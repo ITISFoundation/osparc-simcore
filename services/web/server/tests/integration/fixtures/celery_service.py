@@ -23,10 +23,11 @@ def celery_service(_webserver_dev_config, docker_stack):
     wait_till_celery_responsive(url)
     yield url
 
+
 @tenacity.retry(wait=tenacity.wait_fixed(0.1), stop=tenacity.stop_after_delay(60))
 def wait_till_celery_responsive(url):
-    app = celery.Celery('tasks', broker=url)
+    app = celery.Celery("tasks", broker=url)
 
-    status = celery.bin.celery.CeleryCommand.commands['status']()
+    status = celery.bin.celery.CeleryCommand.commands["status"]()
     status.app = status.get_app()
-    status.run() # raises celery.bin.base.Error if cannot run
+    status.run()  # raises celery.bin.base.Error if cannot run

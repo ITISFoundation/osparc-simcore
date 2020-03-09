@@ -27,14 +27,14 @@ from .rest_config import APP_OPENAPI_SPECS_KEY, get_rest_config
 log = logging.getLogger(__name__)
 
 
-def get_openapi_specs_path(api_version_dir: Optional[str]=None) -> Path:
+def get_openapi_specs_path(api_version_dir: Optional[str] = None) -> Path:
     if api_version_dir is None:
         api_version_dir = api_version_prefix
 
-    return resources.get_path(f'api/{api_version_dir}/openapi.yaml')
+    return resources.get_path(f"api/{api_version_dir}/openapi.yaml")
 
 
-def load_openapi_specs(spec_path: Optional[Path]=None) -> OpenApiSpecs:
+def load_openapi_specs(spec_path: Optional[Path] = None) -> OpenApiSpecs:
     if spec_path is None:
         spec_path = get_openapi_specs_path()
 
@@ -45,9 +45,12 @@ def load_openapi_specs(spec_path: Optional[Path]=None) -> OpenApiSpecs:
     return specs
 
 
-@app_module_setup(__name__, ModuleCategory.ADDON,
-    depends=['simcore_service_webserver.security'],
-    logger=log)
+@app_module_setup(
+    __name__,
+    ModuleCategory.ADDON,
+    depends=["simcore_service_webserver.security"],
+    logger=log,
+)
 def setup(app: web.Application):
     cfg = get_rest_config(app)
     api_version_dir = cfg["version"]
@@ -61,7 +64,9 @@ def setup(app: web.Application):
     major, *_ = specs.info.version
 
     if f"/v{major}" != base_path:
-        raise ValueError(f"Basepath naming {base_path} does not fit API version {specs.info.version}")
+        raise ValueError(
+            f"Basepath naming {base_path} does not fit API version {specs.info.version}"
+        )
 
     # diagnostics routes
     routes = rest_routes.create(specs)
@@ -72,15 +77,10 @@ def setup(app: web.Application):
 
     # rest API doc at /api/doc
     log.debug("OAS loaded from %s ", spec_path)
-    setup_swagger(app,
-        swagger_from_file=str(spec_path),
-        ui_version=3)
-
+    setup_swagger(app, swagger_from_file=str(spec_path), ui_version=3)
 
 
 # alias
 setup_rest = setup
 
-__all__ = (
-    'setup_rest'
-)
+__all__ = "setup_rest"

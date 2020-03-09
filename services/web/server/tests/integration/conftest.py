@@ -37,15 +37,18 @@ pytest_plugins = [
     "fixtures.celery_service",
     "fixtures.postgres_service",
     "fixtures.redis_service",
-    "fixtures.websocket_client"
+    "fixtures.websocket_client",
 ]
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 log = logging.getLogger(__name__)
 
+
 @pytest.fixture(scope="module")
-def webserver_environ(request, docker_stack: Dict, simcore_docker_compose: Dict) -> Dict[str, str]:
+def webserver_environ(
+    request, docker_stack: Dict, simcore_docker_compose: Dict
+) -> Dict[str, str]:
     """
         Started already swarm with integration stack (via dependency with 'docker_stack')
 
@@ -56,15 +59,19 @@ def webserver_environ(request, docker_stack: Dict, simcore_docker_compose: Dict)
     """
     assert "webserver" not in docker_stack["services"]
 
-    dockerfile_environ = {'SIMCORE_WEB_OUTDIR': "undefined" } # TODO: parse webserver dockerfile ??
-    docker_compose_environ = simcore_docker_compose['services']['webserver'].get('environment',{})
+    dockerfile_environ = {
+        "SIMCORE_WEB_OUTDIR": "undefined"
+    }  # TODO: parse webserver dockerfile ??
+    docker_compose_environ = simcore_docker_compose["services"]["webserver"].get(
+        "environment", {}
+    )
 
     environ = {}
     environ.update(dockerfile_environ)
     environ.update(docker_compose_environ)
 
     # get the list of core services the test module wants
-    core_services = getattr(request.module, 'core_services', [])
+    core_services = getattr(request.module, "core_services", [])
 
     # OVERRIDES:
     #   One of the biggest differences with respect to the real system
@@ -72,26 +79,32 @@ def webserver_environ(request, docker_stack: Dict, simcore_docker_compose: Dict)
     #   version tha loads only the subsystems under test. For that reason,
     #   the test webserver is built-up in webserver_service fixture that runs
     #   on the host.
-    services_with_published_ports = [name for name in core_services
-                if 'ports' in simcore_docker_compose['services'][name] ]
+    services_with_published_ports = [
+        name
+        for name in core_services
+        if "ports" in simcore_docker_compose["services"][name]
+    ]
     for name in services_with_published_ports:
 
-        host_key = f'{name.upper()}_HOST'
-        port_key = f'{name.upper()}_PORT'
+        host_key = f"{name.upper()}_HOST"
+        port_key = f"{name.upper()}_PORT"
 
         # published port is sometimes dynamically defined by the swarm
-        assert host_key in environ, "Variables names expected to be prefix with service names in docker-compose"
+        assert (
+            host_key in environ
+        ), "Variables names expected to be prefix with service names in docker-compose"
         assert port_key in environ
 
         # to swarm boundary since webserver is installed in the host and therefore outside the swarm's network
         published_port = get_service_published_port(name, int(environ.get(port_key)))
-        environ[host_key] = '127.0.0.1'
+        environ[host_key] = "127.0.0.1"
         environ[port_key] = published_port
 
-    pprint(environ) # NOTE: displayed only if error
+    pprint(environ)  # NOTE: displayed only if error
     return environ
 
-@pytest.fixture(scope='module')
+
+@pytest.fixture(scope="module")
 def _webserver_dev_config(webserver_environ: Dict, docker_stack: Dict) -> Dict:
     """
         Swarm with integration stack already started
@@ -106,18 +119,22 @@ def _webserver_dev_config(webserver_environ: Dict, docker_stack: Dict) -> Dict:
     with app_resources.stream("config/server-docker-dev.yaml") as f:
         cfg = yaml.safe_load(f)
         # test webserver works in host
-        cfg["main"]['host'] = '127.0.0.1'
+        cfg["main"]["host"] = "127.0.0.1"
 
-    with config_file_path.open('wt') as f:
+    with config_file_path.open("wt") as f:
         yaml.dump(cfg, f, default_flow_style=False)
 
     # Emulates cli
     config_environ = {}
     config_environ.update(webserver_environ)
-    config_environ.update( create_environ(skip_host_environ=True) ) # TODO: can be done monkeypathcing os.environ and calling create_environ as well
+    config_environ.update(
+        create_environ(skip_host_environ=True)
+    )  # TODO: can be done monkeypathcing os.environ and calling create_environ as well
 
     # validates
-    cfg_dict = trafaret_config.read_and_validate(config_file_path, app_schema, vars=config_environ)
+    cfg_dict = trafaret_config.read_and_validate(
+        config_file_path, app_schema, vars=config_environ
+    )
 
     # WARNING: changes to this fixture during testing propagates to other tests. Use cfg = deepcopy(cfg_dict)
     # FIXME:  freeze read/only json obj
@@ -128,6 +145,7 @@ def _webserver_dev_config(webserver_environ: Dict, docker_stack: Dict) -> Dict:
     config_file_path.unlink()
 
     return cfg_dict
+
 
 @pytest.fixture(scope="function")
 def app_config(_webserver_dev_config: Dict, aiohttp_unused_port) -> Dict:

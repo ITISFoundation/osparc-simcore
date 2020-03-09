@@ -37,22 +37,26 @@ from utils_login import LoggedUser
 from utils_projects import NewProject, delete_all_projects
 
 API_VERSION = "v0"
-RESOURCE_NAME = 'projects'
+RESOURCE_NAME = "projects"
 API_PREFIX = "/" + API_VERSION
 
 
 @pytest.fixture
 def client(loop, aiohttp_client, app_cfg, postgres_service):
-#def client(loop, aiohttp_client, app_cfg): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
+    # def client(loop, aiohttp_client, app_cfg): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
 
     # config app
     cfg = deepcopy(app_cfg)
     port = cfg["main"]["port"]
-    cfg["db"]["init_tables"] = True # inits tables of postgres_service upon startup
+    cfg["db"]["init_tables"] = True  # inits tables of postgres_service upon startup
     cfg["projects"]["enabled"] = True
     cfg["director"]["enabled"] = True
-    cfg["resource_manager"]["garbage_collection_interval_seconds"] = 3 # increase speed of garbage collection
-    cfg["resource_manager"]["resource_deletion_timeout_seconds"] = 3 # reduce deletion delay
+    cfg["resource_manager"][
+        "garbage_collection_interval_seconds"
+    ] = 3  # increase speed of garbage collection
+    cfg["resource_manager"][
+        "resource_deletion_timeout_seconds"
+    ] = 3  # reduce deletion delay
     app = create_safe_application(cfg)
 
     # setup app
@@ -60,7 +64,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_service):
     setup_session(app)
     setup_security(app)
     setup_rest(app)
-    setup_login(app)            # needed for login_utils fixtures
+    setup_login(app)  # needed for login_utils fixtures
     setup_resource_manager(app)
     setup_sockets(app)
     setup_director(app)
@@ -68,12 +72,12 @@ def client(loop, aiohttp_client, app_cfg, postgres_service):
     assert setup_projects(app)
 
     # server and client
-    yield loop.run_until_complete(aiohttp_client(app, server_kwargs={
-        'port': port,
-        'host': 'localhost'
-    }))
+    yield loop.run_until_complete(
+        aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
+    )
 
     # teardown here ...
+
 
 @pytest.fixture()
 async def logged_user(client, user_role: UserRole):
@@ -84,22 +88,22 @@ async def logged_user(client, user_role: UserRole):
     async with LoggedUser(
         client,
         {"role": user_role.name},
-        check_if_succeeds = user_role!=UserRole.ANONYMOUS
+        check_if_succeeds=user_role != UserRole.ANONYMOUS,
     ) as user:
         print("-----> logged in user", user_role)
         yield user
         print("<----- logged out user", user_role)
 
+
 @pytest.fixture
 async def user_project(client, fake_project, logged_user):
     async with NewProject(
-        fake_project,
-        client.app,
-        user_id=logged_user["id"]
+        fake_project, client.app, user_id=logged_user["id"]
     ) as project:
         print("-----> added project", project["name"])
         yield project
         print("<----- removed project", project["name"])
+
 
 @pytest.fixture
 async def template_project(client, fake_project):
@@ -108,20 +112,22 @@ async def template_project(client, fake_project):
     project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"
 
     async with NewProject(
-        project_data,
-        client.app,
-        user_id=None,
-        clear_all=True
+        project_data, client.app, user_id=None, clear_all=True
     ) as template_project:
         print("-----> added template project", template_project["name"])
         yield template_project
         print("<----- removed template project", template_project["name"])
 
+
 @pytest.fixture
 def computational_system_mock(mocker):
-    mock_fun = mocker.patch('simcore_service_webserver.projects.projects_handlers.update_pipeline_db', return_value=Future())
+    mock_fun = mocker.patch(
+        "simcore_service_webserver.projects.projects_handlers.update_pipeline_db",
+        return_value=Future(),
+    )
     mock_fun.return_value.set_result("")
     return mock_fun
+
 
 @pytest.fixture
 def fake_services():
@@ -134,9 +140,11 @@ def fake_services():
 
 def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
-        return {k:dikt[k] for k in keys}
+        return {k: dikt[k] for k in keys}
 
-    modified = ["lastChangeDate", ]
+    modified = [
+        "lastChangeDate",
+    ]
     keep = [k for k in update_data.keys() if k not in modified]
 
     assert _extract(current_project, keep) == _extract(update_data, keep)
@@ -145,17 +153,20 @@ def assert_replaced(current_project, update_data):
     assert to_datetime(update_data[k]) < to_datetime(current_project[k])
 
 
-
-
 # GET --------
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPOk),
-    (UserRole.USER, web.HTTPOk),
-    (UserRole.TESTER, web.HTTPOk),
-])
-async def test_list_projects(client, logged_user, user_project, template_project, expected):
-    #TODO: GET /v0/projects?start=0&count=3
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_list_projects(
+    client, logged_user, user_project, template_project, expected
+):
+    # TODO: GET /v0/projects?start=0&count=3
 
     # GET /v0/projects
     url = client.app.router["list_projects"].url_for()
@@ -169,30 +180,34 @@ async def test_list_projects(client, logged_user, user_project, template_project
         assert data[0] == template_project
         assert data[1] == user_project
 
-    #GET /v0/projects?type=user
-    resp = await client.get(url.with_query(type='user'))
+    # GET /v0/projects?type=user
+    resp = await client.get(url.with_query(type="user"))
     data, errors = await assert_status(resp, expected)
     if not errors:
         assert len(data) == 1
         assert data[0] == user_project
 
-    #GET /v0/projects?type=template
+    # GET /v0/projects?type=template
     # instead /v0/projects/templates ??
-    resp = await client.get(url.with_query(type='template'))
+    resp = await client.get(url.with_query(type="template"))
     data, errors = await assert_status(resp, expected)
     if not errors:
         assert len(data) == 1
         assert data[0] == template_project
 
 
-
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPOk),
-    (UserRole.USER, web.HTTPOk),
-    (UserRole.TESTER, web.HTTPOk),
-])
-async def test_get_project(client, logged_user, user_project, template_project, expected):
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_get_project(
+    client, logged_user, user_project, template_project, expected
+):
     # GET /v0/projects/{project_id}
 
     # with a project owned by user
@@ -215,14 +230,18 @@ async def test_get_project(client, logged_user, user_project, template_project, 
 
 
 # POST --------
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
-    (UserRole.USER, web.HTTPCreated),
-    (UserRole.TESTER, web.HTTPCreated),
-])
-async def test_new_project(client, logged_user, expected,
-    computational_system_mock, storage_subsystem_mock):
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPCreated),
+        (UserRole.TESTER, web.HTTPCreated),
+    ],
+)
+async def test_new_project(
+    client, logged_user, expected, computational_system_mock, storage_subsystem_mock
+):
     # POST /v0/projects
     url = client.app.router["create_projects"].url_for()
     assert str(url) == API_PREFIX + "/projects"
@@ -236,7 +255,7 @@ async def test_new_project(client, logged_user, expected,
         "creationDate": now_str(),
         "lastChangeDate": now_str(),
         "thumbnail": "",
-        "workbench": {}
+        "workbench": {},
     }
 
     resp = await client.post(url, json=default_project)
@@ -249,11 +268,13 @@ async def test_new_project(client, logged_user, expected,
         # updated fields
         assert default_project["uuid"] != new_project["uuid"]
         assert default_project["prjOwner"] != logged_user["name"]
-        assert to_datetime(default_project["creationDate"]) < to_datetime(new_project["creationDate"])
+        assert to_datetime(default_project["creationDate"]) < to_datetime(
+            new_project["creationDate"]
+        )
 
         # invariant fields
         for key in new_project.keys():
-            if key not in ('uuid', 'prjOwner', 'creationDate', 'lastChangeDate'):
+            if key not in ("uuid", "prjOwner", "creationDate", "lastChangeDate"):
                 assert default_project[key] == new_project[key]
 
         # TODO: validate response using OAS?
@@ -264,16 +285,30 @@ async def test_new_project(client, logged_user, expected,
         #   violates foreign key constraint "user_to_projects_user_id_fkey" on table "user_to_projects"
         await delete_all_projects(client.app)
 
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
-    (UserRole.USER, web.HTTPCreated),
-    (UserRole.TESTER, web.HTTPCreated),
-])
-async def test_new_project_from_template(client, logged_user, template_project, expected,
-    computational_system_mock, storage_subsystem_mock):
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPCreated),
+        (UserRole.TESTER, web.HTTPCreated),
+    ],
+)
+async def test_new_project_from_template(
+    client,
+    logged_user,
+    template_project,
+    expected,
+    computational_system_mock,
+    storage_subsystem_mock,
+):
     # POST /v0/projects?from_template={template_uuid}
-    url = client.app.router["create_projects"].url_for().with_query(from_template=template_project["uuid"])
+    url = (
+        client.app.router["create_projects"]
+        .url_for()
+        .with_query(from_template=template_project["uuid"])
+    )
 
     resp = await client.post(url)
 
@@ -288,8 +323,12 @@ async def test_new_project_from_template(client, logged_user, template_project, 
         assert project["prjOwner"] != template_project["prjOwner"]
 
         # different timestamps
-        assert to_datetime(template_project["creationDate"]) < to_datetime(project["creationDate"])
-        assert to_datetime(template_project["lastChangeDate"]) < to_datetime(project["lastChangeDate"])
+        assert to_datetime(template_project["creationDate"]) < to_datetime(
+            project["creationDate"]
+        )
+        assert to_datetime(template_project["lastChangeDate"]) < to_datetime(
+            project["lastChangeDate"]
+        )
 
         # different uuids for project and nodes!?
         assert project["uuid"] != template_project["uuid"]
@@ -301,26 +340,40 @@ async def test_new_project_from_template(client, logged_user, template_project, 
             except ValueError:
                 pytest.fail("Invalid uuid in workbench node {}".format(node_name))
 
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
-    (UserRole.USER, web.HTTPCreated),
-    (UserRole.TESTER, web.HTTPCreated),
-])
-async def test_new_project_from_template_with_body(client, logged_user, template_project, expected,
-    computational_system_mock, storage_subsystem_mock):
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPCreated),
+        (UserRole.TESTER, web.HTTPCreated),
+    ],
+)
+async def test_new_project_from_template_with_body(
+    client,
+    logged_user,
+    template_project,
+    expected,
+    computational_system_mock,
+    storage_subsystem_mock,
+):
     # POST /v0/projects?from_template={template_uuid}
-    url = client.app.router["create_projects"].url_for().with_query(from_template=template_project["uuid"])
+    url = (
+        client.app.router["create_projects"]
+        .url_for()
+        .with_query(from_template=template_project["uuid"])
+    )
 
     predefined = {
-        "uuid":"",
-        "name":"Sleepers8",
-        "description":"Some lines from user",
-        "thumbnail":"",
-        "prjOwner":"",
-        "creationDate":"2019-06-03T09:59:31.987Z",
-        "lastChangeDate":"2019-06-03T09:59:31.987Z",
-        "workbench":{}
+        "uuid": "",
+        "name": "Sleepers8",
+        "description": "Some lines from user",
+        "thumbnail": "",
+        "prjOwner": "",
+        "creationDate": "2019-06-03T09:59:31.987Z",
+        "lastChangeDate": "2019-06-03T09:59:31.987Z",
+        "workbench": {},
     }
 
     resp = await client.post(url, json=predefined)
@@ -334,7 +387,6 @@ async def test_new_project_from_template_with_body(client, logged_user, template
         assert project["name"] == predefined["name"]
         assert project["description"] == predefined["description"]
 
-
         modified = ["prjOwner", "creationDate", "lastChangeDate", "uuid"]
 
         # different ownership
@@ -342,8 +394,12 @@ async def test_new_project_from_template_with_body(client, logged_user, template
         assert project["prjOwner"] != template_project["prjOwner"]
 
         # different timestamps
-        assert to_datetime(template_project["creationDate"]) < to_datetime(project["creationDate"])
-        assert to_datetime(template_project["lastChangeDate"]) < to_datetime(project["lastChangeDate"])
+        assert to_datetime(template_project["creationDate"]) < to_datetime(
+            project["creationDate"]
+        )
+        assert to_datetime(template_project["lastChangeDate"]) < to_datetime(
+            project["lastChangeDate"]
+        )
 
         # different uuids for project and nodes!?
         assert project["uuid"] != template_project["uuid"]
@@ -356,17 +412,29 @@ async def test_new_project_from_template_with_body(client, logged_user, template
                 pytest.fail("Invalid uuid in workbench node {}".format(node_name))
 
 
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
-    (UserRole.USER, web.HTTPForbidden),
-    (UserRole.TESTER, web.HTTPCreated),
-])
-async def test_new_template_from_project(client, logged_user, user_project, expected,
-    computational_system_mock, storage_subsystem_mock):
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPForbidden),
+        (UserRole.TESTER, web.HTTPCreated),
+    ],
+)
+async def test_new_template_from_project(
+    client,
+    logged_user,
+    user_project,
+    expected,
+    computational_system_mock,
+    storage_subsystem_mock,
+):
     # POST /v0/projects?as_template={user_uuid}
-    url = client.app.router["create_projects"].url_for().\
-        with_query(as_template=user_project["uuid"])
+    url = (
+        client.app.router["create_projects"]
+        .url_for()
+        .with_query(as_template=user_project["uuid"])
+    )
 
     resp = await client.post(url)
     data, error = await assert_status(resp, expected)
@@ -389,15 +457,19 @@ async def test_new_template_from_project(client, logged_user, user_project, expe
         # TODO: check in detail all fields in a node
 
 
-
 # PUT --------
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPOk),
-    (UserRole.USER, web.HTTPOk),
-    (UserRole.TESTER, web.HTTPOk),
-])
-async def test_replace_project(client, logged_user, user_project, expected, computational_system_mock):
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_replace_project(
+    client, logged_user, user_project, expected, computational_system_mock
+):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
 
@@ -410,19 +482,25 @@ async def test_replace_project(client, logged_user, user_project, expected, comp
     if not error:
         assert_replaced(current_project=data, update_data=project_update)
 
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPOk),
-    (UserRole.USER, web.HTTPOk),
-    (UserRole.TESTER, web.HTTPOk),
-])
-async def test_replace_project_updated_inputs(client, logged_user, user_project, expected, computational_system_mock):
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_replace_project_updated_inputs(
+    client, logged_user, user_project, expected, computational_system_mock
+):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
 
     project_update = deepcopy(user_project)
     #
-    #"inputAccess": {
+    # "inputAccess": {
     #    "Na": "ReadAndWrite", <--------
     #    "Kr": "ReadOnly",
     #    "BCL": "ReadAndWrite",
@@ -430,7 +508,9 @@ async def test_replace_project_updated_inputs(client, logged_user, user_project,
     #    "Ligand": "Invisible",
     #    "cAMKII": "Invisible"
     #  },
-    project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"]["Na"] = 55
+    project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
+        "Na"
+    ] = 55
 
     resp = await client.put(url, json=project_update)
     data, error = await assert_status(resp, expected)
@@ -438,19 +518,29 @@ async def test_replace_project_updated_inputs(client, logged_user, user_project,
     if not error:
         assert_replaced(current_project=data, update_data=project_update)
 
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPOk),
-    (UserRole.USER, web.HTTPOk),
-    (UserRole.TESTER, web.HTTPOk),
-])
-async def test_replace_project_updated_readonly_inputs(client, logged_user, user_project, expected, computational_system_mock):
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_replace_project_updated_readonly_inputs(
+    client, logged_user, user_project, expected, computational_system_mock
+):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
 
     project_update = deepcopy(user_project)
-    project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"]["Na"] = 55
-    project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"]["Kr"] = 5
+    project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
+        "Na"
+    ] = 55
+    project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
+        "Kr"
+    ] = 5
 
     resp = await client.put(url, json=project_update)
     data, error = await assert_status(resp, expected)
@@ -461,20 +551,38 @@ async def test_replace_project_updated_readonly_inputs(client, logged_user, user
 
 # DELETE -------
 
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
-    (UserRole.USER, web.HTTPNoContent),
-    (UserRole.TESTER, web.HTTPNoContent),
-])
-async def test_delete_project(client, logged_user, user_project, expected, storage_subsystem_mock, mocker, fake_services):
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPNoContent),
+        (UserRole.TESTER, web.HTTPNoContent),
+    ],
+)
+async def test_delete_project(
+    client,
+    logged_user,
+    user_project,
+    expected,
+    storage_subsystem_mock,
+    mocker,
+    fake_services,
+):
     # DELETE /v0/projects/{project_id}
 
     fakes = fake_services(5)
-    mock_director_api = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
+    mock_director_api = mocker.patch(
+        "simcore_service_webserver.director.director_api.get_running_interactive_services",
+        return_value=Future(),
+    )
     mock_director_api.return_value.set_result(fakes)
 
-    mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
+    mock_director_api_stop_services = mocker.patch(
+        "simcore_service_webserver.director.director_api.stop_service",
+        return_value=Future(),
+    )
     mock_director_api_stop_services.return_value.set_result("")
 
     url = client.app.router["delete_project"].url_for(project_id=user_project["uuid"])
@@ -493,48 +601,94 @@ async def test_delete_project(client, logged_user, user_project, expected, stora
         resp = await client.get(url)
         data, error = await assert_status(resp, web.HTTPNotFound)
 
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPOk),
-    (UserRole.USER, web.HTTPOk),
-    (UserRole.TESTER, web.HTTPOk),
-])
-async def test_open_project(client, logged_user, user_project, client_session_id, expected, mocker):
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_open_project(
+    client, logged_user, user_project, client_session_id, expected, mocker
+):
     # POST /v0/projects/{project_id}:open
     # open project
-    mock_director_api = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
+    mock_director_api = mocker.patch(
+        "simcore_service_webserver.director.director_api.get_running_interactive_services",
+        return_value=Future(),
+    )
     mock_director_api.return_value.set_result("")
 
-    mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
+    mock_director_api_start_service = mocker.patch(
+        "simcore_service_webserver.director.director_api.start_service",
+        return_value=Future(),
+    )
     mock_director_api_start_service.return_value.set_result("")
 
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_session_id())
     await assert_status(resp, expected)
     if resp.status == web.HTTPOk.status_code:
-        dynamic_services = {service_uuid:service for service_uuid, service in user_project["workbench"].items() if "/dynamic/" in service["key"]}
+        dynamic_services = {
+            service_uuid: service
+            for service_uuid, service in user_project["workbench"].items()
+            if "/dynamic/" in service["key"]
+        }
         calls = []
         for service_uuid, service in dynamic_services.items():
-            calls.append(call(client.server.app, project_id=user_project["uuid"], service_key=service["key"], service_uuid=service_uuid, service_version=service["version"], user_id=logged_user["id"]))
+            calls.append(
+                call(
+                    client.server.app,
+                    project_id=user_project["uuid"],
+                    service_key=service["key"],
+                    service_uuid=service_uuid,
+                    service_version=service["version"],
+                    user_id=logged_user["id"],
+                )
+            )
         mock_director_api_start_service.assert_has_calls(calls)
 
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
-    (UserRole.USER, web.HTTPNoContent),
-    (UserRole.TESTER, web.HTTPNoContent),
-])
-async def test_close_project(client, logged_user, user_project, client_session_id, expected, mocker, fake_services):
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPNoContent),
+        (UserRole.TESTER, web.HTTPNoContent),
+    ],
+)
+async def test_close_project(
+    client,
+    logged_user,
+    user_project,
+    client_session_id,
+    expected,
+    mocker,
+    fake_services,
+):
     # POST /v0/projects/{project_id}:close
     fakes = fake_services(5)
     assert len(fakes) == 5
-    mock_director_api = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
+    mock_director_api = mocker.patch(
+        "simcore_service_webserver.director.director_api.get_running_interactive_services",
+        return_value=Future(),
+    )
     mock_director_api.return_value.set_result(fakes)
 
-    mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
+    mock_director_api_start_service = mocker.patch(
+        "simcore_service_webserver.director.director_api.start_service",
+        return_value=Future(),
+    )
     mock_director_api_start_service.return_value.set_result("")
 
-    mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
+    mock_director_api_stop_services = mocker.patch(
+        "simcore_service_webserver.director.director_api.stop_service",
+        return_value=Future(),
+    )
     mock_director_api_stop_services.return_value.set_result("")
     # open project
     client_id = client_session_id()
@@ -556,27 +710,52 @@ async def test_close_project(client, logged_user, user_project, client_session_i
     else:
         mock_director_api.assert_not_called()
 
-@pytest.mark.parametrize("user_role, expected", [
-    # (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPOk),
-    (UserRole.USER, web.HTTPOk),
-    (UserRole.TESTER, web.HTTPOk),
-])
-async def test_get_active_project(client, logged_user, user_project, client_session_id, expected, socketio_client, mocker):
-    mock_director_api = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
+
+@pytest.mark.parametrize(
+    "user_role, expected",
+    [
+        # (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_get_active_project(
+    client,
+    logged_user,
+    user_project,
+    client_session_id,
+    expected,
+    socketio_client,
+    mocker,
+):
+    mock_director_api = mocker.patch(
+        "simcore_service_webserver.director.director_api.get_running_interactive_services",
+        return_value=Future(),
+    )
     mock_director_api.return_value.set_result("")
 
-    mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
+    mock_director_api_start_service = mocker.patch(
+        "simcore_service_webserver.director.director_api.start_service",
+        return_value=Future(),
+    )
     mock_director_api_start_service.return_value.set_result("")
 
-    mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
+    mock_director_api_stop_services = mocker.patch(
+        "simcore_service_webserver.director.director_api.stop_service",
+        return_value=Future(),
+    )
     mock_director_api_stop_services.return_value.set_result("")
     # login with socket using client session id
     client_id1 = client_session_id()
     sio = await socketio_client(client_id1)
     assert sio.sid
     # get active projects -> empty
-    get_active_projects_url = client.app.router["get_active_project"].url_for().with_query(client_session_id=client_id1)
+    get_active_projects_url = (
+        client.app.router["get_active_project"]
+        .url_for()
+        .with_query(client_session_id=client_id1)
+    )
     resp = await client.get(get_active_projects_url)
     data, error = await assert_status(resp, expected)
     if resp.status == web.HTTPOk.status_code:
@@ -584,7 +763,9 @@ async def test_get_active_project(client, logged_user, user_project, client_sess
         assert not error
 
     # open project
-    open_project_url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
+    open_project_url = client.app.router["open_project"].url_for(
+        project_id=user_project["uuid"]
+    )
     resp = await client.post(open_project_url, json=client_id1)
     data, error = await assert_status(resp, expected)
     resp = await client.get(get_active_projects_url)
@@ -598,7 +779,11 @@ async def test_get_active_project(client, logged_user, user_project, client_sess
     sio = await socketio_client(client_id2)
     assert sio.sid
     # get active projects -> empty
-    get_active_projects_url = client.app.router["get_active_project"].url_for().with_query(client_session_id=client_id2)
+    get_active_projects_url = (
+        client.app.router["get_active_project"]
+        .url_for()
+        .with_query(client_session_id=client_id2)
+    )
     resp = await client.get(get_active_projects_url)
     data, error = await assert_status(resp, expected)
     if resp.status == web.HTTPOk.status_code:
@@ -606,20 +791,43 @@ async def test_get_active_project(client, logged_user, user_project, client_sess
         assert not error
 
 
-@pytest.mark.parametrize("user_role, expected", [
-    # (UserRole.ANONYMOUS),
-    (UserRole.GUEST, web.HTTPForbidden),
-    (UserRole.USER, web.HTTPForbidden),
-    (UserRole.TESTER, web.HTTPForbidden),
-])
-async def test_delete_shared_project_forbidden(loop, client, logged_user, user_project, mocked_director_api, mocked_dynamic_service, socketio_client, client_session_id, expected, mocker):
-    mock_director_api = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
+@pytest.mark.parametrize(
+    "user_role, expected",
+    [
+        # (UserRole.ANONYMOUS),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPForbidden),
+        (UserRole.TESTER, web.HTTPForbidden),
+    ],
+)
+async def test_delete_shared_project_forbidden(
+    loop,
+    client,
+    logged_user,
+    user_project,
+    mocked_director_api,
+    mocked_dynamic_service,
+    socketio_client,
+    client_session_id,
+    expected,
+    mocker,
+):
+    mock_director_api = mocker.patch(
+        "simcore_service_webserver.director.director_api.get_running_interactive_services",
+        return_value=Future(),
+    )
     mock_director_api.return_value.set_result("")
 
-    mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
+    mock_director_api_start_service = mocker.patch(
+        "simcore_service_webserver.director.director_api.start_service",
+        return_value=Future(),
+    )
     mock_director_api_start_service.return_value.set_result("")
 
-    mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
+    mock_director_api_stop_services = mocker.patch(
+        "simcore_service_webserver.director.director_api.stop_service",
+        return_value=Future(),
+    )
     mock_director_api_stop_services.return_value.set_result("")
 
     # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
@@ -637,28 +845,56 @@ async def test_delete_shared_project_forbidden(loop, client, logged_user, user_p
     resp = await client.delete(url)
     await assert_status(resp, expected)
 
-@pytest.mark.parametrize("user_role, create_exp, get_exp, deletion_exp", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized, web.HTTPUnauthorized, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden, web.HTTPOk, web.HTTPForbidden),
-    (UserRole.USER, web.HTTPCreated, web.HTTPOk, web.HTTPNoContent),
-    (UserRole.TESTER, web.HTTPCreated, web.HTTPOk, web.HTTPNoContent),
-])
-async def test_project_node_lifetime(loop, client, logged_user, user_project, create_exp, get_exp, deletion_exp, mocker, storage_subsystem_mock):
-    mock_director_api_get_running_services = mocker.patch('simcore_service_webserver.director.director_api.get_running_interactive_services', return_value=Future())
 
-    mock_director_api_start_service = mocker.patch('simcore_service_webserver.director.director_api.start_service', return_value=Future())
+@pytest.mark.parametrize(
+    "user_role, create_exp, get_exp, deletion_exp",
+    [
+        (
+            UserRole.ANONYMOUS,
+            web.HTTPUnauthorized,
+            web.HTTPUnauthorized,
+            web.HTTPUnauthorized,
+        ),
+        (UserRole.GUEST, web.HTTPForbidden, web.HTTPOk, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPCreated, web.HTTPOk, web.HTTPNoContent),
+        (UserRole.TESTER, web.HTTPCreated, web.HTTPOk, web.HTTPNoContent),
+    ],
+)
+async def test_project_node_lifetime(
+    loop,
+    client,
+    logged_user,
+    user_project,
+    create_exp,
+    get_exp,
+    deletion_exp,
+    mocker,
+    storage_subsystem_mock,
+):
+    mock_director_api_get_running_services = mocker.patch(
+        "simcore_service_webserver.director.director_api.get_running_interactive_services",
+        return_value=Future(),
+    )
+
+    mock_director_api_start_service = mocker.patch(
+        "simcore_service_webserver.director.director_api.start_service",
+        return_value=Future(),
+    )
     mock_director_api_start_service.return_value.set_result("")
-    mock_director_api_stop_services = mocker.patch('simcore_service_webserver.director.director_api.stop_service', return_value=Future())
+    mock_director_api_stop_services = mocker.patch(
+        "simcore_service_webserver.director.director_api.stop_service",
+        return_value=Future(),
+    )
     mock_director_api_stop_services.return_value.set_result("")
-    mock_storage_api_delete_data_folders_of_project_node = mocker.patch('simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project_node', return_value=Future())
+    mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
+        "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project_node",
+        return_value=Future(),
+    )
     mock_storage_api_delete_data_folders_of_project_node.return_value.set_result("")
 
     # create a new dynamic node...
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
-    body = {
-        "service_key": "some/dynamic/key",
-        "service_version": "1.3.4"
-        }
+    body = {"service_key": "some/dynamic/key", "service_version": "1.3.4"}
     resp = await client.post(url, json=body)
     data, errors = await assert_status(resp, create_exp)
     node_id = "wrong_node_id"
@@ -671,10 +907,7 @@ async def test_project_node_lifetime(loop, client, logged_user, user_project, cr
     # create a new NOT dynamic node...
     mock_director_api_start_service.reset_mock()
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
-    body = {
-        "service_key": "some/notdynamic/key",
-        "service_version": "1.3.4"
-        }
+    body = {"service_key": "some/notdynamic/key", "service_version": "1.3.4"}
     resp = await client.post(url, json=body)
     data, errors = await assert_status(resp, create_exp)
     node_id_2 = "wrong_node_id"
@@ -686,8 +919,12 @@ async def test_project_node_lifetime(loop, client, logged_user, user_project, cr
         mock_director_api_start_service.assert_not_called()
 
     # get the node state
-    mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id, "service_state": "running"}])
-    url = client.app.router["get_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
+    mock_director_api_get_running_services.return_value.set_result(
+        [{"service_uuid": node_id, "service_state": "running"}]
+    )
+    url = client.app.router["get_node"].url_for(
+        project_id=user_project["uuid"], node_id=node_id
+    )
     resp = await client.get(url)
     data, errors = await assert_status(resp, get_exp)
     if resp.status == web.HTTPOk.status_code:
@@ -697,7 +934,9 @@ async def test_project_node_lifetime(loop, client, logged_user, user_project, cr
     # get the NOT dynamic node state
     mock_director_api_get_running_services.return_value = Future()
     mock_director_api_get_running_services.return_value.set_result("")
-    url = client.app.router["get_node"].url_for(project_id=user_project["uuid"], node_id=node_id_2)
+    url = client.app.router["get_node"].url_for(
+        project_id=user_project["uuid"], node_id=node_id_2
+    )
     resp = await client.get(url)
     data, errors = await assert_status(resp, get_exp)
     if resp.status == web.HTTPOk.status_code:
@@ -706,8 +945,12 @@ async def test_project_node_lifetime(loop, client, logged_user, user_project, cr
 
     # delete the node
     mock_director_api_get_running_services.return_value = Future()
-    mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id}])
-    url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
+    mock_director_api_get_running_services.return_value.set_result(
+        [{"service_uuid": node_id}]
+    )
+    url = client.app.router["delete_node"].url_for(
+        project_id=user_project["uuid"], node_id=node_id
+    )
     resp = await client.delete(url)
     data, errors = await assert_status(resp, deletion_exp)
     if resp.status == web.HTTPNoContent.status_code:
@@ -721,7 +964,9 @@ async def test_project_node_lifetime(loop, client, logged_user, user_project, cr
     mock_director_api_stop_services.reset_mock()
     mock_storage_api_delete_data_folders_of_project_node.reset_mock()
     # mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id}])
-    url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=node_id_2)
+    url = client.app.router["delete_node"].url_for(
+        project_id=user_project["uuid"], node_id=node_id_2
+    )
     resp = await client.delete(url)
     data, errors = await assert_status(resp, deletion_exp)
     if resp.status == web.HTTPNoContent.status_code:
@@ -732,10 +977,10 @@ async def test_project_node_lifetime(loop, client, logged_user, user_project, cr
         mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
 
 
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.USER, web.HTTPOk)
-])
-async def test_tags_to_studies(client, logged_user, user_project, expected, test_tags_data):
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
+async def test_tags_to_studies(
+    client, logged_user, user_project, expected, test_tags_data
+):
     # Add test tags
     tags = test_tags_data
     added_tags = []
@@ -745,7 +990,9 @@ async def test_tags_to_studies(client, logged_user, user_project, expected, test
         added_tag, _ = await assert_status(resp, expected)
         added_tags.append(added_tag)
         # Add tag to study
-        url = client.app.router["add_tag"].url_for(study_uuid=user_project.get("uuid"), tag_id=str(added_tag.get("id")))
+        url = client.app.router["add_tag"].url_for(
+            study_uuid=user_project.get("uuid"), tag_id=str(added_tag.get("id"))
+        )
         resp = await client.put(url)
         data, _ = await assert_status(resp, expected)
         # Tag is included in response
@@ -756,17 +1003,23 @@ async def test_tags_to_studies(client, logged_user, user_project, expected, test
     resp = await client.delete(url)
     await assert_status(resp, web.HTTPNoContent)
     # Get project and check that tag is no longer there
-    url = client.app.router["get_project"].url_for(project_id=str(user_project.get("uuid")))
+    url = client.app.router["get_project"].url_for(
+        project_id=str(user_project.get("uuid"))
+    )
     resp = await client.get(url)
     data, _ = await assert_status(resp, expected)
     assert added_tags[0].get("id") not in data.get("tags")
 
-    #Remove tag1 from project
-    url = client.app.router["remove_tag"].url_for(study_uuid=user_project.get("uuid"), tag_id=str(added_tags[1].get("id")))
+    # Remove tag1 from project
+    url = client.app.router["remove_tag"].url_for(
+        study_uuid=user_project.get("uuid"), tag_id=str(added_tags[1].get("id"))
+    )
     resp = await client.delete(url)
     await assert_status(resp, expected)
     # Get project and check that tag is no longer there
-    url = client.app.router["get_project"].url_for(project_id=str(user_project.get("uuid")))
+    url = client.app.router["get_project"].url_for(
+        project_id=str(user_project.get("uuid"))
+    )
     resp = await client.get(url)
     data, _ = await assert_status(resp, expected)
     assert added_tags[1].get("id") not in data.get("tags")

@@ -14,16 +14,21 @@ from simcore_service_storage.settings import RSC_CONFIG_DIR_KEY
 
 log = logging.getLogger(__name__)
 
+
 @pytest.fixture
 def app_resources(package_dir):
     resource_names = []
-    for name in (RSC_CONFIG_DIR_KEY, 'api'):
+    for name in (RSC_CONFIG_DIR_KEY, "api"):
         folder = package_dir / name
-        resource_names += [ str(p.relative_to(package_dir)) for p in folder.rglob("*.y*ml") ]
+        resource_names += [
+            str(p.relative_to(package_dir)) for p in folder.rglob("*.y*ml")
+        ]
 
     return resource_names
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def test_resource_io_utils(app_resources):
 
@@ -41,13 +46,19 @@ def test_resource_io_utils(app_resources):
 
         assert ostream.closed
 
+
 def test_named_resources():
-    exposed = [getattr(resources, name) for name in dir(resources) if name.startswith("RESOURCES")]
+    exposed = [
+        getattr(resources, name)
+        for name in dir(resources)
+        if name.startswith("RESOURCES")
+    ]
 
     for resource_name in exposed:
         assert resources.exists(resource_name)
         assert resources.isdir(resource_name)
         assert resources.listdir(resource_name)
+
 
 def test_paths(app_resources):
     for resource_name in app_resources:

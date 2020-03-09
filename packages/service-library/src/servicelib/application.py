@@ -5,6 +5,7 @@ from aiohttp import web
 from .application_keys import APP_CONFIG_KEY
 from .client_session import persistent_client_session
 
+
 async def startup_info(app: web.Application):
     print(f"INFO: STARTING UP {app}...", flush=True)
 
@@ -13,7 +14,7 @@ async def shutdown_info(app: web.Application):
     print(f"INFO: SHUTING DOWN {app} ...", flush=True)
 
 
-def create_safe_application(config: Optional[Dict]=None) -> web.Application:
+def create_safe_application(config: Optional[Dict] = None) -> web.Application:
     app = web.Application()
 
     # Enxures config entry

@@ -20,24 +20,28 @@ log = logging.getLogger(__file__)
 @attr.s(auto_attribs=True)
 class RolePermissions:
     role: UserRole
-    allowed: List[str]=attr.Factory(list) # named permissions allowed
-    check: Dict[str, Callable[[],bool]]=attr.Factory(dict) # checked permissions: permissions with conditions
-    inherits: List[str]=attr.Factory(list)
+    allowed: List[str] = attr.Factory(list)  # named permissions allowed
+    check: Dict[str, Callable[[], bool]] = attr.Factory(
+        dict
+    )  # checked permissions: permissions with conditions
+    inherits: List[str] = attr.Factory(list)
 
     @classmethod
-    def from_rawdata(cls, role, value:Dict):
+    def from_rawdata(cls, role, value: Dict):
 
         if isinstance(role, str):
             name = role
             role = UserRole[name]
 
-        role = RolePermissions(role=role, allowed=[], check=[], inherits=value.get('inherits', []))
+        role = RolePermissions(
+            role=role, allowed=[], check=[], inherits=value.get("inherits", [])
+        )
 
         allowed = set()
         check = dict()
-        for item in value.get('can', list()):
+        for item in value.get("can", list()):
             if isinstance(item, Dict):
-                check[item['name']] = item['check']
+                check[item["name"]] = item["check"]
             elif isinstance(item, str):
                 allowed.add(item)
             else:
@@ -57,14 +61,15 @@ class RoleBasedAccessModel:
     - For checks with operation expressions (e.g. can operation A & operation B?) see check_access free function below
 
     """
+
     def __init__(self, roles: List[RolePermissions]):
-        self.roles = {r.role:r for r in roles}
+        self.roles = {r.role: r for r in roles}
 
     # TODO: all operations allowed for a given role
     # TODO: build a tree out of the list of allowed operations
     # TODO: operations to ADD/REMOVE/EDIT permissions in a role
 
-    async def can(self, role: UserRole, operation: str, context: Dict=None) -> bool:
+    async def can(self, role: UserRole, operation: str, context: Dict = None) -> bool:
         # pylint: disable=too-many-return-statements
 
         # undefined operation  TODO: check if such a name is defined??
@@ -88,10 +93,12 @@ class RoleBasedAccessModel:
             check = role_access.check[operation]
             try:
                 if inspect.iscoroutinefunction(check):
-                    return (await check(context))
+                    return await check(context)
                 return check(context)
-            except Exception: #pylint: disable=broad-except
-                log.exception("Check operation '%s', shall not raise [%s]", operation, check)
+            except Exception:  # pylint: disable=broad-except
+                log.exception(
+                    "Check operation '%s', shall not raise [%s]", operation, check
+                )
                 return False
 
         # check if any parents
@@ -103,37 +110,40 @@ class RoleBasedAccessModel:
                 return True
         return False
 
-    async def who_can(self, operation: str, context: Dict=None):
+    async def who_can(self, operation: str, context: Dict = None):
         allowed = []
         for role in self.roles:
             if await self.can(role, operation, context):
                 allowed.append(role)
         return allowed
 
-
     @classmethod
     def from_rawdata(cls, raw: Dict):
-        roles = [RolePermissions.from_rawdata(role, value) for role, value in raw.items()]
+        roles = [
+            RolePermissions.from_rawdata(role, value) for role, value in raw.items()
+        ]
         return RoleBasedAccessModel(roles)
 
     # TODO: print table??
 
 
 # TODO: implement expression parser: reg = re.compile(r'(&|\||\bAND\b|\bOR\b|\(|\))')
-operators_pattern = re.compile(r'(&|\||\bAND\b|\bOR\b)')
+operators_pattern = re.compile(r"(&|\||\bAND\b|\bOR\b)")
 
 
-async def check_access(model: RoleBasedAccessModel, role:UserRole, operations: str, context: Dict=None) -> bool:
+async def check_access(
+    model: RoleBasedAccessModel, role: UserRole, operations: str, context: Dict = None
+) -> bool:
     """ Extends `RoleBasedAccessModel.can` to check access to boolean expressions of operations
 
         Returns True if a user with a role has permission on a given context
     """
     tokens = operators_pattern.split(operations)
-    if len(tokens)==1:
+    if len(tokens) == 1:
         return await model.can(role, tokens[0], context)
 
-    if len(tokens)==3:
-        tokens = [t.strip() for t in tokens if t.strip() != '']
+    if len(tokens) == 3:
+        tokens = [t.strip() for t in tokens if t.strip() != ""]
         lhs, op, rhs = tokens
         can_lhs = await model.can(role, lhs, context)
         if op in ["AND", "&"]:

@@ -22,6 +22,7 @@ async def rabbit_service(_webserver_dev_config: Dict, docker_stack):
     url = "amqp://{}:{}@{}:{}".format(user, password, host, port)
     await wait_till_rabbit_responsive(url)
 
+
 @tenacity.retry(wait=tenacity.wait_fixed(0.1), stop=tenacity.stop_after_delay(60))
 async def wait_till_rabbit_responsive(url: str):
     await aio_pika.connect(url)

@@ -10,9 +10,9 @@ from .comp_pipeline import UNKNOWN
 
 
 class NodeClass(enum.Enum):
-    COMPUTATIONAL="COMPUTATIONAL"
-    INTERACTIVE="INTERACTIVE"
-    FRONTEND="FRONTEND"
+    COMPUTATIONAL = "COMPUTATIONAL"
+    INTERACTIVE = "INTERACTIVE"
+    FRONTEND = "FRONTEND"
 
 
 comp_tasks = sa.Table(
@@ -37,6 +37,5 @@ comp_tasks = sa.Table(
     sa.Column("submit", sa.DateTime),
     sa.Column("start", sa.DateTime),
     sa.Column("end", sa.DateTime),
-
-    sa.UniqueConstraint('project_id', 'node_id', name='project_node_uniqueness'),
+    sa.UniqueConstraint("project_id", "node_id", name="project_node_uniqueness"),
 )

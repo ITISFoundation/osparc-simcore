@@ -5,6 +5,7 @@ from jsonschema import SchemaError, ValidationError, validate
 
 log = logging.getLogger(__name__)
 
+
 def validate_instance(instance: Dict, schema: Dict, *, log_errors=True):
     try:
         validate(instance, schema)

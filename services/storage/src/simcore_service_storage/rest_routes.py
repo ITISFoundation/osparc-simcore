@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 def create(specs: OpenApiSpec) -> List[web.RouteDef]:
     # TODO: consider the case in which server creates routes for both v0 and v1!!!
     # TODO: should this be taken from servers instead?
-    BASEPATH = '/v' + specs.info.version.split('.')[0]
+    BASEPATH = "/v" + specs.info.version.split(".")[0]
 
     log.debug("creating %s ", __name__)
     routes = []
@@ -27,57 +27,66 @@ def create(specs: OpenApiSpec) -> List[web.RouteDef]:
     #   routes = auto_routing(specs, handlers)
 
     # diagnostics --
-    path, handle = '/', handlers.check_health
-    operation_id = specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
+    path, handle = "/", handlers.check_health
+    operation_id = specs.paths[path].operations["get"].operation_id
+    routes.append(web.get(BASEPATH + path, handle, name=operation_id))
 
-    path, handle = '/check/{action}', handlers.check_action
-    operation_id = specs.paths[path].operations['post'].operation_id
-    routes.append( web.post(BASEPATH+path, handle, name=operation_id) )
+    path, handle = "/check/{action}", handlers.check_action
+    operation_id = specs.paths[path].operations["post"].operation_id
+    routes.append(web.post(BASEPATH + path, handle, name=operation_id))
 
-    path, handle = '/locations', handlers.get_storage_locations
-    operation_id = specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
+    path, handle = "/locations", handlers.get_storage_locations
+    operation_id = specs.paths[path].operations["get"].operation_id
+    routes.append(web.get(BASEPATH + path, handle, name=operation_id))
 
-    path, handle = '/locations/{location_id}/files/metadata', handlers.get_files_metadata
-    operation_id = specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
+    path, handle = (
+        "/locations/{location_id}/files/metadata",
+        handlers.get_files_metadata,
+    )
+    operation_id = specs.paths[path].operations["get"].operation_id
+    routes.append(web.get(BASEPATH + path, handle, name=operation_id))
 
-    path, handle = '/locations/{location_id}/datasets', handlers.get_datasets_metadata
-    operation_id = specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
+    path, handle = "/locations/{location_id}/datasets", handlers.get_datasets_metadata
+    operation_id = specs.paths[path].operations["get"].operation_id
+    routes.append(web.get(BASEPATH + path, handle, name=operation_id))
 
-    path, handle = '/locations/{location_id}/files/{fileId}/metadata', handlers.get_file_metadata
-    operation_id = specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
+    path, handle = (
+        "/locations/{location_id}/files/{fileId}/metadata",
+        handlers.get_file_metadata,
+    )
+    operation_id = specs.paths[path].operations["get"].operation_id
+    routes.append(web.get(BASEPATH + path, handle, name=operation_id))
 
-    path, handle = '/locations/{location_id}/datasets/{dataset_id}/metadata', handlers.get_files_metadata_dataset
-    operation_id = specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
+    path, handle = (
+        "/locations/{location_id}/datasets/{dataset_id}/metadata",
+        handlers.get_files_metadata_dataset,
+    )
+    operation_id = specs.paths[path].operations["get"].operation_id
+    routes.append(web.get(BASEPATH + path, handle, name=operation_id))
 
     # TODO: Implements update
     # path, handle = '/{location_id}/files/{fileId}/metadata', handlers.update_file_metadata
     # operation_id = specs.paths[path].operations['patch'].operation_id
     # routes.append( web.patch(BASEPATH+path, handle, name=operation_id) )
 
-    path, handle = '/locations/{location_id}/files/{fileId}', handlers.download_file
-    operation_id = specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(BASEPATH+path, handle, name=operation_id) )
+    path, handle = "/locations/{location_id}/files/{fileId}", handlers.download_file
+    operation_id = specs.paths[path].operations["get"].operation_id
+    routes.append(web.get(BASEPATH + path, handle, name=operation_id))
 
-    path, handle = '/locations/{location_id}/files/{fileId}', handlers.delete_file
-    operation_id = specs.paths[path].operations['delete'].operation_id
-    routes.append( web.delete(BASEPATH+path, handle, name=operation_id) )
+    path, handle = "/locations/{location_id}/files/{fileId}", handlers.delete_file
+    operation_id = specs.paths[path].operations["delete"].operation_id
+    routes.append(web.delete(BASEPATH + path, handle, name=operation_id))
 
-    path, handle = '/locations/{location_id}/files/{fileId}', handlers.upload_file
-    operation_id = specs.paths[path].operations['put'].operation_id
-    routes.append( web.put(BASEPATH+path, handle, name=operation_id) )
+    path, handle = "/locations/{location_id}/files/{fileId}", handlers.upload_file
+    operation_id = specs.paths[path].operations["put"].operation_id
+    routes.append(web.put(BASEPATH + path, handle, name=operation_id))
 
-    path, handle = '/simcore-s3/folders', handlers.create_folders_from_project
-    operation_id = specs.paths[path].operations['post'].operation_id
-    routes.append( web.post(BASEPATH+path, handle, name=operation_id) )
+    path, handle = "/simcore-s3/folders", handlers.create_folders_from_project
+    operation_id = specs.paths[path].operations["post"].operation_id
+    routes.append(web.post(BASEPATH + path, handle, name=operation_id))
 
-    path, handle = '/simcore-s3/folders/{folder_id}', handlers.delete_folders_of_project
-    operation_id = specs.paths[path].operations['delete'].operation_id
-    routes.append( web.delete(BASEPATH+path, handle, name=operation_id) )
+    path, handle = "/simcore-s3/folders/{folder_id}", handlers.delete_folders_of_project
+    operation_id = specs.paths[path].operations["delete"].operation_id
+    routes.append(web.delete(BASEPATH + path, handle, name=operation_id))
 
     return routes
