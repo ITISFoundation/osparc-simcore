@@ -1,10 +1,13 @@
-
 from aiohttp import web
 from openapi_core.validation.request.validators import RequestValidator
 from openapi_core.validation.response.validators import ResponseValidator
 
-from .openapi_wrappers import (PATH_KEY, QUERY_KEY, AiohttpOpenAPIRequest,
-                               AiohttpOpenAPIResponse)
+from .openapi_wrappers import (
+    PATH_KEY,
+    QUERY_KEY,
+    AiohttpOpenAPIRequest,
+    AiohttpOpenAPIResponse,
+)
 from .rest_oas import OpenApiSpec, get_specs
 from .rest_responses import create_error_response
 
@@ -13,6 +16,7 @@ class OpenApiValidator:
     """
         Used to validate data in the request->response cycle against openapi specs
     """
+
     @classmethod
     def create(cls, app: web.Application, _version=""):
         specs = get_specs(app)
@@ -24,7 +28,7 @@ class OpenApiValidator:
         self._resvtor = ResponseValidator(spec, custom_formatters=None)
 
         # Current
-        self.current_request = None # wrapper request
+        self.current_request = None  # wrapper request
 
     async def check_request(self, request: web.Request):
         self.current_request = None
@@ -36,22 +40,28 @@ class OpenApiValidator:
         self.current_request = rq
 
         if result.errors:
-            err = create_error_response(result.errors,
-                        "Failed request validation against API specs",
-                        web.HTTPBadRequest)
+            err = create_error_response(
+                result.errors,
+                "Failed request validation against API specs",
+                web.HTTPBadRequest,
+            )
             raise err
 
-        path, query = [ result.parameters[k] for k in (PATH_KEY, QUERY_KEY) ]
+        path, query = [result.parameters[k] for k in (PATH_KEY, QUERY_KEY)]
 
         return path, query, result.body
 
     def check_response(self, response: web.Response):
         req = self.current_request
-        res = AiohttpOpenAPIResponse(response, response.text) # FIXME:ONLY IN SERVER side. Async in client!
+        res = AiohttpOpenAPIResponse(
+            response, response.text
+        )  # FIXME:ONLY IN SERVER side. Async in client!
 
         result = self._resvtor.validate(req, res)
         if result.errors:
-            err = create_error_response(result.errors,
-                        "Failed response validation against API specs",
-                        web.HTTPServiceUnavailable)
+            err = create_error_response(
+                result.errors,
+                "Failed response validation against API specs",
+                web.HTTPServiceUnavailable,
+            )
             raise err

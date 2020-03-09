@@ -26,13 +26,14 @@ def get_client_outdir(app: web.Application) -> Path:
 
     # pylint 2.3.0 produces 'E1101: Instance of 'Path' has no 'expanduser' member (no-member)' ONLY
     # with the installed code and not with the development code!
-    client_dir = Path(cfg["client_outdir"]).expanduser() #pylint: disable=E1101
+    client_dir = Path(cfg["client_outdir"]).expanduser()  # pylint: disable=E1101
     if not client_dir.exists():
         txt = reason = "Front-end application is not available"
         if cfg["testing"]:
             reason = "Invalid client source path: %s" % client_dir
         raise web.HTTPServiceUnavailable(reason=reason, text=txt)
     return client_dir
+
 
 async def index(request: web.Request):
     """
@@ -47,9 +48,9 @@ async def index(request: web.Request):
 
 def write_statics_file(directory):
     statics = {}
-    statics['stackName'] = os.environ.get('SWARM_STACK_NAME')
-    statics['buildDate'] = os.environ.get('BUILD_DATE')
-    with open(directory / 'statics.json', 'w') as statics_file:
+    statics["stackName"] = os.environ.get("SWARM_STACK_NAME")
+    statics["buildDate"] = os.environ.get("BUILD_DATE")
+    with open(directory / "statics.json", "w") as statics_file:
         json.dump(statics, statics_file)
 
 
@@ -61,16 +62,17 @@ def setup_statics(app: web.Application):
         outdir = get_client_outdir(app)
 
         # Checks integrity of RIA source before serving
-        EXPECTED_FOLDERS = ('osparc', 'resource', 'transpiled')
+        EXPECTED_FOLDERS = ("osparc", "resource", "transpiled")
         folders = [x for x in outdir.iterdir() if x.is_dir()]
 
         for name in EXPECTED_FOLDERS:
             folder_names = [path.name for path in folders]
             if name not in folder_names:
                 raise web.HTTPServiceUnavailable(
-                    reason="Invalid front-end source-output folders" \
-                    " Expected %s, got %s in %s" %(EXPECTED_FOLDERS, folder_names, outdir),
-                    text ="Front-end application is not available"
+                    reason="Invalid front-end source-output folders"
+                    " Expected %s, got %s in %s"
+                    % (EXPECTED_FOLDERS, folder_names, outdir),
+                    text="Front-end application is not available",
                 )
 
         # TODO: map ui to /ui or create an alias!?
@@ -79,10 +81,10 @@ def setup_statics(app: web.Application):
         # NOTE: source-output and build-output have both the same subfolder structure
         # TODO: check whether this can be done at oncen
         for path in folders:
-            app.router.add_static('/' + path.name, path)
+            app.router.add_static("/" + path.name, path)
 
         # Create statics file
-        write_statics_file(outdir / 'resource')
+        write_statics_file(outdir / "resource")
 
     except web.HTTPServiceUnavailable as ex:
         log.exception(ex.text)

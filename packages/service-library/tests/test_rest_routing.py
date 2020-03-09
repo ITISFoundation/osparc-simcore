@@ -4,10 +4,12 @@
 import pytest
 
 from servicelib import openapi
-from servicelib.rest_routing import (create_routes_from_namespace,
-                                     get_handlers_from_namespace,
-                                     iter_path_operations,
-                                     map_handlers_with_operations)
+from servicelib.rest_routing import (
+    create_routes_from_namespace,
+    get_handlers_from_namespace,
+    iter_path_operations,
+    map_handlers_with_operations,
+)
 from tutils import Handlers
 
 
@@ -23,13 +25,11 @@ def test_filtered_routing(specs):
     handlers = Handlers()
     found = get_handlers_from_namespace(handlers)
 
-    hdl_sel = { name:hdl
-                    for name, hdl in found.items()
-                        if "i" in name
-    }
-    opr_iter = ( (mth, url, opname, _tags)
-                    for mth, url, opname, _tags in iter_path_operations(specs)
-                        if "i" in opname
+    hdl_sel = {name: hdl for name, hdl in found.items() if "i" in name}
+    opr_iter = (
+        (mth, url, opname, _tags)
+        for mth, url, opname, _tags in iter_path_operations(specs)
+        if "i" in opname
     )
 
     routes = map_handlers_with_operations(hdl_sel, opr_iter, strict=True)
@@ -45,7 +45,7 @@ def test_create_routes_from_namespace(specs):
     # not - strict
     try:
         routes = create_routes_from_namespace(specs, handlers, strict=False)
-    except Exception: # pylint: disable=W0703
+    except Exception:  # pylint: disable=W0703
         pytest.fail("Non-strict failed", pytrace=True)
 
     # strict
@@ -67,10 +67,10 @@ def test_prepends_basepath(specs):
     try:
         handlers = Handlers()
         routes = create_routes_from_namespace(specs, handlers, strict=False)
-    except Exception: # pylint: disable=W0703
+    except Exception:  # pylint: disable=W0703
         pytest.fail("Non-strict failed", pytrace=True)
 
     basepath = openapi.get_base_path(specs)
     for route in routes:
         assert route.path.startswith(basepath)
-        assert route.handler.__name__[len("get_"):] in route.path
+        assert route.handler.__name__[len("get_") :] in route.path

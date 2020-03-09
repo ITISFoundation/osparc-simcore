@@ -3,6 +3,4 @@
 """
 
 # RQT=request
-RQT_USERID_KEY = __name__ + '.userid'
-
-
+RQT_USERID_KEY = __name__ + ".userid"

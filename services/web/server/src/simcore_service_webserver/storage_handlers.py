@@ -21,19 +21,20 @@ def _resolve_storage_url(request: web.Request) -> URL:
     cfg = get_config(request.app)
 
     # storage service API endpoint
-    endpoint = URL.build(scheme='http',
-                         host=cfg['host'],
-                         port=cfg['port']).with_path(cfg["version"])
+    endpoint = URL.build(scheme="http", host=cfg["host"], port=cfg["port"]).with_path(
+        cfg["version"]
+    )
 
     BASEPATH_INDEX = 3
     # strip basepath from webserver API path (i.e. webserver api version)
     # >>> URL('http://storage:1234/v5/storage/asdf/').raw_parts[3:]
     #    ('asdf', '')
-    suffix = "/".join( request.url.raw_parts[BASEPATH_INDEX:] )
+    suffix = "/".join(request.url.raw_parts[BASEPATH_INDEX:])
 
     # TODO: check request.query to storage! unsafe!?
     url = (endpoint / suffix).with_query(request.query).update_query(user_id=userid)
     return url
+
 
 async def _request_storage(request: web.Request, method: str):
     await extract_and_validate(request)
@@ -51,36 +52,41 @@ async def _request_storage(request: web.Request, method: str):
         return payload
 
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
 
 @login_required
 async def get_storage_locations(request: web.Request):
     await check_permission(request, "storage.locations.*")
-    payload = await _request_storage(request, 'GET')
+    payload = await _request_storage(request, "GET")
     return payload
+
 
 @login_required
 async def get_datasets_metadata(request: web.Request):
     await check_permission(request, "storage.files.*")
-    payload = await _request_storage(request, 'GET')
+    payload = await _request_storage(request, "GET")
     return payload
+
 
 @login_required
 async def get_files_metadata(request: web.Request):
     await check_permission(request, "storage.files.*")
-    payload = await _request_storage(request, 'GET')
+    payload = await _request_storage(request, "GET")
     return payload
+
 
 @login_required
 async def get_files_metadata_dataset(request: web.Request):
     await check_permission(request, "storage.files.*")
-    payload = await _request_storage(request, 'GET')
+    payload = await _request_storage(request, "GET")
     return payload
+
 
 @login_required
 async def get_file_metadata(request: web.Request):
     await check_permission(request, "storage.files.*")
-    payload = await _request_storage(request, 'GET')
+    payload = await _request_storage(request, "GET")
     return payload
 
 
@@ -95,19 +101,19 @@ async def update_file_meta_data(request: web.Request):
 @login_required
 async def download_file(request: web.Request):
     await check_permission(request, "storage.files.*")
-    payload = await _request_storage(request, 'GET')
+    payload = await _request_storage(request, "GET")
     return payload
 
 
 @login_required
 async def upload_file(request: web.Request):
     await check_permission(request, "storage.files.*")
-    payload = await _request_storage(request, 'PUT')
+    payload = await _request_storage(request, "PUT")
     return payload
 
 
 @login_required
 async def delete_file(request: web.Request):
     await check_permission(request, "storage.files.*")
-    payload = await _request_storage(request, 'DELETE')
+    payload = await _request_storage(request, "DELETE")
     return payload
