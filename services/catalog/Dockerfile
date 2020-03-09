@@ -49,7 +49,7 @@ RUN apk add --no-cache \
       postgresql-dev
 
 RUN pip3 --no-cache-dir install --upgrade \
-      pip \
+      pip~=20.0.2 \
       wheel \
       setuptools
 

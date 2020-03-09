@@ -56,7 +56,7 @@ RUN apk add --no-cache \
       linux-headers
 
 RUN $SC_PIP install --upgrade \
-      pip~=19.1.1  \
+      pip~=20.0.2  \
       wheel \
       setuptools
 
