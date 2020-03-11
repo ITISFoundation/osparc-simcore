@@ -4,7 +4,12 @@ IMPORTANT: lowest level module
    I order to avoid cyclic dependences, please
    DO NOT IMPORT ANYTHING from .
 """
+import asyncio
+import logging
 from pathlib import Path
+from typing import List
+
+logger = logging.getLogger(__name__)
 
 
 def is_osparc_repo_dir(path: Path) -> bool:
@@ -27,3 +32,32 @@ def search_osparc_repo_dir(start, max_iterations=8):
         iteration_number += 1
 
     return root_dir if is_osparc_repo_dir(root_dir) else None
+
+
+# FUTURES
+def fire_and_forget_task(obj):
+    future = asyncio.ensure_future(obj)
+
+    def log_exception_callback(fut: asyncio.Future):
+        try:
+            fut.result()
+        except Exception:  # pylint: disable=broad-except
+            logger.exception("Error occured while running task!")
+
+    future.add_done_callback(log_exception_callback)
+
+
+# // tasks
+async def logged_gather(*tasks, reraise: bool = True) -> List:
+    # all coroutine called in // and we take care of returning the exceptions
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    for value in results:
+        if isinstance(value, Exception):
+            if reraise:
+                raise value
+            logger.error(
+                "Exception occured while running %s: %s",
+                str(tasks[results.index(value)]),
+                str(value),
+            )
+    return results

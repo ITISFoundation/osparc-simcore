@@ -8,8 +8,10 @@ from typing import Dict, List, Optional
 from aiohttp import web
 from yarl import URL
 
-from .config import get_client_session, get_config
+from servicelib.utils import logged_gather
+
 from . import director_exceptions
+from .config import get_client_session, get_config
 
 log = logging.getLogger(__name__)
 
@@ -99,7 +101,7 @@ async def stop_services(
         app, user_id=user_id, project_id=project_id
     )
     stop_tasks = [stop_service(app, service_uuid) for service_uuid in services]
-    await asyncio.gather(*stop_tasks)
+    await logged_gather(*stop_tasks, reraise=False)
 
 
 async def get_service_by_key_version(

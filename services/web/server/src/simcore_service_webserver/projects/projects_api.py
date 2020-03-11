@@ -19,14 +19,14 @@ from aiohttp import web
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
+from servicelib.utils import logged_gather
 
 from ..computation_api import delete_pipeline_db
 from ..director import director_api
-from ..storage_api import copy_data_folders_from_project  # mocked in unit-tests
-from ..storage_api import (
-    delete_data_folders_of_project,
-    delete_data_folders_of_project_node,
-)
+from ..storage_api import \
+    copy_data_folders_from_project  # mocked in unit-tests
+from ..storage_api import (delete_data_folders_of_project,
+                           delete_data_folders_of_project_node)
 from ..utils import fire_and_forget_task
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
@@ -136,7 +136,7 @@ async def start_project_interactive_services(
         )
         for service_uuid, service in project_needed_services.items()
     ]
-    await gather(*start_service_tasks)
+    await logged_gather(*start_service_tasks, reraise=True)
 
 
 async def delete_project(request: web.Request, project_uuid: str, user_id: int) -> None:
@@ -164,10 +164,7 @@ async def remove_project_interactive_services(
         for service in list_of_services
     ]
     if stop_tasks:
-        results = await gather(*stop_tasks, return_exceptions=True)
-        for value in results:
-            if isinstance(value, Exception):
-                log.error("Exception occured while stopping service: %s", value)
+        logged_gather(*stop_tasks, reraise=False)
 
 
 async def delete_project_data(

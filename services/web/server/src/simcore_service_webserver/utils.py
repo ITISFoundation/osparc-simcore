@@ -12,7 +12,7 @@ from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
 from secrets import choice
-from typing import Dict, Iterable, List
+from typing import Coroutine, Dict, Iterable, List
 
 from yarl import URL
 
@@ -196,13 +196,3 @@ def get_tracemalloc_info(top=10) -> List[str]:
         )
 
     return top_trace
-
-# FUTURES
-def fire_and_forget_task(obj):
-    future = asyncio.ensure_future(obj)
-    def log_exception_callback(fut: asyncio.Future):
-        try:
-            fut.result()
-        except Exception: #pylint: disable=broad-except
-            log.exception("Error occured while running task!")
-    future.add_done_callback(log_exception_callback)

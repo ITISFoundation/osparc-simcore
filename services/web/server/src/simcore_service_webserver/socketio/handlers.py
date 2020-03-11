@@ -11,9 +11,11 @@ import logging
 from typing import Dict, List, Optional
 
 from aiohttp import web
-from socketio.exceptions import ConnectionRefusedError as socket_io_connection_error
+from socketio.exceptions import \
+    ConnectionRefusedError as socket_io_connection_error
 
 from servicelib.observer import observe
+from servicelib.utils import logged_gather
 
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
@@ -77,18 +79,13 @@ async def disconnect_other_sockets(sio, sockets: List[str]) -> None:
         sio.emit("logout", to=sid, data={"reason": "user logged out"})
         for sid in sockets
     ]
-    results = await asyncio.gather(*logout_tasks, return_exceptions=True)
-    for value in results:
-        if isinstance(value, Exception):
-            log.error("Error occured while logging out users %s", value)
+    logged_gather(*logout_tasks, reraise=False)
+    
     # let the client react
     await asyncio.sleep(3)
     # ensure disconnection is effective
     disconnect_tasks = [sio.disconnect(sid=sid) for sid in sockets]
-    results = await asyncio.gather(*disconnect_tasks, return_exceptions=True)
-    for value in results:
-        if isinstance(value, Exception):
-            log.error("Error occured while disconnecting users %s", value)
+    logged_gather(*disconnect_tasks)
 
 
 @observe(event="SIGNAL_USER_LOGOUT")
