@@ -759,7 +759,11 @@ qx.Class.define("osparc.data.model.Node", {
 
     restartIFrame: function(loadThis) {
       if (this.getIFrame() === null) {
-        this.setIFrame(new osparc.component.widget.PersistentIframe());
+        const iframe = new osparc.component.widget.PersistentIframe();
+        iframe.addListener("restart", () => {
+          this.restartIFrame();
+        }, this);
+        this.setIFrame(iframe);
       }
       if (loadThis) {
         this.getIFrame().resetSource();
@@ -802,11 +806,22 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __retrieveInputs: function(portKey) {
-      const data = {
-        node: this,
-        portKey
-      };
-      this.fireDataEvent("retrieveInputs", data);
+      if (this.isContainer()) {
+        const innerNodes = Object.values(this.getInnerNodes());
+        for (let i=0; i<innerNodes.length; i++) {
+          const data = {
+            node: innerNodes[i],
+            portKey: null
+          };
+          innerNodes[i].fireDataEvent("retrieveInputs", data);
+        }
+      } else {
+        const data = {
+          node: this,
+          portKey
+        };
+        this.fireDataEvent("retrieveInputs", data);
+      }
     },
 
     retrieveInputs: function(portKey = null) {
@@ -875,6 +890,9 @@ qx.Class.define("osparc.data.model.Node", {
         this.setRestartIFrameButton(restartBtn);
 
         this.__showLoadingIFrame();
+      }
+      if (this.isContainer()) {
+        this.__addRetrieveButton();
       }
     },
 
