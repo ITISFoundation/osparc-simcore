@@ -9,7 +9,6 @@
 # pylint: disable=too-many-arguments
 
 import logging
-from asyncio import gather
 from pprint import pformat
 from typing import Dict, Optional
 from uuid import uuid4
@@ -163,7 +162,7 @@ async def remove_project_interactive_services(
         for service in list_of_services
     ]
     if stop_tasks:
-        logged_gather(*stop_tasks, reraise=False)
+        await logged_gather(*stop_tasks, reraise=False)
 
 
 async def delete_project_data(

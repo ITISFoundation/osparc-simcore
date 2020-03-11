@@ -2,7 +2,6 @@
 This module takes care of sending events to the connected webclient through the socket.io interface
 """
 
-import asyncio
 import json
 import logging
 from typing import Any, Dict, List

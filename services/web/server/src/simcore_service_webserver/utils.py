@@ -12,7 +12,7 @@ from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
 from secrets import choice
-from typing import Coroutine, Dict, Iterable, List
+from typing import Dict, Iterable, List
 
 from yarl import URL
 

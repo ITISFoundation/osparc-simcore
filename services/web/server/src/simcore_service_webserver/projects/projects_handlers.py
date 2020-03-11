@@ -1,7 +1,6 @@
 """ Handlers for CRUD operations on /projects/
 
 """
-import asyncio
 import json
 import logging
 

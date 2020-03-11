@@ -54,7 +54,7 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
                     logger.debug(
                         "removing resource entry: %s: %s", other_keys, resources
                     )
-                    logged_gather(*remove_tasks, reraise=False)
+                    await logged_gather(*remove_tasks, reraise=False)
 
                 logger.debug(
                     "the resources %s:%s of %s may be now safely closed",

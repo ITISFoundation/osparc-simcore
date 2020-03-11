@@ -1,6 +1,5 @@
  # pylint: disable=too-many-arguments
 
-import asyncio
 import logging
 import urllib
 from typing import Dict, List, Optional
