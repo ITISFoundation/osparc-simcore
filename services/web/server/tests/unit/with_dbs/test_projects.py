@@ -668,10 +668,10 @@ async def test_open_project(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),        
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
         (UserRole.USER, web.HTTPNoContent),
         (UserRole.TESTER, web.HTTPNoContent),
-        (UserRole.GUEST, web.HTTPForbidden), # NOTE: this must be the last trial, since there is auto-closing of project
     ],
 )
 async def test_close_project(
@@ -694,11 +694,14 @@ async def test_close_project(
     client_id = client_session_id()
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
-    
+
     if resp.status == web.HTTPOk.status_code:
+        calls = [
+            call(client.server.app, user_project["uuid"], logged_user["id"]),
+        ]
         mocked_director_subsystem[
             "get_running_interactive_services"
-        ].assert_called_once()
+        ].has_calls(calls)
         mocked_director_subsystem["get_running_interactive_services"].reset_mock()
     else:
         mocked_director_subsystem[
