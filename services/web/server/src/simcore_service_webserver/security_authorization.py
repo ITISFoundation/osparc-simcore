@@ -23,7 +23,9 @@ log = logging.getLogger(__file__)
 class AuthorizationPolicy(AbstractAuthorizationPolicy):
     app: web.Application
     access_model: RoleBasedAccessModel
-    timed_cache: ExpiringDict = attr.ib(init=False, default=ExpiringDict(max_len=100, max_age_seconds=10))
+    timed_cache: ExpiringDict = attr.ib(
+        init=False, default=ExpiringDict(max_len=100, max_age_seconds=10)
+    )
 
     @property
     def engine(self) -> Engine:
@@ -31,8 +33,8 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
 
         :return: database's engine
         """
-         # TODO: what if db is not available?
-        #return self.app.config_dict[APP_DB_ENGINE_KEY]
+        # TODO: what if db is not available?
+        # return self.app.config_dict[APP_DB_ENGINE_KEY]
         return self.app[APP_DB_ENGINE_KEY]
 
     @retry(**PostgresRetryPolicyUponOperation(log).kwargs)
@@ -41,8 +43,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         row = self.timed_cache.get(identity)
         if not row:
             query = users.select().where(
-                sa.and_(users.c.email == identity,
-                        users.c.status != UserStatus.BANNED)
+                sa.and_(users.c.email == identity, users.c.status != UserStatus.BANNED)
             )
             async with self.engine.acquire() as conn:
                 # NOTE: sometimes it raises psycopg2.DatabaseError in #880 and #1160
@@ -61,7 +62,12 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         user = await self._pg_query_user(identity)
         return user["id"] if user else None
 
-    async def permits(self, identity: str, permission: Union[str,Tuple], context: Optional[Dict]=None) -> bool:
+    async def permits(
+        self,
+        identity: str,
+        permission: Union[str, Tuple],
+        context: Optional[Dict] = None,
+    ) -> bool:
         """ Determines whether an identified user has permission
 
         :param identity: session identified corresponds to the user's email as defined in login.handlers.registration
@@ -70,12 +76,16 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         :return: True if user has permission to execute this operation within the given context
         """
         if identity is None or permission is None:
-            log.debug("Invalid indentity [%s] of permission [%s]. Denying access.", identity, permission)
+            log.debug(
+                "Invalid indentity [%s] of permission [%s]. Denying access.",
+                identity,
+                permission,
+            )
             return False
 
         user = await self._pg_query_user(identity)
         if user:
-            role = user.get('role')
+            role = user.get("role")
             return await check_access(self.access_model, role, permission, context)
 
         return False

@@ -5,17 +5,12 @@ main:
   host: 0.0.0.0
   port: 8080
   client_outdir: ${SIMCORE_WEB_OUTDIR}
-  log_level: DEBUG
+  log_level: ${WEBSERVER_LOGLEVEL}
   testing: True
   studies_access_enabled: True
   monitoring_enabled: True
 socketio:
   enabled: True
-  message_queue:
-    host: ${RABBIT_HOST}
-    port: ${RABBIT_PORT}
-    user: ${RABBIT_USER}
-    password: ${RABBIT_PASSWORD}
 tracing:
   enabled: True
   zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
@@ -23,8 +18,12 @@ director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
   version: "v0"
+catalog:
+  host: catalog
+  port: 8000
+  version: v0
 db:
-  init_tables: False
+  init_tables: True
   postgres:
     database: ${POSTGRES_DB}
     endpoint: ${POSTGRES_ENDPOINT}
@@ -49,11 +48,6 @@ rabbit:
   channels:
     progress: ${RABBIT_PROGRESS_CHANNEL}
     log: ${RABBIT_LOG_CHANNEL}
-# s3:
-#   endpoint: ${S3_ENDPOINT}
-#   access_key: ${S3_ACCESS_KEY}
-#   secret_key: ${S3_SECRET_KEY}
-#   bucket_name: ${S3_BUCKET_NAME}
 activity:
   enabled: True
   prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}

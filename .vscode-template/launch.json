@@ -12,8 +12,8 @@
       "host": "127.0.0.1",
       "pathMappings": [
         {
-          "localRoot": "${workspaceFolder}/services/web/server",
-          "remoteRoot": "/devel/services/web/server"
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/devel"
         }
       ]
     },
@@ -25,8 +25,8 @@
         "host": "127.0.0.1",
         "pathMappings": [
           {
-            "localRoot": "${workspaceFolder}/services/sidecar",
-            "remoteRoot": "/devel/services/sidecar"
+            "localRoot": "${workspaceFolder}",
+            "remoteRoot": "/devel"
           }
         ]
       },
@@ -38,8 +38,21 @@
       "host": "127.0.0.1",
       "pathMappings": [
         {
-          "localRoot": "${workspaceFolder}/services/storage",
-          "remoteRoot": "/devel/services/storage"
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/devel"
+        }
+      ]
+    },
+    {
+      "name": "Python: Remote Attach catalog",
+      "type": "python",
+      "request": "attach",
+      "port": 3005,
+      "host": "127.0.0.1",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/devel"
         }
       ]
     }

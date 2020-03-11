@@ -26,6 +26,7 @@ MAX_WAIT_TIME=240
 
 
 docker_compose_service_names = [
+    'catalog',
     'director',
     'sidecar',
     'storage',
@@ -104,33 +105,35 @@ async def test_core_service_running(
     # find core_service_name
     running_service = next( s for s in core_services_running  if s.name == core_service_name )
 
-    # Every service in the fixture runs a single task, but they might have failed!
+    # Every service in the fixture runs a number of tasks, but they might have failed!
     #
     # $ docker service ps simcore_storage
     # ID                  NAME                     IMAGE                     NODE                DESIRED STATE       CURRENT STATE            ERROR                       PORTS
     # puiaevvmtbs1        simcore_storage.1       simcore_storage:latest   crespo-wkstn        Running             Running 18 minutes ago
     # j5xtlrnn684y         \_ simcore_storage.1   simcore_storage:latest   crespo-wkstn        Shutdown            Failed 18 minutes ago    "task: non-zero exit (1)"
     tasks = running_service.tasks()
-
-    assert len(tasks) == 1, "Expected a single task for '{0}',"\
+    service_config = osparc_deploy['simcore']['services'][core_service_name.split(sep="_")[1]]
+    num_tasks = get_replicas(service_config)
+    assert len(tasks) == num_tasks, f"Expected a {num_tasks} task(s) for '{0}',"\
         " got:\n{1}\n{2}".format(core_service_name,
                                  get_tasks_summary(tasks),
                                  get_failed_tasks_logs(running_service, docker_client))
 
 
-    for n in range(RETRY_COUNT):
-        task = running_service.tasks()[0]
-        if task['Status']['State'].upper() in pre_states:
-            print("Waiting [{}/{}] ...\n{}".format(n, RETRY_COUNT, get_tasks_summary(tasks)))
-            await asyncio.sleep(WAIT_TIME_SECS)
-        else:
-            break
+    for i in range(num_tasks):
+        for n in range(RETRY_COUNT):
+            task = running_service.tasks()[i]
+            if task['Status']['State'].upper() in pre_states:
+                print("Waiting [{}/{}] ...\n{}".format(n, RETRY_COUNT, get_tasks_summary(tasks)))
+                await asyncio.sleep(WAIT_TIME_SECS)
+            else:
+                break
 
-    # should be running
-    assert task['Status']['State'].upper() == "RUNNING", \
-        "Expected running, got \n{}\n{}".format(
-                pformat(task),
-                get_failed_tasks_logs(running_service, docker_client))
+        # should be running
+        assert task['Status']['State'].upper() == "RUNNING", \
+            "Expected running, got \n{}\n{}".format(
+                    pformat(task),
+                    get_failed_tasks_logs(running_service, docker_client))
 
 
 async def test_check_serve_root(osparc_deploy: Dict):
@@ -152,6 +155,14 @@ async def test_check_serve_root(osparc_deploy: Dict):
 
 
 # UTILS --------------------------------
+
+def get_replicas(service: Dict) -> int:
+    replicas = 1
+    if "deploy" in service:
+        if "replicas" in service["deploy"]:
+            replicas = service["deploy"]["replicas"]
+    return replicas
+
 
 def get_tasks_summary(tasks):
     msg = ""

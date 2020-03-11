@@ -14,16 +14,26 @@ TODO: add more strict checks with re
 TODO: add support for versioning.
     - check shema fits version
     - parse/format version in schema
-TODO: add simcore_sdk.config.s3 section!!!
 """
 import logging
+from pathlib import Path
+from typing import Dict
 
 import trafaret as T
 from servicelib import application_keys  # pylint:disable=unused-import
 from servicelib.config_schema_utils import addon_section, minimal_addon_schema
+from trafaret_config.simple import read_and_validate
 
-from . import (computation_config, db_config, email_config, rest_config,
-               session_config, storage_config, tracing)
+from . import (
+    catalog_config,
+    computation_config,
+    db_config,
+    email_config,
+    rest_config,
+    session_config,
+    storage_config,
+    tracing,
+)
 from .activity import config as activity_config
 from .director import config as director_config
 from .login import config as login_config
@@ -34,53 +44,75 @@ from .socketio import config as socketio_config
 
 log = logging.getLogger(__name__)
 
+CLI_DEFAULT_CONFIGFILE = "server-defaults.yaml"
+assert resources.exists("config/" + CLI_DEFAULT_CONFIGFILE)  # nosec
+
 
 def create_schema() -> T.Dict:
     """
         Build schema for the configuration's file
         by aggregating all the subsystem configurations
     """
-    schema = T.Dict({
-        "version": T.String(),
-        "main": T.Dict({
-            "host": T.IP,
-            "port": T.Int(),
-            "client_outdir": T.String(),
-            "log_level": T.Enum(*logging._nameToLevel.keys()), # pylint: disable=protected-access
-            "testing": T.Bool(),
-            T.Key("studies_access_enabled", default=False): T.Or(T.Bool(), T.Int),
-
-            T.Key("monitoring_enabled", default=False): T.Or(T.Bool(), T.Int), # Int added to use environs
-        }),
-        addon_section(tracing.tracing_section_name, optional=True): tracing.schema,
-        db_config.CONFIG_SECTION_NAME: db_config.schema,
-        director_config.CONFIG_SECTION_NAME: director_config.schema,
-        rest_config.CONFIG_SECTION_NAME: rest_config.schema,
-        projects_config.CONFIG_SECTION_NAME: projects_config.schema,
-        email_config.CONFIG_SECTION_NAME: email_config.schema,
-        computation_config.CONFIG_SECTION_NAME: computation_config.schema,
-        storage_config.CONFIG_SECTION_NAME: storage_config.schema,
-        addon_section(login_config.CONFIG_SECTION_NAME, optional=True): login_config.schema,
-        addon_section(socketio_config.CONFIG_SECTION_NAME, optional=True): socketio_config.schema,
-        session_config.CONFIG_SECTION_NAME: session_config.schema,
-        activity_config.CONFIG_SECTION_NAME: activity_config.schema,
-        resource_manager_config.CONFIG_SECTION_NAME: resource_manager_config.schema,
-        #TODO: s3_config.CONFIG_SECTION_NAME: s3_config.schema
-        #TODO: enable when sockets are refactored
-        # BELOW HERE minimal sections until more options are needed
-        addon_section("reverse_proxy", optional=True): minimal_addon_schema(),
-        addon_section("application_proxy", optional=True): minimal_addon_schema(),
-        addon_section("users", optional=True): minimal_addon_schema(),
-        addon_section("studies_access", optional=True): minimal_addon_schema()
-    })
+    # pylint: disable=protected-access
+    schema = T.Dict(
+        {
+            "version": T.String(),
+            "main": T.Dict(
+                {
+                    "host": T.IP,
+                    "port": T.Int(),
+                    "client_outdir": T.String(),
+                    "log_level": T.Enum(
+                        *logging._nameToLevel.keys()
+                    ),
+                    "testing": T.Bool(),
+                    T.Key("studies_access_enabled", default=False): T.Or(
+                        T.Bool(), T.Int
+                    ),
+                    T.Key("monitoring_enabled", default=False): T.Or(
+                        T.Bool(), T.Int
+                    ),  # Int added to use environs
+                }
+            ),
+            addon_section(tracing.tracing_section_name, optional=True): tracing.schema,
+            db_config.CONFIG_SECTION_NAME: db_config.schema,
+            director_config.CONFIG_SECTION_NAME: director_config.schema,
+            rest_config.CONFIG_SECTION_NAME: rest_config.schema,
+            projects_config.CONFIG_SECTION_NAME: projects_config.schema,
+            email_config.CONFIG_SECTION_NAME: email_config.schema,
+            computation_config.CONFIG_SECTION_NAME: computation_config.schema,
+            storage_config.CONFIG_SECTION_NAME: storage_config.schema,
+            addon_section(
+                login_config.CONFIG_SECTION_NAME, optional=True
+            ): login_config.schema,
+            addon_section(
+                socketio_config.CONFIG_SECTION_NAME, optional=True
+            ): socketio_config.schema,
+            session_config.CONFIG_SECTION_NAME: session_config.schema,
+            activity_config.CONFIG_SECTION_NAME: activity_config.schema,
+            resource_manager_config.CONFIG_SECTION_NAME: resource_manager_config.schema,
+            # BELOW HERE minimal sections until more options are needed
+            addon_section("reverse_proxy", optional=True): minimal_addon_schema(),
+            addon_section("application_proxy", optional=True): minimal_addon_schema(),
+            addon_section("users", optional=True): minimal_addon_schema(),
+            addon_section("studies_access", optional=True): minimal_addon_schema(),
+            addon_section("tags", optional=True): minimal_addon_schema(),
+            addon_section("catalog", optional=True): catalog_config.schema,
+        }
+    )
 
     section_names = [k.name for k in schema.keys]
-    assert len(section_names) == len(set(section_names)), "Found repeated section names in %s" % section_names
+
+    assert len(section_names) == len(set(section_names)), (
+        "Found repeated section names in %s" % section_names
+    )  # nosec
 
     return schema
 
 
-CLI_DEFAULT_CONFIGFILE = 'server-defaults.yaml'
-app_schema = create_schema() # TODO: rename as schema
+def load_default_config(environs=None) -> Dict:
+    filepath: Path = resources.get_path(f"config/{CLI_DEFAULT_CONFIGFILE}")
+    return read_and_validate(filepath, trafaret=app_schema, vars=environs)
 
-assert resources.exists( 'config/' + CLI_DEFAULT_CONFIGFILE )
+
+app_schema = create_schema()  # TODO: rename as schema

@@ -23,19 +23,21 @@ def _forward_url(app: web.Application, url: URL) -> URL:
 
     # director service API endpoint
     # TODO: service API endpoint could be deduced and checked upon setup (e.g. health check on startup)
-    endpoint = URL.build(
-        scheme='http',
-        host=cfg['host'],
-        port=cfg['port']).with_path(cfg["version"])
+    endpoint = URL.build(scheme="http", host=cfg["host"], port=cfg["port"]).with_path(
+        cfg["version"]
+    )
     tail = "/".join(url.raw_parts[2:])
 
-    url = (endpoint / tail)
+    url = endpoint / tail
     return url
+
 
 def _resolve_url(request: web.Request) -> URL:
     return _forward_url(request.app, request.url)
 
+
 # HANDLERS -------------------------------------------------------------------
+
 
 @login_required
 async def services_get(request: web.Request) -> web.Response:

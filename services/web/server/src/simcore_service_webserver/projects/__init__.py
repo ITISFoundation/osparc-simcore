@@ -12,14 +12,15 @@ import json
 from aiohttp import ClientSession, web
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
-from servicelib.application_keys import (APP_CONFIG_KEY,
-                                         APP_JSONSCHEMA_SPECS_KEY)
+from servicelib.application_keys import APP_CONFIG_KEY, APP_JSONSCHEMA_SPECS_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.client_session import get_client_session
 from servicelib.jsonschema_specs import create_jsonschema_specs
-from servicelib.rest_routing import (get_handlers_from_namespace,
-                                     iter_path_operations,
-                                     map_handlers_with_operations)
+from servicelib.rest_routing import (
+    get_handlers_from_namespace,
+    iter_path_operations,
+    map_handlers_with_operations,
+)
 
 from ..resources import resources
 from ..rest_config import APP_OPENAPI_SPECS_KEY
@@ -33,7 +34,7 @@ logger = logging.getLogger(__name__)
 module_name = __name__.replace(".__init__", "")
 
 
-def _create_routes(prefix, handlers_module, specs, *, disable_login=False):
+def _create_routes(tag, handlers_module, specs, *, disable_login=False):
     """
     :param disable_login: Disables login_required decorator for testing purposes defaults to False
     :type disable_login: bool, optional
@@ -41,24 +42,26 @@ def _create_routes(prefix, handlers_module, specs, *, disable_login=False):
     # TODO: Remove 'disable_login' and use instead a mock.patch on the decorator!
     handlers = get_handlers_from_namespace(handlers_module)
     if disable_login:
-        handlers = { name: hnds.__wrapped__ for name, hnds in handlers.items() }
+        handlers = {name: hnds.__wrapped__ for name, hnds in handlers.items()}
 
     routes = map_handlers_with_operations(
-            handlers,
-            filter(lambda o: prefix in o[1],  iter_path_operations(specs)),
-            strict=True
+        handlers,
+        filter(lambda o: tag in o[3], iter_path_operations(specs)),
+        strict=True,
     )
 
     if disable_login:
-        logger.debug("%s-%s:\n%s", CONFIG_SECTION_NAME, prefix, pformat(routes))
+        logger.debug("%s:\n%s", CONFIG_SECTION_NAME, pformat(routes))
 
     return routes
 
 
-
-@app_module_setup(module_name, ModuleCategory.ADDON,
-    depends=[f'simcore_service_webserver.{mod}' for mod in ('rest', 'db') ],
-    logger=logger)
+@app_module_setup(
+    module_name,
+    ModuleCategory.ADDON,
+    depends=[f"simcore_service_webserver.{mod}" for mod in ("rest", "db")],
+    logger=logger,
+)
 def setup(app: web.Application, *, enable_fake_data=False) -> bool:
     """
 
@@ -79,11 +82,11 @@ def setup(app: web.Application, *, enable_fake_data=False) -> bool:
     # database API
     setup_projects_db(app)
 
-    routes = _create_routes("/projects", projects_handlers, specs)
+    routes = _create_routes("project", projects_handlers, specs)
     app.router.add_routes(routes)
 
     # FIXME: this uses some unimplemented handlers, do we really need to keep this in?
-    # routes = _create_routes("/nodes", nodes_handlers, specs)
+    # routes = _create_routes("node", nodes_handlers, specs)
     # app.router.add_routes(routes)
 
     # json-schemas for projects datasets
@@ -105,6 +108,4 @@ def setup(app: web.Application, *, enable_fake_data=False) -> bool:
 # alias
 setup_projects = setup
 
-__all__ = (
-    'setup_projects'
-)
+__all__ = "setup_projects"

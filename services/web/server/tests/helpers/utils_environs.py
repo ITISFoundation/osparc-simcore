@@ -8,7 +8,8 @@ from typing import Dict
 
 import yaml
 
-VARIABLE_SUBSTITUTION = re.compile(r'\$\{(\w+)(?:(:{0,1}[-?]{0,1})(.*))?\}$')
+VARIABLE_SUBSTITUTION = re.compile(r"\$\{(\w+)(?:(:{0,1}[-?]{0,1})(.*))?\}$")
+
 
 def load_env(file_handler) -> Dict:
     """ Deserializes an environment file like .env-devel and
@@ -16,7 +17,7 @@ def load_env(file_handler) -> Dict:
 
         Analogous to json.load
     """
-    PATTERN_ENVIRON_EQUAL= re.compile(r"^(\w+)=(.*)$")
+    PATTERN_ENVIRON_EQUAL = re.compile(r"^(\w+)=(.*)$")
     # Works even for `POSTGRES_EXPORTER_DATA_SOURCE_NAME=postgresql://simcore:simcore@postgres:5432/simcoredb?sslmode=disable`
 
     environ = {}
@@ -27,8 +28,14 @@ def load_env(file_handler) -> Dict:
             environ[key] = str(value)
     return environ
 
-def eval_environs_in_docker_compose(docker_compose: Dict, docker_compose_dir: Path,
-    host_environ: Dict=None, *, use_env_devel=True):
+
+def eval_environs_in_docker_compose(
+    docker_compose: Dict,
+    docker_compose_dir: Path,
+    host_environ: Dict = None,
+    *,
+    use_env_devel=True
+):
     """ Resolves environments in docker compose and sets them under 'environment' section
 
         TODO: deprecated. Use instead docker-compose config in services/web/server/tests/integration/fixtures/docker_compose.py
@@ -36,16 +43,22 @@ def eval_environs_in_docker_compose(docker_compose: Dict, docker_compose_dir: Pa
     """
     content = deepcopy(docker_compose)
     for _name, service in content["services"].items():
-        replace_environs_in_docker_compose_service(service, docker_compose_dir,
-            host_environ, use_env_devel=use_env_devel)
+        replace_environs_in_docker_compose_service(
+            service, docker_compose_dir, host_environ, use_env_devel=use_env_devel
+        )
     return content
+
 
 from typing import List
 
-def replace_environs_in_docker_compose_service(service_section: Dict,
+
+def replace_environs_in_docker_compose_service(
+    service_section: Dict,
     docker_compose_dir: Path,
-    host_environ: Dict=None,
-    *, use_env_devel=True):
+    host_environ: Dict = None,
+    *,
+    use_env_devel=True
+):
     """ Resolves environments in docker-compose's service section,
         drops any reference to env_file and sets all
         environs 'environment' section
@@ -73,25 +86,30 @@ def replace_environs_in_docker_compose_service(service_section: Dict,
         for item in environ_items:
             key, value = item.split("=")
             m = VARIABLE_SUBSTITUTION.match(value)
-            if m: # There is a variable as value in docker-compose
-                envkey = m.groups()[0] # Variable name
-                if len(m.groups()) == 3: # There is a default value
+            if m:  # There is a variable as value in docker-compose
+                envkey = m.groups()[0]  # Variable name
+                if len(m.groups()) == 3:  # There is a default value
                     default_value = m.groups()[2]
                 if envkey in host_environ:
-                    value = host_environ[envkey] # Use host environ
-                    if default_value and len(value) == 0 and m.groups()[1] == ':-':
-                        value = default_value # Unless it is empty and default exists
+                    value = host_environ[envkey]  # Use host environ
+                    if default_value and len(value) == 0 and m.groups()[1] == ":-":
+                        value = default_value  # Unless it is empty and default exists
                 elif default_value:
-                    value = default_value # Use default if exists
-                
+                    value = default_value  # Use default if exists
+
             service_environ[key] = value
 
     service_section["environment"] = service_environ
 
-def eval_service_environ(docker_compose_path:Path, service_name:str,
-    host_environ: Dict=None,
-    image_environ: Dict=None,
-    *, use_env_devel=True) -> Dict:
+
+def eval_service_environ(
+    docker_compose_path: Path,
+    service_name: str,
+    host_environ: Dict = None,
+    image_environ: Dict = None,
+    *,
+    use_env_devel=True
+) -> Dict:
     """ Deduces a service environment with it runs in a stack from confirmation
 
     :param docker_compose_path: path to stack configuration
@@ -110,8 +128,9 @@ def eval_service_environ(docker_compose_path:Path, service_name:str,
         content = yaml.safe_load(f)
 
     service = content["services"][service_name]
-    replace_environs_in_docker_compose_service(service, docker_compose_dir,
-        host_environ, use_env_devel=use_env_devel)
+    replace_environs_in_docker_compose_service(
+        service, docker_compose_dir, host_environ, use_env_devel=use_env_devel
+    )
 
     host_environ = host_environ or {}
     image_environ = image_environ or {}

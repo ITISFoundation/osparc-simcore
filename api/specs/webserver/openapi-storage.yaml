@@ -2,6 +2,8 @@ paths:
   /storage/locations:
     get:
       summary: Get available storage locations
+      tags:
+        - storage
       operationId: get_storage_locations
       responses:
         "200":
@@ -16,6 +18,8 @@ paths:
   /storage/locations/{location_id}/datasets:
     get:
       summary: Get datasets metadata
+      tags:
+        - storage
       operationId: get_datasets_metadata
       parameters:
         - name: location_id
@@ -36,6 +40,8 @@ paths:
   /storage/locations/{location_id}/files/metadata:
     get:
       summary: Get list of file meta data
+      tags:
+        - storage
       operationId: get_files_metadata
       parameters:
         - name: location_id
@@ -56,6 +62,8 @@ paths:
   /storage/locations/{location_id}/datasets/{dataset_id}/metadata:
     get:
       summary: Get Files Metadata
+      tags:
+        - storage
       operationId: get_files_metadata_dataset
       parameters:
         - name: location_id
@@ -81,6 +89,8 @@ paths:
   /storage/locations/{location_id}/files/{fileId}:
     get:
       summary: Returns download link for requested file
+      tags:
+        - storage
       operationId: download_file
       parameters:
         - name: fileId
@@ -98,6 +108,8 @@ paths:
           $ref: "#/components/responses/PresignedLink_200"
     put:
       summary: Returns upload link or performs copy operation to datcore
+      tags:
+        - storage
       operationId: upload_file
       parameters:
         - name: fileId
@@ -125,6 +137,8 @@ paths:
           $ref: "#/components/responses/PresignedLink_200"
     delete:
       summary: Deletes File
+      tags:
+        - storage
       operationId: delete_file
       parameters:
         - name: fileId
@@ -144,6 +158,8 @@ paths:
   /storage/locations/{location_id}/files/{fileId}/metadata:
     get:
       summary: Get File Metadata
+      tags:
+        - storage
       operationId: get_file_metadata
       parameters:
         - name: fileId
@@ -161,6 +177,8 @@ paths:
           $ref: "#/components/responses/FileMetaData_200"
     patch:
       summary: Update File Metadata
+      tags:
+        - storage
       operationId: update_file_meta_data
       parameters:
         - name: fileId

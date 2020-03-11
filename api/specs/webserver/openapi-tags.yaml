@@ -1,0 +1,59 @@
+paths:
+  /tags:
+    get:
+      tags:
+        - tag
+      summary: List all tags for the current user
+      operationId: list_tags
+      responses:
+        '200':
+          description: List of tags
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/tag.yaml#/TagListEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+    post:
+      tags:
+        - tag
+      summary: Creates a new tag
+      operationId: create_tag
+      responses:
+        '200':
+          description: The created tag
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/tag.yaml#/TagEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+  /tags/{tag_id}:
+    parameters:
+      - name: tag_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      tags:
+        - tag
+      summary: Updates a tag
+      operationId: update_tag
+      responses:
+        '200':
+          description: The updated tag
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/tag.yaml#/TagEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+    delete:
+      tags:
+        - tag
+      summary: Deletes an existing tag
+      operationId: delete_tag
+      responses:
+        '204':
+          description: The tag has been successfully deleted

@@ -143,6 +143,8 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
+    "window-small-cap/progress": "progressbar",
+
     "service-window": {
       include: "window",
       alias: "window",
@@ -331,7 +333,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
-    "big-button": {
+    "xl-button": {
       include: "material-button",
       alias: "material-button",
       style: state => ({
@@ -342,14 +344,14 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
-    "big-button/label": {
+    "xl-button/label": {
       include: "material-button/label",
       style: state => ({
         font: "title-16"
       })
     },
 
-    "md-button": {
+    "lg-button": {
       include: "material-button",
       alias: "material-button",
       style: state => ({
@@ -360,10 +362,28 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
-    "md-button/label": {
+    "lg-button/label": {
       include: "material-button/label",
       style: state => ({
         font: "text-16"
+      })
+    },
+
+    "md-button": {
+      include: "material-button",
+      alias: "material-button",
+      style: state => ({
+        allowStretchY: false,
+        allowStretchX: false,
+        minHeight: 25,
+        center: true
+      })
+    },
+
+    "md-button/label": {
+      include: "material-button/label",
+      style: state => ({
+        font: "text-14"
       })
     },
 
@@ -506,7 +526,41 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: state => ({
         paddingTop: 4,
         paddingLeft: 3,
-        minWidth: 80
+        minWidth: 80,
+        backgroundColor: "transparent"
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Tag
+    ---------------------------------------------------------------------------
+    */
+    "tag": {
+      include: "atom/label",
+      style: state => ({
+        decorator: "tag",
+        padding: [1, 5]
+      })
+    },
+    "tagitem": {
+      style: () => ({
+        decorator: "tagitem",
+        padding: 5
+      })
+    },
+    "tagitem/colorbutton": {
+      include: "material-button",
+      alias: "material-button",
+      style: () => ({
+        decorator: "tagitem-colorbutton"
+      })
+    },
+    "tagbutton": {
+      include: "material-button",
+      alias: "material-button",
+      style: () => ({
+        decorator: "tagbutton"
       })
     }
   }

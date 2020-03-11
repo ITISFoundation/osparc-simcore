@@ -1,4 +1,22 @@
-function getRandUserAndPass() {
+function getUserAndPass(args) {
+  const userPass = {
+    user: null,
+    pass: null,
+    newUser: true
+  };
+  if (args && args.length === 3) {
+    userPass.user = args[1];
+    userPass.pass = args[2];
+    userPass.newUser = false;
+  } else {
+    const rand = __getRandUserAndPass();
+    userPass.user = rand.user;
+    userPass.pass = rand.pass;
+  }
+  return userPass;
+}
+
+function  __getRandUserAndPass() {
   const randUser = Math.random().toString(36).substring(7);
   const user = 'puppeteer_'+randUser+'@itis.testing';
   const pass = Math.random().toString(36).substring(7);
@@ -6,6 +24,13 @@ function getRandUserAndPass() {
     user,
     pass
   }
+}
+
+function getDomain(url) {
+  url = url.replace("http://", "");
+  url = url.replace("https://", "");
+  url = url.substr(0, url.indexOf("/")); 
+  return url;
 }
 
 async function getNodeTreeItemIDs(page) {
@@ -120,16 +145,26 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function __addZerosAtTheBeggining(input) {
+  return String(input).padStart(2, "0");
+}
+
 async function takeScreenshot(page, captureName) {
+  const d = new Date();
+  const date = __addZerosAtTheBeggining(d.getMonth()+1) +"-"+ __addZerosAtTheBeggining(d.getDate());
+  const time = __addZerosAtTheBeggining(d.getHours()) +":"+ __addZerosAtTheBeggining(d.getMinutes()) +":"+ __addZerosAtTheBeggining(d.getSeconds());
+  const timeStamp = date +"_"+ time;
+  captureName = captureName.replace("undefined", "");
   await page.screenshot({
     fullPage: true,
-    path: 'screenshots/'+captureName+'.jpg',
+    path: 'screenshots/'+timeStamp+'_'+captureName+'.jpg',
     type: 'jpeg',
   })
 }
 
 module.exports = {
-  getRandUserAndPass,
+  getUserAndPass,
+  getDomain,
   getNodeTreeItemIDs,
   getFileTreeItemIDs,
   getVisibleChildrenIDs,

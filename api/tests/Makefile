@@ -3,6 +3,8 @@
 ROOT_DIR  = $(abspath $(CURDIR)/../../)
 VENV_DIR ?= $(abspath $(ROOT_DIR)/.venv)
 
+.PHONY: all
+all: install tests
 
 %.txt: %.in
 	# pip compiling $<
@@ -26,5 +28,5 @@ tests: ## runs all tests [DEV]
 help: ## this colorful help
 	@echo "Recipes for tests/swarm-deploy:"
 	@echo ""
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""

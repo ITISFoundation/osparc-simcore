@@ -51,7 +51,7 @@ RUN apk add --no-cache \
       libc-dev
 
 RUN $SC_PIP install --upgrade \
-      pip~=19.1.1  \
+      pip~=20.0.2  \
       wheel \
       setuptools
 
@@ -99,6 +99,7 @@ FROM cache as production
 
 
 ENV SC_BUILD_TARGET production
+ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 

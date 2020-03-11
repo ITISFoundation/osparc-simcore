@@ -1,15 +1,14 @@
 version: '3.4'
 services:
   postgres:
-    image: postgres:10
+    image: postgres:10.11
     environment:
-      - POSTGRES_USER=test
-      - POSTGRES_PASSWORD=test
-      - POSTGRES_DB=test
-      - POSTGRES_HOST=localhost
-      - POSTGRES_PORT=5432
-    volumes:
-      - test_postgres_database_volume:/var/lib/postgresql/data
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+    # NOTE: DO NOT ADD PERSISTENCE!
     ports:
       - "5432:5432"
     # https://www.postgresql.org/docs/10/runtime-config-logging.html#GUC-LOG-STATEMENT
@@ -19,13 +18,24 @@ services:
         "-c", "log_connections=true",
         "-c", "log_disconnections=true",
         "-c", "log_duration=true",
-        "-c", "log_line_prefix=[%p] [%a] [%c] [%x] "
+        "-c", "log_line_prefix=[%p] [%a] [%c] [%x] ",
+        "-c", "tcp_keepalives_idle=600",
+        "-c", "tcp_keepalives_interval=600",
+        "-c", "tcp_keepalives_count=5"
       ]
+    # NOTES: this is not yet compatible with portainer deployment but could work also for other containers
+    # works with Docker 19.03 and not yet with Portainer 1.23.0 (see https://github.com/portainer/portainer/issues/3551)
+    # in the meantime postgres allows to set a configuration through CLI.
+    # sysctls:
+    #   # NOTES: these values are needed here because docker swarm kills long running idle
+    #   # connections by default after 15 minutes see https://github.com/moby/moby/issues/31208
+    #   # info about these values are here https://tldp.org/HOWTO/TCP-Keepalive-HOWTO/usingkeepalive.html
+    #   - net.ipv4.tcp_keepalive_intvl=600
+    #   - net.ipv4.tcp_keepalive_probes=9
+    #   - net.ipv4.tcp_keepalive_time=600
   adminer:
     image: adminer
     ports:
       - 18080:8080
     depends_on:
       - postgres
-volumes:
-  test_postgres_database_volume:

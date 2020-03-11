@@ -4,7 +4,7 @@ const utils = require('../utils/utils');
 const {
   user,
   pass
-} = utils.getRandUserAndPass();
+} = utils.getUserAndPass();
 
 beforeAll(async () => {
   await page.goto(url);

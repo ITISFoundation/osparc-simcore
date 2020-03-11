@@ -11,20 +11,20 @@ import logging
 from aiohttp import web
 
 from servicelib.application_setup import ModuleCategory, app_module_setup
-from servicelib.rest_routing import (iter_path_operations,
-                                     map_handlers_with_operations)
+from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
 
 from . import computation_handlers
+from .computation_comp_tasks_listening_task import setup as setup_comp_tasks_listener
+from .computation_config import CONFIG_SECTION_NAME
 from .computation_subscribe import subscribe
 from .rest_config import APP_OPENAPI_SPECS_KEY
-from .computation_config import CONFIG_SECTION_NAME
 
 log = logging.getLogger(__file__)
 
 
-@app_module_setup(__name__, ModuleCategory.ADDON,
-    config_section=CONFIG_SECTION_NAME,
-    logger=log)
+@app_module_setup(
+    __name__, ModuleCategory.ADDON, config_section=CONFIG_SECTION_NAME, logger=log
+)
 def setup(app: web.Application):
     # subscribe to rabbit upon startup
     # TODO: Define connection policies (e.g. {on-startup}, lazy). Could be defined in config-file
@@ -34,22 +34,25 @@ def setup(app: web.Application):
     # app.on_cleanup.append(unsubscribe)
 
     if not APP_OPENAPI_SPECS_KEY in app:
-        log.warning("rest submodule not initialised? computation routes will not be defined!")
+        log.warning(
+            "rest submodule not initialised? computation routes will not be defined!"
+        )
         return
 
     specs = app[APP_OPENAPI_SPECS_KEY]
-    routes = map_handlers_with_operations({
-            'start_pipeline': computation_handlers.start_pipeline,
-            'update_pipeline': computation_handlers.update_pipeline
+    routes = map_handlers_with_operations(
+        {
+            "start_pipeline": computation_handlers.start_pipeline,
+            "update_pipeline": computation_handlers.update_pipeline,
         },
         filter(lambda o: "/computation" in o[1], iter_path_operations(specs)),
-        strict=True
+        strict=True,
     )
     app.router.add_routes(routes)
+    setup_comp_tasks_listener(app)
+
 
 # alias
 setup_computation = setup
 
-__all__ = (
-    "setup_computation"
-)
+__all__ = "setup_computation"

@@ -8,13 +8,13 @@ from utils_login import LoggedUser
 async def test_logout(client):
     db = get_storage(client.app)
 
-    logout_url = client.app.router['auth_logout'].url_for()
-    protected_url = client.app.router['auth_change_email'].url_for()
+    logout_url = client.app.router["auth_logout"].url_for()
+    protected_url = client.app.router["auth_change_email"].url_for()
 
     async with LoggedUser(client) as user:
 
         # try to access protected page
-        r = await client.post(protected_url, json={'email': user['email']})
+        r = await client.post(protected_url, json={"email": user["email"]})
         assert r.url_obj.path == protected_url.path
         await assert_status(r, web.HTTPOk)
 
@@ -28,10 +28,10 @@ async def test_logout(client):
         assert r.url_obj.path == protected_url.path
         await assert_status(r, web.HTTPUnauthorized)
 
-
     await db.delete_user(user)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import pytest
-    pytest.main([__file__, '--maxfail=1'])
+
+    pytest.main([__file__, "--maxfail=1"])

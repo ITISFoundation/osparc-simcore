@@ -46,6 +46,16 @@ FROM base as build
 
 ENV SC_BUILD_TARGET build
 
+# Installing client libraries and any other package you need
+#
+#  libpq: client library for PostgreSQL https://www.postgresql.org/docs/9.5/libpq.html
+#  libstdc++: needed in ujson https://github.com/kohlschutter/junixsocket/issues/33
+#
+RUN apk update && \
+    apk add --no-cache \
+      libpq \
+      libstdc++
+
 RUN apk add --no-cache \
       postgresql-dev \
       gcc \
@@ -53,7 +63,7 @@ RUN apk add --no-cache \
       libffi-dev
 
 RUN $SC_PIP install --upgrade \
-      pip~=19.1.1 \
+      pip~=20.0.2 \
       wheel \
       setuptools
 
@@ -96,7 +106,7 @@ RUN $SC_PIP install -r requirements/prod.txt &&\
 FROM cache as production
 
 ENV SC_BUILD_TARGET production
-ENV SC_BOOT_MODE production
+ENV PYTHONOPTIMIZE=TRUE
 
 # front-end client last (image name is the path to the Dockerfile)
 COPY --from=client/tools/qooxdoo-kit/builder:latest --chown=scu:scu \

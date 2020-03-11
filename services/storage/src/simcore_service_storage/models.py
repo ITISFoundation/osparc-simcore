@@ -7,17 +7,21 @@ from typing import Tuple
 
 import attr
 
-from simcore_postgres_database.storage_models import (file_meta_data, metadata,
-                                                      projects, tokens,
-                                                      user_to_projects, users)
-from simcore_service_storage.settings import (DATCORE_STR, SIMCORE_S3_ID,
-                                              SIMCORE_S3_STR)
+from simcore_postgres_database.storage_models import (
+    file_meta_data,
+    metadata,
+    projects,
+    tokens,
+    user_to_projects,
+    users,
+)
+from simcore_service_storage.settings import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 
-#FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
-#from sqlalchemy.dialects.postgresql import UUID
+# FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
+# from sqlalchemy.dialects.postgresql import UUID
 
-#FIXME: R0902: Too many instance attributes (11/7) (too-many-instance-attributes)
-#pylint: disable=R0902
+# FIXME: R0902: Too many instance attributes (11/7) (too-many-instance-attributes)
+# pylint: disable=R0902
 
 
 def _parse_datcore(file_uuid: str) -> Tuple[str, str]:
@@ -29,19 +33,15 @@ def _parse_datcore(file_uuid: str) -> Tuple[str, str]:
 
     return destination, file_name
 
+
 def _locations():
     # TODO: so far this is hardcoded
-    simcore_s3 = {
-    "name" : SIMCORE_S3_STR,
-    "id" : 0
-    }
-    datcore = {
-    "name" : DATCORE_STR,
-    "id"   : 1
-    }
+    simcore_s3 = {"name": SIMCORE_S3_STR, "id": 0}
+    datcore = {"name": DATCORE_STR, "id": 1}
     return [simcore_s3, datcore]
 
-def _location_from_id(location_id : str) ->str:
+
+def _location_from_id(location_id: str) -> str:
     # TODO create a map to sync _location_from_id and _location_from_str
     loc_str = "undefined"
     if location_id == "0":
@@ -51,7 +51,8 @@ def _location_from_id(location_id : str) ->str:
 
     return loc_str
 
-def _location_from_str(location : str) ->str:
+
+def _location_from_str(location: str) -> str:
     intstr = "undefined"
     if location == SIMCORE_S3_STR:
         intstr = "0"
@@ -60,10 +61,12 @@ def _location_from_str(location : str) ->str:
 
     return intstr
 
+
 @attr.s(auto_attribs=True)
 class DatasetMetaData:
-    dataset_id: str=""
-    display_name: str=""
+    dataset_id: str = ""
+    display_name: str = ""
+
 
 class FileMetaData:
     """ This is a proposal, probably no everything is needed.
@@ -110,10 +113,10 @@ class FileMetaData:
         state:  on of OK, UPLOADING, DELETED
 
         """
-    #pylint: disable=attribute-defined-outside-init
+
+    # pylint: disable=attribute-defined-outside-init
     def simcore_from_uuid(self, file_uuid: str, bucket_name: str):
         parts = file_uuid.split("/")
-        assert len(parts) == 3
         if len(parts) == 3:
             self.location = SIMCORE_S3_STR
             self.location_id = SIMCORE_S3_ID
@@ -125,31 +128,35 @@ class FileMetaData:
             self.file_uuid = file_uuid
             self.file_id = file_uuid
             self.raw_file_path = self.file_uuid
-            self.display_file_path = str(Path("not") / Path("yet") / Path("implemented"))
+            self.display_file_path = str(
+                Path("not") / Path("yet") / Path("implemented")
+            )
             self.created_at = str(datetime.datetime.now())
             self.last_modified = self.created_at
             self.file_size = -1
 
     def __str__(self):
         d = attr.asdict(self)
-        _str =""
+        _str = ""
         for _d in d:
             _str += "  {0: <25}: {1}\n".format(_d, str(d[_d]))
         return _str
 
 
 attr.s(
-    these={c.name:attr.ib(default=None) for c in file_meta_data.c},
+    these={c.name: attr.ib(default=None) for c in file_meta_data.c},
     init=True,
-    kw_only=True)(FileMetaData)
+    kw_only=True,
+)(FileMetaData)
 
 
 @attr.s(auto_attribs=True)
-class FileMetaDataEx():
+class FileMetaDataEx:
     """Extend the base type by some additional attributes that shall not end up in the db
     """
+
     fmd: FileMetaData
-    parent_id: str=""
+    parent_id: str = ""
 
     def __str__(self):
         _str = str(self.fmd)
@@ -165,5 +172,5 @@ __all__ = [
     "FileMetaDataEx",
     "projects",
     "users",
-    "user_to_projects"
+    "user_to_projects",
 ]

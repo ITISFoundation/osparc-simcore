@@ -1,6 +1,8 @@
 paths:
   /:
     get:
+      tags:
+        - maintenance
       summary: Service health check
       operationId: check_health
       responses:
@@ -15,6 +17,8 @@ paths:
 
   /check/{action}:
     post:
+      tags:
+        - maintenance
       summary: service test endpoint
       operationId: check_action
       parameters:
@@ -51,6 +55,8 @@ paths:
     get:
       summary: Front end runtime configuration
       operationId: get_config
+      tags:
+        - configuration
       responses:
         "200":
           description: configuration details

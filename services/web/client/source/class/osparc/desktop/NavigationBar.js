@@ -261,15 +261,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     __onOpenAccountSettings: function() {
-      if (!this.__preferencesWin) {
-        this.__preferencesWin = new osparc.desktop.preferences.PreferencesWindow();
-      }
-
-      let win = this.__preferencesWin;
-      if (win) {
-        win.center();
-        win.open();
-      }
+      const preferencesWindow = new osparc.desktop.preferences.PreferencesWindow();
+      preferencesWindow.center();
+      preferencesWindow.open();
     },
 
     __openActivityManager: function() {
@@ -311,7 +305,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       const studyTitle = new osparc.ui.form.EditLabel().set({
         visibility: "excluded",
         labelFont: "title-16",
-        inputFont: "text-16"
+        inputFont: "text-16",
+        editable: osparc.data.Permissions.getInstance().canDo("study.update")
       });
       studyTitle.addListener("editValue", evt => {
         if (evt.getData() !== this.__studyTitle.getValue()) {

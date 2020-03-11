@@ -1,5 +1,20 @@
 version: '3.7'
 services:
+  catalog:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - TESTING=false
+      - LOGLEVEL=WARNING
+    depends_on:
+      - postgres
+    networks:
+      - default
 
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
@@ -49,7 +64,7 @@ services:
       - STORAGE_PORT=8080
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - WEBSERVER_MONITORING_ENABLED=1
-      - WEBSERVER_LOGLEVEL=INFO
+      - WEBSERVER_LOGLEVEL=WARNING
     env_file:
       - ../.env
     depends_on:
@@ -70,6 +85,7 @@ services:
     init: true
     deploy:
       mode: replicated
+      replicas: 4
       endpoint_mode: dnsrr
       resources:
         reservations:
@@ -102,7 +118,7 @@ services:
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
-      - SIDECAR_LOGLEVEL=INFO
+      - SIDECAR_LOGLEVEL=WARNING
     depends_on:
       - rabbit
       - postgres
@@ -119,7 +135,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
-      - STORAGE_LOGLEVEL=INFO
+      - STORAGE_LOGLEVEL=WARNING
       - STORAGE_MONITORING_ENABLED=1
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
@@ -164,7 +180,23 @@ services:
       - default
       - interactive_services_subnet
       - computational_services_subnet
-
+    # NOTES: this is not yet compatible with portainer deployment but could work also for other containers
+    # works with Docker 19.03 and not yet with Portainer 1.23.0 (see https://github.com/portainer/portainer/issues/3551)
+    # in the meantime postgres allows to set a configuration through CLI.
+    # sysctls:
+    #   # NOTES: these values are needed here because docker swarm kills long running idle
+    #   # connections by default after 15 minutes see https://github.com/moby/moby/issues/31208
+    #   # info about these values are here https://tldp.org/HOWTO/TCP-Keepalive-HOWTO/usingkeepalive.html
+    #   - net.ipv4.tcp_keepalive_intvl=600
+    #   - net.ipv4.tcp_keepalive_probes=9
+    #   - net.ipv4.tcp_keepalive_time=600
+    command:
+      [
+        "postgres",
+        "-c", "tcp_keepalives_idle=600",
+        "-c", "tcp_keepalives_interval=600",
+        "-c", "tcp_keepalives_count=5"
+      ]
   redis:
     image: redis:5.0-alpine
     init: true
@@ -178,6 +210,8 @@ volumes:
   postgres_data: {}
 
 networks:
+  default:
+    attachable: true
   interactive_services_subnet:
     driver: overlay
     attachable: true

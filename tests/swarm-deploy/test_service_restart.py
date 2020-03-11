@@ -24,7 +24,7 @@ current_dir =  Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve
 
 # time measured from command 'up' finished until *all* tasks are running
 MAX_TIME_TO_DEPLOY_SECS = 60
-MAX_TIME_TO_RESTART_SERVICE = 5
+MAX_TIME_TO_RESTART_SERVICE = 10
 
 
 @pytest.fixture("module")
@@ -64,7 +64,8 @@ def deployed_simcore_stack(osparc_deploy: Dict, docker_client: DockerClient) -> 
 @pytest.mark.skipif(os.environ.get('GITHUB_ACTIONS', '') == "true", reason="test fails consistently on Github Actions")
 @pytest.mark.parametrize("service_name", [
     'simcore_webserver',
-    'simcore_storage'
+    'simcore_storage',
+    'simcore_catalog',
 ])
 def test_graceful_restart_services(
     service_name: str,

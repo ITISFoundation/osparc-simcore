@@ -15,7 +15,9 @@ import attr
 from aiohttp import web
 
 from .abc import ServiceResolutionPolicy
-from .handlers.jupyter import handler as default_handler #TODO: jupyter shall be the generic one
+from .handlers.jupyter import (
+    handler as default_handler,
+)  # TODO: jupyter shall be the generic one
 from .settings import PROXY_PATH_KEY, SERVICE_ID_KEY
 
 logger = logging.getLogger(__name__)
@@ -29,6 +31,7 @@ class Wrapper:
 
     NOTE: wrapper.cache.clear()
     """
+
     encapsulated: ServiceResolutionPolicy
     cache: Dict[str, Tuple[str, str]] = OrderedDict()
     MAXSIZE = 128
@@ -53,8 +56,7 @@ class Wrapper:
         except Exception:
             logger.debug("Failed to resolve service", exc_info=True)
             # TODO: translate exception into HTTPStatus
-            raise web.HTTPServiceUnavailable(
-                reason="Cannot resolve service")
+            raise web.HTTPServiceUnavailable(reason="Cannot resolve service")
 
 
 @attr.s(auto_attribs=True)
@@ -62,9 +64,9 @@ class ReverseChooser:
     resolver: Wrapper = attr.ib(converter=Wrapper)
     handlers: Dict = dict()
 
-    def register_handler(self,
-                         handler: Callable[..., web.StreamResponse], *,
-                         image_name: str):
+    def register_handler(
+        self, handler: Callable[..., web.StreamResponse], *, image_name: str
+    ):
         self.handlers[image_name] = handler
 
     async def do_route(self, request: web.Request) -> web.Response:
@@ -75,9 +77,11 @@ class ReverseChooser:
 
         service_identifier = request.match_info.get(SERVICE_ID_KEY)
         proxy_path = request.match_info.get(PROXY_PATH_KEY)
-        mountpoint = request.path[:-len(proxy_path)].rstrip("/")
+        mountpoint = request.path[: -len(proxy_path)].rstrip("/")
 
-        image_name, service_url = await cli.resolve(service_identifier)  # pylint: disable=E1101
+        image_name, service_url = await cli.resolve(
+            service_identifier
+        )  # pylint: disable=E1101
 
         # TODO: reset cache for given service_identifier when it is shutdown or reused
         # To clear cache, use cli.cache.clear()
@@ -89,8 +93,7 @@ class ReverseChooser:
         # FIXME: add version as well
         handler = self.handlers.get(image_name, default_handler)
 
-
-        response = await handler(request, service_url,
-                                 mount_point=mountpoint,
-                                 proxy_path=proxy_path)
+        response = await handler(
+            request, service_url, mount_point=mountpoint, proxy_path=proxy_path
+        )
         return response

@@ -1,0 +1,9 @@
+# Python tools installed in .venv for development
+#
+# $ make devenv
+#
+pylint
+black
+pip-tools
+rope
+bump2version

@@ -131,7 +131,9 @@ qx.Class.define("osparc.desktop.ServiceBrowserListItem", {
       let control;
       switch (id) {
         case "title":
-          control = new osparc.ui.basic.Label(14, true);
+          control = new qx.ui.basic.Label().set({
+            font: osparc.utils.Utils.getFont(14, true)
+          });
           this._add(control, {
             row: 0,
             column: 0
@@ -202,7 +204,7 @@ qx.Class.define("osparc.desktop.ServiceBrowserListItem", {
       if (data.tags && data.tags.length) {
         const category = this.getCategory() || "";
         const type = this.getType() || "";
-        if (!data.tags.includes(category.trim().toLowerCase()) && !data.tags.includes(type.trim().toLowerCase())) {
+        if (!data.tags.includes(osparc.utils.Utils.capitalize(category.trim())) && !data.tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
           return true;
         }
       }

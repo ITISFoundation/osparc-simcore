@@ -13,8 +13,6 @@ OAS_SOURCES   = $(shell find  ${API_PARTS_DIR} -type f -name '*.y*ml')
 
 API_COMMON_JSON_SCHEMAS = $(shell find ${API_SPECS_DIR}/common/schemas -type f -name '*.json')
 
-WEB_CLIENT_DIR = $(abspath $(APP_DIR)/../client)
-
 
 .PHONY: .update-schemas
 .update-schemas:
@@ -40,5 +38,3 @@ ${OAS_TARGET}: ${OAS_SOURCES} .update-schemas
 openapi-specs: ${OAS_TARGET} ## creates and validates OpenAPI specs
 	# Validating bundled '${OAS_TARGET}'
 	@swagger-cli validate $<
-	# Copies specs as client resources
-	@cp -v --preserve $< -t ${WEB_CLIENT_DIR}/source/resource/api

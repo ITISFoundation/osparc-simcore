@@ -1,4 +1,8 @@
-# Runs insides a container
+#
+# The environment variables in this context are those defined in the production container
+#
+# NOTE: Trafaret does not handle defaults as ${WEBSERVER_LOGLEVEL:-info}
+#       To define defaults, see services/web/server/src/simcore_service_webserver/cli.py::create_environ
 ---
 version: "1.0"
 main:
@@ -13,11 +17,7 @@ tracing:
   enabled: ${TRACING_ENABLED}
   zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
 socketio:
-  message_queue:
-    host: ${RABBIT_HOST}
-    port: ${RABBIT_PORT}
-    user: ${RABBIT_USER}
-    password: ${RABBIT_PASSWORD}
+  enabled: True
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
@@ -49,11 +49,6 @@ rabbit:
   channels:
     progress: ${RABBIT_PROGRESS_CHANNEL}
     log: ${RABBIT_LOG_CHANNEL}
-# s3:
-#   endpoint: ${S3_ENDPOINT}
-#   access_key: ${S3_ACCESS_KEY}
-#   secret_key: ${S3_SECRET_KEY}
-#   bucket_name: ${S3_BUCKET_NAME}
 login:
   enabled: True
   registration_invitation_required: ${WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED}
@@ -62,12 +57,16 @@ smtp:
   sender: 'OSPARC support <support@osparc.io>'
   host: ${SMTP_HOST}
   port: ${SMTP_PORT}
-  tls: False
-  username: Null
-  password: Null
+  tls: ${SMTP_TLS_ENABLED}
+  username: ${SMTP_USERNAME}
+  password: ${SMTP_PASSWORD}
 storage:
   host: ${STORAGE_HOST}
   port: ${STORAGE_PORT}
+  version: v0
+catalog:
+  host: catalog
+  port: 8000
   version: v0
 rest:
   version: v0

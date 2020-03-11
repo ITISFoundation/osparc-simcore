@@ -8,7 +8,7 @@
 /**
  * Class that defines all the endpoints of the API to get the application resources. It also offers some convenient methods
  * to get them. It stores all the data in {osparc.store.Store} and consumes it from there whenever it is possible. The flag
- * "usesCache" must be set in the resource definition.
+ * "useCache" must be set in the resource definition.
  *
  * *Example*
  *
@@ -38,7 +38,7 @@
  * <pre class='javascript'>
  *   statics.resources = {
  *     studies: {
- *       usesCache: true, // Decide if the resources in the response have to be cached to avoid future calls
+ *       useCache: true, // Decide if the resources in the response have to be cached to avoid future calls
  *       endpoints: {
  *         // Define here all possible operations on this resource
  *         post: { // Second parameter of of fetch, endpoint name. The used method (post) should be contained in this name.
@@ -67,7 +67,7 @@ qx.Class.define("osparc.data.Resources", {
        * STUDIES
        */
       studies: {
-        usesCache: true,
+        useCache: true,
         endpoints: {
           get: {
             method: "GET",
@@ -78,17 +78,17 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/projects/{projectId}"
           },
           getActive: {
-            usesCache: false,
+            useCache: false,
             method: "GET",
             url: statics.API + "/projects/active?client_session_id={tabId}"
           },
           open: {
-            usesCache: false,
+            useCache: false,
             method: "POST",
             url: statics.API + "/projects/{projectId}:open"
           },
           close: {
-            usesCache: false,
+            useCache: false,
             method: "POST",
             url: statics.API + "/projects/{projectId}:close"
           },
@@ -109,19 +109,27 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/projects/{projectId}"
           },
           addNode: {
-            usesCache: false,
+            useCache: false,
             method: "POST",
             url: statics.API + "/projects/{projectId}/nodes"
           },
           getNode: {
-            usesCache: false,
+            useCache: false,
             method: "GET",
             url: statics.API + "/projects/{projectId}/nodes/{nodeId}"
           },
           deleteNode: {
-            usesCache: false,
+            useCache: false,
             method: "DELETE",
             url: statics.API + "/projects/{projectId}/nodes/{nodeId}"
+          },
+          addTag: {
+            method: "PUT",
+            url: statics.API + "/projects/{studyUuid}/tags/{tagId}"
+          },
+          removeTag: {
+            method: "DELETE",
+            url: statics.API + "/projects/{studyUuid}/tags/{tagId}"
           }
         }
       },
@@ -129,7 +137,7 @@ qx.Class.define("osparc.data.Resources", {
        * TEMPLATES (actually studies flagged as templates)
        */
       templates: {
-        usesCache: true,
+        useCache: true,
         endpoints: {
           get: {
             method: "GET",
@@ -153,7 +161,7 @@ qx.Class.define("osparc.data.Resources", {
        * CONFIG
        */
       config: {
-        usesCache: true,
+        useCache: true,
         endpoints: {
           getOne: {
             method: "GET",
@@ -165,7 +173,7 @@ qx.Class.define("osparc.data.Resources", {
        * PROFILE
        */
       profile: {
-        usesCache: true,
+        useCache: true,
         endpoints: {
           getOne: {
             method: "GET",
@@ -178,7 +186,7 @@ qx.Class.define("osparc.data.Resources", {
        */
       tokens: {
         idField: "service",
-        usesCache: true,
+        useCache: true,
         endpoints: {
           get: {
             method: "GET",
@@ -206,7 +214,7 @@ qx.Class.define("osparc.data.Resources", {
        * PASSWORD
        */
       password: {
-        usesCache: false,
+        useCache: false,
         endpoints: {
           post: {
             method: "POST",
@@ -218,7 +226,7 @@ qx.Class.define("osparc.data.Resources", {
        * HEALTHCHECK
        */
       healthCheck: {
-        usesCache: false,
+        useCache: false,
         endpoints: {
           get: {
             method: "GET",
@@ -230,7 +238,7 @@ qx.Class.define("osparc.data.Resources", {
        * SERVICES (TODO: remove frontend processing. This is unusable for the moment)
        */
       servicesTodo: {
-        usesCache: true,
+        useCache: true,
         endpoints: {
           get: {
             method: "GET",
@@ -242,7 +250,7 @@ qx.Class.define("osparc.data.Resources", {
        * AUTH
        */
       auth: {
-        usesCache: false,
+        useCache: false,
         endpoints: {
           postLogin: {
             method: "POST",
@@ -270,7 +278,7 @@ qx.Class.define("osparc.data.Resources", {
        * STORAGE LOCATIONS
        */
       storageLocations: {
-        usesCache: true,
+        useCache: true,
         endpoints: {
           get: {
             method: "GET",
@@ -282,7 +290,7 @@ qx.Class.define("osparc.data.Resources", {
        * STORAGE DATASETS
        */
       storageDatasets: {
-        usesCache: false,
+        useCache: false,
         endpoints: {
           getByLocation: {
             method: "GET",
@@ -294,7 +302,7 @@ qx.Class.define("osparc.data.Resources", {
        * STORAGE FILES
        */
       storageFiles: {
-        usesCache: false,
+        useCache: false,
         endpoints: {
           getByLocationAndDataset: {
             method: "GET",
@@ -318,7 +326,7 @@ qx.Class.define("osparc.data.Resources", {
        * STORAGE LINK
        */
       storageLink: {
-        usesCache: false,
+        useCache: false,
         endpoints: {
           getOne: {
             method: "GET",
@@ -334,7 +342,7 @@ qx.Class.define("osparc.data.Resources", {
        * ACTIVITY
        */
       activity: {
-        usesCache: false,
+        useCache: false,
         endpoints: {
           getOne: {
             method: "GET",
@@ -347,7 +355,7 @@ qx.Class.define("osparc.data.Resources", {
        * Test/Diagnonstic entrypoint
        */
       checkEP: {
-        usesCache: false,
+        useCache: false,
         endpoints: {
           postFail: {
             method: "POST",
@@ -360,8 +368,38 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
 
+      /*
+       * TAGS
+       */
+      tags: {
+        idField: "id",
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/tags"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/tags"
+          },
+          put: {
+            method: "PUT",
+            url: statics.API + "/tags/{tagId}"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/tags/{tagId}"
+          }
+        }
+      },
+
+      /*
+       * STATICS
+       * Gets the json file containing some runtime server variables.
+       */
       statics: {
-        usesCache: true,
+        useCache: true,
         endpoints: {
           get: {
             method: "GET",
@@ -398,7 +436,7 @@ qx.Class.define("osparc.data.Resources", {
           const response = e.getRequest().getResponse();
           const endpointDef = resourceDefinition.endpoints[endpoint];
           const data = endpointDef.isJsonFile ? response : response.data;
-          const useCache = ("usesCache" in endpointDef) ? endpointDef.useCache : resourceDefinition.usesCache;
+          const useCache = ("useCache" in endpointDef) ? endpointDef.useCache : resourceDefinition.useCache;
           if (useCache) {
             if (endpoint.includes("delete")) {
               this.__removeCached(resource, deleteId);

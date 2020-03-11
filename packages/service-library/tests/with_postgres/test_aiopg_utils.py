@@ -13,35 +13,49 @@ import psycopg2
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
-
-from servicelib.aiopg_utils import (DatabaseError, DataSourceName,
-                                    PostgresRetryPolicyUponOperation,
-                                    create_pg_engine, init_pg_tables,
-                                    is_pg_responsive, retry_pg_api)
+import asyncio
+from servicelib.aiopg_utils import (
+    DatabaseError,
+    DataSourceName,
+    PostgresRetryPolicyUponOperation,
+    create_pg_engine,
+    init_pg_tables,
+    is_pg_responsive,
+    retry_pg_api,
+)
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 metadata = sa.MetaData()
-tbl = sa.Table('tbl', metadata,
-               sa.Column('id', sa.Integer, primary_key=True),
-               sa.Column('val', sa.String(255)))
-
-
+tbl = sa.Table(
+    "tbl",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True),
+    sa.Column("val", sa.String(255)),
+)
 
 
 @pytest.fixture
-async def postgres_service_with_fake_data(request, loop, postgres_service: DataSourceName)-> DataSourceName:
+async def postgres_service_with_fake_data(
+    request, loop, postgres_service: DataSourceName
+) -> DataSourceName:
     async def _create_table(engine: aiopg.sa.Engine):
         async with engine.acquire() as conn:
-            await conn.execute(f'DROP TABLE IF EXISTS {tbl.name}')
-            await conn.execute(f'''CREATE TABLE {tbl.name} (
+            await conn.execute(f"DROP TABLE IF EXISTS {tbl.name}")
+            await conn.execute(
+                f"""CREATE TABLE {tbl.name} (
                                     id serial PRIMARY KEY,
-                                    val varchar(255))''')
+                                    val varchar(255))"""
+            )
 
     dsn = deepcopy(postgres_service)
-    dsn.application_name = f"setup {request.module.__name__}.{request.function.__name__}"
+    dsn.application_name = (
+        f"setup {request.module.__name__}.{request.function.__name__}"
+    )
 
-    async with aiopg.sa.create_engine(dsn.to_uri(), application_name=dsn.application_name) as engine:
+    async with aiopg.sa.create_engine(
+        dsn.to_uri(), application_name=dsn.application_name
+    ) as engine:
         await _create_table(engine)
 
     dsn.application_name = f"{request.module.__name__}.{request.function.__name__}"
@@ -52,8 +66,8 @@ def test_dsn_uri_with_query(postgres_service_with_fake_data):
     uri = postgres_service_with_fake_data.to_uri(with_query=True)
     try:
         sa_engine = sa.create_engine(uri, echo=True, echo_pool=True)
-        assert sa_engine.name == 'postgresql'
-        assert sa_engine.driver == 'psycopg2'
+        assert sa_engine.name == "postgresql"
+        assert sa_engine.driver == "psycopg2"
 
         # if url is wrong, these will fail
         metadata.create_all(sa_engine)
@@ -94,8 +108,40 @@ async def test_create_pg_engine(postgres_service_with_fake_data):
         assert engine4.closed
 
 
+@pytest.mark.skip(reason="for documentation only and needs a swarm")
+async def test_engine_when_idle_for_some_time():
+    # NOTE: this test needs a docker swarm and a running postgres service
+    dsn = DataSourceName(
+        user="test",
+        password="secret",
+        host="127.0.0.1",
+        port=5432,
+        database="db",
+        application_name="test-app",
+    )
+    engine = await create_pg_engine(dsn, minsize=1, maxsize=1)
+    init_pg_tables(dsn, metadata)
+    # import pdb; pdb.set_trace()
+    assert not engine.closed  # does not mean anything!!!
+    # pylint: disable=no-value-for-parameter
+    async with engine.acquire() as conn:
+        # writes
+        await conn.execute(tbl.insert().values(val=f"first"))
+
+    # by default docker swarm kills connections that are idle for more than 15 minutes
+    await asyncio.sleep(901)
+    # import pdb; pdb.set_trace()
+
+    async with engine.acquire() as conn:
+        await conn.execute(tbl.insert().values(val=f"third"))
+
+    # import pdb; pdb.set_trace()
+
+
 async def test_engine_when_pg_not_reachable():
-    dsn = DataSourceName(database='db', user='foo', password='foo', host='localhost', port=123)
+    dsn = DataSourceName(
+        database="db", user="foo", password="foo", host="localhost", port=123
+    )
 
     with pytest.raises(psycopg2.OperationalError):
         await create_pg_engine(dsn)
@@ -113,7 +159,9 @@ async def test_retry_pg_api_policy(postgres_service_with_fake_data, caplog):
     dsn = postgres_service_with_fake_data.to_uri()
     app_name = postgres_service_with_fake_data.application_name
 
-    async with aiopg.sa.create_engine(dsn, application_name=app_name, echo=True) as engine:
+    async with aiopg.sa.create_engine(
+        dsn, application_name=app_name, echo=True
+    ) as engine:
 
         # goes
         await dec_go(engine, gid=0)
@@ -126,12 +174,17 @@ async def test_retry_pg_api_policy(postgres_service_with_fake_data, caplog):
         assert "Postgres service non-responsive, responding 503" in caplog.text
 
         print(dec_go.retry.statistics)
-        assert dec_go.total_retry_count() == PostgresRetryPolicyUponOperation.ATTEMPTS_COUNT+1
+        assert (
+            dec_go.total_retry_count()
+            == PostgresRetryPolicyUponOperation.ATTEMPTS_COUNT + 1
+        )
 
         # goes and keeps count of all retrials
         await dec_go(engine, gid=2)
-        assert dec_go.total_retry_count() == PostgresRetryPolicyUponOperation.ATTEMPTS_COUNT+2
-
+        assert (
+            dec_go.total_retry_count()
+            == PostgresRetryPolicyUponOperation.ATTEMPTS_COUNT + 2
+        )
 
 
 # TODO: review tests below
@@ -140,10 +193,10 @@ async def test_engine_when_pg_refuses(postgres_service_with_fake_data):
     dsn = postgres_service_with_fake_data
     dsn.password = "Wrong pass"
 
-    #async with create_pg_engine(dsn) as engine:
+    # async with create_pg_engine(dsn) as engine:
 
     engine = await create_pg_engine(dsn)
-    assert not engine.closed # does not mean anything!!!
+    assert not engine.closed  # does not mean anything!!!
 
     # acquiring connection must fail
     with pytest.raises(RuntimeError) as execinfo:
@@ -162,10 +215,8 @@ async def test_connections(postgres_service_with_fake_data):
     ## number of seconds after which connection is recycled, helps to deal with stale connections in pool, default value is -1, means recycling logic is disabled.
     POOL_RECYCLE_SECS = 2
 
-
     async def conn_callback(conn):
         print(f"Opening {conn.raw}")
-
 
     async with aiopg.sa.create_engine(
         dsn,
@@ -174,10 +225,13 @@ async def test_connections(postgres_service_with_fake_data):
         # timeout=1,
         pool_recycle=POOL_RECYCLE_SECS,
         echo=True,
-        enable_json=True, enable_hstore=True, enable_uuid=True,
+        enable_json=True,
+        enable_hstore=True,
+        enable_uuid=True,
         on_connect=conn_callback,
         # extra kwargs in https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
-        application_name=app_name) as engine:
+        application_name=app_name,
+    ) as engine:
 
         #  used and free connections
         # size_before = engine.size
@@ -191,6 +245,7 @@ async def test_connections(postgres_service_with_fake_data):
 
 # HELPERS ------------
 
+
 @retry_pg_api
 async def dec_go(*args, **kargs):
     return await go(*args, **kargs)
@@ -201,14 +256,13 @@ async def go(engine: aiopg.sa.Engine, gid="", raise_cls=None):
     async with engine.acquire() as conn:
         # writes
         async with conn.begin():
-            await conn.execute(tbl.insert().values(val=f'first-{gid}'))
-            await conn.execute(tbl.insert().values(val=f'second-{gid}'))
+            await conn.execute(tbl.insert().values(val=f"first-{gid}"))
+            await conn.execute(tbl.insert().values(val=f"second-{gid}"))
 
             if raise_cls is not None:
                 raise raise_cls
 
-
         # reads
         async for row in conn.execute(tbl.select()):
             print(row.id, row.val)
-            assert any(prefix in row.val for prefix in ('first', 'second'))
+            assert any(prefix in row.val for prefix in ("first", "second"))

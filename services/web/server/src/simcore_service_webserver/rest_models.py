@@ -9,6 +9,7 @@ import attr
 # NOTE: using these, optional and required fields are always transmitted!
 # NOTE: make some attrs nullable by default!?
 
+
 @attr.s(auto_attribs=True)
 class RegistrationType:
     email: str
@@ -16,7 +17,7 @@ class RegistrationType:
     confirm: str
 
     @classmethod
-    def from_body(cls, data): # struct-like unmarshalled data produced by
+    def from_body(cls, data):  # struct-like unmarshalled data produced by
         # TODO: simplify
         return cls(email=data.email, password=data.password, confirm=data.confirm)
 
@@ -24,8 +25,8 @@ class RegistrationType:
 @attr.s(auto_attribs=True)
 class LogMessageType:
     message: str
-    level: str = 'INFO'
-    logger: str = 'user'
+    level: str = "INFO"
+    logger: str = "user"
 
 
 @attr.s(auto_attribs=True)
@@ -37,10 +38,8 @@ class ErrorItemType:
 
     @classmethod
     def from_error(cls, err: BaseException):
-        item = cls( code = err.__class__.__name__,
-         message=str(err),
-         resource=None,
-         field=None
+        item = cls(
+            code=err.__class__.__name__, message=str(err), resource=None, field=None
         )
         return item
 
