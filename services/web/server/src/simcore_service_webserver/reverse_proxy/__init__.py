@@ -26,12 +26,13 @@ MODULE_NAME = __name__.split(".")[-1]
 ROUTE_NAME = MODULE_NAME
 module_name = module_name = __name__.replace(".__init__", "")
 
+
 async def _on_shutdown(app: web.Application):
     for ws in app[APP_SOCKETS_KEY]:
         await ws.close()
 
-@app_module_setup(module_name, ModuleCategory.ADDON,
-    logger=logger)
+
+@app_module_setup(module_name, ModuleCategory.ADDON, logger=logger)
 def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
     """Sets up reverse-proxy subsystem in the application (a la aiohttp)
 
@@ -40,20 +41,18 @@ def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
 
     # Registers reverse proxy handlers customized for specific service types
     for name in jupyter.SUPPORTED_IMAGE_NAME:
-        chooser.register_handler(jupyter.handler,
-                             image_name=name)
-
+        chooser.register_handler(jupyter.handler, image_name=name)
 
     for name in paraview.SUPPORTED_IMAGE_NAME:
         chooser.register_handler(paraview.handler, image_name=name)
 
     # /x/{serviceId}/{proxyPath:.*}
-    app.router.add_route(method='*', path=URL_PATH,
-                         handler=chooser.do_route, name=ROUTE_NAME)
+    app.router.add_route(
+        method="*", path=URL_PATH, handler=chooser.do_route, name=ROUTE_NAME
+    )
 
     # chooser has same lifetime as the application
     app[__name__] = {"chooser": chooser}
-
 
     # cleans up all sockets created by the proxy
     app[APP_SOCKETS_KEY] = list()
@@ -63,6 +62,4 @@ def setup(app: web.Application, service_resolver: ServiceResolutionPolicy):
 # alias
 setup_reverse_proxy = setup
 
-__all__ = (
-    'setup_reverse_proxy'
-)
+__all__ = "setup_reverse_proxy"

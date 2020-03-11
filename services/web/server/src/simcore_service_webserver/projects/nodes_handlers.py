@@ -13,6 +13,7 @@ from ..login.decorators import login_required
 
 log = logging.getLogger(__name__)
 
+
 @login_required
 async def get_node_output_ui(request: web.Request):
     """ Returns a json description of the ui for presenting the output within the mainUi
@@ -20,9 +21,7 @@ async def get_node_output_ui(request: web.Request):
         json payloads and responses for the api calls available at this endpoint
 
     """
-    log.debug(request.match_info["nodeInstanceUUID"],
-              request.match_info["outputKey"]
-    )
+    log.debug(request.match_info["nodeInstanceUUID"], request.match_info["outputKey"])
 
     raise NotImplementedError()
 
@@ -33,13 +32,15 @@ async def send_to_node_output_api(request: web.Request):
         protocol depends on the definition
     """
     body = await request.body
-    log.debug(request.match_info["nodeInstanceUUID"],
-              request.match_info["outputKey"],
-              request.match_info["apiCall"],
-              body
+    log.debug(
+        request.match_info["nodeInstanceUUID"],
+        request.match_info["outputKey"],
+        request.match_info["apiCall"],
+        body,
     )
 
     raise NotImplementedError()
+
 
 @login_required
 async def get_node_output_iframe(request: web.Request):

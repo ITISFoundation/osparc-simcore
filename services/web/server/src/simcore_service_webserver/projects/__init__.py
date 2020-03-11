@@ -12,14 +12,15 @@ import json
 from aiohttp import ClientSession, web
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
-from servicelib.application_keys import (APP_CONFIG_KEY,
-                                         APP_JSONSCHEMA_SPECS_KEY)
+from servicelib.application_keys import APP_CONFIG_KEY, APP_JSONSCHEMA_SPECS_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.client_session import get_client_session
 from servicelib.jsonschema_specs import create_jsonschema_specs
-from servicelib.rest_routing import (get_handlers_from_namespace,
-                                     iter_path_operations,
-                                     map_handlers_with_operations)
+from servicelib.rest_routing import (
+    get_handlers_from_namespace,
+    iter_path_operations,
+    map_handlers_with_operations,
+)
 
 from ..resources import resources
 from ..rest_config import APP_OPENAPI_SPECS_KEY
@@ -41,12 +42,12 @@ def _create_routes(tag, handlers_module, specs, *, disable_login=False):
     # TODO: Remove 'disable_login' and use instead a mock.patch on the decorator!
     handlers = get_handlers_from_namespace(handlers_module)
     if disable_login:
-        handlers = { name: hnds.__wrapped__ for name, hnds in handlers.items() }
+        handlers = {name: hnds.__wrapped__ for name, hnds in handlers.items()}
 
     routes = map_handlers_with_operations(
-            handlers,
-            filter(lambda o: tag in o[3],  iter_path_operations(specs)),
-            strict=True
+        handlers,
+        filter(lambda o: tag in o[3], iter_path_operations(specs)),
+        strict=True,
     )
 
     if disable_login:
@@ -55,10 +56,12 @@ def _create_routes(tag, handlers_module, specs, *, disable_login=False):
     return routes
 
 
-
-@app_module_setup(module_name, ModuleCategory.ADDON,
-    depends=[f'simcore_service_webserver.{mod}' for mod in ('rest', 'db') ],
-    logger=logger)
+@app_module_setup(
+    module_name,
+    ModuleCategory.ADDON,
+    depends=[f"simcore_service_webserver.{mod}" for mod in ("rest", "db")],
+    logger=logger,
+)
 def setup(app: web.Application, *, enable_fake_data=False) -> bool:
     """
 
@@ -105,6 +108,4 @@ def setup(app: web.Application, *, enable_fake_data=False) -> bool:
 # alias
 setup_projects = setup
 
-__all__ = (
-    'setup_projects'
-)
+__all__ = "setup_projects"

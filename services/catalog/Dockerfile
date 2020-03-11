@@ -32,6 +32,16 @@ FROM base as build
 
 ENV SC_BUILD_TARGET build
 
+# Installing client libraries and any other package you need
+#
+#  libpq: client library for PostgreSQL https://www.postgresql.org/docs/9.5/libpq.html
+#  libstdc++: needed in ujson https://github.com/kohlschutter/junixsocket/issues/33
+#
+RUN apk update && \
+    apk add --no-cache \
+      libpq \
+      libstdc++
+
 RUN apk add --no-cache \
       alpine-sdk \
       python3-dev \
@@ -39,7 +49,7 @@ RUN apk add --no-cache \
       postgresql-dev
 
 RUN pip3 --no-cache-dir install --upgrade \
-      pip \
+      pip~=20.0.2 \
       wheel \
       setuptools
 

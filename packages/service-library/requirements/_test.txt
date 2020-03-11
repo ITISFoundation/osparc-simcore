@@ -49,7 +49,7 @@ strict-rfc3339==0.7       # via -r requirements/_base.txt, openapi-core
 tenacity==6.1.0           # via -r requirements/_base.txt
 termcolor==1.1.0          # via pytest-sugar
 trafaret==2.0.2           # via -r requirements/_base.txt
-ujson==1.35               # via -r requirements/_base.txt
+ujson==2.0.1              # via -r requirements/_base.txt
 urllib3==1.25.7           # via requests
 wcwidth==0.1.8            # via pytest
 werkzeug==1.0.0           # via -r requirements/_base.txt

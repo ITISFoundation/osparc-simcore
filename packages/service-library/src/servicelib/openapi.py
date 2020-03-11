@@ -15,13 +15,17 @@ from yarl import URL
 
 # Supported version of openapi (last number indicates only editorial changes)
 # TODO: ensure openapi_core.__version__ is up-to-date with OAI_VERSION
-OAI_VERSION = '3.0.2'
-OAI_VERSION_URL = 'https://github.com/OAI/OpenAPI-Specification/blob/master/versions/%s.md'%OAI_VERSION
+OAI_VERSION = "3.0.2"
+OAI_VERSION_URL = (
+    "https://github.com/OAI/OpenAPI-Specification/blob/master/versions/%s.md"
+    % OAI_VERSION
+)
 
 # alias
 OpenApiSpec = Spec
 
-def get_base_path(specs: OpenApiSpec) ->str:
+
+def get_base_path(specs: OpenApiSpec) -> str:
     """ Expected API basepath
 
     By convention, the API basepath indicates the major
@@ -33,7 +37,7 @@ def get_base_path(specs: OpenApiSpec) ->str:
     :rtype: str
     """
     # TODO: guarantee this convention is true
-    return '/v' + specs.info.version.split('.')[0]
+    return "/v" + specs.info.version.split(".")[0]
 
 
 # TODO: _load_from_* is also found in jsonshema_specs
@@ -42,6 +46,7 @@ def _load_from_path(filepath: Path) -> Tuple[Dict, str]:
         spec_dict = yaml.safe_load(f)
         return spec_dict, filepath.as_uri()
 
+
 async def _load_from_url(session: ClientSession, url: URL) -> Tuple[Dict, str]:
     async with session.get(url) as resp:
         text = await resp.text()
@@ -49,7 +54,7 @@ async def _load_from_url(session: ClientSession, url: URL) -> Tuple[Dict, str]:
         return spec_dict, str(url)
 
 
-async def create_openapi_specs(location, session: ClientSession=None) -> OpenApiSpec:
+async def create_openapi_specs(location, session: ClientSession = None) -> OpenApiSpec:
     """ Loads specs from a given location (url or path),
         validates them and returns a working instance
 
@@ -69,17 +74,14 @@ async def create_openapi_specs(location, session: ClientSession=None) -> OpenApi
             raise ValueError("Client session required in arguments")
         spec_dict, spec_url = await _load_from_url(session, URL(location))
     else:
-        path = Path(location).expanduser().resolve() #pylint: disable=no-member
+        path = Path(location).expanduser().resolve()  # pylint: disable=no-member
         spec_dict, spec_url = _load_from_path(path)
 
     return openapi_core.create_spec(spec_dict, spec_url)
 
 
-
 def create_specs(openapi_path: Path) -> OpenApiSpec:
-    warnings.warn("Use instead create_openapi_specs",
-        category=DeprecationWarning)
-
+    warnings.warn("Use instead create_openapi_specs", category=DeprecationWarning)
 
     # TODO: spec_from_file and spec_from_url
     with openapi_path.open() as f:
@@ -89,11 +91,10 @@ def create_specs(openapi_path: Path) -> OpenApiSpec:
     return spec
 
 
-
 __all__ = (
-    'get_base_path',
-    'create_openapi_specs',
-    'OpenApiSpec',
-    'OpenAPIError',
-    'OpenAPIMappingError'
+    "get_base_path",
+    "create_openapi_specs",
+    "OpenApiSpec",
+    "OpenAPIError",
+    "OpenAPIMappingError",
 )

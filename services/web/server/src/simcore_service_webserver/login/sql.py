@@ -2,7 +2,7 @@ from logging import getLogger
 
 
 log = getLogger(__name__)
-LOG_TPL = '%s <--%s'
+LOG_TPL = "%s <--%s"
 
 
 def find_one(conn, table, filter_, fields=None):
@@ -12,27 +12,27 @@ def find_one(conn, table, filter_, fields=None):
 
 
 def find_one_sql(table, filter_, fields=None):
-    '''
+    """
     >>> find_one_sql('tbl', {'foo': 10, 'bar': 'baz'})
     ('SELECT * FROM tbl WHERE bar=$1 AND foo=$2', ['baz', 10])
     >>> find_one_sql('tbl', {'id': 10}, fields=['foo', 'bar'])
     ('SELECT foo, bar FROM tbl WHERE id=$1', [10])
-    '''
+    """
     keys, values = _split_dict(filter_)
-    fields = ', '.join(fields) if fields else '*'
+    fields = ", ".join(fields) if fields else "*"
     where = _pairs(keys)
-    sql = 'SELECT {} FROM {} WHERE {}'.format(fields, table, where)
+    sql = "SELECT {} FROM {} WHERE {}".format(fields, table, where)
     return sql, values
 
 
-def insert(conn, table, data, returning='id'):
+def insert(conn, table, data, returning="id"):
     sql, values = insert_sql(table, data, returning)
     log.debug(LOG_TPL, sql, values)
     return conn.fetchval(sql, *values)
 
 
-def insert_sql(table, data, returning='id'):
-    '''
+def insert_sql(table, data, returning="id"):
+    """
     >>> insert_sql('tbl', {'foo': 'bar', 'id': 1})
     ('INSERT INTO tbl (foo, id) VALUES ($1, $2) RETURNING id', ['bar', 1])
 
@@ -41,13 +41,14 @@ def insert_sql(table, data, returning='id'):
 
     >>> insert_sql('tbl', {'foo': 'bar', 'id': 1}, returning='pk')
     ('INSERT INTO tbl (foo, id) VALUES ($1, $2) RETURNING pk', ['bar', 1])
-    '''
+    """
     keys, values = _split_dict(data)
-    sql = 'INSERT INTO {} ({}) VALUES ({}){}'.format(
+    sql = "INSERT INTO {} ({}) VALUES ({}){}".format(
         table,
-        ', '.join(keys),
-        ', '.join(_placeholders(data)),
-        ' RETURNING {}'.format(returning) if returning else '')
+        ", ".join(keys),
+        ", ".join(_placeholders(data)),
+        " RETURNING {}".format(returning) if returning else "",
+    )
     return sql, values
 
 
@@ -58,16 +59,15 @@ def update(conn, table, filter_, updates):
 
 
 def update_sql(table, filter_, updates):
-    '''
+    """
     >>> update_sql('tbl', {'foo': 'a', 'bar': 1}, {'bar': 2, 'baz': 'b'})
     ('UPDATE tbl SET bar=$1, baz=$2 WHERE bar=$3 AND foo=$4', [2, 'b', 1, 'a'])
-    '''
+    """
     where_keys, where_vals = _split_dict(filter_)
     up_keys, up_vals = _split_dict(updates)
-    changes = _pairs(up_keys, sep=', ')
+    changes = _pairs(up_keys, sep=", ")
     where = _pairs(where_keys, start=len(up_keys) + 1)
-    sql = 'UPDATE {} SET {} WHERE {}'.format(
-        table, changes, where)
+    sql = "UPDATE {} SET {} WHERE {}".format(table, changes, where)
     return sql, up_vals + where_vals
 
 
@@ -78,41 +78,41 @@ def delete(conn, table, filter_):
 
 
 def delete_sql(table, filter_):
-    '''
+    """
     >>> delete_sql('tbl', {'foo': 10, 'bar': 'baz'})
     ('DELETE FROM tbl WHERE bar=$1 AND foo=$2', ['baz', 10])
-    '''
+    """
     keys, values = _split_dict(filter_)
     where = _pairs(keys)
-    sql = 'DELETE FROM {} WHERE {}'.format(table, where)
+    sql = "DELETE FROM {} WHERE {}".format(table, where)
     return sql, values
 
 
-def _pairs(keys, *, start=1, sep=' AND '):
-    '''
+def _pairs(keys, *, start=1, sep=" AND "):
+    """
     >>> _pairs(['foo', 'bar', 'baz'], sep=', ')
     'foo=$1, bar=$2, baz=$3'
     >>> _pairs(['foo', 'bar', 'baz'], start=2)
     'foo=$2 AND bar=$3 AND baz=$4'
-    '''
-    return sep.join('{}=${}'.format(k, i) for i, k in enumerate(keys, start))
+    """
+    return sep.join("{}=${}".format(k, i) for i, k in enumerate(keys, start))
 
 
 def _placeholders(variables):
-    '''Returns placeholders by number of variables
+    """Returns placeholders by number of variables
 
     >>> _placeholders(['foo', 'bar', 1])
     ['$1', '$2', '$3']
-    '''
-    return ['${}'.format(i) for i, _ in enumerate(variables, 1)]
+    """
+    return ["${}".format(i) for i, _ in enumerate(variables, 1)]
 
 
 def _split_dict(dic):
-    '''Split dict into sorted keys and values
+    """Split dict into sorted keys and values
 
     >>> _split_dict({'b': 2, 'a': 1})
     (['a', 'b'], [1, 2])
-    '''
+    """
     keys = sorted(dic.keys())
     return keys, [dic[k] for k in keys]
 
@@ -120,6 +120,4 @@ def _split_dict(dic):
 if __name__ == "__main__":
     import doctest
 
-    print(doctest.testmod(
-        optionflags=doctest.REPORT_ONLY_FIRST_FAILURE
-    ))
+    print(doctest.testmod(optionflags=doctest.REPORT_ONLY_FIRST_FAILURE))

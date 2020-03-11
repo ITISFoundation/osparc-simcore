@@ -5,6 +5,6 @@
 
 for path_to_req_test in $(find ../ -type f -name '_test.txt')
 do
-  rm --verbose $path_to_req_test
-  make --directory $(dirname -- $path_to_req_test)
+  rm --verbose "$path_to_req_test"
+  make --directory "$(dirname -- "$path_to_req_test")"
 done

@@ -1,4 +1,3 @@
-
 """ rest - common schema models and classes
 
 UNDER DEVELOPMENT
@@ -17,8 +16,8 @@ warnings.warn("DO NOT USE IN PRODUCTION, STILL UNDER DEVELOPMENT")
 @attr.s(auto_attribs=True)
 class LogMessageType:
     message: str
-    level: str = 'INFO'
-    logger: str = 'user'
+    level: str = "INFO"
+    logger: str = "user"
 
 
 @attr.s(auto_attribs=True)
@@ -30,11 +29,9 @@ class ErrorItemType:
 
     @classmethod
     def from_error(cls, err: BaseException):
-        item = cls(code=err.__class__.__name__,
-                   message=str(err),
-                   resource=None,
-                   field=None
-                   )
+        item = cls(
+            code=err.__class__.__name__, message=str(err), resource=None, field=None
+        )
         return item
 
 

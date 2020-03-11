@@ -10,9 +10,11 @@ from yarl import URL
 
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
-from servicelib.rest_routing import (get_handlers_from_namespace,
-                                     iter_path_operations,
-                                     map_handlers_with_operations)
+from servicelib.rest_routing import (
+    get_handlers_from_namespace,
+    iter_path_operations,
+    map_handlers_with_operations,
+)
 
 from ..rest_config import APP_OPENAPI_SPECS_KEY
 from . import handlers
@@ -22,10 +24,9 @@ logger = logging.getLogger(__name__)
 
 module_name = __name__.replace(".__init__", "")
 
-@app_module_setup(module_name, ModuleCategory.ADDON,
-    depends=[],
-    logger=logger)
-def setup(app: web.Application,* , disable_login=False):
+
+@app_module_setup(module_name, ModuleCategory.ADDON, depends=[], logger=logger)
+def setup(app: web.Application, *, disable_login=False):
     """ Sets up director's subsystem
 
     :param app: main application
@@ -43,28 +44,25 @@ def setup(app: web.Application,* , disable_login=False):
 
     def include_path(tup_object):
         _method, path, _operation_id, _tags = tup_object
-        return any( tail in path  for tail in ['/running_interactive_services', '/services'] )
+        return any(
+            tail in path for tail in ["/running_interactive_services", "/services"]
+        )
 
-    handlers_dict = {
-        'services_get': handlers.services_get
-    }
+    handlers_dict = {"services_get": handlers.services_get}
 
     # Disables login_required decorator for testing purposes
     if disable_login:
         for name, hnds in handlers_dict.items():
-            if hasattr(hnds, '__wrapped__'):
+            if hasattr(hnds, "__wrapped__"):
                 handlers_dict[name] = hnds.__wrapped__
 
     routes = map_handlers_with_operations(
-        handlers_dict,
-        filter(include_path, iter_path_operations(specs)),
-        strict=True
+        handlers_dict, filter(include_path, iter_path_operations(specs)), strict=True
     )
     app.router.add_routes(routes)
+
 
 # alias
 setup_director = setup
 
-__all__ = (
-    'setup_director'
-)
+__all__ = "setup_director"

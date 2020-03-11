@@ -126,6 +126,11 @@ $(CLIENT_WEB_OUTPUT):
 	-mkdir $(if $(IS_WIN),,-p) $(CLIENT_WEB_OUTPUT)
 
 
+.PHONY: shell
+shell:
+	docker run -it local/$(target):production /bin/sh
+
+
 ## docker SWARM -------------------------------
 #
 # - All resolved configuration are named as .stack-${name}-*.yml to distinguish from docker-compose files which can be parametrized
@@ -335,9 +340,9 @@ openapi-specs: ## bundles and validates openapi specifications and schemas of AL
 .PHONY: code-analysis
 code-analysis: .codeclimate.yml ## runs code-climate analysis
 	# Validates $<
-	./scripts/code-climate.sh validate-config
+	./scripts/code-climate.bash validate-config
 	# Running analysis
-	./scripts/code-climate.sh analyze
+	./scripts/code-climate.bash analyze
 
 
 .PHONY: info info-images info-swarm  info-tools

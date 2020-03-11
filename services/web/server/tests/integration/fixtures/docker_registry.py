@@ -9,15 +9,17 @@ import pytest
 import tenacity
 import time
 
+
 @pytest.fixture(scope="session")
 def docker_registry():
     # run the registry outside of the stack
     docker_client = docker.from_env()
-    container = docker_client.containers.run("registry:2",
-        ports={"5000":"5000"},
+    container = docker_client.containers.run(
+        "registry:2",
+        ports={"5000": "5000"},
         environment=["REGISTRY_STORAGE_DELETE_ENABLED=true"],
-        restart_policy={"Name":"always"},
-        detach=True
+        restart_policy={"Name": "always"},
+        detach=True,
     )
     host = "127.0.0.1"
     port = 5000
@@ -28,7 +30,7 @@ def docker_registry():
     # test the registry
     docker_client = docker.from_env()
     # get the hello world example from docker hub
-    hello_world_image = docker_client.images.pull("hello-world","latest")
+    hello_world_image = docker_client.images.pull("hello-world", "latest")
     # login to private registry
     docker_client.login(registry=url, username="simcore")
     # tag the image
@@ -50,6 +52,7 @@ def docker_registry():
     while docker_client.containers.list(filters={"name": container.name}):
         time.sleep(1)
 
+
 @tenacity.retry(wait=tenacity.wait_fixed(1), stop=tenacity.stop_after_delay(60))
 def _wait_till_registry_is_responsive(url):
     docker_client = docker.from_env()
@@ -57,7 +60,7 @@ def _wait_till_registry_is_responsive(url):
     return True
 
 
-#pull from itisfoundation/sleeper and push into local registry
+# pull from itisfoundation/sleeper and push into local registry
 @pytest.fixture(scope="session")
 def sleeper_service(docker_registry) -> str:
     """ Adds a itisfoundation/sleeper in docker registry
@@ -72,6 +75,7 @@ def sleeper_service(docker_registry) -> str:
     image = client.images.pull(repo)
     assert image
     yield repo
+
 
 @pytest.fixture(scope="session")
 def jupyter_service(docker_registry) -> str:

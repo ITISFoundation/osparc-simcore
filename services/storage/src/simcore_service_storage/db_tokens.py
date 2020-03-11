@@ -1,4 +1,3 @@
-
 import logging
 from typing import Tuple
 
@@ -18,7 +17,7 @@ log = logging.getLogger(__name__)
 @retry(**PostgresRetryPolicyUponOperation(log).kwargs)
 async def _get_tokens_from_db(engine, userid):
     async with engine.acquire() as conn:
-        stmt = sa.select([tokens, ]).where(tokens.c.user_id == userid)
+        stmt = sa.select([tokens,]).where(tokens.c.user_id == userid)
         result = await conn.execute(stmt)
         row = await result.first()
         data = dict(row) if row else {}
@@ -32,17 +31,22 @@ async def get_api_token_and_secret(request: web.Request, userid) -> Tuple[str, s
 
     # defaults from config if any, othewise None
     defaults = request.app[APP_CONFIG_KEY]["main"].get("test_datcore", {})
-    api_token, api_secret = defaults.get('api_token'), defaults.get('api_secret')
+    api_token, api_secret = defaults.get("api_token"), defaults.get("api_secret")
 
     if engine:
         try:
             data = await _get_tokens_from_db(engine, userid)
         except DbApiError:
             # NOTE this shall not log as error since is a possible outcome with an alternative
-            log.warning("Cannot retrieve tokens for user %s in pgdb %s", userid, engine, exc_info=True)
+            log.warning(
+                "Cannot retrieve tokens for user %s in pgdb %s",
+                userid,
+                engine,
+                exc_info=True,
+            )
         else:
-            data = data.get('token_data', {})
-            api_token = data.get('token_key', api_token)
-            api_secret = data.get('token_secret', api_secret)
+            data = data.get("token_data", {})
+            api_token = data.get("token_key", api_token)
+            api_secret = data.get("token_secret", api_secret)
 
     return api_token, api_secret
