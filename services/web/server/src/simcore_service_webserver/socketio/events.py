@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 from aiohttp.web import Application
 
 from ..resource_manager.websocket_manager import managed_resource
+from ..utils import fire_and_forget_task
 from .config import AsyncServer, get_socket_server
 
 log = logging.getLogger(__name__)
@@ -26,15 +27,5 @@ async def post_messages(
             # We only send the data to the right sockets
             # Notice that there might be several tabs open
             for event_name, data in messages.items():
-                future = asyncio.ensure_future(
-                    sio.emit(event_name, json.dumps(data), room=sid)
-                )
+                fire_and_forget_task(sio.emit(event_name, json.dumps(data), room=sid))
 
-                def log_exception_callback(fut: asyncio.Future):
-                    # check for exception and log them
-                    try:
-                        fut.result()
-                    except Exception: #pylint: disable=broad-except
-                        log.exception("Websocket emissing error occured!")
-
-                future.add_done_callback(log_exception_callback)

@@ -9,7 +9,7 @@
 # pylint: disable=too-many-arguments
 
 import logging
-from asyncio import ensure_future, gather, Future
+from asyncio import gather
 from pprint import pformat
 from typing import Dict, Optional
 from uuid import uuid4
@@ -22,16 +22,15 @@ from servicelib.observer import observe
 
 from ..computation_api import delete_pipeline_db
 from ..director import director_api
-from ..storage_api import copy_data_folders_from_project  # mocked in unit-tests
-from ..storage_api import (
-    delete_data_folders_of_project,
-    delete_data_folders_of_project_node,
-)
+from ..storage_api import \
+    copy_data_folders_from_project  # mocked in unit-tests
+from ..storage_api import (delete_data_folders_of_project,
+                           delete_data_folders_of_project_node)
+from ..utils import fire_and_forget_task
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import NodeNotFoundError, ProjectNotFoundError
 from .projects_utils import clone_project_document
-
 
 log = logging.getLogger(__name__)
 
@@ -150,13 +149,7 @@ async def delete_project(request: web.Request, project_uuid: str, user_id: int) 
         await remove_project_interactive_services(user_id, project_uuid, request.app)
         await delete_project_data(request, project_uuid, user_id)
 
-    future = ensure_future(remove_services_and_data())
-    def log_exception_callback(fut: Future):
-        try:
-            fut.result()
-        except Exception: #pylint: disable=broad-except
-            log.exception("Error occured while removing services and data")
-    future.add_done_callback(log_exception_callback)
+    fire_and_forget_task(remove_services_and_data())
 
 
 @observe(event="SIGNAL_PROJECT_CLOSE")
