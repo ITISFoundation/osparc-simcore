@@ -7,7 +7,7 @@ IMPORTANT: lowest level module
 import asyncio
 import logging
 from pathlib import Path
-from typing import List
+from typing import Any, Coroutine, List, Optional, Union
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ def is_osparc_repo_dir(path: Path) -> bool:
     return all(d in got for d in expected)
 
 
-def search_osparc_repo_dir(start, max_iterations=8):
+def search_osparc_repo_dir(start: Union[str, Path], max_iterations=8) -> Optional[Path]:
     """ Returns path to root repo dir or None if it does not exists
 
         NOTE: assumes starts is a path within repo
@@ -35,7 +35,7 @@ def search_osparc_repo_dir(start, max_iterations=8):
 
 
 # FUTURES
-def fire_and_forget_task(obj):
+def fire_and_forget_task(obj: Union[Coroutine, asyncio.Future]) -> None:
     future = asyncio.ensure_future(obj)
 
     def log_exception_callback(fut: asyncio.Future):
@@ -48,7 +48,7 @@ def fire_and_forget_task(obj):
 
 
 # // tasks
-async def logged_gather(*tasks, reraise: bool = True) -> List:
+async def logged_gather(*tasks, reraise: bool = True) -> List[Any]:
     # all coroutine called in // and we take care of returning the exceptions
     results = await asyncio.gather(*tasks, return_exceptions=True)
     for value in results:
