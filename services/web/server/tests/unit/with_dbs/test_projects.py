@@ -703,10 +703,7 @@ async def test_close_project(
             "get_running_interactive_services"
         ].has_calls(calls)
         mocked_director_subsystem["get_running_interactive_services"].reset_mock()
-    else:
-        mocked_director_subsystem[
-            "get_running_interactive_services"
-        ].assert_not_called()
+    
     # close project
     url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
@@ -719,10 +716,7 @@ async def test_close_project(
         mocked_director_subsystem["get_running_interactive_services"].has_calls(calls)
         calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
         mocked_director_subsystem["stop_service"].has_calls(calls)
-    else:
-        mocked_director_subsystem[
-            "get_running_interactive_services"
-        ].assert_not_called()
+    
 
 
 @pytest.mark.parametrize(
