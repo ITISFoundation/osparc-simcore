@@ -163,11 +163,6 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: true
     },
 
-    restartIFrameButton: {
-      check: "qx.ui.form.Button",
-      init: null
-    },
-
     retrieveIFrameButton: {
       check: "qx.ui.form.Button",
       init: null
@@ -918,6 +913,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
     __onNodeState: function(data) {
       const serviceState = data["service_state"];
+      console.log("__onNodeState", serviceState);
       switch (serviceState) {
         case "starting":
         case "pulling": {
@@ -1015,7 +1011,6 @@ qx.Class.define("osparc.data.model.Node", {
       this.fireDataEvent("showInLogger", msgData);
 
       this.getRetrieveIFrameButton().setEnabled(true);
-      this.getRestartIFrameButton().setEnabled(true);
       this.setProgress(100);
 
       // FIXME: Apparently no all services are inmediately ready when they publish the port

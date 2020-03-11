@@ -228,10 +228,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       if (retrieveIFrameButton) {
         this._buttonContainer.add(retrieveIFrameButton);
       }
-      let restartIFrameButton = this.getNode().getRestartIFrameButton();
-      if (restartIFrameButton) {
-        this._buttonContainer.add(restartIFrameButton);
-      }
       this._buttonContainer.add(this._filesButton);
       this._toolbar.add(this._buttonContainer);
     },
