@@ -668,10 +668,10 @@ async def test_open_project(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),        
         (UserRole.USER, web.HTTPNoContent),
         (UserRole.TESTER, web.HTTPNoContent),
+        (UserRole.GUEST, web.HTTPForbidden), # NOTE: this must be the last trial, since there is auto-closing of project
     ],
 )
 async def test_close_project(
@@ -694,6 +694,7 @@ async def test_close_project(
     client_id = client_session_id()
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
+    
     if resp.status == web.HTTPOk.status_code:
         mocked_director_subsystem[
             "get_running_interactive_services"
@@ -708,9 +709,11 @@ async def test_close_project(
     resp = await client.post(url, json=client_id)
     await assert_status(resp, expected)
     if resp.status == web.HTTPNoContent.status_code:
-        mocked_director_subsystem[
-            "get_running_interactive_services"
-        ].assert_called_once()
+        calls = [
+            call(client.server.app, user_project["uuid"], None),
+            call(client.server.app, user_project["uuid"], logged_user["id"]),
+        ]
+        mocked_director_subsystem["get_running_interactive_services"].has_calls(calls)
         calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
         mocked_director_subsystem["stop_service"].has_calls(calls)
     else:
@@ -881,7 +884,9 @@ async def test_project_node_lifetime(
     # get the node state
     mocked_director_subsystem[
         "get_running_interactive_services"
-    ].return_value = future_with_result([{"service_uuid": node_id, "service_state": "running"}])
+    ].return_value = future_with_result(
+        [{"service_uuid": node_id, "service_state": "running"}]
+    )
     url = client.app.router["get_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
@@ -895,7 +900,7 @@ async def test_project_node_lifetime(
     mocked_director_subsystem[
         "get_running_interactive_services"
     ].return_value = future_with_result("")
-    
+
     url = client.app.router["get_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id_2
     )

@@ -255,15 +255,13 @@ async def open_project(request: web.Request) -> web.Response:
     # TODO: replace by decorator since it checks again authentication
     await check_permission(request, "project.open")
 
-    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-    from .projects_api import get_project_for_user
-
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     client_session_id = await request.json()
-
     try:
         with managed_resource(user_id, client_session_id, request.app) as rt:
+            # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+            from .projects_api import get_project_for_user
             project = await get_project_for_user(
                 request.app,
                 project_uuid=project_uuid,
