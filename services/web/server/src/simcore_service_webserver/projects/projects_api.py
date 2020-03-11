@@ -168,7 +168,10 @@ async def remove_project_interactive_services(
         for service in list_of_services
     ]
     if stop_tasks:
-        await gather(*stop_tasks)
+        results = await gather(*stop_tasks, return_exceptions=True)
+        for value in results:
+            if isinstance(value, Exception):
+                log.error("Exception occured while stopping service: %s", value)
 
 
 async def delete_project_data(

@@ -4,12 +4,15 @@ This module takes care of sending events to the connected webclient through the 
 
 import asyncio
 import json
+import logging
 from typing import Any, Dict, List
 
 from aiohttp.web import Application
 
 from ..resource_manager.websocket_manager import managed_resource
 from .config import AsyncServer, get_socket_server
+
+logger = logging.getLogger(__name__)
 
 
 async def post_messages(
@@ -22,30 +25,16 @@ async def post_messages(
         for sid in socket_ids:
             # We only send the data to the right sockets
             # Notice that there might be several tabs open
-            tasks = [
-                sio.emit(event_name, json.dumps(data), room=sid)
-                for event_name, data in messages.items()
-            ]
-            asyncio.ensure_future(
-                asyncio.gather(
-                    *tasks
-                )  # TODO: PC->SAN??, return_exceptions=True othewise will error '_GatheringFuture exception was never retrieved'
-            )
+            for event_name, data in messages.items():
+                future = asyncio.ensure_future(
+                    sio.emit(event_name, json.dumps(data), room=sid)
+                )
 
+                def callback(fut):
+                    # check for exception and log them
+                    try:
+                        fut.result()
+                    except Exception: #pylint: disable=broad-except
+                        logger.exception("Websocket emissing error occured!")
 
-# FIXME: PC->SAN: I wonder if here is the reason for this unhandled
-#
-# {
-# "txt": "<Task finished coro=<WebSocket.wait() done, defined at /usr/local/lib/python3.6/site-packages/engineio/async_drivers/aiohttp.py:114> exception=OSError()>",
-# "type": "<class '_asyncio.Task'>",
-# "done": true,
-# "cancelled": false,
-# "stack": null,
-# "exception": "<class 'OSError'>: "
-# },
-#  and https://github.com/miguelgrinberg/python-engineio/blob/master/engineio/async_drivers/aiohttp.py#L114) shows that ``IOError = OSError`` is raised
-# when received data is corrupted!!
-#
-#
-# It might be that sio.emit raise exception, which propagates throw gather
-#
+                future.add_done_callback(callback)

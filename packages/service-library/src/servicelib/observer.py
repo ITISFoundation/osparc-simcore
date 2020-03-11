@@ -19,7 +19,10 @@ async def emit(event: str, *args, **kwargs):
 
     coroutines = [observer(*args, **kwargs) for observer in event_registry[event]]
     # all coroutine called in //
-    await asyncio.gather(*coroutines, return_exceptions=True)
+    results = await asyncio.gather(*coroutines, return_exceptions=True)
+    for value in results:
+        if isinstance(value, Exception):
+            log.error("Exception occured while emitting event: %s", str(value))
 
 
 def observe(event: str):

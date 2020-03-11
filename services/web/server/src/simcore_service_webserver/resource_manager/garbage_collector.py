@@ -53,7 +53,10 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
                     logger.debug(
                         "removing resource entry: %s: %s", other_keys, resources
                     )
-                    await asyncio.gather(*remove_tasks)
+                    results = await asyncio.gather(*remove_tasks, return_exceptions=True)
+                    for value in results:
+                        if isinstance(value, Exception):
+                            logger.error("Exception occured while remving resource: %s", value)
                 logger.debug(
                     "the resources %s:%s of %s may be now safely closed",
                     resource_name,

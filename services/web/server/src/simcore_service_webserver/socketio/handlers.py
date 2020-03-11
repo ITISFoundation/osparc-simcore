@@ -76,12 +76,18 @@ async def disconnect_other_sockets(sio, sockets: List[str]) -> None:
         sio.emit("logout", to=sid, data={"reason": "user logged out"})
         for sid in sockets
     ]
-    await asyncio.gather(*logout_tasks, return_exceptions=True)
+    results = await asyncio.gather(*logout_tasks, return_exceptions=True)
+    for value in results:
+        if isinstance(value, Exception):
+            log.error("Error occured while logging out users %s", value)
     # let the client react
     await asyncio.sleep(3)
     # ensure disconnection is effective
     disconnect_tasks = [sio.disconnect(sid=sid) for sid in sockets]
-    await asyncio.gather(*disconnect_tasks, return_exceptions=True)
+    results = await asyncio.gather(*disconnect_tasks, return_exceptions=True)
+    for value in results:
+        if isinstance(value, Exception):
+            log.error("Error occured while disconnecting users %s", value)
 
 
 @observe(event="SIGNAL_USER_LOGOUT")
