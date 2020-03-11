@@ -11,8 +11,7 @@ import logging
 from typing import Dict, List, Optional
 
 from aiohttp import web
-from socketio.exceptions import \
-    ConnectionRefusedError as socket_io_connection_error
+from socketio.exceptions import ConnectionRefusedError as socket_io_connection_error
 
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
@@ -78,13 +77,13 @@ async def disconnect_other_sockets(sio, sockets: List[str]) -> None:
         sio.emit("logout", to=sid, data={"reason": "user logged out"})
         for sid in sockets
     ]
-    logged_gather(*logout_tasks, reraise=False)
-    
+    await logged_gather(*logout_tasks, reraise=False)
+
     # let the client react
     await asyncio.sleep(3)
     # ensure disconnection is effective
     disconnect_tasks = [sio.disconnect(sid=sid) for sid in sockets]
-    logged_gather(*disconnect_tasks)
+    await logged_gather(*disconnect_tasks)
 
 
 @observe(event="SIGNAL_USER_LOGOUT")
