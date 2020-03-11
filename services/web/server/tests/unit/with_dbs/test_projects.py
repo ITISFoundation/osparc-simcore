@@ -688,7 +688,7 @@ async def test_close_project(
     assert len(fakes) == 5
     mocked_director_subsystem[
         "get_running_interactive_services"
-    ].return_value = future_with_result(fales)
+    ].return_value = future_with_result(fakes)
 
     # open project
     client_id = client_session_id()
