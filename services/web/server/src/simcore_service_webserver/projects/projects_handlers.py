@@ -91,7 +91,8 @@ async def create_projects(request: web.Request):
 
     except ValidationError:
         raise web.HTTPBadRequest(reason="Invalid project data")
-
+    except ProjectNotFoundError:
+        raise web.HTTPNotFound(reason=f"Project not found")
     except ProjectInvalidRightsError:
         raise web.HTTPUnauthorized
 
@@ -148,15 +149,18 @@ async def get_project(request: web.Request):
     from .projects_api import get_project_for_user
 
     project_uuid = request.match_info.get("project_id")
+    try:
+        project = await get_project_for_user(
+            request.app,
+            project_uuid=project_uuid,
+            user_id=request[RQT_USERID_KEY],
+            include_templates=True,
+        )
 
-    project = await get_project_for_user(
-        request.app,
-        project_uuid=project_uuid,
-        user_id=request[RQT_USERID_KEY],
-        include_templates=True,
-    )
-
-    return {"data": project}
+        return {"data": project}
+    except ProjectNotFoundError:
+        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
+    
 
 
 @login_required
@@ -221,21 +225,26 @@ async def delete_project(request: web.Request):
     # first check if the project exists
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-    project = await projects_api.get_project_for_user(
-        request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True
-    )
-    with managed_resource(user_id, None, request.app) as rt:
-        other_users = await rt.find_users_of_resource("project_id", project_uuid)
-        if other_users:
-            message = "Project is opened by another user. It cannot be deleted."
-            if user_id in other_users:
-                message = (
-                    "Project is still open. It cannot be deleted until it is closed."
-                )
-            # we cannot delete that project
-            raise web.HTTPForbidden(reason=message)
+    try:
+        project = await projects_api.get_project_for_user(
+            request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True
+        )
+        with managed_resource(user_id, None, request.app) as rt:
+            other_users = await rt.find_users_of_resource("project_id", project_uuid)
+            if other_users:
+                message = "Project is opened by another user. It cannot be deleted."
+                if user_id in other_users:
+                    message = (
+                        "Project is still open. It cannot be deleted until it is closed."
+                    )
+                # we cannot delete that project
+                raise web.HTTPForbidden(reason=message)
 
-    await projects_api.delete_project(request, project_uuid, user_id)
+    
+        await projects_api.delete_project(request, project_uuid, user_id)
+    except ProjectNotFoundError:
+        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
+    
 
     raise web.HTTPNoContent(content_type="application/json")
 
@@ -252,19 +261,22 @@ async def open_project(request: web.Request) -> web.Response:
     project_uuid = request.match_info.get("project_id")
     client_session_id = await request.json()
 
-    with managed_resource(user_id, client_session_id, request.app) as rt:
-        project = await get_project_for_user(
-            request.app,
-            project_uuid=project_uuid,
-            user_id=user_id,
-            include_templates=True,
-        )
-        await rt.add("project_id", project_uuid)
+    try:
+        with managed_resource(user_id, client_session_id, request.app) as rt:
+            project = await get_project_for_user(
+                request.app,
+                project_uuid=project_uuid,
+                user_id=user_id,
+                include_templates=True,
+            )
+            await rt.add("project_id", project_uuid)
 
-    # user id opened project uuid
-    await projects_api.start_project_interactive_services(request, project, user_id)
+        # user id opened project uuid
+        await projects_api.start_project_interactive_services(request, project, user_id)
 
-    return {"data": project}
+        return {"data": project}
+    except ProjectNotFoundError:
+        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
 
 
 @login_required
@@ -276,28 +288,32 @@ async def close_project(request: web.Request) -> web.Response:
     project_uuid = request.match_info.get("project_id")
     client_session_id = await request.json()
 
-    # ensure the project exists
-    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-    from .projects_api import get_project_for_user
+    try:
+        # ensure the project exists
+        # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+        from .projects_api import get_project_for_user
 
-    with managed_resource(user_id, client_session_id, request.app) as rt:
-        project = await get_project_for_user(
-            request.app,
-            project_uuid=project_uuid,
-            user_id=user_id,
-            include_templates=True,
-        )
-        await rt.remove("project_id")
-        other_users = await rt.find_users_of_resource("project_id", project_uuid)
-        if not other_users:
-            # only remove the services if no one else is using them now
-            fire_and_forget_task(
-                projects_api.remove_project_interactive_services(
-                    user_id, project_uuid, request.app
-                )
+        with managed_resource(user_id, client_session_id, request.app) as rt:
+            project = await get_project_for_user(
+                request.app,
+                project_uuid=project_uuid,
+                user_id=user_id,
+                include_templates=True,
             )
+            await rt.remove("project_id")
+            other_users = await rt.find_users_of_resource("project_id", project_uuid)
+            if not other_users:
+                # only remove the services if no one else is using them now
+                fire_and_forget_task(
+                    projects_api.remove_project_interactive_services(
+                        user_id, project_uuid, request.app
+                    )
+                )
 
-    raise web.HTTPNoContent(content_type="application/json")
+        raise web.HTTPNoContent(content_type="application/json")
+    except ProjectNotFoundError:
+        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
+    
 
 
 @login_required
@@ -305,22 +321,26 @@ async def get_active_project(request: web.Request) -> web.Response:
     await check_permission(request, "project.read")
     user_id = request[RQT_USERID_KEY]
     client_session_id = request.query["client_session_id"]
-    project = None
-    with managed_resource(user_id, client_session_id, request.app) as rt:
-        # get user's projects
-        list_project_ids = await rt.find("project_id")
-        if list_project_ids:
-            # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-            from .projects_api import get_project_for_user
 
-            project = await get_project_for_user(
-                request.app,
-                project_uuid=list_project_ids[0],
-                user_id=user_id,
-                include_templates=True,
-            )
+    try:
+        project = None
+        with managed_resource(user_id, client_session_id, request.app) as rt:
+            # get user's projects
+            list_project_ids = await rt.find("project_id")
+            if list_project_ids:
+                # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+                from .projects_api import get_project_for_user
 
-    return {"data": project}
+                project = await get_project_for_user(
+                    request.app,
+                    project_uuid=list_project_ids[0],
+                    user_id=user_id,
+                    include_templates=True,
+                )
+
+        return {"data": project}
+    except ProjectNotFoundError:
+        raise web.HTTPNotFound(reason=f"Project not found")
 
 
 @login_required
@@ -331,24 +351,28 @@ async def create_node(request: web.Request) -> web.Response:
     project_uuid = request.match_info.get("project_id")
     body = await request.json()
 
-    # ensure the project exists
-    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-    from .projects_api import get_project_for_user
+    try:
+        # ensure the project exists
+        # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+        from .projects_api import get_project_for_user
 
-    await get_project_for_user(
-        request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True
-    )
-    data = {
-        "node_id": await projects_api.add_project_node(
-            request,
-            project_uuid,
-            user_id,
-            body["service_key"],
-            body["service_version"],
-            body["service_id"] if "service_id" in body else None,
+        await get_project_for_user(
+            request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True
         )
-    }
-    return web.json_response({"data": data}, status=web.HTTPCreated.status_code)
+        data = {
+            "node_id": await projects_api.add_project_node(
+                request,
+                project_uuid,
+                user_id,
+                body["service_key"],
+                body["service_version"],
+                body["service_id"] if "service_id" in body else None,
+            )
+        }
+        return web.json_response({"data": data}, status=web.HTTPCreated.status_code)
+    except ProjectNotFoundError:
+        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
+    
 
 
 @login_required
@@ -358,18 +382,22 @@ async def get_node(request: web.Request) -> web.Response:
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     node_uuid = request.match_info.get("node_id")
-    # ensure the project exists
-    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-    from .projects_api import get_project_for_user
+    try:
+        # ensure the project exists
+        # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+        from .projects_api import get_project_for_user
 
-    await get_project_for_user(
-        request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True
-    )
+        await get_project_for_user(
+            request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True
+        )
 
-    node_details = await projects_api.get_project_node(
-        request, project_uuid, user_id, node_uuid
-    )
-    return {"data": node_details}
+        node_details = await projects_api.get_project_node(
+            request, project_uuid, user_id, node_uuid
+        )
+        return {"data": node_details}
+    except ProjectNotFoundError:
+        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
+    
 
 
 @login_required
@@ -379,17 +407,20 @@ async def delete_node(request: web.Request) -> web.Response:
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     node_uuid = request.match_info.get("node_id")
-    # ensure the project exists
-    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-    from .projects_api import get_project_for_user
+    try:
+        # ensure the project exists
+        # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+        from .projects_api import get_project_for_user
 
-    await get_project_for_user(
-        request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True
-    )
+        await get_project_for_user(
+            request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True
+        )
 
-    await projects_api.delete_project_node(request, project_uuid, user_id, node_uuid)
+        await projects_api.delete_project_node(request, project_uuid, user_id, node_uuid)
 
-    raise web.HTTPNoContent(content_type="application/json")
+        raise web.HTTPNoContent(content_type="application/json")
+    except ProjectNotFoundError:
+        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
 
 
 @login_required
