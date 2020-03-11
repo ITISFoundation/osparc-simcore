@@ -877,27 +877,37 @@ qx.Class.define("osparc.data.model.Node", {
 
     addDynamicButtons: function() {
       if (this.isDynamic() && this.isRealService()) {
-        const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
-        osparc.utils.Utils.setIdToWidget(retrieveBtn, "nodeViewRetrieveBtn");
-        retrieveBtn.addListener("execute", e => {
-          this.__retrieveInputs();
-        }, this);
-        retrieveBtn.setEnabled(false);
-        this.setRetrieveIFrameButton(retrieveBtn);
-
-        const restartBtn = new qx.ui.toolbar.Button(this.tr("Restart"), "@FontAwesome5Solid/redo-alt/14");
-        osparc.utils.Utils.setIdToWidget(restartBtn, "nodeViewRestartBtn");
-        restartBtn.addListener("execute", e => {
-          this.restartIFrame();
-        }, this);
-        restartBtn.setEnabled(false);
-        this.setRestartIFrameButton(restartBtn);
-
+        this.__addRetrieveButton();
+        this.__addRestartButton();
         this.__showLoadingIFrame();
       }
       if (this.isContainer()) {
-        this.__addRetrieveButton();
+        const innerNodes = Object.values(this.getInnerNodes());
+        if (innerNodes.some(innerNode => innerNode.isDynamic())) {
+          this.__addRetrieveButton();
+          this.getRetrieveIFrameButton().setEnabled(true);
+        }
       }
+    },
+
+    __addRetrieveButton: function() {
+      const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
+      osparc.utils.Utils.setIdToWidget(retrieveBtn, "nodeViewRetrieveBtn");
+      retrieveBtn.addListener("execute", e => {
+        this.__retrieveInputs();
+      }, this);
+      retrieveBtn.setEnabled(false);
+      this.setRetrieveIFrameButton(retrieveBtn);
+    },
+
+    __addRestartButton: function() {
+      const restartBtn = new qx.ui.toolbar.Button(this.tr("Restart"), "@FontAwesome5Solid/redo-alt/14");
+      osparc.utils.Utils.setIdToWidget(restartBtn, "nodeViewRestartBtn");
+      restartBtn.addListener("execute", e => {
+        this.restartIFrame();
+      }, this);
+      restartBtn.setEnabled(false);
+      this.setRestartIFrameButton(restartBtn);
     },
 
     startDynamicService: function() {
