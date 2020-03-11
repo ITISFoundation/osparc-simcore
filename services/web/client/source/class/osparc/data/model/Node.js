@@ -843,9 +843,13 @@ qx.Class.define("osparc.data.model.Node", {
             requestData: qx.util.Serializer.toJson(reqData)
           });
           updReq.addListener("success", e => {
+            let resp = e.getTarget().getResponse();
+            if (typeof resp === "string") {
+              resp = JSON.parse(resp);
+            }
             const {
               data
-            } = e.getTarget().getResponse();
+            } = resp;
             const sizeBytes = (data && ("size_bytes" in data)) ? data["size_bytes"] : 0;
             this.getPropsWidget().retrievedPortData(portKey, true, sizeBytes);
             console.log(data);
