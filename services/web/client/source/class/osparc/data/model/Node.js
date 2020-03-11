@@ -878,7 +878,6 @@ qx.Class.define("osparc.data.model.Node", {
     addDynamicButtons: function() {
       if (this.isDynamic() && this.isRealService()) {
         this.__addRetrieveButton();
-        this.__addRestartButton();
         this.__showLoadingIFrame();
       }
       if (this.isContainer()) {
@@ -898,16 +897,6 @@ qx.Class.define("osparc.data.model.Node", {
       }, this);
       retrieveBtn.setEnabled(false);
       this.setRetrieveIFrameButton(retrieveBtn);
-    },
-
-    __addRestartButton: function() {
-      const restartBtn = new qx.ui.toolbar.Button(this.tr("Restart"), "@FontAwesome5Solid/redo-alt/14");
-      osparc.utils.Utils.setIdToWidget(restartBtn, "nodeViewRestartBtn");
-      restartBtn.addListener("execute", e => {
-        this.restartIFrame();
-      }, this);
-      restartBtn.setEnabled(false);
-      this.setRestartIFrameButton(restartBtn);
     },
 
     startDynamicService: function() {

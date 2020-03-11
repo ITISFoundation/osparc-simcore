@@ -40,7 +40,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
   },
 
   events: {
-    /** Fired for restarting the iframe */
+    /** Fired for requesting a restart */
     "restart" : "qx.event.type.Event",
     /** Fired if the iframe is restored from a minimized or maximized state */
     "restore" : "qx.event.type.Event",
@@ -102,6 +102,9 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       });
       standin.addListener("disappear", e => {
         iframe.setLayoutProperties({
+          top: -10000
+        });
+        restartButton.setLayoutProperties({
           top: -10000
         });
         actionButton.setLayoutProperties({
