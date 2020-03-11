@@ -15,11 +15,10 @@ from socketio.exceptions import \
     ConnectionRefusedError as socket_io_connection_error
 
 from servicelib.observer import observe
-from servicelib.utils import logged_gather
+from servicelib.utils import fire_and_forget_task, logged_gather
 
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
-from ..utils import fire_and_forget_task
 from .config import get_socket_server
 
 ANONYMOUS_USER_ID = -1

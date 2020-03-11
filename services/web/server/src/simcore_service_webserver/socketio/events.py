@@ -9,8 +9,9 @@ from typing import Any, Dict, List
 
 from aiohttp.web import Application
 
+from servicelib.utils import fire_and_forget_task
+
 from ..resource_manager.websocket_manager import managed_resource
-from ..utils import fire_and_forget_task
 from .config import AsyncServer, get_socket_server
 
 log = logging.getLogger(__name__)
@@ -28,4 +29,3 @@ async def post_messages(
             # Notice that there might be several tabs open
             for event_name, data in messages.items():
                 fire_and_forget_task(sio.emit(event_name, json.dumps(data), room=sid))
-

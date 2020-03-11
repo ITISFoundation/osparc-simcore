@@ -8,14 +8,16 @@ import logging
 from aiohttp import web
 from jsonschema import ValidationError
 
+from servicelib.utils import fire_and_forget_task
+
 from ..computation_api import update_pipeline_db
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from ..security_api import check_permission
-from ..utils import fire_and_forget_task
 from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
-from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from .projects_exceptions import (ProjectInvalidRightsError,
+                                  ProjectNotFoundError)
 
 OVERRIDABLE_DOCUMENT_KEYS = ["name", "description", "thumbnail", "prjOwner"]
 # TODO: validate these against api/specs/webserver/v0/components/schemas/project-v0.0.1.json

@@ -19,7 +19,7 @@ from aiohttp import web
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
-from servicelib.utils import logged_gather
+from servicelib.utils import fire_and_forget_task, logged_gather
 
 from ..computation_api import delete_pipeline_db
 from ..director import director_api
@@ -27,7 +27,6 @@ from ..storage_api import \
     copy_data_folders_from_project  # mocked in unit-tests
 from ..storage_api import (delete_data_folders_of_project,
                            delete_data_folders_of_project_node)
-from ..utils import fire_and_forget_task
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import NodeNotFoundError
