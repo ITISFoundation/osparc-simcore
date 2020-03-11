@@ -290,11 +290,19 @@ async def close_project(request: web.Request) -> web.Response:
         other_users = await rt.find_users_of_resource("project_id", project_uuid)
         if not other_users:
             # only remove the services if no one else is using them now
-            asyncio.ensure_future(
+            future = asyncio.ensure_future(
                 projects_api.remove_project_interactive_services(
                     user_id, project_uuid, request.app
                 )
             )
+            def log_exception_callback(fut: asyncio.Future):
+                # check for exception and log them
+                try:
+                    fut.result()
+                except Exception: #pylint: disable=broad-except
+                    log.exception("Error while removing interactive services!")
+
+            future.add_done_callback(log_exception_callback)
 
     raise web.HTTPNoContent(content_type="application/json")
 

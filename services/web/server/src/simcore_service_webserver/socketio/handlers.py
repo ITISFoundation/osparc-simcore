@@ -108,7 +108,15 @@ async def user_logged_out(
         sockets = await rt.find_socket_ids()
         if sockets:
             # let's do it as a task so it does not block us here
-            asyncio.ensure_future(disconnect_other_sockets(sio, sockets))
+            future = asyncio.ensure_future(disconnect_other_sockets(sio, sockets))
+            def log_exception_callback(fut: asyncio.Future):
+                # check for exception and log them
+                try:
+                    fut.result()
+                except Exception: #pylint: disable=broad-except
+                    log.exception("Error while disconnecting sockets!")
+
+            future.add_done_callback(log_exception_callback)
 
 
 async def disconnect(sid: str, app: web.Application) -> None:

@@ -12,7 +12,7 @@ from aiohttp.web import Application
 from ..resource_manager.websocket_manager import managed_resource
 from .config import AsyncServer, get_socket_server
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 async def post_messages(
@@ -30,11 +30,11 @@ async def post_messages(
                     sio.emit(event_name, json.dumps(data), room=sid)
                 )
 
-                def callback(fut):
+                def log_exception_callback(fut: asyncio.Future):
                     # check for exception and log them
                     try:
                         fut.result()
                     except Exception: #pylint: disable=broad-except
-                        logger.exception("Websocket emissing error occured!")
+                        log.exception("Websocket emissing error occured!")
 
-                future.add_done_callback(callback)
+                future.add_done_callback(log_exception_callback)

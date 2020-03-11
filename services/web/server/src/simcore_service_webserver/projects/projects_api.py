@@ -9,7 +9,7 @@
 # pylint: disable=too-many-arguments
 
 import logging
-from asyncio import ensure_future, gather
+from asyncio import ensure_future, gather, Future
 from pprint import pformat
 from typing import Dict, Optional
 from uuid import uuid4
@@ -150,7 +150,13 @@ async def delete_project(request: web.Request, project_uuid: str, user_id: int) 
         await remove_project_interactive_services(user_id, project_uuid, request.app)
         await delete_project_data(request, project_uuid, user_id)
 
-    ensure_future(remove_services_and_data())
+    future = ensure_future(remove_services_and_data())
+    def log_exception_callback(fut: Future):
+        try:
+            fut.result()
+        except Exception: #pylint: disable=broad-except
+            log.exception("Error occured while removing services and data")
+    future.add_done_callback(log_exception_callback)
 
 
 @observe(event="SIGNAL_PROJECT_CLOSE")
