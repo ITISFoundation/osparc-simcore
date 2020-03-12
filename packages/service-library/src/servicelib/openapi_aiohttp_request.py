@@ -3,7 +3,7 @@
 Based in https://github.com/p1c2u/openapi-core/blob/master/openapi_core/contrib/requests/requests.py
 """
 import re
-from typing import Dict, Optional
+from typing import Dict
 
 from aiohttp.web import Request, UrlMappingMatchInfo
 from openapi_core.validation.request.datatypes import OpenAPIRequest, RequestParameters
