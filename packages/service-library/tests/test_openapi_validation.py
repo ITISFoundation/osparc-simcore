@@ -18,7 +18,7 @@ from servicelib.rest_middlewares import (
 )
 from servicelib.rest_responses import is_enveloped, unwrap_envelope
 from servicelib.rest_routing import create_routes_from_namespace
-from tutils import Handlers
+from fake_handlers import Handlers
 
 
 @pytest.fixture
@@ -75,3 +75,12 @@ async def test_validate_handlers(path, client, specs):
 )
 async def test_validate_handlers_mixed(client, specs):
     await test_validate_handlers("/mixed", client, specs)
+
+
+
+
+from servicelib.openapi_aiohttp_response import AiohttpOpenAPIResponseFactory
+from servicelib.openapi_aiohttp_request import AiohttpOpenAPIRequestFactory
+
+
+async def test_openapi_aiohttp_adapters():

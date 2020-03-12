@@ -10,7 +10,7 @@ from servicelib.rest_routing import (
     iter_path_operations,
     map_handlers_with_operations,
 )
-from tutils import Handlers
+from fake_handlers import Handlers
 
 
 @pytest.fixture
