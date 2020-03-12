@@ -31,6 +31,7 @@ class ResponsesQueue {
       if (resp.url().includes(url)) {
         console.log((new Date).toUTCString(), "-- Queued response received", resp.url(), ":");
         resp.json().then(data => {
+          console.log("url response", typeof data);
           respReceivedQueue[url] = data;
         });
         page.removeListener("response", callback);
