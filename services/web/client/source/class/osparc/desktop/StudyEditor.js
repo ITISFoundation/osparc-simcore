@@ -74,9 +74,28 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       osparc.store.Store.getInstance().setCurrentStudy(study);
       study.buildWorkbench();
       study.openStudy();
-      this.__initDefault();
+      this.__initViews();
       this.__connectEvents();
       this.__startAutoSaveTimer();
+
+      this.__openOneNode();
+    },
+
+    __openOneNode: function() {
+      const validNodeIds = [];
+      const allNodes = this.getStudy().getWorkbench().getNodes(true);
+      Object.values(allNodes).forEach(node => {
+        if (!node.isFilePicker()) {
+          validNodeIds.push(node.getNodeId());
+        }
+      });
+
+      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      if (validNodeIds.length === 1 && preferencesSettings.getAutoOpenNode()) {
+        this.nodeSelected(validNodeIds[0]);
+      } else {
+        this.nodeSelected(this.getStudy().getUuid());
+      }
     },
 
     /**
@@ -87,7 +106,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__stopAutoSaveTimer();
     },
 
-    __initDefault: function() {
+    __initViews: function() {
       const study = this.getStudy();
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree(study);
@@ -112,7 +131,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const edgeId = e.getData();
         this.__removeEdge(edgeId);
       }, this);
-      this.showInMainView(workbenchUI, study.getUuid());
 
       this.__nodeView = new osparc.component.node.NodeView().set({
         minHeight: 200

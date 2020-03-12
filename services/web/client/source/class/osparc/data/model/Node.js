@@ -368,6 +368,10 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.__outputWidget) {
         this.__outputWidget.populatePortsData();
       }
+
+      if (this.isDynamic()) {
+        this.__showLoadingIFrame();
+      }
     },
 
     giveUniqueName: function() {
@@ -775,8 +779,6 @@ qx.Class.define("osparc.data.model.Node", {
         }, this);
         restartBtn.setEnabled(false);
         this.setRestartIFrameButton(restartBtn);
-
-        this.__showLoadingIFrame();
       }
     },
 
