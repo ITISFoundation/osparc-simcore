@@ -9,7 +9,6 @@
 # pylint: disable=too-many-arguments
 
 import logging
-from asyncio import ensure_future, gather
 from pprint import pformat
 from typing import Dict, Optional
 from uuid import uuid4
@@ -19,19 +18,18 @@ from aiohttp import web
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
+from servicelib.utils import fire_and_forget_task, logged_gather
 
 from ..computation_api import delete_pipeline_db
 from ..director import director_api
-from ..storage_api import copy_data_folders_from_project  # mocked in unit-tests
-from ..storage_api import (
-    delete_data_folders_of_project,
-    delete_data_folders_of_project_node,
-)
+from ..storage_api import \
+    copy_data_folders_from_project  # mocked in unit-tests
+from ..storage_api import (delete_data_folders_of_project,
+                           delete_data_folders_of_project_node)
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
-from .projects_exceptions import NodeNotFoundError, ProjectNotFoundError
+from .projects_exceptions import NodeNotFoundError
 from .projects_utils import clone_project_document
-
 
 log = logging.getLogger(__name__)
 
@@ -59,23 +57,19 @@ async def get_project_for_user(
     :rtype: Dict
     """
 
-    try:
-        db = app[APP_PROJECT_DBAPI]
+    db = app[APP_PROJECT_DBAPI]
 
-        project = None
-        if include_templates:
-            project = await db.get_template_project(project_uuid)
+    project = None
+    if include_templates:
+        project = await db.get_template_project(project_uuid)
 
-        if not project:
-            project = await db.get_user_project(user_id, project_uuid)
+    if not project:
+        project = await db.get_user_project(user_id, project_uuid)
 
-        # TODO: how to handle when database has an invalid project schema???
-        # Notice that db model does not include a check on project schema.
-        validate_project(app, project)
-        return project
-
-    except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason="Project not found")
+    # TODO: how to handle when database has an invalid project schema???
+    # Notice that db model does not include a check on project schema.
+    validate_project(app, project)
+    return project
 
 
 async def clone_project(
@@ -140,7 +134,7 @@ async def start_project_interactive_services(
         )
         for service_uuid, service in project_needed_services.items()
     ]
-    await gather(*start_service_tasks)
+    await logged_gather(*start_service_tasks, reraise=True)
 
 
 async def delete_project(request: web.Request, project_uuid: str, user_id: int) -> None:
@@ -150,7 +144,7 @@ async def delete_project(request: web.Request, project_uuid: str, user_id: int) 
         await remove_project_interactive_services(user_id, project_uuid, request.app)
         await delete_project_data(request, project_uuid, user_id)
 
-    ensure_future(remove_services_and_data())
+    fire_and_forget_task(remove_services_and_data())
 
 
 @observe(event="SIGNAL_PROJECT_CLOSE")
@@ -168,7 +162,7 @@ async def remove_project_interactive_services(
         for service in list_of_services
     ]
     if stop_tasks:
-        await gather(*stop_tasks)
+        await logged_gather(*stop_tasks, reraise=False)
 
 
 async def delete_project_data(
@@ -182,13 +176,8 @@ async def delete_project_from_db(
     request: web.Request, project_uuid: str, user_id: int
 ) -> None:
     db = request.config_dict[APP_PROJECT_DBAPI]
-    try:
-        await delete_pipeline_db(request.app, project_uuid)
-        await db.delete_user_project(user_id, project_uuid)
-    except ProjectNotFoundError:
-        # TODO: add flag in query to determine whether to respond if error?
-        raise web.HTTPNotFound
-
+    await delete_pipeline_db(request.app, project_uuid)
+    await db.delete_user_project(user_id, project_uuid)
     # requests storage to delete all project's stored data
     await delete_data_folders_of_project(request.app, project_uuid, user_id)
 
