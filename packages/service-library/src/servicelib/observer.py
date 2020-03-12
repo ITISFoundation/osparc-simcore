@@ -3,10 +3,11 @@ Allows loose coupling subject and an observer.
 
 """
 
-import asyncio
 import logging
 from collections import defaultdict
 from functools import wraps
+
+from .utils import logged_gather
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ async def emit(event: str, *args, **kwargs):
 
     coroutines = [observer(*args, **kwargs) for observer in event_registry[event]]
     # all coroutine called in //
-    await asyncio.gather(*coroutines, return_exceptions=True)
+    await logged_gather(*coroutines)
 
 
 def observe(event: str):
