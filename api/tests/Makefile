@@ -6,7 +6,7 @@ VENV_DIR ?= $(abspath $(ROOT_DIR)/.venv)
 .PHONY: all
 all: install tests
 
-%.txt: %.in
+requirements.txt: requirements.in
 	# pip compiling $<
 	@$(VENV_DIR)/bin/pip-compile --output-file $@ $<
 
