@@ -60,7 +60,10 @@ class TutorialBase {
     await auto.logIn(this.__page, this.__user, this.__pass);
     try {
       const templates = await this.__responsesQueue.waitUntilResponse("projects?type=template");
-      console.log("templates resp", templates);
+      console.log("templates resp:");
+      templates.forEach(template => {
+        console.log(" - ", template.name);
+      });
     }
     catch(err) {
       console.error("Templates could not be fetched", err);
@@ -74,7 +77,10 @@ class TutorialBase {
     }
     try {
       const services = await this.__responsesQueue.waitUntilResponse("services");
-      console.log("services resp", services);
+      console.log("services resp:");
+      services.forEach(service => {
+        console.log(" - ", service.name);
+      });
     }
     catch(err) {
       console.error("Services could not be fetched", err);
