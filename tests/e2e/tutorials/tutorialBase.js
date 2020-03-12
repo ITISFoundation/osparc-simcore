@@ -55,7 +55,7 @@ class TutorialBase {
 
   async login() {
     this.__responsesQueue.addResponseListener("projects?type=template");
-    this.__responsesQueue.addResponseListener("dags");
+    this.__responsesQueue.addResponseListener("catalog/dags");
     this.__responsesQueue.addResponseListener("services");
     await auto.logIn(this.__page, this.__user, this.__pass);
     try {
@@ -69,7 +69,7 @@ class TutorialBase {
       console.error("Templates could not be fetched", err);
     }
     try {
-      const dags = await this.__responsesQueue.waitUntilResponse("dags");
+      const dags = await this.__responsesQueue.waitUntilResponse("catalog/dags");
       console.log("dags resp (", dags.length, "):");
       dags.forEach(dag => {
         console.log(" - ", dag.name);
