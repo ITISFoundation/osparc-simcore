@@ -34,8 +34,20 @@ setup-commit: install-dev up-pg ## sets up a database to create a new commit int
 	@echo "To add new commit, sc-pg review -m \"Some message\" "
 
 
-.PHONY: up-pg down-pg
+.PHONY: migrate
+DOT_ENV_FILE = $(abspath $(REPO_BASE_DIR)/.env)
 
+migrate: $(DOT_ENV_FILE) ## basic migration update (use ONLY for development purposes)
+	# Discovering postpgres server
+	@export $(shell grep -v '^#' $< | xargs -0); sc-pg discover
+	# Upgraded to head
+	@sc-pg upgrade
+	@sc-pg clean
+
+
+
+
+.PHONY: up-pg down-pg
 DOCKER_COMPOSE_CONFIG := tests/docker-compose.yml
 
 up-pg: $(DOCKER_COMPOSE_CONFIG) ## starts pg server

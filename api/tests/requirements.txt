@@ -10,16 +10,18 @@ attrs==19.3.0             # via aiohttp, jsonschema, openapi-core, pytest
 chardet==3.0.4            # via aiohttp
 coverage==4.5.1
 idna-ssl==1.1.0           # via aiohttp
-idna==2.8                 # via idna-ssl, yarl
-importlib-metadata==1.3.0  # via jsonschema, pluggy, pytest
-isodate==0.6.0            # via openapi-core
-jsonschema==3.2.0         # via openapi-spec-validator
+idna==2.9                 # via idna-ssl, yarl
+importlib-metadata==1.5.0  # via jsonschema, pluggy, pytest
+isodate==0.6.0            # via openapi-schema-validator
+jsonschema==3.2.0         # via openapi-schema-validator, openapi-spec-validator
 lazy-object-proxy==1.4.3  # via openapi-core
-more-itertools==8.0.2     # via pytest, zipp
-multidict==4.7.3          # via aiohttp, yarl
-openapi-core==0.12.0
+more-itertools==8.2.0     # via openapi-core, pytest
+multidict==4.7.5          # via aiohttp, yarl
+openapi-core==0.13.3
+openapi-schema-validator==0.1.1  # via openapi-core
 openapi-spec-validator==0.2.8  # via openapi-core
-packaging==20.0           # via pytest, pytest-sugar
+packaging==20.3           # via pytest, pytest-sugar
+parse==1.15.0             # via openapi-core
 pluggy==0.13.1            # via pytest
 py==1.8.1                 # via pytest
 pyparsing==2.4.6          # via packaging
@@ -28,15 +30,16 @@ pytest-aiohttp==0.3.0
 pytest-cov==2.8.1
 pytest-instafail==0.4.1.post0
 pytest-sugar==0.9.2
-pytest==5.3.2
+pytest==5.3.5
 pyyaml==5.3               # via openapi-spec-validator
-six==1.13.0               # via isodate, jsonschema, openapi-core, openapi-spec-validator, packaging, pyrsistent
-strict-rfc3339==0.7       # via openapi-core
+six==1.14.0               # via isodate, jsonschema, openapi-core, openapi-schema-validator, openapi-spec-validator, packaging, pyrsistent
+strict-rfc3339==0.7       # via openapi-schema-validator
 termcolor==1.1.0          # via pytest-sugar
 typing-extensions==3.7.4.1  # via aiohttp
 wcwidth==0.1.8            # via pytest
+werkzeug==1.0.0           # via openapi-core
 yarl==1.4.2               # via aiohttp
-zipp==0.6.0               # via importlib-metadata
+zipp==3.1.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

@@ -4,7 +4,7 @@ ROOT_DIR  = $(realpath $(CURDIR)/../../../)
 VENV_DIR ?= $(realpath $(ROOT_DIR)/.venv)
 
 
-%.txt: %.in
+requirements.txt: requirements.in
 	# pip compiling $<
 	@$(VENV_DIR)/bin/pip-compile --output-file $@ $<
 

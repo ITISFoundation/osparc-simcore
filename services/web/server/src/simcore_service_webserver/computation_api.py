@@ -12,6 +12,7 @@ import psycopg2.errors
 import sqlalchemy as sa
 from aiohttp import web, web_exceptions
 from aiopg.sa import Engine
+from aiopg.sa.connection import SAConnection
 from sqlalchemy import and_
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
@@ -218,6 +219,63 @@ async def _set_tasks_in_tasks_db(
     db_engine: Engine, project_id: str, tasks: Dict[str, Dict], replace_pipeline=True
 ):
     # pylint: disable=no-value-for-parameter
+
+    async def _task_already_exists(
+        conn: SAConnection, project_id: str, node_id: str
+    ) -> bool:
+        task_count: int = await conn.scalar(
+            sa.select([sa.func.count()]).where(
+                and_(
+                    comp_tasks.c.project_id == project_id,
+                    comp_tasks.c.node_id == node_id,
+                )
+            )
+        )
+        assert task_count in (                              # nosec
+            0,
+            1,
+        ), f"Uniqueness violated: task_count={task_count}"  # nosec
+        return task_count != 0
+
+    async def _update_task(
+        conn: SAConnection, task: Dict, project_id: str, node_id: str
+    ) -> None:
+        # update task's inputs/outputs
+        io_update = {}
+        task_inputs: str = await conn.scalar(
+            sa.select([comp_tasks.c.inputs]).where(
+                and_(
+                    comp_tasks.c.project_id == project_id,
+                    comp_tasks.c.node_id == node_id,
+                )
+            )
+        )
+        # updates inputs
+        if task_inputs != task["inputs"]:
+            io_update["inputs"] = task["inputs"]
+
+        # update outputs
+        #  NOTE: update ONLY outputs of front-end nodes. The rest are
+        #  updated by backend services (e.g. workers, interactive services)
+        if task["outputs"] and task["node_class"] == NodeClass.FRONTEND:
+            io_update["outputs"] = task["outputs"]
+
+        if io_update:
+            query = (
+                comp_tasks.update()
+                .where(
+                    and_(
+                        comp_tasks.c.project_id == project_id,
+                        comp_tasks.c.node_id == node_id,
+                    )
+                )
+                .values(**io_update)
+            )
+
+            await conn.execute(query)
+
+    # MAIN -----------
+
     async with db_engine.acquire() as conn:
 
         if replace_pipeline:
@@ -239,24 +297,33 @@ async def _set_tasks_in_tasks_db(
 
         internal_id = 1
         for node_id, task in tasks.items():
-            try:
-                # create task
-                query = comp_tasks.insert().values(
-                    project_id=project_id,
-                    node_id=node_id,
-                    node_class=task["node_class"],
-                    internal_id=internal_id,
-                    image=task["image"],
-                    schema=task["schema"],
-                    inputs=task["inputs"],
-                    outputs=task["outputs"] if task["outputs"] else {},
-                    submit=datetime.datetime.utcnow(),
-                )
 
-                await conn.execute(query)
-                internal_id = internal_id + 1
+            is_new_task: bool = not await _task_already_exists(
+                conn, project_id, node_id
+            )
+            try:
+                if is_new_task:
+                    # create task
+                    query = comp_tasks.insert().values(
+                        project_id=project_id,
+                        node_id=node_id,
+                        node_class=task["node_class"],
+                        internal_id=internal_id,
+                        image=task["image"],
+                        schema=task["schema"],
+                        inputs=task["inputs"],
+                        outputs=task["outputs"] if task["outputs"] else {},
+                        submit=datetime.datetime.utcnow(),
+                    )
+
+                    await conn.execute(query)
+                    internal_id = internal_id + 1
 
             except psycopg2.errors.UniqueViolation:  # pylint: disable=no-member
+                # avoids race condition
+                is_new_task = False
+
+            if not is_new_task:
                 if replace_pipeline:
                     # replace task
                     query = (
@@ -280,39 +347,7 @@ async def _set_tasks_in_tasks_db(
                     )
                     await conn.execute(query)
                 else:
-                    # update task's inputs/outputs
-                    io_update = {}
-                    task_inputs: str = await conn.scalar(
-                        sa.select([comp_tasks.c.inputs]).where(
-                            and_(
-                                comp_tasks.c.project_id == project_id,
-                                comp_tasks.c.node_id == node_id,
-                            )
-                        )
-                    )
-                    # updates inputs
-                    if task_inputs != task["inputs"]:
-                        io_update["inputs"] = task["inputs"]
-
-                    # update outputs
-                    #  NOTE: update ONLY outputs of front-end nodes. The rest are
-                    #  updated by backend services (e.g. workers, interactive services)
-                    if task["outputs"] and task["node_class"] == NodeClass.FRONTEND:
-                        io_update["outputs"] = task["outputs"]
-
-                    if io_update:
-                        query = (
-                            comp_tasks.update()
-                            .where(
-                                and_(
-                                    comp_tasks.c.project_id == project_id,
-                                    comp_tasks.c.node_id == node_id,
-                                )
-                            )
-                            .values(**io_update)
-                        )
-
-                        await conn.execute(query)
+                    await _update_task(conn, task, project_id, node_id)
 
 
 #
