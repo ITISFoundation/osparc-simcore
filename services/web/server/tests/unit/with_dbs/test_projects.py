@@ -41,8 +41,33 @@ RESOURCE_NAME = "projects"
 API_PREFIX = "/" + API_VERSION
 
 
+def future_with_result(result) -> Future:
+    f = Future()
+    f.set_result(result)
+    return f
+
+
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, postgres_service):
+def mocked_director_subsystem(mocker):
+    mock_director_api = {
+        "get_running_interactive_services": mocker.patch(
+            "simcore_service_webserver.director.director_api.get_running_interactive_services",
+            return_value=future_with_result(""),
+        ),
+        "start_service": mocker.patch(
+            "simcore_service_webserver.director.director_api.start_service",
+            return_value=future_with_result(""),
+        ),
+        "stop_service": mocker.patch(
+            "simcore_service_webserver.director.director_api.stop_service",
+            return_value=future_with_result(""),
+        ),
+    }
+    return mock_director_api
+
+
+@pytest.fixture
+def client(loop, aiohttp_client, app_cfg, postgres_service, mocked_director_subsystem):
     # def client(loop, aiohttp_client, app_cfg): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
 
     # config app
@@ -567,32 +592,26 @@ async def test_delete_project(
     user_project,
     expected,
     storage_subsystem_mock,
-    mocker,
+    mocked_director_subsystem,
     fake_services,
 ):
     # DELETE /v0/projects/{project_id}
 
     fakes = fake_services(5)
-    mock_director_api = mocker.patch(
-        "simcore_service_webserver.director.director_api.get_running_interactive_services",
-        return_value=Future(),
-    )
-    mock_director_api.return_value.set_result(fakes)
-
-    mock_director_api_stop_services = mocker.patch(
-        "simcore_service_webserver.director.director_api.stop_service",
-        return_value=Future(),
-    )
-    mock_director_api_stop_services.return_value.set_result("")
+    mocked_director_subsystem[
+        "get_running_interactive_services"
+    ].return_value = future_with_result(fakes)
 
     url = client.app.router["delete_project"].url_for(project_id=user_project["uuid"])
 
     resp = await client.delete(url)
     await assert_status(resp, expected)
     if resp.status == web.HTTPNoContent.status_code:
-        mock_director_api.assert_called_once()
+        mocked_director_subsystem[
+            "get_running_interactive_services"
+        ].assert_called_once()
         calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
-        mock_director_api_stop_services.has_calls(calls)
+        mocked_director_subsystem["stop_service"].has_calls(calls)
         # wait for the fire&forget to run
         await sleep(2)
         # check if database entries are correctly removed, there should be no project available here
@@ -612,21 +631,15 @@ async def test_delete_project(
     ],
 )
 async def test_open_project(
-    client, logged_user, user_project, client_session_id, expected, mocker
+    client,
+    logged_user,
+    user_project,
+    client_session_id,
+    expected,
+    mocked_director_subsystem,
 ):
     # POST /v0/projects/{project_id}:open
     # open project
-    mock_director_api = mocker.patch(
-        "simcore_service_webserver.director.director_api.get_running_interactive_services",
-        return_value=Future(),
-    )
-    mock_director_api.return_value.set_result("")
-
-    mock_director_api_start_service = mocker.patch(
-        "simcore_service_webserver.director.director_api.start_service",
-        return_value=Future(),
-    )
-    mock_director_api_start_service.return_value.set_result("")
 
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_session_id())
@@ -649,7 +662,7 @@ async def test_open_project(
                     user_id=logged_user["id"],
                 )
             )
-        mock_director_api_start_service.assert_has_calls(calls)
+        mocked_director_subsystem["start_service"].assert_has_calls(calls)
 
 
 @pytest.mark.parametrize(
@@ -667,48 +680,43 @@ async def test_close_project(
     user_project,
     client_session_id,
     expected,
-    mocker,
+    mocked_director_subsystem,
     fake_services,
 ):
     # POST /v0/projects/{project_id}:close
     fakes = fake_services(5)
     assert len(fakes) == 5
-    mock_director_api = mocker.patch(
-        "simcore_service_webserver.director.director_api.get_running_interactive_services",
-        return_value=Future(),
-    )
-    mock_director_api.return_value.set_result(fakes)
+    mocked_director_subsystem[
+        "get_running_interactive_services"
+    ].return_value = future_with_result(fakes)
 
-    mock_director_api_start_service = mocker.patch(
-        "simcore_service_webserver.director.director_api.start_service",
-        return_value=Future(),
-    )
-    mock_director_api_start_service.return_value.set_result("")
-
-    mock_director_api_stop_services = mocker.patch(
-        "simcore_service_webserver.director.director_api.stop_service",
-        return_value=Future(),
-    )
-    mock_director_api_stop_services.return_value.set_result("")
     # open project
     client_id = client_session_id()
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
+
     if resp.status == web.HTTPOk.status_code:
-        mock_director_api.assert_called_once()
-        mock_director_api.reset_mock()
-    else:
-        mock_director_api.assert_not_called()
+        calls = [
+            call(client.server.app, user_project["uuid"], logged_user["id"]),
+        ]
+        mocked_director_subsystem[
+            "get_running_interactive_services"
+        ].has_calls(calls)
+        mocked_director_subsystem["get_running_interactive_services"].reset_mock()
+    
     # close project
     url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
     await assert_status(resp, expected)
     if resp.status == web.HTTPNoContent.status_code:
-        mock_director_api.assert_called_once()
+        calls = [
+            call(client.server.app, user_project["uuid"], None),
+            call(client.server.app, user_project["uuid"], logged_user["id"]),
+        ]
+        mocked_director_subsystem["get_running_interactive_services"].has_calls(calls)
         calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
-        mock_director_api_stop_services.has_calls(calls)
-    else:
-        mock_director_api.assert_not_called()
+        mocked_director_subsystem["stop_service"].has_calls(calls)
+    
 
 
 @pytest.mark.parametrize(
@@ -727,25 +735,8 @@ async def test_get_active_project(
     client_session_id,
     expected,
     socketio_client,
-    mocker,
+    mocked_director_subsystem,
 ):
-    mock_director_api = mocker.patch(
-        "simcore_service_webserver.director.director_api.get_running_interactive_services",
-        return_value=Future(),
-    )
-    mock_director_api.return_value.set_result("")
-
-    mock_director_api_start_service = mocker.patch(
-        "simcore_service_webserver.director.director_api.start_service",
-        return_value=Future(),
-    )
-    mock_director_api_start_service.return_value.set_result("")
-
-    mock_director_api_stop_services = mocker.patch(
-        "simcore_service_webserver.director.director_api.stop_service",
-        return_value=Future(),
-    )
-    mock_director_api_stop_services.return_value.set_result("")
     # login with socket using client session id
     client_id1 = client_session_id()
     sio = await socketio_client(client_id1)
@@ -810,26 +801,8 @@ async def test_delete_shared_project_forbidden(
     socketio_client,
     client_session_id,
     expected,
-    mocker,
+    mocked_director_subsystem,
 ):
-    mock_director_api = mocker.patch(
-        "simcore_service_webserver.director.director_api.get_running_interactive_services",
-        return_value=Future(),
-    )
-    mock_director_api.return_value.set_result("")
-
-    mock_director_api_start_service = mocker.patch(
-        "simcore_service_webserver.director.director_api.start_service",
-        return_value=Future(),
-    )
-    mock_director_api_start_service.return_value.set_result("")
-
-    mock_director_api_stop_services = mocker.patch(
-        "simcore_service_webserver.director.director_api.stop_service",
-        return_value=Future(),
-    )
-    mock_director_api_stop_services.return_value.set_result("")
-
     # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
     service = await mocked_dynamic_service(logged_user["id"], user_project["uuid"])
     # open project in tab1
@@ -868,24 +841,11 @@ async def test_project_node_lifetime(
     create_exp,
     get_exp,
     deletion_exp,
-    mocker,
+    mocked_director_subsystem,
     storage_subsystem_mock,
+    mocker,
 ):
-    mock_director_api_get_running_services = mocker.patch(
-        "simcore_service_webserver.director.director_api.get_running_interactive_services",
-        return_value=Future(),
-    )
 
-    mock_director_api_start_service = mocker.patch(
-        "simcore_service_webserver.director.director_api.start_service",
-        return_value=Future(),
-    )
-    mock_director_api_start_service.return_value.set_result("")
-    mock_director_api_stop_services = mocker.patch(
-        "simcore_service_webserver.director.director_api.stop_service",
-        return_value=Future(),
-    )
-    mock_director_api_stop_services.return_value.set_result("")
     mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
         "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project_node",
         return_value=Future(),
@@ -899,27 +859,29 @@ async def test_project_node_lifetime(
     data, errors = await assert_status(resp, create_exp)
     node_id = "wrong_node_id"
     if resp.status == web.HTTPCreated.status_code:
-        mock_director_api_start_service.assert_called_once()
+        mocked_director_subsystem["start_service"].assert_called_once()
         assert "node_id" in data
         node_id = data["node_id"]
     else:
-        mock_director_api_start_service.assert_not_called()
+        mocked_director_subsystem["start_service"].assert_not_called()
     # create a new NOT dynamic node...
-    mock_director_api_start_service.reset_mock()
+    mocked_director_subsystem["start_service"].reset_mock()
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {"service_key": "some/notdynamic/key", "service_version": "1.3.4"}
     resp = await client.post(url, json=body)
     data, errors = await assert_status(resp, create_exp)
     node_id_2 = "wrong_node_id"
     if resp.status == web.HTTPCreated.status_code:
-        mock_director_api_start_service.assert_not_called()
+        mocked_director_subsystem["start_service"].assert_not_called()
         assert "node_id" in data
         node_id_2 = data["node_id"]
     else:
-        mock_director_api_start_service.assert_not_called()
+        mocked_director_subsystem["start_service"].assert_not_called()
 
     # get the node state
-    mock_director_api_get_running_services.return_value.set_result(
+    mocked_director_subsystem[
+        "get_running_interactive_services"
+    ].return_value = future_with_result(
         [{"service_uuid": node_id, "service_state": "running"}]
     )
     url = client.app.router["get_node"].url_for(
@@ -932,8 +894,10 @@ async def test_project_node_lifetime(
         assert data["service_state"] == "running"
 
     # get the NOT dynamic node state
-    mock_director_api_get_running_services.return_value = Future()
-    mock_director_api_get_running_services.return_value.set_result("")
+    mocked_director_subsystem[
+        "get_running_interactive_services"
+    ].return_value = future_with_result("")
+
     url = client.app.router["get_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id_2
     )
@@ -944,24 +908,23 @@ async def test_project_node_lifetime(
         assert data["service_state"] == "idle"
 
     # delete the node
-    mock_director_api_get_running_services.return_value = Future()
-    mock_director_api_get_running_services.return_value.set_result(
-        [{"service_uuid": node_id}]
-    )
+    mocked_director_subsystem[
+        "get_running_interactive_services"
+    ].return_value = future_with_result([{"service_uuid": node_id}])
     url = client.app.router["delete_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
     resp = await client.delete(url)
     data, errors = await assert_status(resp, deletion_exp)
     if resp.status == web.HTTPNoContent.status_code:
-        mock_director_api_stop_services.assert_called_once()
+        mocked_director_subsystem["stop_service"].assert_called_once()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
     else:
-        mock_director_api_stop_services.assert_not_called()
+        mocked_director_subsystem["stop_service"].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
 
     # delete the NOT dynamic node
-    mock_director_api_stop_services.reset_mock()
+    mocked_director_subsystem["stop_service"].reset_mock()
     mock_storage_api_delete_data_folders_of_project_node.reset_mock()
     # mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id}])
     url = client.app.router["delete_node"].url_for(
@@ -970,10 +933,10 @@ async def test_project_node_lifetime(
     resp = await client.delete(url)
     data, errors = await assert_status(resp, deletion_exp)
     if resp.status == web.HTTPNoContent.status_code:
-        mock_director_api_stop_services.assert_not_called()
+        mocked_director_subsystem["stop_service"].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
     else:
-        mock_director_api_stop_services.assert_not_called()
+        mocked_director_subsystem["stop_service"].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
 
 

@@ -11,9 +11,10 @@ import logging
 from typing import Dict, List, Optional
 
 from aiohttp import web
+from socketio.exceptions import ConnectionRefusedError as socket_io_connection_error
+
 from servicelib.observer import observe
-from socketio.exceptions import \
-    ConnectionRefusedError as socket_io_connection_error
+from servicelib.utils import fire_and_forget_task, logged_gather
 
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
@@ -76,12 +77,13 @@ async def disconnect_other_sockets(sio, sockets: List[str]) -> None:
         sio.emit("logout", to=sid, data={"reason": "user logged out"})
         for sid in sockets
     ]
-    await asyncio.gather(*logout_tasks, return_exceptions=True)
+    await logged_gather(*logout_tasks, reraise=False)
+
     # let the client react
     await asyncio.sleep(3)
     # ensure disconnection is effective
     disconnect_tasks = [sio.disconnect(sid=sid) for sid in sockets]
-    await asyncio.gather(*disconnect_tasks, return_exceptions=True)
+    await logged_gather(*disconnect_tasks)
 
 
 @observe(event="SIGNAL_USER_LOGOUT")
@@ -102,7 +104,7 @@ async def user_logged_out(
         sockets = await rt.find_socket_ids()
         if sockets:
             # let's do it as a task so it does not block us here
-            asyncio.ensure_future(disconnect_other_sockets(sio, sockets))
+            fire_and_forget_task(disconnect_other_sockets(sio, sockets))
 
 
 async def disconnect(sid: str, app: web.Application) -> None:
@@ -123,4 +125,8 @@ async def disconnect(sid: str, app: web.Application) -> None:
                 await rt.remove_socket_id()
         else:
             # this should not happen!!
-            log.error("Unknown client diconnected sid: %s, session %s", sid, str(socketio_session))
+            log.error(
+                "Unknown client diconnected sid: %s, session %s",
+                sid,
+                str(socketio_session),
+            )

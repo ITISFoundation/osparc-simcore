@@ -19,14 +19,14 @@ bump2version==1.0.0
 certifi==2019.11.28
 chardet==3.0.4
 click==7.0
-codecov==2.0.15
+codecov==2.0.16
 coverage==5.0.3           # via codecov, coveralls, pytest-cov
-coveralls==1.10.0
+coveralls==1.11.1
 dataclasses==0.7
 dnspython==1.16.0
 docopt==0.6.2             # via coveralls
 email-validator==1.0.5
-faker==4.0.0
+faker==4.0.1
 fastapi[all]==0.48.0
 graphene==2.1.8
 graphql-core==2.3.1
@@ -44,9 +44,9 @@ markupsafe==1.1.1
 mccabe==0.6.1             # via pylint
 more-itertools==8.2.0     # via pytest
 multidict==4.7.4
-packaging==20.1           # via pytest
+packaging==20.3           # via pytest
 pathspec==0.7.0           # via black
-pip-tools==4.4.1
+pip-tools==4.5.1
 pluggy==0.13.1            # via pytest
 promise==2.3
 psycopg2-binary==2.8.4
@@ -57,14 +57,14 @@ pylint==2.4.4
 pyparsing==2.4.6          # via packaging
 pytest-aiohttp==0.3.0
 pytest-cov==2.8.1
-pytest-docker==0.7.1
+pytest-docker==0.7.2
 pytest-mock==2.0.0
 pytest-runner==5.2
 pytest==5.3.5
 python-dateutil==2.8.1    # via faker
 python-multipart==0.0.5
 pyyaml==5.3
-regex==2020.2.18          # via black
+regex==2020.2.20          # via black
 requests==2.22.0
 rope==0.16.0
 rx==1.6.1
@@ -84,4 +84,4 @@ wcwidth==0.1.8            # via pytest
 websockets==8.1
 wrapt==1.11.2             # via astroid
 yarl==1.4.2
-zipp==2.1.0               # via importlib-metadata
+zipp==3.1.0               # via importlib-metadata
