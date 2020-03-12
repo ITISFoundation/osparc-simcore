@@ -366,6 +366,10 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.__outputWidget) {
         this.__outputWidget.populatePortsData();
       }
+
+      if (this.isDynamic()) {
+        this.__showLoadingIFrame();
+      }
     },
 
     populateInputOutputData: function(nodeData) {
