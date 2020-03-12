@@ -12,7 +12,4 @@ resources = ResourcesFacade(
 )
 
 
-__all__ = (
-    'resources',
-    'RSC_CONFIG_DIR_KEY'
-)
+__all__ = ("resources", "RSC_CONFIG_DIR_KEY")

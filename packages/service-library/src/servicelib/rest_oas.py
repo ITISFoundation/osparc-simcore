@@ -16,16 +16,12 @@ def set_specs(app: web.Application, specs: Spec) -> Spec:
     app[APP_OPENAPI_SPECS_KEY] = specs
     return app[APP_OPENAPI_SPECS_KEY]
 
+
 def get_specs(app: web.Application) -> Spec:
     # TODO consider the case of multiple versions of spec -> Dict[Spec] ??
     return app[APP_OPENAPI_SPECS_KEY]
 
 
-
 OpenApiSpec = Spec
 
-__all__ = (
-    'set_specs', 'get_specs',
-    'OpenApiSpec',
-    'create_specs'
-)
+__all__ = ("set_specs", "get_specs", "OpenApiSpec", "create_specs")

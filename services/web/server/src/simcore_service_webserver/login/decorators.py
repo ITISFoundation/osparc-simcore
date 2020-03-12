@@ -13,11 +13,13 @@ def user_to_request(handler):
     """ Handler decorator that injects in request, current authorized user ID
 
     """
+
     @wraps(handler)
     async def wrapped(*args, **kwargs):
         request = get_request(*args, **kwargs)
         request[RQT_USERID_KEY] = await authorized_userid(request)
         return await handler(*args)
+
     return wrapped
 
 
@@ -29,6 +31,7 @@ def login_required(handler):
 
     Keeps userid in request[RQT_USERID_KEY]
     """
+
     @wraps(handler)
     async def wrapped(*args, **kwargs):
         request = get_request(*args, **kwargs)
@@ -39,9 +42,8 @@ def login_required(handler):
         request[RQT_USERID_KEY] = userid
         ret = await handler(*args, **kwargs)
         return ret
+
     return wrapped
 
 
-__all__ = (
-    "login_required"
-)
+__all__ = "login_required"

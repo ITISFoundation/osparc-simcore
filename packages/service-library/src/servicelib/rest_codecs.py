@@ -14,7 +14,8 @@ class DataEncoder(json.JSONEncoder):
 
     TODO: extend to more types like apiset
     """
-    def default(self, o): #pylint: disable=E0202
+
+    def default(self, o):  # pylint: disable=E0202
         if attr.has(o.__class__):
             return attr.asdict(o)
         return json.JSONEncoder.default(self, o)

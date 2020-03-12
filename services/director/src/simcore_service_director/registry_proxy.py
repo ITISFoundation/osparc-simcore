@@ -195,6 +195,8 @@ async def list_services(app: web.Application, service_type: ServiceType) -> List
     for repo_details in results:
         if repo_details and isinstance(repo_details, list):
             services.extend(repo_details)
+        elif isinstance(repo_details, Exception):
+            _logger.error("Exception occured while listing services %s", repo_details)
     return services
 
 async def list_interactive_service_dependencies(app: web.Application, service_key: str, service_tag: str) -> List[Dict]:

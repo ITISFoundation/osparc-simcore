@@ -28,7 +28,6 @@ ROLES_PERMISSIONS = {
         "project.update",
         "storage.locations.*", # "storage.datcore.read"
         "storage.files.*",
-
         "project.open",
         "project.read",          # "studies.user.read",
                                  # "studies.templates.read"
@@ -101,8 +100,8 @@ ROLES_PERMISSIONS = {
 ###   "study.node.start",
 #   "study.node.data.push", <----------???
 #   "study.node.data.delete", <----------???
-#XX   "study.edge.create",
-#XX   "study.edge.delete"
+# XX   "study.edge.create",
+# XX   "study.edge.delete"
 # ],
 # "tester": [
 #   "services.all.read",   <----------???

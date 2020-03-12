@@ -35,9 +35,12 @@ from .users import setup_users
 log = logging.getLogger(__name__)
 
 
-@app_module_setup("servicelib.monitoring", ModuleCategory.ADDON,
+@app_module_setup(
+    "servicelib.monitoring",
+    ModuleCategory.ADDON,
     config_enabled="main.monitoring_enabled",
-    logger=log)
+    logger=log,
+)
 def setup_app_monitoring(app: web.Application):
     return setup_monitoring(app, "simcore_service_webserver")
 
@@ -46,8 +49,10 @@ def create_application(config: Dict) -> web.Application:
     """
         Initializes service
     """
-    log.debug("Initializing app with config:\n%s",
-        json.dumps(config, indent=2, sort_keys=True))
+    log.debug(
+        "Initializing app with config:\n%s",
+        json.dumps(config, indent=2, sort_keys=True),
+    )
 
     app = create_safe_application(config)
 
@@ -67,7 +72,7 @@ def create_application(config: Dict) -> web.Application:
     setup_director(app)
     setup_storage(app)
     setup_users(app)
-    setup_projects(app) # needs storage
+    setup_projects(app)  # needs storage
     setup_studies_access(app)
     setup_share_study(app)
     setup_activity(app)
@@ -78,6 +83,7 @@ def create_application(config: Dict) -> web.Application:
 
     return app
 
+
 def run_service(config: dict):
     """ Runs service
 
@@ -86,12 +92,7 @@ def run_service(config: dict):
 
     app = create_application(config)
 
-    web.run_app(app,
-                host=config["main"]["host"],
-                port=config["main"]["port"])
+    web.run_app(app, host=config["main"]["host"], port=config["main"]["port"])
 
 
-__all__ = (
-    'create_application',
-    'run_service'
-)
+__all__ = ("create_application", "run_service")

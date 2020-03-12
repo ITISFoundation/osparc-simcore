@@ -25,21 +25,21 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     # TODO: routing will be done automatically using operation_id/tags, etc...
 
     # diagnostics --
-    path, handle = '/', rest_handlers.check_health
-    operation_id = specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(base_path+path, handle, name=operation_id) )
+    path, handle = "/", rest_handlers.check_health
+    operation_id = specs.paths[path].operations["get"].operation_id
+    routes.append(web.get(base_path + path, handle, name=operation_id))
 
-    path, handle = '/check/{action}', rest_handlers.check_action
-    operation_id = specs.paths[path].operations['post'].operation_id
-    routes.append( web.post(base_path+path, handle, name=operation_id) )
+    path, handle = "/check/{action}", rest_handlers.check_action
+    operation_id = specs.paths[path].operations["post"].operation_id
+    routes.append(web.post(base_path + path, handle, name=operation_id))
 
-    path, handle = '/config', rest_handlers.get_config
-    operation_id = specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(base_path+path, handle, name=operation_id) )
+    path, handle = "/config", rest_handlers.get_config
+    operation_id = specs.paths[path].operations["get"].operation_id
+    routes.append(web.get(base_path + path, handle, name=operation_id))
 
     # NOTE: Internal. Not shown in api/docs
-    path, handle = '/diagnostics', rest_handlers.get_diagnostics
-    operation_id =  'get_diagnotics' # specs.paths[path].operations['get'].operation_id
-    routes.append( web.get(base_path+path, handle, name=operation_id) )
+    path, handle = "/diagnostics", rest_handlers.get_diagnostics
+    operation_id = "get_diagnotics"  # specs.paths[path].operations['get'].operation_id
+    routes.append(web.get(base_path + path, handle, name=operation_id))
 
     return routes
