@@ -231,7 +231,7 @@ async def _set_tasks_in_tasks_db(
                 )
             )
         )
-        assert task_count in (
+        assert task_count in (                              # nosec
             0,
             1,
         ), f"Uniqueness violated: task_count={task_count}"  # nosec
