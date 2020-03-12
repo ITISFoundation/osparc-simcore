@@ -101,19 +101,19 @@ def main(args: Optional[List] = None):
     setup_parser(parser)
     config = parse(args, parser)
 
-    # logging
+    # service log level
     log_level = getattr(logging, config["main"]["log_level"])
     logging.basicConfig(level=log_level)
     logging.root.setLevel(log_level)
+    # aiohttp access log-levels
+    access_logger.setLevel(log_level)
 
-    # mute noisy loggers
-    logging.getLogger("engineio").setLevel(
-        min(log_level + LOG_LEVEL_STEP, logging.CRITICAL)
-    )
-    access_logger.setLevel(max(log_level - LOG_LEVEL_STEP, logging.DEBUG))
-    logging.getLogger("openapi_spec_validator").setLevel(logging.WARNING)
-    logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
-    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+    # keep mostly quiet noisy loggers
+    quiet_level = max(min(log_level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING)
+    logging.getLogger("engineio").setLevel(quiet_level)
+    logging.getLogger("openapi_spec_validator").setLevel(quiet_level)
+    logging.getLogger("sqlalchemy").setLevel(quiet_level)
+    logging.getLogger("sqlalchemy.engine").setLevel(quiet_level)
 
     # NOTE: Every task blocking > AIODEBUG_SLOW_DURATION_SECS secs is considered slow and logged as warning
     slow_duration = float(os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0.1))
