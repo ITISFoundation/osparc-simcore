@@ -60,7 +60,7 @@ class TutorialBase {
     await auto.logIn(this.__page, this.__user, this.__pass);
     try {
       const templates = await this.__responsesQueue.waitUntilResponse("projects?type=template");
-      console.log("templates resp:");
+      console.log("templates resp (", templates.length, "):");
       templates.forEach(template => {
         console.log(" - ", template.name);
       });
@@ -70,14 +70,17 @@ class TutorialBase {
     }
     try {
       const dags = await this.__responsesQueue.waitUntilResponse("dags");
-      console.log("dags resp", dags);
+      console.log("dags resp (", dags.length, "):");
+      dags.forEach(dag => {
+        console.log(" - ", dag.name);
+      });
     }
     catch(err) {
       console.error("DAGs could not be fetched", err);
     }
     try {
       const services = await this.__responsesQueue.waitUntilResponse("services");
-      console.log("services resp:");
+      console.log("services resp (", services.length, "):");
       services.forEach(service => {
         console.log(" - ", service.name);
       });
