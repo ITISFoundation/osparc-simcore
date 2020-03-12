@@ -55,12 +55,26 @@ class TutorialBase {
 
   async login() {
     this.__responsesQueue.addResponseListener("projects?type=template");
+    this.__responsesQueue.addResponseListener("dags");
+    this.__responsesQueue.addResponseListener("services");
     await auto.logIn(this.__page, this.__user, this.__pass);
     try {
       await this.__responsesQueue.waitUntilResponse("projects?type=template");
     }
     catch(err) {
       console.error("Templates could not be fetched", err);
+    }
+    try {
+      await this.__responsesQueue.waitUntilResponse("dags");
+    }
+    catch(err) {
+      console.error("DAGs could not be fetched", err);
+    }
+    try {
+      await this.__responsesQueue.waitUntilResponse("services");
+    }
+    catch(err) {
+      console.error("Services could not be fetched", err);
     }
   }
 
