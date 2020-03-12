@@ -26,7 +26,10 @@ class ResponsesQueue {
     });
     page.on("response", function callback(resp) {
       if (resp.url().includes(url)) {
-        console.log((new Date).toUTCString(), "-- Queued response received", resp.url());
+        console.log((new Date).toUTCString(), "-- Queued response received", resp.url(), ":");
+        resp.json().then(data => {
+          console.log((new Date).toUTCString(), JSON.stringify(data));
+        });
         page.removeListener("response", callback);
         const index = respQueue.indexOf(url);
         if (index > -1) {
