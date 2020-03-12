@@ -59,19 +59,22 @@ class TutorialBase {
     this.__responsesQueue.addResponseListener("services");
     await auto.logIn(this.__page, this.__user, this.__pass);
     try {
-      await this.__responsesQueue.waitUntilResponse("projects?type=template");
+      const templates = await this.__responsesQueue.waitUntilResponse("projects?type=template");
+      console.log("templates resp", templates);
     }
     catch(err) {
       console.error("Templates could not be fetched", err);
     }
     try {
-      await this.__responsesQueue.waitUntilResponse("dags");
+      const dags = await this.__responsesQueue.waitUntilResponse("dags");
+      console.log("dags resp", dags);
     }
     catch(err) {
       console.error("DAGs could not be fetched", err);
     }
     try {
-      await this.__responsesQueue.waitUntilResponse("services");
+      const services = await this.__responsesQueue.waitUntilResponse("services");
+      console.log("services resp", services);
     }
     catch(err) {
       console.error("Services could not be fetched", err);
