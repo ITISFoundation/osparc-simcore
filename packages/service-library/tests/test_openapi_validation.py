@@ -75,12 +75,3 @@ async def test_validate_handlers(path, client, specs):
 )
 async def test_validate_handlers_mixed(client, specs):
     await test_validate_handlers("/mixed", client, specs)
-
-
-
-
-from servicelib.openapi_aiohttp_response import AiohttpOpenAPIResponseFactory
-from servicelib.openapi_aiohttp_request import AiohttpOpenAPIRequestFactory
-
-
-async def test_openapi_aiohttp_adapters():
