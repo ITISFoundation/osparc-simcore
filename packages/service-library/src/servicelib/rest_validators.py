@@ -2,7 +2,7 @@ from aiohttp import web
 from openapi_core.validation.request.validators import RequestValidator
 from openapi_core.validation.response.validators import ResponseValidator
 
-from .openapi_aiohttp_reponse import AiohttpOpenAPIResponseFactory
+from .openapi_aiohttp_response import AiohttpOpenAPIResponseFactory
 from .openapi_aiohttp_request import AiohttpOpenAPIRequestFactory
 from .rest_oas import OpenApiSpec, get_specs
 from .rest_responses import create_error_response
