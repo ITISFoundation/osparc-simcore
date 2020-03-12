@@ -11,7 +11,7 @@ from servicelib.rest_middlewares import (
 )
 from servicelib.rest_responses import is_enveloped, unwrap_envelope
 from servicelib.rest_routing import create_routes_from_namespace
-from tutils import Handlers
+from fake_handlers import Handlers
 
 
 @pytest.fixture
