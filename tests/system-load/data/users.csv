@@ -1,2 +1,0 @@
-id,name,email,password_hash,status,role,created_at,created_ip
-1,test,test@test.com,$5$rounds=1000$hz2IU23TTu5P9d4o$gtDerxvvx12U8nDOxFbYOaGtheNr/WnzDl3XN7BKHWC,ACTIVE,USER,2020-02-21 15:59:15.413612,127.0.0.1

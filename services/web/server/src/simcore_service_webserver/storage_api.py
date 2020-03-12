@@ -70,9 +70,6 @@ async def delete_data_folders_of_project(app, project_id, user_id):
     )
 
     await _delete(session, url)
-    # asyncio.ensure_future(_delete(session, url))
-    # loop = asyncio.get_event_loop()
-    # loop.run_until_complete(_delete(session, url))
 
 
 async def delete_data_folders_of_project_node(

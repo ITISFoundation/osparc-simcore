@@ -9,15 +9,13 @@ from uuid import uuid4
 
 import faker
 import pytest
+import sqlalchemy as sa
 from aiopg.sa.result import ResultProxy, RowProxy
 
 from simcore_postgres_database.models.base import metadata
-from simcore_postgres_database.webserver_models import (
-    UserStatus,
-    projects,
-    user_to_projects,
-    users,
-)
+from simcore_postgres_database.webserver_models import (UserStatus, projects,
+                                                        user_to_projects,
+                                                        users)
 
 fake = faker.Faker()
 
@@ -77,6 +75,23 @@ def engine(make_engine, loop):
         return engine
 
     return loop.run_until_complete(start())
+
+
+
+async def test_count_users(engine):
+    async with engine.acquire() as conn:
+        users_count = await conn.scalar(users.count())
+        assert users_count == 3
+
+        users_count = await conn.scalar(
+            sa.select([sa.func.count()]).where(users.c.name == "A")
+        )
+        assert users_count == 1
+
+        users_count = await conn.scalar(
+            sa.select([sa.func.count()]).where(users.c.name == "UNKNOWN NAME")
+        )
+        assert users_count == 0
 
 
 @pytest.mark.skip(reason="UNDER DEV")
