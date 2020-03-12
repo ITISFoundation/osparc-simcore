@@ -13,7 +13,7 @@ from sqlalchemy.sql import select
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
-from .projects import projects_api
+from .projects import projects_api, projects_exceptions
 from .projects.projects_models import projects, user_to_projects
 from .socketio.events import post_messages
 
@@ -87,9 +87,15 @@ async def listen(app: web.Application):
             )
             async for row in conn.execute(query):
                 user_id = row["user_id"]
-                node_data = await projects_api.update_project_node_outputs(
-                    app, user_id, project_id, node_id, data=task_output
-                )
+                try:
+                    node_data = await projects_api.update_project_node_outputs(
+                        app, user_id, project_id, node_id, data=task_output
+                    )
+                except projects_exceptions.ProjectNotFoundError:
+                    log.exception("Project %s not found", project_id)
+                except projects_exceptions.NodeNotFoundError:
+                    log.exception("Node %s ib project %s not found", node_id, project_id)
+                    
                 messages = {"nodeUpdated": {"Node": node_id, "Data": node_data}}
                 await post_messages(app, user_id, messages)
 

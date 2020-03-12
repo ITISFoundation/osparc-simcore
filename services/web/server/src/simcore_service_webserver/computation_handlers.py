@@ -15,6 +15,7 @@ from .computation_api import update_pipeline_db
 from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
 from .login.decorators import login_required
 from .projects.projects_api import get_project_for_user
+from .projects.projects_exceptions import ProjectNotFoundError
 from .security_api import check_permission
 
 log = logging.getLogger(__file__)
@@ -51,8 +52,12 @@ async def update_pipeline(request: web.Request) -> web.Response:
 
     user_id, project_id = await _process_request(request)
 
-    project = await get_project_for_user(request.app, project_id, user_id)
-    await update_pipeline_db(request.app, project_id, project["workbench"])
+    try:
+        project = await get_project_for_user(request.app, project_id, user_id)
+        await update_pipeline_db(request.app, project_id, project["workbench"])
+    except ProjectNotFoundError:
+        raise web.HTTPNotFound(reason=f"Project {project_id} not found")
+    
 
     raise web.HTTPNoContent()
 
@@ -67,8 +72,11 @@ async def start_pipeline(request: web.Request) -> web.Response:
 
     user_id, project_id = await _process_request(request)
 
-    project = await get_project_for_user(request.app, project_id, user_id)
-    await update_pipeline_db(request.app, project_id, project["workbench"])
+    try:
+        project = await get_project_for_user(request.app, project_id, user_id)
+        await update_pipeline_db(request.app, project_id, project["workbench"])
+    except ProjectNotFoundError:
+        raise web.HTTPNotFound(reason=f"Project {project_id} not found")
 
     # commit the tasks to celery
     _ = get_celery(request.app).send_task(
