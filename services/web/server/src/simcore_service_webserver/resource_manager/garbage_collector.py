@@ -12,6 +12,7 @@ import logging
 from aiohttp import web
 
 from servicelib.observer import emit
+from servicelib.utils import logged_gather
 
 from .config import APP_GARBAGE_COLLECTOR_KEY, get_garbage_collector_interval
 from .registry import RedisResourceRegistry, get_registry
@@ -53,7 +54,8 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
                     logger.debug(
                         "removing resource entry: %s: %s", other_keys, resources
                     )
-                    await asyncio.gather(*remove_tasks)
+                    await logged_gather(*remove_tasks, reraise=False)
+
                 logger.debug(
                     "the resources %s:%s of %s may be now safely closed",
                     resource_name,
