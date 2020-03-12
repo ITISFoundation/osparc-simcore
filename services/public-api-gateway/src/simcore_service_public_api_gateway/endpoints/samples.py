@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from .. import db
-from ..crud import crud_samples as crud
+from ..store import crud_samples as crud
 from ..schemas import schemas_samples as schemas
 
 
