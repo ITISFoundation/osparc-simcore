@@ -185,15 +185,6 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
     _applyTags: function(tags) {
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         const tagsContainer = this.getChildControl("tags");
-        if (tags.length) {
-          tagsContainer.show();
-          this.getChildControl("creator").exclude();
-          this.getChildControl("lastChangeDate").exclude();
-        } else {
-          tagsContainer.exclude();
-          this.getChildControl("creator").show();
-          this.getChildControl("lastChangeDate").show();
-        }
         tagsContainer.removeAll();
         tags.forEach(tag => tagsContainer.add(new osparc.ui.basic.Tag(tag.name, tag.color, "studyBrowser")));
       }
