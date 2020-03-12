@@ -17,7 +17,7 @@ install() {
     # configure simcore for testing with a private registry
     bash tests/e2e/setup_env_insecure_registry
     # start simcore
-    make up-version
+    export LOG_LEVEL=INFO; make up-version
 
     echo "-------------- installing test framework..."
     # create a python venv and activate
