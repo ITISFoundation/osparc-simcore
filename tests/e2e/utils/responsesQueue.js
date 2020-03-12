@@ -61,8 +61,11 @@ class ResponsesQueue {
     if (sleptFor >= timeout) {
       throw("-- Timeout reached." + new Date().toUTCString());
     }
+    else if (this.__respReceivedQueue[url]["error"] !== null) {
+      throw("-- Error in response", this.__respReceivedQueue[url]["error"]);
+    }
     else {
-      return this.__respReceivedQueue[url];
+      return this.__respReceivedQueue[url]["data"];
     }
   }
 }
