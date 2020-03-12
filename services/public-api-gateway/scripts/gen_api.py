@@ -1,3 +1,8 @@
+#
+#
+# TODO: create tests based in the openapi-specs ??
+# TODO: create client from openapi-specs
+#
 import sys
 from pathlib import Path
 from typing import Set
