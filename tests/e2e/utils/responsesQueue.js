@@ -12,10 +12,8 @@ class ResponsesQueue {
     const page = this.__page;
     const reqQueue = this.__reqQueue;
     const respPendingQueue = this.__respPendingQueue;
-    const respReceivedQueue = this.__respReceivedQueue;
     reqQueue.push(url);
     respPendingQueue.push(url);
-    respReceivedQueue[url] = null;
     console.log("-- Expected response added to queue", url);
     page.on("request", function callback(req) {
       if (req.url().includes(url)) {
@@ -27,17 +25,18 @@ class ResponsesQueue {
         }
       }
     });
+    const that = this;
     page.on("response", function callback(resp) {
       if (resp.url().includes(url)) {
         console.log((new Date).toUTCString(), "-- Queued response received", resp.url(), ":");
         resp.json().then(data => {
-          respReceivedQueue[url] = data;
+          that.__respReceivedQueue[url] = data;
+          page.removeListener("response", callback);
+          const index = respPendingQueue.indexOf(url);
+          if (index > -1) {
+            respPendingQueue.splice(index, 1);
+          }
         });
-        page.removeListener("response", callback);
-        const index = respPendingQueue.indexOf(url);
-        if (index > -1) {
-          respPendingQueue.splice(index, 1);
-        }
       }
     });
   }
@@ -61,12 +60,15 @@ class ResponsesQueue {
     if (sleptFor >= timeout) {
       throw("-- Timeout reached." + new Date().toUTCString());
     }
-    else {
+    // console.log("waitUntilResponse", url);
+    // console.log(Object.keys(this.__respReceivedQueue));
+    if (Object.prototype.hasOwnProperty.call(this.__respReceivedQueue, url)) {
       const resp = this.__respReceivedQueue[url];
-      if ("error" in resp && resp["error"] !== null) {
+      if (resp && "error" in resp && resp["error"] !== null) {
         throw("-- Error in response", resp["error"]);
       }
-      return resp["data"];
+      delete this.__respReceivedQueue[url];
+      return resp;
     }
   }
 }

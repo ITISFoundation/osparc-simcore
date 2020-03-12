@@ -59,8 +59,9 @@ class TutorialBase {
     this.__responsesQueue.addResponseListener("services");
     await auto.logIn(this.__page, this.__user, this.__pass);
     try {
-      const templates = await this.__responsesQueue.waitUntilResponse("projects?type=template");
-      console.log("templates resp (", templates.length, "):");
+      const resp = await this.__responsesQueue.waitUntilResponse("projects?type=template");
+      const templates = resp["data"];
+      console.log("Templates received", templates.length);
       templates.forEach(template => {
         console.log(" - ", template.name);
       });
@@ -69,8 +70,9 @@ class TutorialBase {
       console.error("Templates could not be fetched", err);
     }
     try {
-      const dags = await this.__responsesQueue.waitUntilResponse("catalog/dags");
-      console.log("dags resp (", dags.length, "):");
+      const resp = await this.__responsesQueue.waitUntilResponse("catalog/dags");
+      const dags = resp["data"];
+      console.log("DAGs received:", dags.length);
       dags.forEach(dag => {
         console.log(" - ", dag.name);
       });
@@ -79,11 +81,9 @@ class TutorialBase {
       console.error("DAGs could not be fetched", err);
     }
     try {
-      const services = await this.__responsesQueue.waitUntilResponse("services");
-      console.log("services resp (", services.length, "):");
-      services.forEach(service => {
-        console.log(" - ", service.name);
-      });
+      const resp = await this.__responsesQueue.waitUntilResponse("services");
+      const services = resp["data"];
+      console.log("Services received:", services.length);
     }
     catch(err) {
       console.error("Services could not be fetched", err);
