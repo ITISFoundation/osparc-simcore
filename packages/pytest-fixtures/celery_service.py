@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 from copy import deepcopy
+from typing import Dict
 
 import celery
 import celery.bin.base
@@ -11,6 +12,19 @@ import celery.platforms
 import pytest
 import tenacity
 
+from utils_docker import get_service_published_port
+
+
+@pytest.fixture(scope="module")
+def celery_config(docker_stack: Dict, devel_environ: Dict) -> Dict:
+    assert "simcore_rabbit" in docker_stack["services"]
+
+    config = {
+        "host": "127.0.0.1",
+        "port": get_service_published_port("rabbit", devel_environ["RABBIT_PORT"]),
+        "user": devel_environ["RABBIT_USER"],
+        "password": devel_environ["RABBIT_PASSWORD"],
+    }
 
 @pytest.fixture(scope="module")
 def celery_service(_webserver_dev_config, docker_stack):
