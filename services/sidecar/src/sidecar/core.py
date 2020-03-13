@@ -26,6 +26,7 @@ from .utils import (DbSettings, DockerSettings, ExecutorSettings,
                     RabbitSettings, S3Settings,
                     find_entry_point, is_node_ready, safe_channel
                     )
+from servicelib.utils import logged_gather
 
 log = get_task_logger(__name__)
 log.setLevel(config.SIDECAR_LOGLEVEL)
@@ -122,11 +123,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
 
         input_ports = dict()
         PORTS = await self._get_node_ports()
-        await asyncio.gather(
-            *[self._process_task_input(port, input_ports)
-              for port in PORTS.inputs],
-            return_exceptions=True
-        )
+        await logged_gather(*[self._process_task_input(port, input_ports) for port in PORTS.inputs])
 
         log.debug('DUMPING json')
         if input_ports:
@@ -330,7 +327,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
         log.debug('Pre-Processing Pipeline %s:node %s:internal id %s from container',
                   self._task.project_id, self._task.node_id, self._task.internal_id)
         await self._create_shared_folders()
-        await asyncio.gather(self._process_task_inputs(),
+        await logged_gather(self._process_task_inputs(),
                              self._pull_image())
         log.debug('Pre-Processing Pipeline DONE %s:node %s:internal id %s from container',
                   self._task.project_id, self._task.node_id, self._task.internal_id)
