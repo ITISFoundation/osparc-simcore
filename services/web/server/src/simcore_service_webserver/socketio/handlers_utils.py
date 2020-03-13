@@ -42,7 +42,7 @@ def register_handlers(app: web.Application, module: ModuleType):
     ]
     # convert handler
     partial_fcts = [
-        socket_io_handler(app)(func_handler) for _, func_handler in member_fcts
+        socket_io_handler(app)(func_handler) for func_handler in member_fcts
     ]
     app[APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY] = partial_fcts
     # register the fcts
