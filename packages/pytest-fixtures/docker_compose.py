@@ -19,7 +19,7 @@ from typing import Dict, List
 
 import pytest
 import yaml
-from .helpers.utils_docker import run_docker_compose_config
+from utils_docker import run_docker_compose_config
 
 
 @pytest.fixture("session")
