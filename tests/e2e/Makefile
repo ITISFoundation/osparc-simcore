@@ -25,13 +25,15 @@ install: ## install testing framework
 	# install puppeteer
 	@npm install
 	@pip install -r requirements/requirements.txt
-	@pip install $(abspath $(CURDIR)/../../packages/postgres-database)[migration]
+	@pushd $(abspath $(CURDIR)/../../packages/postgres-database)
+	@pip install -r requirements/prod.txt
+	@popd
 
 
 .PHONY: pg-db-tables
 pg-db-tables: ## inits pg database tables
 	# Initializing tables
-	sc-pg discover
+	sc-pg discover -u scu -p adminadmin -d simcoredb
 	sc-pg upgrade
 	sc-pg clean
 
