@@ -9,6 +9,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_INIT_TABLES=${POSTGRES_INIT_TABLES:-0}
       - TESTING=false
       - LOGLEVEL=${LOG_LEVEL:-WARNING}
     depends_on:
