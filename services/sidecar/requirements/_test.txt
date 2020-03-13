@@ -21,19 +21,19 @@ docopt==0.6.2             # via coveralls
 idna==2.8                 # via -r _base.txt, requests
 importlib-metadata==1.5.0  # via pluggy, pytest
 isort==4.3.21             # via pylint
-kombu==4.5.0              # via -r _base.txt, celery
+kombu==4.5.0
 lazy-object-proxy==1.4.3  # via astroid
 mccabe==0.6.1             # via pylint
-minio==4.0.16             # via -r _base.txt
+minio==4.0.16
 more-itertools==8.2.0     # via pytest
 networkx==2.3             # via -r _base.txt
 packaging==20.3           # via pytest, pytest-sugar
 pika==1.0.1               # via -r _base.txt
 pluggy==0.13.1            # via pytest
-psycopg2-binary==2.8.4    # via -r _base.txt, aiopg
-ptvsd==4.3.2              # via -r _test.in
+psycopg2-binary==2.8.4
+ptvsd==4.3.2
 py==1.8.1                 # via pytest
-pylint==2.4.4             # via -r _test.in
+pylint==2.4.4
 pyparsing==2.4.6          # via packaging
 pytest-cov==2.8.1         # via -r _test.in
 pytest-docker==0.7.2      # via -r _test.in
@@ -52,7 +52,7 @@ typed-ast==1.4.1          # via astroid
 urllib3==1.25.8           # via -r _base.txt, minio, requests
 vine==1.3.0               # via -r _base.txt, amqp, celery
 wcwidth==0.1.8            # via pytest
-websocket-client==0.56.0  # via -r _base.txt, docker
+websocket-client==0.56.0
 wrapt==1.11.2             # via astroid
-yarl==1.4.2               # via -r _base.txt, aio-pika, aiohttp, aiormq
+yarl==1.4.2
 zipp==3.1.0               # via importlib-metadata
