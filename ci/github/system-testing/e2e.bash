@@ -19,7 +19,7 @@ install() {
     bash tests/e2e/scripts/setup_env_insecure_registry.bash
 
     # start simcore and set log-level to debug
-    export LOG_LEVEL=DEBUG; make up-version
+    export LOG_LEVEL=INFO; make up-version
 
     echo "-------------- installing test framework..."
     # create a python venv and activate
