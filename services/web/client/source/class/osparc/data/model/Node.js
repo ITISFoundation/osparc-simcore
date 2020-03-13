@@ -917,7 +917,6 @@ qx.Class.define("osparc.data.model.Node", {
     },
     __onNodeState: function(data) {
       const serviceState = data["service_state"];
-      console.log("__onNodeState", serviceState);
       switch (serviceState) {
         case "starting":
         case "pulling": {
