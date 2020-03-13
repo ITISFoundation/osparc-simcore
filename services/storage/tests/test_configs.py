@@ -58,7 +58,10 @@ def container_environ(
 
     container_environ = create_environ(skip_system_environ=True)
     container_environ.update(
-        {"OSPARC_SIMCORE_REPO_ROOTDIR": str(osparc_simcore_root_dir)}
+        {
+            "OSPARC_SIMCORE_REPO_ROOTDIR": str(osparc_simcore_root_dir),
+            "LOG_LEVEL": "DEBUG",
+        }
     )
 
     environ_items = dc["services"][THIS_SERVICE].get("environment", list())
