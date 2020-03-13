@@ -11,14 +11,15 @@ import logging
 from typing import Dict, List, Optional
 
 from aiohttp import web
-from socketio.exceptions import ConnectionRefusedError as socket_io_connection_error
 
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
+from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
 
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from .config import get_socket_server
+from .handlers_utils import register_socketio_handler
 
 ANONYMOUS_USER_ID = -1
 _SOCKET_IO_AIOHTTP_REQUEST_KEY = "aiohttp.request"
@@ -26,6 +27,7 @@ _SOCKET_IO_AIOHTTP_REQUEST_KEY = "aiohttp.request"
 log = logging.getLogger(__file__)
 
 
+@register_socketio_handler
 async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
     """socketio reserved handler for when the fontend connects through socket.io
 
@@ -42,7 +44,10 @@ async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
     try:
         await authenticate_user(sid, app, request)
     except web.HTTPUnauthorized:
-        raise socket_io_connection_error("authentification failed")
+        raise SocketIOConnectionError("authentification failed")
+    except Exception as exc: # pylint: disable=broad-except
+        raise SocketIOConnectionError(f"Unexpected error: {exc}")
+
 
     return True
 
@@ -107,6 +112,7 @@ async def user_logged_out(
             fire_and_forget_task(disconnect_other_sockets(sio, sockets))
 
 
+@register_socketio_handler
 async def disconnect(sid: str, app: web.Application) -> None:
     """socketio reserved handler for when the socket.io connection is disconnected.
 
