@@ -115,7 +115,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__prjStack.add(this.__studyEditor);
       this.__prjStack.setSelection([this.__studyEditor]);
       this.__navBar.setStudy(study);
-      this.__navBar.setPathButtons(study.getWorkbench().getPathIds(study.getUuid()));
+      this.__navBar.setPathButtons(this.__studyEditor.getCurrentPathIds());
 
       this.__studyEditor.addListener("changeMainViewCaption", ev => {
         const elements = ev.getData();

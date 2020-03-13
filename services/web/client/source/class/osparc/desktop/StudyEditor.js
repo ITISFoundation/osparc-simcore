@@ -348,6 +348,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.fireDataEvent("changeMainViewCaption", nodesPath);
     },
 
+    getCurrentPathIds: function() {
+      const nodesPath = this.getStudy().getWorkbench().getPathIds(this.__currentNodeId);
+      return nodesPath;
+    },
+
     getLogger: function() {
       return this.__loggerView;
     },
