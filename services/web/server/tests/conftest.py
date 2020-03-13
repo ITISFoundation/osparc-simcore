@@ -24,7 +24,7 @@ logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 
 # TODO: this should be done as a real pytest plugin instead
 sys.path.append(str(current_dir / '../../../../packages'))
-sys.path.append(str(current_dir / '../../../../packages/helpers'))
+sys.path.append(str(current_dir / '../../../../packages/pytest-fixtures/helpers'))
 
 @pytest.fixture(scope="session")
 def package_dir() -> Path:
