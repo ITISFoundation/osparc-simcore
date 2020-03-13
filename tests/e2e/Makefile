@@ -20,14 +20,14 @@ else
 	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 endif
 
+
 .PHONY: install
 install: ## install testing framework
 	# install puppeteer
 	@npm install
 	@pip install -r requirements/requirements.txt
-	@pushd $(abspath $(CURDIR)/../../packages/postgres-database)
-	@pip install -r requirements/prod.txt
-	@popd
+	# installing postgres-db
+	@pushd "$(abspath $(CURDIR)/../../packages/postgres-database)"; pip install -r requirements/prod.txt; popd
 
 
 .PHONY: pg-db-tables
