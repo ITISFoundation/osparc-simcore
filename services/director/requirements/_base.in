@@ -1,6 +1,7 @@
 #
 # Specifies third-party dependencies for 'director'
 #
+urllib3>=1.25.8     # Vulnerability
 pyyaml>=5.3         # Vulnerable
 
 aiohttp
