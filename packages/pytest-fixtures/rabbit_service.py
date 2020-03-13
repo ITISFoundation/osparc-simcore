@@ -34,7 +34,7 @@ async def rabbit_service(rabbit_config: Dict, docker_stack: Dict) -> str:
     yield url
 
 
-@tenacity.retry(**RabbitMQRetryPolicyUponInitialization.kwargs)
+@tenacity.retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
 async def wait_till_rabbit_responsive(url: str):
     await aio_pika.connect(url)
     return True
