@@ -8,6 +8,7 @@ sys.path.append(str(current_dir / "../../../../packages"))
 print(sys.path)
 # imports the fixtures for the integration tests
 pytest_plugins = [
+    "pytest-fixtures.environs",
     "pytest-fixtures.docker_compose",
     "pytest-fixtures.docker_swarm",
     "pytest-fixtures.docker_registry",
