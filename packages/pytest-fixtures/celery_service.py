@@ -25,21 +25,17 @@ def celery_config(docker_stack: Dict, devel_environ: Dict) -> Dict:
         "user": devel_environ["RABBIT_USER"],
         "password": devel_environ["RABBIT_PASSWORD"],
     }
+    yield config
 
 @pytest.fixture(scope="module")
-def celery_service(_webserver_dev_config, docker_stack):
-    cfg = deepcopy(_webserver_dev_config["rabbit"])
-    host = cfg["host"]
-    port = cfg["port"]
-    user = cfg["user"]
-    password = cfg["password"]
-    url = "amqp://{}:{}@{}:{}".format(user, password, host, port)
+def celery_service(celery_config: Dict, docker_stack: Dict) -> str:
+    url = "amqp://{user}:{password}@{host}:{port}".format(**celery_config)
     wait_till_celery_responsive(url)
     yield url
 
 
 @tenacity.retry(wait=tenacity.wait_fixed(0.1), stop=tenacity.stop_after_delay(60))
-def wait_till_celery_responsive(url):
+def wait_till_celery_responsive(url: str) -> None:
     app = celery.Celery("tasks", broker=url)
 
     status = celery.bin.celery.CeleryCommand.commands["status"]()
