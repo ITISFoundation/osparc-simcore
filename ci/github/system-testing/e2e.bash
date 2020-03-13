@@ -55,6 +55,9 @@ recover_artifacts() {
     (docker service logs --timestamps simcore_storage > simcore_logs/storage.log) || true
     (docker service logs --timestamps simcore_sidecar > simcore_logs/sidecar.log) || true
     (docker service logs --timestamps simcore_catalog > simcore_logs/catalog.log) || true
+
+    # stack config
+    (cp .stack-simcore-version.yml simcore_logs/) || true
 }
 
 clean_up() {
