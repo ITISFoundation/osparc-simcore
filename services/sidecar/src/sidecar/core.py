@@ -230,7 +230,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
             time_logs_sent = time.monotonic()
             file_path = Path(log_file)
             with file_path.open() as fp:
-                for line in _follow(fp):
+                for line in await _follow(fp):
                     if not self._executor.run_pool:
                         break
                     await _parse_progress(line)
