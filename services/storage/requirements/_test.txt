@@ -53,7 +53,7 @@ pandas==0.24.2            # via -r _base.txt, blackfynn
 pluggy==0.13.1            # via pytest
 prometheus-client==0.7.1  # via -r _base.txt
 protobuf==3.2.0           # via -r _base.txt, blackfynn
-psutil==5.6.2             # via -r _base.txt, blackfynn
+psutil==5.7.0             # via -r _base.txt, blackfynn
 psycopg2-binary==2.8.4    # via -r _base.txt, aiopg, sqlalchemy
 ptvsd==4.3.2              # via -r _test.in
 py==1.8.1                 # via pytest

@@ -41,7 +41,7 @@ openapi-spec-validator==0.2.8  # via openapi-core
 pandas==0.24.2            # via -r python-with-pandas_89f709.txt, blackfynn
 prometheus-client==0.7.1  # via -r ../../../packages/service-library/requirements/_base.in
 protobuf==3.2.0           # via blackfynn
-psutil==5.6.2             # via blackfynn
+psutil==5.7.0             # via -r _base.in, blackfynn
 psycopg2-binary==2.8.4    # via -r ../../../packages/service-library/requirements/_base.in, -r _base.in, aiopg, sqlalchemy
 pyrsistent==0.15.6        # via jsonschema
 python-dateutil==2.8.0    # via -r python-with-pandas_89f709.txt, botocore, pandas
