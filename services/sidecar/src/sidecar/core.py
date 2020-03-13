@@ -68,10 +68,10 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
         self._task = None
 
         # current user id
-        self._user_id = None
+        self._user_id: str = None
 
         # stack name
-        self._stack_name = None
+        self._stack_name: str = None
 
         # executor options
         self._executor = ExecutorSettings()
@@ -84,17 +84,16 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
 
     async def _create_shared_folders(self):
         for folder in [self._executor.in_dir, self._executor.log_dir, self._executor.out_dir]:
-            if not os.path.exists(folder):
-                os.makedirs(folder)
-            else:
-                delete_contents(folder)
+            if folder.exists():
+                shutil.rmtree(folder)
+            folder.mkdir(parents=True, exist_ok=True)
 
     async def _process_task_input(self, port: node_ports.Port, input_ports: Dict):
         # pylint: disable=too-many-branches
         port_name = port.key
-        port_value = wrap_async_call(port.get())
-        log.debug("PROCESSING %s %s", port_name, port_value)
-        log.debug(type(port_value))
+        port_value = await port.get()
+        log.debug("PROCESSING %s %s:%s", port_name,
+                  type(port_value), port_value)
         if str(port.type).startswith("data:"):
             path = port_value
             if not path is None:
@@ -123,18 +122,18 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                   self._task.project_id, self._task.internal_id)
 
         input_ports = dict()
-        PORTS = self._get_node_ports()
-        for port in PORTS.inputs:
-            log.debug(port)
-            self._process_task_input(port, input_ports)
+        PORTS = await self._get_node_ports()
+        await asyncio.gather(
+            *[self._process_task_input(port, input_ports)
+              for port in PORTS.inputs],
+            return_exceptions=True
+        )
 
         log.debug('DUMPING json')
-        # dump json file
         if input_ports:
-            file_name = os.path.join(self._executor.in_dir, 'input.json')
-            with open(file_name, 'w') as f:
-                json.dump(input_ports, f)
-
+            file_name = self._executor.in_dir / 'input.json'
+            with file_name.open('w') as fp:
+                json.dump(input_ports, fp)
         log.debug('DUMPING DONE')
 
     async def _pull_image(self):
@@ -186,7 +185,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                   self._task.project_id, self._task.node_id, self._task.internal_id)
         with safe_channel(self._pika) as (channel, blocking_connection):
 
-            def _follow(thefile):
+            async def _follow(thefile):
                 thefile.seek(0, 2)
                 while self._executor.run_pool:
                     line = thefile.readline()
@@ -196,31 +195,31 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                         continue
                     yield line
 
-            def _parse_progress(line: str):
+            async def _parse_progress(line: str):
                 # TODO: This should be 'settings', a regex for every service
                 if line.lower().startswith("[progress]"):
                     progress = line.lower().lstrip(
                         "[progress]").rstrip("%").strip()
-                    self._post_progress(channel, progress)
+                    await self._post_progress(channel, progress)
                     log.debug('PROGRESS %s', progress)
                 elif "percent done" in line.lower():
                     progress = line.lower().rstrip("percent done")
                     try:
                         float_progress = float(progress) / 100.0
                         progress = str(float_progress)
-                        self._post_progress(channel, progress)
+                        await self._post_progress(channel, progress)
                         log.debug('PROGRESS %s', progress)
                     except ValueError:
                         log.exception("Could not extract progress from solver")
-                        self._post_log(channel, line)
+                        await self._post_log(channel, line)
 
-            def _log_accumulated_logs(new_log: str, acc_logs: List[str], time_logs_sent: float):
+            async def _log_accumulated_logs(new_log: str, acc_logs: List[str], time_logs_sent: float):
                 # do not overload broker with messages, we log once every 1sec
                 TIME_BETWEEN_LOGS_S = 2.0
                 acc_logs.append(new_log)
                 now = time.monotonic()
                 if (now - time_logs_sent) > TIME_BETWEEN_LOGS_S:
-                    self._post_log(channel, acc_logs)
+                    await self._post_log(channel, acc_logs)
                     log.debug('LOG %s', acc_logs)
                     # empty the logs
                     acc_logs = []
@@ -234,17 +233,17 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                 for line in _follow(fp):
                     if not self._executor.run_pool:
                         break
-                    _parse_progress(line)
+                    await _parse_progress(line)
                     acc_logs, time_logs_sent = _log_accumulated_logs(
                         line, acc_logs, time_logs_sent)
             if acc_logs:
                 # send the remaining logs
-                self._post_log(channel, acc_logs)
+                await self._post_log(channel, acc_logs)
                 log.debug('LOG %s', acc_logs)
 
             # set progress to 1.0 at the end, ignore failures
             progress = "1.0"
-            self._post_progress(channel, progress)
+            await self._post_progress(channel, progress)
             log.debug('Bck job completed %s:node %s:internal id %s from container',
                       self._task.project_id, self._task.node_id, self._task.internal_id)
 
@@ -261,31 +260,28 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
         """
         log.debug('Processing task outputs %s:node %s:internal id %s from container',
                   self._task.project_id, self._task.node_id, self._task.internal_id)
-        PORTS = self._get_node_ports()
+        PORTS = await self._get_node_ports()
         directory = self._executor.out_dir
-        if not os.path.exists(directory):
+        if not directory.exists():
             return
         try:
-            for root, _dirs, files in os.walk(directory):
-                for name in files:
-                    filepath = os.path.join(root, name)
-                    # the name should match what is in the db!
-                    if name == 'output.json':
-                        log.debug("POSTRO FOUND output.json")
+            for file_path in directory.rglob("*.*"):
+                if file_path.name == "output.json":
+                    log.debug("POSTRO FOUND output.json")
                         # parse and compare/update with the tasks output ports from db
-                        output_ports = dict()
-                        with open(filepath) as f:
-                            output_ports = json.load(f)
-                            task_outputs = PORTS.outputs
-                            for to in task_outputs:
-                                if to.key in output_ports.keys():
-                                    wrap_async_call(
-                                        to.set(output_ports[to.key]))
-                    else:
-                        wrap_async_call(
-                            PORTS.set_file_by_keymap(Path(filepath)))
-
-        except (OSError, IOError) as _e:
+                    with file_path.open() as fp:
+                        output_ports = json.load(fp)
+                        task_outputs = PORTS.outputs
+                        for port in task_outputs:
+                            if port.key in output_ports.keys():
+                                await port.set(output_ports[port.key])
+                else:
+                    await PORTS.set_file_by_keymap(file_path)
+        except json.JSONDecodeError:
+            logging.exception("Error occured while decoding output.json")
+        except node_ports.exceptions.NodeportsException:
+            logging.exception("Error occured while setting port")
+        except (OSError, IOError):
             logging.exception("Could not process output")
         log.debug('Processing task outputs DONE %s:node %s:internal id %s from container',
                   self._task.project_id, self._task.node_id, self._task.internal_id)
