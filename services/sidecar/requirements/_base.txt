@@ -4,9 +4,10 @@
 #
 #    pip-compile --output-file=_base.txt _base.in
 #
+aio-pika==6.5.3           # via -r _base.in
 aiodocker==0.17.0         # via -r _base.in
 aiohttp==3.6.2            # via aiodocker
-aiopika==0.1.1            # via -r _base.in
+aiormq==3.2.1             # via aio-pika
 amqp==2.4.2               # via kombu
 async-timeout==3.0.1      # via aiohttp
 attrs==19.3.0             # via aiohttp
@@ -21,6 +22,7 @@ idna==2.8                 # via requests
 kombu==4.5.0              # via -r _base.in, celery
 minio==4.0.16             # via -r _base.in
 networkx==2.3             # via -r _base.in
+pamqp==2.3.0              # via aiormq
 pika==1.0.1               # via -r _base.in
 psycopg2-binary==2.8.4    # via -r _base.in
 python-dateutil==2.8.0    # via minio
@@ -32,4 +34,4 @@ tenacity==6.0.0           # via -r _base.in
 urllib3==1.25.8           # via -r _base.in, minio, requests
 vine==1.3.0               # via amqp, celery
 websocket-client==0.56.0  # via docker
-yarl==1.4.2               # via aiohttp
+yarl==1.4.2               # via aio-pika, aiohttp, aiormq
