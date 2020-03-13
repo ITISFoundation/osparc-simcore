@@ -14,6 +14,7 @@
 ../../packages/s3wrapper/
 ../../packages/postgres-database/
 ../../packages/simcore-sdk/
+../../packages/service-library/
 
 # installs current package
 .

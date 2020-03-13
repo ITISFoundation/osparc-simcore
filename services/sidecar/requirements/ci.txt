@@ -13,6 +13,7 @@
 ../../services/storage/client-sdk/python/
 ../../packages/s3wrapper/
 ../../packages/simcore-sdk/
+../../packages/service-library/
 
 # installs current package
 .
