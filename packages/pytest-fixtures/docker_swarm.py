@@ -8,6 +8,7 @@ import os
 import subprocess
 import time
 from pathlib import Path
+from typing import Dict
 
 import docker
 import pytest
@@ -39,7 +40,7 @@ def docker_stack(
     docker_client,
     core_services_config_file: Path,
     ops_services_config_file: Path,
-):
+) -> Dict:
     stacks = {"simcore": core_services_config_file, "ops": ops_services_config_file}
 
     # make up-version
