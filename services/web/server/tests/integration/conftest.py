@@ -32,7 +32,6 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 # TODO: this should be done as a real pytest plugin instead
 sys.path.append(str(current_dir / '../../../../../packages'))
-print(sys.path)
 # imports the fixtures for the integration tests
 pytest_plugins = [
     "pytest-fixtures.docker_compose",
