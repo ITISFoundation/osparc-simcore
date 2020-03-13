@@ -8,7 +8,6 @@
 # testing
 coverage==4.5.1 # TODO: Downgraded because of a bug https://github.com/nedbat/coveragepy/issues/716
 pytest~=5.3.5  # Bug in pytest-sugar https://github.com/Teemu/pytest-sugar/issues/187
-pytest-docker
 pytest-cov
 pytest-instafail
 pytest-mock
