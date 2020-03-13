@@ -6,15 +6,17 @@
 
 from copy import deepcopy
 
-import aioredis
 import pytest
 import tenacity
 from yarl import URL
 
+import aioredis
+from servicelib.redis_utils import RedisRetryPolicyUponInitialization
 from utils_docker import get_service_published_port
 
+
 @pytest.fixture(scope="module")
-def redis_config(docker_stack: Dict, devel_environ: Dict) -> Dict[str,str]:
+def redis_config(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
     assert "simcore_redis" in docker_stack["services"]
 
     config = {
@@ -23,8 +25,9 @@ def redis_config(docker_stack: Dict, devel_environ: Dict) -> Dict[str,str]:
     }
     yield config
 
+
 @pytest.fixture(scope="module")
-async def redis_service(redis_config: Dict[str,str], docker_stack: Dict) -> URL:
+async def redis_service(redis_config: Dict[str, str], docker_stack: Dict) -> URL:
     url = URL("redis://{host}:{port}".format(**redis_config))
 
     assert await wait_till_redis_responsive(url)
@@ -32,7 +35,7 @@ async def redis_service(redis_config: Dict[str,str], docker_stack: Dict) -> URL:
     yield url
 
 
-@tenacity.retry(wait=tenacity.wait_fixed(0.1), stop=tenacity.stop_after_delay(60))
+@tenacity.retry(**RedisRetryPolicyUponInitialization.kwargs)
 async def wait_till_redis_responsive(redis_url: URL) -> bool:
     client = await aioredis.create_redis_pool(str(redis_url), encoding="utf-8")
     client.close()
