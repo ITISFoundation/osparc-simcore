@@ -35,7 +35,7 @@ async def redis_service(redis_config: Dict[str, str], docker_stack: Dict) -> URL
     yield url
 
 
-@tenacity.retry(**RedisRetryPolicyUponInitialization.kwargs)
+@tenacity.retry(**RedisRetryPolicyUponInitialization().kwargs)
 async def wait_till_redis_responsive(redis_url: URL) -> bool:
     client = await aioredis.create_redis_pool(str(redis_url), encoding="utf-8")
     client.close()
