@@ -291,34 +291,28 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
     async def _process_task_log(self):
         log.debug('Processing Logs %s:node %s:internal id %s from container',
                   self._task.project_id, self._task.node_id, self._task.internal_id)
-        directory = Path(self._executor.log_dir)
-
+        directory = self._executor.log_dir
         if directory.exists():
-            wrap_async_call(node_data.data_manager.push(
-                directory, rename_to="logs"))
+            await node_data.data_manager.push(
+                directory, rename_to="logs")
         log.debug('Processing Logs DONE %s:node %s:internal id %s from container',
                   self._task.project_id, self._task.node_id, self._task.internal_id)
 
-    async def initialize(self, task, user_id):
+    async def initialize(self, task, user_id: str):
         log.debug("TASK %s of user %s FOUND, initializing...",
                   task.internal_id, user_id)
         self._task = task
         self._user_id = user_id
-
-        HOMEDIR = str(Path.home())
 
         self._docker.image_name = self._docker.registry_name + \
             "/" + task.image['name']
         self._docker.image_tag = task.image['tag']
         self._docker.env = []
 
-        tails = dict((name, Path(name, task.job_id).as_posix())
-                     for name in ("input", "output", "log"))
-
         # volume paths for side-car container
-        self._executor.in_dir = os.path.join(HOMEDIR, tails['input'])
-        self._executor.out_dir = os.path.join(HOMEDIR, tails['output'])
-        self._executor.log_dir = os.path.join(HOMEDIR, tails['log'])
+        self._executor.in_dir = Path.home() / "input" / task.job_id
+        self._executor.out_dir = Path.home() / 'output' / task.job_id
+        self._executor.log_dir = Path.home() / 'log' / task.job_id
 
         # volume paths for car container (w/o prefix)
         self._docker.env = [
