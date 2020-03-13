@@ -11,7 +11,9 @@ import aio_pika
 import pytest
 import tenacity
 
+from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from utils_docker import get_service_published_port
+
 
 @pytest.fixture(scope="module")
 def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> Dict:
@@ -32,7 +34,7 @@ async def rabbit_service(rabbit_config: Dict, docker_stack: Dict) -> str:
     yield url
 
 
-@tenacity.retry(wait=tenacity.wait_fixed(0.1), stop=tenacity.stop_after_delay(60))
+@tenacity.retry(**RabbitMQRetryPolicyUponInitialization.kwargs)
 async def wait_till_rabbit_responsive(url: str):
     await aio_pika.connect(url)
     return True
