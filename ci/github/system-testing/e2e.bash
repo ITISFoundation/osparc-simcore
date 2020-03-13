@@ -16,7 +16,7 @@ install() {
     make info-images
 
     # configure simcore for testing with a private registry
-    bash tests/e2e/setup_env_insecure_registry
+    bash tests/e2e/scripts/setup_env_insecure_registry.bash
 
     # start simcore and set log-level to debug
     export LOG_LEVEL=DEBUG; make up-version
@@ -36,6 +36,7 @@ install() {
     echo "--------------- transfering the images to the local registry..."
     make transfer-images-to-registry
     echo "--------------- injecting templates in postgres db..."
+    make pg-db-tables
     make inject-templates-in-db
     popd
 }

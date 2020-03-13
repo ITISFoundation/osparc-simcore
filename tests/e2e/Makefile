@@ -25,6 +25,16 @@ install: ## install testing framework
 	# install puppeteer
 	@npm install
 	@pip install -r requirements/requirements.txt
+	@pip install $(abspath $(CURDIR)/../../packages/postgres-database)[migration]
+
+
+.PHONY: pg-db-tables
+pg-db-tables: ## inits pg database tables
+	# Initializing tables
+	sc-pg discover
+	sc-pg upgrade
+	sc-pg clean
+
 
 registry-up: ## deploys the insecure docker registry in the simcore network
 	docker stack deploy -c docker-compose.yml registry

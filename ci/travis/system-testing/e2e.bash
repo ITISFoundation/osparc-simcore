@@ -24,13 +24,14 @@ before_script() {
     make pull-version || ( (make pull-cache || true) && make build tag-version)
     make info-images
     # configure simcore for testing with a private registry
-    bash tests/e2e/setup_env_insecure_registry
+    bash tests/e2e/scripts/setup_env_insecure_registry.bash
     # start simcore
     make up-version
 
     echo "-------------- installing test framework..."
     # create a python venv and activate
     make .venv
+     # shellcheck disable=SC1091
     source .venv/bin/activate
     bash ci/helpers/ensure_python_pip.bash
     pushd tests/e2e;
@@ -42,6 +43,7 @@ before_script() {
     echo "--------------- transfering the images to the local registry..."
     make transfer-images-to-registry
     echo "--------------- injecting templates in postgres db..."
+    make pg-db-tables
     make inject-templates-in-db
     popd
 }
