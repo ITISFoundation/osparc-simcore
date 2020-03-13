@@ -523,6 +523,62 @@ jobs:
           name: integration_webserver_coverage
           path: codeclimate.integration_webserver_coverage.json
 
+  integration-test-sidecar:
+    name: Integration-testing sidecar
+    needs: [build-test-images]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - name: set PR default variables
+      # only pushes have access to the docker credentials, use a default
+      if: github.event_name == 'pull_request'
+      run: |
+        export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
+        echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.bash
+    - name: setup python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions.bash
+    - uses: actions/cache@v1
+      name: getting cached data
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: install
+      run: ./ci/github/integration-testing/sidecar.bash install
+    - name: test
+      run: ./ci/github/integration-testing/sidecar.bash test
+    - name: cleanup
+      if: always()
+      run: ./ci/github/integration-testing/sidecar.bash clean_up
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ env.CODECOV_TOKEN }} #required
+        flags: integrationtests #optional
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_sidecar_coverage.json coverage.xml
+    - name: upload codeclimate coverage
+      uses: actions/upload-artifact@v1
+      with:
+        name: integration_sidecar_coverage
+        path: codeclimate.integration_sidecar_coverage.json
+
   integration-test-simcore-sdk:
     name: Integration-testing simcore-sdk
     needs: [build-test-images]
@@ -691,17 +747,16 @@ jobs:
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
 
   coverage:
-    needs:
-      [
-        unit-test-api-gateway,
-        unit-test-catalog,
-        unit-test-director,
-        unit-test-service-library,
-        unit-test-simcore-sdk,
-        unit-test-storage,
-        unit-test-webserver,
-        integration-test-webserver,
-        integration-test-simcore-sdk,
+    needs: [
+      unit-test-catalog,
+      unit-test-director,
+      unit-test-service-library,
+      unit-test-simcore-sdk,
+      unit-test-storage,
+      unit-test-webserver,
+      integration-test-webserver,
+      integration-test-sidecar,
+      integration-test-simcore-sdk
       ]
     name: coverage
     runs-on: ubuntu-latest
@@ -761,23 +816,22 @@ jobs:
   deploy:
     name: deploy to dockerhub
     if: github.event_name == 'push'
-    needs:
-      [
-        unit-test-api,
-        unit-test-api-gateway,
-        unit-test-catalog,
-        unit-test-director,
-        unit-test-frontend,
-        unit-test-python-linting,
-        unit-test-service-library,
-        unit-test-simcore-sdk,
-        unit-test-storage,
-        unit-test-webserver,
-        integration-test-webserver,
-        integration-test-simcore-sdk,
-        system-test-swarm-deploy,
-        system-test-e2e,
-      ]
+    needs: [
+      unit-test-api,
+      unit-test-catalog,
+      unit-test-director,
+      unit-test-frontend,
+      unit-test-python-linting,
+      unit-test-service-library,
+      unit-test-simcore-sdk,
+      unit-test-storage,
+      unit-test-webserver,
+      integration-test-webserver,
+      integration-test-sidecar,
+      integration-test-simcore-sdk,
+      system-test-swarm-deploy,
+      system-test-e2e
+          ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1

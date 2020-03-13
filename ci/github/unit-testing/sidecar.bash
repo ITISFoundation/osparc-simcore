@@ -10,10 +10,9 @@ install() {
 }
 
 test() {
-    # TODO: call services/sidecar/tests/unit when integration tests available
     pytest --cov=simcore_service_sidecar --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-          -v -m "not travis" services/sidecar/tests
+          -v -m "not travis" services/sidecar/tests/unit
 }
 
 # Check if the function exists (bash specific)
