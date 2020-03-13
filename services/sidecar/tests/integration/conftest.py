@@ -14,7 +14,5 @@ pytest_plugins = [
     "pytest-fixtures.rabbit_service",
     "pytest-fixtures.celery_service",
     "pytest-fixtures.postgres_service",
-    "pytest-fixtures.redis_service",
-    "pytest-fixtures.websocket_client",
 ]
 log = logging.getLogger(__name__)
