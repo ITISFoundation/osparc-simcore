@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import os
 import shutil
 import time
 from contextlib import contextmanager
@@ -24,9 +23,9 @@ from simcore_sdk.node_ports.dbmanager import DBManager
 
 from . import config
 from .utils import (DbSettings, DockerSettings, ExecutorSettings,
-                    RabbitSettings, S3Settings, delete_contents,
-                    find_entry_point, is_node_ready, safe_channel,
-                    wrap_async_call)
+                    RabbitSettings, S3Settings,
+                    find_entry_point, is_node_ready, safe_channel
+                    )
 
 log = get_task_logger(__name__)
 log.setLevel(config.SIDECAR_LOGLEVEL)
@@ -268,7 +267,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
             for file_path in directory.rglob("*.*"):
                 if file_path.name == "output.json":
                     log.debug("POSTRO FOUND output.json")
-                        # parse and compare/update with the tasks output ports from db
+                    # parse and compare/update with the tasks output ports from db
                     with file_path.open() as fp:
                         output_ports = json.load(fp)
                         task_outputs = PORTS.outputs
@@ -307,7 +306,6 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
         self._docker.image_name = self._docker.registry_name + \
             "/" + task.image['name']
         self._docker.image_tag = task.image['tag']
-        self._docker.env = []
 
         # volume paths for side-car container
         self._executor.in_dir = Path.home() / "input" / task.job_id
@@ -316,7 +314,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
 
         # volume paths for car container (w/o prefix)
         self._docker.env = [
-            "{}_FOLDER=/{}".format(name.upper(), tail) for name, tail in tails.items()]
+            f"{name.upper()}_FOLDER=/{name}/{task.job_id}" for name in ["input", "output", "log"]]
 
         # stack name, should throw if not set
         self._stack_name = config.SWARM_STACK_NAME
