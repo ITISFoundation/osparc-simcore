@@ -45,9 +45,8 @@ async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
         await authenticate_user(sid, app, request)
     except web.HTTPUnauthorized:
         raise SocketIOConnectionError("authentification failed")
-    except Exception as exc: # pylint: disable=broad-except
+    except Exception as exc:  # pylint: disable=broad-except
         raise SocketIOConnectionError(f"Unexpected error: {exc}")
-
 
     return True
 
