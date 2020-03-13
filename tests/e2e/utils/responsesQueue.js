@@ -17,7 +17,7 @@ class ResponsesQueue {
     console.log("-- Expected response added to queue", url);
     page.on("request", function callback(req) {
       if (req.url().includes(url)) {
-        console.log((new Date).toUTCString(), "-- Queued request sent", req.url());
+        console.log((new Date).toUTCString(), "-- Queued request sent", req.method(), req.url());
         page.removeListener("request", callback);
         const index = reqQueue.indexOf(url);
         if (index > -1) {
