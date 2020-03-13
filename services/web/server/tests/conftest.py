@@ -22,9 +22,6 @@ log = logging.getLogger(__name__)
 logging.getLogger("openapi_spec_validator").setLevel(logging.WARNING)
 logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 
-# TODO: this should be done as a real pytest plugin instead
-sys.path.append(str(current_dir / '../../../../packages'))
-sys.path.append(str(current_dir / '../../../../packages/pytest-fixtures/helpers'))
 
 @pytest.fixture(scope="session")
 def package_dir() -> Path:
