@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
