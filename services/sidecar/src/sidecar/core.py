@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -9,18 +10,17 @@ from pathlib import Path
 from typing import Dict, List, Union
 
 import docker
-import requests
-from celery.states import SUCCESS as CSUCCESS
-from celery.utils.log import get_task_logger
-
 import pika
-from simcore_sdk import node_ports, node_data
+import requests
+from celery.utils.log import get_task_logger
+from sqlalchemy import and_, exc
+
+from simcore_sdk import node_data, node_ports
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
                                                 ComputationalTask)
 from simcore_sdk.node_ports import log as node_port_log
 from simcore_sdk.node_ports.dbmanager import DBManager
-from sqlalchemy import and_, exc
 
 from . import config
 from .utils import (DbSettings, DockerSettings, ExecutorSettings,
@@ -33,6 +33,7 @@ log.setLevel(config.SIDECAR_LOGLEVEL)
 
 node_port_log.setLevel(config.SIDECAR_LOGLEVEL)
 
+
 @contextmanager
 def session_scope(session_factory):
     """Provide a transactional scope around a series of operations
@@ -41,13 +42,14 @@ def session_scope(session_factory):
     session = session_factory()
     try:
         yield session
-    except: # pylint: disable=W0702
+    except:  # pylint: disable=W0702
         log.exception("DB access error, rolling back")
         session.rollback()
     finally:
         session.close()
 
-class Sidecar: # pylint: disable=too-many-instance-attributes
+
+class Sidecar:  # pylint: disable=too-many-instance-attributes
     def __init__(self):
         # publish subscribe config
         self._pika = RabbitSettings()
@@ -59,8 +61,8 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         self._s3 = S3Settings()
 
         # db config
-        self._db = DbSettings() # keeps single db engine: sidecar.utils_{id}
-        self._db_manager = None # lazy init because still not configured. SEE _get_node_ports
+        self._db = DbSettings()  # keeps single db engine: sidecar.utils_{id}
+        self._db_manager = None  # lazy init because still not configured. SEE _get_node_ports
 
         # current task
         self._task = None
@@ -76,7 +78,8 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
 
     async def _get_node_ports(self):
         if self._db_manager is None:
-            self._db_manager = DBManager() # Keeps single db engine: simcore_sdk.node_ports.dbmanager_{id}
+            # Keeps single db engine: simcore_sdk.node_ports.dbmanager_{id}
+            self._db_manager = DBManager()
         return node_ports.ports(self._db_manager)
 
     async def _create_shared_folders(self):
@@ -86,7 +89,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
             else:
                 delete_contents(folder)
 
-    async def _process_task_input(self, port:node_ports.Port, input_ports:Dict):
+    async def _process_task_input(self, port: node_ports.Port, input_ports: Dict):
         # pylint: disable=too-many-branches
         port_name = port.key
         port_value = wrap_async_call(port.get())
@@ -100,7 +103,8 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
                 input_ports[port_name] = str(port_value)
                 final_path = Path(self._executor.in_dir, mapped_filename)
                 shutil.copy(str(path), str(final_path))
-                log.debug("DOWNLOAD successfull from %s to %s via %s" , str(port_name), str(final_path), str(path))
+                log.debug("DOWNLOAD successfull from %s to %s via %s",
+                          str(port_name), str(final_path), str(path))
             else:
                 input_ports[port_name] = port_value
         else:
@@ -115,7 +119,8 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
             The dictionary is dumped to input.json, files are dumped
             as port['key']. Both end up in /input/ of the container
         """
-        log.debug('Input parsing for %s and node %s from container', self._task.project_id, self._task.internal_id)
+        log.debug('Input parsing for %s and node %s from container',
+                  self._task.project_id, self._task.internal_id)
 
         input_ports = dict()
         PORTS = self._get_node_ports()
@@ -124,7 +129,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
             self._process_task_input(port, input_ports)
 
         log.debug('DUMPING json')
-        #dump json file
+        # dump json file
         if input_ports:
             file_name = os.path.join(self._executor.in_dir, 'input.json')
             with open(file_name, 'w') as f:
@@ -134,16 +139,19 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
 
     async def _pull_image(self):
         log.debug('PULLING IMAGE')
-        log.debug('reg %s user %s pwd %s', self._docker.registry, self._docker.registry_user,self._docker.registry_pwd )
+        log.debug('reg %s user %s pwd %s', self._docker.registry,
+                  self._docker.registry_user, self._docker.registry_pwd)
 
         try:
             self._docker.client.login(
                 registry=self._docker.registry,
                 username=self._docker.registry_user,
                 password=self._docker.registry_pwd)
-            log.debug('img %s tag %s', self._docker.image_name, self._docker.image_tag)
+            log.debug('img %s tag %s', self._docker.image_name,
+                      self._docker.image_tag)
 
-            self._docker.client.images.pull(self._docker.image_name, tag=self._docker.image_tag)
+            self._docker.client.images.pull(
+                self._docker.image_name, tag=self._docker.image_tag)
         except docker.errors.APIError:
             msg = f"Failed to pull image '{self._docker.image_name}:{self._docker.image_tag}' from {self._docker.registry,}"
             log.exception(msg)
@@ -151,32 +159,35 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
 
     async def _post_log(self, channel: pika.channel.Channel, msg: Union[str, List[str]]):
         log_data = {
-            "Channel" : "Log",
+            "Channel": "Log",
             "Node": self._task.node_id,
             "user_id": self._user_id,
             "project_id": self._task.project_id,
-            "Messages" : msg if isinstance(msg, list) else [msg]
+            "Messages": msg if isinstance(msg, list) else [msg]
         }
         log_body = json.dumps(log_data)
-        channel.basic_publish(exchange=self._pika.log_channel, routing_key='', body=log_body)
+        channel.basic_publish(exchange=self._pika.log_channel,
+                              routing_key='', body=log_body)
 
     async def _post_progress(self, channel, progress):
         prog_data = {
-            "Channel" : "Progress",
+            "Channel": "Progress",
             "Node": self._task.node_id,
             "user_id": self._user_id,
             "project_id": self._task.project_id,
-            "Progress" : progress
+            "Progress": progress
         }
         prog_body = json.dumps(prog_data)
-        channel.basic_publish(exchange=self._pika.progress_channel, routing_key='', body=prog_body)
+        channel.basic_publish(
+            exchange=self._pika.progress_channel, routing_key='', body=prog_body)
 
     async def _bg_job(self, log_file):
-        log.debug('Bck job started %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
+        log.debug('Bck job started %s:node %s:internal id %s from container',
+                  self._task.project_id, self._task.node_id, self._task.internal_id)
         with safe_channel(self._pika) as (channel, blocking_connection):
 
             def _follow(thefile):
-                thefile.seek(0,2)
+                thefile.seek(0, 2)
                 while self._executor.run_pool:
                     line = thefile.readline()
                     if not line:
@@ -188,7 +199,8 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
             def _parse_progress(line: str):
                 # TODO: This should be 'settings', a regex for every service
                 if line.lower().startswith("[progress]"):
-                    progress = line.lower().lstrip("[progress]").rstrip("%").strip()
+                    progress = line.lower().lstrip(
+                        "[progress]").rstrip("%").strip()
                     self._post_progress(channel, progress)
                     log.debug('PROGRESS %s', progress)
                 elif "percent done" in line.lower():
@@ -213,8 +225,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
                     # empty the logs
                     acc_logs = []
                     time_logs_sent = now
-                return acc_logs,time_logs_sent
-
+                return acc_logs, time_logs_sent
 
             acc_logs = []
             time_logs_sent = time.monotonic()
@@ -224,7 +235,8 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
                     if not self._executor.run_pool:
                         break
                     _parse_progress(line)
-                    acc_logs, time_logs_sent = _log_accumulated_logs(line, acc_logs, time_logs_sent)
+                    acc_logs, time_logs_sent = _log_accumulated_logs(
+                        line, acc_logs, time_logs_sent)
             if acc_logs:
                 # send the remaining logs
                 self._post_log(channel, acc_logs)
@@ -233,7 +245,8 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
             # set progress to 1.0 at the end, ignore failures
             progress = "1.0"
             self._post_progress(channel, progress)
-            log.debug('Bck job completed %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
+            log.debug('Bck job completed %s:node %s:internal id %s from container',
+                      self._task.project_id, self._task.node_id, self._task.internal_id)
 
     async def _process_task_output(self):
         # pylint: disable=too-many-branches
@@ -246,7 +259,8 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
             Files will be pushed to S3 with reference in db. output.json will be parsed
             and the db updated
         """
-        log.debug('Processing task outputs %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
+        log.debug('Processing task outputs %s:node %s:internal id %s from container',
+                  self._task.project_id, self._task.node_id, self._task.internal_id)
         PORTS = self._get_node_ports()
         directory = self._executor.out_dir
         if not os.path.exists(directory):
@@ -265,36 +279,45 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
                             task_outputs = PORTS.outputs
                             for to in task_outputs:
                                 if to.key in output_ports.keys():
-                                    wrap_async_call(to.set(output_ports[to.key]))
+                                    wrap_async_call(
+                                        to.set(output_ports[to.key]))
                     else:
-                        wrap_async_call(PORTS.set_file_by_keymap(Path(filepath)))
+                        wrap_async_call(
+                            PORTS.set_file_by_keymap(Path(filepath)))
 
         except (OSError, IOError) as _e:
             logging.exception("Could not process output")
-        log.debug('Processing task outputs DONE %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
-
+        log.debug('Processing task outputs DONE %s:node %s:internal id %s from container',
+                  self._task.project_id, self._task.node_id, self._task.internal_id)
 
     # pylint: disable=no-self-use
+
     async def _process_task_log(self):
-        log.debug('Processing Logs %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
+        log.debug('Processing Logs %s:node %s:internal id %s from container',
+                  self._task.project_id, self._task.node_id, self._task.internal_id)
         directory = Path(self._executor.log_dir)
 
         if directory.exists():
-            wrap_async_call(node_data.data_manager.push(directory, rename_to="logs"))
-        log.debug('Processing Logs DONE %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
+            wrap_async_call(node_data.data_manager.push(
+                directory, rename_to="logs"))
+        log.debug('Processing Logs DONE %s:node %s:internal id %s from container',
+                  self._task.project_id, self._task.node_id, self._task.internal_id)
 
     async def initialize(self, task, user_id):
-        log.debug("TASK %s of user %s FOUND, initializing...", task.internal_id, user_id)
+        log.debug("TASK %s of user %s FOUND, initializing...",
+                  task.internal_id, user_id)
         self._task = task
         self._user_id = user_id
 
         HOMEDIR = str(Path.home())
 
-        self._docker.image_name = self._docker.registry_name + "/" + task.image['name']
+        self._docker.image_name = self._docker.registry_name + \
+            "/" + task.image['name']
         self._docker.image_tag = task.image['tag']
         self._docker.env = []
 
-        tails = dict( (name, Path(name, task.job_id).as_posix()) for name in ("input", "output", "log") )
+        tails = dict((name, Path(name, task.job_id).as_posix())
+                     for name in ("input", "output", "log"))
 
         # volume paths for side-car container
         self._executor.in_dir = os.path.join(HOMEDIR, tails['input'])
@@ -302,7 +325,8 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         self._executor.log_dir = os.path.join(HOMEDIR, tails['log'])
 
         # volume paths for car container (w/o prefix)
-        self._docker.env = ["{}_FOLDER=/{}".format(name.upper(), tail) for name, tail in tails.items()]
+        self._docker.env = [
+            "{}_FOLDER=/{}".format(name.upper(), tail) for name, tail in tails.items()]
 
         # stack name, should throw if not set
         self._stack_name = config.SWARM_STACK_NAME
@@ -311,27 +335,27 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         node_ports.node_config.USER_ID = user_id
         node_ports.node_config.NODE_UUID = task.node_id
         node_ports.node_config.PROJECT_ID = task.project_id
-        log.debug("TASK %s of user %s FOUND, initializing DONE", task.internal_id, user_id)
-
-
+        log.debug("TASK %s of user %s FOUND, initializing DONE",
+                  task.internal_id, user_id)
 
     async def preprocess(self):
-        log.debug('Pre-Processing Pipeline %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
-        self._create_shared_folders()
-        self._process_task_inputs()
-        self._pull_image()
-        log.debug('Pre-Processing Pipeline DONE %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
-
+        log.debug('Pre-Processing Pipeline %s:node %s:internal id %s from container',
+                  self._task.project_id, self._task.node_id, self._task.internal_id)
+        await self._create_shared_folders()
+        await asyncio.gather(self._process_task_inputs(),
+                             self._pull_image())
+        log.debug('Pre-Processing Pipeline DONE %s:node %s:internal id %s from container',
+                  self._task.project_id, self._task.node_id, self._task.internal_id)
 
     async def process(self):
-        log.debug('Processing Pipeline %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
+        log.debug('Processing Pipeline %s:node %s:internal id %s from container',
+                  self._task.project_id, self._task.node_id, self._task.internal_id)
 
         self._executor.run_pool = True
 
         # touch output file
-        log_file = os.path.join(self._executor.log_dir, "log.dat")
-
-        Path(log_file).touch()
+        log_file = self._executor.log_dir / "log.dat"
+        log_file.touch()
         fut = self._executor.pool.submit(self._bg_job, log_file)
 
         start_time = time.perf_counter()
@@ -339,21 +363,21 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         try:
             docker_image = self._docker.image_name + ":" + self._docker.image_tag
             container = self._docker.client.containers.run(docker_image, "run",
-                                                            init=True,
-                                                            detach=True, remove=False,
-                                                            volumes = {'{}_input'.format(self._stack_name)  : {'bind' : '/input'},
-                                                            '{}_output'.format(self._stack_name) : {'bind' : '/output'},
-                                                            '{}_log'.format(self._stack_name)    : {'bind'  : '/log'}},
-                                                            environment=self._docker.env,
-                                                            nano_cpus=config.SERVICES_MAX_NANO_CPUS,
-                                                            mem_limit=config.SERVICES_MAX_MEMORY_BYTES,
-                                                            labels={
-                                                                'user_id': str(self._user_id),
-                                                                'study_id': str(self._task.project_id),
-                                                                'node_id': str(self._task.node_id),
-                                                                'nano_cpus_limit': str(config.SERVICES_MAX_NANO_CPUS),
-                                                                'mem_limit': str(config.SERVICES_MAX_MEMORY_BYTES)
-                                                            })
+                                                           init=True,
+                                                           detach=True, remove=False,
+                                                           volumes={'{}_input'.format(self._stack_name): {'bind': '/input'},
+                                                                    '{}_output'.format(self._stack_name): {'bind': '/output'},
+                                                                    '{}_log'.format(self._stack_name): {'bind': '/log'}},
+                                                           environment=self._docker.env,
+                                                           nano_cpus=config.SERVICES_MAX_NANO_CPUS,
+                                                           mem_limit=config.SERVICES_MAX_MEMORY_BYTES,
+                                                           labels={
+                                                               'user_id': str(self._user_id),
+                                                               'study_id': str(self._task.project_id),
+                                                               'node_id': str(self._task.node_id),
+                                                               'nano_cpus_limit': str(config.SERVICES_MAX_NANO_CPUS),
+                                                               'mem_limit': str(config.SERVICES_MAX_MEMORY_BYTES)
+                                                           })
         except docker.errors.ImageNotFound:
             log.exception("Run container: Image not found")
         except docker.errors.APIError:
@@ -363,54 +387,61 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
             try:
                 wait_arguments = {}
                 if config.SERVICES_TIMEOUT_SECONDS > 0:
-                    wait_arguments["timeout"] = int(config.SERVICES_TIMEOUT_SECONDS)
+                    wait_arguments["timeout"] = int(
+                        config.SERVICES_TIMEOUT_SECONDS)
                 response = container.wait(**wait_arguments)
-                log.info("container completed with response %s\nlogs: %s", response, container.logs())
+                log.info("container completed with response %s\nlogs: %s",
+                         response, container.logs())
             except requests.exceptions.ConnectionError:
-                log.exception("Running container timed-out after %ss and will be killed now\nlogs: %s", config.SERVICES_TIMEOUT_SECONDS, container.logs())
+                log.exception("Running container timed-out after %ss and will be killed now\nlogs: %s",
+                              config.SERVICES_TIMEOUT_SECONDS, container.logs())
             except docker.errors.APIError:
                 log.exception("Run Container: Server returns error")
             finally:
                 stop_time = time.perf_counter()
-                log.info("Running %s took %sseconds", docker_image, stop_time-start_time)
+                log.info("Running %s took %sseconds",
+                         docker_image, stop_time-start_time)
                 container.remove(force=True)
 
-        time.sleep(1)
         self._executor.run_pool = False
         while not fut.done():
-            time.sleep(0.1)
+            asyncio.sleep(1)
 
-        log.debug('DONE Processing Pipeline %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
+        log.debug('DONE Processing Pipeline %s:node %s:internal id %s from container',
+                  self._task.project_id, self._task.node_id, self._task.internal_id)
 
     async def run(self):
-        log.debug('Running Pipeline %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
-        #NOTE: the rabbit has a timeout of 60seconds so blocking this channel for more is a no go.
+        log.debug('Running Pipeline %s:node %s:internal id %s from container',
+                  self._task.project_id, self._task.node_id, self._task.internal_id)
+        # NOTE: the rabbit has a timeout of 60seconds so blocking this channel for more is a no go.
 
-        with safe_channel(self._pika) as (channel,_):
-            self._post_log(channel, msg = "Preprocessing start...")
+        with safe_channel(self._pika) as (channel, _):
+            self._post_log(channel, msg="Preprocessing start...")
 
-        self.preprocess()
+        await self.preprocess()
 
-        with safe_channel(self._pika) as (channel,_):
-            self._post_log(channel, msg = "...preprocessing end")
-            self._post_log(channel, msg = "Processing start...")
-        self.process()
+        with safe_channel(self._pika) as (channel, _):
+            self._post_log(channel, msg="...preprocessing end")
+            self._post_log(channel, msg="Processing start...")
+        await self.process()
 
-        with safe_channel(self._pika) as (channel,_):
-            self._post_log(channel, msg = "...processing end")
-            self._post_log(channel, msg = "Postprocessing start...")
-        self.postprocess()
+        with safe_channel(self._pika) as (channel, _):
+            self._post_log(channel, msg="...processing end")
+            self._post_log(channel, msg="Postprocessing start...")
+        await self.postprocess()
 
-        with safe_channel(self._pika) as (channel,_):
-            self._post_log(channel, msg = "...postprocessing end")
+        with safe_channel(self._pika) as (channel, _):
+            self._post_log(channel, msg="...postprocessing end")
 
-        log.debug('Running Pipeline DONE %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
+        log.debug('Running Pipeline DONE %s:node %s:internal id %s from container',
+                  self._task.project_id, self._task.node_id, self._task.internal_id)
 
     async def postprocess(self):
-        log.debug('Post-Processing Pipeline %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
+        log.debug('Post-Processing Pipeline %s:node %s:internal id %s from container',
+                  self._task.project_id, self._task.node_id, self._task.internal_id)
 
-        self._process_task_output()
-        self._process_task_log()
+        await self._process_task_output()
+        await self._process_task_log()
 
         self._task.state = SUCCESS
         self._task.end = datetime.utcnow()
@@ -418,7 +449,8 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         try:
             _session.add(self._task)
             _session.commit()
-            log.debug('Post-Processing Pipeline DONE %s:node %s:internal id %s from container', self._task.project_id, self._task.node_id, self._task.internal_id)
+            log.debug('Post-Processing Pipeline DONE %s:node %s:internal id %s from container',
+                      self._task.project_id, self._task.node_id, self._task.internal_id)
 
         except exc.SQLAlchemyError:
             log.exception("Could not update job from postprocessing")
@@ -426,14 +458,15 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
         finally:
             _session.close()
 
-
     async def inspect(self, celery_task, user_id: str, project_id: str, node_id: str):
-        log.debug("ENTERING inspect with user %s pipeline:node %s: %s", user_id, project_id, node_id)
+        log.debug("ENTERING inspect with user %s pipeline:node %s: %s",
+                  user_id, project_id, node_id)
 
         next_task_nodes = []
 
         with session_scope(self._db.Session) as _session:
-            _pipeline =_session.query(ComputationalPipeline).filter_by(project_id=project_id).one()
+            _pipeline = _session.query(ComputationalPipeline).filter_by(
+                project_id=project_id).one()
 
             graph = _pipeline.execution_graph
             if not node_id:
@@ -444,10 +477,10 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
                 return next_task_nodes
 
             # find the for the current node_id, skip if there is already a job_id around
-            query =_session.query(ComputationalTask).filter(
-                and_(   ComputationalTask.node_id==node_id, # pylint: disable=no-member
-                        ComputationalTask.project_id==project_id, # pylint: disable=no-member
-                        ComputationalTask.job_id==None ) # pylint: disable=no-member
+            query = _session.query(ComputationalTask).filter(
+                and_(ComputationalTask.node_id == node_id,  # pylint: disable=no-member
+                     ComputationalTask.project_id == project_id,  # pylint: disable=no-member
+                     ComputationalTask.job_id == None)  # pylint: disable=no-member
             )
             # Use SELECT FOR UPDATE TO lock the row
             query.with_for_update()
@@ -470,10 +503,10 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
             # the task is ready!
             task.job_id = celery_task.request.id
             _session.add(task)
-            _session.commit()                    
+            _session.commit()
 
-            task =_session.query(ComputationalTask).filter(
-                and_(ComputationalTask.node_id==node_id,ComputationalTask.project_id==project_id)).one()  # pylint: disable=no-member
+            task = _session.query(ComputationalTask).filter(
+                and_(ComputationalTask.node_id == node_id, ComputationalTask.project_id == project_id)).one()  # pylint: disable=no-member
 
             if task.job_id != celery_task.request.id:
                 # somebody else was faster
@@ -482,7 +515,7 @@ class Sidecar: # pylint: disable=too-many-instance-attributes
             task.start = datetime.utcnow()
             _session.add(task)
             _session.commit()
-            
+
             self.initialize(task, user_id)
 
         # now proceed actually running the task (we do that after the db session has been closed)

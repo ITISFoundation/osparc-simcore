@@ -108,12 +108,12 @@ class ExecutorSettings:
     def __init__(self):
         # Pool
         self.pool = ThreadPoolExecutor(1)
-        self.run_pool = False
+        self.run_pool: bool = False
 
         # shared folders
-        self.in_dir = ""
-        self.out_dir = ""
-        self.log_dir = ""
+        self.in_dir: Path = ""
+        self.out_dir: Path = ""
+        self.log_dir: Path = ""
 
 @contextmanager
 def safe_channel(rabbit_settings: RabbitSettings) -> Tuple[pika.channel.Channel, pika.adapters.BlockingConnection]:
