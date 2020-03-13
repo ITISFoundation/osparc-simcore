@@ -966,6 +966,10 @@ qx.Class.define("osparc.data.model.Node", {
     },
     __nodeState: function() {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
+      if (study === null) {
+        return;
+      }
+
       const params = {
         url: {
           projectId: study.getUuid(),
