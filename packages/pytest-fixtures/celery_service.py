@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from copy import deepcopy
 from typing import Dict
 
 import celery

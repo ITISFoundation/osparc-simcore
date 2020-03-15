@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 import os
-from copy import deepcopy
 from typing import Dict
 
 import pytest

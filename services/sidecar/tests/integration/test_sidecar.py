@@ -1,6 +1,6 @@
-import logging
+#pylint: disable=unused-argument
 
-import pytest
+# import pytest
 
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = ["storage", "postgres", "rabbit"]
