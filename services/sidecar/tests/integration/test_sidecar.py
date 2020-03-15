@@ -9,7 +9,7 @@ ops_services = ["minio", "adminer"]
 
 
 
-async def test_run_sleepers(loop, docker_stack, postgres_session, sleeper_service, celery_service):
+async def test_run_sleepers(loop, docker_stack, postgres_session, sleeper_service):
     import pdb
     pdb.set_trace()
     # next_task_nodes = await SIDECAR.inspect(task, user_id, pipeline_id, node_id)
