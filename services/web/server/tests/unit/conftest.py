@@ -27,6 +27,8 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 ## Log
 log = logging.getLogger(__name__)
 
+pytest_plugins = ["pytest-fixtures.environs"]
+
 
 @pytest.fixture(scope="session")
 def here():
