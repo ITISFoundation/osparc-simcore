@@ -3,7 +3,7 @@ import json
 import logging
 from functools import wraps
 from pprint import pformat
-from typing import Callable, Coroutine, Dict, Optional
+from typing import Callable, Coroutine, Dict
 
 import aio_pika
 from aiohttp import web
