@@ -20,7 +20,7 @@ coverage==5.0.3           # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==1.11.1         # via -r requirements/_test.in
 docker==4.0.2             # via -r requirements/_migration.txt
 docopt==0.6.2             # via coveralls
-faker==4.0.1              # via -r requirements/_test.in
+faker==4.0.2              # via -r requirements/_test.in
 idna==2.8                 # via -r requirements/_migration.txt, requests, yarl
 isort==4.3.21             # via pylint
 lazy-object-proxy==1.4.3  # via astroid
