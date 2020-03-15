@@ -5,7 +5,7 @@
   "devDependencies": {
     "eslint": "^4.19.1",
     "babel-eslint": "^8.2.3",
-    "eslint-config-qx": "^0.1.0",
+    "eslint-config-qx": "^0.2.6",
     "eslint-plugin-qx-rules": "^0.1.0",
     "puppeteer": "^1.19.0",
     "puppeteer-to-istanbul": "^1.2.2",
