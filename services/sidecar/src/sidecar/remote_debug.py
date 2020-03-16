@@ -8,12 +8,13 @@ from .celery_log_setup import get_task_logger
 log = get_task_logger(__name__)
 
 
-def setup_remote_debugging(force_enabled=False):
+def setup_remote_debugging(force_enabled=False) -> None:
     """ Programaticaly enables remote debugging if SC_BOOT_MODE==debug-ptvsd
 
     """
     if "SC_BOOT_MODE" not in os.environ:
-        raise ValueError("Remote debugging only available when running in a container")
+        log.warning("Remote debugging only available when running in a container")
+        return
 
     boot_mode = os.environ["SC_BOOT_MODE"]
 
