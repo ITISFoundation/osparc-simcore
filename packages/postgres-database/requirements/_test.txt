@@ -6,7 +6,7 @@
 #
 aiohttp==3.6.2            # via pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r requirements/_test.in
-alembic==1.0.8            # via -r requirements/_migration.txt
+alembic==1.4.1            # via -r requirements/_migration.txt
 appdirs==1.4.3            # via black
 astroid==2.3.3            # via pylint
 async-timeout==3.0.1      # via aiohttp
