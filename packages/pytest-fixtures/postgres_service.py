@@ -16,7 +16,7 @@ from utils_docker import get_service_published_port
 
 
 @pytest.fixture(scope="module")
-def postgres_dsn(docker_stack: Dict, devel_environ: Dict) -> Dict:
+def postgres_dsn(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
     assert "simcore_postgres" in docker_stack["services"]
 
     DSN = {
@@ -35,7 +35,7 @@ def postgres_dsn(docker_stack: Dict, devel_environ: Dict) -> Dict:
 
 
 @pytest.fixture(scope="module")
-def postgres_db(postgres_dsn: Dict, docker_stack: Dict):
+def postgres_db(postgres_dsn: Dict[str, str], docker_stack: Dict) -> sa.engine.Engine:
     url = DSN.format(**postgres_dsn)
 
     # NOTE: Comment this to avoid postgres_service
@@ -53,7 +53,7 @@ def postgres_db(postgres_dsn: Dict, docker_stack: Dict):
 
 
 @pytest.fixture(scope="module")
-def postgres_session(postgres_db):
+def postgres_session(postgres_db: sa.engine.Engine) -> sa.orm.session.Session:
     Session = sessionmaker(postgres_db)
     session = Session()
     yield session
@@ -61,7 +61,7 @@ def postgres_session(postgres_db):
 
 
 @tenacity.retry(**PostgresRetryPolicyUponInitialization().kwargs)
-def wait_till_postgres_responsive(url):
+def wait_till_postgres_responsive(url: str) -> bool:
     """Check if something responds to ``url`` """
     engine = sa.create_engine(url)
     conn = engine.connect()
