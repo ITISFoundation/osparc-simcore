@@ -56,6 +56,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     __navBar: null,
     __prjStack: null,
     __dashboard: null,
+    __dashboardLayout: null,
     __studyEditor: null,
 
     __createNavigationBar: function() {
@@ -84,20 +85,32 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __createMainView: function() {
-      let prjStack = new qx.ui.container.Stack();
+      const prjStack = new qx.ui.container.Stack();
 
-      let dashboard = this.__dashboard = new osparc.desktop.Dashboard();
+      const dashboard = this.__dashboard = new osparc.desktop.Dashboard().set({
+        maxWidth: 1200
+      });
       dashboard.getStudyBrowser().addListener("startStudy", e => {
         const studyEditor = e.getData();
         this.__startStudyEditor(studyEditor);
       }, this);
-      prjStack.add(dashboard);
+
+      const dashboardLayout = this.__dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      dashboardLayout.add(new qx.ui.core.Widget(), {
+        flex: 1
+      });
+      dashboardLayout.add(dashboard);
+      dashboardLayout.add(new qx.ui.core.Widget(), {
+        flex: 1
+      });
+
+      prjStack.add(dashboardLayout);
 
       return prjStack;
     },
 
     __showDashboard: function() {
-      this.__prjStack.setSelection([this.__dashboard]);
+      this.__prjStack.setSelection([this.__dashboardLayout]);
       this.__dashboard.getStudyBrowser().reloadUserStudies();
       this.__navBar.setPathButtons([]);
       if (this.__studyEditor) {
