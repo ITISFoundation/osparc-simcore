@@ -211,12 +211,12 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
 
     __createStudiesLayout: function() {
       const studyFilters = this.__studyFilters = new osparc.component.filter.group.StudyFilterGroup("studyBrowser");
-      const userStudyLayout = this.__createUserStudiesLayout();
       const tempStudyLayout = this.__createTemplateStudiesLayout();
+      const userStudyLayout = this.__createUserStudiesLayout();
 
       this.__studiesPane.add(studyFilters);
-      this.__studiesPane.add(userStudyLayout);
       this.__studiesPane.add(tempStudyLayout);
+      this.__studiesPane.add(userStudyLayout);
     },
 
     __createNewStudyButton: function() {
@@ -231,12 +231,10 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __createUserStudiesLayout: function() {
-      const newStudyBtn = this.__createNewStudyButton();
-
       const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
       const studiesTitleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       const studiesDeleteButton = this.__studiesDeleteButton = this.__createDeleteButton();
-      const myStudyLabel = new qx.ui.basic.Label(this.tr("My Studies")).set({
+      const myStudyLabel = new qx.ui.basic.Label(this.tr("Recent studies")).set({
         font: navBarLabelFont
       });
       studiesTitleContainer.add(myStudyLabel);
@@ -246,16 +244,17 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         marginTop: 20
       });
       userStudyLayout.add(studiesTitleContainer);
-      userStudyLayout.add(newStudyBtn);
       userStudyLayout.add(userStudyList);
       return userStudyLayout;
     },
 
     __createTemplateStudiesLayout: function() {
+      const newStudyBtn = this.__createNewStudyButton();
+
       const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
       const templateTitleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       const templateDeleteButton = this.__templateDeleteButton = this.__createDeleteButton();
-      const tempStudyLabel = new qx.ui.basic.Label(this.tr("Template Studies")).set({
+      const tempStudyLabel = new qx.ui.basic.Label(this.tr("New studies")).set({
         font: navBarLabelFont
       });
       templateTitleContainer.add(tempStudyLabel);
@@ -265,6 +264,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         marginTop: 20
       });
       tempStudyLayout.add(templateTitleContainer);
+      tempStudyLayout.add(newStudyBtn);
       tempStudyLayout.add(tempStudyList);
       return tempStudyLayout;
     },
@@ -449,7 +449,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     },
 
     __createStudyListLayout: function() {
-      return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(8, 8));
+      return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(12, 12));
     },
 
     __createStudyItem: function(study, isTemplate) {
