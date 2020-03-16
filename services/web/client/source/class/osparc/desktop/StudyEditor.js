@@ -69,6 +69,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __loggerView: null,
     __currentNodeId: null,
     __autoSaveTimer: null,
+    __lastSavedStudy: null,
 
     _applyStudy: function(study) {
       osparc.store.Store.getInstance().setCurrentStudy(study);
@@ -184,21 +185,28 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const nodeId = e.getData();
         const node = this.getStudy().getWorkbench().getNode(nodeId);
         if (node && node.isContainer()) {
-          // const exportGroupView = new osparc.component.export.ExportGroup(node);
-
+          const exportGroupView = new osparc.component.export.ExportGroup(node);
           const window = new qx.ui.window.Window(this.tr("Export: ") + node.getLabel()).set({
             appearance: "service-window",
             layout: new qx.ui.layout.Grow(),
             autoDestroy: true,
             contentPadding: 0,
-            width: 900,
-            height: 800,
+            width: 700,
+            height: 700,
             showMinimize: false,
             modal: true
           });
-          // window.add(exportGroupView);
+          window.add(exportGroupView);
           window.center();
           window.open();
+
+          window.addListener("close", () => {
+            exportGroupView.tearDown();
+          }, this);
+
+          exportGroupView.addListener("finished", () => {
+            window.close();
+          }, this);
         }
       });
 
@@ -340,6 +348,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.fireDataEvent("changeMainViewCaption", nodesPath);
     },
 
+    getCurrentPathIds: function() {
+      const nodesPath = this.getStudy().getWorkbench().getPathIds(this.__currentNodeId);
+      return nodesPath;
+    },
+
     getLogger: function() {
       return this.__loggerView;
     },
@@ -461,6 +474,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __doStartPipeline: function() {
       this.getStudy().getWorkbench().clearProgressData();
+
       // post pipeline
       const url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid()) + "/start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
@@ -524,7 +538,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       let timer = this.__autoSaveTimer = new qx.event.Timer(interval);
       timer.addListener("interval", () => {
         const newObj = this.getStudy().serializeStudy();
-        const delta = diffPatcher.diff(this.__lastSavedPrj, newObj);
+        const delta = diffPatcher.diff(this.__lastSavedStudy, newObj);
         if (delta) {
           let deltaKeys = Object.keys(delta);
           // lastChangeDate should not be taken into account as data change
@@ -561,7 +575,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       };
       osparc.data.Resources.fetch("studies", "put", params).then(data => {
         this.fireDataEvent("studySaved", true);
-        this.__lastSavedPrj = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
+        this.__lastSavedStudy = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
         if (cbSuccess) {
           cbSuccess.call(this);
         }

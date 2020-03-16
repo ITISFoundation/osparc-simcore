@@ -14,10 +14,12 @@ install() {
     echo "--------------- getting simcore docker images..."
     make pull-version || ( (make pull-cache || true) && make build tag-version)
     make info-images
+
     # configure simcore for testing with a private registry
-    bash tests/e2e/setup_env_insecure_registry
-    # start simcore
-    make up-version
+    bash tests/e2e/scripts/setup_env_insecure_registry.bash
+
+    # start simcore and set log-level to debug
+    export LOG_LEVEL=INFO; make up-version
 
     echo "-------------- installing test framework..."
     # create a python venv and activate
@@ -34,6 +36,7 @@ install() {
     echo "--------------- transfering the images to the local registry..."
     make transfer-images-to-registry
     echo "--------------- injecting templates in postgres db..."
+    make pg-db-tables
     make inject-templates-in-db
     popd
 }
@@ -53,6 +56,9 @@ recover_artifacts() {
     (docker service logs --timestamps simcore_storage > simcore_logs/storage.log) || true
     (docker service logs --timestamps simcore_sidecar > simcore_logs/sidecar.log) || true
     (docker service logs --timestamps simcore_catalog > simcore_logs/catalog.log) || true
+
+    # stack config
+    (cp .stack-simcore-version.yml simcore_logs/) || true
 }
 
 clean_up() {
