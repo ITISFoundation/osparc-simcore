@@ -95,9 +95,9 @@ chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_LOG_FOLDER}"
 if [ "${SC_BUILD_TARGET}" = "development" ]
 then
     echo "$INFO installing pythong dependencies..."
-    pushd services/sidecar
+    cd services/sidecar || exit 1
     pip install --no-cache-dir -r requirements/dev.txt
-    popd
+    cd - || exit 1
 fi
 
 
