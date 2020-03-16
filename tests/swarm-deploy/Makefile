@@ -11,7 +11,7 @@ requirements.txt: requirements.in
 	# pip compiling $<
 	@$(VENV_DIR)/bin/pip-compile --output-file $@ $<
 
-reqs: requirements.txt # alias
+reqs: requirements.txt ## alias to compile requirements.txt
 
 .PHONY: install
 install: $(VENV_DIR) requirements.txt ## installs dependencies
