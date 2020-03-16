@@ -299,15 +299,15 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                   task.internal_id, user_id)
         self._task = task
         self._user_id = user_id
-
+        import pdb; pdb.set_trace()
         self._docker.image_name = self._docker.registry_name + \
-            "/" + task.image['name']
-        self._docker.image_tag = task.image['tag']
+            "/" + task.schema["key"]
+        self._docker.image_tag = task.schema["version"]
 
         # volume paths for side-car container
-        self._executor.in_dir = Path.home() / "input" / task.job_id
-        self._executor.out_dir = Path.home() / 'output' / task.job_id
-        self._executor.log_dir = Path.home() / 'log' / task.job_id
+        self._executor.in_dir = Path.home() / f"input/{task.job_id}"
+        self._executor.out_dir = Path.home() / f"output/{task.job_id}"
+        self._executor.log_dir = Path.home() / f"log/{task.job_id}"
 
         # volume paths for car container (w/o prefix)
         self._docker.env = [
@@ -324,6 +324,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                   task.internal_id, user_id)
 
     async def preprocess(self):
+        import pdb; pdb.set_trace()
         log.debug('Pre-Processing Pipeline %s:node %s:internal id %s from container',
                   self._task.project_id, self._task.node_id, self._task.internal_id)
         await self._create_shared_folders()
@@ -333,6 +334,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                   self._task.project_id, self._task.node_id, self._task.internal_id)
 
     async def process(self):
+        import pdb; pdb.set_trace()
         log.debug('Processing Pipeline %s:node %s:internal id %s from container',
                   self._task.project_id, self._task.node_id, self._task.internal_id)
 
@@ -396,6 +398,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                   self._task.project_id, self._task.node_id, self._task.internal_id)
 
     async def run(self):
+        import pdb; pdb.set_trace()
         log.debug('Running Pipeline %s:node %s:internal id %s from container',
                   self._task.project_id, self._task.node_id, self._task.internal_id)
         # NOTE: the rabbit has a timeout of 60seconds so blocking this channel for more is a no go.
@@ -448,7 +451,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                   user_id, project_id, node_id)
 
         next_task_nodes = []
-
+        import pdb; pdb.set_trace()
         with session_scope(self._db.Session) as _session:
             _pipeline = _session.query(ComputationalPipeline).filter_by(
                 project_id=project_id).one()
@@ -501,7 +504,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
             _session.add(task)
             _session.commit()
 
-            self.initialize(task, user_id)
+            await self.initialize(task, user_id)
 
         # now proceed actually running the task (we do that after the db session has been closed)
         # try to run the task, return empyt list of next nodes if anything goes wrong
