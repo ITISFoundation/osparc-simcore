@@ -238,7 +238,7 @@ class ProjectDBAPI:
 
     async def __load_projects(self, conn: SAConnection, query) -> List[Dict]:
         api_projects: List[Dict] = []  # API model-compatible projects
-        db_projects: List[Dict] = []   # DB model-compatible projects
+        db_projects: List[Dict] = []  # DB model-compatible projects
         async for row in conn.execute(query):
             prj = dict(row.items())
             log.debug("found project: %s", prj)
@@ -404,7 +404,6 @@ class ProjectDBAPI:
                 .where(projects.c.id == row[projects.c.id.key])
             )
             await conn.execute(query)
-
 
     async def delete_user_project(self, user_id: int, project_uuid: str):
         log.info("Deleting project %s for user %s", project_uuid, user_id)

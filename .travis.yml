@@ -153,28 +153,6 @@ jobs:
       after_failure:
         - unbuffer bash ci/travis/unit-testing/director.bash after_failure
 
-    # test python, sidecar ----------------------------------------------------------------------
-    # TODO: activate when sidecar tests are READY!
-    # - stage: build / unit-testing
-    #   name: sidecar
-    #   language: python
-    #   python:
-    #     - "3.6"
-    #   sudo: required
-    #   cache: pip
-    #   before_install:
-    #     - sudo bash ci/travis/unit-testing/sidecar.bash before_install
-    #   install:
-    #     - bash ci/travis/unit-testing/sidecar.bash install
-    #   before_script:
-    #     - bash ci/travis/unit-testing/sidecar.bash before_script
-    #   script:
-    #     - bash ci/travis/unit-testing/sidecar.bash script
-    #   after_success:
-    #     - bash ci/travis/unit-testing/sidecar.bash after_success
-    #   after_failure:
-    #     - bash ci/travis/unit-testing/sidecar.bash after_failure
-
     # test python, service-library ----------------------------------------------------------------------
     - stage: build / unit-testing
       name: service-library

@@ -10,20 +10,21 @@ from ..resources import resources
 
 log = logging.getLogger(__name__)
 
+
 class Fake:
     """ Holds fake database of projects and its association to users
         for testing purposes
 
         Keeps also generated data
     """
+
     # TODO: auto generate data from specs and faker tool. Use http://json-schema-faker.js.org
 
     ProjectItem = namedtuple("ProjectItem", "id template data".split())
 
     # fake databases
-    projects = {} # project_id -> ProjectItem
-    user_to_projects_map = defaultdict(list) # user_id -> [project_id, ...]
-
+    projects = {}  # project_id -> ProjectItem
+    user_to_projects_map = defaultdict(list)  # user_id -> [project_id, ...]
 
     @classmethod
     def add_projects(cls, projects, user_id=None):
@@ -31,8 +32,10 @@ class Fake:
 
         """
         for prj in projects:
-            pid = prj['uuid']
-            cls.projects[pid] = cls.ProjectItem(id=pid, template=user_id is None, data=deepcopy(prj))
+            pid = prj["uuid"]
+            cls.projects[pid] = cls.ProjectItem(
+                id=pid, template=user_id is None, data=deepcopy(prj)
+            )
             if user_id is not None:
                 cls.user_to_projects_map[user_id].append(pid)
 
@@ -49,8 +52,8 @@ class Fake:
             projects = projects + json.load(f)
 
         for prj in projects:
-            pid = prj['uuid']
-            cls.projects[pid] =  cls.ProjectItem(id=pid, template=True, data=prj)
+            pid = prj["uuid"]
+            cls.projects[pid] = cls.ProjectItem(id=pid, template=True, data=prj)
 
     @classmethod
     def reset(cls):

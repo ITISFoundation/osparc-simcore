@@ -152,20 +152,22 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     setPathButtons: function(nodeIds) {
       this.__mainViewCaptionLayout.removeAll();
-      const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
+      nodeIds.length === 1 ? this.__studyTitle.show() : this.__studyTitle.exclude();
       if (nodeIds.length === 0) {
         this.__highlightDashboard(true);
-      } else if (nodeIds.length === 1) {
-        this.__studyTitle.show();
         return;
       }
-      this.__studyTitle.exclude();
+      if (nodeIds.length === 1) {
+        return;
+      }
+
+      const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
       for (let i=0; i<nodeIds.length; i++) {
         let btn = new qx.ui.form.Button().set({
           rich: true,
           maxHeight: NAVIGATION_BUTTON_HEIGHT
         });
-        const study = this.getStudy();
         const nodeId = nodeIds[i];
         if (nodeId === study.getUuid()) {
           study.bind("name", btn, "label");

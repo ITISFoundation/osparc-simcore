@@ -32,7 +32,7 @@ def setup(app: web.Application):
     """
     log.debug("Setting up %s ...", __name__)
 
-    spec_path = resources.get_path('api/v0/openapi.yaml')
+    spec_path = resources.get_path("api/v0/openapi.yaml")
     with spec_path.open() as fh:
         spec_dict = yaml.safe_load(fh)
     api_specs = openapi_core.create_spec(spec_dict, spec_path.as_uri())
@@ -44,7 +44,7 @@ def setup(app: web.Application):
     routes = rest_routes.create(api_specs)
     app.router.add_routes(routes)
 
-    log.debug("routes:\n\t%s", "\n\t".join(map(str, routes)) )
+    log.debug("routes:\n\t%s", "\n\t".join(map(str, routes)))
 
     # Enable error, validation and envelop middleware on API routes
     base_path = get_base_path(api_specs)
@@ -54,6 +54,4 @@ def setup(app: web.Application):
 # alias
 setup_rest = setup
 
-__all__ = (
-    'setup_rest'
-)
+__all__ = "setup_rest"

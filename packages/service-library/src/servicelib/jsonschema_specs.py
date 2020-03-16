@@ -14,13 +14,17 @@ def _load_from_path(filepath: Path) -> Dict:
         spec_dict = json.load(f)
         return spec_dict
 
+
 async def _load_from_url(session: ClientSession, url: URL) -> Dict:
     async with session.get(url) as resp:
         text = await resp.text()
         spec_dict = json.loads(text)
         return spec_dict
 
-async def create_jsonschema_specs(location: Path, session: ClientSession=None) -> Dict:
+
+async def create_jsonschema_specs(
+    location: Path, session: ClientSession = None
+) -> Dict:
     """ Loads specs from a given location (url or path),
         validates them and returns a working instance
 
@@ -38,7 +42,7 @@ async def create_jsonschema_specs(location: Path, session: ClientSession=None) -
     if URL(str(location)).host:
         spec_dict = await _load_from_url(session, URL(location))
     else:
-        path = Path(location).expanduser().resolve() #pylint: disable=no-member
+        path = Path(location).expanduser().resolve()  # pylint: disable=no-member
         spec_dict = _load_from_path(path)
 
     try:

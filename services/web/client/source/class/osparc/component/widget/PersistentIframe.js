@@ -27,8 +27,8 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
   construct: function(source, el) {
     this.base(arguments, source);
   },
-  properties :
-  {
+
+  properties: {
     /**
      * Show a Maximize Button
      */
@@ -38,15 +38,20 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       apply: "_applyShowMaximize"
     }
   },
+
   events: {
+    /** Fired for requesting a restart */
+    "restart" : "qx.event.type.Event",
     /** Fired if the iframe is restored from a minimized or maximized state */
     "restore" : "qx.event.type.Event",
     /** Fired if the iframe is maximized */
     "maximize" : "qx.event.type.Event"
   },
+
   members: {
     __iframe: null,
     __syncScheduled: null,
+    __restartButton: null,
     __actionButton: null,
     // override
     _createContentElement : function() {
@@ -61,6 +66,22 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       let standin = new qx.html.Element("div");
       let appRoot = this.getApplicationRoot();
       appRoot.add(iframe, {
+        top:-10000
+      });
+      const restartButton = this.__restartButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/redo-alt/14").set({
+        zIndex: 20,
+        paddingLeft: 8,
+        paddingRight: 8,
+        paddingTop: 6,
+        paddingBottom: 6,
+        backgroundColor: "transparent",
+        decorator: null
+      });
+      restartButton.addListener("execute", e => {
+        this.fireEvent("restart");
+      }, this);
+      osparc.utils.Utils.setIdToWidget(restartButton, "iFrameRestartBtn");
+      appRoot.add(restartButton, {
         top:-10000
       });
       let actionButton = this.__actionButton = new qx.ui.form.Button(null, osparc.theme.osparcdark.Image.URLS["window-maximize"]+"/20").set({
@@ -81,6 +102,9 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       });
       standin.addListener("disappear", e => {
         iframe.setLayoutProperties({
+          top: -10000
+        });
+        restartButton.setLayoutProperties({
           top: -10000
         });
         actionButton.setLayoutProperties({
@@ -129,8 +153,12 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       window.setTimeout(() => {
         this.__syncScheduled = false;
         let iframeParentPos = qx.bom.element.Location.get(qx.bom.element.Location.getOffsetParent(this.__iframe.getContentElement().getDomElement()), "scroll");
-        let divPos = qx.bom.element.Location.get(this.getContentElement().getDomElement(), "scroll");
-        let divSize = qx.bom.element.Dimension.getSize(this.getContentElement().getDomElement());
+        const domElement = this.getContentElement().getDomElement();
+        if (domElement === null) {
+          return;
+        }
+        let divPos = qx.bom.element.Location.get(domElement, "scroll");
+        let divSize = qx.bom.element.Dimension.getSize(domElement);
         this.__iframe.setLayoutProperties({
           top: divPos.top - iframeParentPos.top,
           left: (divPos.left - iframeParentPos.left)
@@ -138,6 +166,10 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
         this.__iframe.set({
           width: (divSize.width),
           height: (divSize.height)
+        });
+        this.__restartButton.setLayoutProperties({
+          top: (divPos.top - iframeParentPos.top),
+          right: (iframeParentPos.right - iframeParentPos.left - divPos.right) + 35
         });
         this.__actionButton.setLayoutProperties({
           top: (divPos.top - iframeParentPos.top),

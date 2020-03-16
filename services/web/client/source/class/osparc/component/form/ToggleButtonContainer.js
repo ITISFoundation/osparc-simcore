@@ -20,7 +20,7 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
   },
 
   members: {
-    // overriden
+    // overridden
     add: function(child, options) {
       if (child instanceof qx.ui.form.ToggleButton) {
         this.base(arguments, child, options);

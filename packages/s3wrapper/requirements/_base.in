@@ -1,5 +1,5 @@
 #
 # Specifies third-party dependencies for 's3wrapper'
 #
-
+urllib3>=1.25.8
 minio
