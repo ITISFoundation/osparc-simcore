@@ -5,6 +5,7 @@
 # pylint:disable=redefined-outer-name
 
 import json
+import os
 import time
 from typing import Dict
 
@@ -24,7 +25,7 @@ def docker_registry(keepdockerup: bool) -> str:
     container = None
     try:
         docker_client.login(registry=url, username="simcore")
-        container = docker_client.containers.list({"name":"pytest_registry"})[0]
+        container = docker_client.containers.list({"name": "pytest_registry"})[0]
     except Exception:
         print("Warning: docker registry is already up!")
         container = docker_client.containers.run(
@@ -35,7 +36,7 @@ def docker_registry(keepdockerup: bool) -> str:
             restart_policy={"Name": "always"},
             detach=True,
         )
-    
+
         # Wait until we can connect
         assert _wait_till_registry_is_responsive(url)
 
@@ -54,6 +55,11 @@ def docker_registry(keepdockerup: bool) -> str:
     # pull the image from the private registry
     private_image = docker_client.images.pull(repo)
     docker_client.images.remove(image=private_image.id)
+
+    # necessary for old school configs
+    os.environ["REGISTRY_URL"] = url
+    os.environ["REGISTRY_USER"] = "simcore"
+    os.environ["REGISTRY_PW"] = ""    
 
     yield url
     if not keepdockerup:
@@ -88,9 +94,12 @@ def sleeper_service(docker_registry: str) -> Dict[str, str]:
     image_labels = image.labels
 
     yield {
-        key[len("io.simcore."):]: json.loads(value)[key[len("io.simcore."):]]
-        for key, value in image_labels.items()
-        if key.startswith("io.simcore.")
+        "schema": {
+            key[len("io.simcore.") :]: json.loads(value)[key[len("io.simcore.") :]]
+            for key, value in image_labels.items()
+            if key.startswith("io.simcore.")
+        },
+        "image": repo,
     }
 
 
@@ -120,7 +129,10 @@ def jupyter_service(docker_registry: str) -> Dict[str, str]:
     image_labels = image.labels
 
     yield {
-        key[len("io.simcore."):]: json.loads(value)[key[len("io.simcore."):]]
-        for key, value in image_labels.items()
-        if key.startswith("io.simcore.")
+        "schema": {
+            key[len("io.simcore.") :]: json.loads(value)[key[len("io.simcore.") :]]
+            for key, value in image_labels.items()
+            if key.startswith("io.simcore.")
+        },
+        "image": repo,
     }
