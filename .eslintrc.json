@@ -66,6 +66,9 @@
       {
         "args": "none"
       }
-    ]
+    ],
+    "no-async-promise-executor": "error",
+    "no-useless-catch": "error",
+    "no-misleading-character-class": "error"
   }
 }
