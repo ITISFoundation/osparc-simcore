@@ -18,8 +18,8 @@ install() {
     # configure simcore for testing with a private registry
     bash tests/e2e/scripts/setup_env_insecure_registry.bash
 
-    # start simcore and set log-level to debug
-    export LOG_LEVEL=INFO; make up-version
+    # start simcore and set log-level
+    export LOG_LEVEL=WARNING; make up-version
 
     echo "-------------- installing test framework..."
     # create a python venv and activate
@@ -49,16 +49,14 @@ test() {
 recover_artifacts() {
     # all screenshots are in tests/e2e/screenshots if any
 
-    # get docker logs
+    # get docker logs.
+    # WARNING: dumping long logs might take hours!!
     mkdir simcore_logs
-    (docker service logs --timestamps simcore_webserver > simcore_logs/webserver.log) || true
-    (docker service logs --timestamps simcore_director > simcore_logs/director.log ) || true
-    (docker service logs --timestamps simcore_storage > simcore_logs/storage.log) || true
-    (docker service logs --timestamps simcore_sidecar > simcore_logs/sidecar.log) || true
-    (docker service logs --timestamps simcore_catalog > simcore_logs/catalog.log) || true
-
-    # stack config
-    (cp .stack-simcore-version.yml simcore_logs/) || true
+    (docker service logs --timestamps --tail 300 --details simcore_webserver > simcore_logs/webserver.log) || true
+    (docker service logs --timestamps --tail 200 --details simcore_director > simcore_logs/director.log ) || true
+    (docker service logs --timestamps --tail 200 --details simcore_storage > simcore_logs/storage.log) || true
+    (docker service logs --timestamps --tail 200 --details simcore_sidecar > simcore_logs/sidecar.log) || true
+    (docker service logs --timestamps --tail 200 --details simcore_catalog > simcore_logs/catalog.log) || true
 }
 
 clean_up() {
