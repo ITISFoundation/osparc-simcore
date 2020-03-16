@@ -88,7 +88,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const prjStack = new qx.ui.container.Stack();
 
       const dashboard = this.__dashboard = new osparc.desktop.Dashboard().set({
-        maxWidth: 1200
+        width: 1200
       });
       dashboard.getStudyBrowser().addListener("startStudy", e => {
         const studyEditor = e.getData();
