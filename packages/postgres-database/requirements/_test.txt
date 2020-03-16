@@ -6,7 +6,7 @@
 #
 aiohttp==3.6.2            # via pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r requirements/_test.in
-alembic==1.0.8            # via -r requirements/_migration.txt
+alembic==1.4.1            # via -r requirements/_migration.txt
 appdirs==1.4.3            # via black
 astroid==2.3.3            # via pylint
 async-timeout==3.0.1      # via aiohttp
@@ -15,10 +15,10 @@ black==19.10b0            # via -r requirements/../../../requirements.txt
 bump2version==1.0.0       # via -r requirements/../../../requirements.txt
 certifi==2019.11.28       # via -r requirements/_migration.txt, requests
 chardet==3.0.4            # via -r requirements/_migration.txt, aiohttp, requests
-click==7.0                # via -r requirements/_migration.txt, black, pip-tools
+click==7.1.1              # via -r requirements/_migration.txt, black, pip-tools
 coverage==5.0.3           # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==1.11.1         # via -r requirements/_test.in
-docker==4.0.2             # via -r requirements/_migration.txt
+docker==4.2.0             # via -r requirements/_migration.txt
 docopt==0.6.2             # via coveralls
 faker==4.0.2              # via -r requirements/_test.in
 idna==2.8                 # via -r requirements/_migration.txt, requests, yarl
