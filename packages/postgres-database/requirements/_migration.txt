@@ -4,11 +4,11 @@
 #
 #    pip-compile --output-file=_migration.txt _migration.in
 #
-alembic==1.0.8            # via -r requirements/_migration.in
+alembic==1.4.1            # via -r requirements/_migration.in
 certifi==2019.11.28       # via -r requirements/_migration.in, requests
 chardet==3.0.4            # via requests
-click==7.0                # via -r requirements/_migration.in
-docker==4.0.2             # via -r requirements/_migration.in
+click==7.1.1              # via -r requirements/_migration.in
+docker==4.2.0             # via -r requirements/_migration.in
 idna==2.8                 # via -r requirements/_base.txt, requests, yarl
 mako==1.0.12              # via alembic
 markupsafe==1.1.1         # via mako
@@ -19,7 +19,7 @@ python-editor==1.0.4      # via alembic
 requests==2.22.0          # via docker
 six==1.12.0               # via docker, python-dateutil, tenacity, websocket-client
 sqlalchemy[postgresql_psycopg2binary]==1.3.5  # via -r requirements/_base.txt, alembic
-tenacity==6.0.0           # via -r requirements/_migration.in
+tenacity==6.1.0           # via -r requirements/_migration.in
 urllib3==1.25.8           # via -r requirements/_migration.in, requests
 websocket-client==0.56.0  # via docker
-yarl==1.3.0               # via -r requirements/_base.txt
+yarl==1.4.2               # via -r requirements/_base.txt
