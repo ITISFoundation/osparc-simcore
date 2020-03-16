@@ -13,7 +13,7 @@ import pytest
 import tenacity
 
 @pytest.fixture(scope="session")
-def docker_registry() -> str:
+def docker_registry(keepdockerup: bool) -> str:
     # run the registry outside of the stack
     docker_client = docker.from_env()
     container = docker_client.containers.run("registry:2",
@@ -25,11 +25,24 @@ def docker_registry() -> str:
     host = "127.0.0.1"
     port = 5000
     url = "{host}:{port}".format(host=host, port=port)
-    # Wait until we can connect
-    assert _wait_till_registry_is_responsive(url)
+    container = None
+    try:
+        docker_client.login(registry=url, username="simcore")
+        container = docker_client.containers.list({"name":"pytest_registry"})[0]
+    except Exception:
+        print("Warning: docker registry is already up!")
+        container = docker_client.containers.run(
+            "registry:2",
+            ports={"5000": "5000"},
+            name="pytest_registry",
+            environment=["REGISTRY_STORAGE_DELETE_ENABLED=true"],
+            restart_policy={"Name": "always"},
+            detach=True,
+        )
+    
+        # Wait until we can connect
+        assert _wait_till_registry_is_responsive(url)
 
-    # test the registry
-    docker_client = docker.from_env()
     # get the hello world example from docker hub
     hello_world_image = docker_client.images.pull("hello-world","latest")
     # login to private registry
@@ -47,11 +60,11 @@ def docker_registry() -> str:
     docker_client.images.remove(image=private_image.id)
 
     yield url
+    if not keepdockerup:
+        container.stop()
 
-    container.stop()
-
-    while docker_client.containers.list(filters={"name": container.name}):
-        time.sleep(1)
+        while docker_client.containers.list(filters={"name": container.name}):
+            time.sleep(1)
 
 @tenacity.retry(wait=tenacity.wait_fixed(1), stop=tenacity.stop_after_delay(60))
 def _wait_till_registry_is_responsive(url: str) -> bool:
@@ -78,9 +91,9 @@ def sleeper_service(docker_registry: str) -> Dict[str, str]:
     image_labels = image.labels
 
     yield {
-        json.loads(key): json.loads(value)
+        key[len("io.simcore."):]: json.loads(value)[key[len("io.simcore."):]]
         for key, value in image_labels.items()
-        if key.starts_with("io.simcore.")
+        if key.startswith("io.simcore.")
     }
 
 @pytest.fixture(scope="session")
@@ -109,7 +122,7 @@ def jupyter_service(docker_registry: str) -> Dict[str, str]:
     image_labels = image.labels
 
     yield {
-        json.loads(key): json.loads(value)
+        key[len("io.simcore."):]: json.loads(value)[key[len("io.simcore."):]]
         for key, value in image_labels.items()
-        if key.starts_with("io.simcore.")
+        if key.startswith("io.simcore.")
     }
