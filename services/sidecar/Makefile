@@ -47,7 +47,7 @@ tests-integration: ## runs integration tests against local+production images
 
 
 .PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
-build build-nc build-devel build-devel-nc build-cache build-cache-nc: openapi-specs ## docker image build in many flavours
+build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## docker image build in many flavours
 	# building ${APP_NAME} ...
 	@$(MAKE) --directory ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
