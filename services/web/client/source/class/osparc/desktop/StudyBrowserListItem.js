@@ -55,7 +55,7 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
       left: 0
     });
 
-    if (menu !== null) {
+    if (menu !== undefined) {
       this.setMenu(menu);
     }
 
