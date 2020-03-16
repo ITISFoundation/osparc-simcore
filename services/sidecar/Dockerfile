@@ -1,4 +1,5 @@
-FROM python:3.6-slim as base
+ARG PYTHON_VERSION="3.6"
+FROM python:${PYTHON_VERSION}-slim as base
 #
 #  USAGE:
 #     cd sercices/sidecar
