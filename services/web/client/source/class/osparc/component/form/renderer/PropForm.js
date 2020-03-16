@@ -431,15 +431,15 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
 
       switch (visibility) {
-        case "Invisible":
+        case this._visibility.hidden:
           control.setEnabled(false);
           control.setVisibility("excluded");
           break;
-        case "ReadOnly":
+        case this._visibility.readOnly:
           control.setEnabled(false);
           control.setVisibility("visible");
           break;
-        case "ReadAndWrite":
+        case this._visibility.readWrite:
           control.setEnabled(true);
           control.setVisibility("visible");
           break;

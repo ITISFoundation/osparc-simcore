@@ -55,15 +55,15 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
         if (control) {
           const group = this.__ctrlRBsMap[key];
           switch (data[key]) {
-            case "Invisible": {
+            case this._visibility.hidden: {
               group.setSelection([group.getSelectables()[0]]);
               break;
             }
-            case "ReadOnly": {
+            case this._visibility.readOnly: {
               group.setSelection([group.getSelectables()[1]]);
               break;
             }
-            case "ReadAndWrite": {
+            case this._visibility.readWrite: {
               group.setSelection([group.getSelectables()[2]]);
               break;
             }
@@ -109,13 +109,13 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
 
     __addAccessLevelRB: function(portId) {
       const rbHidden = new qx.ui.form.RadioButton(this.tr("Not Visible"));
-      rbHidden.accessLevel = "Invisible";
+      rbHidden.accessLevel = this._visibility.hidden;
       rbHidden.portId = portId;
       const rbReadOnly = new qx.ui.form.RadioButton(this.tr("Read Only"));
-      rbReadOnly.accessLevel = "ReadOnly";
+      rbReadOnly.accessLevel = this._visibility.readOnly;
       rbReadOnly.portId = portId;
       const rbEditable = new qx.ui.form.RadioButton(this.tr("Editable"));
-      rbEditable.accessLevel = "ReadAndWrite";
+      rbEditable.accessLevel = this._visibility.readWrite;
       rbEditable.portId = portId;
 
       const groupBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
@@ -179,21 +179,21 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
         const label = this._getLabelFieldChild(key).child;
         const control = this._form.getControl(key);
         switch (data[key]) {
-          case "Invisible": {
+          case this._visibility.hidden: {
             const newLabel = this.__addDelTag(label.getValue());
             label.setValue(newLabel);
             label.setEnabled(false);
             control.setEnabled(false);
             break;
           }
-          case "ReadOnly": {
+          case this._visibility.readOnly: {
             const newLabel = this.__removeDelTag(label.getValue());
             label.setValue(newLabel);
             label.setEnabled(false);
             control.setEnabled(false);
             break;
           }
-          case "ReadAndWrite": {
+          case this._visibility.readWrite: {
             const newLabel = this.__removeDelTag(label.getValue());
             label.setValue(newLabel);
             label.setEnabled(true);

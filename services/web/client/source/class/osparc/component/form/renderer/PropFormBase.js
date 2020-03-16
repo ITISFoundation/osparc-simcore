@@ -56,6 +56,12 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       ctrlField: 1
     },
 
+    _visibility: {
+      hidden: "Invisible",
+      readOnly: "ReadOnly",
+      readWrite: "ReadAndWrite"
+    },
+
     addItems: function(items, names, title, itemOptions, headerOptions) {
       // add the header
       if (title !== null) {
