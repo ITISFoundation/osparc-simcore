@@ -26,7 +26,7 @@ pyparsing==2.4.6          # via packaging
 pytest-cov==2.8.1         # via -r _test.in
 pytest-docker==0.7.2      # via -r _test.in
 pytest-runner==5.2        # via -r _test.in
-pytest==5.4.1             # via -r _test.in, pytest-cov
+pytest==5.3.5             # via -r _test.in, pytest-cov
 python-dateutil==2.8.0    # via -r _base.txt, minio
 pytz==2019.1              # via -r _base.txt, minio
 requests==2.23.0          # via -r _test.in, coveralls
