@@ -18,7 +18,7 @@ requirements: ## compiles pip requirements (.in -> .txt)
 
 
 .PHONY: install-dev install-prod install-ci
-install-dev install-prod install-ci: requirements .check-venv-active ## install app in development/production or CI mode
+install-dev install-prod install-ci: requirements _check_venv_active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
 	pip-sync requirements/$(subst install-,,$@).txt
 
