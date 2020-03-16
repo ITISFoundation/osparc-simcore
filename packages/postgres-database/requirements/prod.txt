@@ -1,0 +1,11 @@
+# Shortcut to install 'simcore-postgres-database'
+#
+# Usage:
+#   pip install -r requirements/prod.txt
+#
+
+# installs requirements first
+-r _base.txt
+-r _migration.txt
+
+.[migration]

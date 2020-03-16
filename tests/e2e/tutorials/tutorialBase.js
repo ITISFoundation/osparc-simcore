@@ -55,12 +55,38 @@ class TutorialBase {
 
   async login() {
     this.__responsesQueue.addResponseListener("projects?type=template");
+    this.__responsesQueue.addResponseListener("catalog/dags");
+    this.__responsesQueue.addResponseListener("services");
     await auto.logIn(this.__page, this.__user, this.__pass);
     try {
-      await this.__responsesQueue.waitUntilResponse("projects?type=template");
+      const resp = await this.__responsesQueue.waitUntilResponse("projects?type=template");
+      const templates = resp["data"];
+      console.log("Templates received", templates.length);
+      templates.forEach(template => {
+        console.log(" - ", template.name);
+      });
     }
     catch(err) {
       console.error("Templates could not be fetched", err);
+    }
+    try {
+      const resp = await this.__responsesQueue.waitUntilResponse("catalog/dags");
+      const dags = resp["data"];
+      console.log("DAGs received:", dags.length);
+      dags.forEach(dag => {
+        console.log(" - ", dag.name);
+      });
+    }
+    catch(err) {
+      console.error("DAGs could not be fetched", err);
+    }
+    try {
+      const resp = await this.__responsesQueue.waitUntilResponse("services");
+      const services = resp["data"];
+      console.log("Services received:", services.length);
+    }
+    catch(err) {
+      console.error("Services could not be fetched", err);
     }
   }
 

@@ -28,7 +28,7 @@ qx.Class.define("osparc.component.filter.group.ServiceFilterGroup", {
   construct: function(groupId) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox());
-
+    this.__groupId = groupId;
     const textFilter = this.__textFilter = new osparc.component.filter.TextFilter("text", groupId);
     osparc.utils.Utils.setIdToWidget(textFilter, "serviceFiltersTextFld");
     const tagsFilter = this.__tagsFilter = new osparc.component.filter.NodeTypeFilter("tags", groupId);
@@ -39,6 +39,7 @@ qx.Class.define("osparc.component.filter.group.ServiceFilterGroup", {
   members: {
     __textFilter: null,
     __tagsFilter: null,
+    __groupId: null,
 
     /**
      * Resets the text and active tags.
@@ -46,6 +47,13 @@ qx.Class.define("osparc.component.filter.group.ServiceFilterGroup", {
     reset: function() {
       this.__textFilter.reset();
       this.__tagsFilter.reset();
+    },
+
+    /**
+     * Programmatically triggers filtering again.
+     */
+    dispatch: function() {
+      osparc.component.filter.UIFilterController.dispatch(this.__groupId);
     },
 
     /**

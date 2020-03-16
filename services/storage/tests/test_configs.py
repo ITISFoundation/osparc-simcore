@@ -45,6 +45,31 @@ def devel_environ(env_devel_file):
     return env_devel
 
 
+variable_expansion_pattern = re.compile(r"\$\{*(\w+)+[:-]*(\w+)*\}")
+
+@pytest.mark.parametrize(
+    "sample,expected_match",
+    [
+        (r"${varname:-default}", ("varname", "default")),
+        (r"${varname}", ("varname", None)),
+        (r"33", None),
+        (r"${VAR_name:-33}", ("VAR_name", "33")),
+        (r"${varname-default}", ("varname", "default")), # this is not standard!
+        (r"${varname:default}", ("varname", "default")), # this is not standard!
+    ],
+)
+def test_variable_expansions(sample, expected_match):
+    # TODO: extend variable expansions
+    # https://en.wikibooks.org/wiki/Bourne_Shell_Scripting/Variable_Expansion
+    match = variable_expansion_pattern.match(sample)
+    if expected_match:
+        assert match
+        varname, default = match.groups()
+        assert (varname, default) == expected_match
+    else:
+        assert not match
+
+
 @pytest.fixture("session")
 def container_environ(
     services_docker_compose_file, devel_environ, osparc_simcore_root_dir
@@ -62,15 +87,14 @@ def container_environ(
     )
 
     environ_items = dc["services"][THIS_SERVICE].get("environment", list())
-    MATCH = re.compile(r"\$\{(\w+)+")
 
     for item in environ_items:
         key, value = item.split("=")
 
-        m = MATCH.match(value)
-        if m:
-            envkey = m.groups()[0]
-            value = devel_environ[envkey]
+        match = variable_expansion_pattern.match(value)
+        if match:
+            varname, default_value = match.groups()
+            value = devel_environ.get(varname, default_value)
         container_environ[key] = value
 
     return container_environ
