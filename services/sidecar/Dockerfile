@@ -1,4 +1,4 @@
-FROM python:3.6-alpine as base
+FROM python:3.6-slim as base
 #
 #  USAGE:
 #     cd sercices/sidecar
@@ -10,29 +10,30 @@ FROM python:3.6-alpine as base
 LABEL maintainer=mguidon
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
-RUN adduser -D -u 8004 -s /bin/sh -h /home/scu scu
+ENV SC_USER_ID=8004 \
+    SC_USER_NAME=scu \
+    SC_BUILD_TARGET=base \
+    SC_BOOT_MODE=default
 
-# needed for running entrypoint.sh
-RUN apk add --no-cache \
-      su-exec
+RUN adduser --uid ${SC_USER_ID} --disabled-password --gecos "" --shell /bin/sh --home /home/${SC_USER_NAME} ${SC_USER_NAME}
 
-# All SC_ variables are customized
-ENV SC_PIP pip3 --no-cache-dir
-ENV SC_BUILD_TARGET base
-ENV SC_BOOT_MODE default
 # Sets utf-8 encoding for Python et al
 ENV LANG=C.UTF-8
 # Turns off writing .pyc files; superfluous on an ephemeral container.
-ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    VIRTUAL_ENV=/home/scu/.venv
 # Ensures that the python and pip executables used
 # in the image will be those from our virtualenv.
-ENV PATH="/.venv/bin:$PATH"
+ENV PATH="/${VIRTUAL_ENV}/bin:$PATH"
 
 # environment variables
-ENV SWARM_STACK_NAME = '' \
-      SIDECAR_SERVICES_MAX_NANO_CPUS = '4000000000' \
-      SIDECAR_SERVICES_MAX_MEMORY_BYTES = '2147483648' \
-      SIDECAR_SERVICES_TIMEOUT_SECONDS = '1200'
+ENV SWARM_STACK_NAME=""\
+    SIDECAR_SERVICES_MAX_NANO_CPUS=4000000000 \
+    SIDECAR_SERVICES_MAX_MEMORY_BYTES=2147483648 \
+    SIDECAR_SERVICES_TIMEOUT_SECONDS=1200 \
+    SIDECAR_INPUT_FOLDER=/home/scu/input \
+    SIDECAR_OUTPUT_FOLDER=/home/scu/output \
+    SIDECAR_LOG_FOLDER=/home/scu/log
 
 EXPOSE 8080
 
@@ -48,20 +49,16 @@ VOLUME /home/scu/log
 
 FROM base as build
 
-ENV SC_BUILD_TARGET build
+ENV SC_BUILD_TARGET=build
 
-#  libpq: client library for PostgreSQL https://www.postgresql.org/docs/9.5/libpq.html
-#  libstdc++: needed in ujson https://github.com/kohlschutter/junixsocket/issues/33
-RUN apk add  --virtual .build-deps --no-cache \
-      postgresql-dev \
-      gcc \
-      g++ \
-      libc-dev \
-      libstdc++
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends \
+      build-essential \
+      gcc
 
-RUN python -m venv /.venv
+RUN python -m venv ${VIRTUAL_ENV}
 
-RUN $SC_PIP install --upgrade \
+RUN pip install --upgrade --no-cache-dir \
       pip~=20.0.2  \
       wheel \
       setuptools
@@ -72,7 +69,7 @@ WORKDIR /build
 COPY  --chown=scu:scu services/sidecar/requirements/*.txt \
       tmp/sidecar/requirements/
 
-RUN $SC_PIP install \
+RUN pip install --no-cache-dir \
       -r tmp/sidecar/requirements/_base.txt
 
 
@@ -84,7 +81,7 @@ RUN $SC_PIP install \
 #
 FROM build as cache
 
-ENV SC_BUILD_TARGET cache
+ENV SC_BUILD_TARGET=cache
 
 
 COPY --chown=scu:scu packages /build/packages
@@ -94,8 +91,8 @@ COPY --chown=scu:scu services/storage/client-sdk /build/services/storage/client-
 WORKDIR /build/services/sidecar
 
 
-RUN $SC_PIP install -r requirements/prod.txt &&\
-      $SC_PIP list -v
+RUN pip install --no-cache-dir -r requirements/prod.txt &&\
+      pip list -v
 
 
 
@@ -109,20 +106,14 @@ RUN $SC_PIP install -r requirements/prod.txt &&\
 FROM base as production
 
 
-ENV SC_BUILD_TARGET production
+ENV SC_BUILD_TARGET=production
 ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
-COPY --from=cache /.venv /.venv
+COPY --from=cache ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+RUN chown --recursive scu:scu ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/sidecar/docker services/sidecar/docker
-# RUN mkdir -p services/sidecar &&\
-#     chown scu:scu services/sidecar &&\
-#     mv /build/services/sidecar/docker services/sidecar/docker &&\
-#     rm -rf /build
-
-# RUN apk del --no-cache\
-#       gcc
 
 
 ENTRYPOINT [ "/bin/sh", "services/sidecar/docker/entrypoint.sh" ]
@@ -139,13 +130,7 @@ CMD ["/bin/sh", "services/sidecar/docker/boot.sh"]
 #
 FROM build as development
 
-ENV SC_BUILD_TARGET development
-
-
-#  TODO: consider installing tooling in a separate virtualenv?
-#  TODO: really necesary???
-WORKDIR /build
-
+ENV SC_BUILD_TARGET=development
 
 WORKDIR /devel
 VOLUME  /devel/packages

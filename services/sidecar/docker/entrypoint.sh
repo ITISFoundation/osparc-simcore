@@ -1,6 +1,11 @@
 #!/bin/sh
-#
+set -o errexit
+set -o nounset
+
+IFS=$(printf '\n\t')
+
 INFO="INFO: [$(basename "$0")] "
+WARNING="WARNING: [$(basename "$0")] "
 ERROR="ERROR: [$(basename "$0")] "
 
 # This entrypoint script:
@@ -10,9 +15,9 @@ ERROR="ERROR: [$(basename "$0")] "
 #   *runs* as non-root user [scu]
 #
 echo "$INFO" "Entrypoint for stage ${SC_BUILD_TARGET} ..."
-echo "  User    :$(id "$(whoami)")"
-echo "  Workdir :$(pwd)"
-echo "  scuUser :$(id scu)"
+echo   User    :"$(id "$(whoami)")"
+echo   Workdir :"$(pwd)"
+echo   scuUser :"$(id scu)"
 
 
 USERNAME=scu
@@ -25,30 +30,39 @@ then
     DEVEL_MOUNT=/devel/services/sidecar
 
     stat $DEVEL_MOUNT > /dev/null 2>&1 || \
-        (echo "$ERROR" "You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1) # FIXME: exit does not stop script
+        (echo "$ERROR" "You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1)
 
-    USERID=$(stat -c %u $DEVEL_MOUNT)
-    GROUPID=$(stat -c %g $DEVEL_MOUNT)
-    GROUPNAME=$(getent group "${GROUPID}" | cut -d: -f1)
+    USERID=$(stat --format=%u $DEVEL_MOUNT)
+    GROUPID=$(stat --format=%g $DEVEL_MOUNT)
+    GROUPNAME=$(getent group "${GROUPID}" | cut --delimiter=: --fields=1)
 
     if [ "$USERID" -eq 0 ]
     then
-        echo "$INFO" "mounted folder from root, adding scu to root..."
-        addgroup scu root
+        echo "$WARNING" Folder mounted owned by root user... adding "$SC_USER_NAME" to root...
+        adduser "${SC_USER_NAME}" root
     else
         # take host's credentials in scu
         if [ -z "$GROUPNAME" ]
         then
-            echo "$INFO" "mounted folder from $USERID, creating new group..."
-            GROUPNAME=host_group
-            addgroup -g "$GROUPID" $GROUPNAME
+            echo "$INFO" mounted folder from "$USERID", creating new group my"${SC_USER_NAME}"
+            GROUPNAME=my"${SC_USER_NAME}"
+            addgroup --gid "$GROUPID" "$GROUPNAME"
+            # change group property of files already around
+            find / -path /proc -prune -group "$SC_USER_ID" -exec chgrp --no-dereference "$GROUPNAME" {} \;
         else
-            echo "$INFO" "mounted folder from $USERID, adding scu to $GROUPNAME..."
-            addgroup scu $GROUPNAME
+            echo "$INFO" "mounted folder from $USERID, adding ${SC_USER_NAME} to $GROUPNAME..."
+            adduser "$SC_USER_NAME" "$GROUPNAME"
         fi
 
-        deluser scu > /dev/null 2>&1
-        adduser -u "$USERID" -G $GROUPNAME -D -s /bin/sh scu
+        echo "$INFO changing $SC_USER_NAME $SC_USER_ID:$SC_USER_ID to $USERID:$GROUPID"
+        deluser "${SC_USER_NAME}" > /dev/null 2>&1
+        if [ "$SC_USER_NAME" = "$GROUPNAME" ]
+        then
+            addgroup --gid "$GROUPID" "$GROUPNAME"
+        fi
+        adduser --disabled-password --gecos "" --uid "$USERID" --gid "$GROUPID" --shell /bin/sh "$SC_USER_NAME" --no-create-home
+        # change user property of files already around
+        find / -path /proc -prune -user "$SC_USER_ID" -exec chown --no-dereference "$SC_USER_NAME" {} \;
     fi
 fi
 
@@ -56,25 +70,38 @@ fi
 
 # Appends docker group if socket is mounted
 DOCKER_MOUNT=/var/run/docker.sock
-
-
 if stat $DOCKER_MOUNT > /dev/null 2>&1
 then
-    GROUPID=$(stat -c %g $DOCKER_MOUNT)
+    echo "$INFO detected docker socket is mounted, adding user to group..."
+    GROUPID=$(stat --format=%g $DOCKER_MOUNT)
     GROUPNAME=scdocker
 
-
-    if ! addgroup -g "$GROUPID" $GROUPNAME > /dev/null 2>&1
+    if ! addgroup --gid "$GROUPID" $GROUPNAME > /dev/null 2>&1
     then
+        echo "$WARNING docker group with $GROUPID already exists, getting group name..."
         # if group already exists in container, then reuse name
-        GROUPNAME=$(getent group "${GROUPID}" | cut -d: -f1)
+        GROUPNAME=$(getent group "${GROUPID}" | cut --delimiters=: --fields=1)
+        echo "$WARNING docker group with $GROUPID has name $GROUPNAME"
     fi
-    addgroup scu "$GROUPNAME"
+    adduser "$SC_USER_NAME" "$GROUPNAME"
 fi
 
-echo "$INFO" "Starting boot ..."
-chown -R $USERNAME:"$GROUPNAME" /home/scu/input
-chown -R $USERNAME:"$GROUPNAME" /home/scu/output
-chown -R $USERNAME:"$GROUPNAME" /home/scu/log
+echo "$INFO ensuring write rights on folders ..."
+chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_INPUT_FOLDER}"
+chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_OUTPUT_FOLDER}"
+chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_LOG_FOLDER}"
 
-exec su-exec scu "$@"
+echo "$INFO installing pythong dependencies..."
+cd services/sidecar || exit
+pip install --no-cache-dir -r requirements/dev.txt
+cd /devel || exit
+
+
+echo "$INFO Starting $* ..."
+echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
+echo "  local dir : $(ls -al)"
+echo "  input dir : $(ls -al "${SIDECAR_INPUT_FOLDER}")"
+echo "  output dir : $(ls -al "${SIDECAR_OUTPUT_FOLDER}")"
+echo "  log dir : $(ls -al "${SIDECAR_LOG_FOLDER}")"
+
+su --preserve-environment --command "export PATH=${PATH}; $*" "$SC_USER_NAME"

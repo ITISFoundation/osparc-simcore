@@ -1,5 +1,9 @@
 #!/bin/sh
-#
+set -o errexit
+set -o nounset
+
+IFS=$(printf '\n\t')
+
 INFO="INFO: [$(basename "$0")] "
 
 # BOOTING application ---------------------------------------------
@@ -13,16 +17,16 @@ then
   printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
   #--------------------
 
-  cd services/sidecar || exit
-  $SC_PIP install --user -r requirements/dev.txt
-  cd /devel || exit
+  # cd services/sidecar || exit
+  
+  # cd /devel || exit
 
   #--------------------
   echo "$INFO" "Python :"
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
   echo "$INFO" "PIP :"
-  $SC_PIP list | sed 's/^/    /'
+  pip list | sed 's/^/    /'
 fi
 
 # RUNNING application ----------------------------------------
