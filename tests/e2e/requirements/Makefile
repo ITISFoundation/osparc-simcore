@@ -3,11 +3,12 @@
 ROOT_DIR  = $(realpath $(CURDIR)/../../../)
 VENV_DIR ?= $(realpath $(ROOT_DIR)/.venv)
 
-
+.PHONY: reqs
 requirements.txt: requirements.in
 	# pip compiling $<
 	@$(VENV_DIR)/bin/pip-compile --output-file $@ $<
 
+reqs: requirements.txt # alias
 
 .PHONY: install
 install: $(VENV_DIR) requirements.txt ## installs dependencies
