@@ -18,7 +18,7 @@ chardet==3.0.4            # via -r requirements/_migration.txt, aiohttp, request
 click==7.0                # via -r requirements/_migration.txt, black, pip-tools
 coverage==5.0.3           # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==1.11.1         # via -r requirements/_test.in
-docker==4.0.2             # via -r requirements/_migration.txt
+docker==4.2.0             # via -r requirements/_migration.txt
 docopt==0.6.2             # via coveralls
 faker==4.0.2              # via -r requirements/_test.in
 idna==2.8                 # via -r requirements/_migration.txt, requests, yarl
