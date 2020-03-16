@@ -34,12 +34,23 @@ def docker_swarm(docker_client: docker.client.DockerClient) -> None:
         assert docker_client.swarm.leave(force=True)
 
 
+def pytest_addoption(parser):
+    parser.addoption("--keepdockerup", action="store_true", default=False, help="do not bring stack/registry down")
+
+
+@pytest.fixture(scope="session")
+def keepdockerup(request) -> bool:
+    return request.config.getoption("--keepdockerup") == True
+
+
+
 @pytest.fixture(scope="module")
 def docker_stack(
     docker_swarm,
     docker_client: docker.client.DockerClient,
     core_services_config_file: Path,
     ops_services_config_file: Path,
+    keepdockerup: bool
 ) -> Dict:
     stacks = {"simcore": core_services_config_file, "ops": ops_services_config_file}
 
@@ -90,6 +101,10 @@ def docker_stack(
     }
 
     _print_services("[AFTER TEST]")
+
+    if keepdockerup:
+        # skip bringing the stack down
+        return
 
     # clean up. Guarantees that all services are down before creating a new stack!
     #
