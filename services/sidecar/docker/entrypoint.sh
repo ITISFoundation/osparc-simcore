@@ -91,10 +91,14 @@ chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_INPUT_FOLDER}"
 chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_OUTPUT_FOLDER}"
 chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_LOG_FOLDER}"
 
-echo "$INFO installing pythong dependencies..."
-cd services/sidecar || exit
-pip install --no-cache-dir -r requirements/dev.txt
-cd /devel || exit
+
+if [ "${SC_BUILD_TARGET}" = "development" ]
+then
+    echo "$INFO installing pythong dependencies..."
+    pushd services/sidecar
+    pip install --no-cache-dir -r requirements/dev.txt
+    popd
+fi
 
 
 echo "$INFO Starting $* ..."
