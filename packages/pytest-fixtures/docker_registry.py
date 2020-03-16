@@ -4,14 +4,17 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import json
+import time
+from typing import Dict
+
 import docker
 import pytest
 import tenacity
-import time
 
 
 @pytest.fixture(scope="session")
-def docker_registry():
+def docker_registry() -> str:
     # run the registry outside of the stack
     docker_client = docker.from_env()
     container = docker_client.containers.run(
@@ -54,7 +57,7 @@ def docker_registry():
 
 
 @tenacity.retry(wait=tenacity.wait_fixed(1), stop=tenacity.stop_after_delay(60))
-def _wait_till_registry_is_responsive(url):
+def _wait_till_registry_is_responsive(url: str) -> bool:
     docker_client = docker.from_env()
     docker_client.login(registry=url, username="simcore")
     return True
@@ -62,23 +65,30 @@ def _wait_till_registry_is_responsive(url):
 
 # pull from itisfoundation/sleeper and push into local registry
 @pytest.fixture(scope="session")
-def sleeper_service(docker_registry) -> str:
+def sleeper_service(docker_registry: str) -> Dict[str, str]:
     """ Adds a itisfoundation/sleeper in docker registry
 
     """
     client = docker.from_env()
-    image = client.images.pull("itisfoundation/sleeper", tag="1.0.0")
+    TAG = "1.0.0"
+    image = client.images.pull("itisfoundation/sleeper", tag=TAG)
     assert not image is None
-    repo = "{}/simcore/services/comp/itis/sleeper:1.0.0".format(docker_registry)
+    repo = f"{docker_registry}/simcore/services/comp/itis/sleeper:{TAG}"
     assert image.tag(repo) == True
     client.images.push(repo)
     image = client.images.pull(repo)
     assert image
-    yield repo
+    image_labels = image.labels
+
+    yield {
+        json.loads(key): json.loads(value)
+        for key, value in image_labels.items()
+        if key.starts_with("io.simcore.")
+    }
 
 
 @pytest.fixture(scope="session")
-def jupyter_service(docker_registry) -> str:
+def jupyter_service(docker_registry: str) -> Dict[str, str]:
     """ Adds a itisfoundation/jupyter-base-notebook in docker registry
 
     """
@@ -100,5 +110,10 @@ def jupyter_service(docker_registry) -> str:
     # check
     image = client.images.pull(repo)
     assert image
+    image_labels = image.labels
 
-    yield repo
+    yield {
+        json.loads(key): json.loads(value)
+        for key, value in image_labels.items()
+        if key.starts_with("io.simcore.")
+    }
