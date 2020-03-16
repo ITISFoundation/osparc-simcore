@@ -16,13 +16,13 @@ import yaml
 
 
 @pytest.fixture(scope="session")
-def docker_client():
+def docker_client() -> docker.client.DockerClient:
     client = docker.from_env()
     yield client
 
 
 @pytest.fixture(scope="module")
-def docker_swarm(docker_client):
+def docker_swarm(docker_client: docker.client.DockerClient) -> None:
     try:
         docker_client.swarm.reload()
         print("CAUTION: Already part of a swarm")
@@ -37,7 +37,7 @@ def docker_swarm(docker_client):
 @pytest.fixture(scope="module")
 def docker_stack(
     docker_swarm,
-    docker_client,
+    docker_client: docker.client.DockerClient,
     core_services_config_file: Path,
     ops_services_config_file: Path,
 ) -> Dict:
@@ -55,7 +55,7 @@ def docker_stack(
         stacks_up.append(stack_name)
 
     # wait for the stack to come up
-    def _wait_for_services(retry_count, max_wait_time_s):
+    def _wait_for_services(retry_count: int, max_wait_time_s: int) -> None:
         pre_states = ["NEW", "PENDING", "ASSIGNED", "PREPARING", "STARTING"]
         services = docker_client.services.list()
         WAIT_TIME_BEFORE_RETRY = 5
@@ -71,7 +71,7 @@ def docker_stack(
                 print(f"Waiting for {service.name}...")
                 time.sleep(WAIT_TIME_BEFORE_RETRY)
 
-    def _print_services(msg):
+    def _print_services(msg: str) -> None:
         from pprint import pprint
 
         print("{:*^100}".format("docker services running " + msg))
