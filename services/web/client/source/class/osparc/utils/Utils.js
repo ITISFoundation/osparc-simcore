@@ -15,11 +15,6 @@
 
 ************************************************************************ */
 
-/* global window */
-/* global document */
-/* global XMLHttpRequest */
-/* global Blob */
-
 /**
  * @ignore(URL)
  */
