@@ -32,7 +32,7 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
   construct: function(menu) {
     this.base(arguments);
     this.set({
-      width: 210
+      width: this.self().ITEM_WIDTH
     });
 
     // create a date format like "Oct. 19, 2018 11:31 AM"
@@ -63,6 +63,10 @@ qx.Class.define("osparc.desktop.StudyBrowserListItem", {
     this.addListener("pointerout", this._onPointerOut, this);
 
     this.addListener("changeValue", this.__onToggleChange, this);
+  },
+
+  statics: {
+    ITEM_WIDTH: 210
   },
 
   events: {
