@@ -12,15 +12,21 @@ LABEL maintainer=mguidon
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 RUN adduser -D -u 8004 -s /bin/sh -h /home/scu scu
 
+# needed for running entrypoint.sh
 RUN apk add --no-cache \
       su-exec
-
-ENV PATH "/home/scu/.local/bin:$PATH"
 
 # All SC_ variables are customized
 ENV SC_PIP pip3 --no-cache-dir
 ENV SC_BUILD_TARGET base
 ENV SC_BOOT_MODE default
+# Sets utf-8 encoding for Python et al
+ENV LANG=C.UTF-8
+# Turns off writing .pyc files; superfluous on an ephemeral container.
+ENV PYTHONDONTWRITEBYTECODE=1
+# Ensures that the python and pip executables used
+# in the image will be those from our virtualenv.
+ENV PATH="/.venv/bin:$PATH"
 
 # environment variables
 ENV SWARM_STACK_NAME = '' \
@@ -46,12 +52,14 @@ ENV SC_BUILD_TARGET build
 
 #  libpq: client library for PostgreSQL https://www.postgresql.org/docs/9.5/libpq.html
 #  libstdc++: needed in ujson https://github.com/kohlschutter/junixsocket/issues/33
-RUN apk add --no-cache \
+RUN apk add  --virtual .build-deps --no-cache \
       postgresql-dev \
       gcc \
       g++ \
       libc-dev \
       libstdc++
+
+RUN python -m venv /.venv
 
 RUN $SC_PIP install --upgrade \
       pip~=20.0.2  \
@@ -87,7 +95,7 @@ WORKDIR /build/services/sidecar
 
 
 RUN $SC_PIP install -r requirements/prod.txt &&\
-    $SC_PIP list -v
+      $SC_PIP list -v
 
 
 
@@ -98,7 +106,7 @@ RUN $SC_PIP install -r requirements/prod.txt &&\
 #  + /home/scu     $HOME = WORKDIR
 #    + services/sidecar [scu:scu]
 #
-FROM cache as production
+FROM base as production
 
 
 ENV SC_BUILD_TARGET production
@@ -106,13 +114,15 @@ ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
-RUN mkdir -p services/sidecar &&\
-    chown scu:scu services/sidecar &&\
-    mv /build/services/sidecar/docker services/sidecar/docker &&\
-    rm -rf /build
+COPY --from=cache /.venv /.venv
+COPY --chown=scu:scu services/sidecar/docker services/sidecar/docker
+# RUN mkdir -p services/sidecar &&\
+#     chown scu:scu services/sidecar &&\
+#     mv /build/services/sidecar/docker services/sidecar/docker &&\
+#     rm -rf /build
 
-RUN apk del --no-cache\
-      gcc
+# RUN apk del --no-cache\
+#       gcc
 
 
 ENTRYPOINT [ "/bin/sh", "services/sidecar/docker/entrypoint.sh" ]
