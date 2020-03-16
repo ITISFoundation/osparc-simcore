@@ -1,11 +1,8 @@
+# Base Makefile for all requirements/Makefile
 #
-# References:
+# SEE docs/python-dependencies.md
 #
-#  https://github.com/jazzband/pip-tools
-#  https://alexwlchan.net/2017/10/pip-tools/
-#  https://hynek.me/articles/python-app-deps-2018/#pip-tools-everything-old-is-new-again
-#
-#
+
 .PHONY: reqs check clean help
 .DEFAULT_GOAL := help
 
@@ -19,6 +16,7 @@ reqs: $(outputs) ## pip-compiles all requirements/*.in -> requirements/*.txt
 
 _test.txt: _base.txt
 
+## Add more explicit dependencies in sub-Makefile
 
 check: ## Checks whether pip-compile is installed
 	@which pip-compile > /dev/null
