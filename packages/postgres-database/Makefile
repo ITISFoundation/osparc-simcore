@@ -3,7 +3,6 @@
 #
 include ../../scripts/common.Makefile
 
-REPO_BASE_DIR  = $(abspath $(CURDIR)/../../)
 
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)

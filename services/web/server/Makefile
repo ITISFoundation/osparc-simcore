@@ -7,8 +7,6 @@ APP_NAME     := webserver
 APP_CLI_NAME := simcore-service-catalog
 export APP_VERSION = $(shell cat VERSION)
 
-REPO_BASE_DIR  = $(abspath $(CURDIR)/../../../)
-
 
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)

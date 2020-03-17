@@ -3,8 +3,6 @@
 #
 include ../../scripts/common.Makefile
 
-REPO_BASE_DIR  = $(abspath $(CURDIR)/../../)
-
 
 .PHONY: install-dev install-prod install-ci
 install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
