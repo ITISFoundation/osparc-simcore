@@ -13,6 +13,7 @@
 #     validate      Validate specification
 #     version       Show version information
 #
+# IMPORTANT: use absolute paths so they can be automaticaly mapped inside of the container
 #
 # REFERENCES:
 #   https://openapi-generator.tech/
@@ -22,6 +23,10 @@
 USERID=$(stat -c %u "$PWD")
 GROUPID=$(stat -c %g "$PWD")
 
+# FIXME: replaces automatically $PWD by /local so it maps correctly in the container
+#PATTERN=s+$PWD+/local+
+#CMD=$(echo "$@" | sed $PATTERN)
+
 exec docker run --rm \
     --user "$USERID:$GROUPID" \
     --volume "$PWD:/local" \
@@ -30,5 +35,3 @@ exec docker run --rm \
 # Example
 #   openapi-generator-cli generate -i /local/api/specs/webserver/openapi.yaml -g python -o /local/out/sdk/webserver
 #
-
-# TODO: automaticaly replace $PWD by /local in the cmd
