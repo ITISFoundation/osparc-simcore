@@ -15,8 +15,6 @@
 
 ************************************************************************ */
 
-/* global document */
-
 qx.Class.define("osparc.auth.core.Utils", {
   type: "static",
 

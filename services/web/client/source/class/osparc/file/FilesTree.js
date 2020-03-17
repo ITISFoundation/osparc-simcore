@@ -389,7 +389,7 @@ qx.Class.define("osparc.file.FilesTree", {
         const datasetData = osparc.data.Converters.createDirEntry(
           dataset.display_name,
           locationId,
-          dataset.dataset_id,
+          dataset.dataset_id
         );
         datasetData.isDataset = true;
         datasetData.loaded = false;
