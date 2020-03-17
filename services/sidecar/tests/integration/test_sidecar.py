@@ -9,13 +9,12 @@ from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
+from yarl import URL
 
-from simcore_sdk.models.pipeline_models import (
-    ComputationalPipeline,
-    ComputationalTask,
-    comp_pipeline,
-    comp_tasks,
-)
+from s3wrapper import s3_client
+from simcore_sdk.models.pipeline_models import (ComputationalPipeline,
+                                                ComputationalTask,
+                                                comp_pipeline, comp_tasks)
 
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = ["storage", "postgres", "rabbit"]
@@ -42,10 +41,13 @@ def node_uuid() -> str:
 def pipeline_db(
     postgres_session: sa.orm.session.Session, project_id: str, node_uuid
 ) -> ComputationalPipeline:
-    pipeline = ComputationalPipeline(project_id=project_id, dag_adjacency_list={node_uuid:[]})
+    pipeline = ComputationalPipeline(
+        project_id=project_id, dag_adjacency_list={node_uuid: []}
+    )
     postgres_session.add(pipeline)
     postgres_session.commit()
     yield pipeline
+
 
 @pytest.fixture
 def task_db(
@@ -67,10 +69,14 @@ def task_db(
 
     yield comp_task
 
+
 async def test_run_sleepers(
     loop,
     docker_stack: Dict,
     postgres_session: sa.orm.session.Session,
+    rabbit_service: str,
+    minio_service: s3_client,
+    storage_service: URL,
     sleeper_service: Dict[str, str],
     task_db: ComputationalTask,
     user_id: int,
@@ -81,6 +87,7 @@ async def test_run_sleepers(
 
     # Note this must happen here since DB is set already at that time
     from sidecar.core import SIDECAR
+
     next_task_nodes = await SIDECAR.inspect(
         celery_task, user_id, task_db.project_id, task_db.node_id
     )
