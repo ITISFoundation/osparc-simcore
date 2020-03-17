@@ -1,4 +1,4 @@
-from simcore_service_api_gateway.utils.helpers import verify_password, get_password_hash
+from simcore_service_api_gateway.auth_security import verify_password, get_password_hash
 
 
 def test_has_password():
