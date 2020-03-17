@@ -55,6 +55,52 @@ jobs:
     - name: test
       run: ./ci/github/unit-testing/api.bash test
 
+  unit-test-api-gateway:
+    name: Unit-testing api-gateway
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+    - name: setup docker-compose
+      run: sudo ./ci/github/helpers/setup_docker_compose.bash
+    - name: setup python environment
+      uses: actions/setup-python@v1.1.1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: show system version
+      run: ./ci/helpers/show_system_versions.bash
+    - uses: actions/cache@v1
+      name: getting cached data
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: install
+      run: ./ci/github/unit-testing/api-gateway.bash install
+    - name: test
+      run: ./ci/github/unit-testing/api-gateway.bash test
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ env.CODECOV_TOKEN }} #required
+        flags: unittests #optional
+    - name: prepare codeclimate coverage file
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_api_gateway_coverage.json coverage.xml
+    - name: upload codeclimate coverage
+      uses: actions/upload-artifact@v1
+      with:
+        name: unit_api_gateway_coverage
+        path: codeclimate.unit_api_gateway_coverage.json
+
   unit-test-catalog:
     name: Unit-testing catalog
     runs-on: ${{ matrix.os }}
@@ -646,6 +692,7 @@ jobs:
 
   coverage:
     needs: [
+      unit-test-api-gateway,
       unit-test-catalog,
       unit-test-director,
       unit-test-service-library,
@@ -659,6 +706,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
+    - uses: actions/download-artifact@v1
+      with:
+        name: unit_api_gateway_coverage
     - uses: actions/download-artifact@v1
       with:
         name: unit_catalog_coverage
@@ -686,7 +736,9 @@ jobs:
     - name: put all artefacts together
       run: |
         mkdir all_coverages
-        cp unit_catalog_coverage/*.json \
+        cp \
+          unit_api_gateway_coverage/*.json \
+          unit_catalog_coverage/*.json \
           unit_director_coverage/*.json \
           unit_servicelib_coverage/*.json \
           unit_simcoresdk_coverage/*.json \
@@ -710,6 +762,7 @@ jobs:
     if: github.event_name == 'push'
     needs: [
       unit-test-api,
+      unit-tests-api-gateway,
       unit-test-catalog,
       unit-test-director,
       unit-test-frontend,
