@@ -53,3 +53,31 @@ def create_access_jwt_token(*,
 
 def decode_token(encoded_jwt: str) -> dict:
     return jwt.decode(encoded_jwt, __SIGNING_KEY__, algorithms=[__ALGORITHM__])
+
+
+from jwt import PyJWTError
+from typing import Optional
+from .schemas import TokenData, ValidationError
+
+
+def get_access_token_data(token: str) -> Optional[TokenData]:
+    """
+        Decodes and validates
+    """
+    # returns valid
+    try:
+        # decode JWT [header.payload.signature] and get payload:
+        payload = decode_token(token)
+
+        username: str = payload.get("sub")
+        if username is None:
+            return None
+        token_scopes = payload.get("scopes", [])
+
+        # validate
+        token_data = TokenData(scopes=token_scopes, username=username)
+
+    except (PyJWTError, ValidationError):
+        # invalid token!
+        return None
+    return token_data
