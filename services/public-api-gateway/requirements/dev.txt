@@ -11,7 +11,3 @@
 
 # installs current package
 -e .
-
-# scripts/templates
-change_case
-jinja2

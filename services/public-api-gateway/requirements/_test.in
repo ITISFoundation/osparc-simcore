@@ -23,3 +23,7 @@ Faker
 pylint
 coveralls
 codecov
+
+# scripts/templates
+change_case
+jinja2
