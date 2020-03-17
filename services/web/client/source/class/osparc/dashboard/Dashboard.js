@@ -26,12 +26,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let dashboard = new osparc.desktop.Dashboard();
+ *   let dashboard = new osparc.dashboard.Dashboard();
  *   this.getRoot().add(dashboard);
  * </pre>
  */
 
-qx.Class.define("osparc.desktop.Dashboard", {
+qx.Class.define("osparc.dashboard.Dashboard", {
   extend: qx.ui.tabview.TabView,
 
   construct: function() {
@@ -98,17 +98,17 @@ qx.Class.define("osparc.desktop.Dashboard", {
     },
 
     __createStudiesView: function() {
-      const studiesView = this.__prjBrowser = new osparc.desktop.StudyBrowser();
+      const studiesView = this.__prjBrowser = new osparc.dashboard.StudyBrowser();
       return studiesView;
     },
 
     __createServicesLayout: function() {
-      const servicesView = this.__serviceBrowser = new osparc.desktop.ServiceBrowser();
+      const servicesView = this.__serviceBrowser = new osparc.dashboard.ServiceBrowser();
       return servicesView;
     },
 
     __createDataManagerLayout: function() {
-      const dataManagerView = this.__dataManager = new osparc.desktop.DataBrowser();
+      const dataManagerView = this.__dataManager = new osparc.dashboard.DataBrowser();
       return dataManagerView;
     }
   }

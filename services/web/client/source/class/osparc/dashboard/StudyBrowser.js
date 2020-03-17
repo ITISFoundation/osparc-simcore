@@ -30,12 +30,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let prjBrowser = this.__serviceBrowser = new osparc.desktop.StudyBrowser();
+ *   let prjBrowser = this.__serviceBrowser = new osparc.dashboard.StudyBrowser();
  *   this.getRoot().add(prjBrowser);
  * </pre>
  */
 
-qx.Class.define("osparc.desktop.StudyBrowser", {
+qx.Class.define("osparc.dashboard.StudyBrowser", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -432,7 +432,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     __setStudyList: function(userStudyList) {
       this.__userStudies = userStudyList;
       this.__userStudyContainer.removeAll();
-      osparc.desktop.StudyBrowser.sortStudyList(userStudyList);
+      this.self().sortStudyList(userStudyList);
       for (let i=0; i<userStudyList.length; i++) {
         this.__userStudyContainer.add(this.__createStudyItem(userStudyList[i], false));
       }
@@ -442,7 +442,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
     __setTemplateList: function(tempStudyList) {
       this.__templateStudies = tempStudyList;
       this.__templateStudyContainer.removeAll();
-      osparc.desktop.StudyBrowser.sortStudyList(tempStudyList);
+      this.self().sortStudyList(tempStudyList);
       for (let i=0; i<tempStudyList.length; i++) {
         this.__templateStudyContainer.add(this.__createStudyItem(tempStudyList[i], true));
       }
@@ -459,7 +459,7 @@ qx.Class.define("osparc.desktop.StudyBrowser", {
         study.tags ?
           osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id)) :
           [];
-      const item = new osparc.desktop.StudyBrowserListItem(menu).set({
+      const item = new osparc.dashboard.StudyBrowserListItem(menu).set({
         uuid: study.uuid,
         studyTitle: study.name,
         icon: study.thumbnail || "@FontAwesome5Solid/flask/50",

@@ -24,7 +24,7 @@
  * It consists of a thumbnail and creator and last change as caption
  */
 
-qx.Class.define("osparc.desktop.StudyBrowserListItem", {
+qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
   extend: qx.ui.form.ToggleButton,
   implement : [qx.ui.form.IModel, osparc.component.filter.IFilterable],
   include : [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],

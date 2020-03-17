@@ -87,7 +87,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     __createMainView: function() {
       const prjStack = new qx.ui.container.Stack();
 
-      const dashboard = this.__dashboard = new osparc.desktop.Dashboard().set({
+      const dashboard = this.__dashboard = new osparc.dashboard.Dashboard().set({
         width: 1200
       });
       dashboard.getStudyBrowser().addListener("startStudy", e => {
