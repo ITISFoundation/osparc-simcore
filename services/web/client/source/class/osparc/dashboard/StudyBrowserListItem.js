@@ -25,15 +25,10 @@
  */
 
 qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
-  extend: qx.ui.form.ToggleButton,
-  implement : [qx.ui.form.IModel, osparc.component.filter.IFilterable],
-  include : [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],
+  extend: osparc.dashboard.StudyBrowserListBase,
 
   construct: function(menu) {
     this.base(arguments);
-    this.set({
-      width: this.self().ITEM_WIDTH
-    });
 
     // create a date format like "Oct. 19, 2018 11:31 AM"
     this.__dateFormat = new qx.util.format.DateFormat(
@@ -43,43 +38,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
       qx.locale.Date.getTimeFormat("short")
     );
 
-    this._setLayout(new qx.ui.layout.Canvas());
-
-    let mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
-      alignY: "middle"
-    }));
-    this._add(mainLayout, {
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0
-    });
-
     if (menu !== undefined) {
       this.setMenu(menu);
     }
-
-    this.addListener("pointerover", this._onPointerOver, this);
-    this.addListener("pointerout", this._onPointerOut, this);
-
-    this.addListener("changeValue", this.__onToggleChange, this);
-  },
-
-  statics: {
-    ITEM_WIDTH: 210
-  },
-
-  events: {
-    /** (Fired by {@link qx.ui.form.List}) */
-    "action": "qx.event.type.Event"
   },
 
   properties: {
-    appearance: {
-      refine : true,
-      init : "pb-listitem"
-    },
-
     /** The menu instance to show when tapping on the button */
     menu: {
       check : "qx.ui.menu.Menu",
@@ -117,18 +81,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
     }
   },
 
-  members: { // eslint-disable-line qx-rules/no-refs-in-members
+  members: {
     __dateFormat: null,
     __timeFormat: null,
-
-    _forwardStates: {
-      focused : true,
-      hovered : true,
-      selected : true,
-      dragover : true
-    },
-
-    __mainLayout: null,
 
     // overridden
     _createChildControlImpl: function(id) {
@@ -165,7 +120,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
             anonymous: true
           });
           osparc.utils.Utils.setIdToWidget(control, "studyBrowserListItem_title");
-          this.__mainLayout.addAt(control, 0);
+          this._mainLayout.addAt(control, 0);
           break;
         case "creator":
           control = new qx.ui.basic.Label(this.getCreator()).set({
@@ -174,7 +129,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
             anonymous: true
           });
           osparc.utils.Utils.setIdToWidget(control, "studyBrowserListItem_creator");
-          this.__mainLayout.addAt(control, 1);
+          this._mainLayout.addAt(control, 1);
           break;
         case "lastChangeDate":
           control = new qx.ui.basic.Label().set({
@@ -183,7 +138,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
             anonymous: true
           });
           osparc.utils.Utils.setIdToWidget(control, "studyBrowserListItem_lastChangeDate");
-          this.__mainLayout.addAt(control, 2);
+          this._mainLayout.addAt(control, 2);
           break;
         case "icon":
           control = new qx.ui.basic.Image(this.getIcon()).set({
@@ -193,11 +148,11 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
             allowStretchY: true,
             height: 120
           });
-          this.__mainLayout.addAt(control, 3);
+          this._mainLayout.addAt(control, 3);
           break;
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3));
-          this.__mainLayout.addAt(control, 4);
+          this._mainLayout.addAt(control, 4);
           break;
       }
 
@@ -261,33 +216,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
       }
     },
 
-    __onToggleChange: function(e) {
+    _onToggleChange: function(e) {
       this.getChildControl("tick-selected").setVisibility(e.getData() ? "visible" : "excluded");
-    },
-
-    /**
-     * Event handler for the pointer over event.
-     */
-    _onPointerOver: function() {
-      this.addState("hovered");
-    },
-
-    /**
-     * Event handler for the pointer out event.
-     */
-    _onPointerOut : function() {
-      this.removeState("hovered");
-    },
-
-    /**
-     * Event handler for filtering events.
-     */
-    _filter: function() {
-      this.exclude();
-    },
-
-    _unfilter: function() {
-      this.show();
     },
 
     _shouldApplyFilter: function(data) {
@@ -307,16 +237,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
         }
       }
       return false;
-    },
-
-    _shouldReactToFilter: function(data) {
-      if (data.text && data.text.length > 1) {
-        return true;
-      }
-      if (data.tags && data.tags.length) {
-        return true;
-      }
-      return false;
     }
   },
 
@@ -325,7 +245,5 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
     this.__dateFormat = null;
     this.__timeFormat.dispose();
     this.__timeFormat = null;
-    this.removeListener("pointerover", this._onPointerOver, this);
-    this.removeListener("pointerout", this._onPointerOut, this);
   }
 });

@@ -220,11 +220,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createNewStudyButton: function() {
-      const newStudyBtn = new qx.ui.form.Button(this.tr("Create new study"), "@FontAwesome5Solid/plus-circle/18").set({
-        appearance: "xl-button",
-        allowGrowX: false,
-        width: 210
-      });
+      const newStudyBtn = new osparc.dashboard.StudyBrowserListNew();
+      newStudyBtn.subscribeToFilterGroup("studyBrowser");
       osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
       newStudyBtn.addListener("execute", () => this.__createStudyBtnClkd());
       return newStudyBtn;
