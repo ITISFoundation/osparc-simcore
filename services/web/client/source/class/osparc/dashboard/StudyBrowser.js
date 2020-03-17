@@ -246,8 +246,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createTemplateStudiesLayout: function() {
-      const newStudyBtn = this.__createNewStudyButton();
-
       const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
       const templateTitleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       const templateDeleteButton = this.__templateDeleteButton = this.__createDeleteButton();
@@ -261,7 +259,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         marginTop: 20
       });
       tempStudyLayout.add(templateTitleContainer);
-      tempStudyLayout.add(newStudyBtn);
       tempStudyLayout.add(tempStudyList);
       return tempStudyLayout;
     },
@@ -439,6 +436,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __setTemplateList: function(tempStudyList) {
       this.__templateStudies = tempStudyList;
       this.__templateStudyContainer.removeAll();
+      this.__templateStudyContainer.add(this.__createNewStudyButton());
       this.self().sortStudyList(tempStudyList);
       for (let i=0; i<tempStudyList.length; i++) {
         this.__templateStudyContainer.add(this.__createStudyItem(tempStudyList[i], true));
