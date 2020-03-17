@@ -15,7 +15,7 @@ then
   #--------------------
 
   APP_CONFIG=config-host-dev.yaml
-  $SC_PIP install --user -e services/public-api-gateway
+  $SC_PIP install --user -e services/api-gateway
 
   #--------------------
   echo "  Python :"
