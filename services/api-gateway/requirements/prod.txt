@@ -1,4 +1,4 @@
-# Shortcut to install 'services/public-api-gateway' for production
+# Shortcut to install 'services/api-gateway' for production
 #
 # - As ci.txt but w/o tests
 #

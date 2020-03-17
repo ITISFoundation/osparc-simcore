@@ -1,4 +1,4 @@
-""" Current version of the simcore_service_public_api_gateway application.
+""" Current version of the simcore_service_api_gateway application.
 
 This project uses the Semantic Versioning scheme in conjunction with PEP 0440:
 
@@ -23,7 +23,7 @@ Package version is defined in the setup.py following the principle of single-sou
 """
 import pkg_resources
 
-__version__ = pkg_resources.get_distribution('simcore_service_public_api_gateway').version
+__version__ = pkg_resources.get_distribution('simcore_service_api_gateway').version
 
 major, minor, patch = __version__.split('.')
 

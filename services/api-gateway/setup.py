@@ -25,7 +25,7 @@ test_requirements = read_reqs( current_dir / "requirements" / "_test.txt" )
 
 
 setup(
-    name="simcore-service-public-api-gateway",
+    name="simcore-service-api-gateway",
     version=version,
     author="Pedro Crespo (pcrespov)",
     description="Platform's API Gateway for external clients",
@@ -56,7 +56,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            "simcore-service-public-api-gateway = simcore_service_public_api_gateway.cli:main",
+            "simcore-service-api-gateway = simcore_service_api_gateway.cli:main",
         ],
     },
 )

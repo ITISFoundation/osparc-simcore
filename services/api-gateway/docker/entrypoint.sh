@@ -16,8 +16,8 @@ echo "  Workdir :`pwd`"
 
 if [[ ${SC_BUILD_TARGET} == "development" ]]
 then
-    # NOTE: expects docker run ... -v $(pwd):/devel/services/public-api-gateway
-    DEVEL_MOUNT=/devel/services/public-api-gateway
+    # NOTE: expects docker run ... -v $(pwd):/devel/services/api-gateway
+    DEVEL_MOUNT=/devel/services/api-gateway
 
     stat $DEVEL_MOUNT &> /dev/null || \
         (echo $ERROR ": You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1) # FIXME: exit does not stop script
@@ -60,7 +60,7 @@ stat $DOCKER_MOUNT &> /dev/null
 if [[ $? -eq 0 ]]
 then
     GROUPID=$(stat -c %g $DOCKER_MOUNT)
-    
+
     GROUPNAME=scdocker
 
     addgroup -g $GROUPID $GROUPNAME &> /dev/null

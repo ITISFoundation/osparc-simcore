@@ -1,6 +1,6 @@
 """ Main application entry point
 
- `python -m simcore_service_public_api_gateway ...`
+ `python -m simcore_service_api_gateway ...`
 
 Why does this file exist, and why __main__? For more info, read:
 
@@ -9,8 +9,8 @@ Why does this file exist, and why __main__? For more info, read:
 """
 import uvicorn
 
-from simcore_service_public_api_gateway.main import app
-from simcore_service_public_api_gateway.config import uvicorn_settings
+from simcore_service_api_gateway.main import app
+from simcore_service_api_gateway.config import uvicorn_settings
 
 def main():
     uvicorn.run(app, **uvicorn_settings)

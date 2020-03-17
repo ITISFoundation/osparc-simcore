@@ -1,9 +1,9 @@
 FROM python:3.8.1-alpine3.11 as base
 #
 #  USAGE:
-#     cd sercices/public-api-gateway
-#     docker build -f Dockerfile -t public-api-gateway:prod --target production ../../
-#     docker run public-api-gateway:prod
+#     cd sercices/api-gateway
+#     docker build -f Dockerfile -t api-gateway:prod --target production ../../
+#     docker run api-gateway:prod
 #
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 
@@ -48,18 +48,18 @@ RUN $SC_PIP install --upgrade \
 WORKDIR /build
 
 # install base 3rd party dependencies
-COPY  services/public-api-gateway/requirements/*.txt \
-      services/public-api-gateway/requirements/
+COPY  services/api-gateway/requirements/*.txt \
+      services/api-gateway/requirements/
 
 RUN $SC_PIP install \
-      -r services/public-api-gateway/requirements/_base.txt
+      -r services/api-gateway/requirements/_base.txt
 
 
 # --------------------------Cache stage -------------------
 # CI in master buils & pushes this target to speed-up image build
 #
 #  + /build
-#    + services/public-api-gateway [scu:scu] WORKDIR
+#    + services/api-gateway [scu:scu] WORKDIR
 #
 FROM build as cache
 
@@ -67,9 +67,9 @@ ENV SC_BUILD_TARGET cache
 
 
 COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/public-api-gateway /build/services/public-api-gateway
+COPY --chown=scu:scu services/api-gateway /build/services/api-gateway
 
-WORKDIR /build/services/public-api-gateway
+WORKDIR /build/services/api-gateway
 
 
 RUN $SC_PIP install . &&\
@@ -81,7 +81,7 @@ RUN $SC_PIP install . &&\
 # Runs as scu (non-root user)
 #
 #  + /home/scu     $HOME = WORKDIR
-#    + services/public-api-gateway [scu:scu]
+#    + services/api-gateway [scu:scu]
 #
 FROM cache as production
 
@@ -90,9 +90,9 @@ ENV SC_BOOT_MODE production
 
 WORKDIR /home/scu
 
-RUN mkdir -p services/public-api-gateway &&\
-    chown scu:scu services/public-api-gateway &&\
-    mv /build/services/public-api-gateway/docker services/public-api-gateway/docker &&\
+RUN mkdir -p services/api-gateway &&\
+    chown scu:scu services/api-gateway &&\
+    mv /build/services/api-gateway/docker services/api-gateway/docker &&\
     rm -rf /build
 
 
@@ -107,10 +107,10 @@ HEALTHCHECK --interval=30s \
             --timeout=20s \
             --start-period=30s \
             --retries=3 \
-            CMD ["python3", "services/public-api-gateway/docker/healthcheck.py", "http://localhost:8000/"]
+            CMD ["python3", "services/api-gateway/docker/healthcheck.py", "http://localhost:8000/"]
 
-ENTRYPOINT [ "/bin/sh", "services/public-api-gateway/docker/entrypoint.sh" ]
-CMD ["/bin/sh", "services/public-api-gateway/docker/boot.sh"]
+ENTRYPOINT [ "/bin/sh", "services/api-gateway/docker/entrypoint.sh" ]
+CMD ["/bin/sh", "services/api-gateway/docker/boot.sh"]
 
 
 # --------------------------Development stage -------------------
@@ -132,7 +132,7 @@ WORKDIR /build
 
 WORKDIR /devel
 VOLUME  /devel/packages
-VOLUME  /devel/services/public-api-gateway/
+VOLUME  /devel/services/api-gateway/
 
-ENTRYPOINT ["/bin/sh", "services/public-api-gateway/docker/entrypoint.sh"]
-CMD ["/bin/sh", "services/public-api-gateway/docker/boot.sh"]
+ENTRYPOINT ["/bin/sh", "services/api-gateway/docker/entrypoint.sh"]
+CMD ["/bin/sh", "services/api-gateway/docker/boot.sh"]

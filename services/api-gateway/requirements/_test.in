@@ -1,12 +1,12 @@
 #
-# Specifies dependencies required to run 'services/public-api-gateway/test'
+# Specifies dependencies required to run 'services/api-gateway/test'
 #  both for unit and integration tests!!
 #
 
 # frozen specs
 -r _base.txt
 
-# 'services/public-api-gateway/tests/unit' dependencies
+# 'services/api-gateway/tests/unit' dependencies
 
 # testing
 pytest

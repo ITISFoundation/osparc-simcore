@@ -1,5 +1,5 @@
 #
-# Specifies third-party dependencies for 'services/public-api-gateway/src'
+# Specifies third-party dependencies for 'services/api-gateway/src'
 #
 # NOTE: ALL version constraints MUST be commented
 

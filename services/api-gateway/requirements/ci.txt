@@ -1,4 +1,4 @@
-# Shortcut to install all packages for the contigous integration (CI) of 'services/public-api-gateway'
+# Shortcut to install all packages for the contigous integration (CI) of 'services/api-gateway'
 #
 # - As ci.txt but w/ tests
 #

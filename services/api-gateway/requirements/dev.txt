@@ -1,4 +1,4 @@
-# Shortcut to install all packages needed to develop 'services/public-api-gateway'
+# Shortcut to install all packages needed to develop 'services/api-gateway'
 #
 # - As ci.txt but with current and repo packages in develop (edit) mode
 #

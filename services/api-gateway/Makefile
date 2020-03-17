@@ -8,7 +8,7 @@ SHELL = /bin/bash
 
 # Custom variables
 APP_NAME     := $(notdir $(CURDIR))
-APP_CLI_NAME := simcore-service-public-api-gateway
+APP_CLI_NAME := simcore-service-api-gateway
 export APP_VERSION = $(shell cat VERSION)
 
 
@@ -53,7 +53,7 @@ run-devel: down ## runs app with pg fixture for development
 	# starting pg database ...
 	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml up --detach
 	# starting service
-	uvicorn simcore_service_public_api_gateway.main:app --reload
+	uvicorn simcore_service_api_gateway.main:app --reload
 	# stop
 
 down: ## stops pg fixture
@@ -79,11 +79,11 @@ version-major: ## commits version with backwards-INcompatible addition or change
 
 .PHONY: replay
 replay: .cookiecutterrc ## re-applies cookiecutter
-	# Replaying /home/crespo/devp/osparc-simcore/services/public-api-gateway/../../../cookiecutter-simcore-py-fastapi ...
+	# Replaying /home/crespo/devp/osparc-simcore/services/api-gateway/../../../cookiecutter-simcore-py-fastapi ...
 	@cookiecutter --no-input --overwrite-if-exists \
 		--config-file=$< \
 		--output-dir="$(abspath $(CURDIR)/..)" \
-		"/home/crespo/devp/osparc-simcore/services/public-api-gateway/../../../cookiecutter-simcore-py-fastapi"
+		"/home/crespo/devp/osparc-simcore/services/api-gateway/../../../cookiecutter-simcore-py-fastapi"
 
 
 .PHONY: clean clean-all
