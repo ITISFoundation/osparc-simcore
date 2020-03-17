@@ -37,10 +37,16 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
     this.__timeFormat = new qx.util.format.DateFormat(
       qx.locale.Date.getTimeFormat("short")
     );
+
+    const tickIcon = this.getChildControl("tick-selected");
+    this.bind("value", tickIcon, "visibility", {
+      converter: function(value) {
+        return value ? "visible" : "excluded";
+      }
+    });
   },
 
   properties: {
-    /** The menu instance to show when tapping on the button */
     menu: {
       check : "qx.ui.menu.Menu",
       nullable : true,
@@ -90,7 +96,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
             width: 30,
             height: 30,
             icon: "@FontAwesome5Solid/ellipsis-v/16",
-            focusable: false
+            focusable: false,
+            zIndex: 20
           });
           this._add(control, {
             top: 0,
@@ -102,7 +109,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
             width: 30,
             height: 30,
             icon: "@FontAwesome5Solid/check-circle/16",
-            focusable: false
+            focusable: false,
+            zIndex: 21
           });
           this._add(control, {
             top: 0,
@@ -163,7 +171,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
       menuButton.setVisibility(value ? "visible" : "excluded");
     },
 
-    // overridden
     _applyUuid: function(value, old) {
       osparc.utils.Utils.setIdToWidget(this, "studyBrowserListItem_"+value);
     },

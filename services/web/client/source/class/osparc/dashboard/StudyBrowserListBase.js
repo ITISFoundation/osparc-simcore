@@ -49,8 +49,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserListBase", {
       left: 0
     });
 
-    this.addListener("changeValue", this._onToggleChange, this);
-
     this.addListener("pointerover", this._onPointerOver, this);
     this.addListener("pointerout", this._onPointerOut, this);
   },
@@ -104,10 +102,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserListBase", {
 
     _unfilter: function() {
       this.show();
-    },
-
-    _onToggleChange: function(e) {
-      throw new Error("Abstract method called!");
     },
 
     _shouldApplyFilter: function(data) {
