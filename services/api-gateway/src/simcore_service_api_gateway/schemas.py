@@ -1,6 +1,6 @@
 from typing import List
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError  # pylint: disable=no-name-in-module
 
 
 class Token(BaseModel):
@@ -22,3 +22,6 @@ class User(BaseModel):
 
 class UserInDB(User):
     hashed_password: str
+
+
+__all__ = "ValidationError"

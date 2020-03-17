@@ -25,7 +25,6 @@ def build_app() -> FastAPI:
         log.info("Application started")
         setup_remote_debugging()
 
-
     # ROUTES
     app.include_router(endpoints_check.router, tags=["check"])
 
@@ -39,7 +38,6 @@ def build_app() -> FastAPI:
     # SUBMODULES setups
     setup_db(app)
     # add new here!
-
 
     @app.on_event("shutdown")
     def shutdown_event():  # pylint: disable=unused-variable

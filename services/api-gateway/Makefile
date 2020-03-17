@@ -9,26 +9,22 @@ APP_CLI_NAME := simcore-service-api-gateway
 export APP_VERSION = $(shell cat VERSION)
 
 
-.PHONY: requirements
-requirements: ## compiles pip requirements (.in -> .txt)
+.PHONY: reqs
+reqs: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE) --directory requirements reqs
 
-
 .PHONY: install-dev install-prod install-ci
-.check-venv-active:
-	# checking whether virtual environment was activated
-	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
-
-install-dev install-prod install-ci: requirements .check-venv-active ## install app in development/production or CI mode
+install-dev install-prod install-ci: _check-venv-active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
 	pip-sync requirements/$(subst install-,,$@).txt
 
 
-PHONY: tests-unit tests-integration
+PHONY: tests-unit tests-integration tests
+tests: tests-unit tests-integration
+
 tests-unit: ## runs unit tests
 	# running unit tests
 	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/unit
-
 
 tests-integration: ## runs integration tests against local+production images
 	# running integration tests local/(service):production images ...

@@ -15,15 +15,11 @@ from jinja2 import Environment, FileSystemLoader
 # directories
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-package_dir = (
-    current_dir / ".." / "src" / "simcore_service_api_gateway"
-).resolve()
+package_dir = (current_dir / ".." / "src" / "simcore_service_api_gateway").resolve()
 
 
 # formatter
 black_mode = black.FileMode()
-
-
 
 
 def render_to_file(filepath, template, content):
@@ -55,7 +51,6 @@ template_custom_endpoints = template_env.get_template(
 template_cruds = template_env.get_template("cruds.py.jinja2")
 
 template_orm = template_env.get_template("orm.py.jinja2")
-
 
 
 @attr.s(auto_attribs=True)

@@ -41,7 +41,9 @@ def authenticate_user(username: str, password: str) -> Optional[UserInDB]:
 def create_secret_key() -> str:
     # NOTICE that this key is reset when server is restarted!
     try:
-        proc: CompletedProcess = subprocess.run("openssl rand -hex 32", check=True, shell=True)
+        proc: CompletedProcess = subprocess.run(
+            "openssl rand -hex 32", check=True, shell=True
+        )
     except (CalledProcessError, FileNotFoundError) as why:
         raise ValueError(f"Cannot create secret key") from why
     log.warning("Created new secret key!!")
@@ -82,7 +84,7 @@ def get_access_token_data(encoded_jwt: str) -> Optional[TokenData]:
     # returns valid
     try:
         # decode JWT [header.payload.signature] and get payload:
-        payload:Dict = decode_token(encoded_jwt)
+        payload: Dict = decode_token(encoded_jwt)
 
         username: str = payload.get("sub")
         if username is None:
