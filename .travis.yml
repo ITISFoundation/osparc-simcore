@@ -109,6 +109,29 @@ jobs:
       after_failure:
         - unbuffer bash ci/travis/unit-testing/webserver.bash after_failure
 
+    # test python, api-gateway ----------------------------------------------------------------------
+    - stage: build / unit-testing
+      name: api-gateway
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      services:
+        - docker
+      cache: pip
+      before_install:
+        - sudo bash ci/travis/unit-testing/api-gateway.bash before_install
+      install:
+        - unbuffer bash ci/travis/unit-testing/api-gateway.bash install
+      before_script:
+        - unbuffer bash ci/travis/unit-testing/api-gateway.bash before_script
+      script:
+        - unbuffer bash ci/travis/unit-testing/api-gateway.bash script
+      after_success:
+        - unbuffer bash ci/travis/unit-testing/api-gateway.bash after_success
+      after_failure:
+        - unbuffer bash ci/travis/unit-testing/api-gateway.bash after_failure
+
     # test python, catalog ----------------------------------------------------------------------
     - stage: build / unit-testing
       name: catalog
