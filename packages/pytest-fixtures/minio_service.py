@@ -3,51 +3,56 @@
 # pylint:disable=redefined-outer-name
 
 import os
+from distutils.util import strtobool
 from typing import Dict
 
 import pytest
-import sqlalchemy as sa
 import tenacity
-from sqlalchemy.orm import sessionmaker
 
-from s3wrapper import s3_client
+from s3wrapper.s3_client import S3Client
 from servicelib.minio_utils import MinioRetryPolicyUponInitialization
-from simcore_postgres_database.models.base import metadata
 from utils_docker import get_service_published_port
 
 
 @pytest.fixture(scope="module")
 def minio_config(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
-    assert "ops_minio" in docker_stack["ops"]
+    assert "ops_minio" in docker_stack["services"]
 
     config = {
-        "endpoint": f"127.0.0.1:{get_service_published_port('minio', devel_environ['S3_ENDPOINT'].split(':')[1])}",
-        "access_key": devel_environ["S3_ACCESS_KEY"],
-        "secret_key": devel_environ["S3_SECRET_KEY"],
+        "client": {
+            "endpoint": f"127.0.0.1:{get_service_published_port('minio', devel_environ['S3_ENDPOINT'].split(':')[1])}",
+            "access_key": devel_environ["S3_ACCESS_KEY"],
+            "secret_key": devel_environ["S3_SECRET_KEY"],
+            "secure": strtobool(devel_environ["S3_SECURE"]) != 0,
+        },
         "bucket_name": devel_environ["S3_BUCKET_NAME"],
-        "secure": devel_environ["S3_SECURE"],
     }
+
     # nodeports takes its configuration from env variables
-    for key, value in config.items():
-        os.environ[f"S3_{key.upper()}"] = value
+    for key, value in config["client"].items():
+        os.environ[f"S3_{key.upper()}"] = str(value)
+    os.environ[f"S3_BUCKET_NAME"] = devel_environ["S3_BUCKET_NAME"]
 
     return config
 
 
 @pytest.fixture(scope="module")
-def minio_service(minio_config: Dict[str, str], docker_stack: Dict) -> s3_client:
+def minio_service(minio_config: Dict[str, str], docker_stack: Dict) -> S3Client:
     assert wait_till_minio_responsive(minio_config)
 
-    client = s3_client(**minio_config)
+    client = S3Client(**minio_config["client"])
+    assert client.create_bucket(minio_config["bucket_name"])
 
     yield client
+
+    assert client.remove_bucket(minio_config["bucket_name"], delete_contents=True)
 
 
 @tenacity.retry(**MinioRetryPolicyUponInitialization().kwargs)
 def wait_till_minio_responsive(minio_config: Dict[str, str]) -> bool:
     """Check if something responds to ``url`` """
-    s3_client(**minio_config)
-    if s3_client.create_bucket("pytest"):
-        s3_client.remove_bucket("pytest")
+    client = S3Client(**minio_config["client"])
+    if client.create_bucket("pytest"):
+        client.remove_bucket("pytest")
         return True
-    return False
+    raise Exception

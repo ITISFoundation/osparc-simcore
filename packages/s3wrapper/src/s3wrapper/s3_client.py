@@ -1,19 +1,24 @@
 import logging
-
 import re
 from datetime import timedelta
+from typing import Union
 
-from minio import Minio, CopyConditions
+from minio import CopyConditions, Minio
 from minio.error import ResponseError
 
 log = logging.getLogger(__name__)
-
 
 class S3Client:
     """ Wrapper around minio
     """
 
-    def __init__(self, endpoint, access_key=None, secret_key=None, secure=False):
+    def __init__(
+        self,
+        endpoint: str,
+        access_key: str = None,
+        secret_key: str = None,
+        secure: bool = False,
+    ):
         self.__metadata_prefix = "x-amz-meta-"
         self.client = None
         self.endpoint = endpoint
@@ -22,10 +27,9 @@ class S3Client:
         self.secure = secure
         self.endpoint_url = ("https://" if secure else "http://") + endpoint
         try:
-            self.client = Minio(endpoint,
-                access_key=access_key,
-                secret_key=secret_key,
-                secure=secure)
+            self.client = Minio(
+                endpoint, access_key=access_key, secret_key=secret_key, secure=secure
+            )
         except ResponseError as _err:
             logging.exception("Could not create minio client")
 
@@ -36,7 +40,6 @@ class S3Client:
             to_del.append(obj.object_name)
 
         self.remove_objects(bucket_name, to_del)
-
 
     def create_bucket(self, bucket_name, delete_contents_if_exists=False):
         try:
@@ -95,9 +98,10 @@ class S3Client:
             _metadata = {}
             if metadata is not None:
                 for key in metadata.keys():
-                    _metadata[self.__metadata_prefix+key] = metadata[key]
-            self.client.fput_object(bucket_name, object_name, filepath,
-                metadata=_metadata)
+                    _metadata[self.__metadata_prefix + key] = metadata[key]
+            self.client.fput_object(
+                bucket_name, object_name, filepath, metadata=_metadata
+            )
         except ResponseError as _err:
             logging.exception("Could not upload file")
             return False
@@ -117,7 +121,7 @@ class S3Client:
             _metadata = obj.metadata
             metadata = {}
             for key in _metadata.keys():
-                _key = key[len(self.__metadata_prefix):]
+                _key = key[len(self.__metadata_prefix) :]
                 metadata[_key] = _metadata[key]
             return metadata
 
@@ -128,7 +132,9 @@ class S3Client:
 
     def list_objects(self, bucket_name, prefix=None, recursive=False):
         try:
-            return self.client.list_objects(bucket_name, prefix=prefix, recursive=recursive)
+            return self.client.list_objects(
+                bucket_name, prefix=prefix, recursive=recursive
+            )
         except ResponseError as _err:
             logging.exception("Could not list objects")
 
@@ -153,8 +159,8 @@ class S3Client:
         return True
 
     def exists_object(self, bucket_name, object_name, recursive=False):
-        ''' This seems to be pretty heavy, should be used with care
-        '''
+        """ This seems to be pretty heavy, should be used with care
+        """
         try:
             objects = self.list_objects(bucket_name, recursive=recursive)
             for obj in objects:
@@ -181,15 +187,18 @@ class S3Client:
                         results.append(obj)
 
         for r in results:
-            msg = "Object {} in bucket {} matches query {}".format(r.object_name, r.bucket_name, query)
+            msg = "Object {} in bucket {} matches query {}".format(
+                r.object_name, r.bucket_name, query
+            )
             log.debug(msg)
 
         return results
 
     def create_presigned_put_url(self, bucket_name, object_name, dt=timedelta(days=3)):
         try:
-            return self.client.presigned_put_object(bucket_name, object_name,
-                    expires=dt)
+            return self.client.presigned_put_object(
+                bucket_name, object_name, expires=dt
+            )
 
         except ResponseError as _err:
             logging.exception("Could create presigned put url")
@@ -198,8 +207,9 @@ class S3Client:
 
     def create_presigned_get_url(self, bucket_name, object_name, dt=timedelta(days=3)):
         try:
-            return self.client.presigned_get_object(bucket_name, object_name,
-                    expires=dt)
+            return self.client.presigned_get_object(
+                bucket_name, object_name, expires=dt
+            )
 
         except ResponseError as _err:
             logging.exception("Could create presigned get url")
@@ -208,8 +218,12 @@ class S3Client:
 
     def copy_object(self, to_bucket_name, to_object_name, from_bucket_object_name):
         try:
-            ret = self.client.copy_object(to_bucket_name, to_object_name,
-                    from_bucket_object_name, CopyConditions())
+            ret = self.client.copy_object(
+                to_bucket_name,
+                to_object_name,
+                from_bucket_object_name,
+                CopyConditions(),
+            )
             print(ret)
             return True
         except ResponseError as _err:
