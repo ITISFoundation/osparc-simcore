@@ -4,11 +4,11 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
-aiohttp==3.6.2
+aiohttp==3.6.2            # via -r requirements.in, pytest-aiohttp
 async-timeout==3.0.1      # via aiohttp
 attrs==19.3.0             # via aiohttp, jsonschema, openapi-core, pytest
 chardet==3.0.4            # via aiohttp
-coverage==4.5.1
+coverage==4.5.1           # via -r requirements.in, pytest-cov
 idna-ssl==1.1.0           # via aiohttp
 idna==2.9                 # via idna-ssl, yarl
 importlib-metadata==1.5.0  # via jsonschema, pluggy, pytest
@@ -17,7 +17,7 @@ jsonschema==3.2.0         # via openapi-schema-validator, openapi-spec-validator
 lazy-object-proxy==1.4.3  # via openapi-core
 more-itertools==8.2.0     # via openapi-core, pytest
 multidict==4.7.5          # via aiohttp, yarl
-openapi-core==0.13.3
+openapi-core==0.13.3      # via -r requirements.in
 openapi-schema-validator==0.1.1  # via openapi-core
 openapi-spec-validator==0.2.8  # via openapi-core
 packaging==20.3           # via pytest, pytest-sugar
@@ -26,13 +26,13 @@ pluggy==0.13.1            # via pytest
 py==1.8.1                 # via pytest
 pyparsing==2.4.6          # via packaging
 pyrsistent==0.15.7        # via jsonschema
-pytest-aiohttp==0.3.0
-pytest-cov==2.8.1
-pytest-instafail==0.4.1.post0
-pytest-sugar==0.9.2
-pytest==5.3.5
+pytest-aiohttp==0.3.0     # via -r requirements.in
+pytest-cov==2.8.1         # via -r requirements.in
+pytest-instafail==0.4.1.post0  # via -r requirements.in
+pytest-sugar==0.9.2       # via -r requirements.in
+pytest==5.3.5             # via -r requirements.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-sugar
 pyyaml==5.3               # via openapi-spec-validator
-six==1.14.0               # via isodate, jsonschema, openapi-core, openapi-schema-validator, openapi-spec-validator, packaging, pyrsistent
+six==1.14.0               # via isodate, jsonschema, openapi-core, openapi-schema-validator, openapi-spec-validator, packaging
 strict-rfc3339==0.7       # via openapi-schema-validator
 termcolor==1.1.0          # via pytest-sugar
 typing-extensions==3.7.4.1  # via aiohttp
