@@ -12,7 +12,7 @@ REPO_BASE_DIR  = $(abspath $(CURDIR)/../../../)
 
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)
-	@$(MAKE) --directory requirements all
+	@$(MAKE) --directory requirements reqs
 
 
 .PHONY: openapi-specs

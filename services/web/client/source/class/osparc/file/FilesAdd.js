@@ -15,8 +15,6 @@
 
 ************************************************************************ */
 
-/* global XMLHttpRequest */
-
 /**
  * Widget that provides a way to upload files to S3
  *

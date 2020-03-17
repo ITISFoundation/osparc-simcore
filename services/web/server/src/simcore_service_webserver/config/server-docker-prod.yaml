@@ -65,7 +65,7 @@ storage:
   port: ${STORAGE_PORT}
   version: v0
 catalog:
-  host: catalog
+  host: ${CATALOG_HOST}
   port: 8000
   version: v0
 rest:
