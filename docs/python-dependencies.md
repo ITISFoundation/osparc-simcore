@@ -53,6 +53,10 @@ Every python package specifies its dependencies to the installer via the ``setup
    - package names+version in requirements list for ``setup.py``
 1. Cannot use [pip-tools] (e.g. ``pip-sync``) with ``requirements/ci.txt`` or ``requirements/prod.txt`` because of in-place dependencies: ``pip-compile does not support URLs as packages, unless they are editable. Perhaps add -e option? (constraint was: file:///home/crespo/devp/osparc-simcore/packages/s3wrapper (from -r requirements/ci.txt (line 13)))``
 
+### Updates [March 2020]
+
+1. Created common makefile in (scripts/requirements.Makefile)[scripts/requirements.Makefile]
+
 ## Workflows
 
 To install a given workflow we use directly [pip]. Assume we are in the package folder
@@ -109,6 +113,7 @@ $ make
 1. [Pin your packages](https://nvie.com/posts/pin-your-packages/) by V. Driessen
 1. [Using pip-tools to manage my python dependencies](https://alexwlchan.net/2017/10/pip-tools/) by alexwlchan
 1. [A successful pip-tools workflow for managing Python package requirements](https://jamescooke.info/a-successful-pip-tools-workflow-for-managing-python-package-requirements.html) by J. Cooke
+1. [Python Application Dependency Management in 2018](https://hynek.me/articles/python-app-deps-2018/#pip-tools-everything-old-is-new-again) by Hynek Schlawack
 
 
 [pip-tools]:https://github.com/jazzband/pip-tools
