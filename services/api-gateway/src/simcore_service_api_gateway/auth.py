@@ -24,30 +24,27 @@
 #                  Figure 1: Abstract Protocol Flow
 
 
-from pathlib import Path
-from typing import List, Optional
+import logging
+from typing import Optional
 
-from fastapi import Depends, HTTPException, Security, status, APIRouter
+from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.security import (
     OAuth2PasswordBearer,
     OAuth2PasswordRequestForm,
     SecurityScopes,
 )
 
-
-from .schemas import Token, TokenData, User, UserInDB, ValidationError
-
-import logging
-log = logging.getLogger(__name__)
-
-from .auth_security import authenticate_user, create_access_token, get_access_token_data
-from .utils.helpers import json_dumps
 from . import crud_users as crud
+from .auth_security import authenticate_user, create_access_token, get_access_token_data
+from .schemas import Token, TokenData, User, UserInDB
+from .utils.helpers import json_dumps
 
+log = logging.getLogger(__name__)
 
 
 # Authorization SERVER -------------------------------------
 router = APIRouter()
+
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -66,7 +63,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     # TODO: grant requested scopes OR NOT!
 
     access_token = create_access_token(
-        data={"sub": user.username, "scopes": form_data.scopes}
+        subject={"sub": user.username, "scopes": form_data.scopes}
     )
     #
     resp_data = {"access_token": access_token, "token_type": "bearer"}
