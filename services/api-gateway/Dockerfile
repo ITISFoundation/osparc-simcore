@@ -1,4 +1,5 @@
-FROM python:3.8.1-alpine3.11 as base
+ARG PYTHON_VERSION="3.6.10"
+FROM python:${PYTHON_VERSION}-slim as base
 #
 #  USAGE:
 #     cd sercices/api-gateway
@@ -7,20 +8,33 @@ FROM python:3.8.1-alpine3.11 as base
 #
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 
-
 LABEL maintainer=pcrespov
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
-RUN adduser -D -u 8004 -s /bin/sh -h /home/scu scu
+ENV SC_USER_ID=8004 \
+    SC_USER_NAME=scu \
+    SC_BUILD_TARGET=base \
+    SC_BOOT_MODE=default
 
-RUN apk add --no-cache \
-      su-exec
+RUN adduser \
+  --uid ${SC_USER_ID} \
+  --disabled-password \
+  --gecos "" \
+  --shell /bin/sh \
+  --home /home/${SC_USER_NAME} \
+  ${SC_USER_NAME}
 
-ENV PATH "/home/scu/.local/bin:$PATH"
 
-# NOTE: All SC_ variables are customized
-ENV SC_PIP pip3 --no-cache-dir
-ENV SC_BUILD_TARGET base
+# Sets utf-8 encoding for Python et al
+ENV LANG=C.UTF-8
+
+# Turns off writing .pyc files; superfluous on an ephemeral container.
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    VIRTUAL_ENV=/home/scu/.venv
+
+# Ensures that the python and pip executables used in the image will be
+# those from our virtualenv.
+ENV PATH="/${VIRTUAL_ENV}/bin:$PATH"
 
 EXPOSE 8000
 EXPOSE 3000
@@ -32,27 +46,26 @@ EXPOSE 3000
 #
 FROM base as build
 
-ENV SC_BUILD_TARGET build
+ENV SC_BUILD_TARGET=build
 
-RUN apk add --no-cache \
-      alpine-sdk \
-      python3-dev \
-      musl-dev \
-      postgresql-dev
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends \
+      build-essential \
+      gcc
 
-RUN $SC_PIP install --upgrade \
-      pip \
+RUN python -m venv ${VIRTUAL_ENV}
+
+RUN pip install --upgrade --no-cache-dir \
+      pip~=20.0.2  \
       wheel \
       setuptools
 
 WORKDIR /build
 
 # install base 3rd party dependencies
-COPY  services/api-gateway/requirements/*.txt \
-      services/api-gateway/requirements/
-
-RUN $SC_PIP install \
-      -r services/api-gateway/requirements/_base.txt
+# NOTE: copies to /build to avoid overwriting later which would invalidate this layer
+COPY  --chown=scu:scu services/api-gateway/requirements/_base.txt .
+RUN pip --no-cache-dir install -r _base.txt
 
 
 # --------------------------Cache stage -------------------
@@ -65,15 +78,13 @@ FROM build as cache
 
 ENV SC_BUILD_TARGET cache
 
-
 COPY --chown=scu:scu packages /build/packages
 COPY --chown=scu:scu services/api-gateway /build/services/api-gateway
 
 WORKDIR /build/services/api-gateway
 
-
-RUN $SC_PIP install . &&\
-    $SC_PIP list -v
+RUN pip --no-cache-dir install -r requirements/prod.txt &&\
+    pip --no-cache-dir list -v
 
 
 # --------------------------Production stage -------------------
@@ -83,24 +94,17 @@ RUN $SC_PIP install . &&\
 #  + /home/scu     $HOME = WORKDIR
 #    + services/api-gateway [scu:scu]
 #
-FROM cache as production
+FROM base as production
 
-ENV SC_BUILD_TARGET production
-ENV SC_BOOT_MODE production
+ENV SC_BUILD_TARGET=production \
+    SC_BOOT_MODE=production
+
+ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
-RUN mkdir -p services/api-gateway &&\
-    chown scu:scu services/api-gateway &&\
-    mv /build/services/api-gateway/docker services/api-gateway/docker &&\
-    rm -rf /build
-
-
-RUN apk del --no-cache\
-      alpine-sdk \
-      python3-dev \
-      musl-dev \
-      postgresql-dev
+COPY --chown=scu:scu --from=cache  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --chown=scu:scu services/api-gateway/docker services/api-gateway/docker
 
 
 HEALTHCHECK --interval=30s \
@@ -123,12 +127,7 @@ CMD ["/bin/sh", "services/api-gateway/docker/boot.sh"]
 #
 FROM build as development
 
-ENV SC_BUILD_TARGET development
-ENV SC_BOOT_MODE development
-
-
-
-WORKDIR /build
+ENV SC_BUILD_TARGET=development
 
 WORKDIR /devel
 VOLUME  /devel/packages
