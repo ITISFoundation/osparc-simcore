@@ -6,14 +6,15 @@ import os
 import subprocess
 from datetime import datetime, timedelta
 from subprocess import CalledProcessError, CompletedProcess
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
 import jwt
 from jwt import PyJWTError
 from passlib.context import CryptContext
+from pydantic import ValidationError
 
 from . import crud_users as crud
-from .schemas import TokenData, UserInDB, ValidationError
+from .schemas import TokenData, UserInDB
 
 log = logging.getLogger(__name__)
 
@@ -96,5 +97,6 @@ def get_access_token_data(encoded_jwt: str) -> Optional[TokenData]:
 
     except (PyJWTError, ValidationError):
         # invalid token!
+        log.debug("Invalid token", exc_info=True)
         return None
     return token_data
