@@ -1,4 +1,5 @@
 import logging
+from io import StringIO
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -11,41 +12,30 @@ from .utils.helpers import json_dumps
 log = logging.getLogger(__name__)
 
 
-# Authorization SERVER -------------------------------------
-#
-#  +--------+                               +---------------+
-#  |        |--(A)- Authorization Request ->|   Resource    |
-#  |        |                               |     Owner     | Authorization request
-#  |        |<-(B)-- Authorization Grant ---|               |
-#  |        |                               +---------------+
-#  |        |
-#  |        |                               +---------------+
-#  |        |--(C)-- Authorization Grant -->| Authorization |
-#  | Client |                               |     Server    | Token request
-#  |        |<-(D)----- Access Token -------|               |
-#  |        |                               +---------------+
-#  |        |
-#  |        |                               +---------------+
-#  |        |--(E)----- Access Token ------>|    Resource   |
-#  |        |                               |     Server    |
-#  |        |<-(F)--- Protected Resource ---|               |
-#  +--------+                               +---------------+
-#
-#                  Figure 1: Abstract Protocol Flow
-
-
 router = APIRouter()
 
-
+# TODO: has to be the same as in auth.oauth2_scheme
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    """
+    - This entrypoint is part of the Authorization Server
+    - Implements access point to obtain access-tokens
 
-    print("Form Request", "-" * 20)
+    |        |                               +---------------+
+    |        |--(C)-- Authorization Grant -->| Authorization |
+    | Client |                               |     Server    | Token request
+    |        |<-(D)----- Access Token -------|               |
+    |        |                               +---------------+
+
+    """
+    stream = StringIO()
+    print("Form Request", "-" * 20, file=stream)
     for (
         attr
-    ) in "grant_type   username    password    scopes    client_id    client_secret".split():
-        print("-", attr, ":", getattr(form_data, attr))
-    print("-" * 20)
+    ) in "grant_type username password scopes client_id client_secret".split():
+        print("-", attr, ":", getattr(form_data, attr), file=stream)
+    print("-" * 20, file=stream)
+    log.debug(stream.getvalue())
 
     user: Optional[UserInDB] = authenticate_user(form_data.username, form_data.password)
     if not user:
@@ -56,10 +46,13 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     access_token = create_access_token(
         subject={"sub": user.username, "scopes": form_data.scopes}
     )
-    #
+    # TODO: THIS IS A STANDARD RESPOSE!
     resp_data = {"access_token": access_token, "token_type": "bearer"}
 
-    print("{:-^30}".format("/token response"))
-    print(json_dumps(resp_data))
-    print("-" * 30)
+    stream = StringIO()
+    print("{:-^30}".format("/token response"), file=stream)
+    print(json_dumps(resp_data), file=stream)
+    print("-" * 30, file=stream)
+    log.debug(stream.getvalue())
+
     return resp_data
