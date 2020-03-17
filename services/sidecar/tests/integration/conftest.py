@@ -13,5 +13,6 @@ pytest_plugins = [
     "pytest-fixtures.docker_registry",
     "pytest-fixtures.rabbit_service",
     "pytest-fixtures.postgres_service",
+    "pytest-fixtures.minio_service",
 ]
 log = logging.getLogger(__name__)

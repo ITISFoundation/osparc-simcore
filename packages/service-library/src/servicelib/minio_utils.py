@@ -1,7 +1,10 @@
 import logging
-from typing import Optional
 
-from tenacity import before_sleep_log, stop_after_attempt, wait_fixed
+from tenacity import (
+    before_sleep_log,
+    stop_after_attempt,
+    wait_fixed,
+)
 
 log = logging.getLogger(__name__)
 
