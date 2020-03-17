@@ -59,3 +59,10 @@ def shutdown_event():
 async def shutdown_db():
     log.info("Shutting down db")
     await teardown_engine()
+
+
+# #
+# current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+# with open(current_dir / "openapi.json", "wt") as fh:
+#     json.dump(app.openapi(), fh, indent=2)
