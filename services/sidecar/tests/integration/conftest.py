@@ -14,5 +14,6 @@ pytest_plugins = [
     "pytest-fixtures.rabbit_service",
     "pytest-fixtures.postgres_service",
     "pytest-fixtures.minio_service",
+    "pytest-fixtures.simcore_storage_service",
 ]
 log = logging.getLogger(__name__)
