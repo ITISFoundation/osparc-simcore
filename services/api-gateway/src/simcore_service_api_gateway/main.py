@@ -4,9 +4,8 @@ from pathlib import Path
 
 from fastapi import FastAPI
 
-from __version__ import api_version_prefix
-
 from . import application, endpoints_auth, endpoints_check, endpoints_user
+from .__version__ import api_version_prefix
 from .db import setup_db
 from .utils.remote_debug import setup_remote_debugging
 

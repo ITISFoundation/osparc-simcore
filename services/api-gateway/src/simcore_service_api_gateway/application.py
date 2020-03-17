@@ -8,8 +8,7 @@ from typing import Callable
 import yaml
 from fastapi import FastAPI
 
-from __version__ import api_version, api_version_prefix
-
+from .__version__ import api_version, api_version_prefix
 from .config import is_testing_enabled
 
 

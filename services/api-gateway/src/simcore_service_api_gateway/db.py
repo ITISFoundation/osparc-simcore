@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from tenacity import Retrying, before_sleep_log, stop_after_attempt, wait_fixed
 
 from .config import app_context, is_testing_enabled, postgres_dsn
-from .orm.base import Base
+## from .orm.base import Base
 
 log = logging.getLogger(__name__)
 
@@ -63,8 +63,9 @@ def info():
 
 
 def create_tables():
-    engine = sa.create_engine(postgres_dsn)
-    Base.metadata.create_all(bind=engine)
+    log.info("creating tables")
+    #engine = sa.create_engine(postgres_dsn)
+    #Base.metadata.create_all(bind=engine)
 
 
 # SETUP ------

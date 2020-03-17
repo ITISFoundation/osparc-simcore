@@ -12,6 +12,7 @@ from jwt import PyJWTError
 from passlib.context import CryptContext
 
 from . import crud_users as crud
+from .config import is_testing_enabled
 from .schemas import TokenData, UserInDB, ValidationError
 
 # PASSWORDS
@@ -38,8 +39,8 @@ def authenticate_user(username: str, password: str) -> Optional[UserInDB]:
 def create_secret_key() -> str:
     # NOTICE that this key is reset when server is restarted!
     try:
-        proc: CompletedProcess = subprocess.run("openssl rand -hex 32", check=True)
-    except CalledProcessError as why:
+        proc: CompletedProcess = subprocess.run("openssl rand -hex 32", check=True, shell=True)
+    except (CalledProcessError, FileNotFoundError) as why:
         raise ValueError(f"Cannot create secret key") from why
     return str(proc.stdout).strip()
 

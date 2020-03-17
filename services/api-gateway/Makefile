@@ -42,7 +42,7 @@ run-devel: down ## runs app with pg fixture for development
 	# starting pg database ...
 	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml up --detach
 	# starting service
-	uvicorn simcore_service_api_gateway.main:the_app --reload
+	uvicorn simcore_service_api_gateway.main:the_app --reload --port=8001 --host=0.0.0.0
 	# stop
 
 down: ## stops pg fixture

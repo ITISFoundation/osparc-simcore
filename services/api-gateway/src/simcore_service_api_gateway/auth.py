@@ -4,9 +4,8 @@ from typing import Optional
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 
-from __version__ import api_version_prefix
-
 from . import crud_users as crud
+from .__version__ import api_version_prefix
 from .auth_security import get_access_token_data
 from .schemas import TokenData, User, UserInDB
 
