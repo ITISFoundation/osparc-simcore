@@ -43,25 +43,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     this._setLayout(new qx.ui.layout.HBox());
 
-    this.__studiesPane = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-    this.__editPane = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-      appearance: "sidepanel",
-      width: 570,
-      allowGrowX: false,
-      visibility: "excluded",
-      padding: [0, 15]
-    });
+    this.__studiesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
     const scrollStudies = new qx.ui.container.Scroll();
-    scrollStudies.add(this.__studiesPane);
+    scrollStudies.add(this.__studiesLayout);
     this._add(scrollStudies, {
       flex: 1
     });
-    const scrollEditStudy = new qx.ui.container.Scroll();
-    scrollEditStudy.add(this.__editPane);
-    this._add(scrollEditStudy);
 
     let iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Studies"));
-    this.__studiesPane.add(iframe, {
+    this.__studiesLayout.add(iframe, {
       flex: 1
     });
 
@@ -71,11 +61,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     userTimer.addListener("interval", () => {
       if (this.__userReady) {
         userTimer.stop();
-        this.__studiesPane.removeAll();
-        this.__editPane.removeAll();
+        this.__studiesLayout.removeAll();
         iframe.dispose();
         this.__createStudiesLayout();
-        this.__createEditStudyLayout();
         this.__reloadStudies();
         this.__attachEventHandlers();
         const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
@@ -136,9 +124,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __studyFilters: null,
     __userStudyContainer: null,
     __templateStudyContainer: null,
-    __editStudyLayout: null,
-    __studiesPane: null,
-    __editPane: null,
+    __studiesLayout: null,
     __userStudies: null,
     __templateStudies: null,
     __templateDeleteButton: null,
@@ -214,9 +200,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const tempStudyLayout = this.__createTemplateStudiesLayout();
       const userStudyLayout = this.__createUserStudiesLayout();
 
-      this.__studiesPane.add(studyFilters);
-      this.__studiesPane.add(tempStudyLayout);
-      this.__studiesPane.add(userStudyLayout);
+      this.__studiesLayout.add(studyFilters);
+      this.__studiesLayout.add(tempStudyLayout);
+      this.__studiesLayout.add(userStudyLayout);
     },
 
     __createNewStudyButton: function() {
@@ -261,11 +247,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       tempStudyLayout.add(templateTitleContainer);
       tempStudyLayout.add(tempStudyList);
       return tempStudyLayout;
-    },
-
-    __createEditStudyLayout: function() {
-      const editStudyLayout = this.__editStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      this.__editPane.add(editStudyLayout);
     },
 
     __reloadStudies: function() {
@@ -535,9 +516,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (this.__templateStudyContainer) {
           this.__templateStudyContainer.resetSelection();
         }
-        if (this.__editStudyLayout) {
-          this.__editPane.exclude();
-        }
         if (this.__studiesDeleteButton) {
           this.__studiesDeleteButton.exclude();
         }
@@ -546,13 +524,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
         return;
       }
-      const studyData = this.__getStudyData(studyId, isTemplate);
-      this.__createForm(studyData, isTemplate);
-      this.__editPane.setVisibility("visible");
     },
 
-    __createForm: function(studyData, isTemplate) {
-      this.__editStudyLayout.removeAll();
+    __createStudyDetailsEditor: function(studyData, isTemplate) {
       const studyDetails = new osparc.component.metadata.StudyDetailsEditor(studyData, isTemplate);
       studyDetails.addListener("closed", () => this.__itemSelected(null), this);
       studyDetails.addListener("updatedStudy", e => this.reloadUserStudies(e.getData()), this);
@@ -572,9 +546,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       });
 
-      this.__editStudyLayout.add(studyDetails);
-
       this.__updateDeleteButtons(studyData, isTemplate);
+
+      return studyDetails;
     },
 
     __updateDeleteButtons: function(studyData, isTemplate) {
