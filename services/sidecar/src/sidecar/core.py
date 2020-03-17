@@ -8,12 +8,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Union
 
+import aiofiles
 import docker
 import pika
 import requests
 from celery.utils.log import get_task_logger
 from sqlalchemy import and_, exc
 
+from servicelib.utils import logged_gather
 from simcore_sdk import node_data, node_ports
 from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
                                                 ComputationalPipeline,
@@ -23,10 +25,8 @@ from simcore_sdk.node_ports.dbmanager import DBManager
 
 from . import config
 from .utils import (DbSettings, DockerSettings, ExecutorSettings,
-                    RabbitSettings, S3Settings,
-                    find_entry_point, is_node_ready, safe_channel
-                    )
-from servicelib.utils import logged_gather
+                    RabbitSettings, S3Settings, find_entry_point,
+                    is_node_ready, safe_channel)
 
 log = get_task_logger(__name__)
 log.setLevel(config.SIDECAR_LOGLEVEL)
@@ -176,6 +176,30 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
         channel.basic_publish(
             exchange=self._pika.progress_channel, routing_key='', body=prog_body)
 
+    async def log_file_processor(self, log_file: Path) -> None:
+        """checks both container logs and the log_file if any
+        """
+        try:
+            TIME_BETWEEN_LOGS_S: int = 2
+            time_logs_sent = time.monotonic()
+            accumulated_logs = []
+            async with aiofiles.open(log_file, mode='r') as fp:
+                async for line in fp:
+                    now = time.monotonic()
+                    accumulated_logs.append(line)
+                    if (now - time_logs_sent) < TIME_BETWEEN_LOGS_S:
+                        continue
+                    # send logs to rabbitMQ
+                    # TODO: NEEDS to shield??
+                    with safe_channel(self._pika) as (channel, _):
+                        await self._post_log(channel, msg=accumulated_logs)
+                        time_log_sent = now
+                        accumulated_logs = []
+        except asyncio.CancelledError:
+            # the task is complete
+            
+
+
     async def _bg_job(self, log_file):
         log.debug('Bck job started %s:node %s:internal id %s from container',
                   self._task.project_id, self._task.node_id, self._task.internal_id)
@@ -298,8 +322,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
         log.debug("TASK %s of user %s FOUND, initializing...",
                   task.internal_id, user_id)
         self._task = task
-        self._user_id = user_id
-        import pdb; pdb.set_trace()
+        self._user_id = user_id        
         self._docker.image_name = self._docker.registry_name + \
             "/" + task.schema["key"]
         self._docker.image_tag = task.schema["version"]
@@ -323,8 +346,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
         log.debug("TASK %s of user %s FOUND, initializing DONE",
                   task.internal_id, user_id)
 
-    async def preprocess(self):
-        import pdb; pdb.set_trace()
+    async def preprocess(self):        
         log.debug('Pre-Processing Pipeline %s:node %s:internal id %s from container',
                   self._task.project_id, self._task.node_id, self._task.internal_id)
         await self._create_shared_folders()
@@ -334,16 +356,13 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                   self._task.project_id, self._task.node_id, self._task.internal_id)
 
     async def process(self):
-        import pdb; pdb.set_trace()
         log.debug('Processing Pipeline %s:node %s:internal id %s from container',
                   self._task.project_id, self._task.node_id, self._task.internal_id)
 
-        self._executor.run_pool = True
-
-        # touch output file
+        # touch output file, so it's ready for the container (v0)
         log_file = self._executor.log_dir / "log.dat"
-        log_file.touch()
-        fut = self._executor.pool.submit(self._bg_job, log_file)
+        log_file.touch()  
+        future = asyncio.ensure_future(log_file_processor(log_file))      
 
         start_time = time.perf_counter()
         container = None
@@ -372,16 +391,17 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
 
         if container:
             try:
-                wait_arguments = {}
-                if config.SERVICES_TIMEOUT_SECONDS > 0:
-                    wait_arguments["timeout"] = int(
-                        config.SERVICES_TIMEOUT_SECONDS)
-                response = container.wait(**wait_arguments)
+                while  not any(container.status in ["not-running", "exited", "removed"]):
+                    if (time.perf_counter() - start_time) > config.SERVICES_TIMEOUT_SECONDS and config.SERVICES_TIMEOUT_SECONDS > 0:
+                        log.error("Running container timed-out after %ss and will be stopped now\nlogs: %s",
+                              config.SERVICES_TIMEOUT_SECONDS, container.logs())
+                        container.stop()
+
+                    await asyncio.sleep(2)
+                # let's get the container response here                
+                response = container.wait()
                 log.info("container completed with response %s\nlogs: %s",
                          response, container.logs())
-            except requests.exceptions.ConnectionError:
-                log.exception("Running container timed-out after %ss and will be killed now\nlogs: %s",
-                              config.SERVICES_TIMEOUT_SECONDS, container.logs())
             except docker.errors.APIError:
                 log.exception("Run Container: Server returns error")
             finally:
@@ -389,37 +409,34 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                 log.info("Running %s took %sseconds",
                          docker_image, stop_time-start_time)
                 container.remove(force=True)
-
-        self._executor.run_pool = False
-        while not fut.done():
-            asyncio.sleep(1)
-
+        else:
+            log.error("Container could not be created: %s", docker_image)
+        
         log.debug('DONE Processing Pipeline %s:node %s:internal id %s from container',
                   self._task.project_id, self._task.node_id, self._task.internal_id)
 
     async def run(self):
-        import pdb; pdb.set_trace()
         log.debug('Running Pipeline %s:node %s:internal id %s from container',
                   self._task.project_id, self._task.node_id, self._task.internal_id)
         # NOTE: the rabbit has a timeout of 60seconds so blocking this channel for more is a no go.
 
         with safe_channel(self._pika) as (channel, _):
-            self._post_log(channel, msg="Preprocessing start...")
+            await self._post_log(channel, msg="Preprocessing start...")
 
         await self.preprocess()
 
         with safe_channel(self._pika) as (channel, _):
-            self._post_log(channel, msg="...preprocessing end")
-            self._post_log(channel, msg="Processing start...")
+            await self._post_log(channel, msg="...preprocessing end")
+            await self._post_log(channel, msg="Processing start...")
         await self.process()
 
         with safe_channel(self._pika) as (channel, _):
-            self._post_log(channel, msg="...processing end")
-            self._post_log(channel, msg="Postprocessing start...")
+            await self._post_log(channel, msg="...processing end")
+            await self._post_log(channel, msg="Postprocessing start...")
         await self.postprocess()
 
         with safe_channel(self._pika) as (channel, _):
-            self._post_log(channel, msg="...postprocessing end")
+            await self._post_log(channel, msg="...postprocessing end")
 
         log.debug('Running Pipeline DONE %s:node %s:internal id %s from container',
                   self._task.project_id, self._task.node_id, self._task.internal_id)
@@ -450,8 +467,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
         log.debug("ENTERING inspect with user %s pipeline:node %s: %s",
                   user_id, project_id, node_id)
 
-        next_task_nodes = []
-        import pdb; pdb.set_trace()
+        next_task_nodes = []        
         with session_scope(self._db.Session) as _session:
             _pipeline = _session.query(ComputationalPipeline).filter_by(
                 project_id=project_id).one()

@@ -115,10 +115,6 @@ class DbSettings:
 
 class ExecutorSettings:
     def __init__(self):
-        # Pool
-        self.pool = ThreadPoolExecutor(1)
-        self.run_pool: bool = False
-
         # shared folders
         self.in_dir: Path = ""
         self.out_dir: Path = ""
