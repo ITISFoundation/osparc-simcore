@@ -15,7 +15,10 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 log = logging.getLogger(__name__)
 
 
-def setup():
+def build_app() -> FastAPI:
+    """
+        Creates a sets up app
+    """
     app: FastAPI = application.create()
 
     @app.on_event("startup")
@@ -36,6 +39,7 @@ def setup():
 
     # SUBMODULES setups
     setup_db(app)
+    # add new here!
 
 
     @app.on_event("shutdown")
@@ -45,6 +49,5 @@ def setup():
     return app
 
 
-
 # SINGLETON FastAPI app
-the_app = setup()
+the_app: FastAPI = build_app()
