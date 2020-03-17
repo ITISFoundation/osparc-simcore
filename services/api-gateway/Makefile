@@ -42,6 +42,7 @@ run-devel: down ## runs app with pg fixture for development
 	# starting pg database ...
 	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml up --detach
 	# starting service
+	export SECRET_KEY="d0d0397de2c85ad26ffd4a0f9643dfe3a0ca3937f99cf3c2e174e11b5ef79880"; \
 	uvicorn simcore_service_api_gateway.main:the_app --reload --port=8001 --host=0.0.0.0
 	# stop
 

@@ -1,19 +1,21 @@
 """ Utility functions related with security
 
 """
+import logging
 import os
 import subprocess
 from datetime import datetime, timedelta
 from subprocess import CalledProcessError, CompletedProcess
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 import jwt
 from jwt import PyJWTError
 from passlib.context import CryptContext
 
 from . import crud_users as crud
-from .config import is_testing_enabled
 from .schemas import TokenData, UserInDB, ValidationError
+
+log = logging.getLogger(__name__)
 
 # PASSWORDS
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -42,12 +44,13 @@ def create_secret_key() -> str:
         proc: CompletedProcess = subprocess.run("openssl rand -hex 32", check=True, shell=True)
     except (CalledProcessError, FileNotFoundError) as why:
         raise ValueError(f"Cannot create secret key") from why
+    log.warning("Created new secret key!!")
     return str(proc.stdout).strip()
 
 
 # JSON WEB TOKENS (JWT)
 
-__SIGNING_KEY__ = os.environ.get("SECRET_KEY") or create_secret_key()
+__SIGNING_KEY__ = os.environ.get("SECRET_KEY")
 __ALGORITHM__ = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -68,7 +71,7 @@ def create_access_token(
     return encoded_jwt
 
 
-def decode_token(encoded_jwt: str) -> dict:
+def decode_token(encoded_jwt: str) -> Dict:
     return jwt.decode(encoded_jwt, __SIGNING_KEY__, algorithms=[__ALGORITHM__])
 
 
@@ -79,7 +82,7 @@ def get_access_token_data(encoded_jwt: str) -> Optional[TokenData]:
     # returns valid
     try:
         # decode JWT [header.payload.signature] and get payload:
-        payload = decode_token(encoded_jwt)
+        payload:Dict = decode_token(encoded_jwt)
 
         username: str = payload.get("sub")
         if username is None:

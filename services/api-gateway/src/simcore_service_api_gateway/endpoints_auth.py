@@ -18,21 +18,23 @@ router = APIRouter()
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     """
-    - This entrypoint is part of the Authorization Server
-    - Implements access point to obtain access-tokens
-
-    |        |                               +---------------+
-    |        |--(C)-- Authorization Grant -->| Authorization |
-    | Client |                               |     Server    | Token request
-    |        |<-(D)----- Access Token -------|               |
-    |        |                               +---------------+
-
+        Returns an access-token provided a valid authorization grant
     """
+
+    #
+    # - This entrypoint is part of the Authorization Server
+    # - Implements access point to obtain access-tokens
+    #
+    # |        |                               +---------------+
+    # |        |--(C)-- Authorization Grant -->| Authorization |
+    # | Client |                               |     Server    | Token request
+    # |        |<-(D)----- Access Token -------|               |
+    # |        |                               +---------------+
+    #
+
     stream = StringIO()
     print("Form Request", "-" * 20, file=stream)
-    for (
-        attr
-    ) in "grant_type username password scopes client_id client_secret".split():
+    for attr in "grant_type username password scopes client_id client_secret".split():
         print("-", attr, ":", getattr(form_data, attr), file=stream)
     print("-" * 20, file=stream)
     log.debug(stream.getvalue())
@@ -43,9 +45,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
     # TODO: grant requested scopes OR NOT!
 
-    access_token = create_access_token(
-        subject={"sub": user.username, "scopes": form_data.scopes}
-    )
+    access_token = create_access_token(subject=user.username, scopes=form_data.scopes)
     # TODO: THIS IS A STANDARD RESPOSE!
     resp_data = {"access_token": access_token, "token_type": "bearer"}
 
