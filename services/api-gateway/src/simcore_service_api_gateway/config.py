@@ -2,6 +2,9 @@
 
     NOTE: CONS of programmatic config
     - not testing-friendly since variables set upon import. Must reload when fixture is setup
+
+
+TODO: convert in pydantic Data
 """
 import logging
 import os
