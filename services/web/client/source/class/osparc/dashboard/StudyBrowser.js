@@ -149,7 +149,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         osparc.data.Resources.get("studies")
           .then(studies => {
             this.__setStudyList(studies);
-            this.__itemSelected(study ? study.uuid : null, false);
+            this.__itemSelected(study ? study.uuid : null);
           })
           .catch(err => {
             console.error(err);
@@ -167,7 +167,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         osparc.data.Resources.get("templates")
           .then(templates => {
             this.__setTemplateList(templates);
-            this.__itemSelected(template ? template.uuid : null, true);
+            this.__itemSelected(template ? template.uuid : null);
           })
           .catch(err => {
             console.error(err);
@@ -525,7 +525,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         } else {
           this.__templateStudyContainer.resetSelection();
         }
-        this.__itemSelected(item.getUuid(), isTemplate);
+        this.__itemSelected(item.getUuid());
       } else if (isTemplate) {
         this.__itemSelected(null);
         this.__templateDeleteButton.exclude();
@@ -549,7 +549,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __itemSelected: function(studyId, isTemplate = false) {
+    __itemSelected: function(studyId) {
       if (studyId === null) {
         if (this.__userStudyContainer) {
           this.__userStudyContainer.resetSelection();
