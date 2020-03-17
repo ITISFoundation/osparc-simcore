@@ -9,11 +9,11 @@ Why does this file exist, and why __main__? For more info, read:
 """
 import uvicorn
 
-from simcore_service_api_gateway.main import app
+from simcore_service_api_gateway.main import the_app
 from simcore_service_api_gateway.config import uvicorn_settings
 
 def main():
-    uvicorn.run(app, **uvicorn_settings)
+    uvicorn.run(the_app, **uvicorn_settings)
 
 if __name__ == "__main__":
     main()

@@ -56,7 +56,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            "simcore-service-api-gateway = simcore_service_api_gateway.cli:main",
+            "simcore-service-api-gateway = simcore_service_api_gateway.__main__:main",
         ],
     },
 )

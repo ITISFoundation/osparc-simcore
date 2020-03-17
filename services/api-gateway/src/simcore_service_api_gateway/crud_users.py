@@ -1,3 +1,7 @@
+"""
+    API layer to access dbs and return schema-based data structures
+"""
+
 from .schemas import UserInDB
 from typing import Optional
 
@@ -17,8 +21,6 @@ fake_users_db = {
         "disabled": True,
     },
 }
-
-
 
 
 def get_user(username: str) -> Optional[UserInDB]:
