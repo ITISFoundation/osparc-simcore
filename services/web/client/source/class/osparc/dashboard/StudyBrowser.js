@@ -304,7 +304,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         win.open();
         win.addListener("close", () => {
           if (win.getConfirmed()) {
-            this.__deleteStudy(selection.map(button => this.__getStudyData(button.getUuid(), isTemplate)), isTemplate);
+            this.__deleteStudies(selection.map(button => this.__getStudyData(button.getUuid(), isTemplate)), isTemplate);
           }
         }, this);
       }, this);
@@ -593,17 +593,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       deleteButton.setEnabled(isCurrentUserOwner && (!isTemplate || canDeleteTemplate));
     },
 
-    __deleteStudy: function(studyData, isTemplate = false) {
-      Promise.all(studyData.map(study => {
+    __deleteStudies: function(studiesData, areTemplates = false) {
+      Promise.all(studiesData.map(study => {
         const params = {
           url: {
             projectId: study.uuid
           }
         };
-        return osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "delete", params, study.uuid);
+        return osparc.data.Resources.fetch(areTemplates ? "templates" : "studies", "delete", params, study.uuid);
       }))
         .then(() => {
-          if (isTemplate) {
+          if (areTemplates) {
             this.reloadTemplateStudies();
           } else {
             this.reloadUserStudies();
