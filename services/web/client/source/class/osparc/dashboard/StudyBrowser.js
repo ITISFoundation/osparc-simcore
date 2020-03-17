@@ -429,8 +429,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createStudyItem: function(study, isTemplate) {
-      const menu = this.__getStudyItemMenu(study, isTemplate);
-
       const tags =
         study.tags ?
           osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id)) :
@@ -443,7 +441,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
         tags
       });
-
+      const menu = this.__getStudyItemMenu(item, study, isTemplate);
+      item.setMenu(menu);
       item.subscribeToFilterGroup("studyBrowser");
 
       item.addListener("execute", () => {
@@ -457,12 +456,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return item;
     },
 
-    __getStudyItemMenu: function(studyData, isTemplate) {
+    __getStudyItemMenu: function(item, studyData, isTemplate) {
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
 
       const selectButton = new qx.ui.menu.Button(this.tr("Select"));
+      selectButton.addListener("execute", () => {
+        item.toggleValue();
+        this.__itemPreSelected(item, isTemplate);
+      }, this);
       menu.add(selectButton);
 
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More info"));

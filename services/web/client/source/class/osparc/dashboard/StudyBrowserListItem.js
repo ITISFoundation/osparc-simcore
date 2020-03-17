@@ -27,7 +27,7 @@
 qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
   extend: osparc.dashboard.StudyBrowserListBase,
 
-  construct: function(menu) {
+  construct: function() {
     this.base(arguments);
 
     // create a date format like "Oct. 19, 2018 11:31 AM"
@@ -37,10 +37,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
     this.__timeFormat = new qx.util.format.DateFormat(
       qx.locale.Date.getTimeFormat("short")
     );
-
-    if (menu !== undefined) {
-      this.setMenu(menu);
-    }
   },
 
   properties: {
@@ -214,10 +210,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
         tagsContainer.removeAll();
         tags.forEach(tag => tagsContainer.add(new osparc.ui.basic.Tag(tag.name, tag.color, "studyBrowser")));
       }
-    },
-
-    _onToggleChange: function(e) {
-      this.getChildControl("tick-selected").setVisibility(e.getData() ? "visible" : "excluded");
     },
 
     _shouldApplyFilter: function(data) {
