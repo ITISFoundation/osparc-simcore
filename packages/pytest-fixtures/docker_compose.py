@@ -179,6 +179,15 @@ def ops_services_config_file(request, temp_folder, ops_docker_compose):
 
 
 # HELPERS ---------------------------------------------
+def _minio_fix(service_environs: Dict) -> Dict:
+    """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work.
+        172.17.0.1 is the docker0 interface, which redirect from inside a container onto the host network interface.
+    """
+    if "S3_ENDPOINT" in service_environs:
+        service_environs["S3_ENDPOINT"] = "172.17.0.1:9001"
+    return service_environs
+
+
 def _get_ip() -> str:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -207,6 +216,8 @@ def _filter_services_and_dump(
         # removes builds (No more)
         if "build" in service:
             service.pop("build", None)
+        if "environment" in service:
+            service["environment"] = _minio_fix(service["environment"])
 
     # updates current docker-compose (also versioned ... do not change by hand)
     with docker_compose_path.open("wt") as fh:

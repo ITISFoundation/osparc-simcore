@@ -18,9 +18,10 @@ from utils_docker import get_service_published_port
 def minio_config(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
     assert "ops_minio" in docker_stack["services"]
 
+    # 172.17.0.1 is the docker0 interface, which redirect from inside a container onto the host network interface.
     config = {
         "client": {
-            "endpoint": f"127.0.0.1:{get_service_published_port('minio', devel_environ['S3_ENDPOINT'].split(':')[1])}",
+            "endpoint": f"172.17.0.1:{get_service_published_port('minio', devel_environ['S3_ENDPOINT'].split(':')[1])}",
             "access_key": devel_environ["S3_ACCESS_KEY"],
             "secret_key": devel_environ["S3_SECRET_KEY"],
             "secure": strtobool(devel_environ["S3_SECURE"]) != 0,
