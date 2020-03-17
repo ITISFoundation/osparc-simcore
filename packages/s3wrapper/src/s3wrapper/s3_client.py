@@ -1,6 +1,7 @@
 import logging
 import re
 from datetime import timedelta
+from typing import Union
 
 from minio import CopyConditions, Minio
 from minio.error import ResponseError
