@@ -8,9 +8,6 @@ APP_NAME     := $(notdir $(CURDIR))
 APP_CLI_NAME := simcore-service-catalog
 export APP_VERSION = $(shell cat VERSION)
 
-REPO_BASE_DIR  = $(abspath $(CURDIR)/../../)
-VENV_DIR      ?= $(abspath $(REPO_BASE_DIR)/.venv)
-
 
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)
