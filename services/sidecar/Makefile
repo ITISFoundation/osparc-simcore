@@ -14,7 +14,7 @@ VENV_DIR      ?= $(abspath $(REPO_BASE_DIR)/.venv)
 
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)
-	@$(MAKE) --directory requirements all
+	@$(MAKE) --directory requirements reqs
 
 
 .PHONY: install-dev install-prod install-ci
