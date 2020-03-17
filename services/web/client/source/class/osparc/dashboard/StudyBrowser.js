@@ -429,7 +429,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createStudyItem: function(study, isTemplate) {
-      const menu = this.__getStudyItemMenu();
+      const menu = this.__getStudyItemMenu(study, isTemplate);
 
       const tags =
         study.tags ?
@@ -457,13 +457,39 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return item;
     },
 
-    __getStudyItemMenu: function() {
+    __getStudyItemMenu: function(studyData, isTemplate) {
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
-      const moreInfoButton = new qx.ui.menu.Button(this.tr("More info"));
+      const moreInfoButton = new qx.ui.menu.Button(this.tr("Edit info"));
+      moreInfoButton.addListener("execute", () => {
+        const studyDetailsEditor = this.__createStudyDetailsEditor(studyData, isTemplate);
+        const win = new osparc.ui.window.Dialog(this.tr("Study Details Editor")).set({
+          contentPadding: 10,
+          resizable: true,
+          maxWidth: 800,
+          width: 400,
+          height: 400
+        });
+        studyDetailsEditor.addListener("openedStudy", () => {
+          win.close();
+        });
+        win.add(studyDetailsEditor);
+        win.open();
+        win.center();
+      }, this);
       const selectButton = new qx.ui.menu.Button(this.tr("Select"));
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
+      deleteButton.addListener("execute", () => {
+        const win = this.__createConfirmWindow(false);
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            this.__deleteStudies([studyData], isTemplate);
+          }
+        }, this);
+      }, this);
       menu.add(moreInfoButton);
       menu.add(selectButton);
       menu.add(deleteButton);
