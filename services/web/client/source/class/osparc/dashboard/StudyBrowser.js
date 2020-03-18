@@ -85,7 +85,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   members: {
-    __servicesReady: null,
     __studyFilters: null,
     __userStudyContainer: null,
     __templateStudyContainer: null,
@@ -155,7 +154,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this.__getStudyAndStart(loadStudyId);
           }
         });
-      this.__getServicesPreload();
     },
 
     __reloadStudies: function() {
@@ -181,13 +179,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => {
           console.error(err);
         });
-    },
-
-    __getServicesPreload: function() {
-      let store = osparc.store.Store.getInstance();
-      store.addListener("servicesRegistered", e => {
-        this.__servicesReady = true;
-      }, this);
     },
 
     __getTags: function() {
@@ -361,28 +352,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __startStudy: function(studyData) {
-      if (this.__servicesReady === null) {
-        this.__showChildren(false);
-        let iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Services"));
-        this._add(iframe, {
-          flex: 1
-        });
+      this.__showChildren(false);
+      let iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Services"));
+      this._add(iframe, {
+        flex: 1
+      });
 
-        const interval = 500;
-        let servicesTimer = new qx.event.Timer(interval);
-        servicesTimer.addListener("interval", () => {
-          if (this.__servicesReady) {
-            servicesTimer.stop();
-            this._remove(iframe);
-            iframe.dispose();
-            this.__showChildren(true);
-            this.__loadStudy(studyData);
-          }
-        }, this);
-        servicesTimer.start();
-      } else {
-        this.__loadStudy(studyData);
-      }
+      osparc.store.Store.getInstance().getServices(false)
+        .then(() => {
+          this._remove(iframe);
+          iframe.dispose();
+          this.__showChildren(true);
+          this.__loadStudy(studyData);
+        });
     },
 
     __loadStudy: function(studyData) {
