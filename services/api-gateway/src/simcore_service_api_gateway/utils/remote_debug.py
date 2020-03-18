@@ -1,5 +1,6 @@
 """ Setup remote debugger with Python Tools for Visual Studio (PTVSD)
 
+TODO: move to some servicelib-tools variant with minimal dependencies
 """
 import logging
 import os
@@ -9,11 +10,11 @@ REMOTE_DEBUG_PORT = 3000
 log = logging.getLogger(__name__)
 
 
-def setup_remote_debugging(force_enabled=False):
+def setup_remote_debugging(force_enabled=False, *, boot_mode=None):
     """
         Programaticaly enables remote debugging if SC_BOOT_MODE==debug-ptvsd
     """
-    boot_mode = os.environ.get("SC_BOOT_MODE")
+    boot_mode = boot_mode or os.environ.get("SC_BOOT_MODE")
     if boot_mode == "debug-ptvsd" or force_enabled:
         try:
             log.debug("Enabling attach ptvsd ...")
@@ -23,7 +24,7 @@ def setup_remote_debugging(force_enabled=False):
             import ptvsd
 
             ptvsd.enable_attach(
-                address=("0.0.0.0", REMOTE_DEBUG_PORT), redirect_output=True
+                address=("0.0.0.0", REMOTE_DEBUG_PORT), redirect_output=True # nosec
             )  # nosec
         except ImportError:
             raise ValueError(
