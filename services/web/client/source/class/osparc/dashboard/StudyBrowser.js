@@ -474,12 +474,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More info"));
       moreInfoButton.addListener("execute", () => {
         const studyDetailsEditor = this.__createStudyDetailsEditor(studyData, isTemplate);
-        const win = new osparc.ui.window.Dialog(this.tr("Study Details Editor")).set({
-          contentPadding: 10,
+        const win = new qx.ui.window.Window(this.tr("Study Details Editor")).set({
+          autoDestroy: true,
+          layout: new qx.ui.layout.VBox(),
+          appearance: "service-window",
+          showMinimize: false,
+          showMaximize: false,
           resizable: true,
-          maxWidth: 800,
+          contentPadding: 10,
           width: 400,
-          height: 400
+          height: 400,
+          modal: true
         });
         studyDetailsEditor.addListener("openedStudy", () => {
           win.close();
