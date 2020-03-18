@@ -83,9 +83,18 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
     }
   },
 
+  statics: {
+    menuButtonZIndex: 20
+  },
+
   members: {
     __dateFormat: null,
     __timeFormat: null,
+
+    multiSelection: function(on) {
+      const untickIcon = this.getChildControl("tick-unselected");
+      untickIcon.setVisibility(on ? "visible" : "excluded");
+    },
 
     // overridden
     _createChildControlImpl: function(id) {
@@ -96,8 +105,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
             width: 30,
             height: 30,
             icon: "@FontAwesome5Solid/ellipsis-v/16",
-            focusable: false,
-            zIndex: 20
+            zIndex: this.self().menuButtonZIndex,
+            focusable: false
           });
           this._add(control, {
             top: 0,
@@ -109,8 +118,21 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
             width: 30,
             height: 30,
             icon: "@FontAwesome5Solid/check-circle/16",
-            focusable: false,
-            zIndex: 21
+            zIndex: this.self().menuButtonZIndex + 2,
+            focusable: false
+          });
+          this._add(control, {
+            top: 0,
+            right: 0
+          });
+          break;
+        case "tick-unselected":
+          control = new qx.ui.form.MenuButton().set({
+            width: 30,
+            height: 30,
+            icon: "@FontAwesome5Solid/circle/16",
+            zIndex: this.self().menuButtonZIndex + 1,
+            focusable: false
           });
           this._add(control, {
             top: 0,
