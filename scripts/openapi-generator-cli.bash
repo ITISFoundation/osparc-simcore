@@ -21,7 +21,7 @@
 #
 
 USERID=$(stat --format=%u "$PWD")
-GROUPID=$(stat -c %g "$PWD")
+GROUPID=$(stat --format=%g "$PWD")
 
 # FIXME: replaces automatically $PWD by /local so it maps correctly in the container
 #PATTERN=s+$PWD+/local+
