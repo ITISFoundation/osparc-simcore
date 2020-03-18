@@ -92,6 +92,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserListBase", {
           control = new qx.ui.basic.Label(this.getStudyTitle()).set({
             margin: [5, 0],
             font: "title-14",
+            rich : true,
             anonymous: true
           });
           osparc.utils.Utils.setIdToWidget(control, "studyBrowserListNew_title");
