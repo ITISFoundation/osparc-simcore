@@ -15,13 +15,6 @@ if [ "${SC_BUILD_TARGET}" = "development" ]
 then
   echo "$INFO" "Environment :"
   printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
-  #--------------------
-
-  # cd services/sidecar || exit
-  
-  # cd /devel || exit
-
-  #--------------------
   echo "$INFO" "Python :"
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'

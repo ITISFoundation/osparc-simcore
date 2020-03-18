@@ -64,8 +64,19 @@ then
         # change user property of files already around
         find / -path /proc -prune -user "$SC_USER_ID" -exec chown --no-dereference "$SC_USER_NAME" {} \;
     fi
+
+    echo "$INFO installing pythong dependencies..."
+    cd services/sidecar || exit 1
+    pip install --no-cache-dir -r requirements/dev.txt
+    cd - || exit 1
 fi
 
+
+if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]
+then
+  # NOTE: production does NOT pre-installs ptvsd
+  pip install --no-cache-dir ptvsd
+fi
 
 
 # Appends docker group if socket is mounted
@@ -90,15 +101,6 @@ echo "$INFO ensuring write rights on folders ..."
 chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_INPUT_FOLDER}"
 chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_OUTPUT_FOLDER}"
 chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_LOG_FOLDER}"
-
-
-if [ "${SC_BUILD_TARGET}" = "development" ]
-then
-    echo "$INFO installing pythong dependencies..."
-    cd services/sidecar || exit 1
-    pip install --no-cache-dir -r requirements/dev.txt
-    cd - || exit 1
-fi
 
 
 echo "$INFO Starting $* ..."
