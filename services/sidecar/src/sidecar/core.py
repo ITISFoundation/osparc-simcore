@@ -431,7 +431,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
         start_time = time.perf_counter()
         container = None
         try:
-            docker_image = self._docker.image_name + ":" + self._docker.image_tag
+            docker_image = f"{self._docker.image_name}:{self._docker.image_tag}"
             container = self._docker.client.containers.run(
                 docker_image,
                 "run",
@@ -439,9 +439,9 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                 detach=True,
                 remove=False,
                 volumes={
-                    "{}_input".format(self._stack_name): {"bind": "/input"},
-                    "{}_output".format(self._stack_name): {"bind": "/output"},
-                    "{}_log".format(self._stack_name): {"bind": "/log"},
+                    f"{self._stack_name}_input": {"bind": "/input"},
+                    f"{self._stack_name}_output": {"bind": "/output"},
+                    f"{self._stack_name}_log": {"bind": "/log"},
                 },
                 environment=self._docker.env,
                 nano_cpus=config.SERVICES_MAX_NANO_CPUS,
