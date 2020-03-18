@@ -98,7 +98,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserListBase", {
           this._mainLayout.addAt(control, 0);
           break;
       }
-  
       return control || this.base(arguments, id);
     },
 
