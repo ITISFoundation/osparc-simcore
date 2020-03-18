@@ -99,9 +99,8 @@ services:
     init: true
     deploy:
       mode: replicated
-      replicas: 4
-      endpoint_mode: dnsrr
       replicas: 8
+      endpoint_mode: dnsrr      
       resources:
         reservations:
           cpus: "0.1"
