@@ -11,7 +11,7 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from fastapi import FastAPI
-from tenacity import Retrying, before_sleep_log, stop_after_attempt, wait_fixed
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from .application import FastAPI, get_settings
 from .settings import AppSettings
@@ -75,12 +75,11 @@ async def start_db(app: FastAPI):
     # TODO: tmp disabled
     log.debug("DUMMY: Initializing db in %s", app)
 
-    # FIXME: do async
-    # for attempt in Retrying(**pg_retry_policy(log)):
-    #    with attempt:
-    #        await setup_engine()
+    @retry(**pg_retry_policy(log))
+    async def _go():
+        await setup_engine(app)
 
-    # if is_testing_enabled:
+    #if False:
     #    log.info("Creating db tables (testing mode)")
     #    create_tables()
 
