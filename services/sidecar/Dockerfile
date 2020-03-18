@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION="3.6"
+ARG PYTHON_VERSION="3.6.10"
 FROM python:${PYTHON_VERSION}-slim as base
 #
 #  USAGE:
@@ -16,7 +16,13 @@ ENV SC_USER_ID=8004 \
     SC_BUILD_TARGET=base \
     SC_BOOT_MODE=default
 
-RUN adduser --uid ${SC_USER_ID} --disabled-password --gecos "" --shell /bin/sh --home /home/${SC_USER_NAME} ${SC_USER_NAME}
+RUN adduser \
+    --uid ${SC_USER_ID} \
+    --disabled-password \
+    --gecos "" \
+    --shell /bin/sh \
+    --home /home/${SC_USER_NAME} \
+    ${SC_USER_NAME}
 
 # Sets utf-8 encoding for Python et al
 ENV LANG=C.UTF-8
@@ -38,41 +44,35 @@ ENV SWARM_STACK_NAME=""\
 
 EXPOSE 8080
 
-VOLUME /home/scu/input
-VOLUME /home/scu/output
-VOLUME /home/scu/log
-
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
 #
 # + /build             WORKDIR
 #
-
 FROM base as build
 
 ENV SC_BUILD_TARGET=build
 
-RUN apt-get update
-RUN apt-get install -y --no-install-recommends \
-      build-essential \
-      gcc
+RUN apt-get update &&\
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc
 
+# NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN python -m venv ${VIRTUAL_ENV}
 
-RUN pip install --upgrade --no-cache-dir \
-      pip~=20.0.2  \
-      wheel \
-      setuptools
+RUN pip --no-cache-dir install --upgrade \
+    pip~=20.0.2  \
+    wheel \
+    setuptools
 
-WORKDIR /build
+# copy sidecar and dependencies
+COPY --chown=scu:scu packages /build/packages
+COPY --chown=scu:scu services/sidecar /build/services/sidecar
+COPY --chown=scu:scu services/storage/client-sdk /build/services/storage/client-sdk
 
-# install base 3rd party dependencies
-COPY  --chown=scu:scu services/sidecar/requirements/*.txt \
-      tmp/sidecar/requirements/
-
-RUN pip install --no-cache-dir \
-      -r tmp/sidecar/requirements/_base.txt
-
+# install base 3rd party dependencies (NOTE: this speeds up devel mode)
+RUN pip --no-cache-dir install -r /build/services/sidecar/requirements/_base.txt
 
 # --------------------------Cache stage -------------------
 # CI in master buils & pushes this target to speed-up image build
@@ -82,20 +82,9 @@ RUN pip install --no-cache-dir \
 #
 FROM build as cache
 
-ENV SC_BUILD_TARGET=cache
-
-
-COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/sidecar /build/services/sidecar
-COPY --chown=scu:scu services/storage/client-sdk /build/services/storage/client-sdk
-
 WORKDIR /build/services/sidecar
-
-
-RUN pip install --no-cache-dir -r requirements/prod.txt &&\
-      pip list -v
-
-
+ENV SC_BUILD_TARGET=cache
+RUN pip --no-cache-dir install -r requirements/prod.txt
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup
@@ -106,17 +95,15 @@ RUN pip install --no-cache-dir -r requirements/prod.txt &&\
 #
 FROM base as production
 
-
 ENV SC_BUILD_TARGET=production
 ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
-COPY --from=cache ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-RUN chown --recursive scu:scu ${VIRTUAL_ENV}
+# bring installed package without build tools
+COPY --from=cache --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+# copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/sidecar/docker services/sidecar/docker
-
-
 ENTRYPOINT [ "/bin/sh", "services/sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/sidecar/docker/boot.sh"]
 
@@ -134,8 +121,5 @@ FROM build as development
 ENV SC_BUILD_TARGET=development
 
 WORKDIR /devel
-VOLUME  /devel/packages
-VOLUME  /devel/services/sidecar/
-
 ENTRYPOINT [ "/bin/sh", "services/sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/sidecar/docker/boot.sh"]
