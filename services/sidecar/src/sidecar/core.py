@@ -11,7 +11,6 @@ from typing import Dict, List, Union
 import aiofiles
 import docker
 import pika
-import requests
 from celery.utils.log import get_task_logger
 from sqlalchemy import and_, exc
 
@@ -226,7 +225,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                     # TODO: NEEDS to shield??
                     with safe_channel(self._pika) as (channel, _):
                         await self._post_log(channel, msg=accumulated_logs)
-                        time_log_sent = now
+                        time_logs_sent = now
                         accumulated_logs = []
         except asyncio.CancelledError:
             # the task is complete let's send the last logs
@@ -597,10 +596,10 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
             query = _session.query(ComputationalTask).filter(
                 and_(
                     ComputationalTask.node_id == node_id,  # pylint: disable=no-member
-                    ComputationalTask.project_id
+                    ComputationalTask.project_id # pylint: disable=no-member
                     == project_id,  # pylint: disable=no-member
-                    ComputationalTask.job_id == None,
-                )  # pylint: disable=no-member
+                    ComputationalTask.job_id == None, # pylint: disable=no-member
+                ) 
             )
             # Use SELECT FOR UPDATE TO lock the row
             query.with_for_update()
