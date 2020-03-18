@@ -1,19 +1,20 @@
 """ Access to postgres service
-
+ DUMMY!
 """
 import logging
+from functools import partial
 from typing import Dict, Optional
 
 import aiopg.sa
-
-## TODO: import sqlalchemy as sa
+import sqlalchemy as sa
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from fastapi import FastAPI
 from tenacity import Retrying, before_sleep_log, stop_after_attempt, wait_fixed
 
-from .config import app_context, is_testing_enabled, postgres_dsn
+from .application import FastAPI, get_settings
+from .settings import AppSettings
 
 ## from .orm.base import Base
 
@@ -31,70 +32,68 @@ def pg_retry_policy(logger: Optional[logging.Logger] = None) -> Dict:
     )
 
 
-# TODO: idealy context cleanup. This concept here? app-context Dependency?
-async def setup_engine() -> None:
+async def setup_engine(app: FastAPI) -> None:
+    settings = get_settings(app)
     engine = await aiopg.sa.create_engine(
-        postgres_dsn,
-        application_name=f"{__name__}_{id(app_context)}",  # unique identifier per app
+        settings.postgres_dsn,
+        application_name=f"{__name__}_{id(app)}",  # unique identifier per app
         minsize=5,
         maxsize=10,
     )
-    app_context["engine"] = engine
+    app.state.engine = engine
 
 
-async def teardown_engine() -> None:
-    engine = app_context["engine"]
+async def teardown_engine(app: FastAPI) -> None:
+    engine = app.state.engine
     engine.close()
     await engine.wait_closed()
 
 
-def get_engine() -> Engine:
-    return app_context["engine"]
-
-
-async def get_cnx():
+async def get_cnx(app: FastAPI):
     # TODO: problem here is retries??
-    async with get_engine().acquire() as conn:
+    engine: Engine = app.state.engine
+    async with engine.acquire() as conn:
         yield conn
 
 
-def info():
-    engine = get_engine()
+def info(app: FastAPI):
+    engine = app.state.engine
     for p in "closed driver dsn freesize maxsize minsize name  size timeout".split():
         print(f"{p} = {getattr(engine, p)}")
 
 
-def create_tables():
+def create_tables(settings: AppSettings):
     log.info("creating tables")
-    # engine = sa.create_engine(postgres_dsn)
-    # Base.metadata.create_all(bind=engine)
+    _engine = sa.create_engine(settings.postgres_dsn)
+    ## Base.metadata.create_all(bind=engine)
 
 
 # SETUP ------
 
 
-async def start_db():
-    log.info("Initializing db")
+async def start_db(app: FastAPI):
+    # TODO: tmp disabled
+    log.debug("DUMMY: Initializing db in %s", app)
 
     # FIXME: do async
-    for attempt in Retrying(**pg_retry_policy(log)):
-        with attempt:
-            await setup_engine()
+    # for attempt in Retrying(**pg_retry_policy(log)):
+    #    with attempt:
+    #        await setup_engine()
 
-    if is_testing_enabled:
-        log.info("Creating db tables (testing mode)")
-        create_tables()
+    # if is_testing_enabled:
+    #    log.info("Creating db tables (testing mode)")
+    #    create_tables()
 
 
-async def shutdown_db():
-    log.info("Shutting down db")
-    await teardown_engine()
+async def shutdown_db(app: FastAPI):
+    # TODO: tmp disabled
+    log.debug("DUMMY: Shutting down db in %s", app)
+    # await teardown_engine(app)
 
 
 def setup_db(app: FastAPI):
-
-    app.router.add_event_handler("startup", start_db)
-    app.router.add_event_handler("shutdown", shutdown_db)
+    app.router.add_event_handler("startup", partial(start_db, app))
+    app.router.add_event_handler("shutdown", partial(shutdown_db, app))
 
 
 __all__ = ("Engine", "ResultProxy", "RowProxy", "SAConnection")

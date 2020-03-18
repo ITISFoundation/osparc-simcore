@@ -8,6 +8,7 @@ from . import application, endpoints_auth, endpoints_check, endpoints_user
 from .__version__ import api_version_prefix
 from .db import setup_db
 from .utils.remote_debug import setup_remote_debugging
+from .settings import AppSettings
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -18,7 +19,9 @@ def build_app() -> FastAPI:
     """
         Creates a sets up app
     """
-    app: FastAPI = application.create()
+    settings = AppSettings()
+
+    app: FastAPI = application.create(settings=settings)
 
     @app.on_event("startup")
     def startup_event():  # pylint: disable=unused-variable

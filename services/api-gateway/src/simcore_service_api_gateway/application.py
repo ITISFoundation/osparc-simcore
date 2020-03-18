@@ -9,20 +9,28 @@ import yaml
 from fastapi import FastAPI
 
 from .__version__ import api_version, api_version_prefix
-from .config import is_testing_enabled
+from .settings import AppSettings
 
 
-def create() -> FastAPI:
+def create(settings: AppSettings) -> FastAPI:
     # factory
     app = FastAPI(
-        debug=is_testing_enabled,
+        debug=settings.debug,
         title="Public API Gateway",
         description="Platform's API Gateway for external clients",
         version=api_version,
         openapi_url=f"/api/{api_version_prefix}/openapi.json",
     )
 
+    # TODO: FREEZE once setup!
+    app.state.settings = settings
+
     return app
+
+
+def get_settings(app: FastAPI) -> AppSettings:
+    """ Read-only app settings """
+    return app.state["settings"].copy()
 
 
 def add_startup_handler(app: FastAPI, startup_event: Callable):

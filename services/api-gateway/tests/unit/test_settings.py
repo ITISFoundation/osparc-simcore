@@ -1,7 +1,9 @@
-from simcore_service_api_gateway.settings import Settings, BootModeEnum, URL
+from simcore_service_api_gateway.settings import AppSettings, BootModeEnum, URL
+
 # import pytest
 import logging
 from pprint import pprint
+
 
 def test_app_settings(monkeypatch):
     monkeypatch.setenv("POSTGRES_USER", "test")
@@ -10,7 +12,7 @@ def test_app_settings(monkeypatch):
     monkeypatch.setenv("LOGLEVEL", "debug")
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
-    settings = Settings()
+    settings = AppSettings()
 
     pprint(settings.dict())
     assert settings.boot_mode == BootModeEnum.production
