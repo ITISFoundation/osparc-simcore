@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict
 from uuid import uuid4
-
+import json
 import aio_pika
 import pytest
 import sqlalchemy as sa
@@ -67,7 +67,7 @@ def sidecar_config() -> None:
 async def test_run_sleepers(
     loop,
     postgres_session: sa.orm.session.Session,
-    rabbit_queue: aio_pika.Queue,
+    rabbit_queue,
     storage_service: URL,
     sleeper_service: Dict[str, str],
     sidecar_config: None,
@@ -77,6 +77,11 @@ async def test_run_sleepers(
 ):
     # NOTE: import is done here as this triggers already DB calls and setting up some settings
     from sidecar.core import SIDECAR
+
+
+    async def rabbit_message_handler(message: aio_pika.IncomingMessage):
+        data = json.loads(message.body)
+    await rabbit_queue.consume(rabbit_message_handler, exclusive=True, no_ack=True)
 
     celery_task = mocker.MagicMock()
     celery_task.request.id = 1
