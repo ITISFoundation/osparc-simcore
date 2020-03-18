@@ -68,22 +68,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__attachEventHandlers();
         const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
         if (loadStudyId) {
-          const params = {
-            url: {
-              projectId: loadStudyId
-            }
-          };
-          osparc.data.Resources.getOne("studies", params)
-            .then(studyData => {
-              this.__startStudy(studyData);
-            })
-            .catch(err => {
-              if (osparc.data.Permissions.getInstance().getRole() === "Guest") {
-                // If guest fails to load study, log him out
-                osparc.auth.Manager.getInstance().logout();
-              }
-              console.error(err);
-            });
+          this.__getStudyAndStart(loadStudyId);
         }
       }
     }, this);
@@ -257,6 +242,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadStudies: function() {
+      this.__fetchActiveStudy();
+      this.reloadUserStudies();
+      this.reloadTemplateStudies();
+    },
+
+    __fetchActiveStudy: function() {
       const params = {
         url: {
           tabId: osparc.utils.Utils.getClientSessionID()
@@ -273,9 +264,25 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => {
           console.error(err);
         });
+    },
 
-      this.reloadUserStudies();
-      this.reloadTemplateStudies();
+    __getStudyAndStart: function(loadStudyId) {
+      const params = {
+        url: {
+          projectId: loadStudyId
+        }
+      };
+      osparc.data.Resources.getOne("studies", params)
+        .then(studyData => {
+          this.__startStudy(studyData);
+        })
+        .catch(err => {
+          if (osparc.data.Permissions.getInstance().getRole() === "Guest") {
+            // If guest fails to load study, log him out
+            osparc.auth.Manager.getInstance().logout();
+          }
+          console.error(err);
+        });
     },
 
     __createDeleteButton: function() {
