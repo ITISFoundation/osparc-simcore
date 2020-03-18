@@ -439,7 +439,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         study.tags ?
           osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id)) :
           [];
-      const item = new osparc.dashboard.StudyBrowserListItem(menu).set({
+      const item = new osparc.dashboard.StudyBrowserListItem().set({
         uuid: study.uuid,
         studyTitle: study.name,
         icon: study.thumbnail || "@FontAwesome5Solid/flask/50",
