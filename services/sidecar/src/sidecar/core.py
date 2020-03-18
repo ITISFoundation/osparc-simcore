@@ -423,7 +423,6 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
         )
 
         # touch output file, so it's ready for the container (v0)
-        import pdb; pdb.set_trace()
         log_file = self._executor.log_dir / "log.dat"
         log_file.touch()
         log_processor_task = asyncio.ensure_future(self.log_file_processor(log_file))
@@ -439,9 +438,9 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                 detach=True,
                 remove=False,
                 volumes={
-                    f"{self._stack_name}_input": {"bind": "/input"},
-                    f"{self._stack_name}_output": {"bind": "/output"},
-                    f"{self._stack_name}_log": {"bind": "/log"},
+                    f"{config.SIDECAR_DOCKER_VOLUME_INPUT}": {"bind": "/input"},
+                    f"{config.SIDECAR_DOCKER_VOLUME_OUTPUT}": {"bind": "/output"},
+                    f"{config.SIDECAR_DOCKER_VOLUME_LOG}": {"bind": "/log"},
                 },
                 environment=self._docker.env,
                 nano_cpus=config.SERVICES_MAX_NANO_CPUS,
@@ -495,7 +494,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                 )
                 container.remove(force=True)
                 log_processor_task.cancel()
-                log_processor_task.wait()
+                await log_processor_task
         else:
             log.error("Container could not be created: %s", docker_image)
 

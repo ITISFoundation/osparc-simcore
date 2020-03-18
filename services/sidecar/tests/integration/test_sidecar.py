@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 import os
+from pathlib import Path
 from typing import Dict
 from uuid import uuid4
 
@@ -12,9 +13,9 @@ import sqlalchemy as sa
 from yarl import URL
 
 from s3wrapper import s3_client
+from sidecar import config
 from simcore_sdk.models.pipeline_models import (ComputationalPipeline,
-                                                ComputationalTask,
-                                                comp_pipeline, comp_tasks)
+                                                ComputationalTask)
 
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = ["storage", "postgres", "rabbit"]
@@ -82,6 +83,10 @@ async def test_run_sleepers(
     user_id: int,
     mocker,
 ):
+    config.SIDECAR_DOCKER_VOLUME_INPUT = Path.home() / f"input"
+    config.SIDECAR_DOCKER_VOLUME_OUTPUT = Path.home() / f"output"
+    config.SIDECAR_DOCKER_VOLUME_LOG = Path.home() / f"log"
+
     celery_task = mocker.MagicMock()
     celery_task.request.id = 1
 

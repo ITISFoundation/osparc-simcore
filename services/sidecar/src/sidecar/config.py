@@ -13,6 +13,9 @@ SERVICES_MAX_MEMORY_BYTES: int = os.environ.get(
 SERVICES_TIMEOUT_SECONDS: int = os.environ.get("SIDECAR_SERVICES_TIMEOUT_SECONDS", 20 * 60)
 SWARM_STACK_NAME: str = os.environ.get("SWARM_STACK_NAME", "simcore")
 
+SIDECAR_DOCKER_VOLUME_INPUT: str = os.environ.get("SIDECAR_DOCKER_VOLUME_INPUT", f"{SWARM_STACK_NAME}_input")
+SIDECAR_DOCKER_VOLUME_OUTPUT: str = os.environ.get("SIDECAR_DOCKER_VOLUME_OUTPUT", f"{SWARM_STACK_NAME}_output")
+SIDECAR_DOCKER_VOLUME_LOG: str = os.environ.get("SIDECAR_DOCKER_VOLUME_LOG", f"{SWARM_STACK_NAME}_log")
 SIDECAR_LOGLEVEL: str = getattr(
     logging, os.environ.get("SIDECAR_LOGLEVEL", "WARNING").upper(), logging.WARNING
 )
