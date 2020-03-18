@@ -5,7 +5,7 @@
 
 import os
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Any
 from uuid import uuid4
 
 import pytest
@@ -14,8 +14,7 @@ from yarl import URL
 
 from s3wrapper import s3_client
 from sidecar import config
-from simcore_sdk.models.pipeline_models import (ComputationalPipeline,
-                                                ComputationalTask)
+from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
 
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = ["storage", "postgres", "rabbit"]
@@ -33,8 +32,7 @@ def user_id() -> int:
     return 1
 
 
-@pytest.fixture
-def node_uuid() -> str:
+def _node_uuid() -> str:
     return str(uuid4())
 
 
@@ -71,28 +69,81 @@ def task_db(
     yield comp_task
 
 
-async def test_run_sleepers(
-    loop,
-    docker_stack: Dict,
-    postgres_session: sa.orm.session.Session,
-    rabbit_service: str,
-    minio_service: s3_client,
-    storage_service: URL,
-    sleeper_service: Dict[str, str],
-    task_db: ComputationalTask,
-    user_id: int,
-    mocker,
-):
+@pytest.fixture
+def create_pipeline(postgres_session: sa.orm.session.Session, project_id: str):
+    def create(tasks: Dict[str, Any], dag: Dict) -> ComputationalPipeline:
+        # set the pipeline
+        pipeline = ComputationalPipeline(
+            project_id=project_id, dag_adjacency_list=dag
+        )
+        postgres_session.add(pipeline)
+        postgres_session.commit()
+        # now create the tasks
+        for node_uuid,service in tasks.items():
+            comp_task = ComputationalTask(
+                project_id = project_id,
+                node_id = node_uuid,
+                schema = service["schema"],
+                image = service["image"],
+                inputs = {},
+                outputs = {},
+            )
+            postgres_session.add(comp_task)
+            postgres_session.commit()
+        return pipeline
+
+    yield create
+
+
+@pytest.fixture
+def sidecar_config() -> None:
     config.SIDECAR_DOCKER_VOLUME_INPUT = Path.home() / f"input"
     config.SIDECAR_DOCKER_VOLUME_OUTPUT = Path.home() / f"output"
     config.SIDECAR_DOCKER_VOLUME_LOG = Path.home() / f"log"
 
+async def test_run_sleepers(
+    loop,
+    postgres_session: sa.orm.session.Session,
+    rabbit_service: str,
+    storage_service: URL,
+    sleeper_service: Dict[str, str],
+    sidecar_config: None,
+    create_pipeline,
+    user_id: int,
+    mocker,
+):
+    # NOTE: import is done here as this triggers already DB calls and setting up some settings
+    from sidecar.core import SIDECAR
+
     celery_task = mocker.MagicMock()
     celery_task.request.id = 1
 
-    # Note this must happen here since DB is set already at that time
-    from sidecar.core import SIDECAR
-
-    next_task_nodes = await SIDECAR.inspect(
-        celery_task, user_id, task_db.project_id, task_db.node_id
+    pipeline = create_pipeline(
+        tasks={
+            "node_1": sleeper_service,
+            "node_2": sleeper_service,
+            "node_3": sleeper_service,
+            "node_4": sleeper_service,
+        },
+        dag={
+            "node_1": ["node_2", "node_3"],
+            "node_2": ["node_4"],
+            "node_3": ["node_4"],
+            "node_4": [],
+        },
     )
+
+    import pdb; pdb.set_trace()
+    next_task_nodes = await SIDECAR.inspect(
+        celery_task, user_id, pipeline.project_id, node_id=None
+    )
+    assert len(next_task_nodes) == 1
+    assert next_task_nodes[0] == "node_1"
+    
+    for node_id in next_task_nodes:
+        celery_task.request.id += 1
+        next_tasks = await SIDECAR.inspect(celery_task, user_id, pipeline.project_id, node_id=node_id)
+        if next_tasks:
+            next_task_nodes.extend(next_tasks)
+    assert next_task_nodes == ["node_1", "node_2", "node_3", "node_4", "node_4"]
+    
