@@ -105,11 +105,15 @@ qx.Class.define("osparc.desktop.preferences.pages.ExperimentalPage", {
 
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
 
-      const cbAutoPorts = new qx.ui.form.CheckBox("Auto Connect Ports");
+      const cbAutoPorts = new qx.ui.form.CheckBox(this.tr("Connect ports automatically"));
       preferencesSettings.bind("autoConnectPorts", cbAutoPorts, "value");
       cbAutoPorts.bind("value", preferencesSettings, "autoConnectPorts");
-
       box.add(cbAutoPorts);
+
+      const cbAutoOpenNode = new qx.ui.form.CheckBox(this.tr("Open node automatically when opening studies with a single node"));
+      preferencesSettings.bind("autoOpenNode", cbAutoOpenNode, "value");
+      cbAutoOpenNode.bind("value", preferencesSettings, "autoOpenNode");
+      box.add(cbAutoOpenNode);
 
       return box;
     }

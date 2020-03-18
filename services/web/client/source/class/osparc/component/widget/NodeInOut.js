@@ -102,7 +102,7 @@ qx.Class.define("osparc.component.widget.NodeInOut", {
       this.emptyPorts();
 
       const metaData = this.getNode().getMetaData();
-      this.__createUIPorts(isInput, metaData.outputs);
+      this.__createUIPorts(isInput, metaData && metaData.outputs);
     },
 
     __createUIPorts: function(isInput, ports) {

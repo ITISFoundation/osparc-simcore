@@ -24,6 +24,7 @@ async def test_datcore_ping(loop):
     responsive = await dcw.ping()
     assert responsive
 
+
 async def test_datcore_list_files_recursively(loop):
     if not utils.has_datcore_tokens():
         return
@@ -35,6 +36,7 @@ async def test_datcore_list_files_recursively(loop):
     f = await dcw.list_files_recursively()
     assert len(f)
 
+
 async def test_datcore_list_files_raw(loop):
     if not utils.has_datcore_tokens():
         return
@@ -45,7 +47,6 @@ async def test_datcore_list_files_raw(loop):
     dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
     f = await dcw.list_files_raw()
     assert len(f)
-
 
 
 async def test_datcore_nested_download_link(loop):
@@ -60,4 +61,4 @@ async def test_datcore_nested_download_link(loop):
     filename = "initial_WTstates.txt"
 
     f = await dcw.download_link(destination, filename)
-    assert(f)
+    assert f

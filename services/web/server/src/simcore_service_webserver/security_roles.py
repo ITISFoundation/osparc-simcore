@@ -18,61 +18,54 @@ from simcore_postgres_database.models.users import UserRole
 #       If only needed to discrimiate a resource use `resource.sub_resource.*`
 #
 ROLES_PERMISSIONS = {
-  UserRole.ANONYMOUS: {
-      "can": [] # Add only permissions here to handles that do not require login.
-                # Anonymous user can only access
-  },
-  UserRole.GUEST: {
-      "can": [
-        # Anonymous users need access to the filesystem because files are being transferred
-        "project.update",
-        "storage.locations.*", # "storage.datcore.read"
-        "storage.files.*",
-
-        "project.open",
-        "project.read",          # "studies.user.read",
-                                 # "studies.templates.read"
-        "project.node.read",
-        # NOTE: All services* are not necessary since it only requires login
-        # and there is no distinction among logged in users.
-        # TODO: kept temporarily as a way to denote resources
-        "services.pipeline.*",   # "study.update",
-                                 # "study.start",
-                                 # "study.stop",
-        "services.interactive.*",# "study.node.start"
-        "services.catalog.*",
-      ]
-  },
-  UserRole.USER: {
-      "can": [
-          "project.create",      # "studies.user.create",
-          "project.close",
-          "project.delete",      # "study.node.create",
-                                 # "study.node.delete",
-                                 # "study.node.rename",
-                                 # "study.edge.create",
-                                 # "study.edge.delete"
-          "project.node.create",
-          "project.node.delete",
-          "project.tag.*",       # "study.tag"
-          "user.profile.update", # "preferences.user.update",
-                                 # "preferences.role.update"
-          "user.tokens.*",       # "preferences.token.create",
-                                 # "preferences.token.delete"
-          "tag.crud.*"           # "preferences.tag"
-
-        # NOTE: All services* are not necessary since it only requires login
-        # and there is no distinction among logged in users.
-        # TODO: kept temporarily as a way to denote resources
-      ],
-      "inherits": [UserRole.GUEST, UserRole.ANONYMOUS]
-  },
-  UserRole.TESTER: {
-      "can": [
-          "project.template.create",
-      ],
-      "inherits": [UserRole.USER]
-  }
+    UserRole.ANONYMOUS: {
+        "can": []  # Add only permissions here to handles that do not require login.
+        # Anonymous user can only access
+    },
+    UserRole.GUEST: {
+        "can": [
+            # Anonymous users need access to the filesystem because files are being transferred
+            "project.update",
+            "storage.locations.*",  # "storage.datcore.read"
+            "storage.files.*",
+            "project.open",
+            "project.read",  # "studies.user.read",
+            # "studies.templates.read"
+            "project.node.read",
+            # NOTE: All services* are not necessary since it only requires login
+            # and there is no distinction among logged in users.
+            # TODO: kept temporarily as a way to denote resources
+            "services.pipeline.*",  # "study.update",
+            # "study.start",
+            # "study.stop",
+            "services.interactive.*",  # "study.node.start"
+            "services.catalog.*",
+        ]
+    },
+    UserRole.USER: {
+        "can": [
+            "project.create",  # "studies.user.create",
+            "project.close",
+            "project.delete",  # "study.node.create",
+            # "study.node.delete",
+            # "study.node.rename",
+            # "study.edge.create",
+            # "study.edge.delete"
+            "project.node.create",
+            "project.node.delete",
+            "project.tag.*",  # "study.tag"
+            "user.profile.update",  # "preferences.user.update",
+            # "preferences.role.update"
+            "user.tokens.*",  # "preferences.token.create",
+            # "preferences.token.delete"
+            "tag.crud.*"  # "preferences.tag"
+            # NOTE: All services* are not necessary since it only requires login
+            # and there is no distinction among logged in users.
+            # TODO: kept temporarily as a way to denote resources
+        ],
+        "inherits": [UserRole.GUEST, UserRole.ANONYMOUS],
+    },
+    UserRole.TESTER: {"can": ["project.template.create",], "inherits": [UserRole.USER]},
 }
 
 #
@@ -100,8 +93,8 @@ ROLES_PERMISSIONS = {
 ###   "study.node.start",
 #   "study.node.data.push", <----------???
 #   "study.node.data.delete", <----------???
-#XX   "study.edge.create",
-#XX   "study.edge.delete"
+# XX   "study.edge.create",
+# XX   "study.edge.delete"
 # ],
 # "tester": [
 #   "services.all.read",   <----------???

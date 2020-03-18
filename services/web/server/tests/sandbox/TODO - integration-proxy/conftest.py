@@ -1,4 +1,3 @@
-
 """ Tests reverse proxy within an environment having a selection of
     core and tool services running in a swarm
 """
@@ -37,15 +36,9 @@ logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 MAX_BOOT_TIME_SECS = 20
 
 # Selection of core and tool services started in this swarm fixture (integration)
-core_services = [
-    'director',
-    ''
-]
+core_services = ["director", ""]
 
-ops_services = [
-    'adminer',
-    'portainer'
-]
+ops_services = ["adminer", "portainer"]
 
 
 @pytest.fixture(scope="session")
@@ -53,11 +46,13 @@ def here() -> Path:
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def osparc_simcore_root_dir(here) -> Path:
     root_dir = here.parent.parent.parent.parent.parent.resolve()
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
-    assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
+    assert any(root_dir.glob("services/web/server")), (
+        "%s not look like rootdir" % root_dir
+    )
     return root_dir
 
 
@@ -75,21 +70,25 @@ def _load_docker_compose(docker_compose_path) -> Dict[str, str]:
         content = yaml.safe_load(f)
     return content
 
+
 @pytest.fixture("session")
 def services_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
     docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose.yml"
     return _load_docker_compose(docker_compose_path)
 
+
 @pytest.fixture("session")
 def ops_docker_compose(osparc_simcore_root_dir) -> Dict[str, str]:
-    docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose-ops.yml"
+    docker_compose_path = (
+        osparc_simcore_root_dir / "services" / "docker-compose-ops.yml"
+    )
     return _load_docker_compose(docker_compose_path)
 
 
 @pytest.fixture("session")
 def devel_environ(env_devel_file) -> Dict[str, str]:
     """ Environ dict from .env-devel """
-    PATTERN_ENVIRON_EQUAL= re.compile(r"^(\w+)=(.*)$")
+    PATTERN_ENVIRON_EQUAL = re.compile(r"^(\w+)=(.*)$")
     env_devel = {}
     with env_devel_file.open() as f:
         for line in f:
@@ -107,9 +106,11 @@ def webserver_environ(devel_environ, services_docker_compose) -> Dict[str, str]:
     """ Environment variables for the webserver application
 
     """
-    dockerfile_environ = {'SIMCORE_WEB_OUTDIR': "undefined" } # TODO: parse webserver dockerfile ??
+    dockerfile_environ = {
+        "SIMCORE_WEB_OUTDIR": "undefined"
+    }  # TODO: parse webserver dockerfile ??
 
-    service = services_docker_compose['services']['webserver']
+    service = services_docker_compose["services"]["webserver"]
     docker_compose_environ = resolve_environ(service, devel_environ)
 
     environ = {}
@@ -123,12 +124,15 @@ def webserver_environ(devel_environ, services_docker_compose) -> Dict[str, str]:
     #   the test webserver is built-up in webserver_service fixture that runs
     #   on the host.
     for name in core_services:
-        environ['%s_HOST' % name.upper()] = '127.0.0.1'
-        environ['%s_PORT' % name.upper()] = \
-            services_docker_compose['services'][name]['ports'][0].split(':')[
-            0]  # takes port exposed
+        environ["%s_HOST" % name.upper()] = "127.0.0.1"
+        environ["%s_PORT" % name.upper()] = services_docker_compose["services"][name][
+            "ports"
+        ][0].split(":")[
+            0
+        ]  # takes port exposed
         # to swarm boundary since webserver is installed in the host and therefore outside the swarm's network
     from pprint import pprint
+
     pprint(environ)
 
     return environ
@@ -137,14 +141,15 @@ def webserver_environ(devel_environ, services_docker_compose) -> Dict[str, str]:
 @pytest.fixture
 def app_config(here, webserver_environ) -> Dict:
     config_file_path = here / "config.yaml"
+
     def _recreate_config_file():
         with app_resources.stream("config/server-docker-dev.yaml") as f:
             cfg = yaml.safe_load(f)
             # test webserver works in host
-            cfg["main"]['host'] = '127.0.0.1'
+            cfg["main"]["host"] = "127.0.0.1"
             cfg["director"]["host"] = "127.0.0.1"
 
-        with config_file_path.open('wt') as f:
+        with config_file_path.open("wt") as f:
             yaml.dump(cfg, f, default_flow_style=False)
 
     _recreate_config_file()
@@ -154,10 +159,14 @@ def app_config(here, webserver_environ) -> Dict:
     # Emulates cli
     config_environ = {}
     config_environ.update(webserver_environ)
-    config_environ.update( create_environ(skip_host_environ=True) ) # TODO: can be done monkeypathcing os.environ and calling create_environ as well
+    config_environ.update(
+        create_environ(skip_host_environ=True)
+    )  # TODO: can be done monkeypathcing os.environ and calling create_environ as well
 
     # validates
-    cfg_dict = trafaret_config.read_and_validate(config_file_path, app_schema, vars=config_environ)
+    cfg_dict = trafaret_config.read_and_validate(
+        config_file_path, app_schema, vars=config_environ
+    )
 
     yield cfg_dict
 
@@ -166,17 +175,18 @@ def app_config(here, webserver_environ) -> Dict:
     config_file_path.unlink()
 
 
-
 # DOCKER STACK -------------------------------------------
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def docker_compose_file(here, services_docker_compose, devel_environ):
     """ Overrides pytest-docker fixture
 
     """
-    docker_compose_path = here / 'docker-compose.yml'
+    docker_compose_path = here / "docker-compose.yml"
 
     # creates a docker-compose file only with SERVICES and replaces environ
-    _recreate_compose_file(core_services, services_docker_compose, docker_compose_path, devel_environ)
+    _recreate_compose_file(
+        core_services, services_docker_compose, docker_compose_path, devel_environ
+    )
 
     logger.info(get_content_formatted(docker_compose_path))
 
@@ -186,29 +196,32 @@ def docker_compose_file(here, services_docker_compose, devel_environ):
     docker_compose_path.unlink()
 
 
-
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def docker_client():
     client = docker.from_env()
     yield client
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="session")
 def docker_swarm(docker_client):
     docker_client.swarm.init()
     yield
     assert docker_client.swarm.leave(force=True) == True
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def docker_stack(docker_swarm, docker_client, docker_compose_file: Path):
     """
 
     """
-    assert subprocess.run(
+    assert (
+        subprocess.run(
             "docker stack deploy -c {} services".format(docker_compose_file.name),
             shell=True,
-            cwd=docker_compose_file.parent
-        ).returncode == 0
+            cwd=docker_compose_file.parent,
+        ).returncode
+        == 0
+    )
     # NOTE:
     # ``failed to create service services_apihub: Error response from daemon: network services_default not found```
     # workaround is to restart daemon: ``sudo systemctl restart docker```
@@ -224,7 +237,6 @@ def docker_stack(docker_swarm, docker_client, docker_compose_file: Path):
     assert subprocess.run("docker stack rm services", shell=True).returncode == 0
 
 
-
 # CORE SERVICES ---------------------------------------------
 # @pytest.fixture(scope='session')
 # def director_service(docker_services, docker_ip):
@@ -235,16 +247,15 @@ def docker_stack(docker_swarm, docker_client, docker_compose_file: Path):
 #     return docker_ip, docker_services.port_for('director', 8001)
 
 
-
-
 # HELPERS ---------------------------------------------
 # TODO: should be reused integration-*
 
+
 def get_content_formatted(textfile: Path) -> str:
     return "{:=^10s}\n{}\n{:=^10s}".format(
-            str(textfile),
-            textfile.read_text("utf8"),
-            '')
+        str(textfile), textfile.read_text("utf8"), ""
+    )
+
 
 def resolve_environ(service, environ):
     _environs = {}
@@ -262,21 +273,23 @@ def resolve_environ(service, environ):
     return _environs
 
 
-def _recreate_compose_file(keep, services_compose, docker_compose_path: Path, devel_environ):
+def _recreate_compose_file(
+    keep, services_compose, docker_compose_path: Path, devel_environ
+):
     # reads service/docker-compose.yml
     content = deepcopy(services_compose)
 
     # remove unnecessary services
-    remove = [name for name in content['services'] if name not in keep]
+    remove = [name for name in content["services"] if name not in keep]
     for name in remove:
-        content['services'].pop(name, None)
+        content["services"].pop(name, None)
 
     for name in keep:
-        service = content['services'][name]
+        service = content["services"][name]
         # remove builds
         if "build" in service:
             service.pop("build", None)
-            service['image'] = "services_{}:latest".format(name)
+            service["image"] = "services_{}:latest".format(name)
         # replaces environs
         if "environment" in service:
             _environs = {}
@@ -285,7 +298,9 @@ def _recreate_compose_file(keep, services_compose, docker_compose_path: Path, de
                 if value.startswith("${") and value.endswith("}"):
                     value = devel_environ.get(value[2:-1], value)
                 _environs[key] = value
-            service["environment"] = [ "{}={}".format(k,v) for k,v in _environs.items() ]
+            service["environment"] = [
+                "{}={}".format(k, v) for k, v in _environs.items()
+            ]
     # updates current docker-compose (also versioned ... do not change by hand)
-    with docker_compose_path.open('wt') as f:
+    with docker_compose_path.open("wt") as f:
         yaml.dump(content, f, default_flow_style=False)

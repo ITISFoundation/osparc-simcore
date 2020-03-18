@@ -2,65 +2,66 @@ from aiohttp import web
 
 APP_LOGIN_CONFIG = __name__ + ".config"
 
-_MINUTES = 1./24./60.
+_MINUTES = 1.0 / 24.0 / 60.0
 
 REQUIRED = object()
 DEFAULTS = {
-    'THEME': 'templates/osparc.io',
-    'COMMON_THEME': 'templates/common',
-    'PASSWORD_LEN': (6, 30),
-    'LOGIN_REDIRECT': '/',
-    'LOGOUT_REDIRECT': '/',
-    'REGISTRATION_CONFIRMATION_REQUIRED': True,
-
+    "THEME": "templates/osparc.io",
+    "COMMON_THEME": "templates/common",
+    "PASSWORD_LEN": (6, 30),
+    "LOGIN_REDIRECT": "/",
+    "LOGOUT_REDIRECT": "/",
+    "REGISTRATION_CONFIRMATION_REQUIRED": True,
     # TODO: add in configuration file as environ!
-    'SMTP_SENDER': None,
-    'SMTP_HOST': REQUIRED,
-    'SMTP_PORT': REQUIRED,
-    'SMTP_TLS_ENABLED': False,
-    'SMTP_USERNAME': None,
-    'SMTP_PASSWORD': None,
-
+    "SMTP_SENDER": None,
+    "SMTP_HOST": REQUIRED,
+    "SMTP_PORT": REQUIRED,
+    "SMTP_TLS_ENABLED": False,
+    "SMTP_USERNAME": None,
+    "SMTP_PASSWORD": None,
     # email confirmation links lifetime in days
-    'REGISTRATION_CONFIRMATION_LIFETIME': 5,
-    'INVITATION_CONFIRMATION_LIFETIME': 5,
-    'RESET_PASSWORD_CONFIRMATION_LIFETIME': 20 * _MINUTES,
-    'CHANGE_EMAIL_CONFIRMATION_LIFETIME': 5,
-
-    'MSG_LOGGED_IN': 'You are logged in',
-    'MSG_LOGGED_OUT': 'You are logged out',
-    'MSG_ACTIVATED': 'Your account is activated',
-    'MSG_UNKNOWN_EMAIL': 'This email is not registered',
-    'MSG_WRONG_PASSWORD': 'Wrong password',
-    'MSG_PASSWORD_MISMATCH': 'Password and confirmation do not match',
-    'MSG_USER_BANNED': 'This user is banned',
-    'MSG_ACTIVATION_REQUIRED': ('You have to activate your account via'
-                                ' email, before you can login'),
-    'MSG_EMAIL_EXISTS': 'This email is already registered',
-    'MSG_OFTEN_RESET_PASSWORD': (
-        'You can not request of restoring your password so often. Please, use'
-        ' the link we sent you recently'),
-    'MSG_CANT_SEND_MAIL': 'Can\'t send email, try a little later',
-    'MSG_PASSWORDS_NOT_MATCH': 'Passwords must match',
-    'MSG_PASSWORD_CHANGED': 'Your password is changed',
-    'MSG_CHANGE_EMAIL_REQUESTED': ('Please, click on the verification link'
-                                   ' we sent to your new email address'),
-    'MSG_EMAIL_CHANGED': 'Your email is changed',
-    'MSG_AUTH_FAILED': 'Authorization failed',
-    'MSG_EMAIL_SENT': 'An email has been sent to {email} with further instructions',
-
+    "REGISTRATION_CONFIRMATION_LIFETIME": 5,
+    "INVITATION_CONFIRMATION_LIFETIME": 5,
+    "RESET_PASSWORD_CONFIRMATION_LIFETIME": 20 * _MINUTES,
+    "CHANGE_EMAIL_CONFIRMATION_LIFETIME": 5,
+    "MSG_LOGGED_IN": "You are logged in",
+    "MSG_LOGGED_OUT": "You are logged out",
+    "MSG_ACTIVATED": "Your account is activated",
+    "MSG_UNKNOWN_EMAIL": "This email is not registered",
+    "MSG_WRONG_PASSWORD": "Wrong password",
+    "MSG_PASSWORD_MISMATCH": "Password and confirmation do not match",
+    "MSG_USER_BANNED": "This user is banned",
+    "MSG_ACTIVATION_REQUIRED": (
+        "You have to activate your account via" " email, before you can login"
+    ),
+    "MSG_EMAIL_EXISTS": "This email is already registered",
+    "MSG_OFTEN_RESET_PASSWORD": (
+        "You can not request of restoring your password so often. Please, use"
+        " the link we sent you recently"
+    ),
+    "MSG_CANT_SEND_MAIL": "Can't send email, try a little later",
+    "MSG_PASSWORDS_NOT_MATCH": "Passwords must match",
+    "MSG_PASSWORD_CHANGED": "Your password is changed",
+    "MSG_CHANGE_EMAIL_REQUESTED": (
+        "Please, click on the verification link" " we sent to your new email address"
+    ),
+    "MSG_EMAIL_CHANGED": "Your email is changed",
+    "MSG_AUTH_FAILED": "Authorization failed",
+    "MSG_EMAIL_SENT": "An email has been sent to {email} with further instructions",
     # next settings are initialized during `setup()`, do not set it manually
-    'APP': REQUIRED,
-    'STORAGE': REQUIRED,
+    "APP": REQUIRED,
+    "STORAGE": REQUIRED,
 }
 
-assert 'STORAGE' in DEFAULTS.keys() # nosec
+assert "STORAGE" in DEFAULTS.keys()  # nosec
+
 
 def get_storage(app: web.Application):
-    return app[APP_LOGIN_CONFIG]['STORAGE']
+    return app[APP_LOGIN_CONFIG]["STORAGE"]
+
 
 class Cfg(dict):
-    '''
+    """
     Settings storage witch suports both, dict and dot notations
 
     >>> cfg = Cfg({'foo': 1, 'bar': 2, 'baz': REQUIRED})
@@ -103,7 +104,8 @@ class Cfg(dict):
     Traceback (most recent call last):
         ...
     AttributeError
-    '''
+    """
+
     def __init__(self, defaults):
         super().__init__(self)
         self.defaults = defaults
@@ -112,12 +114,12 @@ class Cfg(dict):
     # pylint: disable=E0202
     def __getitem__(self, name):
         if not self.configured:
-            raise RuntimeError('Settings are not configured yet')
+            raise RuntimeError("Settings are not configured yet")
         self.__getitem__ = super().__getitem__
         return super().__getitem__(name)
 
     def __getattr__(self, name):
-        if name == '__wrapped__':
+        if name == "__wrapped__":
             raise AttributeError
         try:
             return self[name]
@@ -129,13 +131,14 @@ class Cfg(dict):
         for key in self.defaults:
             value = updates.get(key, self.defaults[key])
             if value == REQUIRED:
-                raise RuntimeError('You have to set `{}`'.format(key))
+                raise RuntimeError("You have to set `{}`".format(key))
             self[key] = value
         self.configured = True
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import doctest
+
     print(doctest.testmod())
 else:
     cfg = Cfg(DEFAULTS)

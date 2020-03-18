@@ -89,7 +89,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       let dashboard = this.__dashboard = new osparc.desktop.Dashboard();
       dashboard.getStudyBrowser().addListener("startStudy", e => {
         const studyEditor = e.getData();
-        this.__showStudyEditor(studyEditor);
+        this.__startStudyEditor(studyEditor);
       }, this);
       prjStack.add(dashboard);
 
@@ -105,7 +105,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       }
     },
 
-    __showStudyEditor: function(studyEditor) {
+    __startStudyEditor: function(studyEditor) {
       if (this.__studyEditor) {
         this.__prjStack.remove(this.__studyEditor);
       }
@@ -115,7 +115,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__prjStack.add(this.__studyEditor);
       this.__prjStack.setSelection([this.__studyEditor]);
       this.__navBar.setStudy(study);
-      this.__navBar.setPathButtons(study.getWorkbench().getPathIds(study.getUuid()));
+      this.__navBar.setPathButtons(this.__studyEditor.getCurrentPathIds());
 
       this.__studyEditor.addListener("changeMainViewCaption", ev => {
         const elements = ev.getData();

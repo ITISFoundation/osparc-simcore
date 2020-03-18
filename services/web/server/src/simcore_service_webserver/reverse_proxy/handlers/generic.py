@@ -24,9 +24,12 @@ CHUNK = 32768
 
 
 def check_ws_in_headers(request):
-    return request.headers.get('connection', '').lower() == 'upgrade' and \
-           request.headers.get('upgrade', '').lower() == 'websocket' and \
-           request.method == 'GET'
+    return (
+        request.headers.get("connection", "").lower() == "upgrade"
+        and request.headers.get("upgrade", "").lower() == "websocket"
+        and request.method == "GET"
+    )
+
 
 async def handle_websocket_requests(ws_server, request, target_url):
     client_session = aiohttp.ClientSession(cookies=request.cookies)
@@ -46,34 +49,36 @@ async def handle_websocket_requests(ws_server, request, target_url):
             elif ws_to.closed:
                 await ws_to.close(code=ws_to.close_code, message=msg.extra)
             else:
-                raise ValueError(
-                    'unexpected message type: %s' % pprint.pformat(msg))
+                raise ValueError("unexpected message type: %s" % pprint.pformat(msg))
 
     async with client_session.ws_connect(target_url) as ws_client:
-        await asyncio.wait([_ws_forward(ws_server, ws_client),
-                            _ws_forward(ws_client, ws_server)],
-                            return_when=asyncio.FIRST_COMPLETED)
+        await asyncio.wait(
+            [_ws_forward(ws_server, ws_client), _ws_forward(ws_client, ws_server)],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
 
         return ws_server
 
+
 async def handle_web_request(request, target_url):
     async with client.request(
-        request.method, target_url,
+        request.method,
+        target_url,
         headers=request.headers.copy(),
         allow_redirects=False,
-        data=await request.read()
+        data=await request.read(),
     ) as res:
         body = await res.read()
         response = web.Response(
-            headers=res.headers.copy(),
-            status=res.status,
-            body=body
+            headers=res.headers.copy(), status=res.status, body=body
         )
         return response
 
 
 async def handler(request: web.Request, service_url: str, **_kargs):
-    target_url = URL(service_url).origin().with_path(request.path).with_query(request.query)
+    target_url = (
+        URL(service_url).origin().with_path(request.path).with_query(request.query)
+    )
     ws_available = False
     if check_ws_in_headers(request):
         ws = web.WebSocketResponse()
@@ -89,26 +94,26 @@ async def handler(request: web.Request, service_url: str, **_kargs):
                 request.app[APP_SOCKETS_KEY].remove(ws)
 
     if not ws_available:
-        return ( await handle_web_request(request, target_url) )
-
+        return await handle_web_request(request, target_url)
 
 
 # OTHER IMPLEMENTATIONS ------------------------------------------------------
+
 
 async def handler_impl_2(request: web.Request, target_url: str):
     # FIXME: Taken tmp from https://github.com/weargoggles/aioproxy/blob/master/aioproxy.py
 
     start = time.time()
     async with aiohttp.client.request(
-        request.method, target_url,
+        request.method,
+        target_url,
         headers=request.headers,
         chunked=CHUNK,
         # response_class=ReverseProxyResponse,
     ) as r:
-        logger.debug('opened backend request in %d ms', ((time.time() - start) * 1000))
+        logger.debug("opened backend request in %d ms", ((time.time() - start) * 1000))
 
-        response = aiohttp.web.StreamResponse(status=r.status,
-                                                headers=r.headers)
+        response = aiohttp.web.StreamResponse(status=r.status, headers=r.headers)
         await response.prepare(request)
         content = r.content
         while True:
@@ -117,7 +122,7 @@ async def handler_impl_2(request: web.Request, target_url: str):
                 break
             await response.write(chunk)
 
-    logger.debug('finished sending content in %d ms', ((time.time() - start) * 1000,))
+    logger.debug("finished sending content in %d ms", ((time.time() - start) * 1000,))
     await response.write_eof()
     return response
 

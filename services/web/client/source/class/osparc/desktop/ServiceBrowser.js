@@ -51,29 +51,18 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
       flex: 1
     });
 
-    const interval = 1000;
-    const userTimer = new qx.event.Timer(interval);
-    userTimer.addListener("interval", () => {
-      if (this.__servicesReady) {
-        userTimer.stop();
-        this._removeAll();
-        iframe.dispose();
-        this.__createServicesLayout();
-        this.__attachEventHandlers();
-      }
-    }, this);
-    userTimer.start();
-
-    this.__initResources();
+    this.__initResources(iframe);
   },
 
   members: {
-    __servicesReady: null,
+    __reloadBtn: null,
     __serviceFilters: null,
     __allServices: null,
-    __servicesList: null,
-    __versionsList: null,
-    __searchTextfield: null,
+    __latestServicesModel: null,
+    __servicesUIList: null,
+    __versionsUIBox: null,
+    __deleteServiceBtn: null,
+    __selectedService: null,
 
     /**
      * Function that resets the selected item by reseting the filters and the service selection
@@ -82,21 +71,42 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
       if (this.__serviceFilters) {
         this.__serviceFilters.reset();
       }
-      if (this.__servicesList) {
-        this.__servicesList.setSelection([]);
+      if (this.__servicesUIList) {
+        this.__servicesUIList.setSelection([]);
       }
     },
 
-    __initResources: function() {
-      this.__getServicesPreload();
+    __initResources: function(iframe) {
+      const store = osparc.store.Store.getInstance();
+      store.getServices(true)
+        .then(services => {
+          // Do not validate if are not taking actions
+          // this.__nodeCheck(services);
+          this._removeAll();
+          iframe.dispose();
+          this.__createServicesLayout();
+          this.__populateList(false);
+          this.__attachEventHandlers();
+        });
     },
 
-    __getServicesPreload: function() {
+    __populateList: function(reload) {
+      this.__reloadBtn.setFetching(true);
+
       const store = osparc.store.Store.getInstance();
-      store.addListener("servicesRegistered", e => {
-        this.__servicesReady = e.getData();
-      }, this);
-      store.getServices(true);
+      store.getServices(reload)
+        .then(services => {
+          this.__allServices = services;
+          this.__latestServicesModel.removeAll();
+          for (const serviceKey in services) {
+            const latestService = osparc.utils.Services.getLatest(services, serviceKey);
+            this.__latestServicesModel.append(qx.data.marshal.Json.createModel(latestService));
+          }
+        })
+        .finally(() => {
+          this.__reloadBtn.setFetching(false);
+          this.__serviceFilters.dispatch();
+        });
     },
 
     __createServicesLayout: function() {
@@ -112,42 +122,47 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
     __createServicesListLayout: function() {
       const servicesLayout = this.__createVBoxWLabel(this.tr("Services"));
 
+      // button for refetching services
+      const reloadBtn = this.__reloadBtn = new osparc.ui.form.FetchButton().set({
+        label: this.tr("Reload"),
+        icon: "@FontAwesome5Solid/sync-alt/14",
+        allowGrowX: false
+      });
+      reloadBtn.addListener("execute", function() {
+        this.__populateList(true);
+      }, this);
+      servicesLayout.add(reloadBtn);
+
       const serviceFilters = this.__serviceFilters = new osparc.component.filter.group.ServiceFilterGroup("serviceBrowser");
       servicesLayout.add(serviceFilters);
 
-      const servicesList = this.__servicesList = new qx.ui.form.List().set({
+      const servicesUIList = this.__servicesUIList = new qx.ui.form.List().set({
         orientation: "vertical",
         minWidth: 400,
         appearance: "pb-list"
       });
-      servicesList.addListener("changeSelection", e => {
+      servicesUIList.addListener("changeSelection", e => {
         if (e.getData() && e.getData().length>0) {
           const selectedKey = e.getData()[0].getModel();
           this.__serviceSelected(selectedKey);
         }
       }, this);
-      const store = osparc.store.Store.getInstance();
-      const latestServices = [];
-      const services = this.__allServices = store.getServices();
-      for (const serviceKey in services) {
-        latestServices.push(osparc.utils.Services.getLatest(services, serviceKey));
-      }
-      const latestServicesModel = new qx.data.Array(
-        latestServices.map(s => qx.data.marshal.Json.createModel(s))
-      );
-      const servCtrl = new qx.data.controller.List(latestServicesModel, servicesList, "name");
+
+      const latestServicesModel = this.__latestServicesModel = new qx.data.Array();
+      const servCtrl = new qx.data.controller.List(latestServicesModel, servicesUIList, "name");
       servCtrl.setDelegate({
         createItem: () => {
           const item = new osparc.desktop.ServiceBrowserListItem();
           item.subscribeToFilterGroup("serviceBrowser");
           item.addListener("tap", e => {
-            servicesList.setSelection([item]);
+            servicesUIList.setSelection([item]);
           });
           return item;
         },
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("key", "model", null, item, id);
           ctrl.bindProperty("key", "key", null, item, id);
+          ctrl.bindProperty("version", "version", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("description", "description", null, item, id);
           ctrl.bindProperty("type", "type", null, item, id);
@@ -155,19 +170,9 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
           ctrl.bindProperty("contact", "contact", null, item, id);
         }
       });
-      servicesLayout.add(servicesList, {
+      servicesLayout.add(servicesUIList, {
         flex: 1
       });
-
-      // Workaround to the list.changeSelection
-      servCtrl.addListener("changeValue", e => {
-        if (e.getData() && e.getData().length>0) {
-          const selectedService = e.getData().toArray()[0];
-          this.__serviceSelected(selectedService);
-        } else {
-          this.__serviceSelected(null);
-        }
-      }, this);
 
       return servicesLayout;
     },
@@ -187,7 +192,7 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
 
       titleContainer.add(new qx.ui.basic.Atom(this.tr("Version")));
 
-      const versions = this.__versionsList = new qx.ui.form.SelectBox();
+      const versions = this.__versionsUIBox = new qx.ui.form.SelectBox();
       osparc.utils.Utils.setIdToWidget(versions, "serviceBrowserVersionsDrpDwn");
       titleContainer.add(versions);
       versions.addListener("changeSelection", e => {
@@ -196,6 +201,26 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
         }
       }, this);
       descriptionView.add(titleContainer);
+
+      const actionsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      actionsContainer.add(new qx.ui.core.Spacer(300, null));
+      const deleteServiceBtn = this.__deleteServiceBtn = new osparc.ui.form.FetchButton(this.tr("Delete")).set({
+        allowGrowX: false,
+        visibility: "hidden"
+      });
+      deleteServiceBtn.addListener("execute", () => {
+        const msg = this.tr("Are you sure you want to delete the group?");
+        const win = new osparc.ui.window.Confirmation(msg);
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            this.__deleteService();
+          }
+        }, this);
+        win.center();
+        win.open();
+      }, this);
+      actionsContainer.add(deleteServiceBtn);
+      descriptionView.add(actionsContainer);
 
       const descriptionContainer = this.__serviceDescription = new qx.ui.container.Scroll();
       descriptionView.add(descriptionContainer, {
@@ -273,17 +298,17 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
       }, this);
       textfield.addListener("keypress", e => {
         if (e.getKeyIdentifier() === "Enter") {
-          const selectables = this.__servicesList.getSelectables();
+          const selectables = this.__servicesUIList.getSelectables();
           if (selectables) {
-            this.__servicesList.setSelection([selectables[0]]);
+            this.__servicesUIList.setSelection([selectables[0]]);
           }
         }
       }, this);
     },
 
     __serviceSelected: function(serviceKey) {
-      if (this.__versionsList) {
-        const versionsList = this.__versionsList;
+      if (this.__versionsUIBox) {
+        const versionsList = this.__versionsUIBox;
         versionsList.removeAll();
         if (serviceKey in this.__allServices) {
           const versions = osparc.utils.Services.getVersions(this.__allServices, serviceKey);
@@ -305,7 +330,7 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
     },
 
     __versionSelected: function(versionKey) {
-      const serviceSelection = this.__servicesList.getSelection();
+      const serviceSelection = this.__servicesUIList.getSelection();
       if (serviceSelection.length > 0) {
         const serviceKey = serviceSelection[0].getModel();
         const selectedService = osparc.utils.Services.getFromObject(this.__allServices, serviceKey, versionKey);
@@ -314,15 +339,66 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
     },
 
     __updateServiceDescription: function(selectedService) {
+      let showDelete = false;
       const serviceDescription = this.__serviceDescription;
       if (serviceDescription) {
-        if (selectedService) {
-          const serviceInfo = new osparc.component.metadata.ServiceInfo(selectedService);
-          serviceDescription.add(serviceInfo);
-        } else {
-          serviceDescription.add(null);
-        }
+        const serviceInfo = selectedService ? new osparc.component.metadata.ServiceInfo(selectedService) : null;
+        serviceDescription.add(serviceInfo);
+        this.__selectedService = selectedService;
+        showDelete = this.__canServiceBeDeleted(selectedService);
       }
+      this.__deleteServiceBtn.setVisibility(showDelete ? "visible" : "hidden");
+    },
+
+    __canServiceBeDeleted: function(selectedService) {
+      if (selectedService) {
+        const isMacro = selectedService.key.includes("frontend/nodes-group/macros");
+        const isOwner = selectedService.contact === osparc.auth.Data.getInstance().getEmail();
+        return isMacro && isOwner;
+      }
+      return false;
+    },
+
+    __deleteService: function() {
+      this.__deleteServiceBtn.setFetching(true);
+
+      const serviceId = this.__selectedService.id;
+      const params = {
+        url: {
+          groupId: serviceId
+        }
+      };
+      osparc.data.Resources.fetch("groups", "delete", params, serviceId)
+        .then(() => {
+          this.__updateServiceDescription(null);
+          this.__populateList(true);
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Unable to delete the group."), "ERROR");
+          console.error(err);
+        })
+        .finally(() => {
+          this.__deleteServiceBtn.setFetching(false);
+        });
+    },
+
+    __nodeCheck: function(services) {
+      /** a little ajv test */
+      let nodeCheck = new qx.io.request.Xhr("/resource/osparc/node-meta-v0.0.1.json");
+      nodeCheck.addListener("success", e => {
+        let data = e.getTarget().getResponse();
+        try {
+          let ajv = new osparc.wrapper.Ajv(data);
+          for (const srvId in services) {
+            const service = services[srvId];
+            let check = ajv.validate(service);
+            console.log("services validation result " + service.key + ":", check);
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }, this);
+      nodeCheck.send();
     }
   }
 });

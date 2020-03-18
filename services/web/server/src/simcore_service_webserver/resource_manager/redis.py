@@ -9,14 +9,15 @@ from .config import APP_CLIENT_REDIS_CLIENT_KEY, CONFIG_SECTION_NAME
 
 log = logging.getLogger(__name__)
 
-THIS_SERVICE_NAME = 'redis'
+THIS_SERVICE_NAME = "redis"
 DSN = "redis://{host}:{port}"
 
 retry_upon_init_policy = dict(
     stop=stop_after_attempt(3),
     wait=wait_random(min=1, max=2),
-    before=before_log(log, logging.WARNING)
+    before=before_log(log, logging.WARNING),
 )
+
 
 async def redis_client(app: web.Application):
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
@@ -26,7 +27,7 @@ async def redis_client(app: web.Application):
         with attempt:
             client = await aioredis.create_redis_pool(url, encoding="utf-8")
 
-    assert client # nosec
+    assert client  # nosec
     app[APP_CLIENT_REDIS_CLIENT_KEY] = client
 
     yield
@@ -36,6 +37,7 @@ async def redis_client(app: web.Application):
 
     client.close()
     await client.wait_closed()
+
 
 def setup_redis_client(app: web.Application):
     app[APP_CLIENT_REDIS_CLIENT_KEY] = None
@@ -49,6 +51,7 @@ def setup_redis_client(app: web.Application):
     log.debug("Setting up %s [service: %s] ...", __name__, THIS_SERVICE_NAME)
 
     app.cleanup_ctx.append(redis_client)
+
 
 def get_redis_client(app: web.Application) -> aioredis.Redis:
     return app[APP_CLIENT_REDIS_CLIENT_KEY]

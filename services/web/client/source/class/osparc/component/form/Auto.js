@@ -59,24 +59,16 @@ qx.Class.define("osparc.component.form.Auto", {
   include: [qx.locale.MTranslation],
 
   /**
-     * @param structure {Array} form structure
-     */
-  construct: function(content, node) {
-    // node is necessary for creating links
-    if (node) {
-      this.setNode(node);
-    } else {
-      this.setNode(null);
-    }
-
+    * @param structure {Object} form structure
+    */
+  construct: function(structure) {
     this.base(arguments);
     this.__ctrlMap = {};
-    this.__ctrlLinkMap = {};
     let formCtrl = this.__formCtrl = new qx.data.controller.Form(null, this);
     this.__boxCtrl = {};
     this.__typeMap = {};
-    for (let key in content) {
-      this.__addField(content[key], key);
+    for (let key in structure) {
+      this.__addField(structure[key], key);
     }
     let model = this.__model = formCtrl.createModel(true);
 
@@ -88,27 +80,17 @@ qx.Class.define("osparc.component.form.Auto", {
     this);
   },
 
-  properties: {
-    node: {
-      check: "osparc.data.model.Node",
-      nullable: true
-    }
-  },
-
   events: {
     /**
      * fire when the form changes content and
      * and provide access to the data
      */
-    "changeData": "qx.event.type.Data",
-    "linkAdded": "qx.event.type.Data",
-    "linkRemoved": "qx.event.type.Data"
+    "changeData": "qx.event.type.Data"
   },
 
   members: {
     __boxCtrl: null,
     __ctrlMap: null,
-    __ctrlLinkMap: null,
     __formCtrl: null,
     __model: null,
     __settingData: false,
@@ -144,8 +126,8 @@ qx.Class.define("osparc.component.form.Auto", {
       return this.__ctrlMap[key];
     },
 
-    getControlLink: function(key) {
-      return this.__ctrlLinkMap[key];
+    getControls: function() {
+      return this.__ctrlMap;
     },
 
 
@@ -166,15 +148,6 @@ qx.Class.define("osparc.component.form.Auto", {
      */
     setData: function(data, relax) {
       this.__setData(this.__model, data, relax);
-    },
-
-    /**
-     * set access level to the data main model
-     *
-     * @param data {let} map with key access level pairs to apply
-     */
-    setAccessLevel: function(data) {
-      this.__setAccessLevel(this.__model, data);
     },
 
 
@@ -215,11 +188,7 @@ qx.Class.define("osparc.component.form.Auto", {
       this.__settingData = true;
 
       for (let key in data) {
-        if (data[key] !== null && typeof data[key] === "object" && data[key].nodeUuid) {
-          this.addLink(key, data[key].nodeUuid, data[key].output);
-          continue;
-        }
-        this.getControl(key).setEnabled(true);
+        // this.getControl(key).setEnabled(true);
         let upkey = qx.lang.String.firstUp(key);
         let setter = "set" + upkey;
         let value = data[key];
@@ -232,7 +201,6 @@ qx.Class.define("osparc.component.form.Auto", {
       this.__settingData = false;
 
       /* only fire ONE if there was an attempt at change */
-
       this.fireDataEvent("changeData", this.getData());
     },
 
@@ -253,46 +221,6 @@ qx.Class.define("osparc.component.form.Auto", {
       }
 
       return data;
-    },
-
-
-    /**
-     * set access level to the data model
-     *
-     * @param model {let} TODOC
-     * @param data {let} TODOC
-     */
-    __setAccessLevel: function(model, data) {
-      this.__settingData = true;
-
-      for (const key in data) {
-        const control = this.getControl(key);
-        if (control) {
-          switch (data[key]) {
-            case "Invisible": {
-              control.setEnabled(false);
-              control.setVisibility("excluded");
-              break;
-            }
-            case "ReadOnly": {
-              control.setEnabled(false);
-              control.setVisibility("visible");
-              break;
-            }
-            case "ReadAndWrite": {
-              control.setEnabled(true);
-              control.setVisibility("visible");
-              break;
-            }
-          }
-        }
-      }
-
-      this.__settingData = false;
-
-      /* only fire ONE if there was an attempt at change */
-
-      this.fireDataEvent("changeData", this.getData());
     },
 
     __setupDateField: function(s) {
@@ -487,12 +415,6 @@ qx.Class.define("osparc.component.form.Auto", {
       this.__ctrlMap[key] = control;
       let option = {}; // could use this to pass on info to the form renderer
       this.add(control, s.label ? this["tr"](s.label) : null, null, key, null, option);
-
-      let controlLink = new qx.ui.form.TextField().set({
-        enabled: false
-      });
-      controlLink.key = key;
-      this.__ctrlLinkMap[key] = controlLink;
     },
 
     __getField: function(s, key) {
@@ -587,47 +509,6 @@ qx.Class.define("osparc.component.form.Auto", {
       control.description = s.description;
 
       return control;
-    },
-
-    isPortAvailable: function(portId) {
-      const port = this.getControl(portId);
-      if (!port || !port.getEnabled() || Object.prototype.hasOwnProperty.call(port, "link")) {
-        return false;
-      }
-      return true;
-    },
-
-    addLink: function(toPortId, fromNodeId, fromPortId) {
-      if (!this.isPortAvailable(toPortId)) {
-        return false;
-      }
-      this.getControl(toPortId).setEnabled(false);
-      this.getControl(toPortId).link = {
-        nodeUuid: fromNodeId,
-        output: fromPortId
-      };
-
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const workbench = study.getWorkbench();
-      const fromNode = workbench.getNode(fromNodeId);
-      const port = fromNode.getOutput(fromPortId);
-      const fromPortLabel = port ? port.label : null;
-      fromNode.bind("label", this.getControlLink(toPortId), "value", {
-        converter: label => label + ": " + fromPortLabel
-      });
-
-      this.fireDataEvent("linkAdded", toPortId);
-
-      return true;
-    },
-
-    removeLink: function(toPortId) {
-      this.getControl(toPortId).setEnabled(true);
-      if ("link" in this.getControl(toPortId)) {
-        delete this.getControl(toPortId).link;
-      }
-
-      this.fireDataEvent("linkRemoved", toPortId);
     }
   }
 });

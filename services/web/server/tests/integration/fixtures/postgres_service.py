@@ -12,7 +12,7 @@ from simcore_postgres_database.models.base import metadata
 from sqlalchemy.orm import sessionmaker
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def postgres_db(_webserver_dev_config, webserver_environ, docker_stack):
     cfg = deepcopy(_webserver_dev_config["db"]["postgres"])
     url = DSN.format(**cfg)
@@ -30,12 +30,14 @@ def postgres_db(_webserver_dev_config, webserver_environ, docker_stack):
     metadata.drop_all(engine)
     engine.dispose()
 
-@pytest.fixture(scope='module')
+
+@pytest.fixture(scope="module")
 def postgres_session(postgres_db):
     Session = sessionmaker(postgres_db)
     session = Session()
     yield session
     session.close()
+
 
 @tenacity.retry(**PostgresRetryPolicyUponInitialization().kwargs)
 def wait_till_postgres_responsive(url):
