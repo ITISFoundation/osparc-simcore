@@ -130,8 +130,6 @@ FROM build as development
 ENV SC_BUILD_TARGET=development
 
 WORKDIR /devel
-VOLUME  /devel/packages
-VOLUME  /devel/services/api-gateway/
 
 ENTRYPOINT ["/bin/sh", "services/api-gateway/docker/entrypoint.sh"]
 CMD ["/bin/sh", "services/api-gateway/docker/boot.sh"]
