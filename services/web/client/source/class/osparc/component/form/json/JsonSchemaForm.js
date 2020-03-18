@@ -25,15 +25,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     ]);
     ajvLoader.addListener("ready", e => {
       this.__ajv = new Ajv();
-      var myHeaders = new Headers();
-      myHeaders.append('pragma', 'no-cache');
-      myHeaders.append('cache-control', 'no-cache');
-      
-      var myInit = {
-        method: 'GET',
-        headers: myHeaders,
-      };
-      fetch(schemaUrl, myInit).then(resp => resp.json())
+      osparc.utils.Utils.fetchJSON(schemaUrl)
         .then(schema => {
           if (this.__validate(schema.$schema, schema)) {
             // If schema is valid
@@ -79,20 +71,16 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
         const submitBtn = new osparc.ui.form.FetchButton(this.tr("Submit"));
         submitBtn.addListener("execute", () => {
-          submitBtn.setFetching(true);
           if (this.__validationManager.validate()) {
             const formData = this.toObject();
             if (this.__validate(schema, formData)) {
               console.log(formData);
+              submitBtn.setFetching(true);
               setTimeout(() => {
                 this.fireEvent("submit");
                 submitBtn.setFetching(false);
               }, 2000);
-            } else {
-              submitBtn.setFetching(false);
             }
-          } else {
-            submitBtn.setFetching(false);
           }
         }, this);
         buttonContainer.add(submitBtn);
