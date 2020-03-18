@@ -38,15 +38,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserListNew", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "studyTitle":
-          control = new qx.ui.basic.Label(this.tr("Create New Study")).set({
-            margin: [5, 0],
-            font: "title-14",
-            anonymous: true
-          });
-          osparc.utils.Utils.setIdToWidget(control, "studyBrowserListNew_title");
-          this._mainLayout.addAt(control, 0);
-          break;
         case "studyDescription":
           control = new qx.ui.basic.Label(this.tr("Start with a empty study")).set({
             rich: true,
@@ -72,7 +63,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserListNew", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("studyTitle");
+      this.setStudyTitle(this.tr("Create New Study"));
       this.getChildControl("studyDescription");
       let icon = this.getChildControl("icon");
       icon.set({

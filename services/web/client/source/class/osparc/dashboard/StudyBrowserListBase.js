@@ -66,6 +66,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserListBase", {
     appearance: {
       refine : true,
       init : "pb-listitem"
+    },
+
+    studyTitle: {
+      check: "String",
+      apply : "_applyStudyTitle",
+      nullable : true
     }
   },
 
@@ -78,6 +84,36 @@ qx.Class.define("osparc.dashboard.StudyBrowserListBase", {
     },
 
     _mainLayout: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "studyTitle":
+          control = new qx.ui.basic.Label(this.getStudyTitle()).set({
+            margin: [5, 0],
+            font: "title-14",
+            anonymous: true
+          });
+          osparc.utils.Utils.setIdToWidget(control, "studyBrowserListNew_title");
+          this._mainLayout.addAt(control, 0);
+          break;
+      }
+  
+      return control || this.base(arguments, id);
+    },
+
+    _applyStudyTitle: function(value, old) {
+      let label = this.getChildControl("studyTitle");
+      label.setValue(value);
+    },
+
+    _applyIcon: function(value, old) {
+      let icon = this.getChildControl("icon");
+      icon.set({
+        source: value,
+        paddingTop: value && value.match(/^@/) ? 30 : 0
+      });
+    },
 
     /**
      * Event handler for the pointer over event.

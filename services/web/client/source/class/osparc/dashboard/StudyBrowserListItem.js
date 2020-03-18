@@ -59,12 +59,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
       apply : "_applyUuid"
     },
 
-    studyTitle: {
-      check: "String",
-      apply : "_applyStudyTitle",
-      nullable : true
-    },
-
     creator: {
       check: "String",
       apply : "_applyCreator",
@@ -139,15 +133,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
             right: 0
           });
           break;
-        case "studyTitle":
-          control = new qx.ui.basic.Label(this.getStudyTitle()).set({
-            margin: [5, 0],
-            font: "title-14",
-            anonymous: true
-          });
-          osparc.utils.Utils.setIdToWidget(control, "studyBrowserListItem_title");
-          this._mainLayout.addAt(control, 0);
-          break;
         case "creator":
           control = new qx.ui.basic.Label(this.getCreator()).set({
             rich: true,
@@ -197,19 +182,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
       osparc.utils.Utils.setIdToWidget(this, "studyBrowserListItem_"+value);
     },
 
-    _applyIcon: function(value, old) {
-      let icon = this.getChildControl("icon");
-      icon.set({
-        source: value,
-        paddingTop: value && value.match(/^@/) ? 30 : 0
-      });
-    },
-
-    _applyStudyTitle: function(value, old) {
-      let label = this.getChildControl("studyTitle");
-      label.setValue(value);
-    },
-
     _applyCreator: function(value, old) {
       let label = this.getChildControl("creator");
       label.setValue(value);
@@ -231,6 +203,14 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
       } else {
         label.resetValue();
       }
+    },
+
+    _applyIcon: function(value, old) {
+      let icon = this.getChildControl("icon");
+      icon.set({
+        source: value,
+        paddingTop: value && value.match(/^@/) ? 30 : 0
+      });
     },
 
     _applyTags: function(tags) {
