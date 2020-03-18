@@ -213,12 +213,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __createUserStudiesLayout: function() {
       const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
       const studiesTitleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      const studiesDeleteButton = this.__createDeleteButton(false);
       const myStudyLabel = new qx.ui.basic.Label(this.tr("Recent studies")).set({
         font: navBarLabelFont
       });
       studiesTitleContainer.add(myStudyLabel);
+      const studiesDeleteButton = this.__createDeleteButton(false);
       studiesTitleContainer.add(studiesDeleteButton);
+      userStudyLayout.add(studiesTitleContainer);
+
       const userStudyContainer = this.__userStudyContainer = this.__createUserStudyList();
       userStudyContainer.addListener("changeSelection", () => {
         const nSelected = this.__userStudyContainer.getSelection().length;
@@ -230,20 +232,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const userStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         marginTop: 20
       });
-      userStudyLayout.add(studiesTitleContainer);
       userStudyLayout.add(userStudyContainer);
+
       return userStudyLayout;
     },
 
     __createTemplateStudiesLayout: function() {
       const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
       const templateTitleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      const templateDeleteButton = this.__createDeleteButton(true);
       const tempStudyLabel = new qx.ui.basic.Label(this.tr("New studies")).set({
         font: navBarLabelFont
       });
       templateTitleContainer.add(tempStudyLabel);
+      const templateDeleteButton = this.__createDeleteButton(true);
       templateTitleContainer.add(templateDeleteButton);
+      tempStudyLayout.add(templateTitleContainer);
+
       const templateStudyContainer = this.__templateStudyContainer = this.__createTemplateStudyList();
       this.__templateStudyContainer.addListener("changeSelection", () => {
         const nSelected = this.__templateStudyContainer.getSelection().length;
@@ -258,8 +262,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         marginTop: 20
       });
-      tempStudyLayout.add(templateTitleContainer);
       tempStudyLayout.add(templateStudyContainer);
+
       return tempStudyLayout;
     },
 
