@@ -126,9 +126,9 @@ def safe_channel(rabbit_settings: RabbitSettings) -> Tuple[pika.channel.Channel,
         connection = pika.BlockingConnection(rabbit_settings.parameters)
         channel = connection.channel()
         channel.exchange_declare(
-            exchange=rabbit_settings.log_channel, exchange_type='fanout')
+            exchange=rabbit_settings.log_channel, exchange_type='fanout', auto_delete=True)
         channel.exchange_declare(
-            exchange=rabbit_settings.progress_channel, exchange_type='fanout')
+            exchange=rabbit_settings.progress_channel, exchange_type='fanout', auto_delete=True)
         yield channel, connection
     finally:
         connection.close()

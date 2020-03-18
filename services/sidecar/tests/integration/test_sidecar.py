@@ -5,9 +5,10 @@
 
 import os
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 from uuid import uuid4
 
+import aio_pika
 import pytest
 import sqlalchemy as sa
 from yarl import URL
@@ -35,20 +36,18 @@ def user_id() -> int:
 def create_pipeline(postgres_session: sa.orm.session.Session, project_id: str):
     def create(tasks: Dict[str, Any], dag: Dict) -> ComputationalPipeline:
         # set the pipeline
-        pipeline = ComputationalPipeline(
-            project_id=project_id, dag_adjacency_list=dag
-        )
+        pipeline = ComputationalPipeline(project_id=project_id, dag_adjacency_list=dag)
         postgres_session.add(pipeline)
         postgres_session.commit()
         # now create the tasks
-        for node_uuid,service in tasks.items():
+        for node_uuid, service in tasks.items():
             comp_task = ComputationalTask(
-                project_id = project_id,
-                node_id = node_uuid,
-                schema = service["schema"],
-                image = service["image"],
-                inputs = {},
-                outputs = {},
+                project_id=project_id,
+                node_id=node_uuid,
+                schema=service["schema"],
+                image=service["image"],
+                inputs={},
+                outputs={},
             )
             postgres_session.add(comp_task)
             postgres_session.commit()
@@ -59,15 +58,16 @@ def create_pipeline(postgres_session: sa.orm.session.Session, project_id: str):
 
 @pytest.fixture
 def sidecar_config() -> None:
-    #NOTE: in integration tests the sidecar runs bare-metal which means docker volume cannot be used.
+    # NOTE: in integration tests the sidecar runs bare-metal which means docker volume cannot be used.
     config.SIDECAR_DOCKER_VOLUME_INPUT = Path.home() / f"input"
     config.SIDECAR_DOCKER_VOLUME_OUTPUT = Path.home() / f"output"
     config.SIDECAR_DOCKER_VOLUME_LOG = Path.home() / f"log"
 
+
 async def test_run_sleepers(
     loop,
     postgres_session: sa.orm.session.Session,
-    rabbit_service: str,
+    rabbit_queue: aio_pika.Queue,
     storage_service: URL,
     sleeper_service: Dict[str, str],
     sidecar_config: None,
@@ -101,11 +101,12 @@ async def test_run_sleepers(
     )
     assert len(next_task_nodes) == 1
     assert next_task_nodes[0] == "node_1"
-    
+
     for node_id in next_task_nodes:
         celery_task.request.id += 1
-        next_tasks = await SIDECAR.inspect(celery_task, user_id, pipeline.project_id, node_id=node_id)
+        next_tasks = await SIDECAR.inspect(
+            celery_task, user_id, pipeline.project_id, node_id=node_id
+        )
         if next_tasks:
             next_task_nodes.extend(next_tasks)
     assert next_task_nodes == ["node_1", "node_2", "node_3", "node_4", "node_4"]
-    
