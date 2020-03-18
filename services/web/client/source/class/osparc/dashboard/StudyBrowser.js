@@ -43,9 +43,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     this._setLayout(new qx.ui.layout.HBox());
 
-    this.__studiesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    this.__studyBrowserLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
     const scrollStudies = new qx.ui.container.Scroll();
-    scrollStudies.add(this.__studiesLayout);
+    scrollStudies.add(this.__studyBrowserLayout);
     this._add(scrollStudies, {
       flex: 1
     });
@@ -80,7 +80,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   members: {
-    __studiesLayout: null,
+    __studyBrowserLayout: null,
     __studyFilters: null,
     __userStudyContainer: null,
     __templateStudyContainer: null,
@@ -138,13 +138,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __initResources: function() {
       const iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Studies"));
-      this.__studiesLayout.add(iframe, {
+      this.__studyBrowserLayout.add(iframe, {
         flex: 1
       });
 
       this.__getTags()
         .then(() => {
-          this.__studiesLayout.removeAll();
+          this.__studyBrowserLayout.removeAll();
           iframe.dispose();
           this.__createStudiesLayout();
           this.__reloadStudies();
@@ -205,9 +205,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__updateDeleteTemplatesButton();
       }, this);
 
-      this.__studiesLayout.add(studyFilters);
-      this.__studiesLayout.add(tempStudyLayout);
-      this.__studiesLayout.add(userStudyLayout);
+      this.__studyBrowserLayout.add(studyFilters);
+      this.__studyBrowserLayout.add(tempStudyLayout);
+      this.__studyBrowserLayout.add(userStudyLayout);
     },
 
     __createNewStudyButton: function() {
