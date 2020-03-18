@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     # LOGGING
     log_level_name: str = Field("DEBUG", env="loglevel")
 
-    @validator('loglevel_name')
+    @validator('log_level_name')
     def match_logging_level(cls, value) -> str:
         try:
             getattr(logging, value.upper())

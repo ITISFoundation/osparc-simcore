@@ -1,9 +1,9 @@
 from simcore_service_api_gateway.settings import Settings, BootModeEnum, URL
-import pytest
+# import pytest
 import logging
 from pprint import pprint
 
-def test_it(monkeypatch):
+def test_app_settings(monkeypatch):
     monkeypatch.setenv("POSTGRES_USER", "test")
     monkeypatch.setenv("POSTGRES_PASSWORD", "test")
     monkeypatch.setenv("POSTGRES_DB", "test")
