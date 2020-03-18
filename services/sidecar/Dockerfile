@@ -55,8 +55,7 @@ ENV SC_BUILD_TARGET=build
 
 RUN apt-get update &&\
     apt-get install -y --no-install-recommends \
-    build-essential \
-    gcc
+    build-essential
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN python -m venv ${VIRTUAL_ENV}
