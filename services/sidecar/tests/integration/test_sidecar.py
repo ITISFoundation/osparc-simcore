@@ -12,7 +12,6 @@ import pytest
 import sqlalchemy as sa
 from yarl import URL
 
-from s3wrapper import s3_client
 from sidecar import config
 from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
 
@@ -30,43 +29,6 @@ def project_id() -> str:
 @pytest.fixture
 def user_id() -> int:
     return 1
-
-
-def _node_uuid() -> str:
-    return str(uuid4())
-
-
-@pytest.fixture
-def pipeline_db(
-    postgres_session: sa.orm.session.Session, project_id: str, node_uuid
-) -> ComputationalPipeline:
-    pipeline = ComputationalPipeline(
-        project_id=project_id, dag_adjacency_list={node_uuid: []}
-    )
-    postgres_session.add(pipeline)
-    postgres_session.commit()
-    yield pipeline
-
-
-@pytest.fixture
-def task_db(
-    postgres_session: sa.orm.session.Session,
-    sleeper_service: Dict[str, str],
-    pipeline_db: ComputationalPipeline,
-    node_uuid: str,
-) -> ComputationalTask:
-    comp_task = ComputationalTask(
-        project_id=pipeline_db.project_id,
-        node_id=node_uuid,
-        schema=sleeper_service["schema"],
-        image=sleeper_service["image"],
-        inputs={},
-        outputs={},
-    )
-    postgres_session.add(comp_task)
-    postgres_session.commit()
-
-    yield comp_task
 
 
 @pytest.fixture
@@ -97,6 +59,7 @@ def create_pipeline(postgres_session: sa.orm.session.Session, project_id: str):
 
 @pytest.fixture
 def sidecar_config() -> None:
+    #NOTE: in integration tests the sidecar runs bare-metal which means docker volume cannot be used.
     config.SIDECAR_DOCKER_VOLUME_INPUT = Path.home() / f"input"
     config.SIDECAR_DOCKER_VOLUME_OUTPUT = Path.home() / f"output"
     config.SIDECAR_DOCKER_VOLUME_LOG = Path.home() / f"log"
@@ -133,7 +96,6 @@ async def test_run_sleepers(
         },
     )
 
-    import pdb; pdb.set_trace()
     next_task_nodes = await SIDECAR.inspect(
         celery_task, user_id, pipeline.project_id, node_id=None
     )
