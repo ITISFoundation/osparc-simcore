@@ -50,12 +50,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       flex: 1
     });
 
-    const iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Studies"));
-    this.__studiesLayout.add(iframe, {
-      flex: 1
-    });
-
-    this.__initResources(iframe);
+    this.__initResources();
   },
 
   events: {
@@ -85,14 +80,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   members: {
+    __studiesLayout: null,
     __studyFilters: null,
     __userStudyContainer: null,
     __templateStudyContainer: null,
-    __studiesLayout: null,
     __userStudies: null,
     __templateStudies: null,
-    __templateDeleteButton: null,
     __studiesDeleteButton: null,
+    __templateDeleteButton: null,
 
     /**
      * Function that resets the selected item
@@ -141,7 +136,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __initResources: function(iframe) {
+    __initResources: function() {
+      const iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Studies"));
+      this.__studiesLayout.add(iframe, {
+        flex: 1
+      });
+
       this.__getTags()
         .then(() => {
           this.__studiesLayout.removeAll();
@@ -157,12 +157,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadStudies: function() {
-      this.__fetchActiveStudy();
+      this.__getActiveStudy();
       this.reloadUserStudies();
       this.reloadTemplateStudies();
     },
 
-    __fetchActiveStudy: function() {
+    __getActiveStudy: function() {
       const params = {
         url: {
           tabId: osparc.utils.Utils.getClientSessionID()
