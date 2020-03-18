@@ -43,7 +43,6 @@ setup(
     python_requires="~=3.6",
     packages=find_packages(where="src"),
     package_dir={"": "src",},
-    package_data={"": ["config/*.yaml",],},
     include_package_data=True,
     install_requires=install_requirements,
     test_suite="tests",

@@ -1,5 +1,5 @@
 import json
-import subprocess
+import subprocess  # nosec
 from datetime import datetime
 from subprocess import CalledProcessError, CompletedProcess  # nosec
 from typing import Dict

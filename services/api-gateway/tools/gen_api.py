@@ -38,8 +38,8 @@ def as_class_name(name):
 
 # templates
 template_env = Environment(
-    autoescape=False, loader=FileSystemLoader(current_dir / "templates")  # nosec
-)
+    autoescape=False, loader=FileSystemLoader(current_dir / "templates")
+)  # nosec
 template_env.globals.update({"len": len, "cls_name": as_class_name})
 
 template_std_endpoints = template_env.get_template(
