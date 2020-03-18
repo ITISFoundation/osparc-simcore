@@ -40,9 +40,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserListBase", {
 
     this._setLayout(new qx.ui.layout.Canvas());
 
-    let mainLayout = this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
-      alignY: "middle"
-    }));
+    const mainLayout = this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     this._add(mainLayout, {
       top: 0,
       right: 0,
@@ -99,6 +97,21 @@ qx.Class.define("osparc.dashboard.StudyBrowserListBase", {
           });
           osparc.utils.Utils.setIdToWidget(control, "studyBrowserListNew_title");
           this._mainLayout.addAt(control, 0);
+          break;
+        case "icon":
+          control = new qx.ui.basic.Image().set({
+            anonymous: true,
+            scale: true,
+            allowStretchX: true,
+            allowStretchY: true,
+            alignX: "center",
+            alignY: "middle",
+            allowGrowX: true,
+            allowGrowY: true
+          });
+          this._mainLayout.addAt(control, 3, {
+            flex: 1
+          });
           break;
       }
       return control || this.base(arguments, id);

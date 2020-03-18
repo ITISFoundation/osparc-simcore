@@ -146,16 +146,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
           osparc.utils.Utils.setIdToWidget(control, "studyBrowserListItem_lastChangeDate");
           this._mainLayout.addAt(control, 2);
           break;
-        case "icon":
-          control = new qx.ui.basic.Image(this.getIcon()).set({
-            anonymous: true,
-            scale: true,
-            allowStretchX: true,
-            allowStretchY: true,
-            height: 120
-          });
-          this._mainLayout.addAt(control, 3);
-          break;
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3));
           this._mainLayout.addAt(control, 4);
@@ -198,14 +188,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
       } else {
         label.resetValue();
       }
-    },
-
-    _applyIcon: function(value, old) {
-      let icon = this.getChildControl("icon");
-      icon.set({
-        source: value,
-        paddingTop: value && value.match(/^@/) ? 30 : 0
-      });
     },
 
     _applyTags: function(tags) {

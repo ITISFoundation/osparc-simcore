@@ -46,17 +46,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserListNew", {
           });
           this._mainLayout.addAt(control, 1);
           break;
-        case "icon":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/plus-circle/64").set({
-            anonymous: true,
-            scale: true,
-            allowStretchX: true,
-            allowStretchY: true,
-            alignY: "middle",
-            height: 145
-          });
-          this._mainLayout.addAt(control, 2);
-          break;
       }
 
       return control || this.base(arguments, id);
@@ -65,10 +54,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserListNew", {
     __buildLayout: function() {
       this.setStudyTitle(this.tr("Create New Study"));
       this.getChildControl("studyDescription");
-      let icon = this.getChildControl("icon");
-      icon.set({
-        paddingTop: icon.getSource() && icon.getSource().match(/^@/) ? 30 : 0
-      });
+      this.setIcon("@FontAwesome5Solid/plus-circle/64");
     },
 
     _onToggleChange: function(e) {
