@@ -34,6 +34,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserListBase", {
     this.base(arguments);
     this.set({
       width: this.self().ITEM_WIDTH,
+      height: this.self().ITEM_HEIGHT,
       allowGrowX: false
     });
 
@@ -54,7 +55,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserListBase", {
   },
 
   statics: {
-    ITEM_WIDTH: 210
+    ITEM_WIDTH: 200,
+    ITEM_HEIGHT: 200
   },
 
   events: {
