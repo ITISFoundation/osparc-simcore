@@ -1,3 +1,5 @@
+# pylint: skip-file
+
 # TODO: PC->MaG, please check if something missing and delete
 
 import json

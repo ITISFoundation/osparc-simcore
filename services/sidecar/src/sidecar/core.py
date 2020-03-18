@@ -628,12 +628,12 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                 _session.query(ComputationalTask)
                 .filter(
                     and_(
-                        ComputationalTask.node_id == node_id,
-                        ComputationalTask.project_id == project_id,
+                        ComputationalTask.node_id == node_id, # pylint: disable=no-member
+                        ComputationalTask.project_id == project_id, # pylint: disable=no-member
                     )
                 )
                 .one()
-            )  # pylint: disable=no-member
+            )
 
             if task.job_id != celery_task.request.id:
                 # somebody else was faster

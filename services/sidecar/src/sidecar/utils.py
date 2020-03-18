@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import shutil
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from pathlib import Path
 from typing import List, Tuple
