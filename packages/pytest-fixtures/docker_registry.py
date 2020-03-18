@@ -26,7 +26,7 @@ def docker_registry(keepdockerup: bool) -> str:
     try:
         docker_client.login(registry=url, username="simcore")
         container = docker_client.containers.list({"name": "pytest_registry"})[0]
-    except Exception:
+    except Exception: # pylint: disable=broad-except
         print("Warning: docker registry is already up!")
         container = docker_client.containers.run(
             "registry:2",
