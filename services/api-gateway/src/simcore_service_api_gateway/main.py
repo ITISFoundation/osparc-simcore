@@ -19,9 +19,9 @@ def build_app() -> FastAPI:
     """
         Creates a sets up app
     """
-    settings = AppSettings()
+    app_settings = AppSettings()
 
-    app: FastAPI = application.create(settings=settings)
+    app: FastAPI = application.create(settings=app_settings)
 
     @app.on_event("startup")
     def startup_event():  # pylint: disable=unused-variable
