@@ -450,13 +450,37 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         position: "bottom-right"
       });
 
+      const selectButton = this.__getSelectMenuButton(item, isTemplate);
+      menu.add(selectButton);
+
+      const moreInfoButton = this.__getMoreInfoMenuButton(studyData, isTemplate);
+      menu.add(moreInfoButton);
+
+      const isCurrentUserOwner = studyData.prjOwner === osparc.auth.Data.getInstance().getEmail();
+      const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
+      if (isCurrentUserOwner && !isTemplate && canCreateTemplate) {
+        const saveAsTemplateButton = this.__getSaveAsTemplateMenuButton();
+        menu.add(saveAsTemplateButton);
+      }
+
+      menu.addSeparator();
+
+      const deleteButton = this.__getDeleteStudyMenuButton(studyData, isTemplate);
+      menu.add(deleteButton);
+
+      return menu;
+    },
+
+    __getSelectMenuButton: function(item, isTemplate) {
       const selectButton = new qx.ui.menu.Button(this.tr("Select"));
       selectButton.addListener("execute", () => {
         item.setValue(true);
         this.__itemMultiSelected(item, isTemplate);
       }, this);
-      menu.add(selectButton);
+      return selectButton;
+    },
 
+    __getMoreInfoMenuButton: function(studyData, isTemplate) {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More info"));
       moreInfoButton.addListener("execute", () => {
         const studyDetailsEditor = this.__createStudyDetailsEditor(studyData, isTemplate);
@@ -479,20 +503,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         win.open();
         win.center();
       }, this);
-      menu.add(moreInfoButton);
+      return moreInfoButton;
+    },
 
-      const isCurrentUserOwner = studyData.prjOwner === osparc.auth.Data.getInstance().getEmail();
-      const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
-      if (isCurrentUserOwner && !isTemplate && canCreateTemplate) {
-        const saveAsTemplateButton = new qx.ui.menu.Button(this.tr("Save as template"));
-        saveAsTemplateButton.addListener("execute", e => {
-          // this.__saveAsTemplate();
-        }, this);
-        menu.add(saveAsTemplateButton);
-      }
+    __getSaveAsTemplateMenuButton: function() {
+      const saveAsTemplateButton = new qx.ui.menu.Button(this.tr("Save as template"));
+      saveAsTemplateButton.addListener("execute", e => {
+        // this.__saveAsTemplate();
+      }, this);
+      return saveAsTemplateButton;
+    },
 
-      menu.addSeparator();
-
+    __getDeleteStudyMenuButton: function(studyData, isTemplate) {
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
       deleteButton.addListener("execute", () => {
         const win = this.__createConfirmWindow(false);
@@ -504,8 +526,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
         }, this);
       }, this);
-      menu.add(deleteButton);
-      return menu;
+      return deleteButton;
     },
 
     __getStudyData: function(id, isTemplate) {
