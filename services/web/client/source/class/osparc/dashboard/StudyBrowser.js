@@ -50,31 +50,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       flex: 1
     });
 
-    let iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Studies"));
+    const iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Studies"));
     this.__studiesLayout.add(iframe, {
       flex: 1
     });
 
-    this.__userReady = false;
-    const interval = 500;
-    let userTimer = new qx.event.Timer(interval);
-    userTimer.addListener("interval", () => {
-      if (this.__userReady) {
-        userTimer.stop();
-        this.__studiesLayout.removeAll();
-        iframe.dispose();
-        this.__createStudiesLayout();
-        this.__reloadStudies();
-        this.__attachEventHandlers();
-        const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
-        if (loadStudyId) {
-          this.__getStudyAndStart(loadStudyId);
-        }
-      }
-    }, this);
-    userTimer.start();
-
-    this.__initResources();
+    this.__initResources(iframe);
   },
 
   events: {
@@ -104,7 +85,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   members: {
-    __userReady: null,
     __servicesReady: null,
     __studyFilters: null,
     __userStudyContainer: null,
@@ -162,8 +142,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __initResources: function() {
-      this.__getTags();
+    __initResources: function(iframe) {
+      this.__getTags()
+        .then(() => {
+          this.__studiesLayout.removeAll();
+          iframe.dispose();
+          this.__createStudiesLayout();
+          this.__reloadStudies();
+          this.__attachEventHandlers();
+          const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
+          if (loadStudyId) {
+            this.__getStudyAndStart(loadStudyId);
+          }
+        });
       this.__getServicesPreload();
     },
 
@@ -200,13 +191,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getTags: function() {
-      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
-        osparc.data.Resources.get("tags")
-          .catch(console.error)
-          .finally(() => this.__userReady = true);
-      } else {
-        this.__userReady = true;
-      }
+      return new Promise((resolve, reject) => {
+        if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
+          osparc.data.Resources.get("tags")
+            .catch(console.error)
+            .finally(() => resolve());
+        } else {
+          resolve();
+        }
+      });
     },
 
     __createStudiesLayout: function() {
