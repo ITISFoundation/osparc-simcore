@@ -213,7 +213,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __createUserStudiesLayout: function() {
       const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
       const studiesTitleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      const studiesDeleteButton = this.__createDeleteButton();
+      const studiesDeleteButton = this.__createDeleteButton(false);
       const myStudyLabel = new qx.ui.basic.Label(this.tr("Recent studies")).set({
         font: navBarLabelFont
       });
@@ -234,7 +234,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __createTemplateStudiesLayout: function() {
       const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
       const templateTitleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      const templateDeleteButton = this.__createDeleteButton();
+      const templateDeleteButton = this.__createDeleteButton(true);
       const tempStudyLabel = new qx.ui.basic.Label(this.tr("New studies")).set({
         font: navBarLabelFont
       });
@@ -272,14 +272,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __createDeleteButton: function() {
+    __createDeleteButton: function(areTemplates) {
       const deleteButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14").set({
         visibility: "excluded"
       });
       osparc.utils.Utils.setIdToWidget(deleteButton, "deleteStudiesBtn");
-      deleteButton.addListener("execute", e => {
-        const thisButton = e.getTarget();
-        const areTemplates = this.__templateDeleteButton === thisButton;
+      deleteButton.addListener("execute", () => {
         const selection = areTemplates ? this.__templateStudyContainer.getSelection() : this.__userStudyContainer.getSelection();
         const win = this.__createConfirmWindow(selection.length > 1);
         win.center();
