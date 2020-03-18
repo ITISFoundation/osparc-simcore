@@ -1,4 +1,4 @@
-version: '3.7'
+version: "3.7"
 services:
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
@@ -43,10 +43,10 @@ services:
       - TRACING_ENABLED=${TRACING_ENABLED:-True}
       - TRACING_ZIPKIN_ENDPOINT=${TRACING_ZIPKIN_ENDPOINT:-http://jaeger:9411}
     volumes:
-      - '/var/run/docker.sock:/var/run/docker.sock'
+      - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
       placement:
-       constraints:
+        constraints:
           - node.platform.os == linux
           - node.role == manager
     networks:
@@ -90,8 +90,8 @@ services:
       endpoint_mode: dnsrr
       resources:
         reservations:
-          cpus: '0.1'
-          memory: '100M'
+          cpus: "0.1"
+          memory: "100M"
     volumes:
       - input:/home/scu/input
       - output:/home/scu/output
@@ -194,9 +194,12 @@ services:
     command:
       [
         "postgres",
-        "-c", "tcp_keepalives_idle=600",
-        "-c", "tcp_keepalives_interval=600",
-        "-c", "tcp_keepalives_count=5"
+        "-c",
+        "tcp_keepalives_idle=600",
+        "-c",
+        "tcp_keepalives_interval=600",
+        "-c",
+        "tcp_keepalives_count=5",
       ]
   redis:
     image: redis:5.0-alpine
