@@ -459,7 +459,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const isCurrentUserOwner = studyData.prjOwner === osparc.auth.Data.getInstance().getEmail();
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       if (isCurrentUserOwner && !isTemplate && canCreateTemplate) {
-        const saveAsTemplateButton = this.__getSaveAsTemplateMenuButton();
+        const saveAsTemplateButton = this.__getSaveAsTemplateMenuButton(studyData);
         menu.add(saveAsTemplateButton);
       }
 
@@ -506,10 +506,26 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return moreInfoButton;
     },
 
-    __getSaveAsTemplateMenuButton: function() {
+    __getSaveAsTemplateMenuButton: function(studyData) {
       const saveAsTemplateButton = new qx.ui.menu.Button(this.tr("Save as template"));
       saveAsTemplateButton.addListener("execute", e => {
-        // this.__saveAsTemplate();
+        const params = {
+          url: {
+            "study_url": studyData.uuid
+          },
+          data: studyData
+        };
+        osparc.data.Resources.fetch("templates", "postToTemplate", params)
+          .then(() => {
+            const msg = this.tr("Successfully Saved as template");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+            this.reloadTemplateStudies();
+          })
+          .catch(err => {
+            const msg = this.tr("Failed Saving as template");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            console.error(err);
+          });
       }, this);
       return saveAsTemplateButton;
     },
