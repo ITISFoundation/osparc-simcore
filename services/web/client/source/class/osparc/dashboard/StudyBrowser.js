@@ -86,6 +86,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __templateStudyContainer: null,
     __userStudies: null,
     __templateStudies: null,
+    __newStudyBtn: null,
 
     /**
      * Function that resets the selected item
@@ -202,7 +203,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createNewStudyButton: function() {
-      const newStudyBtn = new osparc.dashboard.StudyBrowserListNew();
+      const newStudyBtn = this.__newStudyBtn = new osparc.dashboard.StudyBrowserListNew();
       newStudyBtn.subscribeToFilterGroup("studyBrowser");
       osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
       newStudyBtn.addListener("execute", () => this.__createStudyBtnClkd());
@@ -241,6 +242,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       templateTitleContainer.add(templateDeleteButton);
       const templateStudyContainer = this.__templateStudyContainer = this.__createTemplateStudyList();
       this.__templateStudyContainer.addListener("changeSelection", () => {
+        this.__newStudyBtn.setEnabled(!this.__templateStudyContainer.getSelection().length);
         this.__updateDeleteTemplatesButton(templateDeleteButton);
       }, this);
       const tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
@@ -550,35 +552,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __itemClicked: function(item, isTemplate) {
       const selected = item.getValue();
       const studyData = this.__getStudyData(item.getUuid(), isTemplate);
-      if (isTemplate) {
-        const selection = this.__templateStudyContainer.getSelection();
-        if (selection.length) {
-          this.__itemMultiSelected(item, isTemplate);
-        } else if (selected) {
-          this.__createStudyBtnClkd(studyData);
-        }
-      } else {
-        const selection = this.__userStudyContainer.getSelection();
-        if (selection.length > 1) {
-          this.__itemMultiSelected(item, isTemplate);
-        } else if (selected) {
-          this.__startStudy(studyData);
-        }
+      const studyContainer = isTemplate ? this.__templateStudyContainer : this.__userStudyContainer;
+
+      const selection = studyContainer.getSelection();
+      if (selection.length > 1) {
+        this.__itemMultiSelected(item, isTemplate);
+      } else if (selected) {
+        isTemplate ? this.__createStudyBtnClkd(studyData) : this.__startStudy(studyData);
       }
     },
 
     __itemMultiSelected: function(item, isTemplate) {
       // Selection logic
       if (item.getValue()) {
-        if (isTemplate) {
-          this.__userStudyContainer.resetSelection();
-          this.__templateStudyContainer.selectOne(item);
-        } else {
-          this.__templateStudyContainer.resetSelection();
-        }
         this.__itemSelected(item.getUuid());
       } else if (isTemplate) {
-        this.__itemSelected(null);
+        const selection = this.__templateStudyContainer.getSelection();
+        if (selection.length) {
+          this.__itemSelected(selection[0].getUuid());
+        } else {
+          this.__itemSelected(null);
+        }
       } else {
         const selection = this.__userStudyContainer.getSelection();
         if (selection.length) {
@@ -638,8 +632,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const canDeleteTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.delete");
       let allMine = Boolean(templateSelection.length) && canDeleteTemplate;
       for (let i=0; i<templateSelection.length && allMine; i++) {
-        const isCurrentUserOwner = templateSelection[i].getCreator() === osparc.auth.Data.getInstance().getEmail();
-        allMine &= isCurrentUserOwner;
+        if (templateSelection[i] instanceof osparc.dashboard.StudyBrowserListNew) {
+          allMine = false;
+        } else {
+          const isCurrentUserOwner = templateSelection[i].getCreator() === osparc.auth.Data.getInstance().getEmail();
+          allMine &= isCurrentUserOwner;
+        }
       }
       if (allMine) {
         const nSelected = templateSelection.length;
