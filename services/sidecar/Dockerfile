@@ -94,7 +94,8 @@ RUN pip --no-cache-dir install -r requirements/prod.txt
 #
 FROM base as production
 
-ENV SC_BUILD_TARGET=production
+ENV SC_BUILD_TARGET=production \
+    SC_BOOT_MODE=production
 ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
@@ -103,6 +104,14 @@ WORKDIR /home/scu
 COPY --from=cache --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/sidecar/docker services/sidecar/docker
+
+# NOTE: when the sidecar gets an API, or maybe through rabbitMQ
+# HEALTHCHECK --interval=30s \
+#             --timeout=20s \
+#             --start-period=30s \
+#             --retries=3 \
+#             CMD ["python3", "services/api-gateway/docker/healthcheck.py", "http://localhost:8000/"]
+
 ENTRYPOINT [ "/bin/sh", "services/sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/sidecar/docker/boot.sh"]
 
