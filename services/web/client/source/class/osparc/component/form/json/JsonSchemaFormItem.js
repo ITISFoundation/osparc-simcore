@@ -93,6 +93,11 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
         case "boolean":
           input = new qx.ui.form.CheckBox();
           break;
+        case "string":
+          if (this.__schema.contentMediaType) {
+            input = new osparc.ui.form.FileInput();
+            break;
+          }
         default:
           input = new qx.ui.form.TextField().set({
             required: validation && validation.required ? true : false
