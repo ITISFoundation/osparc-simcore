@@ -163,14 +163,33 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __initResources: function() {
-      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
-        osparc.data.Resources.get("tags")
-          .catch(console.error)
-          .finally(() => this.__userReady = true);
-      } else {
-        this.__userReady = true;
-      }
+      this.__getTags();
       this.__getServicesPreload();
+    },
+
+    __reloadStudies: function() {
+      this.__fetchActiveStudy();
+      this.reloadUserStudies();
+      this.reloadTemplateStudies();
+    },
+
+    __fetchActiveStudy: function() {
+      const params = {
+        url: {
+          tabId: osparc.utils.Utils.getClientSessionID()
+        }
+      };
+      osparc.data.Resources.fetch("studies", "getActive", params)
+        .then(studyData => {
+          if (studyData) {
+            this.__startStudy(studyData);
+          } else {
+            osparc.store.Store.getInstance().setCurrentStudyId(null);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+        });
     },
 
     __getServicesPreload: function() {
@@ -178,6 +197,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       store.addListener("servicesRegistered", e => {
         this.__servicesReady = true;
       }, this);
+    },
+
+    __getTags: function() {
+      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
+        osparc.data.Resources.get("tags")
+          .catch(console.error)
+          .finally(() => this.__userReady = true);
+      } else {
+        this.__userReady = true;
+      }
     },
 
     __createStudiesLayout: function() {
@@ -239,31 +268,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       tempStudyLayout.add(templateTitleContainer);
       tempStudyLayout.add(tempStudyList);
       return tempStudyLayout;
-    },
-
-    __reloadStudies: function() {
-      this.__fetchActiveStudy();
-      this.reloadUserStudies();
-      this.reloadTemplateStudies();
-    },
-
-    __fetchActiveStudy: function() {
-      const params = {
-        url: {
-          tabId: osparc.utils.Utils.getClientSessionID()
-        }
-      };
-      osparc.data.Resources.fetch("studies", "getActive", params)
-        .then(studyData => {
-          if (studyData) {
-            this.__startStudy(studyData);
-          } else {
-            osparc.store.Store.getInstance().setCurrentStudyId(null);
-          }
-        })
-        .catch(err => {
-          console.error(err);
-        });
     },
 
     __getStudyAndStart: function(loadStudyId) {
