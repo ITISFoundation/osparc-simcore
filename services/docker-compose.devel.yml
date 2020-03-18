@@ -4,7 +4,7 @@
 # NOTES:
 # - port 3000 used for ptsv
 #
-version: '3.7'
+version: "3.7"
 services:
   catalog:
     environment:

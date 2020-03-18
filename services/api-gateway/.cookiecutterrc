@@ -1,0 +1,20 @@
+# This file exists so you can easily regenerate your project.
+#
+#  cookiecutter --overwrite-if-exists --config-file=.cookiecutterrc /home/crespo/devp/osparc-simcore/services/api-gateway/../../../cookiecutter-simcore-py-fastapi
+#
+
+default_context:
+
+    _extensions:               ['jinja2_time.TimeExtension']
+    _template:                 '/home/crespo/devp/osparc-simcore/services/api-gateway/../../../cookiecutter-simcore-py-fastapi'
+    distribution_name:         'simcore-service-api-gateway'
+    enable_docker_daemon_access: 'False'
+    full_name:                 'Pedro Crespo'
+    github_username:           'pcrespov'
+    is_standalone_repo:        'False'
+    package_name:              'simcore_service_api_gateway'
+    project_name:              'Public API Gateway'
+    project_short_description: "Platform's API Gateway for external clients"
+    project_slug:              'api-gateway'
+    version:                   '0.1.0'
+    year:                      '2020'
