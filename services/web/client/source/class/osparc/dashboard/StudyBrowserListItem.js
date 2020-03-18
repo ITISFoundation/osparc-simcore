@@ -38,11 +38,14 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
       qx.locale.Date.getTimeFormat("short")
     );
 
-    const tickIcon = this.getChildControl("tick-selected");
-    this.bind("value", tickIcon, "visibility", {
-      converter: function(value) {
-        return value ? "visible" : "excluded";
-      }
+    this.addListener("changeValue", e => {
+      const val = this.getValue();
+
+      const tick = this.getChildControl("tick-selected");
+      tick.setVisibility(val ? "visible" : "excluded");
+
+      const untick = this.getChildControl("tick-unselected");
+      untick.setVisibility(val ? "excluded" : "visible");
     });
   },
 
@@ -86,8 +89,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
     __timeFormat: null,
 
     multiSelection: function(on) {
-      const untickIcon = this.getChildControl("tick-unselected");
-      untickIcon.setVisibility(on ? "visible" : "excluded");
+      const menuButton = this.getChildControl("menu-button");
+      menuButton.setVisibility(on ? "excluded" : "visible");
     },
 
     // overridden
@@ -108,29 +111,21 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
           });
           break;
         case "tick-unselected":
-          control = new qx.ui.form.MenuButton().set({
-            width: 30,
-            height: 30,
-            icon: "@FontAwesome5Solid/circle/16",
-            zIndex: this.self().menuButtonZIndex + 1,
-            focusable: false
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16").set({
+            zIndex: this.self().menuButtonZIndex -1
           });
           this._add(control, {
-            top: 0,
-            right: 0
+            top: 6,
+            right: 6
           });
           break;
         case "tick-selected":
-          control = new qx.ui.form.MenuButton().set({
-            width: 30,
-            height: 30,
-            icon: "@FontAwesome5Solid/check-circle/16",
-            zIndex: this.self().menuButtonZIndex + 2,
-            focusable: false
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/check-circle/16").set({
+            zIndex: this.self().menuButtonZIndex -1
           });
           this._add(control, {
-            top: 0,
-            right: 0
+            top: 6,
+            right: 6
           });
           break;
         case "creator":
