@@ -113,12 +113,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
             right: 0
           });
           break;
-        case "tick-selected":
+        case "tick-unselected":
           control = new qx.ui.form.MenuButton().set({
             width: 30,
             height: 30,
-            icon: "@FontAwesome5Solid/check-circle/16",
-            zIndex: this.self().menuButtonZIndex + 2,
+            icon: "@FontAwesome5Solid/circle/16",
+            zIndex: this.self().menuButtonZIndex + 1,
             focusable: false
           });
           this._add(control, {
@@ -126,12 +126,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
             right: 0
           });
           break;
-        case "tick-unselected":
+        case "tick-selected":
           control = new qx.ui.form.MenuButton().set({
             width: 30,
             height: 30,
-            icon: "@FontAwesome5Solid/circle/16",
-            zIndex: this.self().menuButtonZIndex + 1,
+            icon: "@FontAwesome5Solid/check-circle/16",
+            zIndex: this.self().menuButtonZIndex + 2,
             focusable: false
           });
           this._add(control, {
