@@ -25,7 +25,7 @@ def create_secret_key() -> str:
     # NOTICE that this key is reset when server is restarted!
 
     try:
-        proc: CompletedProcess = subprocess.run(            # nosec
+        proc: CompletedProcess = subprocess.run(  # nosec
             "openssl rand -hex 32", check=True, shell=True
         )
     except (CalledProcessError, FileNotFoundError) as why:
