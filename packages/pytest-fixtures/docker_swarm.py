@@ -58,7 +58,7 @@ def _wait_for_services(docker_client: docker.client.DockerClient) -> None:
             task = service.tasks()[0]
             if task["Status"]["State"].upper() not in pre_states:
                 if not task["Status"]["State"].upper() == "RUNNING":
-                    raise Exception("service %s not running", service)
+                    raise Exception(f"service {service} not running")
 
 def _print_services(docker_client: docker.client.DockerClient, msg: str) -> None:
     print("{:*^100}".format("docker services running " + msg))
