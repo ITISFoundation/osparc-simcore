@@ -8,11 +8,16 @@ import os
 import subprocess
 import time
 from pathlib import Path
+from pprint import pprint
 from typing import Dict
 
 import docker
 import pytest
+import tenacity
 import yaml
+
+from servicelib.simcore_service_utils import \
+    SimcoreRetryPolicyUponInitialization
 
 
 @pytest.fixture(scope="session")
@@ -43,6 +48,23 @@ def keepdockerup(request) -> bool:
     return request.config.getoption("--keepdockerup") == True
 
 
+@tenacity.retry(**SimcoreRetryPolicyUponInitialization().kwargs)
+def _wait_for_services(docker_client: docker.client.DockerClient) -> None:
+    pre_states = ["NEW", "PENDING", "ASSIGNED", "PREPARING", "STARTING"]
+    services = docker_client.services.list()
+    for service in services:
+        print(f"Waiting for {service.name}...")
+        if service.tasks():
+            task = service.tasks()[0]
+            if task["Status"]["State"].upper() not in pre_states:
+                if not task["Status"]["State"].upper() == "RUNNING":
+                    raise Exception("service %s not running", service)
+
+def _print_services(docker_client: docker.client.DockerClient, msg: str) -> None:
+    print("{:*^100}".format("docker services running " + msg))
+    for service in docker_client.services.list():
+        pprint(service.attrs)
+    print("-" * 100)
 
 @pytest.fixture(scope="module")
 def docker_stack(
@@ -65,42 +87,17 @@ def docker_stack(
         )
         stacks_up.append(stack_name)
 
-    # wait for the stack to come up
-    def _wait_for_services(retry_count: int, max_wait_time_s: int) -> None:
-        pre_states = ["NEW", "PENDING", "ASSIGNED", "PREPARING", "STARTING"]
-        services = docker_client.services.list()
-        WAIT_TIME_BEFORE_RETRY = 5
-        start_time = time.time()
-        for service in services:
-            for n in range(retry_count):
-                assert (time.time() - start_time) < max_wait_time_s
-                if service.tasks():
-                    task = service.tasks()[0]
-                    if task["Status"]["State"].upper() not in pre_states:
-                        assert task["Status"]["State"].upper() == "RUNNING"
-                        break
-                print(f"Waiting for {service.name}...")
-                time.sleep(WAIT_TIME_BEFORE_RETRY)
+    
 
-    def _print_services(msg: str) -> None:
-        from pprint import pprint
-
-        print("{:*^100}".format("docker services running " + msg))
-        for service in docker_client.services.list():
-            pprint(service.attrs)
-        print("-" * 100)
-
-    RETRY_COUNT = 12
-    WAIT_TIME_BEFORE_FAILING = 60
-    _wait_for_services(RETRY_COUNT, WAIT_TIME_BEFORE_FAILING)
-    _print_services("[BEFORE TEST]")
+    _wait_for_services(docker_client)
+    _print_services(docker_client, "[BEFORE TEST]")
 
     yield {
         "stacks": stacks_up,
         "services": [service.name for service in docker_client.services.list()],
     }
 
-    _print_services("[AFTER TEST]")
+    _print_services(docker_client, "[AFTER TEST]")
 
     if keepdockerup:
         # skip bringing the stack down
