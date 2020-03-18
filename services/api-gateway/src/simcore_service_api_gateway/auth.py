@@ -49,10 +49,6 @@ oauth2_scheme = OAuth2PasswordBearer(
 async def get_current_user(
     security_scopes: SecurityScopes, access_token: str = Depends(oauth2_scheme)
 ) -> User:
-    # TODO: SecurityScopes dependnecy?? ????
-    #
-    # security_scopes is FILLED with dependant scopes. Therefore it will
-    # be filled differently depending who is calling it
     if security_scopes.scopes:
         authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'
     else:

@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# TODO: has to be the same as in auth.oauth2_scheme
+# NOTE: this path has to be the same as simcore_service_api_gateway.auth.oauth2_scheme
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     """
@@ -43,10 +43,9 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
 
-    # TODO: grant requested scopes OR NOT!
-
     access_token = create_access_token(subject=user.username, scopes=form_data.scopes)
-    # TODO: THIS IS A STANDARD RESPOSE!
+
+    # NOTE: this reponse is defined in Oath2
     resp_data = {"access_token": access_token, "token_type": "bearer"}
 
     stream = StringIO()

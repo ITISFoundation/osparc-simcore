@@ -21,8 +21,6 @@ def create(settings: AppSettings) -> FastAPI:
         version=api_version,
         openapi_url=f"/api/{api_version_prefix}/openapi.json",
     )
-
-    # TODO: FREEZE once setup!
     app.state.settings = settings
 
     return app
@@ -42,8 +40,6 @@ def add_shutdown_handler(app: FastAPI, shutdown_event: Callable):
 
 
 def dump_openapi(app: FastAPI, filepath: Path):
-    # TODO: fix sections order so it is human readable
-    # TODO: if filepath is None create dumps to stream
     with open(filepath, "wt") as fh:
         if filepath.suffix == ".json":
             json.dump(app.openapi(), fh, indent=2)

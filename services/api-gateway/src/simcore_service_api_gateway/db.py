@@ -50,7 +50,6 @@ async def teardown_engine(app: FastAPI) -> None:
 
 
 async def get_cnx(app: FastAPI):
-    # TODO: problem here is retries??
     engine: Engine = app.state.engine
     async with engine.acquire() as conn:
         yield conn

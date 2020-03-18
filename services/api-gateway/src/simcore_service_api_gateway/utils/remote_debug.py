@@ -1,6 +1,5 @@
 """ Setup remote debugger with Python Tools for Visual Studio (PTVSD)
 
-TODO: move to some servicelib-tools variant with minimal dependencies
 """
 import logging
 import os
