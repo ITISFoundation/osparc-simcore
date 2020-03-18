@@ -20,8 +20,8 @@
 #   https://hub.docker.com/r/openapitools/openapi-generator-cli
 #
 
-USERID=$(stat -c %u "$PWD")
-GROUPID=$(stat -c %g "$PWD")
+USERID=$(stat --format=%u "$PWD")
+GROUPID=$(stat --format=%g "$PWD")
 
 # FIXME: replaces automatically $PWD by /local so it maps correctly in the container
 #PATTERN=s+$PWD+/local+
