@@ -71,9 +71,9 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
     __createMainViewLayout: function() {
       [
-        [this.tr("Studies"), this.__createStudiesView],
-        [this.tr("Services"), this.__createServicesLayout],
-        [this.tr("Data"), this.__createDataManagerLayout]
+        [this.tr("Studies"), this.__createStudyBrowser],
+        [this.tr("Services"), this.__createServiceBrowser],
+        [this.tr("Data"), this.__createDataBrowser]
       ].forEach(tuple => {
         const tabPage = new qx.ui.tabview.Page(tuple[0]).set({
           appearance: "dashboard-page"
@@ -97,17 +97,17 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       }, this);
     },
 
-    __createStudiesView: function() {
+    __createStudyBrowser: function() {
       const studiesView = this.__prjBrowser = new osparc.dashboard.StudyBrowser();
       return studiesView;
     },
 
-    __createServicesLayout: function() {
+    __createServiceBrowser: function() {
       const servicesView = this.__serviceBrowser = new osparc.dashboard.ServiceBrowser();
       return servicesView;
     },
 
-    __createDataManagerLayout: function() {
+    __createDataBrowser: function() {
       const dataManagerView = this.__dataManager = new osparc.dashboard.DataBrowser();
       return dataManagerView;
     }
