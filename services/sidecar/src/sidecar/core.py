@@ -494,6 +494,8 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                     "Running %s took %sseconds", docker_image, stop_time - start_time
                 )
                 container.remove(force=True)
+                log_processor_task.cancel()
+                log_processor_task.wait()
         else:
             log.error("Container could not be created: %s", docker_image)
 
