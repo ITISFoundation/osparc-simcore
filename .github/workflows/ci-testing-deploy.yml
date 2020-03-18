@@ -764,7 +764,7 @@ jobs:
     needs:
       [
         unit-test-api,
-        unit-tests-api-gateway,
+        unit-test-api-gateway,
         unit-test-catalog,
         unit-test-director,
         unit-test-frontend,
