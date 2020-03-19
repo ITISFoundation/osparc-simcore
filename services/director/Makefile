@@ -3,12 +3,7 @@
 #
 include ../../scripts/common.Makefile
 
-
-REPO_BASE_DIR  = $(abspath $(CURDIR)/../../)
-VENV_DIR ?= $(abspath $(REPO_BASE_DIR)/.venv)
-
-APP_NAME     := $(notdir $(CURDIR))
-
+APP_NAME := $(notdir $(CURDIR))
 
 .PHONY: openapi-specs
 openapi-specs: ## updates and validates openapi specifications
