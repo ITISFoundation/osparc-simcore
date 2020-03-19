@@ -5,18 +5,19 @@ from celery import states
 
 from .celery import app
 from .utils import wrap_async_call
-
+from .rabbitmq import RabbitMQ
 log = logging.getLogger(__name__)
 
 
 async def async_pipeline(self, user_id: str, project_id: str, node_id: str) -> List:
     from .core import SIDECAR
 
+    
     log.info("STARTING task processing for user %s, project %s, node %s", user_id, project_id, node_id)
     next_task_nodes = await SIDECAR.inspect(self.request.id, user_id, project_id, node_id)
     log.info("COMPLETED task processing for user %s, project %s, node %s", user_id, project_id, node_id)
     return next_task_nodes
-        
+    
 
 @app.task(name='comp.task', bind=True)
 def pipeline(self, user_id: str, project_id: str, node_id: str =None):

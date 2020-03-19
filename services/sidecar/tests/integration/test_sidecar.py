@@ -3,18 +3,19 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 
+import json
 import os
 from pathlib import Path
 from typing import Any, Dict
 from uuid import uuid4
-import json
+
 import aio_pika
 import pytest
 import sqlalchemy as sa
 from yarl import URL
 
-from sidecar import config
 from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
+from simcore_service_sidecar import cli, config
 
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = ["storage", "postgres", "rabbit"]
@@ -75,43 +76,39 @@ async def test_run_sleepers(
     user_id: int,
     mocker,
 ):
-    # NOTE: import is done here as this triggers already DB calls and setting up some settings
-    from sidecar.core import SIDECAR
-
+    incoming_data = []
 
     async def rabbit_message_handler(message: aio_pika.IncomingMessage):
         data = json.loads(message.body)
+        incoming_data.append(data)
+
     await rabbit_queue.consume(rabbit_message_handler, exclusive=True, no_ack=True)
 
-    celery_task = mocker.MagicMock()
-    celery_task.request.id = 1
+    job_id = 1
 
     pipeline = create_pipeline(
         tasks={
             "node_1": sleeper_service,
-            "node_2": sleeper_service,
-            "node_3": sleeper_service,
-            "node_4": sleeper_service,
+            # "node_2": sleeper_service,
+            # "node_3": sleeper_service,
+            # "node_4": sleeper_service,
         },
         dag={
-            "node_1": ["node_2", "node_3"],
-            "node_2": ["node_4"],
-            "node_3": ["node_4"],
-            "node_4": [],
+            # "node_1": ["node_2", "node_3"],
+            # "node_2": ["node_4"],
+            # "node_3": ["node_4"],
+            "node_1": [],
         },
     )
 
-    next_task_nodes = await SIDECAR.inspect(
-        celery_task, user_id, pipeline.project_id, node_id=None
-    )
+    next_task_nodes = await cli.run_sidecar(job_id, user_id, pipeline.project_id, None)
+    
     assert len(next_task_nodes) == 1
     assert next_task_nodes[0] == "node_1"
 
     for node_id in next_task_nodes:
-        celery_task.request.id += 1
-        next_tasks = await SIDECAR.inspect(
-            celery_task, user_id, pipeline.project_id, node_id=node_id
-        )
+        job_id += 1
+        next_tasks = await cli.run_sidecar(job_id, user_id, pipeline.project_id, node_id)
         if next_tasks:
             next_task_nodes.extend(next_tasks)
     assert next_task_nodes == ["node_1", "node_2", "node_3", "node_4", "node_4"]
