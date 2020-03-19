@@ -23,13 +23,15 @@ def main(job_id: str, user_id: str, project_id: str, node_id: str) -> List[str]:
     )
     try:
         next_task_nodes =  wrap_async_call(SIDECAR.inspect(job_id, user_id, project_id, node_id=node_id))
+        log.info(
+            "COMPLETED task processing for user %s, project %s, node %s",
+            user_id,
+            project_id,
+            node_id,
+        )
+        return next_task_nodes
     except Exception: # pylint: disable=broad-except
         log.exception("Uncaught exception")
-    log.info(
-        "COMPLETED task processing for user %s, project %s, node %s",
-        user_id,
-        project_id,
-        node_id,
-    )
+    
 
-    return next_task_nodes
+    

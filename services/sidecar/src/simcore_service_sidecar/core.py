@@ -44,6 +44,7 @@ def session_scope(session_factory):
     except:  # pylint: disable=W0702
         log.exception("DB access error, rolling back")
         session.rollback()
+        raise
     finally:
         session.close()
 
@@ -533,7 +534,7 @@ class Sidecar(BaseModel):
             project_id,
             node_id,
         )
-
+        import pdb; pdb.set_trace()
         next_task_nodes = []
         with session_scope(self._db.Session) as _session:
             _pipeline = (
