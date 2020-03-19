@@ -18,22 +18,24 @@ log = logging.getLogger(__name__)
 def get_service_published_port(
     service_name: str, target_port: Optional[int] = None
 ) -> str:
-    """
-        WARNING: ENSURE that service name exposes a port in  Dockerfile file or docker-compose config file
-    """
+    # WARNING: ENSURE that service name exposes a port in
+    # Dockerfile file or docker-compose config file
+
     # NOTE: retries since services can take some time to start
     client = docker.from_env()
 
     services = [x for x in client.services.list() if service_name in x.name]
     if not services:
         raise RuntimeError(
-            f"Cannot find published port for service '{service_name}'. Probably services still not started."
+            f"Cannot find published port for service '{service_name}'."
+            "Probably services still not started."
         )
 
     service_ports = services[0].attrs["Endpoint"].get("Ports")
     if not service_ports:
         raise RuntimeError(
-            f"Cannot find published port for service '{service_name}' in endpoint. Probably services still not started."
+            f"Cannot find published port for service '{service_name}' in endpoint."
+            "Probably services still not started."
         )
 
     published_port = None

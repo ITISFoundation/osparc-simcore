@@ -1,8 +1,6 @@
-"""
+""" Fixtures to create docker-compose.yaml configururation files (as in Makefile)
 
-    Main Makefile produces a set of docker-compose configuration files
-    Here we can find fixtures of most of these configurations
-
+    Basically runs `docker-compose config
 """
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
@@ -24,19 +22,19 @@ from utils_docker import run_docker_compose_config
 
 @pytest.fixture("session")
 def devel_environ(env_devel_file: Path) -> Dict[str, str]:
-    """ Loads and extends .env-devel
-
+    """ Loads and extends .env-devel returning
+        all environment variables key=value
     """
-    PATTERN_ENVIRON_EQUAL = re.compile(r"^(\w+)=(.*)$")
+    key_eq_value_pattern = re.compile(r"^(\w+)=(.*)$")
     env_devel = {}
-    with env_devel_file.open() as f:
-        for line in f:
-            m = PATTERN_ENVIRON_EQUAL.match(line)
-            if m:
-                key, value = m.groups()
+    with env_devel_file.open() as fh:
+        for line in fh:
+            match = key_eq_value_pattern.match(line)
+            if match:
+                key, value = match.groups()
                 env_devel[key] = str(value)
 
-    # Customized EXTENSION: change some of the environ to accomodate the test case ----
+    # Customized EXTENSION: overrides some of the environ to accomodate the test case ----
     if "REGISTRY_SSL" in env_devel:
         env_devel["REGISTRY_SSL"] = "False"
     if "REGISTRY_URL" in env_devel:
@@ -52,14 +50,6 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
         env_devel["SWARM_STACK_NAME"] = "simcore"
 
     return env_devel
-
-
-@pytest.fixture(scope="module")
-def temp_folder(request, tmpdir_factory) -> Path:
-    tmp = Path(
-        tmpdir_factory.mktemp("docker_compose_{}".format(request.module.__name__))
-    )
-    yield tmp
 
 
 @pytest.fixture(scope="module")

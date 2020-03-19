@@ -10,7 +10,6 @@ import celery.bin.celery
 import celery.platforms
 import pytest
 import tenacity
-
 from servicelib.celery_utils import CeleryRetryPolicyUponInitialization
 from utils_docker import get_service_published_port
 
@@ -26,6 +25,7 @@ def celery_config(docker_stack: Dict, devel_environ: Dict) -> Dict:
         "password": devel_environ["RABBIT_PASSWORD"],
     }
     yield config
+
 
 @pytest.fixture(scope="module")
 def celery_service(celery_config: Dict, docker_stack: Dict) -> str:

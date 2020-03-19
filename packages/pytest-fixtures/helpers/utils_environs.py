@@ -4,7 +4,7 @@
 import re
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 import yaml
 
@@ -47,9 +47,6 @@ def eval_environs_in_docker_compose(
             service, docker_compose_dir, host_environ, use_env_devel=use_env_devel
         )
     return content
-
-
-from typing import List
 
 
 def replace_environs_in_docker_compose_service(

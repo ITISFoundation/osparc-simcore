@@ -36,9 +36,11 @@ async def storage_service(
     yield storage_endpoint
 
 
+# HELPERS --
+
+# TODO: this can be used by ANY of the simcore services!
 @tenacity.retry(**MinioRetryPolicyUponInitialization().kwargs)
-async def wait_till_storage_responsive(storage_endpoint: URL) -> bool:
-    """Check if something responds to ``url`` """
+async def wait_till_storage_responsive(storage_endpoint: URL):
     async with aiohttp.ClientSession() as session:
         async with session.get(storage_endpoint.with_path("/v0/")) as resp:
             assert resp.status == 200
@@ -46,4 +48,3 @@ async def wait_till_storage_responsive(storage_endpoint: URL) -> bool:
             assert "data" in data
             assert "status" in data["data"]
             assert data["data"]["status"] == "SERVICE_RUNNING"
-    return True

@@ -63,9 +63,6 @@ async def log_client_in(client, user_data=None, *, enable_check=True):
     return user
 
 
-# CONTEXT MANAGERS ------------------------------
-
-
 class NewUser:
     def __init__(self, params=None, app: web.Application = None):
         self.params = params

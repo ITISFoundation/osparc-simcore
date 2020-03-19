@@ -1,5 +1,3 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -41,8 +39,11 @@ def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> Dict:
 @pytest.fixture(scope="function")
 async def rabbit_service(rabbit_config: Dict, docker_stack: Dict) -> str:
     url = "amqp://{user}:{password}@{host}:{port}".format(**rabbit_config)
-    await wait_till_rabbit_responsive(url)
+    wait_till_rabbit_responsive(url)
     yield url
+
+
+# HELPERS --
 
 
 @tenacity.retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
