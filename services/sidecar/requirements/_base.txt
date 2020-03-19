@@ -28,6 +28,7 @@ networkx==2.4             # via -r _base.in
 pamqp==2.3.0              # via aiormq
 pika==1.1.0               # via -r _base.in
 psycopg2-binary==2.8.4    # via -r _base.in
+pydantic==1.4             # via -r _base.in
 python-dateutil==2.8.1    # via minio
 pytz==2019.3              # via celery, minio
 requests==2.23.0          # via docker

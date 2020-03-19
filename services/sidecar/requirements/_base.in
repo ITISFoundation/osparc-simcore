@@ -15,4 +15,5 @@ kombu
 minio
 networkx
 pika
+pydantic
 tenacity
