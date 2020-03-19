@@ -32,7 +32,7 @@ test_requirements = read_reqs(current_dir / "requirements" / "_test.txt")
 setup(
     name="simcore-service-sidecar",
     version=version,
-    author="oSparclers",
+    author="Sylvain Anderegg (sanderegg)",
     description="Platform's sidecar",
     classifiers={
         "Development Status :: 1 - Planning",
@@ -52,7 +52,7 @@ setup(
     extras_require={"test": test_requirements},
     entry_points={
         "console_scripts": [
-            "simcore-service-sidecar = simcore_service_sidecar.__main__:main",
+            "simcore-service-sidecar = simcore_service_sidecar.cli:main",
         ],
     },
 )
