@@ -11,6 +11,8 @@ import tenacity
 
 from s3wrapper.s3_client import S3Client
 from servicelib.minio_utils import MinioRetryPolicyUponInitialization
+
+# FIXME: all helpers
 from utils_docker import get_service_published_port
 
 
@@ -18,7 +20,8 @@ from utils_docker import get_service_published_port
 def minio_config(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
     assert "ops_minio" in docker_stack["services"]
 
-    # 172.17.0.1 is the docker0 interface, which redirect from inside a container onto the host network interface.
+    # NOTE: 172.17.0.1 is the docker0 interface, which redirect from inside a
+    # container onto the host network interface.
     config = {
         "client": {
             "endpoint": f"172.17.0.1:{get_service_published_port('minio', devel_environ['S3_ENDPOINT'].split(':')[1])}",
@@ -56,4 +59,4 @@ def wait_till_minio_responsive(minio_config: Dict[str, str]) -> bool:
     if client.create_bucket("pytest"):
         client.remove_bucket("pytest")
         return True
-    raise Exception
+    raise Exception(f"Minio not responding to {minio_config}")

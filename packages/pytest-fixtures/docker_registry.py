@@ -1,5 +1,3 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -15,7 +13,7 @@ import tenacity
 
 
 @pytest.fixture(scope="session")
-def docker_registry(keepdockerup: bool) -> str:
+def docker_registry(keep_docker_up: bool) -> str:
     # run the registry outside of the stack
     docker_client = docker.from_env()
     # try to login to private registry
@@ -59,10 +57,11 @@ def docker_registry(keepdockerup: bool) -> str:
     # necessary for old school configs
     os.environ["REGISTRY_URL"] = url
     os.environ["REGISTRY_USER"] = "simcore"
-    os.environ["REGISTRY_PW"] = ""    
+    os.environ["REGISTRY_PW"] = ""
 
     yield url
-    if not keepdockerup:
+
+    if not keep_docker_up:
         container.stop()
 
         while docker_client.containers.list(filters={"name": container.name}):

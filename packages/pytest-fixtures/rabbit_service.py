@@ -1,11 +1,8 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
 import os
-from copy import deepcopy
 from typing import Dict
 
 import aio_pika
@@ -28,8 +25,8 @@ def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> Dict:
     }
 
     # nodeports takes its configuration from env variables
-    os.environ["RABBIT_HOST"] = "127.0.0.1"    
-    os.environ["RABBIT_PORT"] = config["port"]    
+    os.environ["RABBIT_HOST"] = "127.0.0.1"
+    os.environ["RABBIT_PORT"] = config["port"]
     os.environ["RABBIT_USER"] = devel_environ["RABBIT_USER"]
     os.environ["RABBIT_PASSWORD"] = devel_environ["RABBIT_PASSWORD"]
     os.environ["RABBIT_PROGRESS_CHANNEL"] = devel_environ["RABBIT_PROGRESS_CHANNEL"]
@@ -40,11 +37,13 @@ def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> Dict:
 @pytest.fixture(scope="function")
 async def rabbit_service(rabbit_config: Dict, docker_stack: Dict) -> str:
     url = "amqp://{user}:{password}@{host}:{port}".format(**rabbit_config)
-    await wait_till_rabbit_responsive(url)
+    wait_till_rabbit_responsive(url)
     yield url
 
 
+# HELPERS --
+
+
 @tenacity.retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
-async def wait_till_rabbit_responsive(url: str):
+async def wait_till_rabbit_responsive(url: str) -> None:
     await aio_pika.connect(url)
-    return True

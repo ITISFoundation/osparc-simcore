@@ -7,14 +7,17 @@ import pytest
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-## HELPERS
+# FIXME: PC->SAN: why this?
 sys.path.append(str(current_dir / "helpers"))
 
 
 @pytest.fixture(scope="session")
 def osparc_simcore_root_dir() -> Path:
     """ osparc-simcore repo root dir """
-    WILDCARD = "services/web/server"
+    # FIXME: this will not work when it is installed as an external plugin!
+    # probably the way to go is via a config file or overriding the fixture in
+    # the actual tests (similar to what docker-compose fixture does)
+    WILDCARD = ".git"
 
     root_dir = Path(current_dir)
     while not any(root_dir.glob(WILDCARD)) and root_dir != Path("/"):
@@ -33,3 +36,9 @@ def env_devel_file(osparc_simcore_root_dir) -> Path:
     env_devel_fpath = osparc_simcore_root_dir / ".env-devel"
     assert env_devel_fpath.exists()
     return env_devel_fpath
+
+
+@pytest.fixture(scope="module")
+def temp_folder(request, tmpdir_factory) -> Path:
+    tmp = Path(tmpdir_factory.mktemp(f"tmp_module_{request.module.__name__}"))
+    yield tmp
