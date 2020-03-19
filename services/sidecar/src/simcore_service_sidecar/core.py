@@ -6,13 +6,12 @@ import time
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Union, Any
+from typing import Any, Dict
 
-import aio_pika
-import aiofiles
-import attr
+# import aiofiles
 import docker
 from celery.utils.log import get_task_logger
+from pydantic import BaseModel
 from sqlalchemy import and_, exc
 
 from servicelib.utils import logged_gather
@@ -26,7 +25,7 @@ from simcore_sdk.node_ports.dbmanager import DBManager
 from . import config
 from .rabbitmq import RabbitMQ
 from .utils import (DbSettings, DockerSettings, ExecutorSettings, S3Settings,
-                    find_entry_point, is_node_ready, safe_channel)
+                    find_entry_point, is_node_ready)
 
 log = get_task_logger(__name__)
 log.setLevel(config.SIDECAR_LOGLEVEL)
@@ -48,8 +47,7 @@ def session_scope(session_factory):
     finally:
         session.close()
 
-@attr.s(auto_attribs=True)
-class Sidecar:  # pylint: disable=too-many-instance-attributes
+class Sidecar(BaseModel):
     _rabbit_mq: RabbitMQ
     _docker: DockerSettings = DockerSettings()
     _s3: S3Settings = S3Settings()
@@ -153,34 +151,6 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
             log.exception(msg)
             raise docker.errors.APIError(msg)
 
-    async def _post_log(
-        self, channel: pika.channel.Channel, msg: Union[str, List[str]]
-    ):
-        log_data = {
-            "Channel": "Log",
-            "Node": self._task.node_id,
-            "user_id": self._user_id,
-            "project_id": self._task.project_id,
-            "Messages": msg if isinstance(msg, list) else [msg],
-        }
-        log_body = json.dumps(log_data)
-        channel.basic_publish(
-            exchange=self._pika.log_channel, routing_key="", body=log_body
-        )
-
-    async def _post_progress(self, channel, progress):
-        prog_data = {
-            "Channel": "Progress",
-            "Node": self._task.node_id,
-            "user_id": self._user_id,
-            "project_id": self._task.project_id,
-            "Progress": progress,
-        }
-        prog_body = json.dumps(prog_data)
-        channel.basic_publish(
-            exchange=self._pika.progress_channel, routing_key="", body=prog_body
-        )
-
     async def log_file_processor(self, log_file: Path) -> None:
         """checks both container logs and the log_file if any
         """
@@ -208,7 +178,6 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
 
 
         # try:
-        #     import pdb; pdb.set_trace()
         #     TIME_BETWEEN_LOGS_S: int = 2
         #     time_logs_sent = time.monotonic()
         #     accumulated_logs = []
@@ -508,25 +477,17 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
             self._task.node_id,
             self._task.internal_id,
         )
-        # NOTE: the rabbit has a timeout of 60seconds so blocking this channel for more is a no go.
-
-        with safe_channel(self._pika) as (channel, _):
-            await self._post_log(channel, msg="Preprocessing start...")
-
+        await self._rabbit_mq.post_log_message("Preprocessing start...")
         await self.preprocess()
-
-        with safe_channel(self._pika) as (channel, _):
-            await self._post_log(channel, msg="...preprocessing end")
-            await self._post_log(channel, msg="Processing start...")
+        await self._rabbit_mq.post_log_message("...preprocessing end")
+        
+        await self._rabbit_mq.post_log_message("Processing start...")
         await self.process()
+        await self._rabbit_mq.post_log_message("...processing end")
 
-        with safe_channel(self._pika) as (channel, _):
-            await self._post_log(channel, msg="...processing end")
-            await self._post_log(channel, msg="Postprocessing start...")
+        await self._rabbit_mq.post_log_message("Postprocessing start...")
         await self.postprocess()
-
-        with safe_channel(self._pika) as (channel, _):
-            await self._post_log(channel, msg="...postprocessing end")
+        await self._rabbit_mq.post_log_message("...postprocessing end")
 
         log.debug(
             "Running Pipeline DONE %s:node %s:internal id %s from container",
@@ -617,7 +578,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                 return next_task_nodes
 
             # the task is ready!
-            task.job_id = celery_task.request.id
+            task.job_id = job_request_id
             _session.add(task)
             _session.commit()
 
@@ -632,7 +593,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
                 .one()
             )
 
-            if task.job_id != celery_task.request.id:
+            if task.job_id != job_request_id:
                 # somebody else was faster
                 return next_task_nodes
             task.state = RUNNING

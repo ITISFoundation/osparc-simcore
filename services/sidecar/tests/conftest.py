@@ -15,7 +15,7 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 @pytest.fixture(scope="session")
 def project_slug_dir():
-    folder = current_dir.parent.parent
+    folder = current_dir.parent
     assert folder.exists()
     assert any(folder.glob("src/simcore_service_sidecar"))
     return folder
