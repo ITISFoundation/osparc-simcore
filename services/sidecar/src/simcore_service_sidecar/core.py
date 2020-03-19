@@ -6,36 +6,27 @@ import time
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Any
 
+import aio_pika
 import aiofiles
+import attr
 import docker
-import pika
 from celery.utils.log import get_task_logger
 from sqlalchemy import and_, exc
 
 from servicelib.utils import logged_gather
 from simcore_sdk import node_data, node_ports
-from simcore_sdk.models.pipeline_models import (
-    RUNNING,
-    SUCCESS,
-    ComputationalPipeline,
-    ComputationalTask,
-)
+from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
+                                                ComputationalPipeline,
+                                                ComputationalTask)
 from simcore_sdk.node_ports import log as node_port_log
 from simcore_sdk.node_ports.dbmanager import DBManager
 
 from . import config
-from .utils import (
-    DbSettings,
-    DockerSettings,
-    ExecutorSettings,
-    RabbitSettings,
-    S3Settings,
-    find_entry_point,
-    is_node_ready,
-    safe_channel,
-)
+from .rabbitmq import RabbitMQ
+from .utils import (DbSettings, DockerSettings, ExecutorSettings, S3Settings,
+                    find_entry_point, is_node_ready, safe_channel)
 
 log = get_task_logger(__name__)
 log.setLevel(config.SIDECAR_LOGLEVEL)
@@ -57,35 +48,17 @@ def session_scope(session_factory):
     finally:
         session.close()
 
-
+@attr.s(auto_attribs=True)
 class Sidecar:  # pylint: disable=too-many-instance-attributes
-    def __init__(self):
-        # publish subscribe config
-        self._pika = RabbitSettings()
-
-        # docker client config
-        self._docker = DockerSettings()
-
-        # object storage config
-        self._s3 = S3Settings()
-
-        # db config
-        self._db = DbSettings()  # keeps single db engine: sidecar.utils_{id}
-        self._db_manager = (
-            None  # lazy init because still not configured. SEE _get_node_ports
-        )
-
-        # current task
-        self._task = None
-
-        # current user id
-        self._user_id: str = None
-
-        # stack name
-        self._stack_name: str = None
-
-        # executor options
-        self._executor = ExecutorSettings()
+    _rabbit_mq: RabbitMQ
+    _docker: DockerSettings = DockerSettings()
+    _s3: S3Settings = S3Settings()
+    _db: DbSettings = DbSettings() # keeps single db engine: sidecar.utils_{id}
+    _db_manager: Any = None # lazy init because still not configured. SEE _get_node_ports
+    _task: ComputationalTask = None # current task
+    _user_id: str = None # current user id
+    _stack_name: str = None # stack name
+    _executor: ExecutorSettings = ExecutorSettings() # executor options
 
     async def _get_node_ports(self):
         if self._db_manager is None:
@@ -211,27 +184,51 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
     async def log_file_processor(self, log_file: Path) -> None:
         """checks both container logs and the log_file if any
         """
-        try:
-            TIME_BETWEEN_LOGS_S: int = 2
-            time_logs_sent = time.monotonic()
-            accumulated_logs = []
-            async with aiofiles.open(log_file, mode="r") as fp:
-                async for line in fp:
-                    now = time.monotonic()
-                    accumulated_logs.append(line)
-                    if (now - time_logs_sent) < TIME_BETWEEN_LOGS_S:
-                        continue
-                    # send logs to rabbitMQ
-                    # TODO: NEEDS to shield??
-                    with safe_channel(self._pika) as (channel, _):
-                        await self._post_log(channel, msg=accumulated_logs)
-                        time_logs_sent = now
-                        accumulated_logs = []
-        except asyncio.CancelledError:
-            # the task is complete let's send the last logs
-            if accumulated_logs:
-                with safe_channel(self._pika) as (channel, _):
-                    await self._post_log(channel, msg=accumulated_logs)
+        # async def parse_line(line: str) -> None:
+        #     # TODO: This should be 'settings', a regex for every service
+        #     if line.lower().startswith("[progress]"):
+        #         progress = line.lower().lstrip(
+        #             "[progress]").rstrip("%").strip()
+        #         await self._post_progress(channel, progress)
+        #         log.debug('PROGRESS %s', progress)
+        #     elif "percent done" in line.lower():
+        #         progress = line.lower().rstrip("percent done")
+        #         try:
+        #             float_progress = float(progress) / 100.0
+        #             progress = str(float_progress)
+        #             await self._post_progress(channel, progress)
+        #             log.debug('PROGRESS %s', progress)
+        #         except ValueError:
+        #             log.exception("Could not extract progress from solver")
+        #     else:
+        #         # just send as log
+        #         await self._post_log(channel, msg=line)
+
+        
+
+
+        # try:
+        #     import pdb; pdb.set_trace()
+        #     TIME_BETWEEN_LOGS_S: int = 2
+        #     time_logs_sent = time.monotonic()
+        #     accumulated_logs = []
+        #     async with aiofiles.open(log_file, mode="r") as fp:
+        #         async for line in fp:
+        #             now = time.monotonic()
+        #             accumulated_logs.append(line)
+        #             if (now - time_logs_sent) < TIME_BETWEEN_LOGS_S:
+        #                 continue
+        #             # send logs to rabbitMQ
+        #             # TODO: NEEDS to shield??
+        #             with safe_channel(self._pika) as (channel, _):
+        #                 await self._post_log(channel, msg=accumulated_logs)
+        #                 time_logs_sent = now
+        #                 accumulated_logs = []
+        # except asyncio.CancelledError:
+        #     # the task is complete let's send the last logs
+        #     if accumulated_logs:
+        #         with safe_channel(self._pika) as (channel, _):
+        #             await self._post_log(channel, msg=accumulated_logs)
 
     # async def _bg_job(self, log_file):
     #     log.debug('Bck job started %s:node %s:internal id %s from container',
@@ -568,7 +565,7 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
         finally:
             _session.close()
 
-    async def inspect(self, celery_task, user_id: str, project_id: str, node_id: str):
+    async def inspect(self, job_request_id: int, user_id: str, project_id: str, node_id: str):
         log.debug(
             "ENTERING inspect with user %s pipeline:node %s: %s",
             user_id,
@@ -657,4 +654,3 @@ class Sidecar:  # pylint: disable=too-many-instance-attributes
 SIDECAR = Sidecar()
 
 __all__ = ["SIDECAR"]
-
