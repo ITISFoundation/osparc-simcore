@@ -5,7 +5,7 @@
 """
 # pylint: disable=unused-argument
 # pylint: disable=bare-except
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
 
 import logging
 import sys
