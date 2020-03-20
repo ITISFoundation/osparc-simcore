@@ -25,7 +25,7 @@ def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> Dict:
         "password": devel_environ["RABBIT_PASSWORD"],
     }
 
-    # nodeports takes its configuration from env variables
+    # sidecar takes its configuration from env variables
     os.environ["RABBIT_HOST"] = "127.0.0.1"
     os.environ["RABBIT_PORT"] = config["port"]
     os.environ["RABBIT_USER"] = devel_environ["RABBIT_USER"]
