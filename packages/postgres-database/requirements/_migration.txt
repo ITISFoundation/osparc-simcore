@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=_migration.txt _migration.in
 #
-alembic==1.4.1            # via -r requirements/_migration.in
+alembic==1.4.2            # via -r requirements/_migration.in
 certifi==2019.11.28       # via -r requirements/_migration.in, requests
 chardet==3.0.4            # via requests
 click==7.1.1              # via -r requirements/_migration.in
