@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import faker
 import pytest
+import sqlalchemy as sa
 from aiopg.sa.result import ResultProxy, RowProxy
 
 from simcore_postgres_database.models.base import metadata
@@ -18,25 +19,27 @@ from simcore_postgres_database.webserver_models import (UserStatus, projects,
 
 fake = faker.Faker()
 
+
 def random_user(**overrides):
     data = dict(
-        name = fake.name(),
-        email = fake.email(),
-        password_hash = fake.numerify(text='#'*5),
-        status = UserStatus.ACTIVE,
-        created_ip=fake.ipv4()
+        name=fake.name(),
+        email=fake.email(),
+        password_hash=fake.numerify(text="#" * 5),
+        status=UserStatus.ACTIVE,
+        created_ip=fake.ipv4(),
     )
     data.update(overrides)
     return data
 
+
 def random_project(**overrides):
     data = dict(
-        uuid = uuid4(),
-        name = fake.word(),
-        description= fake.sentence(),
-        prj_owner = fake.email(),
-        workbench = {},
-        published = False
+        uuid=uuid4(),
+        name=fake.word(),
+        description=fake.sentence(),
+        prj_owner=fake.email(),
+        workbench={},
+        published=False,
     )
     data.update(overrides)
     return data
@@ -59,13 +62,36 @@ def engine(make_engine, loop):
             await conn.execute(projects.insert().values(**random_project()))
             await conn.execute(projects.insert().values(**random_project()))
 
-            await conn.execute(user_to_projects.insert().values(user_id=1, project_id=1))
-            await conn.execute(user_to_projects.insert().values(user_id=1, project_id=2))
-            await conn.execute(user_to_projects.insert().values(user_id=2, project_id=3))
+            await conn.execute(
+                user_to_projects.insert().values(user_id=1, project_id=1)
+            )
+            await conn.execute(
+                user_to_projects.insert().values(user_id=1, project_id=2)
+            )
+            await conn.execute(
+                user_to_projects.insert().values(user_id=2, project_id=3)
+            )
 
         return engine
 
     return loop.run_until_complete(start())
+
+
+
+async def test_count_users(engine):
+    async with engine.acquire() as conn:
+        users_count = await conn.scalar(users.count())
+        assert users_count == 3
+
+        users_count = await conn.scalar(
+            sa.select([sa.func.count()]).where(users.c.name == "A")
+        )
+        assert users_count == 1
+
+        users_count = await conn.scalar(
+            sa.select([sa.func.count()]).where(users.c.name == "UNKNOWN NAME")
+        )
+        assert users_count == 0
 
 
 @pytest.mark.skip(reason="UNDER DEV")
@@ -92,8 +118,8 @@ async def test_view(engine):
         assert len(rows) == 3
 
         # effect of cascade is that relation deletes as well
-        res =  await conn.execute(user_to_projects.select())
+        res = await conn.execute(user_to_projects.select())
         rows = await res.fetchall()
 
         assert len(rows) == 1
-        assert not any( row[user_to_projects.c.user_id]==1 for row in rows )
+        assert not any(row[user_to_projects.c.user_id] == 1 for row in rows)

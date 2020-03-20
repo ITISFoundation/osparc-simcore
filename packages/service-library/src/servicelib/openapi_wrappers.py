@@ -10,13 +10,13 @@ from werkzeug.datastructures import ImmutableMultiDict
 
 log = logging.getLogger(__name__)
 
-CAPTURES = re.compile(r'\(\?P<([_a-zA-Z][_a-zA-Z0-9]+)>(.[^)]+)\)')
-PARAMETERS_KEYS = ('path', 'query', 'header', 'cookie')
+CAPTURES = re.compile(r"\(\?P<([_a-zA-Z][_a-zA-Z0-9]+)>(.[^)]+)\)")
+PARAMETERS_KEYS = ("path", "query", "header", "cookie")
 PATH_KEY, QUERY_KEY, HEADER_KEY, COOKIE_KEY = PARAMETERS_KEYS
+
 
 class AiohttpOpenAPIRequest(BaseOpenAPIRequest):
     wrappedcls = web.Request
-
 
     def __init__(self, request: web.Request, data: str):
         self._request = request
@@ -48,18 +48,18 @@ class AiohttpOpenAPIRequest(BaseOpenAPIRequest):
         info = match_info.get_info()
 
         # if PlainResource then
-        path_pattern = info.get('path')
+        path_pattern = info.get("path")
 
         # if DynamicResource then whe need to undo the conversion to formatter and pattern
         if not path_pattern:
-            formatter = info.get('formatter')
-            re_pattern = info.get('pattern').pattern
+            formatter = info.get("formatter")
+            re_pattern = info.get("pattern").pattern
             kargs = {}
             # TODO: create a test with '/my/tokens/{service}/'
             # TODO: create a test with '/my/tokens/{service:google|facebook}/'
             # TODO: create a test with '/my/tokens/{identifier:\d+}/'
             for key, value in CAPTURES.findall(re_pattern):
-                if value == '[^{}/]+': # = no re in pattern
+                if value == "[^{}/]+":  # = no re in pattern
                     kargs[key] = "{%s}" % (key)
                 else:
                     kargs[key] = "{%s:%s}" % (key, value)

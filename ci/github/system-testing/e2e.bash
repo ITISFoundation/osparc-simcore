@@ -14,10 +14,12 @@ install() {
     echo "--------------- getting simcore docker images..."
     make pull-version || ( (make pull-cache || true) && make build tag-version)
     make info-images
+
     # configure simcore for testing with a private registry
-    bash tests/e2e/setup_env_insecure_registry
-    # start simcore
-    make up-version
+    bash tests/e2e/scripts/setup_env_insecure_registry.bash
+
+    # start simcore and set log-level
+    export LOG_LEVEL=WARNING; make up-version
 
     echo "-------------- installing test framework..."
     # create a python venv and activate
@@ -34,6 +36,7 @@ install() {
     echo "--------------- transfering the images to the local registry..."
     make transfer-images-to-registry
     echo "--------------- injecting templates in postgres db..."
+    make pg-db-tables
     make inject-templates-in-db
     popd
 }
@@ -46,13 +49,14 @@ test() {
 recover_artifacts() {
     # all screenshots are in tests/e2e/screenshots if any
 
-    # get docker logs
+    # get docker logs.
+    # WARNING: dumping long logs might take hours!!
     mkdir simcore_logs
-    (docker service logs --timestamps simcore_webserver > simcore_logs/webserver.log) || true
-    (docker service logs --timestamps simcore_director > simcore_logs/director.log ) || true
-    (docker service logs --timestamps simcore_storage > simcore_logs/storage.log) || true
-    (docker service logs --timestamps simcore_sidecar > simcore_logs/sidecar.log) || true
-    (docker service logs --timestamps simcore_catalog > simcore_logs/catalog.log) || true
+    (docker service logs --timestamps --tail=300 --details simcore_webserver > simcore_logs/webserver.log 2>&1) || true
+    (docker service logs --timestamps --tail=200 --details simcore_director > simcore_logs/director.log  2>&1) || true
+    (docker service logs --timestamps --tail=200 --details simcore_storage > simcore_logs/storage.log  2>&1) || true
+    (docker service logs --timestamps --tail=200 --details simcore_sidecar > simcore_logs/sidecar.log  2>&1) || true
+    (docker service logs --timestamps --tail=200 --details simcore_catalog > simcore_logs/catalog.log  2>&1) || true
 }
 
 clean_up() {

@@ -30,8 +30,6 @@
  * </pre>
  */
 
-/* global document */
-
 qx.Class.define("osparc.desktop.DataBrowser", {
   extend: qx.ui.core.Widget,
 

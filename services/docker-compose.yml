@@ -1,4 +1,4 @@
-version: '3.7'
+version: "3.7"
 services:
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
@@ -10,7 +10,7 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
       - TESTING=false
-      - LOGLEVEL=WARNING
+      - LOGLEVEL=${LOG_LEVEL:-WARNING}
     depends_on:
       - postgres
     networks:
@@ -43,10 +43,10 @@ services:
       - TRACING_ENABLED=${TRACING_ENABLED:-True}
       - TRACING_ZIPKIN_ENDPOINT=${TRACING_ZIPKIN_ENDPOINT:-http://jaeger:9411}
     volumes:
-      - '/var/run/docker.sock:/var/run/docker.sock'
+      - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
       placement:
-       constraints:
+        constraints:
           - node.platform.os == linux
           - node.role == manager
     networks:
@@ -62,9 +62,10 @@ services:
       - DIRECTOR_PORT=8080
       - STORAGE_HOST=storage
       - STORAGE_PORT=8080
+      - CATALOG_HOST=${CATALOG_HOST:-catalog}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - WEBSERVER_MONITORING_ENABLED=1
-      - WEBSERVER_LOGLEVEL=WARNING
+      - WEBSERVER_LOGLEVEL=${LOG_LEVEL:-WARNING}
     env_file:
       - ../.env
     depends_on:
@@ -89,8 +90,8 @@ services:
       endpoint_mode: dnsrr
       resources:
         reservations:
-          cpus: '0.1'
-          memory: '100M'
+          cpus: "0.1"
+          memory: "100M"
     volumes:
       - input:/home/scu/input
       - output:/home/scu/output
@@ -118,7 +119,7 @@ services:
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
-      - SIDECAR_LOGLEVEL=WARNING
+      - SIDECAR_LOGLEVEL=${LOG_LEVEL:-WARNING}
     depends_on:
       - rabbit
       - postgres
@@ -135,7 +136,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
-      - STORAGE_LOGLEVEL=WARNING
+      - STORAGE_LOGLEVEL=${LOG_LEVEL:-WARNING}
       - STORAGE_MONITORING_ENABLED=1
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
@@ -193,9 +194,12 @@ services:
     command:
       [
         "postgres",
-        "-c", "tcp_keepalives_idle=600",
-        "-c", "tcp_keepalives_interval=600",
-        "-c", "tcp_keepalives_count=5"
+        "-c",
+        "tcp_keepalives_idle=600",
+        "-c",
+        "tcp_keepalives_interval=600",
+        "-c",
+        "tcp_keepalives_count=5",
       ]
   redis:
     image: redis:5.0-alpine

@@ -28,7 +28,11 @@ make info-images
 # re-tag staging to {GIT_TAG}-DATE.GIT_SHA
 DOCKER_IMAGE_TAG=${GIT_TAG}-$(date --utc +"%Y-%m-%d--%H-%M").$(git rev-parse HEAD)
 export DOCKER_IMAGE_TAG
-make push-version push-latest
+make push-version
+if [ -v TRAVIS ] && [ "$TRAVIS" = "true" ]; then
+    # currently TRAVIS is still the master
+    make push-latest
+fi
 
 echo "## After push"
 make info-images

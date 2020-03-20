@@ -9,9 +9,14 @@ from aiohttp import web
 from openapi_core.schema.exceptions import OpenAPIError
 
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
-from .rest_responses import (JSON_CONTENT_TYPE, create_data_response,
-                             create_error_response, is_enveloped_from_map,
-                             is_enveloped_from_text, wrap_as_envelope)
+from .rest_responses import (
+    JSON_CONTENT_TYPE,
+    create_data_response,
+    create_error_response,
+    is_enveloped_from_map,
+    is_enveloped_from_text,
+    wrap_as_envelope,
+)
 from .rest_utils import EnvelopeFactory
 from .rest_validators import OpenApiValidator
 
@@ -29,15 +34,16 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
 def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
     # FIXME: send info + trace to client ONLY in debug mode!!!
     resp = create_error_response(
-            [err,],
-            "Unexpected Server error",
-            web.HTTPInternalServerError
-        )
+        [err,], "Unexpected Server error", web.HTTPInternalServerError
+    )
 
-    logger.exception('Unexpected server error "%s" from access: %s "%s %s". Responding with status %s',
+    logger.exception(
+        'Unexpected server error "%s" from access: %s "%s %s". Responding with status %s',
         type(err),
-        request.remote, request.method, request.path,
-        resp.status
+        request.remote,
+        request.method,
+        request.path,
+        resp.status,
     )
     raise resp
 
@@ -65,9 +71,9 @@ def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
 
             if not err.text or not is_enveloped_from_text(err.text):
                 error = ErrorType(
-                    errors=[ErrorItemType.from_error(err), ],
+                    errors=[ErrorItemType.from_error(err),],
                     status=err.status,
-                    logs=[LogMessageType(message=err.reason, level="ERROR"), ]
+                    logs=[LogMessageType(message=err.reason, level="ERROR"),],
                 )
                 err.text = EnvelopeFactory(error=error).as_text()
 
@@ -89,7 +95,7 @@ def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
             logger.debug("Redirected to %s", ex)
             raise
 
-        except Exception as err: # pylint: disable=broad-except
+        except Exception as err:  # pylint: disable=broad-except
             _process_and_raise_unexpected_error(request, err)
 
     return _middleware
@@ -106,8 +112,7 @@ def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
             return await handler(request)
 
         # TODO: move this outside!
-        RQ_VALIDATED_DATA_KEYS = (
-            "validated-path", "validated-query", "validated-body")
+        RQ_VALIDATED_DATA_KEYS = ("validated-path", "validated-query", "validated-body")
 
         try:
             validator = OpenApiValidator.create(request.app, api_version)
@@ -156,15 +161,18 @@ def envelope_middleware_factory(api_version: str = DEFAULT_API_VERSION):
             # Enforced by user. Should check it is json?
             response = resp
         return response
+
     return _middleware
 
 
-def append_rest_middlewares(app: web.Application, api_version: str = DEFAULT_API_VERSION):
+def append_rest_middlewares(
+    app: web.Application, api_version: str = DEFAULT_API_VERSION
+):
     """ Helper that appends rest-middlewares in the correct order
 
     """
     app.middlewares.append(error_middleware_factory(api_version))
     # FIXME:  openapi-core fails to validate response when specs are in separate files!
     # FIXME: disabled so webserver and storage do not get this issue
-    #app.middlewares.append(validate_middleware_factory(api_version))
+    # app.middlewares.append(validate_middleware_factory(api_version))
     app.middlewares.append(envelope_middleware_factory(api_version))

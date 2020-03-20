@@ -26,10 +26,12 @@ async def security_cookie(loop, client) -> str:
         cookie = resp.request_info.headers["Cookie"]
     yield cookie
 
+
 @pytest.fixture()
 async def socketio_url(loop, client) -> str:
-    SOCKET_IO_PATH = '/socket.io/'
+    SOCKET_IO_PATH = "/socket.io/"
     return str(client.make_url(SOCKET_IO_PATH))
+
 
 @pytest.fixture()
 async def socketio_client(socketio_url: str, security_cookie: str):
@@ -37,10 +39,13 @@ async def socketio_client(socketio_url: str, security_cookie: str):
 
     async def connect(client_session_id):
         sio = socketio.AsyncClient()
-        url = str(URL(socketio_url).with_query({'client_session_id': client_session_id}))
-        await sio.connect(url, headers={'Cookie': security_cookie})
+        url = str(
+            URL(socketio_url).with_query({"client_session_id": client_session_id})
+        )
+        await sio.connect(url, headers={"Cookie": security_cookie})
         clients.append(sio)
         return sio
+
     yield connect
     for sio in clients:
         await sio.disconnect()

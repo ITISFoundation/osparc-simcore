@@ -9,12 +9,19 @@ from uuid import uuid4
 import pytest
 
 from simcore_service_webserver.resource_manager.config import (
-    APP_CLIENT_REDIS_CLIENT_KEY, APP_CLIENT_SOCKET_REGISTRY_KEY,
-    APP_CONFIG_KEY, CONFIG_SECTION_NAME)
+    APP_CLIENT_REDIS_CLIENT_KEY,
+    APP_CLIENT_SOCKET_REGISTRY_KEY,
+    APP_CONFIG_KEY,
+    CONFIG_SECTION_NAME,
+)
 from simcore_service_webserver.resource_manager.registry import (
-    ALIVE_SUFFIX, RESOURCE_SUFFIX, RedisResourceRegistry)
-from simcore_service_webserver.resource_manager.websocket_manager import \
-    managed_resource
+    ALIVE_SUFFIX,
+    RESOURCE_SUFFIX,
+    RedisResourceRegistry,
+)
+from simcore_service_webserver.resource_manager.websocket_manager import (
+    managed_resource,
+)
 
 
 @pytest.fixture
@@ -22,13 +29,10 @@ def redis_enabled_app(redis_client) -> Dict:
     app = {
         APP_CLIENT_REDIS_CLIENT_KEY: redis_client,
         APP_CLIENT_SOCKET_REGISTRY_KEY: None,
-        APP_CONFIG_KEY: {
-            CONFIG_SECTION_NAME: {
-                "resource_deletion_timeout_seconds": 3
-            }
-        }
+        APP_CONFIG_KEY: {CONFIG_SECTION_NAME: {"resource_deletion_timeout_seconds": 3}},
     }
     yield app
+
 
 @pytest.fixture
 def redis_registry(redis_enabled_app) -> RedisResourceRegistry:
@@ -37,39 +41,49 @@ def redis_registry(redis_enabled_app) -> RedisResourceRegistry:
     yield registry
 
 
-
 @pytest.fixture
 def user_ids():
     def create_user_id(number: int) -> List[str]:
         return [f"user id {i}" for i in range(number)]
+
     return create_user_id
 
-@pytest.mark.parametrize("key, hash_key", [
-    ({"some_key": "some_value"}, "some_key=some_value"),
-    ({"some_key": "some_value", "another_key": "another_value"}, "some_key=some_value:another_key=another_value")
-])
+
+@pytest.mark.parametrize(
+    "key, hash_key",
+    [
+        ({"some_key": "some_value"}, "some_key=some_value"),
+        (
+            {"some_key": "some_value", "another_key": "another_value"},
+            "some_key=some_value:another_key=another_value",
+        ),
+    ],
+)
 async def test_redis_registry_hashes(loop, redis_enabled_app, key, hash_key):
     # pylint: disable=protected-access
     assert RedisResourceRegistry._hash_key(key) == hash_key
-    assert RedisResourceRegistry._decode_hash_key(f"{hash_key}:{RESOURCE_SUFFIX}") == key
+    assert (
+        RedisResourceRegistry._decode_hash_key(f"{hash_key}:{RESOURCE_SUFFIX}") == key
+    )
     assert RedisResourceRegistry._decode_hash_key(f"{hash_key}:{ALIVE_SUFFIX}") == key
+
 
 async def test_redis_registry(loop, redis_registry):
     random_value = randint(1, 10)
-    key = {f"key_{x}":f"value_{x}" for x in range(random_value)}
-    second_key = {f"sec_key_{x}":f"sec_value_{x}" for x in range(random_value)}
-    invalid_key = {f"invalid_key":f"invalid_value"}
+    key = {f"key_{x}": f"value_{x}" for x in range(random_value)}
+    second_key = {f"sec_key_{x}": f"sec_value_{x}" for x in range(random_value)}
+    invalid_key = {f"invalid_key": f"invalid_value"}
     NUM_RESOURCES = 7
     resources = [(f"res_key{x}", f"res_value{x}") for x in range(NUM_RESOURCES)]
-    invalid_resource = (f"invalid_res_key",f"invalid_res_value")
+    invalid_resource = (f"invalid_res_key", f"invalid_res_value")
 
     # create resources
     for res in resources:
         await redis_registry.set_resource(key, res)
-        assert len(await redis_registry.get_resources(key)) == resources.index(res)+1
+        assert len(await redis_registry.get_resources(key)) == resources.index(res) + 1
 
     # get them
-    assert await redis_registry.get_resources(key) == {x[0]:x[1] for x in resources}
+    assert await redis_registry.get_resources(key) == {x[0]: x[1] for x in resources}
     assert not await redis_registry.get_resources(invalid_key)
     # find them
     for res in resources:
@@ -81,7 +95,10 @@ async def test_redis_registry(loop, redis_registry):
     # add second key
     for res in resources:
         await redis_registry.set_resource(second_key, res)
-        assert len(await redis_registry.get_resources(second_key)) == resources.index(res)+1
+        assert (
+            len(await redis_registry.get_resources(second_key))
+            == resources.index(res) + 1
+        )
     # find them
     for res in resources:
         assert await redis_registry.find_resources(key, res[0]) == [res[1]]
@@ -115,7 +132,10 @@ async def test_redis_registry(loop, redis_registry):
     for res in resources:
         assert await redis_registry.find_keys(res) == [second_key]
         await redis_registry.remove_resource(second_key, res[0])
-        assert len(await redis_registry.get_resources(second_key)) == len(resources) - (resources.index(res)+1)
+        assert len(await redis_registry.get_resources(second_key)) == len(resources) - (
+            resources.index(res) + 1
+        )
+
 
 async def test_websocket_manager(loop, redis_enabled_app, redis_registry, user_ids):
 
@@ -136,25 +156,34 @@ async def test_websocket_manager(loop, redis_enabled_app, redis_registry, user_i
             assert socket_id not in tabs
             tabs[socket_id] = client_session_id
             with managed_resource(user, client_session_id, redis_enabled_app) as rt:
-                #pylint: disable=protected-access
-                resource_key = {"user_id":user, "client_session_id": client_session_id}
+                # pylint: disable=protected-access
+                resource_key = {"user_id": user, "client_session_id": client_session_id}
                 assert rt._resource_key() == resource_key
 
                 # set the socket id and check it is rightfully there
                 await rt.set_socket_id(socket_id)
                 assert await rt.get_socket_id() == socket_id
-                assert await redis_registry.get_resources(resource_key) == {"socket_id": socket_id}
+                assert await redis_registry.get_resources(resource_key) == {
+                    "socket_id": socket_id
+                }
                 list_of_sockets_of_user = await rt.find_socket_ids()
                 assert socket_id in list_of_sockets_of_user
                 # resource key shall be empty
                 assert await rt.find(res_key) == []
                 # add the resource now
                 await rt.add(res_key, res_value)
-                assert await redis_registry.get_resources(resource_key) == {"socket_id": socket_id, res_key: res_value}
+                assert await redis_registry.get_resources(resource_key) == {
+                    "socket_id": socket_id,
+                    res_key: res_value,
+                }
                 # resource key shall be filled
                 assert await rt.find(res_key) == [res_value]
-                list_of_same_resource_users = await rt.find_users_of_resource(res_key, res_value)
-                assert list_user_ids[:(list_user_ids.index(user)+1)] == sorted(list_of_same_resource_users)
+                list_of_same_resource_users = await rt.find_users_of_resource(
+                    res_key, res_value
+                )
+                assert list_user_ids[: (list_user_ids.index(user) + 1)] == sorted(
+                    list_of_same_resource_users
+                )
 
     # remove sockets
     for user in list_user_ids:

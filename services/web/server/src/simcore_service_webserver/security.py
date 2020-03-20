@@ -35,8 +35,7 @@ def setup(app: web.Application):
     authorization_policy = AuthorizationPolicy(app, access_model)
     aiohttp_security.setup(app, identity_policy, authorization_policy)
 
+
 setup_security = setup
 
-__all__ = (
-    'setup_security'
-)
+__all__ = "setup_security"

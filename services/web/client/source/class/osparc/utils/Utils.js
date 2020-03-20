@@ -15,11 +15,6 @@
 
 ************************************************************************ */
 
-/* global window */
-/* global document */
-/* global XMLHttpRequest */
-/* global Blob */
-
 /**
  * @ignore(URL)
  * @ignore(sessionStorage)
@@ -74,17 +69,8 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     // deep clone of nested objects
-    // https://medium.com/@tkssharma/objects-in-javascript-object-assign-deep-copy-64106c9aefab#eeed
     deepCloneObject: function(src) {
-      let target = {};
-      for (let key in src) {
-        if (src[key] !== null && typeof (src[key]) === "object") {
-          target[key] = osparc.utils.Utils.deepCloneObject(src[key]);
-        } else {
-          target[key] = src[key];
-        }
-      }
-      return target;
+      return JSON.parse(JSON.stringify(src));
     },
 
     getRandomColor: function() {
