@@ -23,26 +23,24 @@ import pytest
 import trafaret_config
 import yaml
 
+from pytest_simcore.helpers.utils_docker import get_service_published_port
 from simcore_service_webserver.application_config import app_schema
 from simcore_service_webserver.cli import create_environ
 from simcore_service_webserver.resources import resources as app_resources
-from utils_docker import get_service_published_port
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-# TODO: this should be done as a real pytest plugin instead
-sys.path.append(str(current_dir / '../../../../../packages'))
 # imports the fixtures for the integration tests
 pytest_plugins = [
-    "pytest-fixtures.environs",
-    "pytest-fixtures.docker_compose",
-    "pytest-fixtures.docker_swarm",
-    "pytest-fixtures.docker_registry",
-    "pytest-fixtures.rabbit_service",
-    "pytest-fixtures.celery_service",
-    "pytest-fixtures.postgres_service",
-    "pytest-fixtures.redis_service",
-    "pytest-fixtures.websocket_client"
+    "pytest_simcore.environs",
+    "pytest_simcore.docker_compose",
+    "pytest_simcore.docker_swarm",
+    "pytest_simcore.docker_registry",
+    "pytest_simcore.rabbit_service",
+    "pytest_simcore.celery_service",
+    "pytest_simcore.postgres_service",
+    "pytest_simcore.redis_service",
+    "pytest_simcore.websocket_client"
 ]
 
 log = logging.getLogger(__name__)

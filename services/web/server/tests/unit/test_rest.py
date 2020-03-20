@@ -10,12 +10,12 @@ import pytest
 import yaml
 from aiohttp import web
 
+from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.resources import resources
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
-from utils_assert import assert_status
 
 # TODO: reduce log from openapi_core loggers
 

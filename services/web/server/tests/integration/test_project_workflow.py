@@ -17,6 +17,9 @@ from typing import Dict, List
 import pytest
 from aiohttp import web
 
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import LoggedUser
+from pytest_simcore.helpers.utils_projects import delete_all_projects
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
@@ -27,9 +30,6 @@ from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-from utils_assert import assert_status
-from utils_login import LoggedUser
-from utils_projects import delete_all_projects
 
 API_VERSION = "v0"
 

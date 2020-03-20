@@ -7,11 +7,11 @@
 from aiohttp import web
 from yarl import URL
 
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import LoggedUser, NewUser, parse_link
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.login import APP_LOGIN_CONFIG
 from simcore_service_webserver.statics import INDEX_RESOURCE_NAME
-from utils_assert import assert_status
-from utils_login import LoggedUser, NewUser, parse_link
 
 NEW_EMAIL = "new@mail.com"
 
