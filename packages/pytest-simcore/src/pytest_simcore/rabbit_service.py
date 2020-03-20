@@ -39,7 +39,7 @@ def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> Dict:
 @pytest.fixture(scope="function")
 async def rabbit_service(rabbit_config: Dict, docker_stack: Dict) -> str:
     url = "amqp://{user}:{password}@{host}:{port}".format(**rabbit_config)
-    wait_till_rabbit_responsive(url)
+    await wait_till_rabbit_responsive(url)
     yield url
 
 
