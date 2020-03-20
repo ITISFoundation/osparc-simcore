@@ -49,7 +49,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
   },
   events: {
     "ready": "qx.event.type.Event",
-    "submit": "qx.event.type.Event"
+    "submit": "qx.event.type.Data"
   },
   members: {
     __inputItems: null,
@@ -73,13 +73,8 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         submitBtn.addListener("execute", () => {
           if (this.__validationManager.validate()) {
             const formData = this.toObject();
-            if (this.__validate(schema, formData)) {
-              console.log(formData);
-              submitBtn.setFetching(true);
-              setTimeout(() => {
-                this.fireEvent("submit");
-                submitBtn.setFetching(false);
-              }, 2000);
+            if (this.__validate(schema, formData.json)) {
+              this.fireDataEvent("submit", formData);
             }
           }
         }, this);
@@ -192,7 +187,9 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
      * Uses objectPath library to construct a JS object with the values from the inputs.
      */
     toObject: function() {
-      const obj = {};
+      const obj = {
+        json: {}
+      };
       const inputMap = {};
       // Retrieve paths
       this.__inputItems.forEach(item => {
@@ -206,9 +203,16 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
       this.__inputItems = this.__inputItems.filter(item => Object.values(inputMap).includes(item));
       // Construct object
       Object.entries(inputMap).forEach(([path, item]) => {
-        const value = item.getInput().getValue();
+        const input = item.getInput();
+        if (input instanceof osparc.ui.form.FileInput) {
+          obj.files = obj.files || [];
+          if (input.getFile()) {
+            obj.files.push(input.getFile());
+          }
+        }
+        const value = input.getValue();
         if (typeof value !== "undefined" && value !== null) {
-          objectPath.set(obj, path, item.getInput().getValue());
+          objectPath.set(obj.json, path, input.getValue());
         }
       });
       return obj;

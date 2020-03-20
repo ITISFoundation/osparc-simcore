@@ -95,7 +95,12 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
           break;
         case "string":
           if (this.__schema.contentMediaType) {
-            input = new osparc.ui.form.FileInput();
+            const splitted = this.__schema.contentMediaType.split("/");
+            let extension = null;
+            if (splitted.length === 2 && splitted[1] !== "*") {
+              extension = splitted[1];
+            }
+            input = new osparc.ui.form.FileInput([extension]);
             break;
           }
         default:
