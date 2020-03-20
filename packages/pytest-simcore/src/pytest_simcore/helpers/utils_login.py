@@ -7,7 +7,8 @@ from simcore_service_webserver.db_models import UserRole, UserStatus
 from simcore_service_webserver.login.cfg import cfg, get_storage
 from simcore_service_webserver.login.registration import create_invitation
 from simcore_service_webserver.login.utils import encrypt_password, get_random_string
-from utils_assert import assert_status
+
+from .utils_assert import assert_status
 
 TEST_MARKS = re.compile(r"TEST (\w+):(.*)")
 
