@@ -39,7 +39,7 @@ async def run_sidecar(job_id: str, user_id: str, project_id: str, node_id: str) 
     from simcore_service_sidecar.core import SIDECAR
 
     async with RabbitMQContextManager() as rabbit_mq:
-        next_task_nodes =  wrap_async_call(SIDECAR.inspect(rabbit_mq, job_id, user_id, project_id, node_id=node_id))
+        next_task_nodes =  await SIDECAR.inspect(rabbit_mq, job_id, user_id, project_id, node_id=node_id)
         log.info(
             "COMPLETED task processing for user %s, project %s, node %s",
             user_id,
