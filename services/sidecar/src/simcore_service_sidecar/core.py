@@ -59,26 +59,26 @@ def session_scope(session_factory):
 
 
 class Sidecar(BaseModel):
-    _rabbit_mq: RabbitMQ = None
-    _docker: DockerSettings = DockerSettings()
-    _db: DbSettings = DbSettings()  # keeps single db engine: sidecar.utils_{id}
-    _db_manager: Any = None  # lazy init because still not configured. SEE _get_node_ports
-    _task: ComputationalTask = None  # current task
-    _user_id: str = None  # current user id
-    _stack_name: str = None  # stack name
-    _executor: ExecutorSettings = ExecutorSettings()  # executor options
+    rabbit_mq: RabbitMQ = None
+    docker: DockerSettings = DockerSettings()
+    db: DbSettings = DbSettings()  # keeps single db engine: sidecar.utils_{id}
+    db_manager: Any = None  # lazy init because still not configured. SEE _get_node_ports
+    task: ComputationalTask = None  # current task
+    user_id: str = None  # current user id
+    stack_name: str = None  # stack name
+    executor: ExecutorSettings = ExecutorSettings()  # executor options
 
     async def _get_node_ports(self):
-        if self._db_manager is None:
+        if self.db_manager is None:
             # Keeps single db engine: simcore_sdk.node_ports.dbmanager_{id}
-            self._db_manager = DBManager()
-        return node_ports.ports(self._db_manager)
+            self.db_manager = DBManager()
+        return node_ports.ports(self.db_manager)
 
     async def _create_shared_folders(self):
         for folder in [
-            self._executor.in_dir,
-            self._executor.log_dir,
-            self._executor.out_dir,
+            self.executor.in_dir,
+            self.executor.log_dir,
+            self.executor.out_dir,
         ]:
             if folder.exists():
                 shutil.rmtree(folder)
@@ -95,7 +95,7 @@ class Sidecar(BaseModel):
                 # the filename is not necessarily the name of the port, might be mapped
                 mapped_filename = Path(path).name
                 input_ports[port_name] = str(port_value)
-                final_path = Path(self._executor.in_dir, mapped_filename)
+                final_path = Path(self.executor.in_dir, mapped_filename)
                 shutil.copy(str(path), str(final_path))
                 log.debug(
                     "DOWNLOAD successfull from %s to %s via %s",
@@ -119,8 +119,8 @@ class Sidecar(BaseModel):
         """
         log.debug(
             "Input parsing for %s and node %s from container",
-            self._task.project_id,
-            self._task.internal_id,
+            self.task.project_id,
+            self.task.internal_id,
         )
 
         input_ports = dict()
@@ -131,7 +131,7 @@ class Sidecar(BaseModel):
 
         log.debug("DUMPING json")
         if input_ports:
-            file_name = self._executor.in_dir / "input.json"
+            file_name = self.executor.in_dir / "input.json"
             with file_name.open("w") as fp:
                 json.dump(input_ports, fp)
         log.debug("DUMPING DONE")
@@ -140,24 +140,24 @@ class Sidecar(BaseModel):
         log.debug("PULLING IMAGE")
         log.debug(
             "reg %s user %s pwd %s",
-            self._docker.registry,
-            self._docker.registry_user,
-            self._docker.registry_pwd,
+            self.docker.registry,
+            self.docker.registry_user,
+            self.docker.registry_pwd,
         )
 
         try:
-            self._docker.client.login(
-                registry=self._docker.registry,
-                username=self._docker.registry_user,
-                password=self._docker.registry_pwd,
+            self.docker.client.login(
+                registry=self.docker.registry,
+                username=self.docker.registry_user,
+                password=self.docker.registry_pwd,
             )
-            log.debug("img %s tag %s", self._docker.image_name, self._docker.image_tag)
+            log.debug("img %s tag %s", self.docker.image_name, self.docker.image_tag)
 
-            self._docker.client.images.pull(
-                self._docker.image_name, tag=self._docker.image_tag
+            self.docker.client.images.pull(
+                self.docker.image_name, tag=self.docker.image_tag
             )
         except docker.errors.APIError:
-            msg = f"Failed to pull image '{self._docker.image_name}:{self._docker.image_tag}' from {self._docker.registry,}"
+            msg = f"Failed to pull image '{self.docker.image_name}:{self.docker.image_tag}' from {self.docker.registry,}"
             log.exception(msg)
             raise docker.errors.APIError(msg)
 
@@ -208,12 +208,12 @@ class Sidecar(BaseModel):
 
     # async def _bg_job(self, log_file):
     #     log.debug('Bck job started %s:node %s:internal id %s from container',
-    #               self._task.project_id, self._task.node_id, self._task.internal_id)
+    #               self.task.project_id, self.task.node_id, self.task.internal_id)
     #     with safe_channel(self._pika) as (channel, blocking_connection):
 
     #         async def _follow(thefile):
     #             thefile.seek(0, 2)
-    #             while self._executor.run_pool:
+    #             while self.executor.run_pool:
     #                 line = thefile.readline()
     #                 if not line:
     #                     time.sleep(1)
@@ -257,7 +257,7 @@ class Sidecar(BaseModel):
     #         file_path = Path(log_file)
     #         with file_path.open() as fp:
     #             for line in await _follow(fp):
-    #                 if not self._executor.run_pool:
+    #                 if not self.executor.run_pool:
     #                     break
     #                 await _parse_progress(line)
     #                 acc_logs, time_logs_sent = _log_accumulated_logs(
@@ -271,7 +271,7 @@ class Sidecar(BaseModel):
     #         progress = "1.0"
     #         await self._post_progress(channel, progress)
     #         log.debug('Bck job completed %s:node %s:internal id %s from container',
-    #                   self._task.project_id, self._task.node_id, self._task.internal_id)
+    #                   self.task.project_id, self.task.node_id, self.task.internal_id)
 
     async def _process_task_output(self):
         # pylint: disable=too-many-branches
@@ -286,12 +286,12 @@ class Sidecar(BaseModel):
         """
         log.debug(
             "Processing task outputs %s:node %s:internal id %s from container",
-            self._task.project_id,
-            self._task.node_id,
-            self._task.internal_id,
+            self.task.project_id,
+            self.task.node_id,
+            self.task.internal_id,
         )
         PORTS = await self._get_node_ports()
-        directory = self._executor.out_dir
+        directory = self.executor.out_dir
         if not directory.exists():
             return
         try:
@@ -315,9 +315,9 @@ class Sidecar(BaseModel):
             logging.exception("Could not process output")
         log.debug(
             "Processing task outputs DONE %s:node %s:internal id %s from container",
-            self._task.project_id,
-            self._task.node_id,
-            self._task.internal_id,
+            self.task.project_id,
+            self.task.node_id,
+            self.task.internal_id,
         )
 
     # pylint: disable=no-self-use
@@ -325,42 +325,42 @@ class Sidecar(BaseModel):
     async def _process_task_log(self):
         log.debug(
             "Processing Logs %s:node %s:internal id %s from container",
-            self._task.project_id,
-            self._task.node_id,
-            self._task.internal_id,
+            self.task.project_id,
+            self.task.node_id,
+            self.task.internal_id,
         )
-        directory = self._executor.log_dir
+        directory = self.executor.log_dir
         if directory.exists():
             await node_data.data_manager.push(directory, rename_to="logs")
         log.debug(
             "Processing Logs DONE %s:node %s:internal id %s from container",
-            self._task.project_id,
-            self._task.node_id,
-            self._task.internal_id,
+            self.task.project_id,
+            self.task.node_id,
+            self.task.internal_id,
         )
 
     async def initialize(self, task, user_id: str):
         log.debug(
             "TASK %s of user %s FOUND, initializing...", task.internal_id, user_id
         )
-        self._task = task
-        self._user_id = user_id
-        self._docker.image_name = self._docker.registry_name + "/" + task.schema["key"]
-        self._docker.image_tag = task.schema["version"]
+        self.task = task
+        self.user_id = user_id
+        self.docker.image_name = self.docker.registry_name + "/" + task.schema["key"]
+        self.docker.image_tag = task.schema["version"]
 
         # volume paths for side-car container
-        self._executor.in_dir = Path.home() / f"input/{task.job_id}"
-        self._executor.out_dir = Path.home() / f"output/{task.job_id}"
-        self._executor.log_dir = Path.home() / f"log/{task.job_id}"
+        self.executor.in_dir = Path.home() / f"input/{task.job_id}"
+        self.executor.out_dir = Path.home() / f"output/{task.job_id}"
+        self.executor.log_dir = Path.home() / f"log/{task.job_id}"
 
         # volume paths for car container (w/o prefix)
-        self._docker.env = [
+        self.docker.env = [
             f"{name.upper()}_FOLDER=/{name}/{task.job_id}"
             for name in ["input", "output", "log"]
         ]
 
         # stack name, should throw if not set
-        self._stack_name = config.SWARM_STACK_NAME
+        self.stack_name = config.SWARM_STACK_NAME
 
         # config nodeports
         node_ports.node_config.USER_ID = user_id
@@ -373,37 +373,37 @@ class Sidecar(BaseModel):
     async def preprocess(self):
         log.debug(
             "Pre-Processing Pipeline %s:node %s:internal id %s from container",
-            self._task.project_id,
-            self._task.node_id,
-            self._task.internal_id,
+            self.task.project_id,
+            self.task.node_id,
+            self.task.internal_id,
         )
         await self._create_shared_folders()
         await logged_gather(self._process_task_inputs(), self._pull_image())
         log.debug(
             "Pre-Processing Pipeline DONE %s:node %s:internal id %s from container",
-            self._task.project_id,
-            self._task.node_id,
-            self._task.internal_id,
+            self.task.project_id,
+            self.task.node_id,
+            self.task.internal_id,
         )
 
     async def process(self):
         log.debug(
             "Processing Pipeline %s:node %s:internal id %s from container",
-            self._task.project_id,
-            self._task.node_id,
-            self._task.internal_id,
+            self.task.project_id,
+            self.task.node_id,
+            self.task.internal_id,
         )
 
         # touch output file, so it's ready for the container (v0)
-        log_file = self._executor.log_dir / "log.dat"
+        log_file = self.executor.log_dir / "log.dat"
         log_file.touch()
         log_processor_task = asyncio.ensure_future(self.log_file_processor(log_file))
 
         start_time = time.perf_counter()
         container = None
         try:
-            docker_image = f"{self._docker.image_name}:{self._docker.image_tag}"
-            container = self._docker.client.containers.run(
+            docker_image = f"{self.docker.image_name}:{self.docker.image_tag}"
+            container = self.docker.client.containers.run(
                 docker_image,
                 "run",
                 init=True,
@@ -414,13 +414,13 @@ class Sidecar(BaseModel):
                     f"{config.SIDECAR_DOCKER_VOLUME_OUTPUT}": {"bind": "/output"},
                     f"{config.SIDECAR_DOCKER_VOLUME_LOG}": {"bind": "/log"},
                 },
-                environment=self._docker.env,
+                environment=self.docker.env,
                 nano_cpus=config.SERVICES_MAX_NANO_CPUS,
                 mem_limit=config.SERVICES_MAX_MEMORY_BYTES,
                 labels={
-                    "user_id": str(self._user_id),
-                    "study_id": str(self._task.project_id),
-                    "node_id": str(self._task.node_id),
+                    "user_id": str(self.user_id),
+                    "study_id": str(self.task.project_id),
+                    "node_id": str(self.task.node_id),
                     "nano_cpus_limit": str(config.SERVICES_MAX_NANO_CPUS),
                     "mem_limit": str(config.SERVICES_MAX_MEMORY_BYTES),
                 },
@@ -472,59 +472,59 @@ class Sidecar(BaseModel):
 
         log.debug(
             "DONE Processing Pipeline %s:node %s:internal id %s from container",
-            self._task.project_id,
-            self._task.node_id,
-            self._task.internal_id,
+            self.task.project_id,
+            self.task.node_id,
+            self.task.internal_id,
         )
 
     async def run(self):
         log.debug(
             "Running Pipeline %s:node %s:internal id %s from container",
-            self._task.project_id,
-            self._task.node_id,
-            self._task.internal_id,
+            self.task.project_id,
+            self.task.node_id,
+            self.task.internal_id,
         )
-        await self._rabbit_mq.post_log_message("Preprocessing start...")
+        await self.rabbit_mq.post_log_message("Preprocessing start...")
         await self.preprocess()
-        await self._rabbit_mq.post_log_message("...preprocessing end")
+        await self.rabbit_mq.post_log_message("...preprocessing end")
 
-        await self._rabbit_mq.post_log_message("Processing start...")
+        await self.rabbit_mq.post_log_message("Processing start...")
         await self.process()
-        await self._rabbit_mq.post_log_message("...processing end")
+        await self.rabbit_mq.post_log_message("...processing end")
 
-        await self._rabbit_mq.post_log_message("Postprocessing start...")
+        await self.rabbit_mq.post_log_message("Postprocessing start...")
         await self.postprocess()
-        await self._rabbit_mq.post_log_message("...postprocessing end")
+        await self.rabbit_mq.post_log_message("...postprocessing end")
 
         log.debug(
             "Running Pipeline DONE %s:node %s:internal id %s from container",
-            self._task.project_id,
-            self._task.node_id,
-            self._task.internal_id,
+            self.task.project_id,
+            self.task.node_id,
+            self.task.internal_id,
         )
 
     async def postprocess(self):
         log.debug(
             "Post-Processing Pipeline %s:node %s:internal id %s from container",
-            self._task.project_id,
-            self._task.node_id,
-            self._task.internal_id,
+            self.task.project_id,
+            self.task.node_id,
+            self.task.internal_id,
         )
 
         await self._process_task_output()
         await self._process_task_log()
 
-        self._task.state = SUCCESS
-        self._task.end = datetime.utcnow()
-        _session = self._db.Session()
+        self.task.state = SUCCESS
+        self.task.end = datetime.utcnow()
+        _session = self.db.Session()
         try:
-            _session.add(self._task)
+            _session.add(self.task)
             _session.commit()
             log.debug(
                 "Post-Processing Pipeline DONE %s:node %s:internal id %s from container",
-                self._task.project_id,
-                self._task.node_id,
-                self._task.internal_id,
+                self.task.project_id,
+                self.task.node_id,
+                self.task.internal_id,
             )
 
         except exc.SQLAlchemyError:
@@ -547,9 +547,9 @@ class Sidecar(BaseModel):
             project_id,
             node_id,
         )
-        self._rabbit_mq = rabbit_mq
+        self.rabbit_mq = rabbit_mq
         next_task_nodes = []
-        with session_scope(self._db.Session) as _session:
+        with session_scope(self.db.Session) as _session:
             _pipeline = (
                 _session.query(ComputationalPipeline)
                 .filter_by(project_id=project_id)
