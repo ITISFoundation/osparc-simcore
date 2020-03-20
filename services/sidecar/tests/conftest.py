@@ -9,6 +9,7 @@ import pytest
 
 import simcore_service_sidecar
 
+pytest_plugins = ["pytest_simcore.environs"]
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -26,15 +27,3 @@ def package_dir():
     dirpath = Path(simcore_service_sidecar.__file__).resolve().parent
     assert dirpath.exists()
     return dirpath
-
-
-@pytest.fixture(scope="session")
-def osparc_simcore_root_dir(project_slug_dir):
-    root_dir = project_slug_dir.parent.parent
-    assert (
-        root_dir and root_dir.exists()
-    ), "Did you renamed or moved the integration folder under sidecar??"
-    assert any(root_dir.glob("services/sidecar")), (
-        "%s not look like rootdir" % root_dir
-    )
-    return root_dir
