@@ -32,6 +32,8 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
 
   members: {
     __email: null,
+    __submitBtn: null,
+    __cancelBtn: null,
 
     // overrides base
     _buildPage: function() {
@@ -47,6 +49,10 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       this.add(email);
       osparc.utils.Utils.setIdToWidget(email, "registrationEmailFld");
       this.__email = email;
+      this.addListener("appear", () => {
+        email.focus();
+        email.activate();
+      });
 
       // const uname = new qx.ui.form.TextField().set({
       //   required: true,
@@ -86,13 +92,13 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       // submit & cancel buttons
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      const submitBtn = new qx.ui.form.Button(this.tr("Submit"));
+      const submitBtn = this.__submitBtn = new qx.ui.form.Button(this.tr("Submit"));
       osparc.utils.Utils.setIdToWidget(submitBtn, "registrationSubmitBtn");
       grp.add(submitBtn, {
         flex:1
       });
 
-      const cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
+      const cancelBtn = this.__cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
       osparc.utils.Utils.setIdToWidget(cancelBtn, "registrationCancelBtn");
       grp.add(cancelBtn, {
         flex:1
@@ -132,7 +138,21 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       };
 
       manager.register(userData, successFun, failFun, this);
-    }
+    },
 
+    _onAppear: function() {
+      // Listen to "Enter" key
+      const commandEnter = new qx.ui.command.Command("Enter");
+      this.__submitBtn.setCommand(commandEnter);
+
+      // Listen to "Esc" key
+      const commandEsc = new qx.ui.command.Command("Esc");
+      this.__cancelBtn.setCommand(commandEsc);
+    },
+
+    _onDisappear: function() {
+      this.__submitBtn.setCommand(null);
+      this.__cancelBtn.setCommand(null);
+    }
   }
 });

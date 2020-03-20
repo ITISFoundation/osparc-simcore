@@ -50,6 +50,8 @@ qx.Class.define("osparc.auth.ui.LoginView", {
   members: {
     // overrides base
     __form: null,
+    __loginBtn: null,
+
     _buildPage: function() {
       this.__form = new qx.ui.form.Form();
 
@@ -85,16 +87,10 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       this.add(pass);
       this.__form.add(pass, "", null, "password", null);
 
-      const loginBtn = new osparc.ui.form.FetchButton(this.tr("Sign in"));
+      const loginBtn = this.__loginBtn = new osparc.ui.form.FetchButton(this.tr("Sign in"));
       loginBtn.addListener("execute", () => {
         loginBtn.setFetching(true);
         this.__login(loginBtn);
-      }, this);
-      // Listen to "Enter" key
-      this.addListener("keypress", keyEvent => {
-        if (keyEvent.getKeyIdentifier() === "Enter") {
-          this.__login();
-        }
       }, this);
       osparc.utils.Utils.setIdToWidget(loginBtn, "loginSubmitBtn");
       this.add(loginBtn);
@@ -201,6 +197,16 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       for (const key in fieldItems) {
         fieldItems[key].resetValue();
       }
+    },
+
+    _onAppear: function() {
+      // Listen to "Enter" key
+      const command = new qx.ui.command.Command("Enter");
+      this.__loginBtn.setCommand(command);
+    },
+
+    _onDisappear: function() {
+      this.__loginBtn.setCommand(null);
     }
   }
 });
