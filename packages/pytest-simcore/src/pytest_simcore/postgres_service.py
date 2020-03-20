@@ -7,11 +7,13 @@ from typing import Dict
 
 import pytest
 import sqlalchemy as sa
-from servicelib.aiopg_utils import DSN, PostgresRetryPolicyUponInitialization
-from simcore_postgres_database.models.base import metadata
 from sqlalchemy.orm import sessionmaker
 from tenacity import Retrying
-from utils_docker import get_service_published_port
+
+from servicelib.aiopg_utils import DSN, PostgresRetryPolicyUponInitialization
+from simcore_postgres_database.models.base import metadata
+
+from .helpers.utils_docker import get_service_published_port
 
 
 @pytest.fixture(scope="module")

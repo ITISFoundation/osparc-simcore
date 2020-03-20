@@ -11,8 +11,7 @@ from typing import Dict
 import docker
 import pytest
 import tenacity
-from servicelib.simcore_service_utils import \
-    SimcoreRetryPolicyUponInitialization
+from servicelib.simcore_service_utils import SimcoreRetryPolicyUponInitialization
 
 
 @pytest.fixture(scope="session")
@@ -31,17 +30,6 @@ def docker_swarm(docker_client: docker.client.DockerClient) -> None:
         docker_client.swarm.init()
         yield
         assert docker_client.swarm.leave(force=True)
-
-
-def pytest_addoption(parser):
-    #TODO: group = parser.getgroup("simcore")
-    #TODO: group.addoption(
-    parser.addoption(
-        "--keep-docker-up",
-        action="store_true",
-        default=False,
-        help="Keep stack/registry up after fixtures closes",
-    )
 
 
 @pytest.fixture(scope="session")

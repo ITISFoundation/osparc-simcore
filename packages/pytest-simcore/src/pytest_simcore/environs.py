@@ -7,8 +7,6 @@ import pytest
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-# FIXME: PC->SAN: why this?
-sys.path.append(str(current_dir / "helpers"))
 
 
 @pytest.fixture(scope="session")
@@ -17,6 +15,7 @@ def osparc_simcore_root_dir() -> Path:
     # FIXME: this will not work when it is installed as an external plugin!
     # probably the way to go is via a config file or overriding the fixture in
     # the actual tests (similar to what docker-compose fixture does)
+    # OR can add current working test dir?? i.e. pytest target folder!
     WILDCARD = ".git"
 
     root_dir = Path(current_dir)

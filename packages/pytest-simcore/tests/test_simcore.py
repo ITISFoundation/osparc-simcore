@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 
 
-def test_bar_fixture(testdir):
+def test_using_pytest_simcore_fixture(testdir):
     """Make sure that pytest accepts our fixture."""
 
     # create a temporary pytest test module
     testdir.makepyfile("""
-        def test_sth(bar):
-            assert bar == "europython2015"
+        pytest_plugins = ["pytest_simcore.environs"]
+
+        def test_sth(request):
+            assert request.config.getoption("--keep-docker-up") == True
     """)
 
     # run pytest with the following cmd args
     result = testdir.runpytest(
-        '--foo=europython2015',
+        '--keep-docker-up',
         '-v'
     )
 
@@ -32,7 +34,7 @@ def test_help_message(testdir):
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines([
         'simcore:',
-        '*--foo=DEST_FOO*Set the value for the fixture "bar".',
+        '*--keep-docker-up*Keep stack/registry up after fixtures closes',
     ])
 
 

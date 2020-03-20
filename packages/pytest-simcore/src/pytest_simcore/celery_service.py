@@ -10,7 +10,9 @@ import celery.bin.celery
 import celery.platforms
 import pytest
 import tenacity
+
 from servicelib.celery_utils import CeleryRetryPolicyUponInitialization
+
 from .helpers.utils_docker import get_service_published_port
 
 
