@@ -8,7 +8,6 @@ from pydantic import BaseModel
 
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from simcore_sdk.config.rabbit import Config as RabbitConfig
-from simcore_sdk.config.rabbit import eval_broker
 
 log = logging.getLogger(__file__)
 
@@ -25,7 +24,7 @@ class RabbitMQ(BaseModel):
         arbitrary_types_allowed = True
 
     async def connect(self):
-        url = eval_broker(self._config)
+        url = self._config.broker_url
         await wait_till_rabbit_responsive(url)
 
         self._connection = await aio_pika.connect_robust(
@@ -34,10 +33,10 @@ class RabbitMQ(BaseModel):
 
         self._channel = await self._connection.channel()
         self._logs_exchange = await self._channel.declare_exchange(
-            self._config.log_channel, aio_pika.ExchangeType.FANOUT, auto_delete=True
+            self._config.channels["log"], aio_pika.ExchangeType.FANOUT, auto_delete=True
         )
         self._progress_exchange = await self._channel.declare_exchange(
-            self._config.progress_channel,
+            self._config.channels["progress"],
             aio_pika.ExchangeType.FANOUT,
             auto_delete=True,
         )

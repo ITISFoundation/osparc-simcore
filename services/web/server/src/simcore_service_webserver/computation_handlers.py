@@ -9,7 +9,7 @@ from celery import Celery
 
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.request_keys import RQT_USERID_KEY
-from simcore_sdk.config.rabbit import Config as rabbit_config
+from simcore_sdk.config.rabbit import Config as RabbitConfig
 
 from .computation_api import update_pipeline_db
 from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
@@ -25,8 +25,8 @@ computation_routes = web.RouteTableDef()
 
 def get_celery(_app: web.Application):
     config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
-    rabbit = rabbit_config(config=config)
-    celery = Celery(rabbit.name, broker=rabbit.broker, backend=rabbit.backend)
+    rabbit = RabbitConfig(**config)
+    celery = Celery(rabbit.name, broker=rabbit.broker_url, backend=rabbit.celery["result_backend"])
     return celery
 
 

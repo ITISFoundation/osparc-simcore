@@ -11,7 +11,6 @@ import tenacity
 
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from simcore_sdk.config.rabbit import Config
-
 from .helpers.utils_docker import get_service_published_port
 
 
@@ -31,8 +30,8 @@ def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> Dict:
     os.environ["RABBIT_PORT"] = config["port"]
     os.environ["RABBIT_USER"] = devel_environ["RABBIT_USER"]
     os.environ["RABBIT_PASSWORD"] = devel_environ["RABBIT_PASSWORD"]
-    os.environ["RABBIT_PROGRESS_CHANNEL"] = devel_environ["RABBIT_PROGRESS_CHANNEL"]
-
+    os.environ["RABBIT_CHANNELS"] = devel_environ["RABBIT_CHANNELS"]    
+    
     yield config
 
 
@@ -77,12 +76,12 @@ async def rabbit_exchange(
     rb_config = Config()
 
     # declare log exchange
-    LOG_EXCHANGE_NAME: str = rb_config.log_channel
+    LOG_EXCHANGE_NAME: str = rb_config.channels["log"]
     logs_exchange = await rabbit_channel.declare_exchange(
         LOG_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT, auto_delete=True
     )
     # declare progress exchange
-    PROGRESS_EXCHANGE_NAME: str = rb_config.progress_channel
+    PROGRESS_EXCHANGE_NAME: str = rb_config.channels["progress"]
     progress_exchange = await rabbit_channel.declare_exchange(
         PROGRESS_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT, auto_delete=True
     )
