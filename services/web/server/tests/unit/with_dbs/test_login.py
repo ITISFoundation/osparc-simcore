@@ -6,10 +6,10 @@
 
 from aiohttp import web
 
+from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login.cfg import cfg
-from utils_login import NewUser
 
 EMAIL, PASSWORD = "tester@test.com", "password"
 

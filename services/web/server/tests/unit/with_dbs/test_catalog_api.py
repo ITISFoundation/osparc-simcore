@@ -8,6 +8,8 @@ from copy import deepcopy
 import pytest
 from aiohttp import web
 
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import LoggedUser
 from simcore_service_webserver.application import (
     create_safe_application,
     setup_catalog,
@@ -18,8 +20,6 @@ from simcore_service_webserver.application import (
     setup_session,
 )
 from simcore_service_webserver.db_models import UserRole
-from utils_assert import assert_status
-from utils_login import LoggedUser
 
 
 @pytest.fixture()

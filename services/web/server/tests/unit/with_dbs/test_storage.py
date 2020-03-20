@@ -9,12 +9,12 @@ from urllib.parse import quote
 import pytest
 from aiohttp import web
 
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import LoggedUser
 from servicelib.application import create_safe_application
 from servicelib.rest_responses import unwrap_envelope
 from servicelib.rest_utils import extract_and_validate
 from simcore_service_webserver.security_roles import UserRole
-from utils_assert import assert_status
-from utils_login import LoggedUser
 
 API_VERSION = "v0"
 

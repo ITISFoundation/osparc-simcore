@@ -1,10 +1,7 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import os
 import subprocess
 import time
 from pathlib import Path
@@ -14,10 +11,7 @@ from typing import Dict
 import docker
 import pytest
 import tenacity
-import yaml
-
-from servicelib.simcore_service_utils import \
-    SimcoreRetryPolicyUponInitialization
+from servicelib.simcore_service_utils import SimcoreRetryPolicyUponInitialization
 
 
 @pytest.fixture(scope="session")
@@ -35,17 +29,12 @@ def docker_swarm(docker_client: docker.client.DockerClient) -> None:
     except docker.errors.APIError:
         docker_client.swarm.init()
         yield
-        # teardown
         assert docker_client.swarm.leave(force=True)
 
 
-def pytest_addoption(parser):
-    parser.addoption("--keepdockerup", action="store_true", default=False, help="do not bring stack/registry down")
-
-
 @pytest.fixture(scope="session")
-def keepdockerup(request) -> bool:
-    return request.config.getoption("--keepdockerup") == True
+def keep_docker_up(request) -> bool:
+    return request.config.getoption("--keep-docker-up") == True
 
 
 @tenacity.retry(**SimcoreRetryPolicyUponInitialization().kwargs)
@@ -60,11 +49,13 @@ def _wait_for_services(docker_client: docker.client.DockerClient) -> None:
                 if not task["Status"]["State"].upper() == "RUNNING":
                     raise Exception(f"service {service} not running")
 
+
 def _print_services(docker_client: docker.client.DockerClient, msg: str) -> None:
     print("{:*^100}".format("docker services running " + msg))
     for service in docker_client.services.list():
         pprint(service.attrs)
     print("-" * 100)
+
 
 @pytest.fixture(scope="module")
 def docker_stack(
@@ -72,7 +63,7 @@ def docker_stack(
     docker_client: docker.client.DockerClient,
     core_services_config_file: Path,
     ops_services_config_file: Path,
-    keepdockerup: bool
+    keep_docker_up: bool,
 ) -> Dict:
     stacks = {"simcore": core_services_config_file, "ops": ops_services_config_file}
 
@@ -87,8 +78,6 @@ def docker_stack(
         )
         stacks_up.append(stack_name)
 
-    
-
     _wait_for_services(docker_client)
     _print_services(docker_client, "[BEFORE TEST]")
 
@@ -99,7 +88,7 @@ def docker_stack(
 
     _print_services(docker_client, "[AFTER TEST]")
 
-    if keepdockerup:
+    if keep_docker_up:
         # skip bringing the stack down
         return
 
@@ -107,15 +96,13 @@ def docker_stack(
     #
     # WORKAROUND https://github.com/moby/moby/issues/30942#issue-207070098
     #
-    # docker stack rm services
-
-    # until [ -z "$(docker service ls --filter label=com.docker.stack.namespace=services -q)" ] || [ "$limit" -lt 0 ]; do
-    # sleep 1;
-    # done
-
-    # until [ -z "$(docker network ls --filter label=com.docker.stack.namespace=services -q)" ] || [ "$limit" -lt 0 ]; do
-    # sleep 1;
-    # done
+    #   docker stack rm services
+    #   until [ -z "$(docker service ls --filter label=com.docker.stack.namespace=services -q)" ] || [ "$limit" -lt 0 ]; do
+    #   sleep 1;
+    #   done
+    #   until [ -z "$(docker network ls --filter label=com.docker.stack.namespace=services -q)" ] || [ "$limit" -lt 0 ]; do
+    #   sleep 1;
+    #   done
 
     # make down
     # NOTE: remove them in reverse order since stacks share common networks
@@ -134,4 +121,4 @@ def docker_stack(
         ):
             time.sleep(WAIT_BEFORE_RETRY_SECS)
 
-    _print_services("[AFTER REMOVED]")
+    _print_services(docker_client, "[AFTER REMOVED]")
