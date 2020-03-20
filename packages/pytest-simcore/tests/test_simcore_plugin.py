@@ -19,6 +19,7 @@ def test_using_pytest_simcore_fixture(testdir):
     )
 
     # fnmatch_lines does an assertion internally
+    # WARNING: this does not work with pytest-sugar!
     result.stdout.fnmatch_lines([
         '*::test_sth PASSED*',
     ])
