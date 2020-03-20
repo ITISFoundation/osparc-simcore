@@ -1,21 +1,20 @@
 #
-# Targets for DEVELOPMENT of Components Catalog Service
+# Targets for DEVELOPMENT of Public API Gateway
 #
 include ../../scripts/common.Makefile
 
 # Custom variables
 APP_NAME     := $(notdir $(CURDIR))
-APP_CLI_NAME := simcore-service-catalog
+APP_CLI_NAME := simcore-service-api-gateway
 export APP_VERSION = $(shell cat VERSION)
 
 
-.PHONY: requirements
-requirements: ## compiles pip requirements (.in -> .txt)
+.PHONY: reqs
+reqs: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE) --directory requirements reqs
 
-
 .PHONY: install-dev install-prod install-ci
-install-dev install-prod install-ci: requirements _check_venv_active ## install app in development/production or CI mode
+install-dev install-prod install-ci: _check-venv-active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
 	pip-sync requirements/$(subst install-,,$@).txt
 
@@ -34,42 +33,27 @@ tests-integration: ## runs integration tests against local+production images
 	pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/integration
 
 
-.PHONY: run-devel down-pg up-pg
-run-devel run-prod: up-pg ## runs app with pg service
-	# starting service ...
-ifeq ($(subst run-,,$@),devel)
-	# development mode (with reload upon change)
-	uvicorn simcore_service_catalog.main:app --reload
-else
-	# production mode
-	simcore-service-catalog
-endif
-	# stop
-
-
-up-pg: down-pg
+.PHONY: run-devel down
+run-devel: down ## runs app with pg fixture for development
 	# starting pg database ...
 	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml up --detach
+	# starting service
+	export SECRET_KEY="d0d0397de2c85ad26ffd4a0f9643dfe3a0ca3937f99cf3c2e174e11b5ef79880"; \
+	uvicorn simcore_service_api_gateway.main:the_app --reload --port=8001 --host=0.0.0.0
+	# stop
 
-down-pg: ## stops pg fixture
+down: ## stops pg fixture
 	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml down
 
-
-.PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
-build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## docker image build in many flavours
-	# building ${APP_NAME} ...
-	@$(MAKE) --directory ${REPO_BASE_DIR} $@ target=${APP_NAME}
-
-
-.PHONY: openapi-specs
-openapi-specs: install-dev ## TODO: implementing a way to serialize openapi
-	python3 -c "from simcore_service_catalog.main import *; dump_openapi()"
+.PHONY: build
+build: ## builds docker image (using main services/docker-compose-build.yml)
+	@$(MAKE) --directory ${REPO_BASE_DIR} target=${APP_NAME} $@
 
 
 .PHONY: replay
 replay: .cookiecutterrc ## re-applies cookiecutter
-	# Replaying ../cookiecutter-simcore-py-fastapi/ ...
+	# Replaying /home/crespo/devp/osparc-simcore/services/api-gateway/../../../cookiecutter-simcore-py-fastapi ...
 	@cookiecutter --no-input --overwrite-if-exists \
 		--config-file=$< \
 		--output-dir="$(abspath $(CURDIR)/..)" \
-		"../cookiecutter-simcore-py-fastapi/"
+		"/home/crespo/devp/osparc-simcore/services/api-gateway/../../../cookiecutter-simcore-py-fastapi"
