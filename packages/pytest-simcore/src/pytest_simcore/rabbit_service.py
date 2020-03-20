@@ -3,13 +3,14 @@
 # pylint:disable=redefined-outer-name
 
 import os
-from typing import Dict
+from typing import Dict, Tuple
 
 import aio_pika
 import pytest
 import tenacity
 
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
+from simcore_sdk.config.rabbit import Config
 
 from .helpers.utils_docker import get_service_published_port
 
@@ -40,6 +41,67 @@ async def rabbit_service(rabbit_config: Dict, docker_stack: Dict) -> str:
     url = "amqp://{user}:{password}@{host}:{port}".format(**rabbit_config)
     wait_till_rabbit_responsive(url)
     yield url
+
+
+@pytest.fixture(scope="function")
+async def rabbit_connection(rabbit_service: str) -> aio_pika.RobustConnection:
+    # create connection
+    connection = await aio_pika.connect_robust(
+        rabbit_service, client_properties={"connection_name": "pytest read connection"}
+    )
+    assert connection
+    assert not connection.is_closed
+
+    yield connection
+    # close connection
+    await connection.close()
+    assert connection.is_closed
+
+
+@pytest.fixture(scope="function")
+async def rabbit_channel(
+    rabbit_connection: aio_pika.RobustConnection,
+) -> aio_pika.Channel:
+    # create channel
+    channel = await rabbit_connection.channel()
+    assert channel
+    yield channel
+    # close channel
+    await channel.close()
+
+
+@pytest.fixture(scope="function")
+async def rabbit_exchange(
+    rabbit_channel: aio_pika.Channel,
+) -> Tuple[aio_pika.Exchange, aio_pika.Exchange]:
+    rb_config = Config()
+
+    # declare log exchange
+    LOG_EXCHANGE_NAME: str = rb_config.log_channel
+    logs_exchange = await rabbit_channel.declare_exchange(
+        LOG_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT, auto_delete=True
+    )
+    # declare progress exchange
+    PROGRESS_EXCHANGE_NAME: str = rb_config.progress_channel
+    progress_exchange = await rabbit_channel.declare_exchange(
+        PROGRESS_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT, auto_delete=True
+    )
+
+    yield logs_exchange, progress_exchange
+
+
+@pytest.fixture(scope="function")
+async def rabbit_queue(
+    rabbit_channel: aio_pika.Channel,
+    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
+) -> aio_pika.Queue:
+    (logs_exchange, progress_exchange) = rabbit_exchange
+    # declare queue
+    queue = await rabbit_channel.declare_queue(exclusive=True)
+    # Binding queue to exchange
+    await queue.bind(logs_exchange)
+    await queue.bind(progress_exchange)
+    yield queue
 
 
 # HELPERS --
