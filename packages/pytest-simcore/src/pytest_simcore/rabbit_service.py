@@ -109,4 +109,5 @@ async def rabbit_queue(
 
 @tenacity.retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
 async def wait_till_rabbit_responsive(url: str) -> None:
-    await aio_pika.connect(url)
+    connection = await aio_pika.connect(url)
+    await connection.close()
