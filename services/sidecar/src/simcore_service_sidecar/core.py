@@ -1,3 +1,4 @@
+ # pylint: disable=no-member
 import asyncio
 import json
 import logging
@@ -16,16 +17,24 @@ from sqlalchemy import and_, exc
 
 from servicelib.utils import logged_gather
 from simcore_sdk import node_data, node_ports
-from simcore_sdk.models.pipeline_models import (RUNNING, SUCCESS,
-                                                ComputationalPipeline,
-                                                ComputationalTask)
+from simcore_sdk.models.pipeline_models import (
+    RUNNING,
+    SUCCESS,
+    ComputationalPipeline,
+    ComputationalTask,
+)
 from simcore_sdk.node_ports import log as node_port_log
 from simcore_sdk.node_ports.dbmanager import DBManager
 
 from . import config
 from .rabbitmq import RabbitMQ
-from .utils import (DbSettings, DockerSettings, ExecutorSettings, S3Settings,
-                    find_entry_point, is_node_ready)
+from .utils import (
+    DbSettings,
+    DockerSettings,
+    ExecutorSettings,
+    find_entry_point,
+    is_node_ready,
+)
 
 log = get_task_logger(__name__)
 log.setLevel(config.SIDECAR_LOGLEVEL)
@@ -48,15 +57,16 @@ def session_scope(session_factory):
     finally:
         session.close()
 
+
 class Sidecar(BaseModel):
     _rabbit_mq: RabbitMQ = None
     _docker: DockerSettings = DockerSettings()
-    _db: DbSettings = DbSettings() # keeps single db engine: sidecar.utils_{id}
-    _db_manager: Any = None # lazy init because still not configured. SEE _get_node_ports
-    _task: ComputationalTask = None # current task
-    _user_id: str = None # current user id
-    _stack_name: str = None # stack name
-    _executor: ExecutorSettings = ExecutorSettings() # executor options
+    _db: DbSettings = DbSettings()  # keeps single db engine: sidecar.utils_{id}
+    _db_manager: Any = None  # lazy init because still not configured. SEE _get_node_ports
+    _task: ComputationalTask = None  # current task
+    _user_id: str = None  # current user id
+    _stack_name: str = None  # stack name
+    _executor: ExecutorSettings = ExecutorSettings()  # executor options
 
     async def _get_node_ports(self):
         if self._db_manager is None:
@@ -173,9 +183,6 @@ class Sidecar(BaseModel):
         #     else:
         #         # just send as log
         #         await self._post_log(channel, msg=line)
-
-        
-
 
         # try:
         #     TIME_BETWEEN_LOGS_S: int = 2
@@ -480,7 +487,7 @@ class Sidecar(BaseModel):
         await self._rabbit_mq.post_log_message("Preprocessing start...")
         await self.preprocess()
         await self._rabbit_mq.post_log_message("...preprocessing end")
-        
+
         await self._rabbit_mq.post_log_message("Processing start...")
         await self.process()
         await self._rabbit_mq.post_log_message("...processing end")
@@ -526,7 +533,14 @@ class Sidecar(BaseModel):
         finally:
             _session.close()
 
-    async def inspect(self, rabbit_mq: RabbitMQ, job_request_id: int, user_id: str, project_id: str, node_id: str):
+    async def inspect(
+        self,
+        rabbit_mq: RabbitMQ,
+        job_request_id: int,
+        user_id: str,
+        project_id: str,
+        node_id: str,
+    ): # pylint: disable=too-many-arguments
         log.debug(
             "ENTERING inspect with user %s pipeline:node %s: %s",
             user_id,
@@ -534,7 +548,6 @@ class Sidecar(BaseModel):
             node_id,
         )
         self._rabbit_mq = rabbit_mq
-        import pdb; pdb.set_trace()
         next_task_nodes = []
         with session_scope(self._db.Session) as _session:
             _pipeline = (
@@ -554,11 +567,11 @@ class Sidecar(BaseModel):
             # find the for the current node_id, skip if there is already a job_id around
             query = _session.query(ComputationalTask).filter(
                 and_(
-                    ComputationalTask.node_id == node_id,  # pylint: disable=no-member
-                    ComputationalTask.project_id # pylint: disable=no-member
-                    == project_id,  # pylint: disable=no-member
-                    ComputationalTask.job_id == None, # pylint: disable=no-member
-                ) 
+                    ComputationalTask.node_id == node_id,
+                    ComputationalTask.project_id
+                    == project_id,
+                    ComputationalTask.job_id == None,
+                )
             )
             # Use SELECT FOR UPDATE TO lock the row
             query.with_for_update()
@@ -587,8 +600,10 @@ class Sidecar(BaseModel):
                 _session.query(ComputationalTask)
                 .filter(
                     and_(
-                        ComputationalTask.node_id == node_id, # pylint: disable=no-member
-                        ComputationalTask.project_id == project_id, # pylint: disable=no-member
+                        ComputationalTask.node_id
+                        == node_id,
+                        ComputationalTask.project_id
+                        == project_id,
                     )
                 )
                 .one()
