@@ -15,10 +15,11 @@ def test_root_dir_with_installed_plugin(testdir):
     # create a temporary pytest test module
     testdir.makepyfile(
         f"""
+        from pathlib import Path
         pytest_plugins = ["pytest_simcore.environs"]
 
         def test_sth(osparc_simcore_root_dir):
-            assert osparc_simcore_root_dir == {repo_base_dir}
+            assert osparc_simcore_root_dir == Path('{repo_base_dir}')
         """
     )
 
