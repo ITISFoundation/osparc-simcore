@@ -77,4 +77,4 @@ exclude_patterns:
   - "**/generated_code/"
   - "**/migrations/"
   - "**/*.js"
-  - "**/pytest-fixtures/"
+  - "**/pytest-simcore/"
