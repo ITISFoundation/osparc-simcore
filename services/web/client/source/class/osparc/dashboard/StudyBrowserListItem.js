@@ -121,8 +121,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
             zIndex: this.self().menuButtonZIndex -1
           });
           this._add(control, {
-            top: 6,
-            right: 6
+            top: 4,
+            right: 4
           });
           break;
         case "tick-selected":
@@ -130,8 +130,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
             zIndex: this.self().menuButtonZIndex -1
           });
           this._add(control, {
-            top: 6,
-            right: 6
+            top: 4,
+            right: 4
           });
           break;
         case "tags":

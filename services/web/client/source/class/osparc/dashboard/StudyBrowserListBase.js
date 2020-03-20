@@ -16,8 +16,6 @@
 
 ************************************************************************ */
 
-/* eslint "qx-rules/no-refs-in-members": "warn" */
-
 /**
  * Widget used mainly by StudyBrowser for displaying Studies
  *
@@ -39,6 +37,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserListBase", {
     });
 
     this._setLayout(new qx.ui.layout.Canvas());
+
+    this.setPadding(8);
 
     const mainLayout = this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     this._add(mainLayout, {
