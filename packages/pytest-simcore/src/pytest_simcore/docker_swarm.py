@@ -12,7 +12,7 @@ import docker
 import pytest
 import tenacity
 from servicelib.simcore_service_utils import SimcoreRetryPolicyUponInitialization
-
+from .helpers.utils_docker import get_ip
 
 @pytest.fixture(scope="session")
 def docker_client() -> docker.client.DockerClient:
@@ -27,7 +27,7 @@ def docker_swarm(docker_client: docker.client.DockerClient) -> None:
         print("CAUTION: Already part of a swarm")
         yield
     except docker.errors.APIError:
-        docker_client.swarm.init()
+        docker_client.swarm.init(advertise_addr=get_ip())
         yield
         assert docker_client.swarm.leave(force=True)
 
