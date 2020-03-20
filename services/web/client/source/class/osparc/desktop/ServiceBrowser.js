@@ -234,7 +234,7 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
         marginTop: 20
       });
 
-      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       const label = new qx.ui.basic.Label(text).set({
         font: qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]),
         allowStretchX: true
@@ -242,8 +242,8 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
       header.add(label, {
         flex: 1
       });
-      const addServiceButton = new qx.ui.form.Button(this.tr("Add service"), "@FontAwesome5Solid/plus-circle/14");
-      addServiceButton.addListener("execute", () => {
+      let formData = null;
+      const displayForm = () => {
         const addServiceWindow = new qx.ui.window.Window(this.tr("Create a new service")).set({
           appearance: "service-window",
           modal: true,
@@ -257,12 +257,47 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
         });
         const scroll = new qx.ui.container.Scroll();
         addServiceWindow.add(scroll);
-        const form = new osparc.component.form.json.JsonSchemaForm("/resource/form/service.json");
+        const form = new osparc.component.form.json.JsonSchemaForm("/resource/form/service.json", formData);
         form.addListener("ready", () => {
           addServiceWindow.open();
         });
+        form.addListener("submit", e => {
+          addServiceWindow.close();
+          const data = e.getData();
+          const headers = new Headers();
+          headers.append("Accept", "application/json");
+          const body = new FormData();
+          body.append("json", JSON.stringify(data.json));
+          if (data.files && data.files.length) {
+            body.append("file", data.files[0], data.files[0].name);
+          }
+          fetch("/", {
+            method: "POST",
+            headers,
+            body
+          })
+            .then(() => {
+              osparc.component.message.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
+            });
+        });
         scroll.add(form);
+      }
+      const addServiceButton = new qx.ui.form.Button(this.tr("Add service"), "@FontAwesome5Solid/plus-circle/14");
+      const testDataButton = new qx.ui.form.Button(this.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");
+      addServiceButton.addListener("execute", () => {
+        formData = null;
+        displayForm();
       });
+
+      testDataButton.addListener("execute", () => {
+        osparc.utils.Utils.fetchJSON("/resource/form/service-data.json")
+          .then(data => {
+            formData = data;
+            displayForm();
+          });
+      });
+      header.add(testDataButton);
+
       header.add(addServiceButton);
       vBoxLayout.add(header);
 

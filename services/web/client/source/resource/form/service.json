@@ -36,8 +36,7 @@
             "type": "object",
             "title": "Service information",
             "required": [
-                "description",
-                "url"
+                "description"
             ],
             "properties": {
                 "description": {
@@ -48,6 +47,12 @@
                 "url": {
                     "type": "string",
                     "title": "URL of the repository"
+                },
+                "files": {
+                    "type": "string",
+                    "title": "File upload",
+                    "description": "If your code doesn't live inside a repository, you can upload a single .zip file containing it.",
+                    "contentMediaType": "application/zip"
                 }
             }
         },
@@ -163,13 +168,6 @@
                         "title": "Affiliation"
                     }
                 }
-            }
-        },
-        "members": {
-            "type": "array",
-            "maxItems": 1,
-            "items": {
-                "type": "string"
             }
         }
     }
