@@ -15,7 +15,7 @@ import sqlalchemy as sa
 from yarl import URL
 
 from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
-from simcore_service_sidecar import cli, config
+from simcore_service_sidecar import config
 
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = ["storage", "postgres", "rabbit"]
@@ -76,6 +76,8 @@ async def test_run_sleepers(
     user_id: int,
     mocker,
 ):
+    from simcore_service_sidecar import cli
+
     incoming_data = []
 
     async def rabbit_message_handler(message: aio_pika.IncomingMessage):
@@ -89,26 +91,28 @@ async def test_run_sleepers(
     pipeline = create_pipeline(
         tasks={
             "node_1": sleeper_service,
-            # "node_2": sleeper_service,
-            # "node_3": sleeper_service,
-            # "node_4": sleeper_service,
+            "node_2": sleeper_service,
+            "node_3": sleeper_service,
+            "node_4": sleeper_service,
         },
         dag={
-            # "node_1": ["node_2", "node_3"],
-            # "node_2": ["node_4"],
-            # "node_3": ["node_4"],
-            "node_1": [],
+            "node_1": ["node_2", "node_3"],
+            "node_2": ["node_4"],
+            "node_3": ["node_4"],
+            "node_4": [],
         },
     )
 
     next_task_nodes = await cli.run_sidecar(job_id, user_id, pipeline.project_id, None)
-    
+
     assert len(next_task_nodes) == 1
     assert next_task_nodes[0] == "node_1"
 
     for node_id in next_task_nodes:
         job_id += 1
-        next_tasks = await cli.run_sidecar(job_id, user_id, pipeline.project_id, node_id)
+        next_tasks = await cli.run_sidecar(
+            job_id, user_id, pipeline.project_id, node_id
+        )
         if next_tasks:
             next_task_nodes.extend(next_tasks)
     assert next_task_nodes == ["node_1", "node_2", "node_3", "node_4", "node_4"]

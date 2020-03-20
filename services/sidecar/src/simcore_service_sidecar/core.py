@@ -12,8 +12,9 @@ from typing import Any, Dict
 # import aiofiles
 import docker
 from celery.utils.log import get_task_logger
-from pydantic import BaseModel
+from pydantic.dataclasses import dataclass
 from sqlalchemy import and_, exc
+import attr
 
 from servicelib.utils import logged_gather
 from simcore_sdk import node_data, node_ports
@@ -57,12 +58,12 @@ def session_scope(session_factory):
     finally:
         session.close()
 
-
-class Sidecar(BaseModel):
+@attr.s
+class Sidecar:
     rabbit_mq: RabbitMQ = None
     docker: DockerSettings = DockerSettings()
     db: DbSettings = DbSettings()  # keeps single db engine: sidecar.utils_{id}
-    db_manager: Any = None  # lazy init because still not configured. SEE _get_node_ports
+    db_manager: DBManager = None  # lazy init because still not configured. SEE _get_node_ports
     task: ComputationalTask = None  # current task
     user_id: str = None  # current user id
     stack_name: str = None  # stack name
@@ -484,17 +485,17 @@ class Sidecar(BaseModel):
             self.task.node_id,
             self.task.internal_id,
         )
-        await self.rabbit_mq.post_log_message("Preprocessing start...")
+        await self.rabbit_mq.post_log_message(self.user_id, self.task.project_id, self.task.node_id, "Preprocessing start...")
         await self.preprocess()
-        await self.rabbit_mq.post_log_message("...preprocessing end")
+        await self.rabbit_mq.post_log_message(self.user_id, self.task.project_id, self.task.node_id, "...preprocessing end")
 
-        await self.rabbit_mq.post_log_message("Processing start...")
+        await self.rabbit_mq.post_log_message(self.user_id, self.task.project_id, self.task.node_id, "Processing start...")
         await self.process()
-        await self.rabbit_mq.post_log_message("...processing end")
+        await self.rabbit_mq.post_log_message(self.user_id, self.task.project_id, self.task.node_id, "...processing end")
 
-        await self.rabbit_mq.post_log_message("Postprocessing start...")
+        await self.rabbit_mq.post_log_message(self.user_id, self.task.project_id, self.task.node_id, "Postprocessing start...")
         await self.postprocess()
-        await self.rabbit_mq.post_log_message("...postprocessing end")
+        await self.rabbit_mq.post_log_message(self.user_id, self.task.project_id, self.task.node_id, "...postprocessing end")
 
         log.debug(
             "Running Pipeline DONE %s:node %s:internal id %s from container",

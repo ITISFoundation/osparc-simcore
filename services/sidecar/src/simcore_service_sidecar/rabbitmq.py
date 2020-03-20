@@ -20,7 +20,7 @@ class RabbitMQ(BaseModel):
     progress_exchange: aio_pika.Exchange = None
 
     class Config:
-
+        # see https://pydantic-docs.helpmanual.io/usage/types/#arbitrary-types-allowed
         arbitrary_types_allowed = True
 
     async def connect(self):
@@ -46,7 +46,9 @@ class RabbitMQ(BaseModel):
         await self.connection.close()
 
     async def _post_message(self, exchange: aio_pika.Exchange, data: Dict[str, str]):
-        await exchange.publish(message=json.dumps(data))
+        await exchange.publish(
+            aio_pika.Message(body=json.dumps(data).encode()), routing_key=""
+        )
 
     async def post_log_message(
         self,
