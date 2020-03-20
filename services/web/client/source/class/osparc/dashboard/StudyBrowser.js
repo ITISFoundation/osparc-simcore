@@ -129,15 +129,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __initResources: function() {
-      const iframe = this.__loadingIFrame = osparc.utils.Utils.createLoadingIFrame(this.tr("Studies"));
-      this._add(iframe, {
-        flex: 1
-      });
+      this.__showLoadingIFrame(this.tr("Studies"));
 
       this.__getTags()
         .then(() => {
-          this._removeAll();
-          iframe.dispose();
+          this.__hideLoadingIFrame();
           this.__createStudiesLayout();
           this.__reloadStudies();
           this.__attachEventHandlers();
@@ -338,6 +334,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createStudy: function(minStudyData, templateId) {
+      this.__showLoadingIFrame(this.tr("Creating Study"));
       if (templateId) {
         const params = {
           url: {
@@ -367,11 +364,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __startStudy: function(studyData) {
+      this.__showLoadingIFrame(this.tr("Starting Study"));
       osparc.store.Store.getInstance().getServices(false)
         .then(() => {
-          this._remove(this.__loadingIFrame);
-          this.__loadingIFrame.dispose();
-          this.__showChildren(true);
+          this.__hideLoadingIFrame();
           this.__loadStudy(studyData);
         });
     },
@@ -383,15 +379,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.fireDataEvent("startStudy", this.__studyEditor);
     },
 
-    __showChildren: function(show) {
-      let children = this._getChildren();
-      for (let i=0; i<children.length; i++) {
-        if (show) {
-          children[i].setVisibility("visible");
-        } else {
-          children[i].setVisibility("excluded");
-        }
-      }
+    __showStudiesLayout: function(show) {
+      this._getChildren().forEach(children => {
+        children.setVisibility(show ? "visible" : "excluded");
+      });
     },
 
     __createUserStudyList: function() {
@@ -574,11 +565,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (selection.length > 1) {
         this.__itemMultiSelected(item, isTemplate);
       } else if (selected) {
-        this.__showChildren(false);
-        const iframe = this.__loadingIFrame = osparc.utils.Utils.createLoadingIFrame(this.tr("Services"));
-        this._add(iframe, {
-          flex: 1
-        });
         isTemplate ? this.__createStudyBtnClkd(studyData) : this.__startStudy(studyData);
       }
     },
@@ -692,6 +678,30 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __createConfirmWindow: function(isMulti) {
       const msg = isMulti ? this.tr("Are you sure you want to delete the studies?") : this.tr("Are you sure you want to delete the study?");
       return new osparc.ui.window.Confirmation(msg);
+    },
+
+    __showLoadingIFrame: function(label) {
+      this.__hideLoadingIFrame();
+
+      this.__showStudiesLayout(false);
+
+      const iframe = this.__loadingIFrame = osparc.utils.Utils.createLoadingIFrame(label);
+      this._add(iframe, {
+        flex: 1
+      });
+    },
+
+    __hideLoadingIFrame: function() {
+      if (this.__loadingIFrame) {
+        const idx = this._indexOf(this.__loadingIFrame);
+        if (idx !== -1) {
+          this._remove(this.__loadingIFrame);
+        }
+        this.__loadingIFrame.dispose();
+        this.__loadingIFrame = null;
+      }
+
+      this.__showStudiesLayout(true);
     }
   }
 });
