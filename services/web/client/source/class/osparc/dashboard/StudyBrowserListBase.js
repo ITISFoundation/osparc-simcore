@@ -66,12 +66,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserListBase", {
     appearance: {
       refine : true,
       init : "pb-listitem"
-    },
-
-    studyTitle: {
-      check: "String",
-      apply : "_applyStudyTitle",
-      nullable : true
     }
   },
 
@@ -88,15 +82,30 @@ qx.Class.define("osparc.dashboard.StudyBrowserListBase", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "studyTitle":
-          control = new qx.ui.basic.Label(this.getStudyTitle()).set({
+        case "title":
+          control = new qx.ui.basic.Label().set({
             margin: [5, 0],
             font: "title-14",
             rich : true,
             anonymous: true
           });
-          osparc.utils.Utils.setIdToWidget(control, "studyBrowserListNew_title");
           this._mainLayout.addAt(control, 0);
+          break;
+        case "desc1":
+          control = new qx.ui.basic.Label().set({
+            rich: true,
+            allowGrowY: false,
+            anonymous: true
+          });
+          this._mainLayout.addAt(control, 1);
+          break;
+        case "desc2":
+          control = new qx.ui.basic.Label().set({
+            rich: true,
+            allowGrowY: false,
+            anonymous: true
+          });
+          this._mainLayout.addAt(control, 2);
           break;
         case "icon":
           control = new qx.ui.basic.Image().set({
@@ -115,11 +124,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserListBase", {
           break;
       }
       return control || this.base(arguments, id);
-    },
-
-    _applyStudyTitle: function(value, old) {
-      let label = this.getChildControl("studyTitle");
-      label.setValue(value);
     },
 
     _applyIcon: function(value, old) {

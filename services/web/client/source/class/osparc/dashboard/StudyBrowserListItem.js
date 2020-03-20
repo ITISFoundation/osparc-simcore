@@ -62,6 +62,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
       apply : "_applyUuid"
     },
 
+    studyTitle: {
+      check: "String",
+      apply : "_applyStudyTitle",
+      nullable : true
+    },
+
     creator: {
       check: "String",
       apply : "_applyCreator",
@@ -128,24 +134,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
             right: 6
           });
           break;
-        case "creator":
-          control = new qx.ui.basic.Label(this.getCreator()).set({
-            rich: true,
-            allowGrowY: false,
-            anonymous: true
-          });
-          osparc.utils.Utils.setIdToWidget(control, "studyBrowserListItem_creator");
-          this._mainLayout.addAt(control, 1);
-          break;
-        case "lastChangeDate":
-          control = new qx.ui.basic.Label().set({
-            rich: true,
-            allowGrowY: false,
-            anonymous: true
-          });
-          osparc.utils.Utils.setIdToWidget(control, "studyBrowserListItem_lastChangeDate");
-          this._mainLayout.addAt(control, 2);
-          break;
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3));
           this._mainLayout.addAt(control, 4);
@@ -167,13 +155,18 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
       osparc.utils.Utils.setIdToWidget(this, "studyBrowserListItem_"+value);
     },
 
+    _applyStudyTitle: function(value, old) {
+      let label = this.getChildControl("title");
+      label.setValue(value);
+    },
+
     _applyCreator: function(value, old) {
-      let label = this.getChildControl("creator");
+      let label = this.getChildControl("desc1");
       label.setValue(value);
     },
 
     _applylastChangeDate: function(value, old) {
-      let label = this.getChildControl("lastChangeDate");
+      let label = this.getChildControl("desc2");
       if (value) {
         let dateStr = null;
         if (value.getDate() === (new Date()).getDate()) {

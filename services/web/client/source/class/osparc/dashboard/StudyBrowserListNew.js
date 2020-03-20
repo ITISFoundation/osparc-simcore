@@ -34,26 +34,13 @@ qx.Class.define("osparc.dashboard.StudyBrowserListNew", {
   },
 
   members: {
-    // overridden
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "studyDescription":
-          control = new qx.ui.basic.Label(this.tr("Start with a empty study")).set({
-            rich: true,
-            allowGrowY: false,
-            anonymous: true
-          });
-          this._mainLayout.addAt(control, 1);
-          break;
-      }
-
-      return control || this.base(arguments, id);
-    },
-
     __buildLayout: function() {
-      this.setStudyTitle(this.tr("Create New Study"));
-      this.getChildControl("studyDescription");
+      const title = this.getChildControl("title");
+      title.setValue(this.tr("Create New Study"));
+
+      const desc1 = this.getChildControl("desc1");
+      desc1.setValue(this.tr("Start with a empty study"));
+
       this.setIcon("@FontAwesome5Solid/plus-circle/64");
     },
 
