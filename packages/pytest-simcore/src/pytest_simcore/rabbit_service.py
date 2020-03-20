@@ -10,7 +10,8 @@ import pytest
 import tenacity
 
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
-from utils_docker import get_service_published_port
+
+from .helpers.utils_docker import get_service_published_port
 
 
 @pytest.fixture(scope="module")

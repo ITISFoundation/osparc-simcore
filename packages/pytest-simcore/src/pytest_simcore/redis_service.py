@@ -4,13 +4,14 @@
 
 from typing import Dict
 
+import aioredis
 import pytest
 import tenacity
 from yarl import URL
 
-import aioredis
 from servicelib.redis_utils import RedisRetryPolicyUponInitialization
-from utils_docker import get_service_published_port
+
+from .helpers.utils_docker import get_service_published_port
 
 
 @pytest.fixture(scope="module")
