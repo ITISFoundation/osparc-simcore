@@ -20,6 +20,10 @@ SIDECAR_LOGLEVEL: str = getattr(
     logging, os.environ.get("SIDECAR_LOGLEVEL", "WARNING").upper(), logging.WARNING
 )
 
+DOCKER_REGISTRY = os.environ.get("REGISTRY_URL", "masu.speag.com")
+DOCKER_USER = os.environ.get("REGISTRY_USER", "z43")
+DOCKER_PASSWORD = os.environ.get("REGISTRY_PW", "z43")
+
 logging.basicConfig(level=SIDECAR_LOGLEVEL)
 logging.getLogger("sqlalchemy.engine").setLevel(SIDECAR_LOGLEVEL)
 logging.getLogger("sqlalchemy.pool").setLevel(SIDECAR_LOGLEVEL)

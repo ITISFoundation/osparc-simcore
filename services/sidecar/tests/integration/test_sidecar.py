@@ -58,11 +58,15 @@ def create_pipeline(postgres_session: sa.orm.session.Session, project_id: str):
 
 
 @pytest.fixture
-def sidecar_config() -> None:
+def sidecar_config(docker_registry) -> None:
     # NOTE: in integration tests the sidecar runs bare-metal which means docker volume cannot be used.
     config.SIDECAR_DOCKER_VOLUME_INPUT = Path.home() / f"input"
     config.SIDECAR_DOCKER_VOLUME_OUTPUT = Path.home() / f"output"
     config.SIDECAR_DOCKER_VOLUME_LOG = Path.home() / f"log"
+
+    config.DOCKER_REGISTRY = docker_registry
+    config.DOCKER_USER = "simcore"
+    config.DOCKER_PASSWORD = ""
 
 
 async def test_run_sleepers(
@@ -103,7 +107,15 @@ async def test_run_sleepers(
         },
     )
 
+    import asyncio
     next_task_nodes = await cli.run_sidecar(job_id, user_id, pipeline.project_id, None)
+    await asyncio.sleep(5)
+    assert not incoming_data
+    # async with rabbit_queue.iterator() as queue_iter:
+    #     async for message in queue_iter:
+    #         async with message.process():
+                
+    #             incoming_data.append(json.loads(message.body))
 
     assert len(next_task_nodes) == 1
     assert next_task_nodes[0] == "node_1"

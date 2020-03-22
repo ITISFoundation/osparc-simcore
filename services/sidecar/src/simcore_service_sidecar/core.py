@@ -7,13 +7,12 @@ import time
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Dict, List, Union
 
 import aiofiles
 import attr
-import docker
+import aiodocker
 from celery.utils.log import get_task_logger
-from pydantic.dataclasses import dataclass
 from sqlalchemy import and_, exc
 
 from servicelib.utils import logged_gather
@@ -31,7 +30,6 @@ from . import config
 from .rabbitmq import RabbitMQ
 from .utils import (
     DbSettings,
-    DockerSettings,
     ExecutorSettings,
     find_entry_point,
     is_node_ready,
@@ -62,7 +60,6 @@ def session_scope(session_factory):
 @attr.s
 class Sidecar:
     rabbit_mq: RabbitMQ = None
-    docker: DockerSettings = DockerSettings()
     db: DbSettings = DbSettings()  # keeps single db engine: sidecar.utils_{id}
     db_manager: DBManager = None  # lazy init because still not configured. SEE _get_node_ports
     task: ComputationalTask = None  # current task
@@ -139,29 +136,15 @@ class Sidecar:
         log.debug("DUMPING DONE")
 
     async def _pull_image(self):
-        log.debug("PULLING IMAGE")
-        log.debug(
-            "reg %s user %s pwd %s",
-            self.docker.registry,
-            self.docker.registry_user,
-            self.docker.registry_pwd,
-        )
-
+        docker_image = f"{config.DOCKER_REGISTRY}/{self.task.schema['key']}:{self.task.schema['version']}"
+        log.debug("PULLING IMAGE %s as %s with pwd %s", docker_image, config.DOCKER_USER, config.DOCKER_PASSWORD)
         try:
-            self.docker.client.login(
-                registry=self.docker.registry,
-                username=self.docker.registry_user,
-                password=self.docker.registry_pwd,
-            )
-            log.debug("img %s tag %s", self.docker.image_name, self.docker.image_tag)
-
-            self.docker.client.images.pull(
-                self.docker.image_name, tag=self.docker.image_tag
-            )
-        except docker.errors.APIError:
-            msg = f"Failed to pull image '{self.docker.image_name}:{self.docker.image_tag}' from {self.docker.registry,}"
+            docker_client: aiodocker.Docker = aiodocker.Docker()
+            await docker_client.images.pull(docker_image, auth={"username": config.DOCKER_USER, "password": config.DOCKER_PASSWORD})
+        except aiodocker.exceptions.DockerError:
+            msg = f"Failed to pull image '{docker_image}'"
             log.exception(msg)
-            raise docker.errors.APIError(msg)
+            raise
 
     async def log_file_processor(self, log_file: Path) -> None:
         """checks both container logs and the log_file if any
@@ -296,19 +279,11 @@ class Sidecar:
         )
         self.task = task
         self.user_id = user_id
-        self.docker.image_name = self.docker.registry_name + "/" + task.schema["key"]
-        self.docker.image_tag = task.schema["version"]
 
         # volume paths for side-car container
         self.executor.in_dir = Path.home() / f"input/{task.job_id}"
         self.executor.out_dir = Path.home() / f"output/{task.job_id}"
         self.executor.log_dir = Path.home() / f"log/{task.job_id}"
-
-        # volume paths for car container (w/o prefix)
-        self.docker.env = [
-            f"{name.upper()}_FOLDER=/{name}/{task.job_id}"
-            for name in ["input", "output", "log"]
-        ]
 
         # stack name, should throw if not set
         self.stack_name = config.SWARM_STACK_NAME
@@ -352,74 +327,67 @@ class Sidecar:
 
         start_time = time.perf_counter()
         container = None
-        try:
-            docker_image = f"{self.docker.image_name}:{self.docker.image_tag}"
-            container = self.docker.client.containers.run(
-                docker_image,
-                "run",
-                init=True,
-                detach=True,
-                remove=False,
-                volumes={
-                    f"{config.SIDECAR_DOCKER_VOLUME_INPUT}": {"bind": "/input"},
-                    f"{config.SIDECAR_DOCKER_VOLUME_OUTPUT}": {"bind": "/output"},
-                    f"{config.SIDECAR_DOCKER_VOLUME_LOG}": {"bind": "/log"},
-                },
-                environment=self.docker.env,
-                nano_cpus=config.SERVICES_MAX_NANO_CPUS,
-                mem_limit=config.SERVICES_MAX_MEMORY_BYTES,
-                labels={
-                    "user_id": str(self.user_id),
-                    "study_id": str(self.task.project_id),
-                    "node_id": str(self.task.node_id),
-                    "nano_cpus_limit": str(config.SERVICES_MAX_NANO_CPUS),
-                    "mem_limit": str(config.SERVICES_MAX_MEMORY_BYTES),
-                },
-            )
-        except docker.errors.ImageNotFound:
-            log.exception("Run container: Image not found")
-        except docker.errors.APIError:
-            log.exception("Run Container: Server returns error")
+        docker_image = f"{config.DOCKER_REGISTRY}/{self.task.schema['key']}:{self.task.schema['version']}"
 
-        if container:
-            try:
-                while not any(
-                    n in container.status for n in ["not-running", "exited", "removed"]
-                ):
-                    # update status
-                    container.reload()
-                    if (
-                        (time.perf_counter() - start_time)
-                        > config.SERVICES_TIMEOUT_SECONDS
-                        and config.SERVICES_TIMEOUT_SECONDS > 0
-                    ):
-                        log.error(
+        docker_container_config = {
+            "Env": [
+                f"{name.upper()}_FOLDER=/{name}/{self.task.job_id}" for name in ["input", "output", "log"]
+            ],
+            "Cmd": "run",
+            "Image": docker_image,
+            "Labels": {
+                "user_id": str(self.user_id),
+                "study_id": str(self.task.project_id),
+                "node_id": str(self.task.node_id),
+                "nano_cpus_limit": str(config.SERVICES_MAX_NANO_CPUS),
+                "mem_limit": str(config.SERVICES_MAX_MEMORY_BYTES),
+            },
+            "HostConfig": {
+                "Memory": config.SERVICES_MAX_MEMORY_BYTES,
+                "NanoCPUs": config.SERVICES_MAX_NANO_CPUS,
+                "Init": True,
+                "AutoRemove": False,
+                "Binds": [
+                    f"{config.SIDECAR_DOCKER_VOLUME_INPUT}:/input",
+                    f"{config.SIDECAR_DOCKER_VOLUME_OUTPUT}:/output",
+                    f"{config.SIDECAR_DOCKER_VOLUME_LOG}:/log"
+                ],
+            },
+        }
+        
+        # volume paths for car container (w/o prefix)
+        try:
+            docker_client: aiodocker.Docker = aiodocker.Docker()
+            container = await docker_client.containers.run(config=docker_container_config)
+            
+            container_data = await container.show()
+            while container_data["State"]["Running"]:
+                # reload container data
+                container_data = await container.show()
+                if (time.perf_counter() - start_time) > config.SERVICES_TIMEOUT_SECONDS and config.SERVICES_TIMEOUT_SECONDS > 0:
+                    log.error(
                             "Running container timed-out after %ss and will be stopped now\nlogs: %s",
                             config.SERVICES_TIMEOUT_SECONDS,
-                            container.logs(),
+                            await container.logs(stdout=True, stderr=True),
                         )
-                        container.stop()
-
-                    await asyncio.sleep(2)
-                # let's get the container response here
-                response = container.wait()
-                log.info(
-                    "container completed with response %s\nlogs: %s",
-                    response,
-                    container.logs(),
-                )
-            except docker.errors.APIError:
-                log.exception("Run Container: Server returns error")
-            finally:
-                stop_time = time.perf_counter()
-                log.info(
-                    "Running %s took %sseconds", docker_image, stop_time - start_time
-                )
-                container.remove(force=True)
-                log_processor_task.cancel()
-                await log_processor_task
-        else:
-            log.error("Container could not be created: %s", docker_image)
+                    await container.stop()
+                    break
+                await asyncio.sleep(5)
+            # reload container data
+            container_data = await container.show()
+            log.info("%s completed with error code %s and Error %s", docker_image, container_data["State"]["ExitCode"], container_data["State"]["Error"])
+        except aiodocker.exceptions.DockerContainerError:
+            log.exception("Error while running %s with parameters %s", docker_image, docker_container_config)
+        except aiodocker.exceptions.DockerError:
+            log.exception("Unknown error while trying to run %s with parameters %s", docker_image, docker_container_config)
+        finally:
+            stop_time = time.perf_counter()
+            log.info(
+                "Running %s took %sseconds", docker_image, stop_time - start_time
+            )
+            await container.delete(force=True)
+            log_processor_task.cancel()
+            await log_processor_task
 
         log.debug(
             "DONE Processing Pipeline %s:node %s:internal id %s from container",
