@@ -16,11 +16,13 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 def read_reqs(reqs_path: Path):
     return re.findall(r"(^[^#-][\w]+[-~>=<.\w]+)", reqs_path.read_text(), re.MULTILINE)
 
+
 readme = (current_dir / "README.md").read_text()
 version = (current_dir / "VERSION").read_text().strip()
 
 install_requirements = read_reqs(current_dir / "requirements" / "_base.txt") + [
     "s3wrapper==0.1.0",
+    "simcore-postgres-database",
     "simcore-sdk==0.1.0",
     "simcore-service-storage-sdk==0.1.0",
     "simcore-service-library",
