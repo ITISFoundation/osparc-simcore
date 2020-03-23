@@ -226,6 +226,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const userStudyContainer = this.__userStudyContainer = this.__createUserStudyList();
       userStudyContainer.addListener("changeSelection", () => {
         const nSelected = this.__userStudyContainer.getSelection().length;
+        myStudyLabel.setVisibility(nSelected ? "visible" : "excluded");
         this.__userStudyContainer.getChildren().forEach(userStudyItem => {
           userStudyItem.multiSelection(nSelected);
         });
@@ -252,8 +253,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       tempStudyLayout.add(templateTitleContainer);
 
       const templateStudyContainer = this.__templateStudyContainer = this.__createTemplateStudyList();
-      this.__templateStudyContainer.addListener("changeSelection", () => {
+      templateStudyContainer.addListener("changeSelection", () => {
         const nSelected = this.__templateStudyContainer.getSelection().length;
+        tempStudyLabel.setVisibility(nSelected ? "visible" : "excluded");
         this.__newStudyBtn.setEnabled(!nSelected);
         this.__templateStudyContainer.getChildren().forEach(templateStudyItem => {
           if (templateStudyItem instanceof osparc.dashboard.StudyBrowserListItem) {
