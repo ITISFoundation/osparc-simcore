@@ -3,6 +3,10 @@
 #
 include ../../scripts/common.Makefile
 
+.PHONY: requirements
+requirements: ## compiles pip requirements (.in -> .txt)
+	@$(MAKE) --directory requirements reqs
+
 
 .PHONY: install-dev install-prod install-ci
 install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
