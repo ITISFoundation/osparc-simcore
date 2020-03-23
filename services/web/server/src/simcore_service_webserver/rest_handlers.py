@@ -4,6 +4,7 @@
 """
 import asyncio
 from typing import Optional
+import logging
 
 from aiohttp import web
 
@@ -20,12 +21,21 @@ from .diagnostics import (
 from .utils import get_task_info, get_tracemalloc_info
 
 
+log = logging.getLogger(__name__)
+
+
 async def check_health(request: web.Request):
 
     # diagnostics of incidents
     incidents: Optional[IncidentsRegistry] = request.app.get(INCIDENTS_REGISTRY_KEY)
     if incidents:
-        if incidents.max_delay > MAX_DELAY_SECS_ALLOWED:
+        max_delay: float = incidents.eval_max_delay()
+        if max_delay > MAX_DELAY_SECS_ALLOWED:
+            log.error(
+                "Unhealthy service: %s secs delay [%s secs allowed]",
+                max_delay,
+                MAX_DELAY_SECS_ALLOWED,
+            )
             raise web.HTTPServiceUnavailable()
 
     data = {
