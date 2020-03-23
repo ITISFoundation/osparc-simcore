@@ -1,27 +1,27 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import os
 import subprocess
 import time
 from pathlib import Path
+from pprint import pprint
+from typing import Dict
 
 import docker
 import pytest
-import yaml
+import tenacity
+from servicelib.simcore_service_utils import SimcoreRetryPolicyUponInitialization
 
 
 @pytest.fixture(scope="session")
-def docker_client():
+def docker_client() -> docker.client.DockerClient:
     client = docker.from_env()
     yield client
 
 
 @pytest.fixture(scope="module")
-def docker_swarm(docker_client):
+def docker_swarm(docker_client: docker.client.DockerClient) -> None:
     try:
         docker_client.swarm.reload()
         print("CAUTION: Already part of a swarm")
@@ -29,17 +29,42 @@ def docker_swarm(docker_client):
     except docker.errors.APIError:
         docker_client.swarm.init()
         yield
-        # teardown
         assert docker_client.swarm.leave(force=True)
+
+
+@pytest.fixture(scope="session")
+def keep_docker_up(request) -> bool:
+    return request.config.getoption("--keep-docker-up") == True
+
+
+@tenacity.retry(**SimcoreRetryPolicyUponInitialization().kwargs)
+def _wait_for_services(docker_client: docker.client.DockerClient) -> None:
+    pre_states = ["NEW", "PENDING", "ASSIGNED", "PREPARING", "STARTING"]
+    services = docker_client.services.list()
+    for service in services:
+        print(f"Waiting for {service.name}...")
+        if service.tasks():
+            task = service.tasks()[0]
+            if task["Status"]["State"].upper() not in pre_states:
+                if not task["Status"]["State"].upper() == "RUNNING":
+                    raise Exception(f"service {service} not running")
+
+
+def _print_services(docker_client: docker.client.DockerClient, msg: str) -> None:
+    print("{:*^100}".format("docker services running " + msg))
+    for service in docker_client.services.list():
+        pprint(service.attrs)
+    print("-" * 100)
 
 
 @pytest.fixture(scope="module")
 def docker_stack(
     docker_swarm,
-    docker_client,
+    docker_client: docker.client.DockerClient,
     core_services_config_file: Path,
     ops_services_config_file: Path,
-):
+    keep_docker_up: bool,
+) -> Dict:
     stacks = {"simcore": core_services_config_file, "ops": ops_services_config_file}
 
     # make up-version
@@ -53,56 +78,31 @@ def docker_stack(
         )
         stacks_up.append(stack_name)
 
-    # wait for the stack to come up
-    def _wait_for_services(retry_count, max_wait_time_s):
-        pre_states = ["NEW", "PENDING", "ASSIGNED", "PREPARING", "STARTING"]
-        services = docker_client.services.list()
-        WAIT_TIME_BEFORE_RETRY = 5
-        start_time = time.time()
-        for service in services:
-            for n in range(retry_count):
-                assert (time.time() - start_time) < max_wait_time_s
-                if service.tasks():
-                    task = service.tasks()[0]
-                    if task["Status"]["State"].upper() not in pre_states:
-                        assert task["Status"]["State"].upper() == "RUNNING"
-                        break
-                print(f"Waiting for {service.name}...")
-                time.sleep(WAIT_TIME_BEFORE_RETRY)
-
-    def _print_services(msg):
-        from pprint import pprint
-
-        print("{:*^100}".format("docker services running " + msg))
-        for service in docker_client.services.list():
-            pprint(service.attrs)
-        print("-" * 100)
-
-    RETRY_COUNT = 12
-    WAIT_TIME_BEFORE_FAILING = 60
-    _wait_for_services(RETRY_COUNT, WAIT_TIME_BEFORE_FAILING)
-    _print_services("[BEFORE TEST]")
+    _wait_for_services(docker_client)
+    _print_services(docker_client, "[BEFORE TEST]")
 
     yield {
         "stacks": stacks_up,
         "services": [service.name for service in docker_client.services.list()],
     }
 
-    _print_services("[AFTER TEST]")
+    _print_services(docker_client, "[AFTER TEST]")
+
+    if keep_docker_up:
+        # skip bringing the stack down
+        return
 
     # clean up. Guarantees that all services are down before creating a new stack!
     #
     # WORKAROUND https://github.com/moby/moby/issues/30942#issue-207070098
     #
-    # docker stack rm services
-
-    # until [ -z "$(docker service ls --filter label=com.docker.stack.namespace=services -q)" ] || [ "$limit" -lt 0 ]; do
-    # sleep 1;
-    # done
-
-    # until [ -z "$(docker network ls --filter label=com.docker.stack.namespace=services -q)" ] || [ "$limit" -lt 0 ]; do
-    # sleep 1;
-    # done
+    #   docker stack rm services
+    #   until [ -z "$(docker service ls --filter label=com.docker.stack.namespace=services -q)" ] || [ "$limit" -lt 0 ]; do
+    #   sleep 1;
+    #   done
+    #   until [ -z "$(docker network ls --filter label=com.docker.stack.namespace=services -q)" ] || [ "$limit" -lt 0 ]; do
+    #   sleep 1;
+    #   done
 
     # make down
     # NOTE: remove them in reverse order since stacks share common networks
@@ -121,4 +121,4 @@ def docker_stack(
         ):
             time.sleep(WAIT_BEFORE_RETRY_SECS)
 
-    _print_services("[AFTER REMOVED]")
+    _print_services(docker_client, "[AFTER REMOVED]")

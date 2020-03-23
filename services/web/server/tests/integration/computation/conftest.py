@@ -9,9 +9,9 @@ from pathlib import Path
 
 import pytest
 
+from pytest_simcore.helpers.utils_login import LoggedUser
+from pytest_simcore.helpers.utils_projects import NewProject
 from simcore_service_webserver.security_roles import UserRole
-from utils_login import LoggedUser
-from utils_projects import NewProject
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 

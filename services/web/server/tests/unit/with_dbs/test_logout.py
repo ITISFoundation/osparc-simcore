@@ -1,8 +1,8 @@
 from aiohttp import web
 
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import LoggedUser
 from simcore_service_webserver.login.cfg import get_storage
-from utils_assert import assert_status
-from utils_login import LoggedUser
 
 
 async def test_logout(client):

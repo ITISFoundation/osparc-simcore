@@ -6,12 +6,12 @@
 import pytest
 from aiohttp import web
 
+from pytest_simcore.helpers.utils_assert import assert_error, assert_status
+from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login.cfg import cfg, get_storage
 from simcore_service_webserver.login.registration import get_confirmation_info
-from utils_assert import assert_error, assert_status
-from utils_login import NewInvitation, NewUser, parse_link
 
 EMAIL, PASSWORD = "tester@test.com", "password"
 

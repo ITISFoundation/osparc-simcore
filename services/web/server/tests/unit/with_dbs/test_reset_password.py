@@ -8,12 +8,12 @@ import pytest
 from aiohttp import web
 from yarl import URL
 
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import NewUser, parse_link, parse_test_marks
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login import APP_LOGIN_CONFIG
 from simcore_service_webserver.login.utils import get_random_string
-from utils_assert import assert_status
-from utils_login import NewUser, parse_link, parse_test_marks
 
 EMAIL, PASSWORD = "tester@test.com", "password"
 

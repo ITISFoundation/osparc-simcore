@@ -7,10 +7,10 @@
 from aiohttp import web
 from yarl import URL
 
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import LoggedUser, parse_link
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.login import APP_LOGIN_CONFIG
-from utils_assert import assert_status
-from utils_login import LoggedUser, parse_link
 
 NEW_PASSWORD = "NewPassword1*&^"
 
