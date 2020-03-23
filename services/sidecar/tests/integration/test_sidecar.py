@@ -58,7 +58,7 @@ def create_pipeline(postgres_session: sa.orm.session.Session, project_id: str):
 
 
 @pytest.fixture
-def sidecar_config(docker_registry) -> None:
+def sidecar_config(postgres_dsn: Dict[str, str],  docker_registry: str) -> None:
     # NOTE: in integration tests the sidecar runs bare-metal which means docker volume cannot be used.
     config.SIDECAR_DOCKER_VOLUME_INPUT = Path.home() / f"input"
     config.SIDECAR_DOCKER_VOLUME_OUTPUT = Path.home() / f"output"
@@ -67,6 +67,11 @@ def sidecar_config(docker_registry) -> None:
     config.DOCKER_REGISTRY = docker_registry
     config.DOCKER_USER = "simcore"
     config.DOCKER_PASSWORD = ""
+
+    config.POSTGRES_DB = postgres_dsn["database"]
+    config.POSTGRES_ENDPOINT = f"{postgres_dsn['host']}:{postgres_dsn['port']}"
+    config.POSTGRES_USER = postgres_dsn["user"]
+    config.POSTGRES_PW = postgres_dsn["password"]
 
 
 async def test_run_sleepers(

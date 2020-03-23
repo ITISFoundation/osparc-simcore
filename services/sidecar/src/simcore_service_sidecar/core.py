@@ -14,7 +14,7 @@ import attr
 import aiodocker
 from celery.utils.log import get_task_logger
 from sqlalchemy import and_, exc
-
+import aiopg
 from servicelib.utils import logged_gather
 from simcore_sdk import node_data, node_ports
 from simcore_sdk.models.pipeline_models import (
@@ -59,6 +59,7 @@ def session_scope(session_factory):
 
 @attr.s
 class Sidecar:
+    db_engine: aiopg.sa.Engine = None
     rabbit_mq: RabbitMQ = None
     db: DbSettings = DbSettings()  # keeps single db engine: sidecar.utils_{id}
     db_manager: DBManager = None  # lazy init because still not configured. SEE _get_node_ports
@@ -478,6 +479,7 @@ class Sidecar:
 
     async def inspect(
         self,
+        db_engine: aiopg.sa.Engine,
         rabbit_mq: RabbitMQ,
         job_request_id: int,
         user_id: str,
@@ -490,6 +492,7 @@ class Sidecar:
             project_id,
             node_id,
         )
+        self.db_engine = db_engine
         self.rabbit_mq = rabbit_mq
         next_task_nodes = []
         with session_scope(self.db.Session) as _session:
