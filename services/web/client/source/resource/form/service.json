@@ -48,6 +48,12 @@
                     "type": "string",
                     "title": "URL of the repository"
                 },
+                "codeVariant": {
+                    "type": "string",
+                    "title": "Language/Code type",
+                    "description": "Choose one of the accepted options.",
+                    "enum": ["matlab", "opencor", "python"]
+                },
                 "files": {
                     "type": "string",
                     "title": "File upload",

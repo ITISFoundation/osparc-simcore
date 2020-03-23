@@ -103,6 +103,11 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
             input = new osparc.ui.form.FileInput([extension]);
             break;
           }
+          if (this.__schema.enum && this.__schema.enum.length) {
+            input = new osparc.ui.form.ListItemSelectBox();
+            this.__schema.enum.forEach(element => input.add(element));
+            break;
+          }
         default:
           input = new qx.ui.form.TextField().set({
             required: validation && validation.required ? true : false
