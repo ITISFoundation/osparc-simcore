@@ -82,7 +82,7 @@ COPY --chown=scu:scu services/web/server /build/services/web/server
 
 WORKDIR /build/services/web/server
 
-RUN pip --no-cache-dir install -r requirements/prod.txt &&
+RUN pip --no-cache-dir install -r requirements/prod.txt &&\
   pip --no-cache-dir list -v
 
 # --------------------------Production stage -------------------
