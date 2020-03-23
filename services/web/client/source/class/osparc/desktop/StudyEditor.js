@@ -646,14 +646,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       // callback for node updates
       const slotName3 = "nodeUpdated";
       socket.removeSlot(slotName3);
-      socket.on(slotName3, function(data) {
+      socket.on(slotName3, data => {
         const d = JSON.parse(data);
         const nodeId = d["Node"];
         const nodeData = d["Data"];
         const workbench = this.getStudy().getWorkbench();
         const node = workbench.getNode(nodeId);
         if (node) {
-          node.setOutputData(nodeData);
+          node.setOutputData(nodeData.outputs);
           if (nodeData.progress) {
             const progress = Number.parseInt(nodeData.progress);
             node.setProgress(progress);
