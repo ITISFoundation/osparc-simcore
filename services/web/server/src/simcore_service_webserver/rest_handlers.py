@@ -3,6 +3,7 @@
 
 """
 import asyncio
+from typing import Optional
 
 from aiohttp import web
 
@@ -11,11 +12,21 @@ from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_utils import body_to_dict, extract_and_validate
 
 from . import __version__
+from .diagnostics import (
+    INCIDENTS_REGISTRY_KEY,
+    MAX_DELAY_SECS_ALLOWED,
+    IncidentsRegistry,
+)
 from .utils import get_task_info, get_tracemalloc_info
 
 
 async def check_health(request: web.Request):
-    await extract_and_validate(request)
+
+    # diagnostics of incidents
+    incidents: Optional[IncidentsRegistry] = request.app.get(INCIDENTS_REGISTRY_KEY)
+    if incidents:
+        if incidents.max_delay > MAX_DELAY_SECS_ALLOWED:
+            raise web.HTTPServiceUnavailable()
 
     data = {
         "name": __name__.split(".")[0],
@@ -23,7 +34,6 @@ async def check_health(request: web.Request):
         "status": "SERVICE_RUNNING",
         "api_version": str(__version__),
     }
-
     return data
 
 

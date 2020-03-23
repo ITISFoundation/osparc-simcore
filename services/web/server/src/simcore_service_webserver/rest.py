@@ -45,6 +45,7 @@ def load_openapi_specs(spec_path: Optional[Path] = None) -> OpenApiSpecs:
     return specs
 
 
+
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
