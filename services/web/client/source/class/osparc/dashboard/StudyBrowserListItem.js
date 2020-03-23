@@ -68,6 +68,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
       nullable : true
     },
 
+    studyDescription: {
+      check: "String",
+      apply : "_applyStudyDescription",
+      nullable : true
+    },
+
     creator: {
       check: "String",
       apply : "_applyCreator",
@@ -158,6 +164,13 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
     _applyStudyTitle: function(value, old) {
       let label = this.getChildControl("title");
       label.setValue(value);
+    },
+
+    _applyStudyDescription: function(value, old) {
+      if (value) {
+        const label = this.getChildControl("desc2");
+        label.setValue(value);
+      }
     },
 
     _applyCreator: function(value, old) {

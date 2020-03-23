@@ -438,11 +438,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const item = new osparc.dashboard.StudyBrowserListItem().set({
         uuid: study.uuid,
         studyTitle: study.name,
-        icon: study.thumbnail || "@FontAwesome5Solid/flask/50",
         creator: study.prjOwner ? study.prjOwner : null,
-        lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
+        icon: study.thumbnail || "@FontAwesome5Solid/flask/50",
         tags
       });
+      if (isTemplate) {
+        item.set({
+          studyDescription: isTemplate ? study.description : null
+        });
+      } else {
+        item.set({
+          lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null
+        });
+      }
       const menu = this.__getStudyItemMenu(item, study, isTemplate);
       item.setMenu(menu);
       item.subscribeToFilterGroup("studyBrowser");
