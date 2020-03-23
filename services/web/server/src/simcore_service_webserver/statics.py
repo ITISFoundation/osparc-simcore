@@ -9,6 +9,8 @@
 import json
 import logging
 import os
+import shutil
+import tempfile
 from pathlib import Path
 
 from aiohttp import web
@@ -17,22 +19,28 @@ from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
 INDEX_RESOURCE_NAME = "statics.index"
+TMPDIR_KEY = f"{__name__}.tmpdir"
 
 log = logging.getLogger(__file__)
 
 
 def get_client_outdir(app: web.Application) -> Path:
     cfg = app[APP_CONFIG_KEY]["main"]
-
-    # pylint 2.3.0 produces 'E1101: Instance of 'Path' has no 'expanduser' member (no-member)' ONLY
-    # with the installed code and not with the development code!
-    client_dir = Path(cfg["client_outdir"]).expanduser()  # pylint: disable=E1101
+    client_dir = Path(cfg["client_outdir"]).expanduser()
     if not client_dir.exists():
-        txt = reason = "Front-end application is not available"
-        if cfg["testing"]:
-            reason = "Invalid client source path: %s" % client_dir
-        raise web.HTTPServiceUnavailable(reason=reason, text=txt)
+        tmp_dir = tempfile.mkdtemp(suffix="client_outdir")
+        log.error(
+            "Invalid client source path [%s]. Defaulting to %s", client_dir, tmp_dir
+        )
+        client_dir = tmp_dir
+        app[TMPDIR_KEY] = tmp_dir
     return client_dir
+
+
+async def _delete_tmps(app: web.Application):
+    tmp_dir = app.get(TMPDIR_KEY)
+    if tmp_dir:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 async def index(request: web.Request):
@@ -58,32 +66,35 @@ def write_statics_file(directory: Path) -> None:
         json.dump(statics, fh)
 
 
-@app_module_setup(__name__, ModuleCategory.ADDON, logger=log)
+@app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
 def setup_statics(app: web.Application):
-    # Front-end Rich Interface Application (RIA)
+    # Serves Front-end Rich Interface Application (RIA)
     app.router.add_get("/", index, name=INDEX_RESOURCE_NAME)
 
     # NOTE: source-output and build-output have both the same subfolder structure
-    outdir = get_client_outdir(app)
+    outdir: Path = get_client_outdir(app)
 
     # Create statics file
     write_statics_file(outdir / "resource")
 
-    EXPECTED_FOLDERS = ["osparc", "resource", "transpiled"]
+    required_dirs = ["osparc", "resource", "transpiled"]
     folders = [x for x in outdir.iterdir() if x.is_dir()]
 
     # Checks integrity of RIA source before serving and warn!
-    for name in EXPECTED_FOLDERS:
+    for name in required_dirs:
         folder_names = [path.name for path in folders]
         if name not in folder_names:
             log.warning(
                 "Missing folders: expected %s, got %s in %s",
-                EXPECTED_FOLDERS,
+                required_dirs,
                 folder_names,
                 outdir,
             )
 
-    # Add statis routes
-    folders = set(folders).union(EXPECTED_FOLDERS)
+    # Add static routes
+    folders = set(folders).union(required_dirs)
     for path in folders:
         app.router.add_static("/" + path.name, path)
+
+    # cleanup
+    app.on_cleanup.append(_delete_tmps)
