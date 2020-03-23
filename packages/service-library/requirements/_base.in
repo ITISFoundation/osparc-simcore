@@ -13,8 +13,9 @@ aiozipkin
 ujson
 werkzeug
 jsonschema
-openapi-core
+openapi-core==0.12.0 # FIXME: until PR#1396  is resolved
 prometheus_client  # TODO: add as optional service-library[monitoring]
 tenacity
 attrs
 trafaret
+aiodebug
