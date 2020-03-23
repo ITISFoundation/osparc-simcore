@@ -3,11 +3,6 @@ from typing import List
 
 import click
 
-from servicelib.aiopg_utils import (
-    PostgresRetryPolicyUponInitialization,
-    create_pg_engine,
-)
-
 from .db import DBContextManager
 from .rabbitmq import RabbitMQContextManager
 from .utils import wrap_async_call
