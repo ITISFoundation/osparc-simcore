@@ -1,22 +1,15 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-import functools
+
 import logging
-from typing import Dict, List, Optional
 
 import pytest
 from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.application_setup import (
-    app_module_setup,
-    ModuleCategory,
-    DependencyError,
-    APP_SETUP_KEY,
-)
+from servicelib.application_setup import (APP_SETUP_KEY, DependencyError,
+                                          ModuleCategory, app_module_setup)
 
 log = logging.getLogger(__name__)
 
