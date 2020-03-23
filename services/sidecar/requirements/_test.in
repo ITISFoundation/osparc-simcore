@@ -16,6 +16,7 @@ pytest-sugar
 
 # fixtures
 aiopg
+docker
 
 # tools for CI
 pylint
