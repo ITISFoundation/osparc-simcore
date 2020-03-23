@@ -46,46 +46,44 @@ async def index(request: web.Request):
         return web.Response(text=ofh.read(), content_type="text/html")
 
 
-def write_statics_file(directory):
+def write_statics_file(directory: Path) -> None:
+    # ensures directory exists
+    os.makedirs(directory, exist_ok=True)
+
+    # create statis fiel
     statics = {}
     statics["stackName"] = os.environ.get("SWARM_STACK_NAME")
     statics["buildDate"] = os.environ.get("BUILD_DATE")
-    with open(directory / "statics.json", "w") as statics_file:
-        json.dump(statics, statics_file)
+    with open(directory / "statics.json", "wt") as fh:
+        json.dump(statics, fh)
 
 
-@app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
+@app_module_setup(__name__, ModuleCategory.ADDON, logger=log)
 def setup_statics(app: web.Application):
-    # TODO: Should serving front-end ria be configurable?
     # Front-end Rich Interface Application (RIA)
-    try:
-        outdir = get_client_outdir(app)
+    app.router.add_get("/", index, name=INDEX_RESOURCE_NAME)
 
-        # Checks integrity of RIA source before serving
-        EXPECTED_FOLDERS = ("osparc", "resource", "transpiled")
-        folders = [x for x in outdir.iterdir() if x.is_dir()]
+    # NOTE: source-output and build-output have both the same subfolder structure
+    outdir = get_client_outdir(app)
 
-        for name in EXPECTED_FOLDERS:
-            folder_names = [path.name for path in folders]
-            if name not in folder_names:
-                raise web.HTTPServiceUnavailable(
-                    reason="Invalid front-end source-output folders"
-                    " Expected %s, got %s in %s"
-                    % (EXPECTED_FOLDERS, folder_names, outdir),
-                    text="Front-end application is not available",
-                )
+    # Create statics file
+    write_statics_file(outdir / "resource")
 
-        # TODO: map ui to /ui or create an alias!?
-        app.router.add_get("/", index, name=INDEX_RESOURCE_NAME)
+    EXPECTED_FOLDERS = ["osparc", "resource", "transpiled"]
+    folders = [x for x in outdir.iterdir() if x.is_dir()]
 
-        # NOTE: source-output and build-output have both the same subfolder structure
-        # TODO: check whether this can be done at oncen
-        for path in folders:
-            app.router.add_static("/" + path.name, path)
+    # Checks integrity of RIA source before serving and warn!
+    for name in EXPECTED_FOLDERS:
+        folder_names = [path.name for path in folders]
+        if name not in folder_names:
+            log.warning(
+                "Missing folders: expected %s, got %s in %s",
+                EXPECTED_FOLDERS,
+                folder_names,
+                outdir,
+            )
 
-        # Create statics file
-        write_statics_file(outdir / "resource")
-
-    except web.HTTPServiceUnavailable as ex:
-        log.exception(ex.text)
-        return
+    # Add statis routes
+    folders = set(folders).union(EXPECTED_FOLDERS)
+    for path in folders:
+        app.router.add_static("/" + path.name, path)
