@@ -3,13 +3,18 @@
 # pylint:disable=redefined-outer-name
 
 import logging
+from typing import Dict
 
 import pytest
 from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.application_setup import (APP_SETUP_KEY, DependencyError,
-                                          ModuleCategory, app_module_setup)
+from servicelib.application_setup import (
+    APP_SETUP_KEY,
+    DependencyError,
+    ModuleCategory,
+    app_module_setup,
+)
 
 log = logging.getLogger(__name__)
 
