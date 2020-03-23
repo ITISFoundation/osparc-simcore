@@ -50,7 +50,13 @@ qx.Class.define("osparc.dashboard.StudyBrowserListNew", {
 
     _shouldApplyFilter: function(data) {
       if (data.text) {
-        return true;
+        const checks = [
+          this.getChildControl("title").getValue().toString(),
+          this.getChildControl("desc1").getValue().toString()
+        ];
+        if (checks.filter(label => label.toLowerCase().trim().includes(data.text)).length == 0) {
+          return true;
+        }
       }
       if (data.tags && data.tags.length) {
         return true;

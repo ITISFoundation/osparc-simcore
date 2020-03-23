@@ -229,7 +229,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         myStudyLabel.setVisibility(nVisibles ? "visible" : "excluded");
       }, this);
       userStudyContainer.addListener("changeSelection", e => {
-        const nSelected = e.getdata().length;
+        const nSelected = e.getData().length;
         this.__userStudyContainer.getChildren().forEach(userStudyItem => {
           userStudyItem.multiSelection(nSelected);
         });
