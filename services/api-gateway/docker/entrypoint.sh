@@ -71,7 +71,7 @@ then
     cd - || exit 1
 fi
 
-if [ ${SC_BOOT_MODE} == "debug-ptvsd" ]
+if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]
 then
   # NOTE: production does NOT pre-installs ptvsd
   pip install --no-cache-dir ptvsd
