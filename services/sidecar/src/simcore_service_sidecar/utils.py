@@ -1,8 +1,9 @@
 import asyncio
 from pathlib import Path
 from typing import List
-
+import logging
 import networkx as nx
+from pydantic import BaseModel
 from sqlalchemy import and_, create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -22,7 +23,7 @@ def find_entry_point(g: nx.DiGraph) -> List:
     return result
 
 
-def is_node_ready(task, graph, _session, _logger):
+def is_node_ready(task: ComputationalTask, graph: nx.DiGraph, _session, _logger: logging.Logger) -> bool:
     # pylint: disable=no-member
     tasks = (
         _session.query(ComputationalTask)
@@ -64,9 +65,7 @@ class DbSettings:
         # self.session = self.Session()
 
 
-class ExecutorSettings:
-    def __init__(self):
-        # shared folders
-        self.in_dir: Path = ""
-        self.out_dir: Path = ""
-        self.log_dir: Path = ""
+class ExecutorSettings(BaseModel):
+    in_dir: Path = ""
+    out_dir: Path = ""
+    log_dir: Path = ""
