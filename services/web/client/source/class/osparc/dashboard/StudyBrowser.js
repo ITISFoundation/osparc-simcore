@@ -224,9 +224,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       userStudyLayout.add(studiesTitleContainer);
 
       const userStudyContainer = this.__userStudyContainer = this.__createUserStudyList();
-      userStudyContainer.addListener("changeSelection", () => {
-        const nSelected = this.__userStudyContainer.getSelection().length;
-        myStudyLabel.setVisibility(nSelected ? "visible" : "excluded");
+      userStudyContainer.addListener("changeVisibility", e => {
+        const nVisibles = e.getData().length;
+        myStudyLabel.setVisibility(nVisibles ? "visible" : "excluded");
+      }, this);
+      userStudyContainer.addListener("changeSelection", e => {
+        const nSelected = e.getdata().length;
         this.__userStudyContainer.getChildren().forEach(userStudyItem => {
           userStudyItem.multiSelection(nSelected);
         });
@@ -253,9 +256,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       tempStudyLayout.add(templateTitleContainer);
 
       const templateStudyContainer = this.__templateStudyContainer = this.__createTemplateStudyList();
-      templateStudyContainer.addListener("changeSelection", () => {
-        const nSelected = this.__templateStudyContainer.getSelection().length;
-        tempStudyLabel.setVisibility(nSelected ? "visible" : "excluded");
+      templateStudyContainer.addListener("changeVisibility", e => {
+        const nVisibles = e.getData().length;
+        tempStudyLabel.setVisibility(nVisibles ? "visible" : "excluded");
+      }, this);
+
+      templateStudyContainer.addListener("changeSelection", e => {
+        const nSelected = e.getData().length;
         this.__newStudyBtn.setEnabled(!nSelected);
         this.__templateStudyContainer.getChildren().forEach(templateStudyItem => {
           if (templateStudyItem instanceof osparc.dashboard.StudyBrowserListItem) {
