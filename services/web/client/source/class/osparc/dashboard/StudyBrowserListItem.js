@@ -50,40 +50,47 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
   },
 
   properties: {
+    isTemplate: {
+      check: "Boolean",
+      nullable: false,
+      init: false,
+      event: "changeIsTemplate"
+    },
+
     menu: {
-      check : "qx.ui.menu.Menu",
-      nullable : true,
-      apply : "_applyMenu",
-      event : "changeMenu"
+      check: "qx.ui.menu.Menu",
+      nullable: true,
+      apply: "_applyMenu",
+      event: "changeMenu"
     },
 
     uuid: {
       check: "String",
-      apply : "_applyUuid"
+      apply: "_applyUuid"
     },
 
     studyTitle: {
       check: "String",
-      apply : "_applyStudyTitle",
-      nullable : true
+      apply: "_applyStudyTitle",
+      nullable: true
     },
 
     studyDescription: {
       check: "String",
-      apply : "_applyStudyDescription",
-      nullable : true
+      apply: "_applyStudyDescription",
+      nullable: true
     },
 
     creator: {
       check: "String",
-      apply : "_applyCreator",
-      nullable : true
+      apply: "_applyCreator",
+      nullable: true
     },
 
     lastChangeDate: {
-      check : "Date",
-      apply : "_applylastChangeDate",
-      nullable : true
+      check: "Date",
+      apply: "_applyLastChangeDate",
+      nullable: true
     },
 
     tags: {
@@ -167,20 +174,15 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
     },
 
     _applyStudyDescription: function(value, old) {
-      if (value) {
-        const label = this.getChildControl("desc2");
+      if (value !== "" && this.getIsTemplate()) {
+        const label = this.getChildControl("desc1");
         label.setValue(value);
       }
     },
 
-    _applyCreator: function(value, old) {
-      let label = this.getChildControl("desc1");
-      label.setValue(value);
-    },
-
-    _applylastChangeDate: function(value, old) {
-      let label = this.getChildControl("desc2");
-      if (value) {
+    _applyLastChangeDate: function(value, old) {
+      if (value && !this.getIsTemplate()) {
+        const label = this.getChildControl("desc1");
         let dateStr = null;
         if (value.getDate() === (new Date()).getDate()) {
           dateStr = this.tr("Today");
@@ -191,8 +193,13 @@ qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
         }
         const timeStr = this.__timeFormat.format(value);
         label.setValue(dateStr + " " + timeStr);
-      } else {
-        label.resetValue();
+      }
+    },
+
+    _applyCreator: function(value, old) {
+      if (this.getIsTemplate()) {
+        const label = this.getChildControl("desc2");
+        label.setValue(value);
       }
     },
 
