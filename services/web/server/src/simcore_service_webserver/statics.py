@@ -12,6 +12,7 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
+from typing import Set
 
 from aiohttp import web
 
@@ -92,7 +93,7 @@ def setup_statics(app: web.Application):
             )
 
     # Add static routes
-    folders = set(folders).union(required_dirs)
+    folders: Set[Path] = set(folders).union([outdir / name for name in required_dirs])
     for path in folders:
         app.router.add_static("/" + path.name, path)
 
