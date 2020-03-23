@@ -30,6 +30,7 @@ from .studies_access import setup_studies_access
 from .tags import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
+from .publications import setup_publications
 
 log = logging.getLogger(__name__)
 
@@ -78,6 +79,7 @@ def create_application(config: Dict) -> web.Application:
     setup_resource_manager(app)
     setup_tags(app)
     setup_catalog(app)
+    setup_publications(app)
 
     return app
 

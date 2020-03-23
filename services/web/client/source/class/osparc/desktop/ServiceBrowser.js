@@ -262,23 +262,31 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
           addServiceWindow.open();
         });
         form.addListener("submit", e => {
-          addServiceWindow.close();
+          form.setFetching(true);
           const data = e.getData();
           const headers = new Headers();
           headers.append("Accept", "application/json");
           const body = new FormData();
-          body.append("json", JSON.stringify(data.json));
+          body.append("data", new Blob([JSON.stringify(data.json)], {
+            type: "application/json"
+          }));
           if (data.files && data.files.length) {
             body.append("file", data.files[0], data.files[0].name);
           }
-          fetch("/", {
+          fetch("/v0/publications/service-submission", {
             method: "POST",
             headers,
             body
           })
-            .then(() => {
-              osparc.component.message.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
-            });
+            .then(resp => {
+              if (resp.ok) {
+                osparc.component.message.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
+                addServiceWindow.close();
+              } else {
+                osparc.component.message.FlashMessenger.logAs("A problem occured while processing your data.", "ERROR");
+              }
+            })
+            .finally(() => form.setFetching(false));
         });
         scroll.add(form);
       }

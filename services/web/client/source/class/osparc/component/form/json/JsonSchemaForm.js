@@ -69,8 +69,8 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         this._add(this.__expand(null, schema, this.__data));
         // Buttons
         const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-        const submitBtn = new osparc.ui.form.FetchButton(this.tr("Submit"));
-        submitBtn.addListener("execute", () => {
+        this.__submitBtn = new osparc.ui.form.FetchButton(this.tr("Submit"));
+        this.__submitBtn.addListener("execute", () => {
           if (this.__validationManager.validate()) {
             const formData = this.toObject();
             if (this.__validate(schema, formData.json)) {
@@ -78,7 +78,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
             }
           }
         }, this);
-        buttonContainer.add(submitBtn);
+        buttonContainer.add(this.__submitBtn);
         this._add(buttonContainer);
       } else {
         // Validation failed
@@ -229,6 +229,12 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
           input = new qx.ui.form.TextField();
       }
       return input;
+    },
+    /**
+     * Function for setting the fetching state of the submit button.
+     */
+    setFetching: function(isFetching) {
+      this.__submitBtn.setFetching(isFetching);
     }
   }
 });

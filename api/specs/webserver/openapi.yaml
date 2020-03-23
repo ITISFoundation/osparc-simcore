@@ -43,6 +43,10 @@ tags:
       defines the protocol for the frontend to interact with the node.
   - name: configuration
   - name: maintenance
+  - name: publications
+    description: |
+      oSPARC users can make publications. Starting from submission of new service candidates, but this could
+      end up accepting other types of publications.
 
 
 paths:
@@ -165,8 +169,13 @@ paths:
   # TAGS -------------------------------------------------------------------------
   /tags:
     $ref: './openapi-tags.yaml#/paths/~1tags'
+    
   /tags/{tag_id}:
     $ref: './openapi-tags.yaml#/paths/~1tags~1{tag_id}'
+
+  # PUBLICATIONS -------------------------------------------------------------------------
+  /publications/service-submission:
+    $ref: './openapi-publications.yaml#/paths/~1publications~1service-submission'
 
   # CATALOG -------------------------------------------------------------------------
   /catalog/dags:

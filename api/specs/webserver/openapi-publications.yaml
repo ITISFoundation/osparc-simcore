@@ -1,0 +1,34 @@
+paths:
+  /publications/service-submission:
+    post:
+      tags:
+        - publication
+      summary: Submits a new service candidate
+      operationId: service_submission
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - data
+              properties:
+                data:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Submission has been registered
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: boolean
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
