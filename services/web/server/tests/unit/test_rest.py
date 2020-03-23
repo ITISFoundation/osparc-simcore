@@ -13,6 +13,10 @@ from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
+from simcore_service_webserver.diagnostics import (
+    INCIDENTS_REGISTRY_KEY,
+    setup_diagnostics,
+)
 from simcore_service_webserver.resources import resources
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
@@ -31,6 +35,14 @@ def spec_dict(openapi_path):
 def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
     app = create_safe_application()
 
+    MAX_DELAY_SECS_ALLOWED = 1  # secs
+
+    async def slow_handler(request: web.Request):
+        import time
+
+        time.sleep(MAX_DELAY_SECS_ALLOWED * 1.1)
+        raise web.HTTPOk()
+
     server_kwargs = {"port": aiohttp_unused_port(), "host": "localhost"}
     # fake config
     app[APP_CONFIG_KEY] = {
@@ -40,6 +52,9 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
     # activates only security+restAPI sub-modules
     setup_security(app)
     setup_rest(app)
+    setup_diagnostics(app, max_delay_allowed=MAX_DELAY_SECS_ALLOWED)
+
+    app.router.add_get("/slow", slow_handler)
 
     cli = loop.run_until_complete(aiohttp_client(app, server_kwargs=server_kwargs))
     return cli
@@ -57,6 +72,19 @@ async def test_check_health(client, api_version_prefix):
 
     assert data["name"] == "simcore_service_webserver"
     assert data["status"] == "SERVICE_RUNNING"
+
+
+async def test_unhealthy_app(client, api_version_prefix):
+    resp = await client.get(f"/{api_version_prefix}/")
+    await assert_status(resp, web.HTTPOk)
+
+    resp = await client.get("/slow")
+    await assert_status(resp, web.HTTPOk)
+
+    assert len(client.app[INCIDENTS_REGISTRY_KEY].slow_callbaks) >= 1
+
+    resp = await client.get(f"/{api_version_prefix}/")
+    await assert_status(resp, web.HTTPServiceUnavailable)
 
 
 FAKE = {
