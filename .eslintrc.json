@@ -27,7 +27,10 @@
     ],
     "indent": [
       "warn",
-      2
+      2,
+      {
+        "SwitchCase": 1
+      }
     ],
     "object-property-newline": "warn",
     "object-curly-newline": [

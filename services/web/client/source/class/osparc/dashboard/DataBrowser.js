@@ -25,12 +25,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let dataManager = new osparc.desktop.DataBrowser();
+ *   let dataManager = new osparc.dashboard.DataBrowser();
  *   this.getRoot().add(dataManager);
  * </pre>
  */
 
-qx.Class.define("osparc.desktop.DataBrowser", {
+qx.Class.define("osparc.dashboard.DataBrowser", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

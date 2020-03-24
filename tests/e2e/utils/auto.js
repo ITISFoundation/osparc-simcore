@@ -220,10 +220,6 @@ async function dashboardOpenFirstTemplate(page, templateName) {
   const firstChildId = '[osparc-test-id="' + children[0] + '"]'
   await page.waitForSelector(firstChildId)
   await page.click(firstChildId)
-
-  await page.waitForSelector('[osparc-test-id="openStudyBtn"]')
-  console.log("Opening ", templateName)
-  await page.click('[osparc-test-id="openStudyBtn"]')
 }
 
 async function __dashboardFilterStudiesByText(page, templateName) {

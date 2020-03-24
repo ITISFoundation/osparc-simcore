@@ -26,18 +26,18 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let dashboard = new osparc.desktop.Dashboard();
+ *   let dashboard = new osparc.dashboard.Dashboard();
  *   this.getRoot().add(dashboard);
  * </pre>
  */
 
-qx.Class.define("osparc.desktop.Dashboard", {
+qx.Class.define("osparc.dashboard.Dashboard", {
   extend: qx.ui.tabview.TabView,
 
   construct: function() {
     this.base(arguments);
 
-    this.setBarPosition("left");
+    this.setBarPosition("top");
 
     osparc.wrapper.JsonDiffPatch.getInstance().init();
     osparc.wrapper.JsonTreeViewer.getInstance().init();
@@ -71,9 +71,9 @@ qx.Class.define("osparc.desktop.Dashboard", {
 
     __createMainViewLayout: function() {
       [
-        [this.tr("Studies"), this.__createStudiesView],
-        [this.tr("Services"), this.__createServicesLayout],
-        [this.tr("Data"), this.__createDataManagerLayout]
+        [this.tr("Studies"), this.__createStudyBrowser],
+        [this.tr("Services"), this.__createServiceBrowser],
+        [this.tr("Data"), this.__createDataBrowser]
       ].forEach(tuple => {
         const tabPage = new qx.ui.tabview.Page(tuple[0]).set({
           appearance: "dashboard-page"
@@ -97,18 +97,18 @@ qx.Class.define("osparc.desktop.Dashboard", {
       }, this);
     },
 
-    __createStudiesView: function() {
-      const studiesView = this.__prjBrowser = new osparc.desktop.StudyBrowser();
+    __createStudyBrowser: function() {
+      const studiesView = this.__prjBrowser = new osparc.dashboard.StudyBrowser();
       return studiesView;
     },
 
-    __createServicesLayout: function() {
-      const servicesView = this.__serviceBrowser = new osparc.desktop.ServiceBrowser();
+    __createServiceBrowser: function() {
+      const servicesView = this.__serviceBrowser = new osparc.dashboard.ServiceBrowser();
       return servicesView;
     },
 
-    __createDataManagerLayout: function() {
-      const dataManagerView = this.__dataManager = new osparc.desktop.DataBrowser();
+    __createDataBrowser: function() {
+      const dataManagerView = this.__dataManager = new osparc.dashboard.DataBrowser();
       return dataManagerView;
     }
   }
