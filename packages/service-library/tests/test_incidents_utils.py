@@ -15,6 +15,8 @@ def test_limited_ordered_stack():
 
     reg = IntsRegistry(max_size=2)
 
+    assert not reg
+
     reg.append(1)
     reg.append(5)
     assert reg._items == [5, 1]
@@ -37,26 +39,30 @@ def test_incidents_stack():
     class IncidentsRegistry(LimitedOrderedStack[TestIncident]):
         pass
 
-    reg = IncidentsRegistry(max_size=2, order_by=operator.attrgetter("gravity"))
+    incidents = IncidentsRegistry(max_size=2, order_by=operator.attrgetter("gravity"))
+
+    assert not incidents # __len__ == 0
 
     foo = TestIncident("foo", 0)
     bar = TestIncident("bar", 3)
     zoo = TestIncident("zoo", 4)
 
-    reg.append(foo)
-    reg.append(bar)
-    reg.append(zoo)
+    assert incidents
 
-    assert len(reg) == 2
-    assert len(reg) == reg.max_size
-    assert reg.hits == 3
+    incidents.append(foo)
+    incidents.append(bar)
+    incidents.append(zoo)
 
-    assert reg.max_item is zoo
-    assert reg.min_item is bar
+    assert len(incidents) == 2
+    assert len(incidents) == incidents.max_size
+    assert incidents.hits == 3
+
+    assert incidents.max_item is zoo
+    assert incidents.min_item is bar
 
     kuu = TestIncident("kuu", 22)
-    reg.append(kuu)
+    incidents.append(kuu)
 
-    assert reg.max_item is kuu
-    assert len(reg) == 2
-    assert reg.hits == 4
+    assert incidents.max_item is kuu
+    assert len(incidents) == 2
+    assert incidents.hits == 4
