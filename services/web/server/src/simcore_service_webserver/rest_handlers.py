@@ -3,8 +3,8 @@
 
 """
 import asyncio
-from typing import Optional
 import logging
+from typing import Optional
 
 from aiohttp import web
 
@@ -13,13 +13,8 @@ from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_utils import body_to_dict, extract_and_validate
 
 from . import __version__
-from .diagnostics import (
-    INCIDENTS_REGISTRY_KEY,
-    MAX_DELAY_SECS_ALLOWED,
-    IncidentsRegistry,
-)
+from .diagnostics import DiagnosticError, assert_healthy_app
 from .utils import get_task_info, get_tracemalloc_info
-
 
 log = logging.getLogger(__name__)
 
@@ -27,16 +22,12 @@ log = logging.getLogger(__name__)
 async def check_health(request: web.Request):
 
     # diagnostics of incidents
-    incidents: Optional[IncidentsRegistry] = request.app.get(INCIDENTS_REGISTRY_KEY)
-    if incidents:
-        max_delay: float = incidents.eval_max_delay()
-        if max_delay > MAX_DELAY_SECS_ALLOWED:
-            log.error(
-                "Unhealthy service: %s secs delay [%s secs allowed]",
-                max_delay,
-                MAX_DELAY_SECS_ALLOWED,
-            )
-            raise web.HTTPServiceUnavailable()
+    try:
+        assert_healthy_app(request.app)
+    except DiagnosticError as err:
+        msg = f"Unhealthy service: {err}"
+        log.error(msg)
+        raise web.HTTPServiceUnavailable(reason=msg)
 
     data = {
         "name": __name__.split(".")[0],
