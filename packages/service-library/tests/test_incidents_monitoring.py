@@ -22,7 +22,8 @@ async def fails_to_reach_pg_db():
 
 @pytest.fixture
 def incidents_manager(loop):
-    incidents = monitor_slow_callbacks.enable(slow_duration_secs=0.2)
+    incidents = []
+    monitor_slow_callbacks.enable(slow_duration_secs=0.2, incidents=incidents)
 
     f1a = asyncio.ensure_future(slow_task(0.3), loop=loop)
     f1b = asyncio.ensure_future(slow_task(0.3), loop=loop)
