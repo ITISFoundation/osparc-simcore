@@ -6,7 +6,7 @@
  */
 
 /**
- * Container for StudyBrowserListItems or any other ToggleButtons, with some convenient methods.
+ * Container for StudyBrowserButtonItems or any other ToggleButtons, with some convenient methods.
  */
 qx.Class.define("osparc.component.form.ToggleButtonContainer", {
   extend: qx.ui.container.Composite,

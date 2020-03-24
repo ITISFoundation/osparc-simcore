@@ -17,8 +17,8 @@
 
 /**
  * Widget that shows two lists of studies and study editor form:
- * - List1: User's studies (StudyBrowserListItem)
- * - List2: Template studies to start from (StudyBrowserListItem)
+ * - List1: User's studies (StudyBrowserButtonItem)
+ * - List2: Template studies to start from (StudyBrowserButtonItem)
  * - Form: Extra editable information of the selected study
  *
  * It is the entry point to start editing or creatina new study.
@@ -201,7 +201,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createNewStudyButton: function() {
-      const newStudyBtn = this.__newStudyBtn = new osparc.dashboard.StudyBrowserListNew();
+      const newStudyBtn = this.__newStudyBtn = new osparc.dashboard.StudyBrowserButtonNew();
       newStudyBtn.subscribeToFilterGroup("studyBrowser");
       osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
       newStudyBtn.addListener("execute", () => this.__createStudyBtnClkd());
@@ -265,7 +265,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const nSelected = e.getData().length;
         this.__newStudyBtn.setEnabled(!nSelected);
         this.__templateStudyContainer.getChildren().forEach(templateStudyItem => {
-          if (templateStudyItem instanceof osparc.dashboard.StudyBrowserListItem) {
+          if (templateStudyItem instanceof osparc.dashboard.StudyBrowserButtonItem) {
             templateStudyItem.multiSelection(nSelected);
           }
         });
@@ -435,7 +435,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         study.tags ?
           osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id)) :
           [];
-      const item = new osparc.dashboard.StudyBrowserListItem().set({
+      const item = new osparc.dashboard.StudyBrowserButtonItem().set({
         isTemplate,
         uuid: study.uuid,
         studyTitle: study.name,
@@ -650,7 +650,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const canDeleteTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.delete");
       let allMine = Boolean(templateSelection.length) && canDeleteTemplate;
       for (let i=0; i<templateSelection.length && allMine; i++) {
-        if (templateSelection[i] instanceof osparc.dashboard.StudyBrowserListNew) {
+        if (templateSelection[i] instanceof osparc.dashboard.StudyBrowserButtonNew) {
           allMine = false;
         } else {
           const isCurrentUserOwner = templateSelection[i].getCreator() === osparc.auth.Data.getInstance().getEmail();

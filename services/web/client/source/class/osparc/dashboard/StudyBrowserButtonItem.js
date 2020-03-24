@@ -24,8 +24,8 @@
  * It consists of a thumbnail and creator and last change as caption
  */
 
-qx.Class.define("osparc.dashboard.StudyBrowserListItem", {
-  extend: osparc.dashboard.StudyBrowserListBase,
+qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
+  extend: osparc.dashboard.StudyBrowserButtonBase,
 
   construct: function() {
     this.base(arguments);
