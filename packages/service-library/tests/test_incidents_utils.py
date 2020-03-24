@@ -47,12 +47,11 @@ def test_incidents_stack():
     bar = TestIncident("bar", 3)
     zoo = TestIncident("zoo", 4)
 
-    assert incidents
-
     incidents.append(foo)
     incidents.append(bar)
     incidents.append(zoo)
 
+    assert incidents # __len__ != 0
     assert len(incidents) == 2
     assert len(incidents) == incidents.max_size
     assert incidents.hits == 3

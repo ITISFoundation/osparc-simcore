@@ -27,6 +27,7 @@ class LimitedOrderedStack(Generic[ItemT]):
     _hits: int = attr.ib(init=False, default=0)
 
     def __len__(self):
+        # called also for __bool__
         return len(self._items)
 
     @property
@@ -47,7 +48,7 @@ class LimitedOrderedStack(Generic[ItemT]):
 
     def append(self, item: ItemT):
         self._items.append(item)
-        self._hits +=1
+        self._hits += 1
 
         # sort is based on the __lt__ defined in ItemT
         self._items = sorted(self._items, key=self.order_by, reverse=True)
