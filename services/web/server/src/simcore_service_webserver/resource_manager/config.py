@@ -16,7 +16,7 @@ APP_GARBAGE_COLLECTOR_KEY = __name__ + ".resource_manager.garbage_collector_key"
 
 schema = T.Dict(
     {
-        T.Key("enabled", default=True, optional=True): T.Or(T.Bool(), T.Int()),
+        T.Key("enabled", default=True, optional=True): T.Or(T.Bool(), T.ToInt()),
         T.Key(
             "resource_deletion_timeout_seconds", default=900, optional=True
         ): T.ToInt(),

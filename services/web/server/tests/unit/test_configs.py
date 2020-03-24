@@ -238,6 +238,9 @@ def test_resource_manager_config_section(configfile, service_webserver_environ):
         # >>> t.ToInt().check(3)
         # 3
         #
+        # NOTE: Changelog 2.0.2 https://trafaret.readthedocs.io/en/latest/changelog.html
+        #   construct for int and float will use ToInt and ToFloat
+        #
         # RESOLVED: changing the schema from Int() -> ToInt()
         assert isinstance(app_config["resource_manager"]["enabled"], bool)
         assert isinstance(app_config["resource_manager"]["resource_deletion_timeout_seconds"], int)
