@@ -6,13 +6,10 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-import nest_asyncio
-
 from . import data_items_utils, dbmanager, exceptions, serialization
 from ._data_items_list import DataItemsList
 from ._items_list import ItemsList
 from ._schema_items_list import SchemaItemsList
-from .utils import wrap_async_call
 
 log = logging.getLogger(__name__)
 
