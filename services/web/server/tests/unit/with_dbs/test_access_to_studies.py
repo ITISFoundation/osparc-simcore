@@ -17,6 +17,9 @@ import pytest
 from aiohttp import web
 
 import simcore_service_webserver.statics
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import LoggedUser, UserRole
+from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
@@ -30,9 +33,6 @@ from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.statics import setup_statics
 from simcore_service_webserver.studies_access import setup_studies_access
 from simcore_service_webserver.users import setup_users
-from utils_assert import assert_status
-from utils_login import LoggedUser, UserRole
-from utils_projects import NewProject, delete_all_projects
 
 SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
 

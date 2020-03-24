@@ -12,8 +12,9 @@ from typing import Dict, List
 
 import pytest
 import yaml
-
 from aiohttp import web
+
+from pytest_simcore.helpers.utils_environs import eval_service_environ, load_env
 from servicelib.application_setup import is_setup_function
 from simcore_service_webserver.application_config import create_schema
 from simcore_service_webserver.cli import parse, setup_parser
@@ -27,7 +28,6 @@ from simcore_service_webserver.login import (
 from simcore_service_webserver.login.cfg import DEFAULTS as CONFIG_DEFAULTS
 from simcore_service_webserver.login.cfg import Cfg
 from simcore_service_webserver.resources import resources
-from utils_environs import eval_service_environ, load_env
 
 config_yaml_filenames = [str(name) for name in resources.listdir("config")]
 
