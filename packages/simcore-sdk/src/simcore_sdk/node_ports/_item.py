@@ -1,6 +1,7 @@
 import logging
 import shutil
 from pathlib import Path
+from typing import Dict
 
 from . import config, data_items_utils, exceptions, filemanager
 from ._data_item import DataItem
@@ -160,7 +161,9 @@ class Item:
             await self.new_data_cb(new_data)  # pylint: disable=not-callable
             log.debug("database updated")
 
-    async def __get_value_from_link(self, value):  # pylint: disable=R1710
+    async def __get_value_from_link(
+        self, value: Dict[str, str]
+    ):  # pylint: disable=R1710
         log.debug("Getting value %s", value)
         node_uuid, port_key = data_items_utils.decode_link(value)
         if not self.get_node_from_uuid_cb:
@@ -168,14 +171,14 @@ class Item:
                 "callback to get other node information is not set"
             )
         # create a node ports for the other node
-        other_nodeports = self.get_node_from_uuid_cb(
+        other_nodeports = await self.get_node_from_uuid_cb(
             node_uuid
         )  # pylint: disable=not-callable
         # get the port value through that guy
         log.debug("Received node from DB %s, now returning value", other_nodeports)
         return await other_nodeports.get(port_key)
 
-    async def __get_value_from_store(self, value) -> Path:
+    async def __get_value_from_store(self, value: Dict[str, str]) -> Path:
         log.debug("Getting value from storage %s", value)
         store_id, s3_path = data_items_utils.decode_store(value)
         # do not make any assumption about s3_path, it is a str containing stuff that can be anything depending on the store
