@@ -12,11 +12,8 @@ rabbit_config = RabbitConfig()
 setup_remote_debugging()
 
 # TODO: make it a singleton?
-app= Celery(rabbit_config.name,
-    broker=rabbit_config.broker,
-    backend=rabbit_config.backend)
+app = Celery(
+    rabbit_config.name, broker=rabbit_config.broker_url, backend=rabbit_config.backend
+)
 
-__all__ = [
-    "rabbit_config",
-    "app"
-]
+__all__ = ["rabbit_config", "app"]

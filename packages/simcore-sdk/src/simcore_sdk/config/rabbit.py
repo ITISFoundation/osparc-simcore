@@ -56,3 +56,6 @@ class Config(BaseSettings):
     def broker_url(self):
         return f"amqp://{self.user}:{self.password}@{self.host}:{self.port}"
 
+    @property
+    def backend(self):
+        return self.channels["celery"]["result_backend"]
