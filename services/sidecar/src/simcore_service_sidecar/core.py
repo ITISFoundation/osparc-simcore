@@ -107,14 +107,12 @@ class Sidecar:
         input_ports = dict()
         PORTS = await self._get_node_ports()
 
-        for port in await PORTS.inputs:
-            await self._process_task_input(port, input_ports)
-        # await logged_gather(
-        #     *[
-        #         self._process_task_input(port, input_ports)
-        #         for port in (await PORTS.inputs)
-        #     ]
-        # )
+        await logged_gather(
+            *[
+                self._process_task_input(port, input_ports)
+                for port in (await PORTS.inputs)
+            ]
+        )
 
         log.debug("DUMPING json")
         if input_ports:
@@ -171,34 +169,22 @@ class Sidecar:
         async def post_messages(
             accumulated_messages: Dict[str, Union[str, List]]
         ) -> None:
-            await self.rabbit_mq.post_log_message(
-                self.user_id,
-                self.task.project_id,
-                self.task.node_id,
-                accumulated_messages["log"],
+            await logged_gather(
+                [
+                    self.rabbit_mq.post_log_message(
+                        self.user_id,
+                        self.task.project_id,
+                        self.task.node_id,
+                        accumulated_messages["log"],
+                    ),
+                    self.rabbit_mq.post_progress_message(
+                        self.user_id,
+                        self.task.project_id,
+                        self.task.node_id,
+                        accumulated_messages["progress"],
+                    ),
+                ]
             )
-            await self.rabbit_mq.post_progress_message(
-                self.user_id,
-                self.task.project_id,
-                self.task.node_id,
-                accumulated_messages["progress"],
-            )
-            # await logged_gather(
-            #     [
-            #         self.rabbit_mq.post_log_message(
-            #             self.user_id,
-            #             self.task.project_id,
-            #             self.task.node_id,
-            #             accumulated_messages["log"],
-            #         ),
-            #         self.rabbit_mq.post_progress_message(
-            #             self.user_id,
-            #             self.task.project_id,
-            #             self.task.node_id,
-            #             accumulated_messages["progress"],
-            #         ),
-            #     ]
-            # )
 
         try:
             TIME_BETWEEN_LOGS_S: int = 2
@@ -315,9 +301,7 @@ class Sidecar:
             self.task.internal_id,
         )
         await self._create_shared_folders()
-        await self._process_task_inputs()
-        await self._pull_image()
-        # await logged_gather(self._process_task_inputs(), self._pull_image())
+        await logged_gather(self._process_task_inputs(), self._pull_image())
         log.debug(
             "Pre-Processing Pipeline DONE %s:node %s:internal id %s from container",
             self.task.project_id,
