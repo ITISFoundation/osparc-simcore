@@ -171,9 +171,9 @@ class Item:
                 "callback to get other node information is not set"
             )
         # create a node ports for the other node
-        other_nodeports = await self.get_node_from_uuid_cb(
+        other_nodeports = await self.get_node_from_uuid_cb(  # pylint: disable=not-callable
             node_uuid
-        )  # pylint: disable=not-callable
+        )
         # get the port value through that guy
         log.debug("Received node from DB %s, now returning value", other_nodeports)
         return await other_nodeports.get(port_key)

@@ -92,13 +92,11 @@ class _NodeportsEncoder(json.JSONEncoder):
         if isinstance(o, nodeports.Nodeports):
             log.debug("Encoding Nodeports object")
             return {
-                "version": o._version,  # pylint: disable=W0212
-                "schema": {
-                    "inputs": o._input_schemas,
-                    "outputs": o._output_schemas,
-                },  # pylint: disable=W0212
-                "inputs": o._inputs_payloads,  # pylint: disable=W0212
-                "outputs": o._outputs_payloads,  # pylint: disable=W0212
+                # pylint: disable=W0212
+                "version": o._version,
+                "schema": {"inputs": o._input_schemas, "outputs": o._output_schemas,},
+                "inputs": o._inputs_payloads,
+                "outputs": o._outputs_payloads,
             }
         if isinstance(o, SchemaItemsList):
             log.debug("Encoding SchemaItemsList object")
