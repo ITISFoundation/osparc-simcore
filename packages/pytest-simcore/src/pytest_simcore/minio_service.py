@@ -59,3 +59,14 @@ def wait_till_minio_responsive(minio_config: Dict[str, str]) -> bool:
         client.remove_bucket("pytest")
         return True
     raise Exception(f"Minio not responding to {minio_config}")
+
+
+@pytest.fixture(scope="module")
+def bucket(minio_service: S3Client) -> str:
+    bucket_name = "simcore-test"
+    minio_service.create_bucket(bucket_name, delete_contents_if_exists=True)
+    # set env variables
+    os.environ["S3_BUCKET_NAME"] = bucket_name
+    yield bucket_name
+
+    minio_service.remove_bucket(bucket_name, delete_contents=True)
