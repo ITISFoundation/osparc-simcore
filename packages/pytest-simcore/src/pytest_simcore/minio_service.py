@@ -34,6 +34,7 @@ def minio_config(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
     # nodeports takes its configuration from env variables
     for key, value in config["client"].items():
         os.environ[f"S3_{key.upper()}"] = str(value)
+    os.environ[f"S3_SECURE"] = devel_environ["S3_SECURE"]
     os.environ[f"S3_BUCKET_NAME"] = devel_environ["S3_BUCKET_NAME"]
 
     return config
@@ -62,11 +63,9 @@ def wait_till_minio_responsive(minio_config: Dict[str, str]) -> bool:
 
 
 @pytest.fixture(scope="module")
-def bucket(minio_service: S3Client) -> str:
-    bucket_name = "simcore-test"
+def bucket(minio_config: Dict[str, str], minio_service: S3Client) -> str:
+    bucket_name = minio_config["bucket_name"]
     minio_service.create_bucket(bucket_name, delete_contents_if_exists=True)
-    # set env variables
-    os.environ["S3_BUCKET_NAME"] = bucket_name
     yield bucket_name
 
     minio_service.remove_bucket(bucket_name, delete_contents=True)
