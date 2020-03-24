@@ -25,7 +25,7 @@ def storage_endpoint(docker_stack: Dict, devel_environ: Dict) -> URL:
     # nodeports takes its configuration from env variables
     os.environ[f"STORAGE_ENDPOINT"] = endpoint
 
-    return URL(f"{endpoint}")
+    return URL(f"http://{endpoint}")
 
 
 @pytest.fixture(scope="function")
@@ -43,9 +43,7 @@ async def storage_service(
 @tenacity.retry(**MinioRetryPolicyUponInitialization().kwargs)
 async def wait_till_storage_responsive(storage_endpoint: URL):
     async with aiohttp.ClientSession() as session:
-        async with session.get(
-            storage_endpoint.with_scheme("http").with_path("/v0/")
-        ) as resp:
+        async with session.get(storage_endpoint.with_path("/v0/")) as resp:
             assert resp.status == 200
             data = await resp.json()
             assert "data" in data
