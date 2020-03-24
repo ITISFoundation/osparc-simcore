@@ -43,7 +43,7 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
     return cli
 
 
-async def test_check_health(client, api_version_prefix):
+async def test_check_health_entrypoint(client, api_version_prefix):
     resp = await client.get(f"/{api_version_prefix}/")
     payload = await resp.json()
 
@@ -61,7 +61,7 @@ async def test_unhealthy_app_with_slow_callbacks(client, api_version_prefix):
     resp = await client.get(f"/{api_version_prefix}/")
     await assert_status(resp, web.HTTPOk)
 
-    resp = await client.get("/slow")  # too slow!
+    resp = await client.get("/slow")  # emulates a very slow handle!
     await assert_status(resp, web.HTTPOk)
 
     resp = await client.get(f"/{api_version_prefix}/")
