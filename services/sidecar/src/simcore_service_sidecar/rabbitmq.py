@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 
 import aio_pika
 import tenacity
@@ -10,6 +10,15 @@ from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 
 log = logging.getLogger(__file__)
+
+
+def reconnect_callback():
+    log.error("Rabbit reconnected")
+
+
+def channel_close_callback(exc: Optional[BaseException]):
+    if exc:
+        log.error("Rabbit channel closed: %s", exc)
 
 
 class RabbitMQ(BaseModel):
@@ -30,15 +39,16 @@ class RabbitMQ(BaseModel):
         self.connection = await aio_pika.connect_robust(
             url, client_properties={"connection_name": "sidecar connection"},
         )
+        self.connection.add_reconnect_callback(reconnect_callback)
 
         self.channel = await self.connection.channel()
+        self.channel.add_close_callback(channel_close_callback)
+
         self.logs_exchange = await self.channel.declare_exchange(
-            self.config.channels["log"], aio_pika.ExchangeType.FANOUT, auto_delete=True
+            self.config.channels["log"], aio_pika.ExchangeType.FANOUT
         )
         self.progress_exchange = await self.channel.declare_exchange(
-            self.config.channels["progress"],
-            aio_pika.ExchangeType.FANOUT,
-            auto_delete=True,
+            self.config.channels["progress"], aio_pika.ExchangeType.FANOUT,
         )
 
     async def close(self):

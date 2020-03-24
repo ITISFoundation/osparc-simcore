@@ -3,6 +3,7 @@ from typing import List
 
 import click
 
+from .core import Sidecar
 from .db import DBContextManager
 from .rabbitmq import RabbitMQContextManager
 from .utils import wrap_async_call
@@ -41,11 +42,11 @@ def main(job_id: str, user_id: str, project_id: str, node_id: str) -> List[str]:
 async def run_sidecar(
     job_id: str, user_id: str, project_id: str, node_id: str
 ) -> List[str]:
-    from simcore_service_sidecar.core import SIDECAR
 
     async with DBContextManager() as db_engine:
         async with RabbitMQContextManager() as rabbit_mq:
-            next_task_nodes = await SIDECAR.inspect(
+            sidecar = Sidecar()
+            next_task_nodes = await sidecar.inspect(
                 db_engine, rabbit_mq, job_id, user_id, project_id, node_id=node_id
             )
             log.info(

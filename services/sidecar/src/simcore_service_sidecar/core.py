@@ -4,36 +4,34 @@ import json
 import logging
 import shutil
 import time
-from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Union
 
-import aiofiles
-import attr
 import aiodocker
-from celery.utils.log import get_task_logger
-from sqlalchemy import and_, exc
+import aiofiles
 import aiopg
+import attr
+from celery.utils.log import get_task_logger
+from sqlalchemy import and_
+
 from servicelib.utils import logged_gather
-from simcore_sdk import node_data, node_ports
-from simcore_sdk.models.pipeline_models import (
+from simcore_postgres_database.sidecar_models import (
+    FAILED,
+    # PENDING,
     RUNNING,
     SUCCESS,
-    ComputationalPipeline,
-    ComputationalTask,
+    UNKNOWN,
+    comp_pipeline,
+    comp_tasks,
 )
+from simcore_sdk import node_data, node_ports
 from simcore_sdk.node_ports import log as node_port_log
 from simcore_sdk.node_ports.dbmanager import DBManager
 
-from . import config
+from . import config, exceptions
 from .rabbitmq import RabbitMQ
-from .utils import (
-    DbSettings,
-    ExecutorSettings,
-    find_entry_point,
-    is_node_ready,
-)
+from .utils import ExecutorSettings, execution_graph, find_entry_point, is_node_ready
 
 log = get_task_logger(__name__)
 log.setLevel(config.SIDECAR_LOGLEVEL)
@@ -41,29 +39,12 @@ log.setLevel(config.SIDECAR_LOGLEVEL)
 node_port_log.setLevel(config.SIDECAR_LOGLEVEL)
 
 
-@contextmanager
-def session_scope(session_factory):
-    """Provide a transactional scope around a series of operations
-
-    """
-    session = session_factory()
-    try:
-        yield session
-    except:  # pylint: disable=W0702
-        log.exception("DB access error, rolling back")
-        session.rollback()
-        raise
-    finally:
-        session.close()
-
-
 @attr.s
 class Sidecar:
     db_engine: aiopg.sa.Engine = None
+    db_manager: DBManager = None
     rabbit_mq: RabbitMQ = None
-    db: DbSettings = DbSettings()  # keeps single db engine: sidecar.utils_{id}
-    db_manager: DBManager = None  # lazy init because still not configured. SEE _get_node_ports
-    task: ComputationalTask = None  # current task
+    task: comp_tasks = None  # current task
     user_id: str = None  # current user id
     stack_name: str = None  # stack name
     executor: ExecutorSettings = ExecutorSettings()  # executor options
@@ -71,8 +52,8 @@ class Sidecar:
     async def _get_node_ports(self):
         if self.db_manager is None:
             # Keeps single db engine: simcore_sdk.node_ports.dbmanager_{id}
-            self.db_manager = DBManager()
-        return node_ports.ports(self.db_manager)
+            self.db_manager = DBManager(self.db_engine)
+        return await node_ports.ports(self.db_manager)
 
     async def _create_shared_folders(self):
         for folder in [
@@ -125,9 +106,15 @@ class Sidecar:
 
         input_ports = dict()
         PORTS = await self._get_node_ports()
-        await logged_gather(
-            *[self._process_task_input(port, input_ports) for port in PORTS.inputs]
-        )
+
+        for port in await PORTS.inputs:
+            await self._process_task_input(port, input_ports)
+        # await logged_gather(
+        #     *[
+        #         self._process_task_input(port, input_ports)
+        #         for port in (await PORTS.inputs)
+        #     ]
+        # )
 
         log.debug("DUMPING json")
         if input_ports:
@@ -138,10 +125,21 @@ class Sidecar:
 
     async def _pull_image(self):
         docker_image = f"{config.DOCKER_REGISTRY}/{self.task.schema['key']}:{self.task.schema['version']}"
-        log.debug("PULLING IMAGE %s as %s with pwd %s", docker_image, config.DOCKER_USER, config.DOCKER_PASSWORD)
+        log.debug(
+            "PULLING IMAGE %s as %s with pwd %s",
+            docker_image,
+            config.DOCKER_USER,
+            config.DOCKER_PASSWORD,
+        )
         try:
             docker_client: aiodocker.Docker = aiodocker.Docker()
-            await docker_client.images.pull(docker_image, auth={"username": config.DOCKER_USER, "password": config.DOCKER_PASSWORD})
+            await docker_client.images.pull(
+                docker_image,
+                auth={
+                    "username": config.DOCKER_USER,
+                    "password": config.DOCKER_PASSWORD,
+                },
+            )
         except aiodocker.exceptions.DockerError:
             msg = f"Failed to pull image '{docker_image}'"
             log.exception(msg)
@@ -173,27 +171,39 @@ class Sidecar:
         async def post_messages(
             accumulated_messages: Dict[str, Union[str, List]]
         ) -> None:
-            await logged_gather(
-                [
-                    self.rabbit_mq.post_log_message(
-                        self.user_id,
-                        self.task.project_id,
-                        self.task.node_id,
-                        accumulated_messages["log"],
-                    ),
-                    self.rabbit_mq.post_progress_message(
-                        self.user_id,
-                        self.task.project_id,
-                        self.task.node_id,
-                        accumulated_messages["progress"],
-                    ),
-                ]
+            await self.rabbit_mq.post_log_message(
+                self.user_id,
+                self.task.project_id,
+                self.task.node_id,
+                accumulated_messages["log"],
             )
+            await self.rabbit_mq.post_progress_message(
+                self.user_id,
+                self.task.project_id,
+                self.task.node_id,
+                accumulated_messages["progress"],
+            )
+            # await logged_gather(
+            #     [
+            #         self.rabbit_mq.post_log_message(
+            #             self.user_id,
+            #             self.task.project_id,
+            #             self.task.node_id,
+            #             accumulated_messages["log"],
+            #         ),
+            #         self.rabbit_mq.post_progress_message(
+            #             self.user_id,
+            #             self.task.project_id,
+            #             self.task.node_id,
+            #             accumulated_messages["progress"],
+            #         ),
+            #     ]
+            # )
 
         try:
             TIME_BETWEEN_LOGS_S: int = 2
             time_logs_sent = time.monotonic()
-            accumulated_messages = {"log":[], "progress": ""}
+            accumulated_messages = {"log": [], "progress": ""}
             async with aiofiles.open(log_file, mode="r") as fp:
                 async for line in fp:
                     now = time.monotonic()
@@ -202,8 +212,8 @@ class Sidecar:
                         continue
                     # send logs to rabbitMQ (TODO: shield?)
                     await post_messages(accumulated_messages)
-                    accumulated_messages = {"log":[], "progress": ""}
-                    
+                    accumulated_messages = {"log": [], "progress": ""}
+
         except asyncio.CancelledError:
             # the task is complete let's send the last messages if any
             accumulated_messages["progress"] = "1.0"
@@ -238,7 +248,7 @@ class Sidecar:
                     # parse and compare/update with the tasks output ports from db
                     with file_path.open() as fp:
                         output_ports = json.load(fp)
-                        task_outputs = PORTS.outputs
+                        task_outputs = await PORTS.outputs
                         for port in task_outputs:
                             if port.key in output_ports.keys():
                                 await port.set(output_ports[port.key])
@@ -305,7 +315,9 @@ class Sidecar:
             self.task.internal_id,
         )
         await self._create_shared_folders()
-        await logged_gather(self._process_task_inputs(), self._pull_image())
+        await self._process_task_inputs()
+        await self._pull_image()
+        # await logged_gather(self._process_task_inputs(), self._pull_image())
         log.debug(
             "Pre-Processing Pipeline DONE %s:node %s:internal id %s from container",
             self.task.project_id,
@@ -332,7 +344,8 @@ class Sidecar:
 
         docker_container_config = {
             "Env": [
-                f"{name.upper()}_FOLDER=/{name}/{self.task.job_id}" for name in ["input", "output", "log"]
+                f"{name.upper()}_FOLDER=/{name}/{self.task.job_id}"
+                for name in ["input", "output", "log"]
             ],
             "Cmd": "run",
             "Image": docker_image,
@@ -351,41 +364,57 @@ class Sidecar:
                 "Binds": [
                     f"{config.SIDECAR_DOCKER_VOLUME_INPUT}:/input",
                     f"{config.SIDECAR_DOCKER_VOLUME_OUTPUT}:/output",
-                    f"{config.SIDECAR_DOCKER_VOLUME_LOG}:/log"
+                    f"{config.SIDECAR_DOCKER_VOLUME_LOG}:/log",
                 ],
             },
         }
-        
+
         # volume paths for car container (w/o prefix)
         try:
             docker_client: aiodocker.Docker = aiodocker.Docker()
-            container = await docker_client.containers.run(config=docker_container_config)
-            
+            container = await docker_client.containers.run(
+                config=docker_container_config
+            )
+
             container_data = await container.show()
             while container_data["State"]["Running"]:
                 # reload container data
                 container_data = await container.show()
-                if (time.perf_counter() - start_time) > config.SERVICES_TIMEOUT_SECONDS and config.SERVICES_TIMEOUT_SECONDS > 0:
+                if (
+                    (time.perf_counter() - start_time) > config.SERVICES_TIMEOUT_SECONDS
+                    and config.SERVICES_TIMEOUT_SECONDS > 0
+                ):
                     log.error(
-                            "Running container timed-out after %ss and will be stopped now\nlogs: %s",
-                            config.SERVICES_TIMEOUT_SECONDS,
-                            await container.logs(stdout=True, stderr=True),
-                        )
+                        "Running container timed-out after %ss and will be stopped now\nlogs: %s",
+                        config.SERVICES_TIMEOUT_SECONDS,
+                        await container.logs(stdout=True, stderr=True),
+                    )
                     await container.stop()
                     break
                 await asyncio.sleep(5)
             # reload container data
             container_data = await container.show()
-            log.info("%s completed with error code %s and Error %s", docker_image, container_data["State"]["ExitCode"], container_data["State"]["Error"])
+            log.info(
+                "%s completed with error code %s and Error %s",
+                docker_image,
+                container_data["State"]["ExitCode"],
+                container_data["State"]["Error"],
+            )
         except aiodocker.exceptions.DockerContainerError:
-            log.exception("Error while running %s with parameters %s", docker_image, docker_container_config)
+            log.exception(
+                "Error while running %s with parameters %s",
+                docker_image,
+                docker_container_config,
+            )
         except aiodocker.exceptions.DockerError:
-            log.exception("Unknown error while trying to run %s with parameters %s", docker_image, docker_container_config)
+            log.exception(
+                "Unknown error while trying to run %s with parameters %s",
+                docker_image,
+                docker_container_config,
+            )
         finally:
             stop_time = time.perf_counter()
-            log.info(
-                "Running %s took %sseconds", docker_image, stop_time - start_time
-            )
+            log.info("Running %s took %sseconds", docker_image, stop_time - start_time)
             await container.delete(force=True)
             log_processor_task.cancel()
             await log_processor_task
@@ -458,25 +487,6 @@ class Sidecar:
         await self._process_task_output()
         await self._process_task_log()
 
-        self.task.state = SUCCESS
-        self.task.end = datetime.utcnow()
-        _session = self.db.Session()
-        try:
-            _session.add(self.task)
-            _session.commit()
-            log.debug(
-                "Post-Processing Pipeline DONE %s:node %s:internal id %s from container",
-                self.task.project_id,
-                self.task.node_id,
-                self.task.internal_id,
-            )
-
-        except exc.SQLAlchemyError:
-            log.exception("Could not update job from postprocessing")
-            _session.rollback()
-        finally:
-            _session.close()
-
     async def inspect(
         self,
         db_engine: aiopg.sa.Engine,
@@ -495,82 +505,89 @@ class Sidecar:
         self.db_engine = db_engine
         self.rabbit_mq = rabbit_mq
         next_task_nodes = []
-        with session_scope(self.db.Session) as _session:
-            _pipeline = (
-                _session.query(ComputationalPipeline)
-                .filter_by(project_id=project_id)
-                .one()
-            )
 
-            graph = _pipeline.execution_graph
+        async with self.db_engine.acquire() as connection:
+
+            query = comp_pipeline.select().where(
+                comp_pipeline.c.project_id == project_id
+            )
+            result = await connection.execute(query)
+            if result.rowcount > 1:
+                raise exceptions.DatabaseError(
+                    f"Pipeline {result.rowcount} found instead of only one for project_id {project_id}"
+                )
+            pipeline = await result.first()
+            if not pipeline:
+                raise exceptions.DatabaseError(f"Pipeline {project_id} not found")
+
+            graph = execution_graph(pipeline)
             if not node_id:
-                log.debug("NODE id was zero")
-                log.debug("graph looks like this %s", graph)
+                log.debug("NODE id was zero and graph looks like this %s", graph)
                 next_task_nodes = find_entry_point(graph)
                 log.debug("Next task nodes %s", next_task_nodes)
                 return next_task_nodes
 
             # find the for the current node_id, skip if there is already a job_id around
-            query = _session.query(ComputationalTask).filter(
-                and_(
-                    ComputationalTask.node_id == node_id,
-                    ComputationalTask.project_id == project_id,
-                    ComputationalTask.job_id == None,
+            # Use SELECT FOR UPDATE TO lock the row
+            result = await connection.execute(
+                query=comp_tasks.select(for_update=True).where(
+                    and_(
+                        comp_tasks.c.node_id == node_id,
+                        comp_tasks.c.project_id == project_id,
+                        comp_tasks.c.job_id == None,
+                        comp_tasks.c.state == UNKNOWN,
+                    )
                 )
             )
-            # Use SELECT FOR UPDATE TO lock the row
-            query.with_for_update()
-            task = query.one_or_none()
+            task = await result.fetchone()
 
             if not task:
                 log.debug("No task found")
                 return next_task_nodes
 
-            # already done or running and happy
-            if task.job_id and (task.state == SUCCESS or task.state == RUNNING):
-                log.debug("TASK %s ALREADY DONE OR RUNNING", task.internal_id)
-                return next_task_nodes
-
             # Check if node's dependecies are there
-            if not is_node_ready(task, graph, _session, log):
+            if not await is_node_ready(task, graph, connection, log):
                 log.debug("TASK %s NOT YET READY", task.internal_id)
                 return next_task_nodes
 
             # the task is ready!
-            task.job_id = job_request_id
-            _session.add(task)
-            _session.commit()
-
-            task = (
-                _session.query(ComputationalTask)
-                .filter(
+            result = await connection.execute(
+                # FIXME: E1120:No value for argument 'dml' in method call
+                # pylint: disable=E1120
+                comp_tasks.update()
+                .where(
                     and_(
-                        ComputationalTask.node_id == node_id,
-                        ComputationalTask.project_id == project_id,
+                        comp_tasks.c.node_id == node_id,
+                        comp_tasks.c.project_id == project_id,
                     )
                 )
-                .one()
+                .values(job_id=job_request_id, state=RUNNING, start=datetime.utcnow())
             )
-
-            if task.job_id != job_request_id:
-                # somebody else was faster
-                return next_task_nodes
-            task.state = RUNNING
-            task.start = datetime.utcnow()
-            _session.add(task)
-            _session.commit()
 
             await self.initialize(task, user_id)
 
         # now proceed actually running the task (we do that after the db session has been closed)
         # try to run the task, return empyt list of next nodes if anything goes wrong
-        await self.run()
-        next_task_nodes = list(graph.successors(node_id))
+        run_result = UNKNOWN
+        try:
+            await self.run()
+            run_result = SUCCESS
+            next_task_nodes = list(graph.successors(node_id))
+        except exceptions.SidecarException:
+            run_result = FAILED
+        finally:
+            async with self.db_engine.acquire() as connection:
+                await connection.execute(
+                    # FIXME: E1120:No value for argument 'dml' in method call
+                    # pylint: disable=E1120
+                    comp_tasks.update()
+                    .where(
+                        and_(
+                            comp_tasks.c.node_id == node_id,
+                            comp_tasks.c.project_id == project_id,
+                        )
+                    )
+                    .values(state=run_result, end=datetime.utcnow())
+                )
 
         return next_task_nodes
-
-
-# TODO: if a singleton, then use
-SIDECAR = Sidecar()
-
-__all__ = ["SIDECAR"]

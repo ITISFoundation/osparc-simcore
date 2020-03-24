@@ -1,14 +1,14 @@
 import asyncio
+import logging
 from pathlib import Path
 from typing import List
-import logging
+
+import aiopg
 import networkx as nx
 from pydantic import BaseModel
-from sqlalchemy import and_, create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import and_
 
-from simcore_sdk.config.db import Config as db_config
-from simcore_sdk.models.pipeline_models import SUCCESS, ComputationalTask
+from simcore_postgres_database.sidecar_models import SUCCESS, comp_pipeline, comp_tasks
 
 
 def wrap_async_call(fct: asyncio.coroutine):
@@ -23,18 +23,20 @@ def find_entry_point(g: nx.DiGraph) -> List:
     return result
 
 
-def is_node_ready(task: ComputationalTask, graph: nx.DiGraph, _session, _logger: logging.Logger) -> bool:
-    # pylint: disable=no-member
-    tasks = (
-        _session.query(ComputationalTask)
-        .filter(
-            and_(
-                ComputationalTask.node_id.in_(list(graph.predecessors(task.node_id))),
-                ComputationalTask.project_id == task.project_id,
-            )
+async def is_node_ready(
+    task: comp_tasks,
+    graph: nx.DiGraph,
+    db_connection: aiopg.sa.SAConnection,
+    _logger: logging.Logger,
+) -> bool:
+    query = comp_tasks.select().where(
+        and_(
+            comp_tasks.c.node_id.in_(list(graph.predecessors(task.node_id))),
+            comp_tasks.c.project_id == task.project_id,
         )
-        .all()
     )
+    result = await db_connection.execute(query)
+    tasks = await result.fetchall()
 
     _logger.debug("TASK %s ready? Checking ..", task.internal_id)
     for dep_task in tasks:
@@ -53,16 +55,17 @@ def is_node_ready(task: ComputationalTask, graph: nx.DiGraph, _session, _logger:
     return True
 
 
-class DbSettings:
-    def __init__(self):
-        self._db_config = db_config()
-        self.db = create_engine(
-            self._db_config.endpoint + f"?application_name={__name__}_{id(self)}",
-            client_encoding="utf8",
-            pool_pre_ping=True,
-        )
-        self.Session = sessionmaker(self.db, expire_on_commit=False)
-        # self.session = self.Session()
+def execution_graph(pipeline: comp_pipeline) -> nx.DiGraph:
+    d = pipeline.dag_adjacency_list
+    G = nx.DiGraph()
+
+    for node in d.keys():
+        nodes = d[node]
+        if len(nodes) == 0:
+            G.add_node(node)
+            continue
+        G.add_edges_from([(node, n) for n in nodes])
+    return G
 
 
 class ExecutorSettings(BaseModel):
