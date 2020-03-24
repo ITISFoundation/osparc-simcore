@@ -859,14 +859,18 @@ qx.Class.define("osparc.data.model.Node", {
             const {
               error
             } = e.getTarget().getResponse();
-            this.getPropsWidget().retrievedPortData(portKey, false);
+            if (portKey) {
+              this.getPropsWidget().retrievedPortData(portKey, false);
+            }
             console.error("fail", error);
           }, this);
           updReq.addListener("error", e => {
             const {
               error
             } = e.getTarget().getResponse();
-            this.getPropsWidget().retrievedPortData(portKey, false);
+            if (portKey) {
+              this.getPropsWidget().retrievedPortData(portKey, false);
+            }
             console.error("error", error);
           }, this);
           updReq.send();
