@@ -26,8 +26,8 @@ expiringdict
 jinja_app_loader
 jsondiff
 passlib
-python-socketio==4.3.1 # TODO: check tests failures with latest versions
-python-engineio==3.9.3
+python-socketio==4.3.1 # TODO: Updates in socket libraries are producing test failures
+python-engineio==3.9.3 # TODO: https://github.com/ITISFoundation/osparc-simcore/issues/1402
 semantic_version
 tenacity
 trafaret

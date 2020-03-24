@@ -252,6 +252,7 @@ async def socketio_client(socketio_url: str, security_cookie: str):
         return sio
 
     yield connect
+
     for sio in clients:
         await sio.disconnect()
         assert not sio.sid
