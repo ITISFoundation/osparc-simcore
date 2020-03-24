@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import os
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 
 import aio_pika
 import pytest
@@ -30,8 +30,8 @@ def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> Dict:
     os.environ["RABBIT_PORT"] = config["port"]
     os.environ["RABBIT_USER"] = devel_environ["RABBIT_USER"]
     os.environ["RABBIT_PASSWORD"] = devel_environ["RABBIT_PASSWORD"]
-    os.environ["RABBIT_CHANNELS"] = devel_environ["RABBIT_CHANNELS"]    
-    
+    os.environ["RABBIT_CHANNELS"] = devel_environ["RABBIT_CHANNELS"]
+
     yield config
 
 
@@ -44,12 +44,16 @@ async def rabbit_service(rabbit_config: Dict, docker_stack: Dict) -> str:
 
 @pytest.fixture(scope="function")
 async def rabbit_connection(rabbit_service: str) -> aio_pika.RobustConnection:
+    def reconnect_callback():
+        pytest.fail("rabbit reconnected")
+
     # create connection
     connection = await aio_pika.connect_robust(
         rabbit_service, client_properties={"connection_name": "pytest read connection"}
     )
     assert connection
     assert not connection.is_closed
+    connection.add_reconnect_callback(reconnect_callback)
 
     yield connection
     # close connection
@@ -61,9 +65,13 @@ async def rabbit_connection(rabbit_service: str) -> aio_pika.RobustConnection:
 async def rabbit_channel(
     rabbit_connection: aio_pika.RobustConnection,
 ) -> aio_pika.Channel:
+    def channel_close_callback(exc: Optional[BaseException]):
+        pytest.fail("rabbit channel closed!")
+
     # create channel
     channel = await rabbit_connection.channel()
     assert channel
+    channel.add_close_callback(channel_close_callback)
     yield channel
     # close channel
     await channel.close()
@@ -78,12 +86,12 @@ async def rabbit_exchange(
     # declare log exchange
     LOG_EXCHANGE_NAME: str = rb_config.channels["log"]
     logs_exchange = await rabbit_channel.declare_exchange(
-        LOG_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT, auto_delete=True
+        LOG_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
     )
     # declare progress exchange
     PROGRESS_EXCHANGE_NAME: str = rb_config.channels["progress"]
     progress_exchange = await rabbit_channel.declare_exchange(
-        PROGRESS_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT, auto_delete=True
+        PROGRESS_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
     )
 
     yield logs_exchange, progress_exchange
