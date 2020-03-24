@@ -14,7 +14,7 @@ CONFIG_SCHEMA = T.Dict({
     "access_key": T.String(),
     "secret_key": T.String(),
     "bucket_name": T.String(),
-    T.Key("secure", default=0): T.Int(),
+    T.Key("secure", default=0): T.ToInt(),
 })
 
 
