@@ -9,10 +9,8 @@ import time
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
-from simcore_service_webserver.diagnostics import (
-    INCIDENTS_REGISTRY_KEY,
-    setup_diagnostics,
-)
+from simcore_service_webserver.diagnostics import setup_diagnostics
+
 
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
@@ -63,10 +61,8 @@ async def test_unhealthy_app_with_slow_callbacks(client, api_version_prefix):
     resp = await client.get(f"/{api_version_prefix}/")
     await assert_status(resp, web.HTTPOk)
 
-    resp = await client.get("/slow")
+    resp = await client.get("/slow")  # too slow!
     await assert_status(resp, web.HTTPOk)
-
-    assert len(client.app[INCIDENTS_REGISTRY_KEY].slow_callbacks) >= 1
 
     resp = await client.get(f"/{api_version_prefix}/")
     await assert_status(resp, web.HTTPServiceUnavailable)
