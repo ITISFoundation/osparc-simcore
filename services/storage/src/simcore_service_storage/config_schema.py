@@ -1,13 +1,20 @@
+import os
+
 import trafaret as T
+
 from servicelib.config_schema_utils import addon_section
 from servicelib.tracing import schema as tracing_schema
 from simcore_sdk.config import db, s3
 
 from . import rest_config
 
+in_container = "SC_BUILD_TARGET" in os.environ
+
 app_schema = T.Dict(
     {
-        T.Key("host", default="0.0.0.0"): T.IP,
+        T.Key(
+            "host", default="0.0.0.0" if in_container else "127.0.0.1"  # nosec
+        ): T.IP,
         "port": T.ToInt(),
         "log_level": T.Enum(
             "DEBUG", "WARNING", "INFO", "ERROR", "CRITICAL", "FATAL", "NOTSET"
