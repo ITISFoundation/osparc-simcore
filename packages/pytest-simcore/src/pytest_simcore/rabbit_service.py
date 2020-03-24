@@ -66,7 +66,8 @@ async def rabbit_channel(
     rabbit_connection: aio_pika.RobustConnection,
 ) -> aio_pika.Channel:
     def channel_close_callback(exc: Optional[BaseException]):
-        pytest.fail("rabbit channel closed!")
+        if exc:
+            pytest.fail("rabbit channel closed!")
 
     # create channel
     channel = await rabbit_connection.channel()
