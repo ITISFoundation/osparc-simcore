@@ -875,7 +875,9 @@ qx.Class.define("osparc.data.model.Node", {
           }, this);
           updReq.send();
 
-          this.getPropsWidget().retrievingPortData(portKey);
+          if (portKey) {
+            this.getPropsWidget().retrievingPortData(portKey);
+          }
         }
       }
     },
