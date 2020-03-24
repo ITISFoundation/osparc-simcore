@@ -11,7 +11,7 @@ include ../../scripts/common.Makefile
 
 
 .PHONY: install-dev install-prod install-ci
-install-dev install-prod install-ci: openapi-specs _check_venv_active ## install app in development/production or CI mode
+install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
 	python -m pip install -r requirements/$(subst install-,,$@).txt
 
