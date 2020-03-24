@@ -31,12 +31,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let servicesView = this.__serviceBrowser = new osparc.desktop.ServiceBrowser();
+ *   let servicesView = this.__serviceBrowser = new osparc.dashboard.ServiceBrowser();
  *   this.getRoot().add(servicesView);
  * </pre>
  */
 
-qx.Class.define("osparc.desktop.ServiceBrowser", {
+qx.Class.define("osparc.dashboard.ServiceBrowser", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -150,7 +150,7 @@ qx.Class.define("osparc.desktop.ServiceBrowser", {
       const servCtrl = new qx.data.controller.List(latestServicesModel, servicesUIList, "name");
       servCtrl.setDelegate({
         createItem: () => {
-          const item = new osparc.desktop.ServiceBrowserListItem();
+          const item = new osparc.dashboard.ServiceBrowserListItem();
           item.subscribeToFilterGroup("serviceBrowser");
           item.addListener("tap", e => {
             servicesUIList.setSelection([item]);

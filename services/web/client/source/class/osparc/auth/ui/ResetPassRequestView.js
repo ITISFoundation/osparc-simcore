@@ -29,30 +29,36 @@ qx.Class.define("osparc.auth.ui.ResetPassRequestView", {
   */
 
   members: {
+    __submitBtn: null,
+    __cancelBtn: null,
 
     // overrides base
     _buildPage: function() {
-      let manager = new qx.ui.form.validation.Manager();
+      const manager = new qx.ui.form.validation.Manager();
 
       this._addTitleHeader(this.tr("Reset Password"));
 
       // email
-      let email = new qx.ui.form.TextField();
+      const email = new qx.ui.form.TextField();
       email.setRequired(true);
       email.setPlaceholder(this.tr("Introduce your registration email"));
       this.add(email);
+      this.addListener("appear", () => {
+        email.focus();
+        email.activate();
+      });
 
       manager.add(email, qx.util.Validate.email());
 
       // submit and cancel buttons
-      let grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      let submitBtn = new qx.ui.form.Button(this.tr("Submit"));
+      const submitBtn = this.__submitBtn = new qx.ui.form.Button(this.tr("Submit"));
       grp.add(submitBtn, {
         flex:1
       });
 
-      let cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
+      const cancelBtn = this.__cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
       grp.add(cancelBtn, {
         flex:1
       });
@@ -73,20 +79,34 @@ qx.Class.define("osparc.auth.ui.ResetPassRequestView", {
     __submit: function(email) {
       console.debug("sends email to reset password to ", email);
 
-      let manager = osparc.auth.Manager.getInstance();
+      const manager = osparc.auth.Manager.getInstance();
 
-      let successFun = function(log) {
+      const successFun = function(log) {
         this.fireDataEvent("done", log.message);
         osparc.component.message.FlashMessenger.getInstance().log(log);
       };
 
-      let failFun = function(msg) {
+      const failFun = function(msg) {
         msg = msg || this.tr("Could not request password reset");
         osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
       };
 
       manager.resetPasswordRequest(email.getValue(), successFun, failFun, this);
-    }
+    },
 
+    _onAppear: function() {
+      // Listen to "Enter" key
+      const commandEnter = new qx.ui.command.Command("Enter");
+      this.__submitBtn.setCommand(commandEnter);
+
+      // Listen to "Esc" key
+      const commandEsc = new qx.ui.command.Command("Esc");
+      this.__cancelBtn.setCommand(commandEsc);
+    },
+
+    _onDisappear: function() {
+      this.__submitBtn.setCommand(null);
+      this.__cancelBtn.setCommand(null);
+    }
   }
 });

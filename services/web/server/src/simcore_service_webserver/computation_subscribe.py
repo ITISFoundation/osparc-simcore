@@ -13,14 +13,16 @@ from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 
-from .computation_config import (APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
-                                 CONFIG_SECTION_NAME)
+from .computation_config import (
+    APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
+    CONFIG_SECTION_NAME,
+)
 from .projects import projects_api
-from .projects.projects_exceptions import (NodeNotFoundError,
-                                           ProjectNotFoundError)
+from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
 from .socketio.events import post_messages
 
 log = logging.getLogger(__file__)
+
 
 def rabbit_adapter(app: web.Application) -> Callable:
     """this decorator allows passing additional paramters to python-socketio compatible handlers.

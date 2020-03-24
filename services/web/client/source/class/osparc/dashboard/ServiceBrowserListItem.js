@@ -28,7 +28,7 @@
  *
  * <pre class='javascript'>
  *   tree.setDelegate({
- *     createItem: () => new osparc.desktop.ServiceBrowserListItem(),
+ *     createItem: () => new osparc.dashboard.ServiceBrowserListItem(),
  *     bindItem: (c, item, id) => {
  *       c.bindProperty("key", "model", null, item, id);
  *       c.bindProperty("name", "title", null, item, id);
@@ -41,7 +41,7 @@
  * </pre>
  */
 
-qx.Class.define("osparc.desktop.ServiceBrowserListItem", {
+qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
   extend: qx.ui.core.Widget,
   implement : [qx.ui.form.IModel, osparc.component.filter.IFilterable],
   include : [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],

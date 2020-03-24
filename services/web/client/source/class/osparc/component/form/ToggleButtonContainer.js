@@ -6,7 +6,7 @@
  */
 
 /**
- * Container for StudyBrowserListItems or any other ToggleButtons, with some convenient methods.
+ * Container for StudyBrowserButtonItems or any other ToggleButtons, with some convenient methods.
  */
 qx.Class.define("osparc.component.form.ToggleButtonContainer", {
   extend: qx.ui.container.Composite,
@@ -16,7 +16,8 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
   },
 
   events: {
-    changeSelection: "qx.event.type.Data"
+    changeSelection: "qx.event.type.Data",
+    changeVisibility: "qx.event.type.Data"
   },
 
   members: {
@@ -26,6 +27,9 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
         this.base(arguments, child, options);
         child.addListener("changeValue", e => {
           this.fireDataEvent("changeSelection", this.getSelection());
+        }, this);
+        child.addListener("changeVisibility", e => {
+          this.fireDataEvent("changeVisibility", this.getVisibles());
         }, this);
       } else {
         console.error("ToggleButtonContainer only allows ToggleButton as its children.");
@@ -44,6 +48,13 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
      */
     getSelection: function() {
       return this.getChildren().filter(button => button.getValue());
+    },
+
+    /**
+     * Returns an array that contains all visible buttons.
+     */
+    getVisibles: function() {
+      return this.getChildren().filter(button => button.isVisible());
     },
 
     /**
