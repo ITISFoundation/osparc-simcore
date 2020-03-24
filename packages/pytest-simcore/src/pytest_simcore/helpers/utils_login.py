@@ -7,7 +7,8 @@ from simcore_service_webserver.db_models import UserRole, UserStatus
 from simcore_service_webserver.login.cfg import cfg, get_storage
 from simcore_service_webserver.login.registration import create_invitation
 from simcore_service_webserver.login.utils import encrypt_password, get_random_string
-from utils_assert import assert_status
+
+from .utils_assert import assert_status
 
 TEST_MARKS = re.compile(r"TEST (\w+):(.*)")
 
@@ -61,9 +62,6 @@ async def log_client_in(client, user_data=None, *, enable_check=True):
         await assert_status(r, web.HTTPOk, cfg.MSG_LOGGED_IN)
 
     return user
-
-
-# CONTEXT MANAGERS ------------------------------
 
 
 class NewUser:

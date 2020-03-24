@@ -16,6 +16,9 @@ from aiohttp import web
 from mock import call
 from yarl import URL
 
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import LoggedUser
+from pytest_simcore.helpers.utils_projects import NewProject
 from servicelib.application import create_safe_application
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db import setup_db
@@ -35,9 +38,6 @@ from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_sockets
 from simcore_service_webserver.users import setup_users
 from simcore_service_webserver.utils import now_str
-from utils_assert import assert_status
-from utils_login import LoggedUser
-from utils_projects import NewProject
 
 API_VERSION = "v0"
 GARBAGE_COLLECTOR_INTERVAL = 1

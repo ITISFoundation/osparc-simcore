@@ -1,3 +1,6 @@
+""" Extends assertions for testing
+
+"""
 from aiohttp import web
 
 from pprint import pformat
@@ -17,7 +20,8 @@ async def assert_status(
         assert not data, pformat(data)
         assert not error, pformat(error)
     else:
-        # with a 200, data may still be empty see https://medium.com/@santhoshkumarkrishna/http-get-rest-api-no-content-404-vs-204-vs-200-6dd869e3af1d
+        # with a 200, data may still be empty see
+        # https://medium.com/@santhoshkumarkrishna/http-get-rest-api-no-content-404-vs-204-vs-200-6dd869e3af1d
         # assert data is not None, pformat(data)
         assert not error, pformat(error)
 
@@ -40,7 +44,6 @@ def do_assert_error(
     assert not data, pformat(data)
     assert error, pformat(error)
 
-    # TODO: improve error messages
     assert len(error["errors"]) == 1
 
     err = error["errors"][0]

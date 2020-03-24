@@ -18,6 +18,7 @@ watchdog[watchmedo]
 -e ../../../packages/postgres-database/
 -e ../../../packages/simcore-sdk/
 -e ../../../packages/service-library/
+-e ../../../packages/pytest-simcore/
 
 # installs current package
 -e .
