@@ -26,7 +26,8 @@ expiringdict
 jinja_app_loader
 jsondiff
 passlib
-python-socketio
+python-socketio==4.3.1 # TODO: check tests failures with latest versions
+python-engineio==3.9.3
 semantic_version
 tenacity
 trafaret
