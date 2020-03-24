@@ -66,6 +66,7 @@ services:
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - WEBSERVER_MONITORING_ENABLED=1
       - WEBSERVER_LOGLEVEL=${LOG_LEVEL:-WARNING}
+      - WEBSERVER_DIAGNOSTICS_MAX_DELAY_SECS=30
     env_file:
       - ../.env
     depends_on:

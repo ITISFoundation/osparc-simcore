@@ -55,7 +55,10 @@ def setup_diagnostics(
 
     if max_delay_allowed is None:
         # blocking time to consider app unhealthy
-        max_delay_allowed = max(10 * slow_duration_secs, 30)  # secs
+        max_delay_allowed = max(
+            10 * slow_duration_secs,
+            float(os.environ.get("WEBSERVER_DIAGNOSTICS_MAX_DELAY_SECS", 30)),
+        )  # secs
 
     log.info("slow_duration_secs = %3.2f secs", slow_duration_secs)
     log.info("max_delay_allowed = %3.2f secs", max_delay_allowed)
