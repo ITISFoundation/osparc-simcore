@@ -1,7 +1,8 @@
 #
 # Specifies third-party dependencies for 'simcore-sdk'
 #
-pyyaml >=5.3 # Vulnerability
+pyyaml >=5.3     # Vulnerability
+trafaret>=2.0.2  # from 2.0 changes in API
 
 aiohttp
 networkx
