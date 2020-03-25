@@ -4,14 +4,14 @@ import socket
 from typing import Optional
 
 import aiopg.sa
+import tenacity
 from sqlalchemy import and_
-from tenacity import Retrying
 
 from servicelib.aiopg_utils import (
     DataSourceName,
     PostgresRetryPolicyUponInitialization,
     create_pg_engine,
-    raise_if_not_responsive,
+    is_postgres_responsive,
 )
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 
@@ -44,6 +44,12 @@ async def _get_node_from_db(
     return node
 
 
+@tenacity.retry(**PostgresRetryPolicyUponInitialization().kwargs)
+async def wait_till_postgres_responsive(dsn: DataSourceName) -> None:
+    if not is_postgres_responsive(dsn):
+        raise Exception
+
+
 class DBContextManager:
     def __init__(self, db_engine: Optional[aiopg.sa.Engine] = None):
         self._db_engine: aiopg.sa.Engine = db_engine
@@ -58,13 +64,8 @@ class DBContextManager:
             host=config.POSTGRES_ENDPOINT.split(":")[0],
             port=config.POSTGRES_ENDPOINT.split(":")[1],
         )
-
-        log.info("Creating pg engine for %s", dsn)
-        for attempt in Retrying(**PostgresRetryPolicyUponInitialization(log).kwargs):
-            with attempt:
-                engine = await create_pg_engine(dsn, minsize=1, maxsize=4)
-                await raise_if_not_responsive(engine)
-
+        await wait_till_postgres_responsive(dsn)
+        engine = await create_pg_engine(dsn, minsize=1, maxsize=4)
         return engine
 
     async def __aenter__(self):

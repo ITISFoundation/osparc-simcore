@@ -5,19 +5,25 @@
 import logging
 import socket
 
+import tenacity
 from aiopg.sa import Engine
-from tenacity import Retrying
 
 from servicelib.aiopg_utils import (
     DataSourceName,
     PostgresRetryPolicyUponInitialization,
     create_pg_engine,
-    raise_if_not_responsive,
+    is_postgres_responsive,
 )
 
 from .config import POSTGRES_DB, POSTGRES_ENDPOINT, POSTGRES_PW, POSTGRES_USER
 
 log = logging.getLogger(__name__)
+
+
+@tenacity.retry(**PostgresRetryPolicyUponInitialization().kwargs)
+async def wait_till_postgres_responsive(dsn: DataSourceName) -> None:
+    if not is_postgres_responsive(dsn):
+        raise Exception
 
 
 class DBContextManager:
@@ -35,11 +41,8 @@ class DBContextManager:
         )
 
         log.info("Creating pg engine for %s", dsn)
-        for attempt in Retrying(**PostgresRetryPolicyUponInitialization(log).kwargs):
-            with attempt:
-                engine = await create_pg_engine(dsn, minsize=1, maxsize=4)
-                await raise_if_not_responsive(engine)
-
+        await wait_till_postgres_responsive(dsn)
+        engine = await create_pg_engine(dsn, minsize=1, maxsize=4)
         self._db_engine = engine
         return self._db_engine
 
