@@ -35,13 +35,13 @@ then
   POOL=solo
   watchmedo auto-restart --recursive --pattern="*.py" -- \
     celery worker \
-      --app sidecar.celery:app \
+      --app simcore_service_sidecar.celery:app \
       --concurrency ${CONCURRENCY} \
       --loglevel="${SIDECAR_LOGLEVEL-WARNING}" \
       --pool=${POOL}
 else
   exec celery worker \
-      --app sidecar.celery:app \
+      --app simcore_service_sidecar.celery:app \
       --concurrency ${CONCURRENCY} \
       --loglevel="${SIDECAR_LOGLEVEL-WARNING}" \
       --pool=${POOL}
