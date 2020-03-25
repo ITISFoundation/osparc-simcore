@@ -122,7 +122,7 @@ class Sidecar:
         log.debug("DUMPING DONE")
 
     async def _pull_image(self):
-        docker_image = f"{config.DOCKER_REGISTRY}/{self.task.schema['key']}:{self.task.schema['version']}"
+        docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
         log.debug(
             "PULLING IMAGE %s as %s with pwd %s",
             docker_image,
@@ -170,7 +170,7 @@ class Sidecar:
             accumulated_messages: Dict[str, Union[str, List]]
         ) -> None:
             await logged_gather(
-                [
+                *[
                     self.rabbit_mq.post_log_message(
                         self.user_id,
                         self.task.project_id,
@@ -324,7 +324,7 @@ class Sidecar:
 
         start_time = time.perf_counter()
         container = None
-        docker_image = f"{config.DOCKER_REGISTRY}/{self.task.schema['key']}:{self.task.schema['version']}"
+        docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
 
         docker_container_config = {
             "Env": [
@@ -354,6 +354,7 @@ class Sidecar:
         }
 
         # volume paths for car container (w/o prefix)
+        container = None
         try:
             docker_client: aiodocker.Docker = aiodocker.Docker()
             container = await docker_client.containers.run(
@@ -399,7 +400,8 @@ class Sidecar:
         finally:
             stop_time = time.perf_counter()
             log.info("Running %s took %sseconds", docker_image, stop_time - start_time)
-            await container.delete(force=True)
+            if container:
+                await container.delete(force=True)
             log_processor_task.cancel()
             await log_processor_task
 
