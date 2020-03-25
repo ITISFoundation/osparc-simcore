@@ -270,8 +270,8 @@ async function dashboardDeleteFirstStudy(page) {
   await page.waitForSelector('[osparc-test-id="studiesTabBtn"]')
   await page.click('[osparc-test-id="studiesTabBtn"]')
 
-  await page.waitForSelector('[osparc-test-id="userStudiesList"] > .qx-pb-listitem:nth-child(1) > .qx-material-button')
-  await page.click('[osparc-test-id="userStudiesList"] > .qx-pb-listitem:nth-child(1) > .qx-material-button')
+  await page.waitForSelector('[osparc-test-id="userStudiesList"] > .qx-pb-listitem:nth-child(1) > [osparc-test-id="studyItemMenuButton"]')
+  await page.click('[osparc-test-id="userStudiesList"] > .qx-pb-listitem:nth-child(1) > [osparc-test-id="studyItemMenuButton"]')
 
   await page.waitForSelector('[osparc-test-id="studyItemMenuDelete"]')
   await page.click('[osparc-test-id="studyItemMenuDelete"]')
