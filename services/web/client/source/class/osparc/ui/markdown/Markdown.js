@@ -56,6 +56,11 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
     value: {
       check: "String",
       apply: "_applyMarkdown"
+    },
+
+    noMargin: {
+      check: "Boolean",
+      init: false
     }
   },
 
@@ -115,6 +120,12 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
     },
 
     __getElementHeight: function(element) {
+      if (this.getNoMargin()) {
+        element.style.marginTop = 0;
+        element.style.marginBottom = 0;
+        const size = qx.bom.element.Dimension.getSize(element);
+        return size.height;
+      }
       const size = qx.bom.element.Dimension.getSize(element);
       // add padding
       return size.height + 15;
