@@ -113,7 +113,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       titleBar.addSpacer();
       titleBar.add(buttonPart);
       this.add(titleBar, 0);
-      titlePart.add(new qx.ui.basic.Atom(isInput ? this.tr("Inputs") : this.tr("Outputs")).set({
+      titlePart.add(new qx.ui.basic.Label(isInput ? this.tr("Inputs") : this.tr("Outputs")).set({
+        alignY: "middle",
         font: "title-18"
       }));
       const collapseBtn = new qx.ui.toolbar.Button(this.tr("Collapse all"), "@FontAwesome5Solid/minus-square/14");
