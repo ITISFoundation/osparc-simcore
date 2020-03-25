@@ -19,7 +19,7 @@ def pylintrc(osparc_simcore_root_dir):
 
 def test_run_pylint(pylintrc, package_dir):
     cmd = "pylint --jobs 0 --rcfile {} -v {}".format(pylintrc, package_dir)
-    proc: subprocess.CompletedProcess = subprocess.run(cmd.split())
+    proc: subprocess.CompletedProcess = subprocess.run(cmd.split(), check=True)
     assert proc.returncode == 0, f"pylint error: {proc.stdout}"
 
 
