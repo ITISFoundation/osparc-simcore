@@ -65,7 +65,7 @@ then
         find / -path /proc -prune -user "$SC_USER_ID" -exec chown --no-dereference "$SC_USER_NAME" {} \;
     fi
 
-    echo "$INFO installing pythong dependencies..."
+    echo "$INFO installing python dependencies..."
     cd services/sidecar || exit 1
     pip install --no-cache-dir -r requirements/dev.txt
     cd - || exit 1
