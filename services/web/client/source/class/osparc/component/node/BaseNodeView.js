@@ -89,9 +89,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __buildLayout: function() {
-      const inputs = this.__buildInputsOutputsView(true);
+      const inputs = this.__buildSideView(true);
       const mainView = this.__buildMainView();
-      const outputs = this.__buildInputsOutputsView(false);
+      const outputs = this.__buildSideView(false);
 
       const pane2 = this.__pane2 = new qx.ui.splitpane.Pane();
       this.add(inputs, 0); // flex 0
@@ -101,7 +101,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       pane2.add(outputs, 0); // flex 0
     },
 
-    __buildInputsOutputsView: function(isInput) {
+    __buildSideView: function(isInput) {
       const sidePanel = new osparc.desktop.SidePanel().set({
         minWidth: 300
       });
