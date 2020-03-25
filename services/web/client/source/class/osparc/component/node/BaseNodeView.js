@@ -103,7 +103,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     __buildSideView: function(isInput) {
       const sidePanel = new osparc.desktop.SidePanel().set({
-        minWidth: 300
+        minWidth: 300,
+        collapsedMinWidth: 80,
+        collapsedWidth: 80
       });
 
       const titleBar = new qx.ui.toolbar.ToolBar();
@@ -141,7 +143,34 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         });
       }, this);
 
+      sidePanel.setCollapsedView(this.__buildCollapsedSideView(isInput));
+
       return sidePanel;
+    },
+
+    __buildCollapsedSideView: function(isInput) {
+      const inText = this.tr("In");
+      const outText = this.tr("Out");
+      const collapsedView = new qx.ui.basic.Label((isInput ? inText : outText) + " (0)").set({
+        padding: 8,
+        alignX: "center",
+        alignY: "middle",
+        font: "title-18",
+        height: 35
+      });
+
+      const container = isInput ? this.__inputNodesLayout : this.__outputNodesLayout;
+      [
+        "addChildWidget",
+        "removeChildWidget"
+      ].forEach(event => {
+        container.addListener(event, () => {
+          const nChildren = container.getChildren().length;
+          collapsedView.setValue((isInput ? inText : outText) + " (" + nChildren + ")");
+        });
+      });
+
+      return collapsedView;
     },
 
     __buildMainView: function() {

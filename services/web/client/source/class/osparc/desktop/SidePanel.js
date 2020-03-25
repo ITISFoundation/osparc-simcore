@@ -52,6 +52,11 @@ qx.Class.define("osparc.desktop.SidePanel", {
       apply: "_applyCollapsed"
     },
 
+    collapsedView: {
+      init: null,
+      check: "qx.ui.core.Widget"
+    },
+
     collapsedMinWidth: {
       check: "Number",
       init: 0
@@ -91,7 +96,16 @@ qx.Class.define("osparc.desktop.SidePanel", {
 
     _applyCollapsed: function(collapsed) {
       this.__setDecorators("sidepanel");
+
       this.getChildren().forEach(child => child.setVisibility(collapsed ? "excluded" : "visible"));
+      if (this.getCollapsedView() !== null) {
+        if (collapsed) {
+          this.add(this.getCollapsedView());
+        } else {
+          this.remove(this.getCollapsedView());
+        }
+      }
+      
       const splitpaneContainer = this.__getSplitpaneContainer();
       if (collapsed) {
         // Save widths
