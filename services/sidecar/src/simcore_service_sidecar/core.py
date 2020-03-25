@@ -187,11 +187,14 @@ class Sidecar:
             )
 
         try:
+            log.debug("start checking logs in: %s", log_file)
             TIME_BETWEEN_LOGS_S: int = 2
             time_logs_sent = time.monotonic()
             accumulated_messages = {"log": [], "progress": ""}
             async with aiofiles.open(log_file, mode="r") as fp:
+                log.debug("opened log file: %s", log_file)
                 async for line in fp:
+                    log.debug("found log: %s", line)
                     now = time.monotonic()
                     accumulated_messages = await parse_line(line, accumulated_messages)
                     if (now - time_logs_sent) < TIME_BETWEEN_LOGS_S:
@@ -199,6 +202,7 @@ class Sidecar:
                     # send logs to rabbitMQ (TODO: shield?)
                     await post_messages(accumulated_messages)
                     accumulated_messages = {"log": [], "progress": ""}
+            log.debug("finished checking logs in: %s", log_file)
 
         except asyncio.CancelledError:
             # the task is complete let's send the last messages if any
@@ -321,7 +325,7 @@ class Sidecar:
         # touch output file, so it's ready for the container (v0)
         log_file = self.executor.log_dir / "log.dat"
         log_file.touch()
-        log_processor_task = fire_and_forget_task(self.log_file_processor(log_file))
+        # log_processor_task = fire_and_forget_task(self.log_file_processor(log_file))
 
         start_time = time.perf_counter()
         container = None
@@ -364,7 +368,8 @@ class Sidecar:
 
             container_data = await container.show()
             while container_data["State"]["Running"]:
-                await asyncio.sleep(5)
+                # retrieve the logs
+                await self.log_file_processor(log_file)
                 # reload container data
                 container_data = await container.show()
                 if (
@@ -405,9 +410,11 @@ class Sidecar:
             stop_time = time.perf_counter()
             log.info("Running %s took %sseconds", docker_image, stop_time - start_time)
             if container:
+                # retrieve the last logs
+                await self.log_file_processor(log_file)
                 await container.delete(force=True)
-            log_processor_task.cancel()
-            await log_processor_task
+            # log_processor_task.cancel()
+            # await log_processor_task
 
         log.debug(
             "DONE Processing Pipeline %s:node %s:internal id %s from container",
