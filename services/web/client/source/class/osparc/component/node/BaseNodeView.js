@@ -130,20 +130,15 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       if (isInput) {
         this.__inputsView = sidePanel;
         this.__inputNodesLayout = container;
-        collapseBtn.addListener("execute", () => {
-          this.__inputNodesLayout.getChildren().forEach(node => {
-            node.setCollapsed(true);
-          });
-        }, this);
       } else {
         this.__outputsView = sidePanel;
         this.__outputNodesLayout = container;
-        collapseBtn.addListener("execute", () => {
-          this.__outputNodesLayout.getChildren().forEach(node => {
-            node.setCollapsed(true);
-          });
-        }, this);
       }
+      collapseBtn.addListener("execute", () => {
+        container.getChildren().forEach(node => {
+          node.setCollapsed(true);
+        });
+      }, this);
 
       return sidePanel;
     },
