@@ -31,7 +31,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
       VIRTUAL_ENV=/home/scu/.venv
 # Ensures that the python and pip executables used
 # in the image will be those from our virtualenv.
-ENV PATH="/${VIRTUAL_ENV}/bin:$PATH"
+ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
 # environment variables
 ENV REGISTRY_AUTH='' \
