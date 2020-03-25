@@ -5,10 +5,9 @@ from typing import List
 
 import aiopg
 import networkx as nx
-from pydantic import BaseModel
-from sqlalchemy import and_
-
+from pydantic import BaseModel # pylint: disable=no-name-in-module
 from simcore_postgres_database.sidecar_models import SUCCESS, comp_pipeline, comp_tasks
+from sqlalchemy import and_
 
 
 def wrap_async_call(fct: asyncio.coroutine):

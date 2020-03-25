@@ -19,7 +19,8 @@ def pylintrc(osparc_simcore_root_dir):
 
 def test_run_pylint(pylintrc, package_dir):
     cmd = "pylint --jobs 0 --rcfile {} -v {}".format(pylintrc, package_dir)
-    assert subprocess.check_call(cmd.split()) == 0
+    proc: subprocess.CompletedProcess = subprocess.run(cmd.split())
+    assert proc.returncode == 0, f"pylint error: {proc.stdout}"
 
 
 def test_no_pdbs_in_place(package_dir):

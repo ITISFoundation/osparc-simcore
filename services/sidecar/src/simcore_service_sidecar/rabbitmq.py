@@ -1,11 +1,10 @@
 import json
 import logging
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Optional, Union
 
 import aio_pika
 import tenacity
-from pydantic import BaseModel
-
+from pydantic import BaseModel  # pylint: disable=no-name-in-module
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 
