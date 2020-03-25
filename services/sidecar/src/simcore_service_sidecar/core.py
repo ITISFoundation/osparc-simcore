@@ -15,7 +15,7 @@ import attr
 from celery.utils.log import get_task_logger
 from sqlalchemy import and_, literal_column
 
-from servicelib.utils import logged_gather
+from servicelib.utils import logged_gather, fire_and_forget_task
 from simcore_postgres_database.sidecar_models import (
     FAILED,
     # PENDING,
@@ -228,7 +228,7 @@ class Sidecar:
         if not directory.exists():
             return
         try:
-            for file_path in directory.rglob("*.*"):
+            for file_path in directory.rglob("*"):
                 if file_path.name == "output.json":
                     log.debug("POSTRO FOUND output.json")
                     # parse and compare/update with the tasks output ports from db
@@ -239,6 +239,7 @@ class Sidecar:
                             if port.key in output_ports.keys():
                                 await port.set(output_ports[port.key])
                 else:
+                    log.debug("Uploading %s", file_path)
                     await PORTS.set_file_by_keymap(file_path)
         except json.JSONDecodeError:
             logging.exception("Error occured while decoding output.json")
@@ -320,7 +321,7 @@ class Sidecar:
         # touch output file, so it's ready for the container (v0)
         log_file = self.executor.log_dir / "log.dat"
         log_file.touch()
-        log_processor_task = asyncio.ensure_future(self.log_file_processor(log_file))
+        log_processor_task = fire_and_forget_task(self.log_file_processor(log_file))
 
         start_time = time.perf_counter()
         container = None
@@ -381,10 +382,12 @@ class Sidecar:
             # reload container data
             container_data = await container.show()
             log.info(
-                "%s completed with error code %s and Error %s",
+                "%s completed with error code %s: %s",
                 docker_image,
                 container_data["State"]["ExitCode"],
-                container_data["State"]["Error"],
+                container_data["State"]["Error"]
+                if container_data["State"]["ExitCode"] > 0
+                else "which is good!",
             )
         except aiodocker.exceptions.DockerContainerError:
             log.exception(
