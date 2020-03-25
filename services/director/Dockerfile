@@ -58,7 +58,8 @@ ENV SC_BUILD_TARGET=build
 
 RUN apt-get update &&\
       apt-get install -y --no-install-recommends \
-      build-essential
+      build-essential \
+      git
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN python -m venv ${VIRTUAL_ENV}
@@ -73,7 +74,7 @@ COPY  --chown=scu:scu packages /build/packages
 COPY  --chown=scu:scu services/director /build/services/director
 
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
-RUN $SC_PIP install -r /build/services/director/requirements/_base.txt
+RUN pip --no-cache-dir install -r /build/services/director/requirements/_base.txt
 
 # FIXME:
 # necessary to prevent duplicated files.
