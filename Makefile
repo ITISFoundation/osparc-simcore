@@ -82,13 +82,13 @@ rebuild: build-nc # alias
 build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
 ifeq ($(target),)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client compile
+	@$(MAKE) --directory=services/web/client compile
 	# Building services
 	$(_docker_compose_build) --parallel
 else
 ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client clean compile
+	@$(MAKE) --directory=services/web/client clean compile
 endif
 	# Building service $(target)
 	$(_docker_compose_build) $(target)
@@ -102,7 +102,7 @@ ifeq ($(target),)
 else
 ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client touch compile-dev
+	@$(MAKE) --directory=services/web/client touch compile-dev
 endif
 	# Building service $(target)
 	$(_docker_compose_build) $(target)
@@ -113,7 +113,7 @@ endif
 build-cache build-cache-nc: .env ## Build cache images and tags them as 'local/{service-name}:cache'
 ifeq ($(target),)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client compile
+	@$(MAKE) --directory=services/web/client compile
 	# Building cache images
 	$(_docker_compose_build) --parallel
 else
@@ -175,7 +175,7 @@ up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Dep
 	$(MAKE) .deploy-ops
 	# Start compile+watch front-end container [front-end]
 	$(if $(IS_WSL),$(warning WINDOWS: Do not forget to run scripts/win-watcher.bat in cmd),)
-	$(MAKE) -C services/web/client compile-dev flags=--watch
+	$(MAKE) --directory=services/web/client compile-dev flags=--watch
 
 up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Deploy stack $(SWARM_STACK_NAME)
@@ -199,7 +199,7 @@ down: ## Stops and removes stack
 		$(shell docker stack ls --format={{.Name}} | tac),\
 		docker stack rm $(stack);)
 	# Removing client containers (if any)
-	-$(MAKE) -C services/web/client down
+	-$(MAKE) --directory=services/web/client down
 	# Removing generated docker compose configurations, i.e. .stack-*
 	-$(shell rm $(wildcard .stack-*))
 
@@ -381,7 +381,7 @@ ifeq ($(target),)
 			$(call show-meta,$(service))\
 		)
 	## Client images:
-	@$(MAKE) -C services/web/client info
+	@$(MAKE) --directory=services/web/client info
 else
 	## $(target) images:
 	@$(call show-meta,$(target))
@@ -412,27 +412,29 @@ git_clean_args := -dxf -e .vscode -e TODO.md -e .venv
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 
-clean-venv: ## Purges .venv into original configuration
+clean-venv: devenv ## Purges .venv into original configuration
 	# Cleaning your venv
 	pip-sync $(CURDIR)/requirements.txt
 	@pip list
 
-clean: .check-clean clean-venv ## cleans all unversioned files in project and temp files create by this makefile
+clean: .check-clean  ## cleans all unversioned files in project and temp files create by this makefile
 	# Cleaning unversioned
 	@git clean $(git_clean_args)
 	# Cleaning web/client
-	@$(MAKE) -C services/web/client clean
+	@$(MAKE) --directory=services/web/client clean
 	# Cleaning postgres maintenance
-	@$(MAKE) -C packages/postgres-database/docker clean
+	@$(MAKE) --directory=packages/postgres-database/docker clean
+	#
+	@$(MAKE) clean-venv
 
 clean-images: ## removes all created images
 	# Cleaning all service images
 	-$(foreach service,$(SERVICES_LIST)\
 		,docker image rm -f $(shell docker images */$(service):* -q);)
 	# Cleaning webclient
-	@$(MAKE) -C services/web/client clean
+	@$(MAKE) --directory=services/web/client clean
 	# Cleaning postgres maintenance
-	@$(MAKE) -C packages/postgres-database/docker clean
+	@$(MAKE) --directory=packages/postgres-database/docker clean
 
 clean-all: clean clean-images # Deep clean including .venv and produced images
 	-rm -rf .venv
@@ -440,8 +442,8 @@ clean-all: clean clean-images # Deep clean including .venv and produced images
 
 .PHONY: postgres-upgrade
 postgres-upgrade: ## initalize or upgrade postgres db to latest state
-	@$(MAKE) -C packages/postgres-database/docker build
-	@$(MAKE) -C packages/postgres-database/docker upgrade
+	@$(MAKE) --directory=packages/postgres-database/docker build
+	@$(MAKE) --directory=packages/postgres-database/docker upgrade
 
 .PHONY: reset
 reset: ## restart docker daemon (LINUX ONLY)
