@@ -17,8 +17,6 @@ from simcore_service_webserver.resources import resources
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 
-# TODO: reduce log from openapi_core loggers
-
 
 @pytest.fixture
 def spec_dict(openapi_path):
@@ -31,6 +29,14 @@ def spec_dict(openapi_path):
 def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
     app = create_safe_application()
 
+    MAX_DELAY_SECS_ALLOWED = 1  # secs
+
+    async def slow_handler(request: web.Request):
+        import time
+
+        time.sleep(MAX_DELAY_SECS_ALLOWED * 1.1)
+        raise web.HTTPOk()
+
     server_kwargs = {"port": aiohttp_unused_port(), "host": "localhost"}
     # fake config
     app[APP_CONFIG_KEY] = {
@@ -41,22 +47,10 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
     setup_security(app)
     setup_rest(app)
 
+    app.router.add_get("/slow", slow_handler)
+
     cli = loop.run_until_complete(aiohttp_client(app, server_kwargs=server_kwargs))
     return cli
-
-
-async def test_check_health(client, api_version_prefix):
-    resp = await client.get(f"/{api_version_prefix}/")
-    payload = await resp.json()
-
-    assert resp.status == 200, str(payload)
-    data, error = tuple(payload.get(k) for k in ("data", "error"))
-
-    assert data
-    assert not error
-
-    assert data["name"] == "simcore_service_webserver"
-    assert data["status"] == "SERVICE_RUNNING"
 
 
 FAKE = {
