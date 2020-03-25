@@ -13,7 +13,7 @@ import aiofiles
 import aiopg
 import attr
 from celery.utils.log import get_task_logger
-from sqlalchemy import and_
+from sqlalchemy import and_, literal_column
 
 from servicelib.utils import logged_gather
 from simcore_postgres_database.sidecar_models import (
@@ -363,6 +363,7 @@ class Sidecar:
 
             container_data = await container.show()
             while container_data["State"]["Running"]:
+                await asyncio.sleep(5)
                 # reload container data
                 container_data = await container.show()
                 if (
@@ -376,7 +377,7 @@ class Sidecar:
                     )
                     await container.stop()
                     break
-                await asyncio.sleep(5)
+
             # reload container data
             container_data = await container.show()
             log.info(
@@ -548,7 +549,9 @@ class Sidecar:
                     )
                 )
                 .values(job_id=job_request_id, state=RUNNING, start=datetime.utcnow())
+                .returning(literal_column("*"))
             )
+            task = await result.fetchone()
 
             await self.initialize(task, user_id)
 
