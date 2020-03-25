@@ -18,12 +18,15 @@ billiard==3.6.3.0         # via -r _base.txt, celery
 celery==4.4.2             # via -r _base.txt
 certifi==2019.11.28       # via requests
 chardet==3.0.4            # via -r _base.txt, aiohttp, requests
+click==7.1.1              # via -r _base.txt
 coverage==4.5.1           # via -r _test.in, coveralls, pytest-cov
 coveralls==1.11.1         # via -r _test.in
+dataclasses==0.7          # via -r _base.txt, pydantic
 decorator==4.4.2          # via -r _base.txt, networkx
 docker==4.2.0             # via -r _test.in
 docopt==0.6.2             # via coveralls
-idna==2.9                 # via -r _base.txt, requests, yarl
+idna-ssl==1.1.0           # via -r _base.txt, aiohttp
+idna==2.9                 # via -r _base.txt, idna-ssl, requests, yarl
 importlib-metadata==1.5.0  # via -r _base.txt, kombu, pluggy, pytest
 isort==4.3.21             # via pylint
 kombu==4.6.8              # via -r _base.txt, celery
@@ -54,6 +57,7 @@ sqlalchemy==1.3.15        # via -r _base.txt
 tenacity==6.1.0           # via -r _base.txt
 termcolor==1.1.0          # via pytest-sugar
 typed-ast==1.4.1          # via astroid
+typing-extensions==3.7.4.1  # via -r _base.txt, aiohttp
 urllib3==1.25.8           # via -r _base.txt, requests
 vine==1.3.0               # via -r _base.txt, amqp, celery
 wcwidth==0.1.9            # via pytest
