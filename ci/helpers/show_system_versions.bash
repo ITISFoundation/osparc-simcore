@@ -22,7 +22,10 @@ fi
 
 echo "------------------------------ docker -----------------------------------"
 if command -v docker; then
-    docker -v
+    echo "docker --version output"
+    docker --version
+    echo "docker info output"
+    docker info
 fi
 
 echo "------------------------------ docker-compose -----------------------------------"
