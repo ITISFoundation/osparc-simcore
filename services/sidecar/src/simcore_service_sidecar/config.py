@@ -7,11 +7,11 @@ SERVICES_MAX_NANO_CPUS: int = min(
     multiprocessing.cpu_count() * pow(10, 9),
     int(os.environ.get("SIDECAR_SERVICES_MAX_NANO_CPUS", 4 * pow(10, 9))),
 )
-SERVICES_MAX_MEMORY_BYTES: int = os.environ.get(
-    "SIDECAR_SERVICES_MAX_MEMORY_BYTES", 2 * pow(1024, 3)
+SERVICES_MAX_MEMORY_BYTES: int = int(
+    os.environ.get("SIDECAR_SERVICES_MAX_MEMORY_BYTES", 2 * pow(1024, 3))
 )
-SERVICES_TIMEOUT_SECONDS: int = os.environ.get(
-    "SIDECAR_SERVICES_TIMEOUT_SECONDS", 20 * 60
+SERVICES_TIMEOUT_SECONDS: int = int(
+    os.environ.get("SIDECAR_SERVICES_TIMEOUT_SECONDS", 20 * 60)
 )
 SWARM_STACK_NAME: str = os.environ.get("SWARM_STACK_NAME", "simcore")
 
