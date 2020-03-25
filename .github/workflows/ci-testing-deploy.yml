@@ -33,8 +33,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: setup python environment
@@ -65,8 +63,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: setup python environment
@@ -111,8 +107,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: setup python environment
@@ -157,8 +151,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: setup python environment
@@ -203,8 +195,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: setup python environment
@@ -248,8 +238,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - uses: actions/setup-node@v1
@@ -284,8 +272,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: setup python environment
@@ -316,8 +302,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: setup python environment
@@ -362,8 +346,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: setup python environment
@@ -408,8 +390,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: setup python environment
@@ -454,8 +434,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: setup python environment
@@ -495,8 +473,6 @@ jobs:
     name: build docker test images
     steps:
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: show system environs
@@ -529,8 +505,6 @@ jobs:
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: setup python environment
@@ -585,8 +559,6 @@ jobs:
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: setup python environment
@@ -641,8 +613,6 @@ jobs:
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: setup python environment
@@ -697,8 +667,6 @@ jobs:
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: setup python environment
@@ -740,8 +708,6 @@ jobs:
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: setup python environment
@@ -892,8 +858,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash
       - name: set owner variable
