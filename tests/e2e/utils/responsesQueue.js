@@ -71,11 +71,9 @@ class ResponsesQueue {
     if (sleptFor >= timeout) {
       throw("-- Timeout reached." + new Date().toUTCString());
     }
-    // console.log("waitUntilResponse", url);
-    // console.log(Object.keys(this.__respReceivedQueue));
     if (Object.prototype.hasOwnProperty.call(this.__respReceivedQueue, url)) {
       const resp = this.__respReceivedQueue[url];
-      if (resp && "error" in resp && resp["error"] !== null) {
+      if (resp && Object.prototype.hasOwnProperty.call(resp, "error") && resp["error"] !== null) {
         throw("-- Error in response", resp["error"]);
       }
       delete this.__respReceivedQueue[url];
