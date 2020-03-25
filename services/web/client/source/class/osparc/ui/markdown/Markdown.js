@@ -43,7 +43,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
       }
     });
     if (markdown) {
-      this.setMarkdown(markdown);
+      this.setValue(markdown);
     }
 
     this.addListener("resize", e => this.__resizeMe(), this);
@@ -53,7 +53,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
     /**
      * Holds the raw markdown text and updates the label's {@link #value} whenever new markdown arrives.
      */
-    markdown: {
+    value: {
       check: "String",
       apply: "_applyMarkdown"
     }
