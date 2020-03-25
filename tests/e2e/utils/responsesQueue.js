@@ -29,14 +29,25 @@ class ResponsesQueue {
     page.on("response", function callback(resp) {
       if (resp.url().includes(url)) {
         console.log((new Date).toUTCString(), "-- Queued response received", resp.url(), ":");
-        resp.json().then(data => {
-          that.__respReceivedQueue[url] = data;
+        console.log(resp.status());
+        if (resp.status() === 204) {
+          that.__respReceivedQueue[url] = "ok";
           page.removeListener("response", callback);
           const index = respPendingQueue.indexOf(url);
           if (index > -1) {
             respPendingQueue.splice(index, 1);
           }
-        });
+        }
+        else {
+          resp.json().then(data => {
+            that.__respReceivedQueue[url] = data;
+            page.removeListener("response", callback);
+            const index = respPendingQueue.indexOf(url);
+            if (index > -1) {
+              respPendingQueue.splice(index, 1);
+            }
+          });
+        }
       }
     });
   }
