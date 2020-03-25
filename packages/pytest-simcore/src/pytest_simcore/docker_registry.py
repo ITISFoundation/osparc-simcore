@@ -63,6 +63,7 @@ def docker_registry(keep_docker_up: bool) -> str:
 
     if not keep_docker_up:
         container.stop()
+        container.remove(force=True)
 
         while docker_client.containers.list(filters={"name": container.name}):
             time.sleep(1)
