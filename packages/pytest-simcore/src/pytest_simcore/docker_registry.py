@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import json
+import logging
 import os
 import time
 from typing import Dict
@@ -11,6 +12,7 @@ import docker
 import pytest
 import tenacity
 
+log = logging.getLogger(__name__)
 
 @pytest.fixture(scope="session")
 def docker_registry(keep_docker_up: bool) -> str:
@@ -36,7 +38,7 @@ def docker_registry(keep_docker_up: bool) -> str:
         )
 
         # Wait until we can connect
-        assert _wait_till_registry_is_responsive(url)
+        assert wait_till_registry_is_responsive(url)
 
     # get the hello world example from docker hub
     hello_world_image = docker_client.images.pull("hello-world", "latest")
@@ -69,8 +71,8 @@ def docker_registry(keep_docker_up: bool) -> str:
             time.sleep(1)
 
 
-@tenacity.retry(wait=tenacity.wait_fixed(1), stop=tenacity.stop_after_delay(60))
-def _wait_till_registry_is_responsive(url: str) -> bool:
+@tenacity.retry(wait=tenacity.wait_fixed(2), stop=tenacity.stop_after_delay(20), before_sleep=tenacity.before_sleep_log(log, logging.INFO), reraise=True)
+def wait_till_registry_is_responsive(url: str) -> bool:
     docker_client = docker.from_env()
     docker_client.login(registry=url, username="simcore")
     return True
