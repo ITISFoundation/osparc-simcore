@@ -87,7 +87,7 @@ class RabbitMQ(BaseModel):
                 "Node": node_id,
                 "user_id": user_id,
                 "project_id": project_id,
-                "Messages": progress_msg,
+                "Progress": progress_msg,
             },
         )
 
