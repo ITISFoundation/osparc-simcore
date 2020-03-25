@@ -12,9 +12,10 @@ watchdog[watchmedo]
 
 # installs base + tests requirements
 -r _test.txt
--e ../../packages/pytest-simcore/
+
 # installs this repo's packages
 -e ../../packages/service-library/
+-e ../../packages/pytest-simcore/
 
 # installs current package
 -e .
