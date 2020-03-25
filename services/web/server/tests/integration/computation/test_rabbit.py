@@ -14,7 +14,7 @@ from mock import call
 
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
-from simcore_sdk.config.rabbit import eval_broker
+from simcore_sdk.config.rabbit import Config
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.computation_config import CONFIG_SECTION_NAME
 from simcore_service_webserver.db import setup_db
@@ -80,7 +80,7 @@ def rabbit_config(app_config):
 
 @pytest.fixture
 def rabbit_broker(rabbit_config):
-    rabbit_broker = eval_broker(rabbit_config)
+    rabbit_broker = rabbit_config.broker_url
     yield rabbit_broker
 
 
