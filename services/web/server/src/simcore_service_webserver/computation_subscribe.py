@@ -80,7 +80,7 @@ async def subscribe(app: web.Application) -> None:
     # This exception is catch and pika persists ... WARNING:pika.connection:Could not connect, 5 attempts l
 
     rb_config: Dict = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    rabbit_broker = RabbitConfig(rb_config).broker_url
+    rabbit_broker = RabbitConfig(**rb_config).broker_url
 
     log.info("Creating pika connection for %s", rabbit_broker)
     await wait_till_rabbitmq_responsive(rabbit_broker)

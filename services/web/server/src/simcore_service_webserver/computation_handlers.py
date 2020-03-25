@@ -26,7 +26,7 @@ computation_routes = web.RouteTableDef()
 def get_celery(_app: web.Application):
     config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
     rabbit = RabbitConfig(**config)
-    celery = Celery(rabbit.name, broker=rabbit.broker_url, backend=rabbit.celery["result_backend"])
+    celery = Celery(rabbit.name, broker=rabbit.broker_url, backend=rabbit.backend,)
     return celery
 
 
@@ -57,7 +57,6 @@ async def update_pipeline(request: web.Request) -> web.Response:
         await update_pipeline_db(request.app, project_id, project["workbench"])
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_id} not found")
-    
 
     raise web.HTTPNoContent()
 
