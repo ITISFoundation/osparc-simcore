@@ -36,6 +36,7 @@
  * </pre>
  * 
  * @asset(form/service.json)
+ * @asset(form/service-data.json)
  */
 
 qx.Class.define("osparc.dashboard.ServiceBrowser", {
