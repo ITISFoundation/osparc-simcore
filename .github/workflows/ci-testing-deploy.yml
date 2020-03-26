@@ -513,25 +513,29 @@ jobs:
           path: codeclimate.unit_webserver_coverage.json
 
   build-test-images:
-    # make PR faster
-    if: github.event_name == 'push'
+    # make PR faster by executing this one straight as PR cannot push to the registry anyway
     runs-on: ubuntu-18.04
     name: build docker test images
     steps:
       - uses: actions/checkout@v2
       - name: setup docker
+        if: github.event_name == 'push'
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: show system environs
+        if: github.event_name == 'push'
         run: ./ci/helpers/show_system_versions.bash
       - name: pull images
+        if: github.event_name == 'push'
         run: ./ci/build/test-images.bash pull_images
       - name: build images
+        if: github.event_name == 'push'
         run: ./ci/build/test-images.bash build_images
       - name: set owner variable
+        if: github.event_name == 'push'
         run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
       - name: push images
         # only pushes have access to the docker credentials
