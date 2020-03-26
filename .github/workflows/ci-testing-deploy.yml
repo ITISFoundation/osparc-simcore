@@ -37,6 +37,7 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -69,6 +70,7 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -115,6 +117,7 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -161,6 +164,7 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -207,6 +211,7 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -252,6 +257,7 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node }}
@@ -288,6 +294,7 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -320,6 +327,7 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -366,6 +374,7 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -412,6 +421,7 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -458,6 +468,7 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -499,12 +510,13 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - name: show system environs
         run: ./ci/helpers/show_system_versions.bash
       - name: pull images
-        run: ./ci/build/test-images.bash pull_images
+        run: ./ci/github/build/test-images.bash pull_images
       - name: build images
-        run: ./ci/build/test-images.bash build_images
+        run: ./ci/github/build/test-images.bash build_images
       - name: set owner variable
         run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
       - name: push images
@@ -533,6 +545,7 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -589,6 +602,7 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -645,6 +659,7 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -701,6 +716,7 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -744,6 +760,7 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -896,6 +913,7 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
       - name: set owner variable
         run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
       - name: deploy master
