@@ -20,7 +20,7 @@
 qx.Class.define("osparc.desktop.StudyEditor", {
   extend: qx.ui.splitpane.Pane,
 
-  construct: function(study) {
+  construct: function() {
     this.base(arguments, "horizontal");
 
     let mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
@@ -37,10 +37,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     this.add(mainPanel, 1); // flex 1
     this.add(scroll, 0); // flex 0
-
-    if (study) {
-      this.setStudy(study);
-    }
 
     this.__attachEventHandlers();
   },
