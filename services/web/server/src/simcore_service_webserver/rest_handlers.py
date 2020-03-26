@@ -3,6 +3,7 @@
 
 """
 import asyncio
+import logging
 
 from aiohttp import web
 
@@ -11,11 +12,21 @@ from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_utils import body_to_dict, extract_and_validate
 
 from . import __version__
+from .diagnostics import DiagnosticError, assert_healthy_app
 from .utils import get_task_info, get_tracemalloc_info
+
+log = logging.getLogger(__name__)
 
 
 async def check_health(request: web.Request):
-    await extract_and_validate(request)
+
+    # diagnostics of incidents
+    try:
+        assert_healthy_app(request.app)
+    except DiagnosticError as err:
+        msg = f"Unhealthy service: {err}"
+        log.error(msg)
+        raise web.HTTPServiceUnavailable(reason=msg)
 
     data = {
         "name": __name__.split(".")[0],
@@ -23,7 +34,6 @@ async def check_health(request: web.Request):
         "status": "SERVICE_RUNNING",
         "api_version": str(__version__),
     }
-
     return data
 
 
