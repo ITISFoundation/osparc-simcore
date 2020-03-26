@@ -26,8 +26,8 @@ qx.Class.define("osparc.ui.form.FileInput", {
     if (multiple) {
       this.setMultiple(multiple);
     }
-    this.__input = new qx.html.Input('file', {
-      display: 'none'
+    this.__input = new qx.html.Input("file", {
+      display: "none"
     }, {
       accept: this.getExtensions().map(ext => "." + ext).join(","),
       multiple
@@ -59,7 +59,7 @@ qx.Class.define("osparc.ui.form.FileInput", {
       this.__input.addListener("change", () => {
         const fileNames = [];
         const files = this.__input.getDomElement().files;
-        for (let i=0;i<files.length; i++) {
+        for (let i=0; i<files.length; i++) {
           fileNames.push(files[i].name);
         }
         this.__selectedFiles.setValue(fileNames.join("; "));

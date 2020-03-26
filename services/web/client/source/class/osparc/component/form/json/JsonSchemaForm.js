@@ -57,7 +57,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     __validationManager: null,
     /**
      * Main function to render a form. It uses the data to prefill the form if it is present.
-     * 
+     *
      * @param {Object} schema JSONSchema used for this form
      */
     __render: function(schema) {
@@ -96,13 +96,13 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     },
     /**
      * Uses Ajv library to validate data against a schema.
-     * 
+     *
      * @param {Object} schema JSONSchema to validate against
      * @param {Object} data Data to be validated
      * @param {Boolean} showMessage Determines whether an error message is displayed to the user
      */
     __validate: function(schema, data, showMessage=true) {
-      this.__ajv.validate(schema, data)
+      this.__ajv.validate(schema, data);
       const errors = this.__ajv.errors;
       if (errors) {
         console.error(errors);
@@ -116,7 +116,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     },
     /**
      * Function in charge of recursively building the form.
-     * 
+     *
      * @param {String} key Key of the entry in the schema. == null -> root / == -1 -> array item
      * @param {Object} schema Current schema being expanded.
      * @param {Integer} depth Increases as we go deeper into the schema.
@@ -149,12 +149,12 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     },
     /**
      * Function that expands an array if any data was provided.
-     * 
+     *
      * @param {Object} schema Schema for the array.
      * @param {Object} data Array's given data.
      * @param {Integer} depth Current depth into the schema (could be used for styling purposes).
      */
-    __expandArray(schema, data, depth) {
+    __expandArray: function(schema, data, depth) {
       const container = new osparc.component.form.json.JsonSchemaFormArray();
       // Add array items
       if (data) {
@@ -164,7 +164,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     },
     /**
      * Expands an object property changing its style depending on certain parameters.
-     * 
+     *
      * @param {Object} schema Object's schema to be expanded.
      * @param {Integer} depth Current depth into the schema.
      * @param {Boolean} isArrayItem Used for different styling.
@@ -219,7 +219,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     },
     /**
      * Function that returns an appropriate widget fot the given type.
-     * 
+     *
      * @param {String} type Type of the input that will be used to determine the render behavior
      */
     __getInput: function(type) {

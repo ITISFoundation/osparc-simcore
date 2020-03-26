@@ -19,7 +19,13 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormHeader", {
       font: "title-12"
     });
     if (schema.type === "object" || schema.type === "array") {
-      this.__label.setFont(depth === 0 ? "title-18" : depth == 1 ? "title-16" : "title-14");
+      let font = "title-14";
+      if (depth === 1) {
+        font = "title-16";
+      } else if (depth === 0) {
+        font = "title-18";
+      }
+      this.__label.setFont(font);
       this.setMarginBottom(10);
     }
     this.add(this.__label, {
@@ -37,9 +43,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormHeader", {
       }, this);
     }
     this.bind("key", this.__label, "value", {
-      converter: key => {
-        return this.__getHeaderText(key, schema, isArrayItem);
-      }
+      converter: key => this.__getHeaderText(key, schema, isArrayItem)
     });
   },
   properties: {

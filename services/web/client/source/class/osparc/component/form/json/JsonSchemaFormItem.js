@@ -33,7 +33,6 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
   members: {
     __header: null,
     __isArrayItem: null,
-    __header: null,
     __input: null,
     /**
      * Makes this item a final input (leaf).
@@ -67,7 +66,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
      */
     getPath: function() {
       const isForm = layoutItem => layoutItem instanceof osparc.component.form.json.JsonSchemaForm;
-      const isFormItem = layoutItem  => layoutItem instanceof osparc.component.form.json.JsonSchemaFormItem;
+      const isFormItem = layoutItem => layoutItem instanceof osparc.component.form.json.JsonSchemaFormItem;
       let parent = this.getLayoutParent();
       // Search for its parent FormItem
       while (!isFormItem(parent) && !isForm(parent) && parent) {
@@ -84,7 +83,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
     },
     /**
      * Function that returns an appropriate widget fot the given type.
-     * 
+     *
      * @param {String} type Type of the input that will be used to determine the render behavior
      */
     __getInputElement: function(validation, validationManager) {
@@ -108,16 +107,17 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
             this.__schema.enum.forEach(element => input.add(element));
             break;
           }
+          // falls through
         default:
           input = new qx.ui.form.TextField().set({
-            required: validation && validation.required ? true : false
+            required: validation && validation.required
           });
           if (this.__schema.pattern) {
             validationManager.add(input, osparc.utils.Validators.regExp(RegExp(this.__schema.pattern)));
           } else if (validation) {
             validationManager.add(input);
           }
-        }
+      }
       return input;
     }
   }

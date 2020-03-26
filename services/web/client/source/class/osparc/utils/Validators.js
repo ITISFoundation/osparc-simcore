@@ -24,7 +24,7 @@ qx.Class.define("osparc.utils.Validators", {
           item.setInvalidMessage(qx.locale.Manager.tr("Format is invalid"));
         }
         return valid;
-      }
+      };
     }
   }
 });

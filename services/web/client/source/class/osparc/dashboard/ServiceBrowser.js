@@ -34,7 +34,7 @@
  *   let servicesView = this.__serviceBrowser = new osparc.dashboard.ServiceBrowser();
  *   this.getRoot().add(servicesView);
  * </pre>
- * 
+ *
  * @asset(form/service.json)
  * @asset(form/service-data.json)
  */
@@ -290,7 +290,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
             .finally(() => form.setFetching(false));
         });
         scroll.add(form);
-      }
+      };
       const addServiceButton = new qx.ui.form.Button(this.tr("Add service"), "@FontAwesome5Solid/plus-circle/14");
       const testDataButton = new qx.ui.form.Button(this.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");
       addServiceButton.addListener("execute", () => {
