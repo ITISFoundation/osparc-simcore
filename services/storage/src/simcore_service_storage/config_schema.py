@@ -8,14 +8,14 @@ from . import rest_config
 app_schema = T.Dict(
     {
         T.Key("host", default="0.0.0.0"): T.IP,
-        "port": T.Int(),
+        "port": T.ToInt(),
         "log_level": T.Enum(
             "DEBUG", "WARNING", "INFO", "ERROR", "CRITICAL", "FATAL", "NOTSET"
         ),
         "testing": T.Bool(),
-        T.Key("max_workers", default=8, optional=True): T.Int(),
+        T.Key("max_workers", default=8, optional=True): T.ToInt(),
         T.Key("monitoring_enabled", default=False): T.Or(
-            T.Bool(), T.Int
+            T.Bool(), T.ToInt
         ),  # Int added to use environs
         T.Key("test_datcore", optional=True): T.Dict(
             {"token_key": T.String(), "token_secret": T.String()}
