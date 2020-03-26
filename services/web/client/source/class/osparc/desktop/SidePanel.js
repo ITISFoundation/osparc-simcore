@@ -105,7 +105,7 @@ qx.Class.define("osparc.desktop.SidePanel", {
           this.remove(this.getCollapsedView());
         }
       }
-      
+
       const splitpaneContainer = this.__getSplitpaneContainer();
       if (collapsed) {
         // Save widths
