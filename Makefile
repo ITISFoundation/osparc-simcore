@@ -71,7 +71,7 @@ endif
 #
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
 
-.PHONY: build build-nc rebuild build-devel build-devel-nc build-cache build-cache-nc
+.PHONY: build build-nc rebuild build-devel build-devel-nc build-devel-x build-cache build-cache-x build-cache-nc build-x
 
 define _docker_compose_build
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,$(if $(findstring -cache,$@),cache,production)); \
@@ -92,7 +92,7 @@ ifeq ($(target),)
 else
 ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client clean compile
+	@$(MAKE) -C services/web/client clean compile$(if $(findstring -x,$@),-x,)
 endif
 	# Building service $(target)
 	$(_docker_compose_build) $(target)
@@ -106,7 +106,7 @@ ifeq ($(target),)
 else
 ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client touch-x compile-dev
+	@$(MAKE) -C services/web/client touch$(if $(findstring -x,$@),-x,) compile-dev
 endif
 	# Building service $(target)
 	$(_docker_compose_build) $(target)
@@ -114,10 +114,10 @@ endif
 
 
 # TODO: should download cache if any??
-build-cache build-cache-nc: .env ## Build cache images and tags them as 'local/{service-name}:cache'
+build-cache build-cache-nc build-cache-x: .env ## Build cache images and tags them as 'local/{service-name}:cache'
 ifeq ($(target),)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client compile
+	@$(MAKE) -C services/web/client compile$(if $(findstring -x,$@),-x,)
 	# Building cache images
 	$(_docker_compose_build)
 else
