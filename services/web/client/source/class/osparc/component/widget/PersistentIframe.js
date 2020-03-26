@@ -94,7 +94,6 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       });
       actionButton.addListener("execute", e => {
         this.maximizeIFrame(!this.hasState("maximized"));
-        qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
       }, this);
       appRoot.add(actionButton);
       standin.addListener("appear", e => {
@@ -143,6 +142,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
         this.removeState("maximized");
         actionButton.setIcon(osparc.theme.osparcdark.Image.URLS["window-maximize"]+"/20");
       }
+      qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
     },
 
     __syncIframePos: function() {
