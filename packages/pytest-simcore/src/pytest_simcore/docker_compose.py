@@ -77,9 +77,20 @@ def env_file(osparc_simcore_root_dir: Path, devel_environ: Dict[str, str]) -> Pa
         backup_path.unlink()
 
 
+@pytest.fixture(scope="module")
+def make_up_prod_environ():
+    if not "DOCKER_REGISTRY" in os.environ:
+        os.environ["DOCKER_REGISTRY"] = "local"
+    if not "DOCKER_IMAGE_TAG" in os.environ:
+        os.environ["DOCKER_IMAGE_TAG"] = "production"
+
+
 @pytest.fixture("module")
 def simcore_docker_compose(
-    osparc_simcore_root_dir: Path, env_file: Path, temp_folder: Path
+    osparc_simcore_root_dir: Path,
+    env_file: Path,
+    temp_folder: Path,
+    make_up_prod_environ,
 ) -> Dict:
     """ Resolves docker-compose for simcore stack in local host
 
@@ -87,8 +98,6 @@ def simcore_docker_compose(
     """
     COMPOSE_FILENAMES = ["docker-compose.yml", "docker-compose.local.yml"]
 
-    os.environ["DOCKER_REGISTRY"] = "local"
-    os.environ["DOCKER_IMAGE_TAG"] = "production"
     # ensures .env at git_root_dir
     assert env_file.exists()
     assert env_file.parent == osparc_simcore_root_dir
