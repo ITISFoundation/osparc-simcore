@@ -21,8 +21,10 @@ jobs:
       TAG_PREFIX: staging-github
     steps:
       - uses: actions/checkout@v2
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
       - name: set owner variable
         run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
       - name: set git tag
