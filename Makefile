@@ -75,16 +75,20 @@ SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),N
 
 define _docker_compose_build
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,$(if $(findstring -cache,$@),cache,production)); \
-docker-compose -f services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,)
+$(if $(findstring -x,$@),\
+	pushd services; docker buildx bake --file docker-compose-build.yml; popd;,\
+	docker-compose -f services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,) --parallel;\
+)
 endef
 
 rebuild: build-nc # alias
-build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
+build build-nc build-x: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
 ifeq ($(target),)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client compile
+	@$(MAKE) -C services/web/client compile$(if $(findstring -x,$@),-x,)
+	
 	# Building services
-	$(_docker_compose_build) --parallel
+	$(_docker_compose_build)
 else
 ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
@@ -95,14 +99,14 @@ endif
 endif
 
 
-build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
+build-devel build-devel-nc build-devel-x: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
 ifeq ($(target),)
 	# Building services
-	$(_docker_compose_build) --parallel
+	$(_docker_compose_build)
 else
 ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client touch compile-dev
+	@$(MAKE) -C services/web/client touch-x compile-dev
 endif
 	# Building service $(target)
 	$(_docker_compose_build) $(target)
@@ -115,7 +119,7 @@ ifeq ($(target),)
 	# Compiling front-end
 	@$(MAKE) -C services/web/client compile
 	# Building cache images
-	$(_docker_compose_build) --parallel
+	$(_docker_compose_build)
 else
 	$(_docker_compose_build) $(target)
 endif
