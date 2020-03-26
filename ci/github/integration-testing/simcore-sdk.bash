@@ -11,7 +11,7 @@ install() {
     pushd packages/simcore-sdk; pip3 install -r requirements/ci.txt; popd;
     pip list -v
     # pull the test images if registry is set up, else build the images
-    make pull-version || ( (make pull-cache || true) && make build tag-version)
+    make pull-version || ( (make pull-cache || true) && make build-x tag-version)
     make info-images
     # pip3 install services/storage/client-sdk/python
 }

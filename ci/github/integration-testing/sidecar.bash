@@ -11,7 +11,7 @@ install() {
     bash ci/helpers/ensure_python_pip.bash
     pushd services/sidecar; pip3 install -r requirements/ci.txt; popd;
     pip list -v
-    make pull-version || ( (make pull-cache || true) && make build tag-version)
+    make pull-version || ( (make pull-cache || true) && make build-x tag-version)
     make info-images
 }
 
