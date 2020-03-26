@@ -1,11 +1,9 @@
 import asyncio
 import logging
-from pathlib import Path
 from typing import List
 
 import aiopg
 import networkx as nx
-from pydantic import BaseModel # pylint: disable=no-name-in-module
 from simcore_postgres_database.sidecar_models import SUCCESS, comp_pipeline, comp_tasks
 from sqlalchemy import and_
 
@@ -65,9 +63,3 @@ def execution_graph(pipeline: comp_pipeline) -> nx.DiGraph:
             continue
         G.add_edges_from([(node, n) for n in nodes])
     return G
-
-
-class ExecutorSettings(BaseModel):
-    in_dir: Path = ""
-    out_dir: Path = ""
-    log_dir: Path = ""

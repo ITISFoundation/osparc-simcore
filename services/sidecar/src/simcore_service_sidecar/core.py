@@ -1,17 +1,16 @@
 # pylint: disable=no-member
-import asyncio
 import json
 import logging
 import shutil
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Optional
 
 import aiodocker
-import aiofiles
 import aiopg
 import attr
+import networkx as nx
 from celery.utils.log import get_task_logger
 from sqlalchemy import and_, literal_column
 
@@ -31,7 +30,7 @@ from simcore_sdk.node_ports.dbmanager import DBManager
 from . import config, exceptions
 from .log_parser import LogType, monitor_logs_task
 from .rabbitmq import RabbitMQ
-from .utils import ExecutorSettings, execution_graph, find_entry_point, is_node_ready
+from .utils import execution_graph, find_entry_point, is_node_ready
 
 log = get_task_logger(__name__)
 log.setLevel(config.SIDECAR_LOGLEVEL)
@@ -39,31 +38,46 @@ log.setLevel(config.SIDECAR_LOGLEVEL)
 node_port_log.setLevel(config.SIDECAR_LOGLEVEL)
 
 
-@attr.s
+@attr.s(auto_attribs=True)
+class TaskSharedVolumes:
+    input_folder: Path = None
+    output_folder: Path = None
+    log_folder: Path = None
+
+    @classmethod
+    def from_task(cls, task: aiopg.sa.result.RowProxy):
+        return cls(
+            Path.home() / f"input/{task.job_id}",
+            Path.home() / f"output/{task.job_id}",
+            Path.home() / f"log/{task.job_id}",
+        )
+
+    def create(self) -> None:
+        for folder in [
+            self.input_folder,
+            self.output_folder,
+            self.log_folder,
+        ]:
+            if folder.exists():
+                shutil.rmtree(folder)
+            folder.mkdir(parents=True, exist_ok=True)
+
+
+@attr.s(auto_attribs=True)
 class Sidecar:
     db_engine: aiopg.sa.Engine = None
     db_manager: DBManager = None
     rabbit_mq: RabbitMQ = None
-    task: comp_tasks = None  # current task
-    user_id: str = None  # current user id
-    stack_name: str = None  # stack name
-    executor: ExecutorSettings = ExecutorSettings()  # executor options
+    task: aiopg.sa.result.RowProxy = None
+    user_id: str = None
+    stack_name: str = config.SWARM_STACK_NAME
+    shared_folders: TaskSharedVolumes = None
 
     async def _get_node_ports(self):
         if self.db_manager is None:
             # Keeps single db engine: simcore_sdk.node_ports.dbmanager_{id}
             self.db_manager = DBManager(self.db_engine)
         return await node_ports.ports(self.db_manager)
-
-    async def _create_shared_folders(self):
-        for folder in [
-            self.executor.in_dir,
-            self.executor.log_dir,
-            self.executor.out_dir,
-        ]:
-            if folder.exists():
-                shutil.rmtree(folder)
-            folder.mkdir(parents=True, exist_ok=True)
 
     async def _process_task_input(self, port: node_ports.Port, input_ports: Dict):
         # pylint: disable=too-many-branches
@@ -76,7 +90,7 @@ class Sidecar:
                 # the filename is not necessarily the name of the port, might be mapped
                 mapped_filename = Path(path).name
                 input_ports[port_name] = str(port_value)
-                final_path = Path(self.executor.in_dir, mapped_filename)
+                final_path = Path(self.shared_folders.input_folder, mapped_filename)
                 shutil.copy(str(path), str(final_path))
                 log.debug(
                     "DOWNLOAD successfull from %s to %s via %s",
@@ -116,7 +130,7 @@ class Sidecar:
 
         log.debug("DUMPING json")
         if input_ports:
-            file_name = self.executor.in_dir / "input.json"
+            file_name = self.shared_folders.input_folder / "input.json"
             with file_name.open("w") as fp:
                 json.dump(input_ports, fp)
         log.debug("DUMPING DONE")
@@ -161,7 +175,7 @@ class Sidecar:
             self.task.internal_id,
         )
         PORTS = await self._get_node_ports()
-        directory = self.executor.out_dir
+        directory = self.shared_folders.output_folder
         if not directory.exists():
             return
         try:
@@ -198,7 +212,7 @@ class Sidecar:
             self.task.node_id,
             self.task.internal_id,
         )
-        directory = self.executor.log_dir
+        directory = self.shared_folders.log_folder
         if directory.exists():
             await node_data.data_manager.push(directory, rename_to="logs")
         log.debug(
@@ -208,29 +222,6 @@ class Sidecar:
             self.task.internal_id,
         )
 
-    async def initialize(self, task, user_id: str):
-        log.debug(
-            "TASK %s of user %s FOUND, initializing...", task.internal_id, user_id
-        )
-        self.task = task
-        self.user_id = user_id
-
-        # volume paths for side-car container
-        self.executor.in_dir = Path.home() / f"input/{task.job_id}"
-        self.executor.out_dir = Path.home() / f"output/{task.job_id}"
-        self.executor.log_dir = Path.home() / f"log/{task.job_id}"
-
-        # stack name, should throw if not set
-        self.stack_name = config.SWARM_STACK_NAME
-
-        # config nodeports
-        node_ports.node_config.USER_ID = user_id
-        node_ports.node_config.NODE_UUID = task.node_id
-        node_ports.node_config.PROJECT_ID = task.project_id
-        log.debug(
-            "TASK %s of user %s FOUND, initializing DONE", task.internal_id, user_id
-        )
-
     async def preprocess(self):
         log.debug(
             "Pre-Processing Pipeline %s:node %s:internal id %s from container",
@@ -238,7 +229,7 @@ class Sidecar:
             self.task.node_id,
             self.task.internal_id,
         )
-        await self._create_shared_folders()
+        self.shared_folders.create()
         await logged_gather(self._process_task_inputs(), self._pull_image())
         log.debug(
             "Pre-Processing Pipeline DONE %s:node %s:internal id %s from container",
@@ -266,7 +257,7 @@ class Sidecar:
         )
 
         # touch output file, so it's ready for the container (v0)
-        log_file = self.executor.log_dir / "log.dat"
+        log_file = self.shared_folders.log_folder / "log.dat"
         log_file.touch()
 
         log_processor_task = fire_and_forget_task(
@@ -314,8 +305,6 @@ class Sidecar:
 
             container_data = await container.show()
             while container_data["State"]["Running"]:
-                # retrieve the logs
-                await self.log_file_processor(log_file)
                 # reload container data
                 container_data = await container.show()
                 if (
@@ -356,8 +345,6 @@ class Sidecar:
             stop_time = time.perf_counter()
             log.info("Running %s took %sseconds", docker_image, stop_time - start_time)
             if container:
-                # retrieve the last logs
-                # await self.log_file_processor(log_file)
                 await container.delete(force=True)
             log_processor_task.cancel()
             await log_processor_task
@@ -430,71 +417,137 @@ class Sidecar:
         await self._process_task_output()
         await self._process_task_log()
 
-    async def inspect(
-        self,
-        db_engine: aiopg.sa.Engine,
-        rabbit_mq: RabbitMQ,
-        job_request_id: int,
-        user_id: str,
-        project_id: str,
-        node_id: str,
-    ):  # pylint: disable=too-many-arguments
-        log.debug(
-            "ENTERING inspect with user %s pipeline:node %s: %s",
-            user_id,
-            project_id,
-            node_id,
+
+async def _try_get_task_from_db(
+    db_connection: aiopg.sa.SAConnection,
+    graph: nx.DiGraph,
+    job_request_id: int,
+    project_id: str,
+    node_id: str,
+) -> Optional[aiopg.sa.result.RowProxy]:
+    task: aiopg.sa.result.RowProxy = None
+    # Use SELECT FOR UPDATE TO lock the row
+    result = await db_connection.execute(
+        query=comp_tasks.select(for_update=True).where(
+            and_(
+                comp_tasks.c.node_id == node_id,
+                comp_tasks.c.project_id == project_id,
+                comp_tasks.c.job_id == None,
+                comp_tasks.c.state == UNKNOWN,
+            )
         )
-        self.db_engine = db_engine
-        self.rabbit_mq = rabbit_mq
-        next_task_nodes = []
+    )
+    task = await result.fetchone()
 
-        async with self.db_engine.acquire() as connection:
+    if not task:
+        log.debug("No task found")
+        return
 
-            query = comp_pipeline.select().where(
-                comp_pipeline.c.project_id == project_id
+    # Check if node's dependecies are there
+    if not await is_node_ready(task, graph, db_connection, log):
+        log.debug("TASK %s NOT YET READY", task.internal_id)
+        return
+
+    # the task is ready!
+    result = await db_connection.execute(
+        # FIXME: E1120:No value for argument 'dml' in method call
+        # pylint: disable=E1120
+        comp_tasks.update()
+        .where(
+            and_(
+                comp_tasks.c.node_id == node_id, comp_tasks.c.project_id == project_id,
             )
-            result = await connection.execute(query)
-            if result.rowcount > 1:
-                raise exceptions.DatabaseError(
-                    f"Pipeline {result.rowcount} found instead of only one for project_id {project_id}"
-                )
-            pipeline = await result.first()
-            if not pipeline:
-                raise exceptions.DatabaseError(f"Pipeline {project_id} not found")
+        )
+        .values(job_id=job_request_id, state=RUNNING, start=datetime.utcnow())
+        .returning(literal_column("*"))
+    )
+    task = await result.fetchone()
+    log.debug(
+        "Task %s taken for project:node %s:%s",
+        task.job_id,
+        task.project_id,
+        task.node_id,
+    )
+    return task
 
-            graph = execution_graph(pipeline)
-            if not node_id:
-                log.debug("NODE id was zero and graph looks like this %s", graph)
-                next_task_nodes = find_entry_point(graph)
-                log.debug("Next task nodes %s", next_task_nodes)
-                return next_task_nodes
 
-            # find the for the current node_id, skip if there is already a job_id around
-            # Use SELECT FOR UPDATE TO lock the row
-            result = await connection.execute(
-                query=comp_tasks.select(for_update=True).where(
-                    and_(
-                        comp_tasks.c.node_id == node_id,
-                        comp_tasks.c.project_id == project_id,
-                        comp_tasks.c.job_id == None,
-                        comp_tasks.c.state == UNKNOWN,
-                    )
-                )
-            )
-            task = await result.fetchone()
+async def _get_pipeline_from_db(
+    db_connection: aiopg.sa.SAConnection, project_id: str,
+) -> aiopg.sa.result.RowProxy:
+    pipeline: aiopg.sa.result.RowProxy = None
+    # get the pipeline
+    result = await db_connection.execute(
+        comp_pipeline.select().where(comp_pipeline.c.project_id == project_id)
+    )
+    if result.rowcount > 1:
+        raise exceptions.DatabaseError(
+            f"Pipeline {result.rowcount} found instead of only one for project_id {project_id}"
+        )
 
-            if not task:
-                log.debug("No task found")
-                return next_task_nodes
+    pipeline = await result.first()
+    if not pipeline:
+        raise exceptions.DatabaseError(f"Pipeline {project_id} not found")
+    log.debug("found pipeline %s", pipeline)
+    return pipeline
 
-            # Check if node's dependecies are there
-            if not await is_node_ready(task, graph, connection, log):
-                log.debug("TASK %s NOT YET READY", task.internal_id)
-                return next_task_nodes
 
-            # the task is ready!
-            result = await connection.execute(
+async def inspect(
+    # pylint: disable=too-many-arguments
+    db_engine: aiopg.sa.Engine,
+    rabbit_mq: RabbitMQ,
+    job_request_id: int,
+    user_id: str,
+    project_id: str,
+    node_id: str,
+) -> List[str]:
+    log.debug(
+        "ENTERING inspect with user %s pipeline:node %s: %s",
+        user_id,
+        project_id,
+        node_id,
+    )
+
+    pipeline: aiopg.sa.result.RowProxy = None
+    task: aiopg.sa.result.RowProxy = None
+    graph: nx.DiGraph = None
+    async with db_engine.acquire() as connection:
+        pipeline = await _get_pipeline_from_db(connection, project_id)
+        graph = execution_graph(pipeline)
+        task = await _try_get_task_from_db(
+            connection, graph, job_request_id, project_id, node_id
+        )
+
+    if not node_id:
+        log.debug("NODE id was zero and graph looks like this %s", graph)
+        return find_entry_point(graph)
+    if not task:
+        raise exceptions.SidecarException("Unknown error: No task found!")
+
+    # config nodeports
+    node_ports.node_config.USER_ID = user_id
+    node_ports.node_config.NODE_UUID = task.node_id
+    node_ports.node_config.PROJECT_ID = task.project_id
+
+    # now proceed actually running the task (we do that after the db session has been closed)
+    # try to run the task, return empyt list of next nodes if anything goes wrong
+    run_result = UNKNOWN
+    next_task_nodes = []
+    try:
+        sidecar = Sidecar(
+            db_engine=db_engine,
+            rabbit_mq=rabbit_mq,
+            task=task,
+            user_id=user_id,
+            shared_folders=TaskSharedVolumes.from_task(task),
+        )
+        await sidecar.run()
+        run_result = SUCCESS
+        next_task_nodes = list(graph.successors(node_id))
+    except exceptions.SidecarException:
+        run_result = FAILED
+    finally:
+        async with db_engine.acquire() as connection:
+            await connection.execute(
                 # FIXME: E1120:No value for argument 'dml' in method call
                 # pylint: disable=E1120
                 comp_tasks.update()
@@ -504,35 +557,7 @@ class Sidecar:
                         comp_tasks.c.project_id == project_id,
                     )
                 )
-                .values(job_id=job_request_id, state=RUNNING, start=datetime.utcnow())
-                .returning(literal_column("*"))
+                .values(state=run_result, end=datetime.utcnow())
             )
-            task = await result.fetchone()
 
-            await self.initialize(task, user_id)
-
-        # now proceed actually running the task (we do that after the db session has been closed)
-        # try to run the task, return empyt list of next nodes if anything goes wrong
-        run_result = UNKNOWN
-        try:
-            await self.run()
-            run_result = SUCCESS
-            next_task_nodes = list(graph.successors(node_id))
-        except exceptions.SidecarException:
-            run_result = FAILED
-        finally:
-            async with self.db_engine.acquire() as connection:
-                await connection.execute(
-                    # FIXME: E1120:No value for argument 'dml' in method call
-                    # pylint: disable=E1120
-                    comp_tasks.update()
-                    .where(
-                        and_(
-                            comp_tasks.c.node_id == node_id,
-                            comp_tasks.c.project_id == project_id,
-                        )
-                    )
-                    .values(state=run_result, end=datetime.utcnow())
-                )
-
-        return next_task_nodes
+    return next_task_nodes

@@ -3,7 +3,7 @@ from typing import List
 
 import click
 
-from .core import Sidecar
+from .core import inspect
 from .db import DBContextManager
 from .rabbitmq import RabbitMQContextManager
 from .utils import wrap_async_call
@@ -45,8 +45,7 @@ async def run_sidecar(
 
     async with DBContextManager() as db_engine:
         async with RabbitMQContextManager() as rabbit_mq:
-            sidecar = Sidecar()
-            next_task_nodes = await sidecar.inspect(
+            next_task_nodes = await inspect(
                 db_engine, rabbit_mq, job_id, user_id, project_id, node_id=node_id
             )
             log.info(
