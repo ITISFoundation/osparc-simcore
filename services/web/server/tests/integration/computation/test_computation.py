@@ -171,7 +171,7 @@ async def test_check_health(docker_stack, client):
 async def test_start_pipeline(
     client,
     postgres_session,
-    celery_service,
+    rabbit_service,
     sleeper_service,
     logged_user,
     user_project,
