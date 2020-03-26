@@ -87,6 +87,8 @@ def simcore_docker_compose(
     """
     COMPOSE_FILENAMES = ["docker-compose.yml", "docker-compose.local.yml"]
 
+    os.environ["DOCKER_REGISTRY"] = "local"
+    os.environ["DOCKER_IMAGE_TAG"] = "production"
     # ensures .env at git_root_dir
     assert env_file.exists()
     assert env_file.parent == osparc_simcore_root_dir
