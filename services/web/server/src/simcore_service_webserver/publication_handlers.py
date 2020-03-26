@@ -15,10 +15,10 @@ async def service_submission(request: web.Request):
         if part.headers[hdrs.CONTENT_TYPE] == 'application/json':
             data = await part.json()
             continue
-        elif part.headers[hdrs.CONTENT_TYPE] == 'application/zip':
+        if part.headers[hdrs.CONTENT_TYPE] == 'application/zip':
             filedata = await part.read(decode=True)
             continue
-        else:
-            raise web.HTTPUnsupportedMediaType(reason=f'One part had an unexpected type: {part.headers[hdrs.CONTENT_TYPE]}')
+        raise web.HTTPUnsupportedMediaType(reason=f'One part had an unexpected type: {part.headers[hdrs.CONTENT_TYPE]}')
     # data (dict) and file (bytearray) have the necessary information to compose the email
+    print(data, filedata)
     return True
