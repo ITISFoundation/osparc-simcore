@@ -33,8 +33,11 @@ schema = T.Dict(
 
 
 def get_service_deletion_timeout(app: web.Application) -> int:
-    return app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]["resource_deletion_timeout_seconds"]
-
+    timeout = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME][
+        "resource_deletion_timeout_seconds"
+    ]
+    # NOTE: timeout is INT not FLOAT (timeout in expire arg at aioredis)
+    return int(timeout)
 
 def get_garbage_collector_interval(app: web.Application) -> int:
     return app[APP_CONFIG_KEY][CONFIG_SECTION_NAME][
