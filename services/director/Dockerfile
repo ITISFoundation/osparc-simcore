@@ -112,7 +112,7 @@ WORKDIR /home/scu
 # bring installed package without build tools
 COPY --from=cache --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 # copy docker entrypoint and boot scripts
-COPY --chown=scu:scu services/sidecar/docker services/sidecar/docker
+COPY --chown=scu:scu services/director/docker services/director/docker
 
 HEALTHCHECK --interval=30s \
       --timeout=120s \
