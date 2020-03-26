@@ -19,7 +19,7 @@ then
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
   echo "$INFO" "PIP :"
-  pip list | sed 's/^/    /'
+  pip list | sed 's/^/    /'  
 fi
 
 # RUNNING application ----------------------------------------
