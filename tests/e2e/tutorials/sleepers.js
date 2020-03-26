@@ -39,9 +39,7 @@ async function runTutorial () {
   ];
   await tutorial.checkResults(outFiles.length);
 
-  if (!newUser) {
-    await tutorial.removeStudy();
-  }
+  await tutorial.removeStudy();
   await tutorial.logOut();
   await tutorial.close();
 }
