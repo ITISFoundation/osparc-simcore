@@ -6,6 +6,7 @@ const tutorialBase = require('./tutorialBase');
 
 const args = process.argv.slice(2);
 if (args.length < 1) {
+  console.log('More arguments expented');
   process.exit(1);
 }
 const url = args[0];

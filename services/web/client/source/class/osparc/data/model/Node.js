@@ -849,27 +849,35 @@ qx.Class.define("osparc.data.model.Node", {
             const {
               data
             } = resp;
-            const sizeBytes = (data && ("size_bytes" in data)) ? data["size_bytes"] : 0;
-            this.getPropsWidget().retrievedPortData(portKey, true, sizeBytes);
+            if (portKey) {
+              const sizeBytes = (data && ("size_bytes" in data)) ? data["size_bytes"] : 0;
+              this.getPropsWidget().retrievedPortData(portKey, true, sizeBytes);
+            }
             console.log(data);
           }, this);
           updReq.addListener("fail", e => {
             const {
               error
             } = e.getTarget().getResponse();
-            this.getPropsWidget().retrievedPortData(portKey, false);
+            if (portKey) {
+              this.getPropsWidget().retrievedPortData(portKey, false);
+            }
             console.error("fail", error);
           }, this);
           updReq.addListener("error", e => {
             const {
               error
             } = e.getTarget().getResponse();
-            this.getPropsWidget().retrievedPortData(portKey, false);
+            if (portKey) {
+              this.getPropsWidget().retrievedPortData(portKey, false);
+            }
             console.error("error", error);
           }, this);
           updReq.send();
 
-          this.getPropsWidget().retrievingPortData(portKey);
+          if (portKey) {
+            this.getPropsWidget().retrievingPortData(portKey);
+          }
         }
       }
     },

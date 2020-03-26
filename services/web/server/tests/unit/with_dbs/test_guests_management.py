@@ -9,9 +9,9 @@ from copy import deepcopy
 import pytest
 from aiohttp import web
 
+from pytest_simcore.helpers.utils_projects import create_project
 from servicelib.application import create_safe_application
 from simcore_service_webserver import application
-from utils_projects import create_project
 
 
 @pytest.fixture

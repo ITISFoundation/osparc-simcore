@@ -52,6 +52,9 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
       el.insertInto(form);
     });
     this._buildPage();
+
+    this.addListener("appear", this._onAppear, this);
+    this.addListener("disappear", this._onDisappear, this);
   },
 
   /*
@@ -108,6 +111,14 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
       this.add(lbl, {
         flex:1
       });
+    },
+
+    _onAppear: function() {
+      return;
+    },
+
+    _onDisappear: function() {
+      return;
     }
   }
 });

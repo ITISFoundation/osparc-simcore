@@ -17,6 +17,10 @@ from aiohttp import web
 from mock import call
 from yarl import URL
 
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import LoggedUser
+from pytest_simcore.helpers.utils_projects import (NewProject,
+                                                   delete_all_projects)
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
@@ -32,9 +36,6 @@ from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_sockets
 from simcore_service_webserver.tags import setup_tags
 from simcore_service_webserver.utils import now_str, to_datetime
-from utils_assert import assert_status
-from utils_login import LoggedUser
-from utils_projects import NewProject, delete_all_projects
 
 API_VERSION = "v0"
 RESOURCE_NAME = "projects"
@@ -703,7 +704,7 @@ async def test_close_project(
             "get_running_interactive_services"
         ].has_calls(calls)
         mocked_director_subsystem["get_running_interactive_services"].reset_mock()
-    
+
     # close project
     url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
@@ -716,7 +717,7 @@ async def test_close_project(
         mocked_director_subsystem["get_running_interactive_services"].has_calls(calls)
         calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
         mocked_director_subsystem["stop_service"].has_calls(calls)
-    
+
 
 
 @pytest.mark.parametrize(

@@ -17,7 +17,6 @@ from uuid import uuid4
 
 import pytest
 
-
 from simcore_service_webserver.resources import resources
 from simcore_service_webserver.utils import now_str
 
@@ -26,6 +25,8 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 ## Log
 log = logging.getLogger(__name__)
+
+pytest_plugins = ["pytest_simcore.environs"]
 
 
 @pytest.fixture(scope="session")

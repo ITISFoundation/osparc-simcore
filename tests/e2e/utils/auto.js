@@ -220,10 +220,6 @@ async function dashboardOpenFirstTemplate(page, templateName) {
   const firstChildId = '[osparc-test-id="' + children[0] + '"]'
   await page.waitForSelector(firstChildId)
   await page.click(firstChildId)
-
-  await page.waitForSelector('[osparc-test-id="openStudyBtn"]')
-  console.log("Opening ", templateName)
-  await page.click('[osparc-test-id="openStudyBtn"]')
 }
 
 async function __dashboardFilterStudiesByText(page, templateName) {
@@ -260,6 +256,7 @@ async function runStudy(page, waitFor = 0) {
     await responsesQueue.waitUntilResponse("/start");
   }
   catch(err) {
+    console.error(err);
     throw(err);
   }
 
@@ -273,11 +270,11 @@ async function dashboardDeleteFirstStudy(page) {
   await page.waitForSelector('[osparc-test-id="studiesTabBtn"]')
   await page.click('[osparc-test-id="studiesTabBtn"]')
 
-  await page.waitForSelector('[osparc-test-id="userStudiesList"] > .qx-pb-listitem:nth-child(1)')
-  await page.click('[osparc-test-id="userStudiesList"] > .qx-pb-listitem:nth-child(1)')
+  await page.waitForSelector('[osparc-test-id="userStudiesList"] > .qx-pb-listitem:nth-child(1) > [osparc-test-id="studyItemMenuButton"]')
+  await page.click('[osparc-test-id="userStudiesList"] > .qx-pb-listitem:nth-child(1) > [osparc-test-id="studyItemMenuButton"]')
 
-  await page.waitForSelector('[osparc-test-id="deleteStudiesBtn"]')
-  await page.click('[osparc-test-id="deleteStudiesBtn"]')
+  await page.waitForSelector('[osparc-test-id="studyItemMenuDelete"]')
+  await page.click('[osparc-test-id="studyItemMenuDelete"]')
 
   await page.waitForSelector('[osparc-test-id="confirmDeleteStudyBtn"]')
   await page.click('[osparc-test-id="confirmDeleteStudyBtn"]')
@@ -361,6 +358,7 @@ async function downloadSelectedFile(page) {
     console.log("valid output file value", value)
   }
   catch(err) {
+    console.error(err);
     throw(err);
   }
 }
