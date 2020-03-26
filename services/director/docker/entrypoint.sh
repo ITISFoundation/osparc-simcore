@@ -98,8 +98,5 @@ fi
 echo "$INFO Starting $* ..."
 echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
 echo "  local dir : $(ls -al)"
-echo "  input dir : $(ls -al "${SIDECAR_INPUT_FOLDER}")"
-echo "  output dir : $(ls -al "${SIDECAR_OUTPUT_FOLDER}")"
-echo "  log dir : $(ls -al "${SIDECAR_LOG_FOLDER}")"
 
 su --command "$*" "$SC_USER_NAME"
