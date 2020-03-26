@@ -800,7 +800,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __showLoadingIFrame: function() {
-      const loadingUri = osparc.utils.Utils.getLoaderUri();
+      const loadingUri = osparc.utils.Utils.getLoaderUri("Starting service");
       this.restartIFrame(loadingUri);
     },
 
