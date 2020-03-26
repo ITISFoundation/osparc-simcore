@@ -29,6 +29,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       maxWidth: 700,
       width: 400
     });
+    sidePanel.getContentElement().setStyle("border-left", "1px solid " + qx.theme.manager.Color.getInstance().resolve("material-button-background"));
 
     const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
       minWidth: 0
