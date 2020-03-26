@@ -3,7 +3,8 @@
 # pylint:disable=redefined-outer-name
 
 import os
-from typing import Dict, Tuple, Optional
+import socket
+from typing import Dict, Optional, Tuple
 
 import aio_pika
 import pytest
@@ -11,6 +12,7 @@ import tenacity
 
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from simcore_sdk.config.rabbit import Config
+
 from .helpers.utils_docker import get_service_published_port
 
 
@@ -48,8 +50,10 @@ async def rabbit_connection(rabbit_service: str) -> aio_pika.RobustConnection:
         pytest.fail("rabbit reconnected")
 
     # create connection
+    # NOTE: to show the connection name in the rabbitMQ UI see there [https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url]
     connection = await aio_pika.connect_robust(
-        rabbit_service, client_properties={"connection_name": "pytest read connection"}
+        rabbit_service + f"?name={__name__}_{id(socket.gethostname())}",
+        client_properties={"connection_name": "pytest read connection"},
     )
     assert connection
     assert not connection.is_closed

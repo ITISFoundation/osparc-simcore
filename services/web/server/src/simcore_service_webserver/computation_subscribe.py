@@ -84,8 +84,9 @@ async def subscribe(app: web.Application) -> None:
 
     log.info("Creating pika connection for %s", rabbit_broker)
     await wait_till_rabbitmq_responsive(rabbit_broker)
+    # NOTE: to show the connection name in the rabbitMQ UI see there [https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url]
     connection = await aio_pika.connect_robust(
-        rabbit_broker,
+        rabbit_broker + f"?name={__name__}_{id(app)}",
         client_properties={"connection_name": "webserver read connection"},
     )
 

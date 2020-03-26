@@ -1,10 +1,12 @@
 import json
 import logging
+import socket
 from typing import Dict, List, Optional, Union
 
 import aio_pika
 import tenacity
 from pydantic import BaseModel  # pylint: disable=no-name-in-module
+
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 
@@ -33,25 +35,33 @@ class RabbitMQ(BaseModel):
 
     async def connect(self):
         url = self.config.broker_url
+        log.debug("Connecting to %s", url)
         await wait_till_rabbit_responsive(url)
 
+        # NOTE: to show the connection name in the rabbitMQ UI see there [https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url]
         self.connection = await aio_pika.connect_robust(
-            url, client_properties={"connection_name": "sidecar connection"},
+            url + f"?name={__name__}_{id(socket.gethostname())}",
+            client_properties={"connection_name": "sidecar connection"},
         )
         self.connection.add_reconnect_callback(reconnect_callback)
 
-        self.channel = await self.connection.channel()
+        log.debug("Creating channel")
+        self.channel = await self.connection.channel(publisher_confirms=False)
         self.channel.add_close_callback(channel_close_callback)
 
+        log.debug("Declaring %s exchange", self.config.channels["log"])
         self.logs_exchange = await self.channel.declare_exchange(
             self.config.channels["log"], aio_pika.ExchangeType.FANOUT
         )
+        log.debug("Declaring %s exchange", self.config.channels["progress"])
         self.progress_exchange = await self.channel.declare_exchange(
             self.config.channels["progress"], aio_pika.ExchangeType.FANOUT,
         )
 
     async def close(self):
+        log.debug("Closing channel...")
         await self.channel.close()
+        log.debug("Closing connection...")
         await self.connection.close()
 
     async def _post_message(self, exchange: aio_pika.Exchange, data: Dict[str, str]):
