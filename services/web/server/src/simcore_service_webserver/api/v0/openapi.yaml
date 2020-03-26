@@ -8201,6 +8201,7 @@ paths:
               properties:
                 data:
                   type: string
+                  format: binary
                 file:
                   type: string
                   format: binary
