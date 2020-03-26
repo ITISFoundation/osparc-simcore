@@ -73,19 +73,19 @@ def client(
 
 
 @pytest.fixture
-def rabbit_config(app_config):
+def rabbit_config(app_config) -> Dict:
     rb_config = app_config[CONFIG_SECTION_NAME]
     yield rb_config
 
 
 @pytest.fixture
-def rabbit_broker(rabbit_config):
-    rabbit_broker = rabbit_config.broker_url
+def rabbit_broker(rabbit_config: Dict) -> str:
+    rabbit_broker = Config(**rabbit_config).broker_url
     yield rabbit_broker
 
 
 @pytest.fixture
-async def pika_connection(loop, rabbit_broker):
+async def pika_connection(loop, rabbit_broker: str):
     connection = await aio_pika.connect(
         rabbit_broker, ssl=True, connection_attempts=100
     )
