@@ -10,3 +10,11 @@
 .rotate {
   animation: rotation 1.5s infinite linear;
 }
+
+.verticalText {
+  writing-mode: lr-tb;
+  transform: rotate(-90deg);
+  -webkit-transform: rotate(-90deg);
+  -moz-transform: rotate(-90deg);
+  -o-transform: rotate(-90deg);
+}

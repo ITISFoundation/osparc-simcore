@@ -102,7 +102,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __buildSideView: function(isInput) {
-      const collapsedWidth = 40;
+      const collapsedWidth = 35;
       const sidePanel = new osparc.desktop.SidePanel().set({
         minWidth: 300,
         collapsedMinWidth: collapsedWidth,
@@ -145,21 +145,37 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       }, this);
 
       const collapsedView = this.__buildCollapsedSideView(isInput);
+      collapsedView.addListenerOnce("appear", () => {
+        const elem = collapsedView.getContentElement();
+        console.log(elem);
+        // const size = qx.bom.element.Dimension.getSize(collapsedView);
+        // collapsedView.setDomLeft(-1 * (size.width/2) - (size.height/2));
+        collapsedView.setDomLeft(-45);
+      });
       sidePanel.setCollapsedView(collapsedView);
 
       return sidePanel;
     },
 
     __buildCollapsedSideView: function(isInput) {
-      const inText = this.tr("In");
-      const outText = this.tr("Out");
-      const collapsedView = new qx.ui.basic.Label((isInput ? inText : outText) + " (0)").set({
+      const inText = this.tr("Inputs");
+      const outText = this.tr("Outputs");
+      const inIcon = "@FontAwesome5Solid/chevron-down/12";
+      const outIcon = "@FontAwesome5Solid/chevron-up/12";
+      const collapsedView = new qx.ui.basic.Atom().set({
+        label: (isInput ? inText : outText) + " (0)",
+        icon: isInput ? inIcon : outIcon,
+        iconPosition: "right",
+        gap: 6,
         padding: 8,
         alignX: "center",
         alignY: "middle",
-        font: "title-18",
-        height: 35
+        minWidth: isInput ? 120 : 130,
+        font: "title-18"
       });
+      collapsedView.getContentElement().addClass("verticalText");
+      const view = isInput ? this.__inputsView : this.__outputsView;
+      collapsedView.addListener("tap", view.toggleCollapsed.bind(view));
 
       const container = isInput ? this.__inputNodesLayout : this.__outputNodesLayout;
       [
@@ -168,7 +184,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       ].forEach(event => {
         container.addListener(event, () => {
           const nChildren = container.getChildren().length;
-          collapsedView.setValue((isInput ? inText : outText) + " (" + nChildren + ")");
+          collapsedView.setLabel((isInput ? inText : outText) + " (" + nChildren + ")");
         });
       });
 

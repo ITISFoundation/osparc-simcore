@@ -100,7 +100,9 @@ qx.Class.define("osparc.desktop.SidePanel", {
       this.getChildren().forEach(child => child.setVisibility(collapsed ? "excluded" : "visible"));
       if (this.getCollapsedView() !== null) {
         if (collapsed) {
-          this.add(this.getCollapsedView());
+          this.add(this.getCollapsedView(), {
+            flex: 1
+          });
         } else {
           this.remove(this.getCollapsedView());
         }
