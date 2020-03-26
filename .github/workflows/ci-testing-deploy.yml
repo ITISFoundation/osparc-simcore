@@ -513,6 +513,8 @@ jobs:
           path: codeclimate.unit_webserver_coverage.json
 
   build-test-images:
+    # make PR faster
+    if: github.event_name == 'push'
     runs-on: ubuntu-18.04
     name: build docker test images
     steps:
