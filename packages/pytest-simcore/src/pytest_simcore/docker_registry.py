@@ -14,6 +14,7 @@ import tenacity
 
 log = logging.getLogger(__name__)
 
+
 @pytest.fixture(scope="session")
 def docker_registry(keep_docker_up: bool) -> str:
     # run the registry outside of the stack
@@ -26,7 +27,7 @@ def docker_registry(keep_docker_up: bool) -> str:
     try:
         docker_client.login(registry=url, username="simcore")
         container = docker_client.containers.list({"name": "pytest_registry"})[0]
-    except Exception: # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         print("Warning: docker registry is already up!")
         container = docker_client.containers.run(
             "registry:2",
@@ -71,7 +72,12 @@ def docker_registry(keep_docker_up: bool) -> str:
             time.sleep(1)
 
 
-@tenacity.retry(wait=tenacity.wait_fixed(2), stop=tenacity.stop_after_delay(20), before_sleep=tenacity.before_sleep_log(log, logging.INFO), reraise=True)
+@tenacity.retry(
+    wait=tenacity.wait_fixed(2),
+    stop=tenacity.stop_after_delay(20),
+    before_sleep=tenacity.before_sleep_log(log, logging.INFO),
+    reraise=True,
+)
 def wait_till_registry_is_responsive(url: str) -> bool:
     docker_client = docker.from_env()
     docker_client.login(registry=url, username="simcore")
@@ -101,7 +107,7 @@ def sleeper_service(docker_registry: str) -> Dict[str, str]:
             for key, value in image_labels.items()
             if key.startswith("io.simcore.")
         },
-        "image": repo,
+        "image": {"name": "simcore/services/comp/itis/sleeper", "tag": TAG},
     }
 
 
@@ -136,5 +142,5 @@ def jupyter_service(docker_registry: str) -> Dict[str, str]:
             for key, value in image_labels.items()
             if key.startswith("io.simcore.")
         },
-        "image": repo,
+        "image": {"name": f"simcore/services/dynamic/{image_name}", "tag": f"{tag}"},
     }

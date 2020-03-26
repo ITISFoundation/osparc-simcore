@@ -501,7 +501,7 @@ async def inspect(
     user_id: str,
     project_id: str,
     node_id: str,
-) -> List[str]:
+) -> Optional[List[str]]:
     log.debug(
         "ENTERING inspect with user %s pipeline:node %s: %s",
         user_id,
@@ -515,15 +515,16 @@ async def inspect(
     async with db_engine.acquire() as connection:
         pipeline = await _get_pipeline_from_db(connection, project_id)
         graph = execution_graph(pipeline)
+        if not node_id:
+            log.debug("NODE id was zero, this was the entry node id")
+            return find_entry_point(graph)
         task = await _try_get_task_from_db(
             connection, graph, job_request_id, project_id, node_id
         )
 
-    if not node_id:
-        log.debug("NODE id was zero, this was the entry node id")
-        return find_entry_point(graph)
     if not task:
-        raise exceptions.SidecarException("Unknown error: No task found!")
+        log.debug("no task at hand, let's rest...")
+        return
 
     # config nodeports
     node_ports.node_config.USER_ID = user_id
@@ -532,7 +533,7 @@ async def inspect(
 
     # now proceed actually running the task (we do that after the db session has been closed)
     # try to run the task, return empyt list of next nodes if anything goes wrong
-    run_result = UNKNOWN
+    run_result = SUCCESS
     next_task_nodes = []
     try:
         sidecar = Sidecar(
@@ -543,7 +544,6 @@ async def inspect(
             shared_folders=TaskSharedVolumes.from_task(task),
         )
         await sidecar.run()
-        run_result = SUCCESS
         next_task_nodes = list(graph.successors(node_id))
     except exceptions.SidecarException:
         run_result = FAILED
