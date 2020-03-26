@@ -124,6 +124,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             zIndex: this.self().menuButtonZIndex,
             focusable: false
           });
+          osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           this._add(control, {
             top: 0,
             right: 0
