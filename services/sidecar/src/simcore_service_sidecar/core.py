@@ -321,14 +321,15 @@ class Sidecar:
 
             # reload container data
             container_data = await container.show()
-            log.info(
-                "%s completed with error code %s: %s",
-                docker_image,
-                container_data["State"]["ExitCode"],
-                container_data["State"]["Error"]
-                if container_data["State"]["ExitCode"] > 0
-                else "which is good!",
-            )
+            if container_data["State"]["ExitCode"] > 0:
+                log.error(
+                    "%s completed with error code %s: %s",
+                    docker_image,
+                    container_data["State"]["ExitCode"],
+                    container_data["State"]["Error"],
+                )
+            else:
+                log.info("%s completed with successfully!", docker_image)
         except aiodocker.exceptions.DockerContainerError:
             log.exception(
                 "Error while running %s with parameters %s",
@@ -346,6 +347,7 @@ class Sidecar:
             log.info("Running %s took %sseconds", docker_image, stop_time - start_time)
             if container:
                 await container.delete(force=True)
+            # stop monitoring logs now
             log_processor_task.cancel()
             await log_processor_task
 
@@ -518,7 +520,7 @@ async def inspect(
         )
 
     if not node_id:
-        log.debug("NODE id was zero and graph looks like this %s", graph)
+        log.debug("NODE id was zero, this was the entry node id")
         return find_entry_point(graph)
     if not task:
         raise exceptions.SidecarException("Unknown error: No task found!")
