@@ -15,10 +15,9 @@ import attr
 from celery.utils.log import get_task_logger
 from sqlalchemy import and_, literal_column
 
-from servicelib.utils import logged_gather, fire_and_forget_task
-from simcore_postgres_database.sidecar_models import (
+from servicelib.utils import fire_and_forget_task, logged_gather
+from simcore_postgres_database.sidecar_models import (  # PENDING,
     FAILED,
-    # PENDING,
     RUNNING,
     SUCCESS,
     UNKNOWN,
@@ -30,6 +29,7 @@ from simcore_sdk.node_ports import log as node_port_log
 from simcore_sdk.node_ports.dbmanager import DBManager
 
 from . import config, exceptions
+from .log_parser import LogType, monitor_logs_task
 from .rabbitmq import RabbitMQ
 from .utils import ExecutorSettings, execution_graph, find_entry_point, is_node_ready
 
@@ -143,73 +143,6 @@ class Sidecar:
             log.exception(msg)
             raise
 
-    async def log_file_processor(self, log_file: Path) -> None:
-        """checks both container logs and the log_file if any
-        """
-
-        async def parse_line(
-            line: str, accumulated_messages: Dict[str, Union[str, List]]
-        ) -> Dict[str, Union[str, List]]:
-            # TODO: This should be 'settings', a regex for every service
-            if line.lower().startswith("[progress]"):
-                accumulated_messages["progress"] = (
-                    line.lower().lstrip("[progress]").rstrip("%").strip()
-                )
-            elif "percent done" in line.lower():
-                progress = line.lower().rstrip("percent done")
-                try:
-                    float_progress = float(progress) / 100.0
-                    accumulated_messages["progress"] = str(float_progress)
-                except ValueError:
-                    log.exception("Could not extract progress from solver")
-            else:
-                accumulated_messages["log"].append(line)
-            return accumulated_messages
-
-        async def post_messages(
-            accumulated_messages: Dict[str, Union[str, List]]
-        ) -> None:
-            await logged_gather(
-                *[
-                    self.rabbit_mq.post_log_message(
-                        self.user_id,
-                        self.task.project_id,
-                        self.task.node_id,
-                        accumulated_messages["log"],
-                    ),
-                    self.rabbit_mq.post_progress_message(
-                        self.user_id,
-                        self.task.project_id,
-                        self.task.node_id,
-                        accumulated_messages["progress"],
-                    ),
-                ]
-            )
-
-        try:
-            log.debug("start checking logs in: %s", log_file)
-            TIME_BETWEEN_LOGS_S: int = 2
-            time_logs_sent = time.monotonic()
-            accumulated_messages = {"log": [], "progress": ""}
-            async with aiofiles.open(log_file, mode="r") as fp:
-                log.debug("opened log file: %s", log_file)
-                async for line in fp:
-                    log.debug("found log: %s", line)
-                    now = time.monotonic()
-                    accumulated_messages = await parse_line(line, accumulated_messages)
-                    if (now - time_logs_sent) < TIME_BETWEEN_LOGS_S:
-                        continue
-                    # send logs to rabbitMQ (TODO: shield?)
-                    await post_messages(accumulated_messages)
-                    accumulated_messages = {"log": [], "progress": ""}
-            log.debug("finished checking logs in: %s", log_file)
-
-        except asyncio.CancelledError:
-            # the task is complete let's send the last messages if any
-            accumulated_messages["progress"] = "1.0"
-            if accumulated_messages:
-                await post_messages(accumulated_messages)
-
     async def _process_task_output(self):
         # pylint: disable=too-many-branches
 
@@ -314,6 +247,16 @@ class Sidecar:
             self.task.internal_id,
         )
 
+    async def post_messages(self, log_type: LogType, message: str):
+        if log_type == LogType.LOG:
+            await self.rabbit_mq.post_log_message(
+                self.user_id, self.task.project_id, self.task.node_id, message,
+            )
+        elif log_type == LogType.PROGRESS:
+            await self.rabbit_mq.post_progress_message(
+                self.user_id, self.task.project_id, self.task.node_id, message,
+            )
+
     async def process(self):
         log.debug(
             "Processing Pipeline %s:node %s:internal id %s from container",
@@ -325,7 +268,10 @@ class Sidecar:
         # touch output file, so it's ready for the container (v0)
         log_file = self.executor.log_dir / "log.dat"
         log_file.touch()
-        # log_processor_task = fire_and_forget_task(self.log_file_processor(log_file))
+
+        log_processor_task = fire_and_forget_task(
+            monitor_logs_task(log_file, self.post_messages)
+        )
 
         start_time = time.perf_counter()
         container = None
@@ -411,10 +357,10 @@ class Sidecar:
             log.info("Running %s took %sseconds", docker_image, stop_time - start_time)
             if container:
                 # retrieve the last logs
-                await self.log_file_processor(log_file)
+                # await self.log_file_processor(log_file)
                 await container.delete(force=True)
-            # log_processor_task.cancel()
-            # await log_processor_task
+            log_processor_task.cancel()
+            await log_processor_task
 
         log.debug(
             "DONE Processing Pipeline %s:node %s:internal id %s from container",
