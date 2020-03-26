@@ -13,17 +13,18 @@ from tenacity import after_log, retry, stop_after_attempt, wait_fixed
 log = logging.getLogger(__name__)
 
 
-def get_ip()->str:
+def get_ip() -> str:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         # doesn't even have to be reachable
-        s.connect(('10.255.255.255', 1))
+        s.connect(("10.255.255.255", 1))
         IP = s.getsockname()[0]
-    except Exception: #pylint: disable=W0703
-        IP = '127.0.0.1'
+    except Exception:  # pylint: disable=W0703
+        IP = "127.0.0.1"
     finally:
         s.close()
     return IP
+
 
 @retry(
     wait=wait_fixed(2), stop=stop_after_attempt(10), after=after_log(log, logging.WARN)
