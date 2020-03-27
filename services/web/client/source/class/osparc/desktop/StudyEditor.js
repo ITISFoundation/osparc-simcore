@@ -23,8 +23,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   construct: function() {
     this.base(arguments, "horizontal");
 
-    let mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
-    let sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
+    const mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
+    const sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
       minWidth: 0,
       maxWidth: 700,
       width: 400
