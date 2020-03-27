@@ -8,30 +8,6 @@ from typing import Dict
 import pytest
 from yarl import URL
 
-core_services = []
-
-ops_services = []
-
-
-@pytest.fixture(scope="module")
-def all_services(
-    simcore_docker_compose: Dict, ops_docker_compose: Dict, request
-) -> Dict:
-    services = []
-    for service in simcore_docker_compose["services"].keys():
-        services.append(service)
-    setattr(request.module, "core_services", services)
-    core_services = getattr(request.module, "core_services", [])
-
-    services = []
-    for service in ops_docker_compose["services"].keys():
-        services.append(service)
-    setattr(request.module, "ops_services", services)
-    ops_services = getattr(request.module, "ops_services", [])
-
-    services = {"simcore": simcore_docker_compose, "ops": ops_docker_compose}
-    return services
-
 
 # search ujson in all _base.txt and add here all services that contains it
 @pytest.mark.parametrize(
