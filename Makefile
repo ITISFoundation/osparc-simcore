@@ -26,6 +26,7 @@ SHELL := /bin/bash
 # TODO: read from docker-compose file instead $(shell find  $(CURDIR)/services -type f -name 'Dockerfile')
 # or $(notdir $(subst /Dockerfile,,$(wildcard services/*/Dockerfile))) ...
 SERVICES_LIST := \
+	api-gateway \
 	catalog \
 	director \
 	sidecar \
