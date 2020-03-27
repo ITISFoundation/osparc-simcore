@@ -12,6 +12,7 @@ import docker
 import pytest
 import tenacity
 from servicelib.simcore_service_utils import SimcoreRetryPolicyUponInitialization
+from .helpers.utils_docker import get_ip
 
 
 @pytest.fixture(scope="session")
@@ -20,21 +21,24 @@ def docker_client() -> docker.client.DockerClient:
     yield client
 
 
+@pytest.fixture(scope="session")
+def keep_docker_up(request) -> bool:
+    return request.config.getoption("--keep-docker-up") == True
+
+
 @pytest.fixture(scope="module")
-def docker_swarm(docker_client: docker.client.DockerClient) -> None:
+def docker_swarm(
+    docker_client: docker.client.DockerClient, keep_docker_up: bool
+) -> None:
     try:
         docker_client.swarm.reload()
         print("CAUTION: Already part of a swarm")
         yield
     except docker.errors.APIError:
-        docker_client.swarm.init()
+        docker_client.swarm.init(advertise_addr=get_ip())
         yield
-        assert docker_client.swarm.leave(force=True)
-
-
-@pytest.fixture(scope="session")
-def keep_docker_up(request) -> bool:
-    return request.config.getoption("--keep-docker-up") == True
+        if not keep_docker_up:
+            assert docker_client.swarm.leave(force=True)
 
 
 @tenacity.retry(**SimcoreRetryPolicyUponInitialization().kwargs)
@@ -47,7 +51,7 @@ def _wait_for_services(docker_client: docker.client.DockerClient) -> None:
             task = service.tasks()[0]
             if task["Status"]["State"].upper() not in pre_states:
                 if not task["Status"]["State"].upper() == "RUNNING":
-                    raise Exception(f"service {service} not running")
+                    raise Exception(f"service {service.name} not running")
 
 
 def _print_services(docker_client: docker.client.DockerClient, msg: str) -> None:

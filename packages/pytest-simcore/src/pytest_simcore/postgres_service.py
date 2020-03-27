@@ -7,8 +7,8 @@ from typing import Dict
 
 import pytest
 import sqlalchemy as sa
+import tenacity
 from sqlalchemy.orm import sessionmaker
-from tenacity import Retrying
 
 from servicelib.aiopg_utils import DSN, PostgresRetryPolicyUponInitialization
 from simcore_postgres_database.models.base import metadata
@@ -38,15 +38,10 @@ def postgres_dsn(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
 @pytest.fixture(scope="module")
 def postgres_db(postgres_dsn: Dict[str, str], docker_stack: Dict) -> sa.engine.Engine:
     url = DSN.format(**postgres_dsn)
-
     # Attempts until responsive
-    for attempt in Retrying(**PostgresRetryPolicyUponInitialization().kwargs):
-        with attempt:
-            engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
-            conn = engine.connect()
-            conn.close()
-
+    wait_till_postgres_is_responsive(url)
     # Configures db and initializes tables
+    engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
     metadata.create_all(bind=engine, checkfirst=True)
 
     yield engine
@@ -61,3 +56,10 @@ def postgres_session(postgres_db: sa.engine.Engine) -> sa.orm.session.Session:
     session = Session()
     yield session
     session.close()
+
+
+@tenacity.retry(**PostgresRetryPolicyUponInitialization().kwargs)
+def wait_till_postgres_is_responsive(url: str) -> None:
+    engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
+    conn = engine.connect()
+    conn.close()
