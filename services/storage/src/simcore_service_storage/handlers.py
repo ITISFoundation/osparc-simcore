@@ -305,9 +305,9 @@ async def create_folders_from_project(request: web.Request):
     nodes_map = body.get("nodes_map", {})
 
     assert set(nodes_map.keys()) == set(source_project["workbench"].keys())  # nosec
-    assert set(nodes_map.values()) == set(       # nosec
+    assert set(nodes_map.values()) == set(  # nosec
         destination_project["workbench"].keys()  # nosec
-    )                                            # nosec
+    )  # nosec
 
     # TODO: validate project with jsonschema instead??
     params = {"location_id": SIMCORE_S3_ID}

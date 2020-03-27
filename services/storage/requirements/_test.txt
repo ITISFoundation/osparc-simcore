@@ -82,7 +82,7 @@ strict-rfc3339==0.7       # via -r _base.txt, openapi-core
 tenacity==6.0.0           # via -r _base.txt
 termcolor==1.1.0          # via pytest-sugar
 trafaret-config==2.0.2    # via -r _base.txt
-trafaret==1.2.0           # via -r _base.txt, trafaret-config
+trafaret==2.0.2           # via -r _base.txt, trafaret-config
 typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.2  # via -r _base.txt, aiohttp
 ujson==1.35               # via -r _base.txt
