@@ -82,6 +82,18 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
       });
     },
 
+    isSettingsGroupShowable: function() {
+      let anyVisible = false;
+      const innerNodes = this.getNode().getInnerNodes(true);
+      const innerNodesArray = Object.values(innerNodes);
+      for (let i=0; i<innerNodesArray.length && !anyVisible; i++) {
+        const innerNode = innerNodesArray[i];
+        const propsWidget = innerNode.getPropsWidget();
+        anyVisible = propsWidget.hasVisibleInputs();
+      }
+      return anyVisible;
+    },
+
     _addIFrame: function() {
       this._iFrameLayout.removeAll();
 

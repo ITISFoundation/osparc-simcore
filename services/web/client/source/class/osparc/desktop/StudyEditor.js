@@ -90,6 +90,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (validNodeIds.length === 1 && preferencesSettings.getAutoOpenNode()) {
         this.nodeSelected(validNodeIds[0]);
+        const node = this.getStudy().getWorkbench().getNode(validNodeIds[0]);
+        if (node.getIFrame() && !this.__nodeView.isSettingsGroupShowable()) {
+          // Todo Odei: A bit of a hack
+          qx.event.Timer.once(() => {
+            node.getIFrame().maximizeIFrame(true);
+          }, this, 10);
+        }
       } else {
         this.nodeSelected(this.getStudy().getUuid());
       }

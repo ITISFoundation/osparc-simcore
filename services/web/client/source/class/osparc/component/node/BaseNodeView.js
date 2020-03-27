@@ -334,7 +334,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const othersStatus = maximize ? "excluded" : "visible";
       this.__inputNodesLayout.setVisibility(othersStatus);
       this.__outputNodesLayout.setVisibility(othersStatus);
-      this._settingsLayout.setVisibility(othersStatus);
+      const isSettingsGroupShowable = this.isSettingsGroupShowable();
+      const othersStatus2 = isSettingsGroupShowable && !maximize ? "visible" : "excluded";
+      this._settingsLayout.setVisibility(othersStatus2);
       this._mapperLayout.setVisibility(othersStatus);
       this.__toolbar.setVisibility(othersStatus);
     },
@@ -388,6 +390,13 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this.addListener("disappear", () => {
         qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this);
       }, this);
+    },
+
+    /**
+      * @abstract
+      */
+    isSettingsGroupShowable: function() {
+      throw new Error("Abstract method called!");
     },
 
     /**
