@@ -15,19 +15,14 @@ import simcore_service_director
 from simcore_service_director import config, resources
 
 pytest_plugins = [
-    "fixtures.docker_registry",
-    "fixtures.docker_swarm",
+    "pytest_simcore.environs",
+    "pytest_simcore.docker_compose",
+    "pytest_simcore.docker_swarm",
+    "pytest_simcore.docker_registry",
     "fixtures.fake_services"
 ]
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.absolute()
 
-
-@pytest.fixture(scope='session')
-def osparc_simcore_root_dir():
-    root_dir = current_dir.parent.parent.parent.resolve()
-    assert root_dir.exists(), "Is this service within osparc-simcore repo?"
-    assert any(root_dir.glob("services/web/server")), "%s not look like rootdir" % root_dir
-    return root_dir
 
 @pytest.fixture(scope='session')
 def common_schemas_specs_dir(osparc_simcore_root_dir):
