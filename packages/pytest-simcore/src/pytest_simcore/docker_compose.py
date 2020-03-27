@@ -79,10 +79,13 @@ def env_file(osparc_simcore_root_dir: Path, devel_environ: Dict[str, str]) -> Pa
 
 @pytest.fixture(scope="module")
 def make_up_prod_environ():
+    old_env = deepcopy(os.environ)
     if not "DOCKER_REGISTRY" in os.environ:
         os.environ["DOCKER_REGISTRY"] = "local"
     if not "DOCKER_IMAGE_TAG" in os.environ:
         os.environ["DOCKER_IMAGE_TAG"] = "production"
+    yield
+    os.environ = old_env
 
 
 @pytest.fixture("module")
