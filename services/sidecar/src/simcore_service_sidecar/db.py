@@ -49,7 +49,6 @@ class DBContextManager:
     async def __aexit__(self, exc_type, exc, tb):
         self._db_engine.close()
         await self._db_engine.wait_closed()
-        assert self._db_engine.closed
         log.debug(
             "engine '%s' after shutdown: closed=%s, size=%d",
             self._db_engine.dsn,
