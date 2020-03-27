@@ -78,12 +78,12 @@ def env_file(osparc_simcore_root_dir: Path, devel_environ: Dict[str, str]) -> Pa
 
 
 @pytest.fixture(scope="module")
-def make_up_prod_environ():
+def make_up_prod_environ(monkeypatch):
     if not "DOCKER_REGISTRY" in os.environ:
-        os.environ["DOCKER_REGISTRY"] = "local"
+        monkeypatch.setenv("DOCKER_REGISTRY", "local")
     if not "DOCKER_IMAGE_TAG" in os.environ:
-        os.environ["DOCKER_IMAGE_TAG"] = "production"
-
+        monkeypatch.setenv("DOCKER_IMAGE_TAG", "production")
+         
 
 @pytest.fixture("module")
 def simcore_docker_compose(
