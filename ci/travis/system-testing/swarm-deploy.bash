@@ -21,7 +21,7 @@ before_install() {
 
 install() {
     bash ci/helpers/ensure_python_pip.bash
-    pip3 install -r tests/swarm-deploy/requirements.txt
+    pip3 install -r tests/swarm-deploy/requirements/ci.txt
     make pull-version || ( (make pull-cache || true) && make build tag-version)
     make .env
     echo WEBSERVER_DB_INITTABLES=1 >> .env
