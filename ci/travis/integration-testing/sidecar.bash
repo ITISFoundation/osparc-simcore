@@ -27,7 +27,7 @@ before_script() {
 script() {
     pytest --cov=simcore_service_sidecar --durations=10 --cov-append \
         --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-        -v -m "not travis" services/web/sidecar/tests/integration
+        -v -m "not travis" services/sidecar/tests/integration
 }
 
 after_success() {
