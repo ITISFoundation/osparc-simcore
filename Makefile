@@ -72,7 +72,7 @@ endif
 #
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
 
-.PHONY: build build-nc rebuild build-devel build-devel-nc build-devel-x build-cache build-cache-x build-cache-nc build-x
+.PHONY: build build-nc rebuild build-devel build-devel-nc build-devel-kit build-devel-x build-cache build-cache-kit build-cache-x build-cache-nc build-kit build-x
 
 define _docker_compose_build
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,$(if $(findstring -cache,$@),cache,production)); \
@@ -83,45 +83,56 @@ $(if $(findstring -x,$@),\
 endef
 
 rebuild: build-nc # alias
-build build-nc build-x: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
-ifeq ($(target),)
+build build-nc build-kit build-x: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
+ifeq ($(target),)	
 	# Compiling front-end
-	@$(MAKE) -C services/web/client compile$(if $(findstring -x,$@),-x,)
+	
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
+	$(MAKE) -C services/web/client compile$(if $(findstring -x,$@),-x,)
 	
 	# Building services
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
 	$(_docker_compose_build)
 else
 ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client clean compile$(if $(findstring -x,$@),-x,)
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
+	$(MAKE) -C services/web/client clean compile$(if $(findstring -x,$@),-x,)
 endif
 	# Building service $(target)
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
 	$(_docker_compose_build) $(target)
 endif
 
 
-build-devel build-devel-nc build-devel-x: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
+build-devel build-devel-nc build-devel-kit build-devel-x: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
 ifeq ($(target),)
 	# Building services
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
 	$(_docker_compose_build)
 else
 ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client touch$(if $(findstring -x,$@),-x,) compile-dev
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
+	$(MAKE) -C services/web/client touch$(if $(findstring -x,$@),-x,) compile-dev
 endif
 	# Building service $(target)
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
 	$(_docker_compose_build) $(target)
 endif
 
 
 # TODO: should download cache if any??
-build-cache build-cache-nc build-cache-x: .env ## Build cache images and tags them as 'local/{service-name}:cache'
+build-cache build-cache-nc build-cache-kit build-cache-x: .env ## Build cache images and tags them as 'local/{service-name}:cache'	
 ifeq ($(target),)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client compile$(if $(findstring -x,$@),-x,)
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,)
+	$(MAKE) -C services/web/client compile$(if $(findstring -x,$@),-x,)
 	# Building cache images
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,)
 	$(_docker_compose_build)
 else
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,)
 	$(_docker_compose_build) $(target)
 endif
 
