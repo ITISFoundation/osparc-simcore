@@ -323,25 +323,25 @@ jobs:
         - unbuffer bash ci/travis/integration-testing/webserver.bash after_failure
 
     # integrate sidecar in swarm -------------------------------------------------------------
-    - stage: sidecar-testing / system-testing
-      name: webserver in swarm
+    - stage: integration-testing / system-testing
+      name: sidecar in swarm
       language: python
       python:
         - "3.6"
       sudo: required
       cache: pip
       before_install:
-        - sudo bash ci/travis/sidecar-testing/webserver.bash before_install
+        - sudo bash ci/travis/sidecar-testing/sidecar.bash before_install
       install:
-        - unbuffer bash ci/travis/sidecar-testing/webserver.bash install
+        - unbuffer bash ci/travis/sidecar-testing/sidecar.bash install
       before_script:
-        - unbuffer bash ci/travis/sidecar-testing/webserver.bash before_script
+        - unbuffer bash ci/travis/sidecar-testing/sidecar.bash before_script
       script:
-        - unbuffer bash ci/travis/sidecar-testing/webserver.bash script
+        - unbuffer bash ci/travis/sidecar-testing/sidecar.bash script
       after_success:
-        - unbuffer bash ci/travis/sidecar-testing/webserver.bash after_success
+        - unbuffer bash ci/travis/sidecar-testing/sidecar.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/sidecar-testing/webserver.bash after_failure
+        - unbuffer bash ci/travis/sidecar-testing/sidecar.bash after_failure
 
     # integrate simcore-sdk in swarm -------------------------------------------------------------
     - stage: integration-testing / system-testing
