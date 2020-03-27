@@ -4,7 +4,9 @@
 #
 #    pip-compile --build-isolation --output-file=requirements.txt requirements.in
 #
+aio-pika==6.6.0           # via -r requirements.in
 aiohttp==3.6.2            # via pytest-aiohttp
+aiormq==3.2.1             # via aio-pika
 async-timeout==3.0.1      # via aiohttp
 attrs==19.3.0             # via aiohttp, pytest
 certifi==2019.11.28       # via requests
@@ -12,11 +14,12 @@ chardet==3.0.4            # via aiohttp, requests
 coverage==4.5.1           # via -r requirements.in, pytest-cov
 docker==4.2.0             # via -r requirements.in
 idna-ssl==1.1.0           # via aiohttp
-idna==2.9                 # via idna-ssl, requests, yarl
+idna==2.9                 # via requests, yarl
 importlib-metadata==1.5.2  # via pluggy, pytest
 more-itertools==8.2.0     # via pytest
 multidict==4.7.5          # via aiohttp, yarl
 packaging==20.3           # via pytest, pytest-sugar
+pamqp==2.3.0              # via aiormq
 pluggy==0.13.1            # via pytest
 py==1.8.1                 # via pytest
 pyparsing==2.4.6          # via packaging
@@ -36,5 +39,5 @@ typing-extensions==3.7.4.1  # via aiohttp
 urllib3==1.25.8           # via requests
 wcwidth==0.1.9            # via pytest
 websocket-client==0.57.0  # via docker
-yarl==1.4.2               # via aiohttp
+yarl==1.4.2               # via aio-pika, aiohttp, aiormq
 zipp==3.1.0               # via importlib-metadata
