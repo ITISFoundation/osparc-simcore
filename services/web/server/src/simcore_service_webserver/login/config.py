@@ -17,9 +17,9 @@ schema = T.Dict(
             "registration_confirmation_required",
             default=DEFAULTS["REGISTRATION_CONFIRMATION_REQUIRED"],
             optional=True,
-        ): T.Or(T.Bool, T.Int),
+        ): T.Or(T.Bool, T.ToInt),
         T.Key("registration_invitation_required", default=False, optional=True): T.Or(
-            T.Bool, T.Int
+            T.Bool, T.ToInt
         ),
     }
 )

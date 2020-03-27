@@ -15,7 +15,7 @@ CONFIG_SCHEMA = T.Dict({
     T.Key("name", default="tasks", optional=True): T.String(),
     T.Key("enabled", default=True, optional=True): T.Bool(),
     T.Key("host", default='rabbit', optional=True): T.String(),
-    T.Key("port", default=5672, optional=True): T.Int(),
+    T.Key("port", default=5672, optional=True): T.ToInt(),
     "user": T.String(),
     "password": T.String(),
     "channels": T.Dict({

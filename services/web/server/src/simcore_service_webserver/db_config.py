@@ -16,16 +16,16 @@ CONFIG_SECTION_NAME = "db"
 #    "user": T.String(),
 #    "password": T.String(),
 #    "host": T.Or( T.String, T.Null),
-#    "port": T.Or( T.Int, T.Null),
-#    T.Key("minsize", default=1 ,optional=True): T.Int(),
-#    T.Key("maxsize", default=4, optional=True): T.Int(),
+#    "port": T.Or( T.ToInt, T.Null),
+#    T.Key("minsize", default=1 ,optional=True): T.ToInt(),
+#    T.Key("maxsize", default=4, optional=True): T.ToInt(),
 # })
 
 
 schema = T.Dict(
     {
         T.Key("postgres"): _PG_SCHEMA,
-        T.Key("init_tables", default=False, optional=True): T.Or(T.Bool, T.Int),
+        T.Key("init_tables", default=False, optional=True): T.Or(T.Bool, T.ToInt),
         T.Key("enabled", default=True, optional=True): T.Bool(),
     }
 )

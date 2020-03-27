@@ -31,7 +31,7 @@ def setup_tracing(
 
 schema = T.Dict(
     {
-        T.Key("enabled", default=True, optional=True): T.Or(T.Bool(), T.Int),
+        T.Key("enabled", default=True, optional=True): T.Or(T.Bool(), T.ToInt),
         T.Key("zipkin_endpoint", default="http://jaeger:9411"): T.String(),
     }
 )
