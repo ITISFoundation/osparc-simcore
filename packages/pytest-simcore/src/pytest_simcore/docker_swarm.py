@@ -23,7 +23,7 @@ def docker_client() -> docker.client.DockerClient:
 
 @pytest.fixture(scope="session")
 def keep_docker_up(request) -> bool:
-    return request.config.getoption("--keep-docker-up") == True
+    return request.config.getoption("--keep-docker-up")
 
 
 @pytest.fixture(scope="module")
