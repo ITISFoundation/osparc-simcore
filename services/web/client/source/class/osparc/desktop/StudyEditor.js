@@ -90,13 +90,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (validNodeIds.length === 1 && preferencesSettings.getAutoOpenNode()) {
         this.nodeSelected(validNodeIds[0]);
-        const node = this.getStudy().getWorkbench().getNode(validNodeIds[0]);
-        if (node.getIFrame() && !this.__nodeView.isSettingsGroupShowable()) {
-          // Todo Odei: A bit of a hack
-          qx.event.Timer.once(() => {
-            node.getIFrame().maximizeIFrame(true);
-          }, this, 10);
-        }
+        // Todo Odei: A bit of a hack
+        qx.event.Timer.once(() => {
+          this.__checkMaximizeable();
+        }, this, 10);
       } else {
         this.nodeSelected(this.getStudy().getUuid());
       }
@@ -589,6 +586,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     closeStudy: function() {
       this.getStudy().closeStudy();
+    },
+
+    __checkMaximizeable: function() {
+      this.__scrollContainer.setVisibility("visible");
+      this.__nodeView._maximizeIFrame(false); // eslint-disable-line no-underscore-dangle
+      const node = this.getStudy().getWorkbench().getNode(this.__currentNodeId);
+      if (node && node.getIFrame() && !this.__nodeView.isSettingsGroupShowable()) {
+        console.log("maximizeIFrame");
+        node.getIFrame().maximizeIFrame(true);
+      }
     },
 
     __attachEventHandlers: function() {
