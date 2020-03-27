@@ -12,7 +12,7 @@ schema = T.Dict(
         T.Key(
             "prometheus_host", default="http://prometheus", optional=False
         ): T.String(),
-        T.Key("prometheus_port", default=9090, optional=False): T.Int(),
+        T.Key("prometheus_port", default=9090, optional=False): T.ToInt(),
         T.Key("prometheus_api_version", default="v1", optional=False): T.String(),
     }
 )

@@ -60,17 +60,17 @@ def create_schema() -> T.Dict:
             "main": T.Dict(
                 {
                     "host": T.IP,
-                    "port": T.Int(),
+                    "port": T.ToInt(),
                     "client_outdir": T.String(),
                     "log_level": T.Enum(
                         *logging._nameToLevel.keys()
                     ),
                     "testing": T.Bool(),
                     T.Key("studies_access_enabled", default=False): T.Or(
-                        T.Bool(), T.Int
+                        T.Bool(), T.ToInt
                     ),
                     T.Key("monitoring_enabled", default=False): T.Or(
-                        T.Bool(), T.Int
+                        T.Bool(), T.ToInt
                     ),  # Int added to use environs
                 }
             ),

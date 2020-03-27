@@ -47,6 +47,7 @@ def devel_environ(env_devel_file):
 
 variable_expansion_pattern = re.compile(r"\$\{*(\w+)+[:-]*(\w+)*\}")
 
+
 @pytest.mark.parametrize(
     "sample,expected_match",
     [
@@ -54,8 +55,8 @@ variable_expansion_pattern = re.compile(r"\$\{*(\w+)+[:-]*(\w+)*\}")
         (r"${varname}", ("varname", None)),
         (r"33", None),
         (r"${VAR_name:-33}", ("VAR_name", "33")),
-        (r"${varname-default}", ("varname", "default")), # this is not standard!
-        (r"${varname:default}", ("varname", "default")), # this is not standard!
+        (r"${varname-default}", ("varname", "default")),  # this is not standard!
+        (r"${varname:default}", ("varname", "default")),  # this is not standard!
     ],
 )
 def test_variable_expansions(sample, expected_match):
