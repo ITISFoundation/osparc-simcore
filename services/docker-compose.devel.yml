@@ -18,9 +18,10 @@ services:
   director:
     environment:
       - SC_BOOT_MODE=debug-ptvsd
+      - LOGLEVEL=debug
     volumes:
       - ./director:/devel/services/director
-      - ../packages/service-library:/devel/packages/service-library
+      - ../packages:/devel/packages
       - ../api:/devel/services/api
 
   webserver:

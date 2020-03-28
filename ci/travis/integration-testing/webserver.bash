@@ -7,6 +7,11 @@ IFS=$'\n\t'
 DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
 export DOCKER_IMAGE_TAG
 
+if [[ ! -v DOCKER_REGISTRY ]]; then
+    export DOCKER_REGISTRY="itisfoundation"
+fi
+
+
 before_install() {
     bash ci/travis/helpers/update-docker.bash
     bash ci/travis/helpers/install-docker-compose.bash

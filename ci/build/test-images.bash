@@ -23,8 +23,13 @@ pull_images() {
 }
 
 build_images() {
-    make build-cache
-    make build
+    if [[ -v DOCKER_BUILDX ]]; then
+        make build-cache-x
+        make build-x
+    else
+        make build-cache
+        make build
+    fi    
     make info-images
 }
 

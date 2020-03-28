@@ -15,6 +15,7 @@ watchdog[watchmedo]
 
 # installs this repo's packages
 -e ../../packages/service-library/
+-e ../../packages/pytest-simcore/
 
 # installs current package
 -e .

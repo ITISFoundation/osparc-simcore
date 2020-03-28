@@ -14,7 +14,7 @@ from mock import call
 
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
-from simcore_sdk.config.rabbit import eval_broker
+from simcore_sdk.config.rabbit import Config
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.computation_config import CONFIG_SECTION_NAME
 from simcore_service_webserver.db import setup_db
@@ -73,19 +73,19 @@ def client(
 
 
 @pytest.fixture
-def rabbit_config(app_config):
+def rabbit_config(app_config) -> Dict:
     rb_config = app_config[CONFIG_SECTION_NAME]
     yield rb_config
 
 
 @pytest.fixture
-def rabbit_broker(rabbit_config):
-    rabbit_broker = eval_broker(rabbit_config)
+def rabbit_broker(rabbit_config: Dict) -> str:
+    rabbit_broker = Config(**rabbit_config).broker_url
     yield rabbit_broker
 
 
 @pytest.fixture
-async def pika_connection(loop, rabbit_broker):
+async def pika_connection(loop, rabbit_broker: str):
     connection = await aio_pika.connect(
         rabbit_broker, ssl=True, connection_attempts=100
     )

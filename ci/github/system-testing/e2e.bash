@@ -12,7 +12,7 @@ install() {
     echo "--------------- installing psql client..."
     /bin/bash -c 'sudo apt install -y postgresql-client'
     echo "--------------- getting simcore docker images..."
-    make pull-version || ( (make pull-cache || true) && make build tag-version)
+    make pull-version || ( (make pull-cache || true) && make build-x tag-version)
     make info-images
 
     # configure simcore for testing with a private registry

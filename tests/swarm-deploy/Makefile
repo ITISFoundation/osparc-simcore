@@ -6,17 +6,15 @@ include ../../scripts/common.Makefile
 ROOT_DIR  = $(abspath $(CURDIR)/../../)
 VENV_DIR ?= $(abspath $(ROOT_DIR)/.venv)
 
-.PHONY: reqs
-requirements.txt: requirements.in
-	# pip compiling $<
-	@$(VENV_DIR)/bin/pip-compile --output-file $@ $<
+.PHONY: requirements
+requirements: ## compiles pip requirements (.in -> .txt)
+	@$(MAKE) --directory requirements reqs
 
-reqs: requirements.txt ## alias to compile requirements.txt
 
 .PHONY: install
-install: $(VENV_DIR) requirements.txt ## installs dependencies
+install: $(VENV_DIR) requirements ## installs dependencies
 	# installing requirements
-	@$</bin/pip3 install -r requirements.txt
+	@$</bin/pip3 install -r requirements/ci.txt
 
 
 .PHONY: tests
