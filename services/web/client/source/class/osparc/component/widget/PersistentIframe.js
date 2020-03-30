@@ -32,6 +32,10 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
     getIcon: function(maximize) {
       const iconURL = maximize ? "window-restore" : "window-maximize";
       return osparc.theme.osparcdark.Image.URLS[iconURL]+"/20";
+    },
+
+    getMaximizeWidgetId: function(maximize) {
+      return maximize ? "restoreBtn" : "maximizeBtn";
     }
   },
 
@@ -150,6 +154,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
         this.removeState("maximized");
       }
       actionButton.setIcon(this.self().getIcon(maximize));
+      osparc.utils.Utils.setIdToWidget(actionButton, this.self().getMaximizeWidgetId(maximize));
       qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
     },
 
