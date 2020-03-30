@@ -149,7 +149,10 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
           });
           break;
         case "description":
-          control = new qx.ui.basic.Label();
+          control = new osparc.ui.markdown.Markdown().set({
+            maxHeight: 16,
+            noMargin: true
+          });
           this._add(control, {
             row: 1,
             column: 0
