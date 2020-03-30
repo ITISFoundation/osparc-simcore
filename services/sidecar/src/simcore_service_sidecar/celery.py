@@ -22,20 +22,20 @@ app = Celery(
 
 @app.task(name="comp.task", bind=True)
 def pipeline(self, user_id: str, project_id: str, node_id: str = None):
-    next_task_nodes = []
     try:
         next_task_nodes = wrap_async_call(
             run_sidecar(self.request.id, user_id, project_id, node_id)
         )
         self.update_state(state=states.SUCCESS)
+
+        if next_task_nodes:
+            for _node_id in next_task_nodes:
+                _task = app.send_task(
+                    "comp.task", args=(user_id, project_id, _node_id), kwargs={}
+                )
     except Exception:  # pylint: disable=broad-except
         self.update_state(state=states.FAILURE)
-        log.exception("Uncaught exception")
-
-    for _node_id in next_task_nodes:
-        _task = app.send_task(
-            "comp.task", args=(user_id, project_id, _node_id), kwargs={}
-        )
+        log.exception("Uncaught exception")    
 
 
 __all__ = ["rabbit_config", "app"]
