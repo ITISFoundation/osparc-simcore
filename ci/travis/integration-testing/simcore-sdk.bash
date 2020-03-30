@@ -8,6 +8,11 @@ export DOCKER_IMAGE_TAG
 
 FOLDER_CHECKS=(packages/ simcore-sdk storage/ simcore-sdk .travis.yml)
 
+if [[ ! -v DOCKER_REGISTRY ]]; then
+    export DOCKER_REGISTRY="itisfoundation"
+fi
+
+
 before_install() {
     if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then

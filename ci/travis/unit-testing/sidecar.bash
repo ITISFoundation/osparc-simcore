@@ -32,10 +32,9 @@ before_script() {
 script() {
     if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
-        # TODO: call services/sidecar/tests/unit when integration tests available
         pytest --cov=simcore_service_sidecar --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-          -v -m "not travis" services/sidecar/tests
+          -v -m "not travis" services/sidecar/tests/unit
     else
         echo "No changes detected. Skipping unit-testing of sidecar."
     fi

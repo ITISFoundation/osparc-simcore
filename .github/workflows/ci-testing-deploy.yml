@@ -32,11 +32,13 @@ jobs:
         os: [ubuntu-18.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v1
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -64,11 +66,13 @@ jobs:
         os: [ubuntu-18.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v1
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -110,11 +114,13 @@ jobs:
         os: [ubuntu-18.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v1
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -156,11 +162,13 @@ jobs:
         os: [ubuntu-18.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v1
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -193,6 +201,53 @@ jobs:
           name: unit_director_coverage
           path: codeclimate.unit_director_coverage.json
 
+  unit-test-sidecar:
+    name: Unit-testing sidecar
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
+      - name: setup python environment
+        uses: actions/setup-python@v1.1.1
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v1
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: install
+        run: ./ci/github/unit-testing/sidecar.bash install
+      - name: test
+        run: ./ci/github/unit-testing/sidecar.bash test
+      - uses: codecov/codecov-action@v1
+        with:
+          token: ${{ env.CODECOV_TOKEN }} #required
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_sidecar_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v1
+        with:
+          name: unit_sidecar_coverage
+          path: codeclimate.unit_sidecar_coverage.json
   unit-test-frontend:
     name: Unit-testing frontend
     runs-on: ${{ matrix.os }}
@@ -202,11 +257,13 @@ jobs:
         os: [ubuntu-18.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v1
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
       - uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node }}
@@ -238,11 +295,13 @@ jobs:
         os: [ubuntu-18.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v1
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -270,11 +329,13 @@ jobs:
         os: [ubuntu-18.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v1
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -316,11 +377,13 @@ jobs:
         os: [ubuntu-18.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v1
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -362,11 +425,13 @@ jobs:
         os: [ubuntu-18.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v1
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -408,11 +473,13 @@ jobs:
         os: [ubuntu-18.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v1
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -446,21 +513,29 @@ jobs:
           path: codeclimate.unit_webserver_coverage.json
 
   build-test-images:
+    # make PR faster by executing this one straight as PR cannot push to the registry anyway
     runs-on: ubuntu-18.04
     name: build docker test images
     steps:
-      - uses: actions/checkout@v1
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash
+      - uses: actions/checkout@v2
+      - name: setup docker
+        if: github.event_name == 'push'
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
       - name: show system environs
+        if: github.event_name == 'push'
         run: ./ci/helpers/show_system_versions.bash
       - name: pull images
+        if: github.event_name == 'push'
         run: ./ci/build/test-images.bash pull_images
       - name: build images
+        if: github.event_name == 'push'
         run: ./ci/build/test-images.bash build_images
       - name: set owner variable
+        if: github.event_name == 'push'
         run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
       - name: push images
         # only pushes have access to the docker credentials
@@ -483,11 +558,13 @@ jobs:
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
-      - uses: actions/checkout@v1
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -523,6 +600,64 @@ jobs:
           name: integration_webserver_coverage
           path: codeclimate.integration_webserver_coverage.json
 
+  integration-test-sidecar:
+    name: Integration-testing sidecar
+    needs: [build-test-images]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+      - name: set PR default variables
+        # only pushes have access to the docker credentials, use a default
+        if: github.event_name == 'pull_request'
+        run: |
+          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
+          echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
+      - name: setup python environment
+        uses: actions/setup-python@v1.1.1
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v1
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: install
+        run: ./ci/github/integration-testing/sidecar.bash install
+      - name: test
+        run: ./ci/github/integration-testing/sidecar.bash test
+      - name: cleanup
+        if: always()
+        run: ./ci/github/integration-testing/sidecar.bash clean_up
+      - uses: codecov/codecov-action@v1
+        with:
+          token: ${{ env.CODECOV_TOKEN }} #required
+          flags: integrationtests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_sidecar_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v1
+        with:
+          name: integration_sidecar_coverage
+          path: codeclimate.integration_sidecar_coverage.json
+
   integration-test-simcore-sdk:
     name: Integration-testing simcore-sdk
     needs: [build-test-images]
@@ -539,11 +674,13 @@ jobs:
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
-      - uses: actions/checkout@v1
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -595,11 +732,13 @@ jobs:
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
-      - uses: actions/checkout@v1
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -638,11 +777,13 @@ jobs:
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
-      - uses: actions/checkout@v1
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -693,20 +834,21 @@ jobs:
   coverage:
     needs:
       [
-        unit-test-api-gateway,
         unit-test-catalog,
         unit-test-director,
+        unit-test-sidecar,
         unit-test-service-library,
         unit-test-simcore-sdk,
         unit-test-storage,
         unit-test-webserver,
         integration-test-webserver,
+        integration-test-sidecar,
         integration-test-simcore-sdk,
       ]
     name: coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
         with:
           name: unit_api_gateway_coverage
@@ -716,6 +858,9 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: unit_director_coverage
+      - uses: actions/download-artifact@v1
+        with:
+          name: unit_sidecar_coverage
       - uses: actions/download-artifact@v1
         with:
           name: unit_servicelib_coverage
@@ -733,6 +878,9 @@ jobs:
           name: integration_webserver_coverage
       - uses: actions/download-artifact@v1
         with:
+          name: integration_sidecar_coverage
+      - uses: actions/download-artifact@v1
+        with:
           name: integration_simcoresdk_coverage
       - name: put all artefacts together
         run: |
@@ -741,11 +889,13 @@ jobs:
             unit_api_gateway_coverage/*.json \
             unit_catalog_coverage/*.json \
             unit_director_coverage/*.json \
+            unit_sidecar_coverage/*.json \
             unit_servicelib_coverage/*.json \
             unit_simcoresdk_coverage/*.json \
             unit_storage_coverage/*.json \
             unit_webserver_coverage/*.json \
             integration_webserver_coverage/*.json \
+            integration_sidecar_coverage/*.json \
             integration_simcoresdk_coverage/*.json \
             all_coverages/
           ls -al all_coverages
@@ -753,7 +903,7 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter
-          ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json --parts 9
+          ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json --parts 11
       - name: upload coverages
         run: |
           ./cc-test-reporter upload-coverage
@@ -764,9 +914,9 @@ jobs:
     needs:
       [
         unit-test-api,
-        unit-test-api-gateway,
         unit-test-catalog,
         unit-test-director,
+        unit-test-sidecar,
         unit-test-frontend,
         unit-test-python-linting,
         unit-test-service-library,
@@ -774,17 +924,20 @@ jobs:
         unit-test-storage,
         unit-test-webserver,
         integration-test-webserver,
+        integration-test-sidecar,
         integration-test-simcore-sdk,
         system-test-swarm-deploy,
         system-test-e2e,
       ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
       - name: set owner variable
         run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
       - name: deploy master

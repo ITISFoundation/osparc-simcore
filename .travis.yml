@@ -1,10 +1,8 @@
 dist: bionic
 env:
   global:
-    - DOCKER_COMPOSE_VERSION=1.25.0
+    - DOCKER_COMPOSE_VERSION=1.25.3
     - DOCKER_VERSION=5:19.03.5~3-0~ubuntu-bionic
-    # - DOCKER_BUILDKIT=1
-    # - COMPOSE_DOCKER_CLI_BUILD=1
 services:
   - docker
 addons:
@@ -176,6 +174,27 @@ jobs:
       after_failure:
         - unbuffer bash ci/travis/unit-testing/director.bash after_failure
 
+    # test python, director ----------------------------------------------------------------------
+    - stage: build / unit-testing
+      name: sidecar
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ci/travis/unit-testing/sidecar.bash before_install
+      install:
+        - unbuffer bash ci/travis/unit-testing/sidecar.bash install
+      before_script:
+        - unbuffer bash ci/travis/unit-testing/sidecar.bash before_script
+      script:
+        - unbuffer bash ci/travis/unit-testing/sidecar.bash script
+      after_success:
+        - unbuffer bash ci/travis/unit-testing/sidecar.bash after_success
+      after_failure:
+        - unbuffer bash ci/travis/unit-testing/sidecar.bash after_failure
+
     # test python, service-library ----------------------------------------------------------------------
     - stage: build / unit-testing
       name: service-library
@@ -302,6 +321,27 @@ jobs:
         - unbuffer bash ci/travis/integration-testing/webserver.bash after_success
       after_failure:
         - unbuffer bash ci/travis/integration-testing/webserver.bash after_failure
+
+    # integrate sidecar in swarm -------------------------------------------------------------
+    - stage: integration-testing / system-testing
+      name: sidecar in swarm
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ci/travis/integration-testing/sidecar.bash before_install
+      install:
+        - unbuffer bash ci/travis/integration-testing/sidecar.bash install
+      before_script:
+        - unbuffer bash ci/travis/integration-testing/sidecar.bash before_script
+      script:
+        - unbuffer bash ci/travis/integration-testing/sidecar.bash script
+      after_success:
+        - unbuffer bash ci/travis/integration-testing/sidecar.bash after_success
+      after_failure:
+        - unbuffer bash ci/travis/integration-testing/sidecar.bash after_failure
 
     # integrate simcore-sdk in swarm -------------------------------------------------------------
     - stage: integration-testing / system-testing

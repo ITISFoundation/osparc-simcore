@@ -17,12 +17,12 @@ ENV SC_USER_ID=8004 \
     SC_BOOT_MODE=default
 
 RUN adduser \
-  --uid ${SC_USER_ID} \
-  --disabled-password \
-  --gecos "" \
-  --shell /bin/sh \
-  --home /home/${SC_USER_NAME} \
-  ${SC_USER_NAME}
+    --uid ${SC_USER_ID} \
+    --disabled-password \
+    --gecos "" \
+    --shell /bin/sh \
+    --home /home/${SC_USER_NAME} \
+    ${SC_USER_NAME}
 
 
 # Sets utf-8 encoding for Python et al
@@ -34,7 +34,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # Ensures that the python and pip executables used in the image will be
 # those from our virtualenv.
-ENV PATH="/${VIRTUAL_ENV}/bin:$PATH"
+ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
 EXPOSE 8000
 EXPOSE 3000
@@ -50,15 +50,15 @@ ENV SC_BUILD_TARGET=build
 
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends \
-      build-essential \
-      gcc
+    build-essential \
+    gcc
 
 RUN python -m venv ${VIRTUAL_ENV}
 
 RUN pip install --upgrade --no-cache-dir \
-      pip~=20.0.2  \
-      wheel \
-      setuptools
+    pip~=20.0.2  \
+    wheel \
+    setuptools
 
 WORKDIR /build
 
@@ -108,10 +108,10 @@ COPY --chown=scu:scu services/api-gateway/docker services/api-gateway/docker
 
 
 HEALTHCHECK --interval=30s \
-            --timeout=20s \
-            --start-period=30s \
-            --retries=3 \
-            CMD ["python3", "services/api-gateway/docker/healthcheck.py", "http://localhost:8000/"]
+    --timeout=20s \
+    --start-period=30s \
+    --retries=3 \
+    CMD ["python3", "services/api-gateway/docker/healthcheck.py", "http://localhost:8000/"]
 
 ENTRYPOINT [ "/bin/sh", "services/api-gateway/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/api-gateway/docker/boot.sh"]

@@ -32,7 +32,7 @@ def storage_endpoint(docker_stack: Dict, devel_environ: Dict) -> URL:
 async def storage_service(
     minio_service: S3Client, storage_endpoint: URL, docker_stack: Dict
 ) -> URL:
-    assert await wait_till_storage_responsive(storage_endpoint)
+    await wait_till_storage_responsive(storage_endpoint)
 
     yield storage_endpoint
 

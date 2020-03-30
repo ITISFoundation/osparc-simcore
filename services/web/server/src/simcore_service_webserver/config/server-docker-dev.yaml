@@ -46,8 +46,8 @@ rabbit:
   user: ${RABBIT_USER}
   password: ${RABBIT_PASSWORD}
   channels:
-    progress: ${RABBIT_PROGRESS_CHANNEL}
-    log: ${RABBIT_LOG_CHANNEL}
+    progress: "comp.backend.channels.progress"
+    log: "comp.backend.channels.log"
 activity:
   enabled: True
   prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}
