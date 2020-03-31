@@ -1,3 +1,9 @@
+:root {
+  --background-color: #202020;
+  --text-color: #FFFFFF;
+  --spinner-color: #DDDDDD;
+}
+
 .container {
   position: absolute;
   top: 0;
@@ -5,7 +11,7 @@
   width: 100%;
   height: 100%;
   z-index: 1000;
-  background-color: #202020;
+  background-color: var(--background-color);
 }
 
 .imageLogo {
@@ -43,7 +49,7 @@
   bottom: 20px;
   border-radius: 50%;
   border: 10px solid transparent;
-  border-top-color: #DDDDDD;
+  border-top-color: var(--spinner-color);
 
   -webkit-animation: spin 3s linear infinite; /* Chrome, Opera 15+, Safari 5+ */
   animation: spin 3s linear infinite; /* Chrome, Firefox 16+, IE 10+, Opera */
@@ -59,7 +65,7 @@
   bottom: 20px;
   border-radius: 50%;
   border: 10px solid transparent;
-  border-top-color: #DDDDDD;
+  border-top-color: var(--spinner-color);
 
   -webkit-animation: spin 3s linear infinite; /* Chrome, Opera 15+, Safari 5+ */
   animation: spin 3s linear infinite; /* Chrome, Firefox 16+, IE 10+, Opera */
@@ -72,7 +78,7 @@
   top: calc(50% + 50px);
   font-size: 200%;
   user-select: none;
-  color: white;
+  color: var(--text-color);
 }
 
 .message2 {
@@ -82,7 +88,7 @@
   top: calc(50% + 100px);
   font-size: 150%;
   user-select: none;
-  color: white;
+  color: var(--text-color);
 }
 
 @-webkit-keyframes spin {

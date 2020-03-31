@@ -43,7 +43,11 @@ qx.Class.define("osparc.utils.Utils", {
 
     createLoadingIFrame: function(text) {
       const loadingUri = osparc.utils.Utils.getLoaderUri(text);
-      let iframe = new qx.ui.embed.Iframe(loadingUri);
+      const iframe = new qx.ui.embed.Iframe(loadingUri);
+      const domeEle = iframe.getDomElement();
+      domeEle.style.setProperty("--background-color", "loading-page-background");
+      domeEle.style.setProperty("--text-color", "loading-page-text");
+      domeEle.style.setProperty("--spinner-color", "loading-page-spinner");
       iframe.setBackgroundColor("transparent");
       return iframe;
     },
