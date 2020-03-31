@@ -31,6 +31,9 @@ async function runTutorial () {
   // Wait service to start and output files to be pushed
   await tutorial.waitFor(60000);
 
+  // This study opens in fullscreen mode
+  await tutorial.restoreIFrame();
+
   await tutorial.openNodeFiles(0);
   const outFiles = [
     "CAP_plot.csv",
