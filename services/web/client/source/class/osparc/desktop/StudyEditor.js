@@ -20,15 +20,16 @@
 qx.Class.define("osparc.desktop.StudyEditor", {
   extend: qx.ui.splitpane.Pane,
 
-  construct: function(study) {
+  construct: function() {
     this.base(arguments, "horizontal");
 
-    let mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
-    let sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
+    const mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
+    const sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
       minWidth: 0,
       maxWidth: 700,
       width: 400
     });
+    sidePanel.getContentElement().setStyle("border-left", "1px solid " + qx.theme.manager.Color.getInstance().resolve("material-button-background"));
 
     const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
       minWidth: 0
@@ -37,10 +38,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     this.add(mainPanel, 1); // flex 1
     this.add(scroll, 0); // flex 0
-
-    if (study) {
-      this.setStudy(study);
-    }
 
     this.__attachEventHandlers();
   },
@@ -69,14 +66,38 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __loggerView: null,
     __currentNodeId: null,
     __autoSaveTimer: null,
+    __lastSavedStudy: null,
 
     _applyStudy: function(study) {
       osparc.store.Store.getInstance().setCurrentStudy(study);
       study.buildWorkbench();
       study.openStudy();
-      this.__initDefault();
+      this.__initViews();
       this.__connectEvents();
       this.__startAutoSaveTimer();
+
+      this.__openOneNode();
+    },
+
+    __openOneNode: function() {
+      const validNodeIds = [];
+      const allNodes = this.getStudy().getWorkbench().getNodes(true);
+      Object.values(allNodes).forEach(node => {
+        if (!node.isFilePicker()) {
+          validNodeIds.push(node.getNodeId());
+        }
+      });
+
+      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      if (validNodeIds.length === 1 && preferencesSettings.getAutoOpenNode()) {
+        this.nodeSelected(validNodeIds[0]);
+        // Todo Odei: A bit of a hack
+        qx.event.Timer.once(() => {
+          this.__checkMaximizeable();
+        }, this, 10);
+      } else {
+        this.nodeSelected(this.getStudy().getUuid());
+      }
     },
 
     /**
@@ -87,7 +108,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__stopAutoSaveTimer();
     },
 
-    __initDefault: function() {
+    __initViews: function() {
       const study = this.getStudy();
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree(study);
@@ -112,7 +133,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const edgeId = e.getData();
         this.__removeEdge(edgeId);
       }, this);
-      this.showInMainView(workbenchUI, study.getUuid());
 
       this.__nodeView = new osparc.component.node.NodeView().set({
         minHeight: 200
@@ -166,21 +186,28 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const nodeId = e.getData();
         const node = this.getStudy().getWorkbench().getNode(nodeId);
         if (node && node.isContainer()) {
-          // const exportGroupView = new osparc.component.export.ExportGroup(node);
-
+          const exportGroupView = new osparc.component.export.ExportGroup(node);
           const window = new qx.ui.window.Window(this.tr("Export: ") + node.getLabel()).set({
             appearance: "service-window",
             layout: new qx.ui.layout.Grow(),
             autoDestroy: true,
             contentPadding: 0,
-            width: 900,
-            height: 800,
+            width: 700,
+            height: 700,
             showMinimize: false,
             modal: true
           });
-          // window.add(exportGroupView);
+          window.add(exportGroupView);
           window.center();
           window.open();
+
+          window.addListener("close", () => {
+            exportGroupView.tearDown();
+          }, this);
+
+          exportGroupView.addListener("finished", () => {
+            window.close();
+          }, this);
         }
       });
 
@@ -322,6 +349,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.fireDataEvent("changeMainViewCaption", nodesPath);
     },
 
+    getCurrentPathIds: function() {
+      const nodesPath = this.getStudy().getWorkbench().getPathIds(this.__currentNodeId);
+      return nodesPath;
+    },
+
     getLogger: function() {
       return this.__loggerView;
     },
@@ -443,6 +475,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __doStartPipeline: function() {
       this.getStudy().getWorkbench().clearProgressData();
+
       // post pipeline
       const url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid()) + "/start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
@@ -506,7 +539,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       let timer = this.__autoSaveTimer = new qx.event.Timer(interval);
       timer.addListener("interval", () => {
         const newObj = this.getStudy().serializeStudy();
-        const delta = diffPatcher.diff(this.__lastSavedPrj, newObj);
+        const delta = diffPatcher.diff(this.__lastSavedStudy, newObj);
         if (delta) {
           let deltaKeys = Object.keys(delta);
           // lastChangeDate should not be taken into account as data change
@@ -543,7 +576,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       };
       osparc.data.Resources.fetch("studies", "put", params).then(data => {
         this.fireDataEvent("studySaved", true);
-        this.__lastSavedPrj = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
+        this.__lastSavedStudy = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
         if (cbSuccess) {
           cbSuccess.call(this);
         }
@@ -554,6 +587,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     closeStudy: function() {
       this.getStudy().closeStudy();
+    },
+
+    __checkMaximizeable: function() {
+      this.__scrollContainer.setVisibility("visible");
+      this.__nodeView._maximizeIFrame(false); // eslint-disable-line no-underscore-dangle
+      const node = this.getStudy().getWorkbench().getNode(this.__currentNodeId);
+      if (node && node.getIFrame() && !this.__nodeView.isSettingsGroupShowable()) {
+        console.log("maximizeIFrame");
+        node.getIFrame().maximizeIFrame(true);
+      }
     },
 
     __attachEventHandlers: function() {
@@ -614,14 +657,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       // callback for node updates
       const slotName3 = "nodeUpdated";
       socket.removeSlot(slotName3);
-      socket.on(slotName3, function(data) {
+      socket.on(slotName3, data => {
         const d = JSON.parse(data);
         const nodeId = d["Node"];
         const nodeData = d["Data"];
         const workbench = this.getStudy().getWorkbench();
         const node = workbench.getNode(nodeId);
         if (node) {
-          node.setOutputData(nodeData);
+          node.setOutputData(nodeData.outputs);
           if (nodeData.progress) {
             const progress = Number.parseInt(nodeData.progress);
             node.setProgress(progress);

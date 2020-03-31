@@ -257,9 +257,9 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
           btn.resetIcon();
           btn.getChildControl("icon").getContentElement()
             .removeClass("rotate");
-          this.fireDataEvent(this.__isTemplate ? "updatedTemplate" : "updatedStudy", data);
           this.__model.set(data);
           this.setMode("display");
+          this.fireDataEvent(this.__isTemplate ? "updatedTemplate" : "updatedStudy", data);
         })
         .catch(err => {
           btn.resetIcon();

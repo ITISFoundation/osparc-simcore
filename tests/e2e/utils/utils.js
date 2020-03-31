@@ -8,7 +8,8 @@ function getUserAndPass(args) {
     userPass.user = args[1];
     userPass.pass = args[2];
     userPass.newUser = false;
-  } else {
+  }
+  else {
     const rand = __getRandUserAndPass();
     userPass.user = rand.user;
     userPass.pass = rand.pass;

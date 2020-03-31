@@ -17,11 +17,7 @@ tracing:
   enabled: ${TRACING_ENABLED}
   zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
 socketio:
-  message_queue:
-    host: ${RABBIT_HOST}
-    port: ${RABBIT_PORT}
-    user: ${RABBIT_USER}
-    password: ${RABBIT_PASSWORD}
+  enabled: True
 director:
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
@@ -51,8 +47,8 @@ rabbit:
   user: ${RABBIT_USER}
   password: ${RABBIT_PASSWORD}
   channels:
-    progress: ${RABBIT_PROGRESS_CHANNEL}
-    log: ${RABBIT_LOG_CHANNEL}
+    progress: "comp.backend.channels.progress"
+    log: "comp.backend.channels.log"
 login:
   enabled: True
   registration_invitation_required: ${WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED}
@@ -69,7 +65,7 @@ storage:
   port: ${STORAGE_PORT}
   version: v0
 catalog:
-  host: catalog
+  host: ${CATALOG_HOST}
   port: 8000
   version: v0
 rest:

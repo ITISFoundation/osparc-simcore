@@ -6,6 +6,7 @@ const tutorialBase = require('./tutorialBase');
 
 const args = process.argv.slice(2);
 if (args.length < 1) {
+  console.log('More arguments expented');
   process.exit(1);
 }
 const url = args[0];
@@ -32,7 +33,12 @@ async function runTutorial () {
 
   await tutorial.runPipeline(25000);
   await tutorial.openNodeFiles(0);
-  await tutorial.checkResults();
+  const outFiles = [
+    "logs.zip",
+    "out_1"
+  ];
+  await tutorial.checkResults(outFiles.length);
+
   await tutorial.removeStudy();
   await tutorial.logOut();
   await tutorial.close();

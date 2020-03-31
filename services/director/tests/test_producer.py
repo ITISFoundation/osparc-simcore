@@ -154,9 +154,8 @@ async def test_interactive_service_published_port(run_services):
 
 
 @pytest.fixture
-def docker_network(docker_swarm) -> docker.models.networks.Network:
-    client = docker_swarm
-    network = client.networks.create("test_network", driver="overlay", scope="swarm")
+def docker_network(docker_client: docker.client.DockerClient, docker_swarm: None) -> docker.models.networks.Network:    
+    network = docker_client.networks.create("test_network", driver="overlay", scope="swarm")
     config.SIMCORE_SERVICES_NETWORK_NAME = network.name
     yield network
 
@@ -165,7 +164,7 @@ def docker_network(docker_swarm) -> docker.models.networks.Network:
     config.SIMCORE_SERVICES_NETWORK_NAME = None
 
 
-async def test_interactive_service_in_correct_network(docker_network, run_services):
+async def test_interactive_service_in_correct_network(docker_network: docker.models.networks.Network, run_services):
 
     running_dynamic_services = await run_services(number_comp=0, number_dyn=2, dependant=False)
     assert len(running_dynamic_services) == 2

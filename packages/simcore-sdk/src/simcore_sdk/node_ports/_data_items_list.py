@@ -2,7 +2,7 @@
 
 # pylint: disable=too-many-ancestors
 import logging
-from collections import MutableMapping
+from collections.abc import MutableMapping
 from typing import Dict
 
 from . import exceptions
@@ -10,10 +10,11 @@ from ._data_item import DataItem
 
 log = logging.getLogger(__name__)
 
+
 class DataItemsList(MutableMapping):
     """This class contains a list of Data Items."""
 
-    def __init__(self, data:Dict[str, DataItem]=None):
+    def __init__(self, data: Dict[str, DataItem] = None):
         log.debug("Creating DataItemsList with %s", data)
         if data is None:
             data = {}
@@ -25,7 +26,7 @@ class DataItemsList(MutableMapping):
             raise TypeError
         if isinstance(key, int):
             key = self._store.keys()[key]
-        
+
         self._store[key] = value
 
     def __getitem__(self, key):
@@ -36,7 +37,7 @@ class DataItemsList(MutableMapping):
         if not key in self._store:
             raise exceptions.UnboundPortError(key)
         return self._store[key]
-        
+
     def __iter__(self):
         return iter(self._store)
 

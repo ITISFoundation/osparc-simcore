@@ -2,8 +2,6 @@ name: Github-CI-Release
 
 on:
   push:
-    branches:
-      - staging
     tags:
       - v[0-9]+.[0-9]+.[0-9]+
 
@@ -15,19 +13,23 @@ env:
 
 jobs:
   deploy:
+    # only run on staging branch
+    if: github.event.base_ref == 'ref/heads/staging'
     name: deploy release
     runs-on: ubuntu-latest
     env:
       TAG_PREFIX: staging-github
     steps:
-      - uses: actions/checkout@v1
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@0.0.1
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.sh
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
       - name: set owner variable
         run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
       - name: set git tag
         run: echo ::set-env name=GIT_TAG::${GITHUB_REF##*/}
       - name: deploy
-        run: ./ci/deploy/dockerhub-release
+        run: ./ci/deploy/dockerhub-release.bash

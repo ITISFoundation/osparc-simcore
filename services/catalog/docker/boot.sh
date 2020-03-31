@@ -1,7 +1,6 @@
 #!/bin/sh
 #
 INFO="INFO: [$(basename "$0")] "
-ERROR="ERROR: [$(basename "$0")] "
 
 # BOOTING application ---------------------------------------------
 echo "$INFO" "Booting in ${SC_BOOT_MODE} mode ..."

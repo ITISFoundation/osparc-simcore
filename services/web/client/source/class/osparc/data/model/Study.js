@@ -27,8 +27,9 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let study = new osparc.data.model.Study(studyData);
- *   let prjEditor = new osparc.desktop.StudyEditor(study);
+ *   const study = new osparc.data.model.Study(studyData);
+ *   const studyEditor = new osparc.desktop.StudyEditor();
+ *   studyEditor.setStudy(study);
  * </pre>
  */
 

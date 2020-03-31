@@ -9,9 +9,9 @@ from copy import deepcopy
 import pytest
 from aiohttp import web
 
+from pytest_simcore.helpers.utils_projects import create_project
 from servicelib.application import create_safe_application
 from simcore_service_webserver import application
-from utils_projects import create_project
 
 
 @pytest.fixture
@@ -20,16 +20,15 @@ def client(loop, aiohttp_client, app_cfg, postgres_service):
     # config app
     cfg = deepcopy(app_cfg)
     port = cfg["main"]["port"]
-    cfg["db"]["init_tables"] = True # inits tables of postgres_service upon startup
+    cfg["db"]["init_tables"] = True  # inits tables of postgres_service upon startup
     cfg["projects"]["enabled"] = True
 
     app = application.create_application(cfg)
 
     # server and client
-    return loop.run_until_complete(aiohttp_client(app, server_kwargs={
-        'port': port,
-        'host': 'localhost'
-    }))
+    return loop.run_until_complete(
+        aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
+    )
 
 
 @pytest.mark.skip(reason="Under dev")
@@ -41,7 +40,6 @@ def test_users_projects_db(client):
     # api/specs/webserver/v0/components/schemas/project-v0.0.1.json
     # create_project(client.app, )
     pass
-
 
 
 @pytest.mark.skip(reason="Under dev")

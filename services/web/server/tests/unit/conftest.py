@@ -17,7 +17,6 @@ from uuid import uuid4
 
 import pytest
 
-
 from simcore_service_webserver.resources import resources
 from simcore_service_webserver.utils import now_str
 
@@ -27,15 +26,17 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 ## Log
 log = logging.getLogger(__name__)
 
+pytest_plugins = ["pytest_simcore.environs"]
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="session")
 def here():
     cdir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
     assert cdir == current_dir, "Somebody changing current_dir?"
     return cdir
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def fake_static_dir(fake_data_dir: Path) -> Dict:
     return fake_data_dir / "static"
 
@@ -45,9 +46,11 @@ def fake_project(fake_data_dir: Path) -> Dict:
     with (fake_data_dir / "fake-project.json").open() as fp:
         yield json.load(fp)
 
+
 @pytest.fixture
 def api_version_prefix() -> str:
     return "v0"
+
 
 @pytest.fixture
 def empty_project():
@@ -60,15 +63,18 @@ def empty_project():
             "creationDate": now_str(),
             "lastChangeDate": now_str(),
             "thumbnail": "",
-            "workbench": {}
+            "workbench": {},
         }
         return empty_project
+
     return create
 
 
 @pytest.fixture
 def project_schema_file(api_version_prefix) -> Path:
-    prj_schema_path = resources.get_path(f"api/{api_version_prefix}/schemas/project-v0.0.1.json")
+    prj_schema_path = resources.get_path(
+        f"api/{api_version_prefix}/schemas/project-v0.0.1.json"
+    )
     assert prj_schema_path.exists()
     return prj_schema_path
 
@@ -78,7 +84,8 @@ def activity_data(fake_data_dir: Path) -> Dict:
     with (fake_data_dir / "test_activity_data.json").open() as fp:
         yield json.load(fp)
 
+
 @pytest.fixture
 def test_tags_data(fake_data_dir: Path) -> Dict:
-    with (fake_data_dir / 'test_tags_data.json').open() as fp:
-        yield json.load(fp).get('added_tags')
+    with (fake_data_dir / "test_tags_data.json").open() as fp:
+        yield json.load(fp).get("added_tags")

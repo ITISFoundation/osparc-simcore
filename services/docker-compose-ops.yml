@@ -1,4 +1,3 @@
-
 # Minimal docker-compose configuration to deploy a stack that contains a selection
 # of the services deployed with ITISFoundation/osparc-ops
 #
@@ -18,21 +17,20 @@
 #
 #  NOTE: this stack cannot be called tools because it collides with default network created in services/web/client/tools/docker-compose.yml
 #  IMPORTANT: This stack IS NOT used in the deployed version
-version: '3.7'
+version: "3.7"
 
 services:
-
   adminer:
-    init: true
     image: adminer
+    init: true
     ports:
       - 18080:8080
     networks:
       - simcore_default
 
   portainer:
-    init: true
     image: portainer/portainer
+    init: true
     ports:
       - "9000:9000"
     command: -H unix:///var/run/docker.sock
@@ -56,12 +54,12 @@ services:
       - simcore_default
       - interactive_services_subnet
       - computational_services_subnet
-  
+
   redis-commander:
-    init: true
     image: rediscommander/redis-commander:latest
+    init: true
     restart: always
-    environment: 
+    environment:
       - REDIS_HOSTS=${REDIS_HOST}
     ports:
       - "18081:8081"

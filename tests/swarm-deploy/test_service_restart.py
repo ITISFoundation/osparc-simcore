@@ -24,17 +24,17 @@ current_dir =  Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve
 
 # time measured from command 'up' finished until *all* tasks are running
 MAX_TIME_TO_DEPLOY_SECS = 60
-MAX_TIME_TO_RESTART_SERVICE = 5
+MAX_TIME_TO_RESTART_SERVICE = 10
 
 
 @pytest.fixture("module")
-def deployed_simcore_stack(osparc_deploy: Dict, docker_client: DockerClient) -> List[Service]:
+def deployed_simcore_stack(make_up_prod: Dict, docker_client: DockerClient) -> List[Service]:
     # NOTE: the goal here is NOT to test time-to-deplopy but
     # rather guaranteing that the framework is fully deployed before starting
     # tests. Obviously in a critical state in which the frameworks has a problem
     # the fixture will fail
     STACK_NAME = 'simcore'
-    assert STACK_NAME in osparc_deploy
+    assert STACK_NAME in make_up_prod
 
     @retry( wait=wait_fixed(MAX_TIME_TO_DEPLOY_SECS),
             stop=stop_after_attempt(5),
@@ -70,7 +70,7 @@ def deployed_simcore_stack(osparc_deploy: Dict, docker_client: DockerClient) -> 
 def test_graceful_restart_services(
     service_name: str,
     deployed_simcore_stack: List[Service],
-    osparc_deploy: Dict):
+    make_up_prod: Dict):
     """
         NOTE: loop fixture makes this test async
         NOTE: needs to run AFTER test_core_service_running

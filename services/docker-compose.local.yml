@@ -50,14 +50,22 @@ services:
     command:
       [
         "postgres",
-        "-c", "tcp_keepalives_idle=600",
-        "-c", "tcp_keepalives_interval=600",
-        "-c", "tcp_keepalives_count=5",
-        "-c", "log_statement=all",
-        "-c", "log_connections=true",
-        "-c", "log_disconnections=true",
-        "-c", "log_duration=true",
-        "-c", "log_line_prefix=%m [%p] %q%u@%d/%a "
+        "-c",
+        "tcp_keepalives_idle=600",
+        "-c",
+        "tcp_keepalives_interval=600",
+        "-c",
+        "tcp_keepalives_count=5",
+        "-c",
+        "log_statement=all",
+        "-c",
+        "log_connections=true",
+        "-c",
+        "log_disconnections=true",
+        "-c",
+        "log_duration=true",
+        "-c",
+        "log_line_prefix=%m [%p] %q%u@%d/%a ",
       ]
 
   rabbit:

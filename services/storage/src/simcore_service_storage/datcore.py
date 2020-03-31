@@ -3,18 +3,18 @@
     requires Blackfynn, check Makefile env2
 
 """
-import logging
 # pylint: skip-file
+
+import logging
 import os
 import urllib
+from contextlib import suppress
 from pathlib import Path
 from typing import List
 
 from blackfynn import Blackfynn
 from blackfynn.models import BaseCollection, Collection, DataPackage
-
-from simcore_service_storage.models import (DatasetMetaData, FileMetaData,
-                                            FileMetaDataEx)
+from simcore_service_storage.models import DatasetMetaData, FileMetaData, FileMetaDataEx
 from simcore_service_storage.settings import DATCORE_ID, DATCORE_STR
 
 logger = logging.getLogger(__name__)
@@ -22,14 +22,17 @@ logger = logging.getLogger(__name__)
 DatasetMetaDataVec = List[DatasetMetaData]
 
 
-#FIXME: W0611:Unused IOAPI imported from blackfynn.api.transfers
-#from blackfynn.api.transfers import IOAPI
+# FIXME: W0611:Unused IOAPI imported from blackfynn.api.transfers
+# from blackfynn.api.transfers import IOAPI
 
 
-#FIXME: W0212:Access to a protected member _api of a client class
+# FIXME: W0212:Access to a protected member _api of a client class
 # pylint: disable=W0212
 
-def _get_collection_id(folder: BaseCollection, _collections: List[str], collection_id: str)-> str:
+
+def _get_collection_id(
+    folder: BaseCollection, _collections: List[str], collection_id: str
+) -> str:
     if not len(_collections):
         return collection_id
 
@@ -50,8 +53,13 @@ def _get_collection_id(folder: BaseCollection, _collections: List[str], collecti
 
 class DatcoreClient(object):
     def __init__(self, api_token=None, api_secret=None, host=None, streaming_host=None):
-        self.client = Blackfynn(profile=None, api_token=api_token, api_secret=api_secret,
-                                host=host, streaming_host=streaming_host)
+        self.client = Blackfynn(
+            profile=None,
+            api_token=api_token,
+            api_secret=api_secret,
+            host=host,
+            streaming_host=streaming_host,
+        )
 
     def profile(self):
         """
@@ -87,7 +95,7 @@ class DatcoreClient(object):
 
         return destination
 
-    def list_files_recursively(self, dataset_filter: str=""):
+    def list_files_recursively(self, dataset_filter: str = ""):
         files = []
 
         for dataset in self.client.datasets():
@@ -96,39 +104,45 @@ class DatcoreClient(object):
 
         return files
 
-    def list_files_raw_dataset(self, dataset_id: str)->List[FileMetaDataEx]:
-        files = [] # raw packages
-        _files = [] # fmds
-        data = {} # map to keep track of parents-child
+    def list_files_raw_dataset(self, dataset_id: str) -> List[FileMetaDataEx]:
+        files = []  # raw packages
+        _files = []  # fmds
+        data = {}  # map to keep track of parents-child
 
-        cursor = ''
+        cursor = ""
         page_size = 1000
         api = self.client._api.datasets
 
         dataset = self.client.get_dataset(dataset_id)
         if dataset is not None:
             while True:
-                resp = api._get(api._uri('/{id}/packages?cursor={cursor}&pageSize={pageSize}&includeSourceFiles={includeSourceFiles}', id=dataset_id,
-                    cursor=cursor, pageSize=page_size, includeSourceFiles=False))
-                for package in resp.get('packages', list()):
-                    id = package['content']['id']
+                resp = api._get(
+                    api._uri(
+                        "/{id}/packages?cursor={cursor}&pageSize={pageSize}&includeSourceFiles={includeSourceFiles}",
+                        id=dataset_id,
+                        cursor=cursor,
+                        pageSize=page_size,
+                        includeSourceFiles=False,
+                    )
+                )
+                for package in resp.get("packages", list()):
+                    id = package["content"]["id"]
                     data[id] = package
                     files.append(package)
-                cursor = resp.get('cursor')
+                cursor = resp.get("cursor")
                 if cursor is None:
                     break
 
-
             for f in files:
-                if f['content']['packageType'] != 'Collection':
-                    filename = f['content']['name']
+                if f["content"]["packageType"] != "Collection":
+                    filename = f["content"]["name"]
                     file_path = ""
-                    file_id = f['content']['nodeId']
+                    file_id = f["content"]["nodeId"]
                     _f = f
-                    while 'parentId' in _f['content'].keys():
-                        parentid = _f['content']['parentId']
+                    while "parentId" in _f["content"].keys():
+                        parentid = _f["content"]["parentId"]
                         _f = data[parentid]
-                        file_path =  _f['content']['name'] +"/" + file_path
+                        file_path = _f["content"]["name"] + "/" + file_path
 
                     bucket_name = dataset.name
                     file_name = filename
@@ -136,23 +150,33 @@ class DatcoreClient(object):
                     object_name = str(Path(file_path) / file_name)
 
                     file_uuid = str(Path(bucket_name) / object_name)
-                    created_at = f['content']['createdAt']
-                    last_modified = f['content']['updatedAt']
+                    created_at = f["content"]["createdAt"]
+                    last_modified = f["content"]["updatedAt"]
                     parent_id = dataset_id
-                    if 'parentId' in f['content']:
-                        parentId = f['content']['parentId']
-                        parent_id = data[parentId]['content']['nodeId']
+                    if "parentId" in f["content"]:
+                        parentId = f["content"]["parentId"]
+                        parent_id = data[parentId]["content"]["nodeId"]
 
-                    fmd = FileMetaData(bucket_name=bucket_name, file_name=file_name, object_name=object_name,
-                            location=DATCORE_STR, location_id=DATCORE_ID, file_uuid=file_uuid, file_id=file_id,
-                            raw_file_path=file_uuid, display_file_path=file_uuid, created_at=created_at,
-                            last_modified=last_modified, file_size=file_size)
+                    fmd = FileMetaData(
+                        bucket_name=bucket_name,
+                        file_name=file_name,
+                        object_name=object_name,
+                        location=DATCORE_STR,
+                        location_id=DATCORE_ID,
+                        file_uuid=file_uuid,
+                        file_id=file_id,
+                        raw_file_path=file_uuid,
+                        display_file_path=file_uuid,
+                        created_at=created_at,
+                        last_modified=last_modified,
+                        file_size=file_size,
+                    )
                     fmdx = FileMetaDataEx(fmd=fmd, parent_id=parent_id)
                     _files.append(fmdx)
 
         return _files
 
-    def list_files_raw(self, dataset_filter: str="")->List[FileMetaDataEx]:
+    def list_files_raw(self, dataset_filter: str = "") -> List[FileMetaDataEx]:
         _files = []
 
         for dataset in self.client.datasets():
@@ -160,10 +184,12 @@ class DatcoreClient(object):
 
         return _files
 
-    def list_dataset_files_recursively(self, files: List[FileMetaData], base: BaseCollection, current_root: Path):
+    def list_dataset_files_recursively(
+        self, files: List[FileMetaData], base: BaseCollection, current_root: Path
+    ):
         for item in base:
             if isinstance(item, Collection):
-                _current_root = current_root  / Path(item.name)
+                _current_root = current_root / Path(item.name)
                 self.list_dataset_files_recursively(files, item, _current_root)
             else:
                 parts = current_root.parts
@@ -172,11 +198,11 @@ class DatcoreClient(object):
                 file_size = 0
                 # lets assume we have only one file
                 if item.files:
-                    file_name = Path(item.files[0].as_dict()['content']['s3key']).name
-                    file_size = item.files[0].as_dict()['content']['size']
+                    file_name = Path(item.files[0].as_dict()["content"]["s3key"]).name
+                    file_size = item.files[0].as_dict()["content"]["size"]
                 # if this is in the root directory, the object_name is the filename only
                 if len(parts) > 1:
-                    object_name = str(Path(*list(parts)[1:])/ Path(file_name))
+                    object_name = str(Path(*list(parts)[1:]) / Path(file_name))
                 else:
                     object_name = str(Path(file_name))
 
@@ -184,12 +210,21 @@ class DatcoreClient(object):
                 file_id = item.id
                 created_at = item.created_at
                 last_modified = item.updated_at
-                fmd = FileMetaData(bucket_name=bucket_name, file_name=file_name, object_name=object_name,
-                        location=DATCORE_STR, location_id=DATCORE_ID, file_uuid=file_uuid, file_id=file_id,
-                        raw_file_path=file_uuid, display_file_path=file_uuid, created_at=created_at,
-                        last_modified=last_modified, file_size=file_size)
+                fmd = FileMetaData(
+                    bucket_name=bucket_name,
+                    file_name=file_name,
+                    object_name=object_name,
+                    location=DATCORE_STR,
+                    location_id=DATCORE_ID,
+                    file_uuid=file_uuid,
+                    file_id=file_id,
+                    raw_file_path=file_uuid,
+                    display_file_path=file_uuid,
+                    created_at=created_at,
+                    last_modified=last_modified,
+                    file_size=file_size,
+                )
                 files.append(fmd)
-
 
     def create_dataset(self, ds_name, force_delete=False):
         """
@@ -202,13 +237,11 @@ class DatcoreClient(object):
         """
 
         ds = None
-        try:
+        with suppress(Exception):
             ds = self.client.get_dataset(ds_name)
             if force_delete:
                 ds.delete()
                 ds = None
-        except Exception: # pylint: disable=W0703
-            pass
 
         if ds is None:
             ds = self.client.create_dataset(ds_name)
@@ -225,10 +258,8 @@ class DatcoreClient(object):
         """
 
         ds = None
-        try:
+        with suppress(Exception):
             ds = self.client.get_dataset(ds_name)
-        except Exception: # pylint: disable=W0703
-            pass
 
         if ds is None and create_if_not_exists:
             ds = self.client.create_dataset(ds_name)
@@ -259,7 +290,7 @@ class DatcoreClient(object):
         ds = self.get_dataset(ds_name)
         return ds is not None
 
-    def upload_file(self, destination: str, filepath: str, meta_data = None):
+    def upload_file(self, destination: str, filepath: str, meta_data=None):
         """
         Uploads a file to a given dataset/collection given its filepath on the host. Optionally
         adds some meta data
@@ -303,7 +334,7 @@ class DatcoreClient(object):
         """
 
         for key in meta_data.keys():
-            package.set_property(key, meta_data[key], category='simcore')
+            package.set_property(key, meta_data[key], category="simcore")
 
         package.update()
 
@@ -334,9 +365,11 @@ class DatcoreClient(object):
         # pylint: disable = E1101
         for item in collection:
             if isinstance(item, DataPackage):
-                if Path(item.files[0].as_dict()['content']['s3key']).name == filename:
+                if Path(item.files[0].as_dict()["content"]["s3key"]).name == filename:
                     file_desc = self.client._api.packages.get_sources(item.id)[0]
-                    url = self.client._api.packages.get_presigned_url_for_file(item.id, file_desc.id)
+                    url = self.client._api.packages.get_presigned_url_for_file(
+                        item.id, file_desc.id
+                    )
                     return url
 
         return ""
@@ -349,10 +382,12 @@ class DatcoreClient(object):
         filename = ""
         package = self.client.get(file_id)
         if package is not None:
-            filename = Path(package.files[0].as_dict()['content']['s3key']).name
+            filename = Path(package.files[0].as_dict()["content"]["s3key"]).name
 
         file_desc = self.client._api.packages.get_sources(file_id)[0]
-        url = self.client._api.packages.get_presigned_url_for_file(file_id, file_desc.id)
+        url = self.client._api.packages.get_presigned_url_for_file(
+            file_id, file_desc.id
+        )
 
         return url, filename
 
@@ -388,7 +423,7 @@ class DatcoreClient(object):
         collection.update()
         for item in collection:
             if isinstance(item, DataPackage):
-                if Path(item.files[0].as_dict()['content']['s3key']).name == filename:
+                if Path(item.files[0].as_dict()["content"]["s3key"]).name == filename:
                     self.client.delete(item)
                     return True
 
@@ -436,7 +471,6 @@ class DatcoreClient(object):
         if package is not None:
             self._update_meta_data(package, meta_data)
 
-
     def get_meta_data(self, dataset, filename):
         """
         Returns metadata for a file
@@ -472,10 +506,10 @@ class DatcoreClient(object):
         if package is not None:
             if keys is None:
                 for p in package.properties:
-                    package.remove_property(p.key, category='simcore')
+                    package.remove_property(p.key, category="simcore")
             else:
                 for k in keys:
-                    package.remove_property(k, category='simcore')
+                    package.remove_property(k, category="simcore")
 
     def search(self, what, max_count):
         """
@@ -508,13 +542,14 @@ class DatcoreClient(object):
         files = [filepath]
 
         try:
-            result = self.client._api.io.upload_files(destination, files, display_progress=True)
-            if result and result[0] and 'package' in result[0][0]:
-                _id = result[0][0]['package']['content']['id']
+            result = self.client._api.io.upload_files(
+                destination, files, display_progress=True
+            )
+            if result and result[0] and "package" in result[0][0]:
+                _id = result[0][0]["package"]["content"]["id"]
 
         except Exception:
             logger.exception("Error uploading file to datcore")
-
 
         return _id
 
@@ -539,7 +574,7 @@ class DatcoreClient(object):
 
         return _id
 
-    def list_datasets(self)->DatasetMetaDataVec:
+    def list_datasets(self) -> DatasetMetaDataVec:
         data = []
         for dataset in self.client.datasets():
             dmd = DatasetMetaData(dataset_id=dataset.id, display_name=dataset.name)

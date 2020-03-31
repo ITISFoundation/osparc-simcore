@@ -26,6 +26,14 @@
                 "simcore/services/dynamic/3dviewer"
             ]
         },
+        "integration-version": {
+            "type": "string",
+            "description": "integration version number",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "examples": [
+                "1.0.0"
+            ]
+        },
         "version": {
             "type": "string",
             "description": "semantic version number",

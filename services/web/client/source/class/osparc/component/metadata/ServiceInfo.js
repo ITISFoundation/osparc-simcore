@@ -137,7 +137,7 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
           const badge = this.__metadata.badges[i];
           markdown += `[![${badge.name}](${badge.image})](${badge.url}) `;
         }
-        badges.setMarkdown(markdown);
+        badges.setValue(markdown);
         return badges;
       }
       return null;
@@ -145,7 +145,7 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
 
     __createDescription: function() {
       const description = new osparc.ui.markdown.Markdown();
-      description.setMarkdown(this.__metadata.description);
+      description.setValue(this.__metadata.description || "");
       return description;
     },
 

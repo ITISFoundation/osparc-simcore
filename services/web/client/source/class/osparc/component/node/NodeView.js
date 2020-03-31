@@ -42,23 +42,19 @@ qx.Class.define("osparc.component.node.NodeView", {
   },
 
   members: {
-    populateLayout: function() {
-      this.getNode().bind("label", this._title, "value");
-      this._addInputPortsUIs();
-      this.__addSettings();
-      this.__addIFrame();
-      this._addButtons();
-    },
-
-    __addSettings: function() {
+    _addSettings: function() {
       this._settingsLayout.removeAll();
       this._mapperLayout.removeAll();
 
       const node = this.getNode();
       const propsWidget = node.getPropsWidget();
       if (propsWidget && Object.keys(node.getInputs()).length) {
+        propsWidget.addListener("changeChildVisibility", () => {
+          this.__checkSettingsVisibility();
+        }, this);
         this._settingsLayout.add(propsWidget);
       }
+      this.__checkSettingsVisibility();
       const mapper = node.getInputsMapper();
       if (mapper) {
         this._mapperLayout.add(mapper, {
@@ -72,7 +68,21 @@ qx.Class.define("osparc.component.node.NodeView", {
       });
     },
 
-    __addIFrame: function() {
+    __checkSettingsVisibility: function() {
+      const isSettingsGroupShowable = this.isSettingsGroupShowable();
+      this._settingsLayout.setVisibility(isSettingsGroupShowable ? "visible" : "excluded");
+    },
+
+    isSettingsGroupShowable: function() {
+      const node = this.getNode();
+      const propsWidget = node.getPropsWidget();
+      if (propsWidget) {
+        return propsWidget.hasVisibleInputs();
+      }
+      return false;
+    },
+
+    _addIFrame: function() {
       this._iFrameLayout.removeAll();
 
       const iFrame = this.getNode().getIFrame();
@@ -92,6 +102,16 @@ qx.Class.define("osparc.component.node.NodeView", {
       this._addToMainView(this._iFrameLayout, {
         flex: 1
       });
+    },
+
+    _openEditAccessLevel: function() {
+      const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
+      settingsEditorLayout.add(this.getNode().getPropsWidgetEditor());
+
+      const win = osparc.component.node.BaseNodeView.createWindow(this.getNode().getLabel());
+      win.add(settingsEditorLayout);
+      win.center();
+      win.open();
     },
 
     _applyNode: function(node) {

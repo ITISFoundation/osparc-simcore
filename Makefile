@@ -26,6 +26,7 @@ SHELL := /bin/bash
 # TODO: read from docker-compose file instead $(shell find  $(CURDIR)/services -type f -name 'Dockerfile')
 # or $(notdir $(subst /Dockerfile,,$(wildcard services/*/Dockerfile))) ...
 SERVICES_LIST := \
+	api-gateway \
 	catalog \
 	director \
 	sidecar \
@@ -71,52 +72,67 @@ endif
 #
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
 
-.PHONY: build build-nc rebuild build-devel build-devel-nc build-cache build-cache-nc
+.PHONY: build build-nc rebuild build-devel build-devel-nc build-devel-kit build-devel-x build-cache build-cache-kit build-cache-x build-cache-nc build-kit build-x
 
 define _docker_compose_build
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,$(if $(findstring -cache,$@),cache,production)); \
-docker-compose -f services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,)
+$(if $(findstring -x,$@),\
+	pushd services; docker buildx bake --file docker-compose-build.yml; popd;,\
+	docker-compose -f services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,) --parallel;\
+)
 endef
 
 rebuild: build-nc # alias
-build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
-ifeq ($(target),)
+build build-nc build-kit build-x: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
+ifeq ($(target),)	
 	# Compiling front-end
-	@$(MAKE) -C services/web/client compile
+	
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
+	$(MAKE) -C services/web/client compile$(if $(findstring -x,$@),-x,)
+	
 	# Building services
-	$(_docker_compose_build) --parallel
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
+	$(_docker_compose_build)
 else
 ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client clean compile
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
+	$(MAKE) -C services/web/client clean compile$(if $(findstring -x,$@),-x,)
 endif
 	# Building service $(target)
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
 	$(_docker_compose_build) $(target)
 endif
 
 
-build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
+build-devel build-devel-nc build-devel-kit build-devel-x: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
 ifeq ($(target),)
 	# Building services
-	$(_docker_compose_build) --parallel
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
+	$(_docker_compose_build)
 else
 ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client touch compile-dev
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
+	$(MAKE) -C services/web/client touch$(if $(findstring -x,$@),-x,) compile-dev
 endif
 	# Building service $(target)
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
 	$(_docker_compose_build) $(target)
 endif
 
 
 # TODO: should download cache if any??
-build-cache build-cache-nc: .env ## Build cache images and tags them as 'local/{service-name}:cache'
+build-cache build-cache-nc build-cache-kit build-cache-x: .env ## Build cache images and tags them as 'local/{service-name}:cache'	
 ifeq ($(target),)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client compile
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,)
+	$(MAKE) -C services/web/client compile$(if $(findstring -x,$@),-x,)
 	# Building cache images
-	$(_docker_compose_build) --parallel
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,)
+	$(_docker_compose_build)
 else
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,)
 	$(_docker_compose_build) $(target)
 endif
 
@@ -124,6 +140,11 @@ endif
 $(CLIENT_WEB_OUTPUT):
 	# Ensures source-output folder always exists to avoid issues when mounting webclient->webserver dockers. Supports PowerShell
 	-mkdir $(if $(IS_WIN),,-p) $(CLIENT_WEB_OUTPUT)
+
+
+.PHONY: shell
+shell:
+	docker run -it local/$(target):production /bin/sh
 
 
 ## docker SWARM -------------------------------
@@ -279,6 +300,7 @@ pylint: ## Runs python linter framework's wide
 	# TODO: NOT windows friendly
 	/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
 											-not -path "*egg*" \
+											-not -path "*migration*" \
 											-not -path "*contrib*" \
 											-not -path "*-sdk/python*" \
 											-not -path "*generated_code*" \
@@ -334,9 +356,9 @@ openapi-specs: ## bundles and validates openapi specifications and schemas of AL
 .PHONY: code-analysis
 code-analysis: .codeclimate.yml ## runs code-climate analysis
 	# Validates $<
-	./scripts/code-climate.sh validate-config
+	./scripts/code-climate.bash validate-config
 	# Running analysis
-	./scripts/code-climate.sh analyze
+	./scripts/code-climate.bash analyze
 
 
 .PHONY: info info-images info-swarm  info-tools

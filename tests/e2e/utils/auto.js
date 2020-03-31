@@ -220,10 +220,6 @@ async function dashboardOpenFirstTemplate(page, templateName) {
   const firstChildId = '[osparc-test-id="' + children[0] + '"]'
   await page.waitForSelector(firstChildId)
   await page.click(firstChildId)
-
-  await page.waitForSelector('[osparc-test-id="openStudyBtn"]')
-  console.log("Opening ", templateName)
-  await page.click('[osparc-test-id="openStudyBtn"]')
 }
 
 async function __dashboardFilterStudiesByText(page, templateName) {
@@ -260,6 +256,7 @@ async function runStudy(page, waitFor = 0) {
     await responsesQueue.waitUntilResponse("/start");
   }
   catch(err) {
+    console.error(err);
     throw(err);
   }
 
@@ -273,11 +270,11 @@ async function dashboardDeleteFirstStudy(page) {
   await page.waitForSelector('[osparc-test-id="studiesTabBtn"]')
   await page.click('[osparc-test-id="studiesTabBtn"]')
 
-  await page.waitForSelector('[osparc-test-id="userStudiesList"] > .qx-pb-listitem:nth-child(1)')
-  await page.click('[osparc-test-id="userStudiesList"] > .qx-pb-listitem:nth-child(1)')
+  await page.waitForSelector('[osparc-test-id="userStudiesList"] > .qx-pb-listitem:nth-child(1) > [osparc-test-id="studyItemMenuButton"]')
+  await page.click('[osparc-test-id="userStudiesList"] > .qx-pb-listitem:nth-child(1) > [osparc-test-id="studyItemMenuButton"]')
 
-  await page.waitForSelector('[osparc-test-id="deleteStudiesBtn"]')
-  await page.click('[osparc-test-id="deleteStudiesBtn"]')
+  await page.waitForSelector('[osparc-test-id="studyItemMenuDelete"]')
+  await page.click('[osparc-test-id="studyItemMenuDelete"]')
 
   await page.waitForSelector('[osparc-test-id="confirmDeleteStudyBtn"]')
   await page.click('[osparc-test-id="confirmDeleteStudyBtn"]')
@@ -318,8 +315,8 @@ async function openNodeFiles(page) {
   await page.click('[osparc-test-id="nodeViewFilesBtn"]')
 }
 
-async function checkDataProducedByNode(page) {
-  console.log("checking Data produced by Node");
+async function checkDataProducedByNode(page, nFiles = 1) {
+  console.log("checking Data produced by Node. Expecting", nFiles, "file(s)");
   const tries = 3;
   let children = [];
   for (let i=0; i<tries && children.length === 0; i++) {
@@ -328,8 +325,9 @@ async function checkDataProducedByNode(page) {
     children = await utils.getFileTreeItemIDs(page, "NodeFiles");
     console.log(i+1, 'try: ', children);
   }
-  if (children.length < 4) { // 4 = location + study + node + file
-    throw("file items not found");
+  const nFolders = 3;
+  if (children.length < (nFolders+nFiles)) { // 4 = location + study + node + file
+    throw("Expected files not found");
   }
 
   const lastChildId = '[osparc-test-id="' + children.pop() + '"]';
@@ -360,6 +358,7 @@ async function downloadSelectedFile(page) {
     console.log("valid output file value", value)
   }
   catch(err) {
+    console.error(err);
     throw(err);
   }
 }

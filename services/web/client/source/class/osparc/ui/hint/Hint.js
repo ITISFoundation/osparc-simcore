@@ -17,7 +17,8 @@ qx.Class.define("osparc.ui.hint.Hint", {
     this.base(arguments);
     this.set({
       backgroundColor: "transparent",
-      visibility: "excluded"
+      visibility: "excluded",
+      zIndex: 110000
     });
 
     const hintCssUri = qx.util.ResourceManager.getInstance().toUri("hint/hint.css");

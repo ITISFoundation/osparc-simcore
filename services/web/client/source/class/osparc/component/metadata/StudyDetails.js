@@ -154,7 +154,7 @@ qx.Class.define("osparc.component.metadata.StudyDetails", {
 
     __createDescription: function() {
       const description = new osparc.ui.markdown.Markdown();
-      this.getStudy().bind("description", description, "markdown");
+      this.getStudy().bind("description", description, "value");
       return description;
     }
   }

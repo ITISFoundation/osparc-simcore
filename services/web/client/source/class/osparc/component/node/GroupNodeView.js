@@ -36,26 +36,35 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
     this.base(arguments);
   },
 
-  members: {
-    populateLayout: function() {
-      this.getNode().bind("label", this._title, "value");
-      this._addInputPortsUIs();
-      this.__addSettings();
-      this.__addIFrame();
-      this._addButtons();
-    },
+  statics: {
+    getSettingsEditorLayout: function(nodes) {
+      const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox("Settings");
+      Object.values(nodes).forEach(innerNode => {
+        const propsWidgetEditor = innerNode.getPropsWidgetEditor();
+        if (propsWidgetEditor && Object.keys(innerNode.getInputs()).length) {
+          const innerSettings = osparc.component.node.BaseNodeView.createSettingsGroupBox().set({
+            maxWidth: 700
+          });
+          innerNode.bind("label", innerSettings, "legend");
+          innerSettings.add(propsWidgetEditor);
+          settingsEditorLayout.add(innerSettings);
+        }
+      });
+      return settingsEditorLayout;
+    }
+  },
 
-    __addSettings: function() {
+  members: {
+    _addSettings: function() {
       this._settingsLayout.removeAll();
       this._mapperLayout.removeAll();
 
       const innerNodes = this.getNode().getInnerNodes(true);
       Object.values(innerNodes).forEach(innerNode => {
-        // const innerSettings = this.superclass.self().createSettingsGroupBox();
-        const innerSettings = osparc.component.node.BaseNodeView.createSettingsGroupBox();
-        innerNode.bind("label", innerSettings, "legend");
         const propsWidget = innerNode.getPropsWidget();
-        if (propsWidget && Object.keys(innerNode.getInputs()).length) {
+        if (propsWidget && Object.keys(innerNode.getInputs()).length && propsWidget.hasVisibleInputs()) {
+          const innerSettings = osparc.component.node.BaseNodeView.createSettingsGroupBox();
+          innerNode.bind("label", innerSettings, "legend");
           innerSettings.add(propsWidget);
           this._settingsLayout.add(innerSettings);
         }
@@ -73,7 +82,19 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
       });
     },
 
-    __addIFrame: function() {
+    isSettingsGroupShowable: function() {
+      let anyVisible = false;
+      const innerNodes = this.getNode().getInnerNodes(true);
+      const innerNodesArray = Object.values(innerNodes);
+      for (let i=0; i<innerNodesArray.length && !anyVisible; i++) {
+        const innerNode = innerNodesArray[i];
+        const propsWidget = innerNode.getPropsWidget();
+        anyVisible = propsWidget.hasVisibleInputs();
+      }
+      return anyVisible;
+    },
+
+    _addIFrame: function() {
       this._iFrameLayout.removeAll();
 
       const tabView = new qx.ui.tabview.TabView().set({
@@ -107,6 +128,14 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
       this._addToMainView(this._iFrameLayout, {
         flex: 1
       });
+    },
+
+    _openEditAccessLevel: function() {
+      const settingsEditorLayout = this.self().getSettingsEditorLayout(this.getNode().getInnerNodes());
+      const win = osparc.component.node.BaseNodeView.createWindow(this.getNode().getLabel());
+      win.add(settingsEditorLayout);
+      win.center();
+      win.open();
     },
 
     _applyNode: function(node) {

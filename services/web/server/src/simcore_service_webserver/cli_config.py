@@ -1,4 +1,3 @@
-
 import argparse
 import os
 import logging
@@ -25,13 +24,15 @@ def add_cli_options(argument_parser, default_config):
         argument_parser = argparse.ArgumentParser()
 
     commandline.standard_argparse_options(
-        argument_parser.add_argument_group('settings'),
-        default_config=default_config)
+        argument_parser.add_argument_group("settings"), default_config=default_config
+    )
 
     return argument_parser
 
 
-def config_from_options(options, schema, vars=None): # pylint: disable=redefined-builtin
+def config_from_options(
+    options, schema, vars=None
+):  # pylint: disable=redefined-builtin
     if vars is None:
         vars = os.environ
 
@@ -40,7 +41,7 @@ def config_from_options(options, schema, vars=None): # pylint: disable=redefined
         if resources.exists(resource_name):
             options.config = resources.get_path(resource_name)
         else:
-            resource_name = resources.config_folder + '/' + resource_name
+            resource_name = resources.config_folder + "/" + resource_name
             if resources.exists(resource_name):
                 options.config = resources.get_path(resource_name)
 
@@ -49,16 +50,12 @@ def config_from_options(options, schema, vars=None): # pylint: disable=redefined
     return commandline.config_from_options(options, trafaret=schema, vars=vars)
 
 
-
-
-
-
-
-
 # FIXME: should replace these functions and remove dependency
 
-def read_and_validate(filepath, vars=None): # pylint: disable=W0622
+
+def read_and_validate(filepath, vars=None):  # pylint: disable=W0622
     from .application_config import app_schema
+
     if vars is None:
         vars = os.environ
     # NOTE: vars=os.environ in signature freezes default to os.environ before it gets
@@ -74,5 +71,6 @@ def config_from_file(filepath) -> dict:
         Raises trafaret_config.ConfigError
     """
     from .application_config import app_schema
+
     config = trafaret_config.read_and_validate(filepath, app_schema, vars=os.environ)
     return config

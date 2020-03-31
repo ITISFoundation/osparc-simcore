@@ -34,14 +34,13 @@ def create_environ(skip_system_environ=False):
 
     # project-related environment variables
     here = os.path.dirname(__file__)
-    environ['THIS_PACKAGE_DIR'] = here
+    environ["THIS_PACKAGE_DIR"] = here
 
     rootdir = search_osparc_repo_dir(start=here)
     if rootdir is not None:
-        environ['OSPARC_SIMCORE_REPO_ROOTDIR'] = str(rootdir)
+        environ["OSPARC_SIMCORE_REPO_ROOTDIR"] = str(rootdir)
 
     return environ
-
 
 
 def setup(_parser):
@@ -62,7 +61,9 @@ def parse(args, _parser):
     return config
 
 
-parser = argparse.ArgumentParser(description='Service to manage data storage in simcore.')
+parser = argparse.ArgumentParser(
+    description="Service to manage data storage in simcore."
+)
 setup(parser)
 
 

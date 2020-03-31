@@ -37,6 +37,16 @@ EXPOSE 8080
 
 FROM base as build
 
+# Installing client libraries and any other package you need
+#
+#  libpq: client library for PostgreSQL https://www.postgresql.org/docs/9.5/libpq.html
+#  libstdc++: needed in ujson https://github.com/kohlschutter/junixsocket/issues/33
+#
+RUN apk update && \
+    apk add --no-cache \
+      libpq \
+      libstdc++
+
 RUN apk add --no-cache \
       postgresql-dev \
       gcc \
@@ -46,7 +56,7 @@ RUN apk add --no-cache \
       linux-headers
 
 RUN $SC_PIP install --upgrade \
-      pip~=19.1.1  \
+      pip~=20.0.2  \
       wheel \
       setuptools
 

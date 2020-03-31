@@ -31,6 +31,7 @@ from .session_config import CONFIG_SECTION_NAME
 
 logger = logging.getLogger(__file__)
 
+
 def generate_key():
     # secret_key must be 32 url-safe base64-encoded bytes
     fernet_key = fernet.Fernet.generate_key()
@@ -46,17 +47,17 @@ def setup_session(app: web.Application):
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
 
     # secret key needed by EncryptedCookieStorage: is *bytes* key with length of *32*
-    secret_key_bytes = cfg["secret_key"].encode('utf-8')
-    if len(secret_key_bytes)==0:
+    secret_key_bytes = cfg["secret_key"].encode("utf-8")
+    if len(secret_key_bytes) == 0:
         raise ValueError("Empty %s.secret_key in config. Expected at least length 32")
 
-    while len(secret_key_bytes)<32:
+    while len(secret_key_bytes) < 32:
         secret_key_bytes += secret_key_bytes
 
     # EncryptedCookieStorage urlsafe_b64decode inside if passes bytes
     storage = EncryptedCookieStorage(
-        secret_key=secret_key_bytes[:32],
-        cookie_name="API_SESSION")
+        secret_key=secret_key_bytes[:32], cookie_name="API_SESSION"
+    )
 
     aiohttp_session.setup(app, storage)
 
@@ -65,7 +66,4 @@ def setup_session(app: web.Application):
 get_session = aiohttp_session.get_session
 
 
-__all__ = (
-    'setup_session',
-    'get_session'
-)
+__all__ = ("setup_session", "get_session")

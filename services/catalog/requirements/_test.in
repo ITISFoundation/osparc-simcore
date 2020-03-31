@@ -9,7 +9,7 @@
 # 'services/catalog/tests/unit' dependencies
 
 # testing
-pytest
+pytest~=5.3.5  # Bug in pytest-sugar https://github.com/Teemu/pytest-sugar/issues/187
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
 pytest-mock
