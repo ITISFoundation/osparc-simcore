@@ -38,10 +38,10 @@ qx.Theme.define("osparc.theme.Appearance", {
           backgroundColor: "background-main-lighter+"
         };
         if (states.hovered) {
-          style.backgroundColor = "#444";
+          style.backgroundColor = "light-background";
         }
         if (states.selected || states.checked) {
-          style.backgroundColor = "#555";
+          style.backgroundColor = "light-background+";
         }
         return style;
       }
@@ -58,7 +58,7 @@ qx.Theme.define("osparc.theme.Appearance", {
           style.backgroundColor = "background-main-lighter+";
         }
         if (states.selected || states.checked) {
-          style.backgroundColor = "#444";
+          style.backgroundColor = "light-background";
         }
         return style;
       }
