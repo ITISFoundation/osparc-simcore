@@ -31,7 +31,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
   statics: {
     getIcon: function(maximize) {
       const iconURL = maximize ? "window-restore" : "window-maximize";
-      return osparc.theme.osparcdark.Image.URLS[iconURL]+"/20";
+      return osparc.theme.common.Image.URLS[iconURL]+"/20";
     },
 
     getMaximizeWidgetId: function(maximize) {
