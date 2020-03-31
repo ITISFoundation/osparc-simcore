@@ -308,6 +308,20 @@ async function openLastNode(page) {
   this.openNode(page, children.length-1);
 }
 
+async function restoreIFrame(page) {
+  console.log("Restoring iFrame");
+
+  await page.waitForSelector('[osparc-test-id="restoreBtn"]')
+  await page.click('[osparc-test-id="restoreBtn"]')
+}
+
+async function maximizeIFrame(page) {
+  console.log("Maximizing iFrame");
+
+  await page.waitForSelector('[osparc-test-id="maximizeBtn"]')
+  await page.click('[osparc-test-id="maximizeBtn"]')
+}
+
 async function openNodeFiles(page) {
   console.log("Opening Data produced by Node");
 
@@ -395,6 +409,8 @@ module.exports = {
   toDashboard,
   openNode,
   openLastNode,
+  restoreIFrame,
+  maximizeIFrame,
   openNodeFiles,
   checkDataProducedByNode,
   downloadSelectedFile,
