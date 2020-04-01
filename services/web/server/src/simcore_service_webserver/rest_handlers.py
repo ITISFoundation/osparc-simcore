@@ -11,12 +11,9 @@ from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_utils import body_to_dict, extract_and_validate
 
 from . import __version__
-from .diagnostics_handlers import get_diagnostics, check_health
 
 log = logging.getLogger(__name__)
 
-# TODO: keep here until routes moved to diagnostics
-__all__ = ["get_diagnostics", "check_health", "check_action", "get_config"]
 
 
 async def check_action(request: web.Request):
