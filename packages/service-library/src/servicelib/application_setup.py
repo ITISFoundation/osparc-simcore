@@ -122,7 +122,7 @@ def app_module_setup(
                     is_enabled = _get(cfg, config_enabled.split("."))
                 except KeyError as ee:
                     raise ApplicationSetupError(
-                        f"Cannot find '{config_enabled}' in app config at [ {ee} ]"
+                        f"Cannot find required option '{config_enabled}' in app config's section '{ee}'"
                     )
 
                 if not is_enabled:
