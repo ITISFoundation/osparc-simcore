@@ -1,5 +1,11 @@
-from simcore_service_sidecar.file_log_parser import LogType, parse_line
+from simcore_service_sidecar.file_log_parser import (
+    LogType,
+    parse_line,
+    monitor_logs_task,
+)
 import pytest
+from asyncio import Future, ensure_future, sleep
+from pathlib import Path
 
 
 @pytest.mark.parametrize(
@@ -36,3 +42,23 @@ async def test_parse_line(log, expected_log_type, expected_parsed_message):
     log_type, log_message = await parse_line(log)
     assert log_type == expected_log_type
     assert log_message == expected_parsed_message
+
+
+def future_with_result(result):
+    f = Future()
+    f.set_result(result)
+    return f
+
+
+async def test_monitor_log_task(temp_folder: Path, mocker):
+    mock_cb = mocker.Mock(return_value=future_with_result(""))
+    log_file = temp_folder / "test_log.txt"
+    log_file.touch()
+    assert log_file.exists()
+    task = ensure_future(monitor_logs_task(log_file, mock_cb))
+    assert task
+    await sleep(2)
+    log_file.write_text("this is a test")
+    await sleep(2)
+    mock_cb.assert_called_once()
+    assert task.cancel()
