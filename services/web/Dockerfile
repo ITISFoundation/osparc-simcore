@@ -125,6 +125,9 @@ RUN apk del --no-cache\
       gcc \
       git
 
+ENV SC_HEALTHCHECK_INTERVAL 30
+ENV SC_HEALTHCHECK_RETRY 3
+
 HEALTHCHECK --interval=30s \
             --timeout=120s \
             --start-period=30s \
