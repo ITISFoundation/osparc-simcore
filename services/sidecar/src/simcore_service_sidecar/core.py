@@ -28,7 +28,7 @@ from simcore_sdk.node_ports import log as node_port_log
 from simcore_sdk.node_ports.dbmanager import DBManager
 
 from . import config, exceptions
-from .log_parser import LogType, monitor_logs_task
+from .file_log_parser import LogType, monitor_logs_task
 from .rabbitmq import RabbitMQ
 from .utils import execution_graph, find_entry_point, is_node_ready
 
