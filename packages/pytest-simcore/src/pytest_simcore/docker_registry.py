@@ -84,31 +84,43 @@ def wait_till_registry_is_responsive(url: str) -> bool:
     return True
 
 
+# ********************************************************* Services ***************************************
+
+
+def _pull_push_service(pull_key: str, push_key: str, tag: str) -> Dict[str, str]:
+    client = docker.from_env()
+    # pull image from original location
+    image = client.images.pull(pull_key, tag=tag)
+    assert image, f"image {pull_key}:{tag} not pulled!"
+    # tag image
+    new_image_tag = f"{push_key}:{tag}"
+    assert image.tag(new_image_tag) == True
+    # push the image to the new location
+    client.images.push(new_image_tag)
+
+    # return image io.simcore.* labels
+    image_labels = image.labels
+    return {
+        "schema": {
+            key[len("io.simcore.") :]: json.loads(value)[key[len("io.simcore.") :]]
+            for key, value in image_labels.items()
+            if key.startswith("io.simcore.")
+        },
+        "image": {"name": push_key[(push_key.find("/") + 1) :], "tag": tag},
+    }
+
+
 # pull from itisfoundation/sleeper and push into local registry
 @pytest.fixture(scope="session")
 def sleeper_service(docker_registry: str) -> Dict[str, str]:
     """ Adds a itisfoundation/sleeper in docker registry
 
     """
-    client = docker.from_env()
-    TAG = "1.0.0"
-    image = client.images.pull("itisfoundation/sleeper", tag=TAG)
-    assert not image is None
-    repo = f"{docker_registry}/simcore/services/comp/itis/sleeper:{TAG}"
-    assert image.tag(repo) == True
-    client.images.push(repo)
-    image = client.images.pull(repo)
-    assert image
-    image_labels = image.labels
-
-    yield {
-        "schema": {
-            key[len("io.simcore.") :]: json.loads(value)[key[len("io.simcore.") :]]
-            for key, value in image_labels.items()
-            if key.startswith("io.simcore.")
-        },
-        "image": {"name": "simcore/services/comp/itis/sleeper", "tag": TAG},
-    }
+    return _pull_push_service(
+        "itisfoundation/sleeper",
+        f"{docker_registry}/simcore/services/comp/itis/sleeper",
+        "1.0.0",
+    )
 
 
 @pytest.fixture(scope="session")
@@ -116,31 +128,8 @@ def jupyter_service(docker_registry: str) -> Dict[str, str]:
     """ Adds a itisfoundation/jupyter-base-notebook in docker registry
 
     """
-    client = docker.from_env()
-
-    # TODO: cleanup
-
-    # pull from dockerhub
-    reponame, tag = "itisfoundation/jupyter-base-notebook:2.13.0".split(":")
-    image = client.images.pull(reponame, tag=tag)
-    assert not image is None
-
-    # push to fixture registry (services/{dynamic|comp})
-    image_name = reponame.split("/")[-1]
-    repo = f"{docker_registry}/simcore/services/dynamic/{image_name}:{tag}"
-    assert image.tag(repo) == True
-    client.images.push(repo)
-
-    # check
-    image = client.images.pull(repo)
-    assert image
-    image_labels = image.labels
-
-    yield {
-        "schema": {
-            key[len("io.simcore.") :]: json.loads(value)[key[len("io.simcore.") :]]
-            for key, value in image_labels.items()
-            if key.startswith("io.simcore.")
-        },
-        "image": {"name": f"simcore/services/dynamic/{image_name}", "tag": f"{tag}"},
-    }
+    return _pull_push_service(
+        "itisfoundation/jupyter-base-notebook",
+        f"{docker_registry}/simcore/services/dynamic/jupyter-base-notebook)",
+        "2.13.0",
+    )
