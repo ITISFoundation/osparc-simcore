@@ -48,14 +48,17 @@ qx.Class.define("osparc.utils.Utils", {
       return loadingUri;
     },
 
-    __setStyleToIFrame: function(iframeDocument) {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      const bgColor = colorManager.resolve("loading-page-background-color");
-      const textColor = colorManager.resolve("loading-page-text");
-      const spinnerColor = colorManager.resolve("loading-page-spinner");
-      iframeDocument.style.setProperty("--background-color", bgColor);
-      iframeDocument.style.setProperty("--text-color", textColor);
-      iframeDocument.style.setProperty("--spinner-color", spinnerColor);
+    __setStyleToIFrame: function(domEl) {
+      if (domEl && domEl.contentDocument && domEl.contentDocument.documentElement) {
+        const iframeDocument = domEl.contentDocument.documentElement;
+        const colorManager = qx.theme.manager.Color.getInstance();
+        const bgColor = colorManager.resolve("loading-page-background-color");
+        const textColor = colorManager.resolve("loading-page-text");
+        const spinnerColor = colorManager.resolve("loading-page-spinner");
+        iframeDocument.style.setProperty("--background-color", bgColor);
+        iframeDocument.style.setProperty("--text-color", textColor);
+        iframeDocument.style.setProperty("--spinner-color", spinnerColor);
+      }
     },
 
     createLoadingIFrame: function(text) {
@@ -66,11 +69,11 @@ qx.Class.define("osparc.utils.Utils", {
       contEle.addListener("appear", () => {
         qx.event.Timer.once(() => {
           const domEl = contEle.getDomElement();
-          if (domEl && domEl.contentDocument && domEl.contentDocument.documentElement) {
-            this.__setStyleToIFrame(domEl.contentDocument.documentElement);
+          if (domEl) {
+            this.__setStyleToIFrame(domEl);
             const colorManager = qx.theme.manager.Color.getInstance();
             colorManager.addListener("changeTheme", () => {
-              this.__setStyleToIFrame(domEl.contentDocument.documentElement);
+              this.__setStyleToIFrame(domEl);
             });
           }
         }, this, 50);
