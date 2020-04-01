@@ -32,6 +32,13 @@ qx.Class.define("osparc.utils.Utils", {
         (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
     },
 
+    getLogoPath: function() {
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const textColor = colorManager.resolve("text");
+      const luminance = this.getColorLuminance(textColor);
+      return luminance > 0.3 ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
+    },
+
     getLoaderUri: function(arg) {
       let loadingUri = qx.util.ResourceManager.getInstance().toUri("osparc/loading/loader.html");
       if (arg) {
