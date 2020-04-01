@@ -26,7 +26,7 @@ async def parse_line(line: str) -> Tuple[LogType, str]:
         except ValueError:
             log.exception("Could not extract progress from log line %s", line)
     # default return as log
-    return (LogType.LOG, line)
+    return (LogType.LOG, f"[task]{line}")
 
 
 async def monitor_logs_task(

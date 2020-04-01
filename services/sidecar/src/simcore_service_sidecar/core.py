@@ -120,7 +120,9 @@ class Sidecar:
 
         input_ports = dict()
         PORTS = await self._get_node_ports()
-
+        await self.post_messages(
+            LogType.LOG, f"[sidecar]Downloading inputs...",
+        )
         await logged_gather(
             *[
                 self._process_task_input(port, input_ports)
@@ -145,6 +147,10 @@ class Sidecar:
         )
         try:
             docker_client: aiodocker.Docker = aiodocker.Docker()
+            await self.post_messages(
+                LogType.LOG,
+                f"[sidecar]Pulling {self.task.image['name']}:{self.task.image['tag']}...",
+            )
             await docker_client.images.pull(
                 docker_image,
                 auth={
@@ -173,6 +179,9 @@ class Sidecar:
             self.task.project_id,
             self.task.node_id,
             self.task.internal_id,
+        )
+        await self.post_messages(
+            LogType.LOG, f"[sidecar]Uploading outputs...",
         )
         PORTS = await self._get_node_ports()
         directory = self.shared_folders.output_folder
@@ -212,6 +221,9 @@ class Sidecar:
             self.task.node_id,
             self.task.internal_id,
         )
+        await self.post_messages(
+            LogType.LOG, f"[sidecar]Uploading logs...",
+        )
         directory = self.shared_folders.log_folder
         if directory.exists():
             await node_data.data_manager.push(directory, rename_to="logs")
@@ -223,6 +235,7 @@ class Sidecar:
         )
 
     async def preprocess(self):
+        await self.post_messages(LogType.LOG, "[sidecar]Preprocessing...")
         log.debug(
             "Pre-Processing Pipeline %s:node %s:internal id %s from container",
             self.task.project_id,
@@ -255,7 +268,7 @@ class Sidecar:
             self.task.node_id,
             self.task.internal_id,
         )
-
+        await self.post_messages(LogType.LOG, "[sidecar]Processing...")
         # touch output file, so it's ready for the container (v0)
         log_file = self.shared_folders.log_folder / "log.dat"
         log_file.touch()
@@ -299,6 +312,10 @@ class Sidecar:
         container = None
         try:
             docker_client: aiodocker.Docker = aiodocker.Docker()
+            await self.post_messages(
+                LogType.LOG,
+                f"[sidecar]Running {self.task.image['name']}:{self.task.image['tag']}...",
+            )
             container = await docker_client.containers.run(
                 config=docker_container_config
             )
@@ -365,48 +382,9 @@ class Sidecar:
             self.task.node_id,
             self.task.internal_id,
         )
-        await self.rabbit_mq.post_log_message(
-            self.user_id,
-            self.task.project_id,
-            self.task.node_id,
-            "Preprocessing start...",
-        )
         await self.preprocess()
-        await self.rabbit_mq.post_log_message(
-            self.user_id,
-            self.task.project_id,
-            self.task.node_id,
-            "...preprocessing end",
-        )
-
-        await self.rabbit_mq.post_log_message(
-            self.user_id, self.task.project_id, self.task.node_id, "Processing start..."
-        )
         await self.process()
-        await self.rabbit_mq.post_log_message(
-            self.user_id, self.task.project_id, self.task.node_id, "...processing end"
-        )
-
-        await self.rabbit_mq.post_log_message(
-            self.user_id,
-            self.task.project_id,
-            self.task.node_id,
-            "Postprocessing start...",
-        )
         await self.postprocess()
-        await self.rabbit_mq.post_log_message(
-            self.user_id,
-            self.task.project_id,
-            self.task.node_id,
-            "...postprocessing end",
-        )
-
-        log.debug(
-            "Running Pipeline DONE %s:node %s:internal id %s from container",
-            self.task.project_id,
-            self.task.node_id,
-            self.task.internal_id,
-        )
 
     async def postprocess(self):
         log.debug(
@@ -415,7 +393,7 @@ class Sidecar:
             self.task.node_id,
             self.task.internal_id,
         )
-
+        await self.post_messages(LogType.LOG, "[sidecar]Postprocessing...")
         await self._process_task_output()
         await self._process_task_log()
 
@@ -545,8 +523,13 @@ async def inspect(
         )
         await sidecar.run()
         next_task_nodes = list(graph.successors(node_id))
+        await sidecar.post_messages(
+            LogType.LOG, "[sidecar]...task completed successfully."
+        )
     except exceptions.SidecarException:
         run_result = FAILED
+        log.exception("Error during execution")
+        await sidecar.post_messages(LogType.LOG, "[sidecar]...task failed.")
     finally:
         async with db_engine.acquire() as connection:
             await connection.execute(
