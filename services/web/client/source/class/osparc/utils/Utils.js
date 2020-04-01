@@ -48,13 +48,33 @@ qx.Class.define("osparc.utils.Utils", {
       return loadingUri;
     },
 
+    __setDynamicStyleToIFrame: function(iframeDocument) {
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const bgColor = colorManager.resolve("loading-page-background-color");
+      const textColor = colorManager.resolve("loading-page-text");
+      const spinnerColor = colorManager.resolve("loading-page-spinner");
+      iframeDocument.style.setProperty("--background-color", bgColor);
+      iframeDocument.style.setProperty("--text-color", textColor);
+      iframeDocument.style.setProperty("--spinner-color", spinnerColor);
+    },
+
     createLoadingIFrame: function(text) {
       const loadingUri = osparc.utils.Utils.getLoaderUri(text);
       const iframe = new qx.ui.embed.Iframe(loadingUri);
-      const domeEle = iframe.getDomElement();
-      domeEle.style.setProperty("--background-color", "loading-page-background");
-      domeEle.style.setProperty("--text-color", "loading-page-text");
-      domeEle.style.setProperty("--spinner-color", "loading-page-spinner");
+
+      const contEle = iframe.getContentElement();
+      contEle.addListener("appear", () => {
+        qx.event.Timer.once(() => {
+          const domEl = contEle.getDomElement();
+          if (domEl && domEl.contentDocument && domEl.contentDocument.documentElement) {
+            this.__setDynamicStyleToIFrame(domEl.contentDocument.documentElement);
+            const colorManager = qx.theme.manager.Color.getInstance();
+            colorManager.addListener("changeTheme", () => {
+              this.__setDynamicStyleToIFrame(domEl.contentDocument.documentElement);
+            });
+          }
+        }, this, 50);
+      });
       iframe.setBackgroundColor("transparent");
       return iframe;
     },
