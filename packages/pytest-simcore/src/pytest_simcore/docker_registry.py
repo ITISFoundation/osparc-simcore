@@ -9,6 +9,7 @@ import time
 from typing import Dict
 
 import docker
+import jsonschema
 import pytest
 import tenacity
 
@@ -85,15 +86,29 @@ def wait_till_registry_is_responsive(url: str) -> bool:
 
 
 # ********************************************************* Services ***************************************
-
-
-def _pull_push_service(pull_key: str, push_key: str, tag: str) -> Dict[str, str]:
+def _pull_push_service(
+    pull_key: str, tag: str, new_registry: str, node_meta_schema: Dict
+) -> Dict[str, str]:
     client = docker.from_env()
     # pull image from original location
     image = client.images.pull(pull_key, tag=tag)
     assert image, f"image {pull_key}:{tag} not pulled!"
+    # get io.simcore.* labels
+    image_labels = image.labels
+    assert image_labels
+    io_simcore_labels = {
+        key[len("io.simcore.") :]: json.loads(value)[key[len("io.simcore.") :]]
+        for key, value in image_labels.items()
+        if key.startswith("io.simcore.")
+    }
+    assert io_simcore_labels
+    # validate image
+    jsonschema.validate(io_simcore_labels, node_meta_schema)
+
     # tag image
-    new_image_tag = f"{push_key}:{tag}"
+    new_image_tag = (
+        f"{new_registry}/{io_simcore_labels['key']}:{io_simcore_labels['version']}"
+    )
     assert image.tag(new_image_tag) == True
     # push the image to the new location
     client.images.push(new_image_tag)
@@ -101,35 +116,44 @@ def _pull_push_service(pull_key: str, push_key: str, tag: str) -> Dict[str, str]
     # return image io.simcore.* labels
     image_labels = image.labels
     return {
-        "schema": {
-            key[len("io.simcore.") :]: json.loads(value)[key[len("io.simcore.") :]]
-            for key, value in image_labels.items()
-            if key.startswith("io.simcore.")
+        "schema": io_simcore_labels,
+        "image": {
+            "name": f"{io_simcore_labels['key']}",
+            "tag": io_simcore_labels["version"],
         },
-        "image": {"name": push_key[(push_key.find("/") + 1) :], "tag": tag},
     }
 
 
-# pull from itisfoundation/sleeper and push into local registry
-@pytest.fixture(scope="session")
-def sleeper_service(docker_registry: str) -> Dict[str, str]:
-    """ Adds a itisfoundation/sleeper in docker registry
-
+@pytest.fixture(scope="function")
+def osparc_service(
+    docker_registry: str, node_meta_schema: Dict, service_repo: str, service_tag: str
+) -> Dict[str, str]:
+    """pulls the service from service_repo:service_tag and pushes to docker_registry using the oSparc node meta schema
+        NOTE: 'service_repo' and 'service_tag' defined as parametrization
     """
     return _pull_push_service(
-        "itisfoundation/sleeper",
-        f"{docker_registry}/simcore/services/comp/itis/sleeper",
-        "1.0.0",
+        service_repo, service_tag, docker_registry, node_meta_schema
     )
 
 
 @pytest.fixture(scope="session")
-def jupyter_service(docker_registry: str) -> Dict[str, str]:
+def sleeper_service(docker_registry: str, node_meta_schema: Dict) -> Dict[str, str]:
+    """ Adds a itisfoundation/sleeper in docker registry
+
+    """
+    return _pull_push_service(
+        "itisfoundation/sleeper", "1.0.0", docker_registry, node_meta_schema
+    )
+
+
+@pytest.fixture(scope="session")
+def jupyter_service(docker_registry: str, node_meta_schema: Dict) -> Dict[str, str]:
     """ Adds a itisfoundation/jupyter-base-notebook in docker registry
 
     """
     return _pull_push_service(
         "itisfoundation/jupyter-base-notebook",
-        f"{docker_registry}/simcore/services/dynamic/jupyter-base-notebook)",
         "2.13.0",
+        docker_registry,
+        node_meta_schema,
     )
