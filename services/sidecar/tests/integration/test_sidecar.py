@@ -7,15 +7,16 @@ import asyncio
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Tuple
 from uuid import uuid4
 
 import aio_pika
 import pytest
 import sqlalchemy as sa
+from yarl import URL
+
 from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
 from simcore_service_sidecar import config
-from yarl import URL
 
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = ["storage", "postgres", "rabbit"]
@@ -74,12 +75,55 @@ def sidecar_config(postgres_dsn: Dict[str, str], docker_registry: str) -> None:
     config.POSTGRES_PW = postgres_dsn["password"]
 
 
-async def test_run_sleepers(
+def _assert_incoming_data_logs(
+    tasks: List[str], incoming_data: List[Dict[str, str]], user_id: int, project_id: str
+) -> Tuple[Dict[str, List[str]], Dict[str, List[float]], Dict[str, List[str]]]:
+    # check message contents
+    fields = ["Channel", "Node", "project_id", "user_id"]
+    sidecar_logs = {task: [] for task in tasks}
+    tasks_logs = {task: [] for task in tasks}
+    progress_logs = {task: [] for task in tasks}
+    for message in incoming_data:
+        assert all([field in message for field in fields])
+        assert message["Channel"] == "Log" or message["Channel"] == "Progress"
+        assert message["user_id"] == user_id
+        assert message["project_id"] == project_id
+        if message["Channel"] == "Log":
+            assert "Messages" in message
+            for log in message["Messages"]:
+                if log.startswith("[sidecar]"):
+                    sidecar_logs[message["Node"]].append(log)
+                else:
+                    tasks_logs[message["Node"]].append(log)
+        elif message["Channel"] == "Progress":
+            assert "Progress" in message
+            progress_logs[message["Node"]].append(float(message["Progress"]))
+
+    for task in tasks:
+        # the sidecar should have a fixed amount of logs
+        assert sidecar_logs[task]
+        # the tasks should have a variable amount of logs
+        assert tasks_logs[task]
+        # the progress should at least have the progress 1.0 log
+        assert progress_logs[task]
+        assert 1.0 in progress_logs[task]
+
+    return (sidecar_logs, tasks_logs, progress_logs)
+
+
+@pytest.mark.parametrize(
+    "service_repo, service_tag",
+    [
+        ("itisfoundation/sleeper", "1.0.0"),
+        ("itisfoundation/osparc-python-runner", "1.0.0"),
+    ],
+)
+async def test_run_services(
     loop,
     postgres_session: sa.orm.session.Session,
     rabbit_queue,
     storage_service: URL,
-    sleeper_service: Dict[str, str],
+    osparc_service: Dict[str, str],
     sidecar_config: None,
     create_pipeline,
     user_id: int,
@@ -95,13 +139,14 @@ async def test_run_sleepers(
 
     job_id = 1
 
+    tasks = {
+        "node_1": osparc_service,
+        "node_2": osparc_service,
+        "node_3": osparc_service,
+        "node_4": osparc_service,
+    }
     pipeline = create_pipeline(
-        tasks={
-            "node_1": sleeper_service,
-            "node_2": sleeper_service,
-            "node_3": sleeper_service,
-            "node_4": sleeper_service,
-        },
+        tasks=tasks,
         dag={
             "node_1": ["node_2", "node_3"],
             "node_2": ["node_4"],
@@ -127,3 +172,7 @@ async def test_run_sleepers(
         if next_tasks:
             next_task_nodes.extend(next_tasks)
     assert next_task_nodes == ["node_1", "node_2", "node_3", "node_4", "node_4"]
+
+    _assert_incoming_data_logs(
+        list(tasks.keys()), incoming_data, user_id, pipeline.project_id
+    )
