@@ -45,7 +45,7 @@ def app_module_setup(
 
     See packages/service-library/tests/test_application_setup.py
 
-    :param module_name: typically __name__ (automaticaly removes '.__init__')
+    :param module_name: typically __name__ 
     :param depends: list of module_names that must be called first, defaults to None
     :param config_section: explicit configuration section, defaults to None (i.e. the name of the module, or last entry of the name if dotted)
     :param config_enabled: option in config to enable, defaults to None which is '$(module-section).enabled' (config_section and config_enabled are mutually exclusive)

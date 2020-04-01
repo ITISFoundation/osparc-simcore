@@ -50,7 +50,7 @@ def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception
 
 def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
     @web.middleware
-    async def _middleware(request: web.Request, handler):
+    async def _middleware_handler(request: web.Request, handler):
         """
             Ensure all error raised are properly enveloped and json responses
         """
@@ -98,12 +98,15 @@ def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
         except Exception as err:  # pylint: disable=broad-except
             _process_and_raise_unexpected_error(request, err)
 
-    return _middleware
+    # adds identifier (mostly for debugging)
+    _middleware_handler.__middleware_name__ = f"{__name__}.error_{api_version}"
+
+    return _middleware_handler
 
 
 def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
     @web.middleware
-    async def _middleware(request: web.Request, handler):
+    async def _middleware_handler(request: web.Request, handler):
         """
             Validates requests against openapi specs and extracts body, params, etc ...
             Validate response against openapi specs
@@ -141,12 +144,15 @@ def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
 
         return response
 
-    return _middleware
+    # adds identifier (mostly for debugging)
+    _middleware_handler.__middleware_name__ = f"{__name__}.validate_{api_version}"
+
+    return _middleware_handler
 
 
 def envelope_middleware_factory(api_version: str = DEFAULT_API_VERSION):
     @web.middleware
-    async def _middleware(request: web.Request, handler):
+    async def _middleware_handler(request: web.Request, handler):
         """
             Ensures all responses are enveloped as {'data': .. , 'error', ...} in json
         """
@@ -162,7 +168,10 @@ def envelope_middleware_factory(api_version: str = DEFAULT_API_VERSION):
             response = resp
         return response
 
-    return _middleware
+    # adds identifier (mostly for debugging)
+    _middleware_handler.__middleware_name__ = f"{__name__}.envelope_{api_version}"
+
+    return _middleware_handler
 
 
 def append_rest_middlewares(
