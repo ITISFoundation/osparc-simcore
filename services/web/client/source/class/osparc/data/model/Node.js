@@ -758,15 +758,15 @@ qx.Class.define("osparc.data.model.Node", {
 
     __showLoadingIFrame: function() {
       const loadingUri = osparc.utils.Utils.createLoadingIFrame("Starting Service");
-      this.restartIFrame(loadingUri);
+      this.__restartIFrame(loadingUri.getSource());
     },
 
-    restartIFrame: function(loadThis) {
+    __restartIFrame: function(loadThis) {
       if (this.getIFrame() === null) {
         const iframe = new osparc.component.widget.PersistentIframe();
         osparc.utils.Utils.setIdToWidget(iframe, "PersistentIframe");
         iframe.addListener("restart", () => {
-          this.restartIFrame();
+          this.__restartIFrame();
         }, this);
         this.setIFrame(iframe);
       }
@@ -1032,7 +1032,7 @@ qx.Class.define("osparc.data.model.Node", {
       // FIXME: Apparently no all services are inmediately ready when they publish the port
       const waitFor = 4000;
       qx.event.Timer.once(ev => {
-        this.restartIFrame();
+        this.__restartIFrame();
       }, this, waitFor);
 
       this.__retrieveInputs();
