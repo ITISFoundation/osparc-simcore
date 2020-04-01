@@ -3,6 +3,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 
+import asyncio
 import json
 import os
 from pathlib import Path
@@ -12,10 +13,9 @@ from uuid import uuid4
 import aio_pika
 import pytest
 import sqlalchemy as sa
-from yarl import URL
-
 from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
 from simcore_service_sidecar import config
+from yarl import URL
 
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = ["storage", "postgres", "rabbit"]
@@ -85,8 +85,6 @@ async def test_run_sleepers(
     user_id: int,
     mocker,
 ):
-    from simcore_service_sidecar import cli
-
     incoming_data = []
 
     async def rabbit_message_handler(message: aio_pika.IncomingMessage):
@@ -112,16 +110,11 @@ async def test_run_sleepers(
         },
     )
 
-    import asyncio
+    from simcore_service_sidecar import cli
 
     next_task_nodes = await cli.run_sidecar(job_id, user_id, pipeline.project_id, None)
     await asyncio.sleep(5)
     assert not incoming_data
-    # async with rabbit_queue.iterator() as queue_iter:
-    #     async for message in queue_iter:
-    #         async with message.process():
-
-    #             incoming_data.append(json.loads(message.body))
 
     assert len(next_task_nodes) == 1
     assert next_task_nodes[0] == "node_1"
