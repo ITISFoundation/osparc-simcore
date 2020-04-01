@@ -9,17 +9,18 @@ from typing import Coroutine
 
 import pytest
 from aiohttp import web
-from tenacity import Retrying, before_log, stop_after_attempt, wait_fixed
+from tenacity import before_log, retry, stop_after_attempt, wait_fixed
 
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
-from simcore_service_webserver.application import setup_app_monitoring
+from simcore_service_webserver.diagnostics_core import (
+    HealthError,
+    assert_healthy_app,
+    kLATENCY_PROBE,
+)
 from simcore_service_webserver.diagnostics_plugin import (
-    K_MAX_AVG_RESP_DELAY,
-    K_MAX_CANCEL_RATE,
-    UnhealthyAppError,
-    assert_health_app,
+    kMAX_AVG_RESP_LATENCY,
     setup_diagnostics,
 )
 from simcore_service_webserver.rest import setup_rest
@@ -32,27 +33,34 @@ async def health_checker(
     client,
     api_version_prefix,
     *,
+    min_num_checks=2,
     start_period: int = 0,
     timeout: int = 30,
     interval: int = 30,
     retries: int = 3,
 ):
-    # Emulates https://docs.docker.com/engine/reference/builder/#healthcheck
+    # Emulates healthcheck
+    # SEE https://docs.docker.com/engine/reference/builder/#healthcheck
     checkpoint: Coroutine = client.get(f"/{api_version_prefix}/")
 
-    time.sleep(start_period)
+    check_count = 0
 
-    while True:
-        for attempt in Retrying(
-            wait=wait_fixed(interval),
-            stop=stop_after_attempt(retries),
-            before=before_log(logger, logging.WARNING),
-        ):
-            with attempt:
-                resp = await asyncio.wait_for(checkpoint, timeout=timeout)
-                assert resp.status == web.HTTPOk.status_code
+    @retry(
+        wait=wait_fixed(interval),
+        stop=stop_after_attempt(retries),
+        before=before_log(logger, logging.WARNING),
+    )
+    async def _check_entrypoint():
+        nonlocal check_count
+        check_count += 1
+        resp = await asyncio.wait_for(checkpoint, timeout=timeout)
+        assert resp.status == web.HTTPOk.status_code
 
-        time.sleep(interval)
+    await asyncio.sleep(start_period)
+
+    while check_count < min_num_checks:
+        await _check_entrypoint()
+        await asyncio.sleep(interval)
 
 
 @pytest.fixture
@@ -66,25 +74,30 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
     async def unexpected_error(request: web.Request):
         raise Exception("boom shall produce 500")
 
-    @routes.get("/fail")
+    @routes.get(r"/fail")
     async def expected_failure(request: web.Request):
         raise web.HTTPServiceUnavailable()
 
-    @routes.get("/slow")
+    @routes.get(r"/slow")
     async def blocking_slow(request: web.Request):
         time.sleep(SLOW_HANDLER_DELAY_SECS * 1.1)
         return web.json_response({"data": True, "error": None})
 
-    @routes.get("/cancelled")
+    @routes.get(r"/cancel")
     async def cancelled_task(request: web.Request):
-        task: asyncio.Task = request.app.loop.create_task(
-            asyncio.sleep(SLOW_HANDLER_DELAY_SECS * 3)
-        )
+        task: asyncio.Task = request.app.loop.create_task(asyncio.sleep(10))
         task.cancel()  # raise CancelledError
 
-    @routes.get(r"/delay/{secs:\d+}")
+    @routes.get(r"/timeout/{secs}")
+    async def time_out(request: web.Request):
+        secs = float(request.match_info.get("secs", 0))
+        await asyncio.wait_for(
+            asyncio.sleep(10 * secs), timeout=secs
+        )  # raises TimeOutError
+
+    @routes.get(r"/delay/{secs}")
     async def delay_response(request: web.Request):
-        secs = int(request.match_info.get("secs", 0))
+        secs = float(request.match_info.get("secs", 0))
         await asyncio.sleep(secs)  # non-blocking slow
         return web.json_response({"data": True, "error": None})
 
@@ -94,25 +107,25 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
 
     main = {
         "port": aiohttp_unused_port(),
-        "host": "localhost",
-        "monitoring_enabled": True,
+        "host": "localhost"
     }
     app[APP_CONFIG_KEY] = {
         "main": main,
         "rest": {"enabled": True, "version": api_version_prefix},
+        "diagnostics": {"enabled": True}
     }
 
     # activates some sub-modules
     setup_security(app)
     setup_rest(app)
-    setup_app_monitoring(app)
     setup_diagnostics(
         app,
         slow_duration_secs=SLOW_HANDLER_DELAY_SECS / 10,
-        max_delay_allowed=SLOW_HANDLER_DELAY_SECS,
-        max_cancelations_rate=3,  # cancelations/s during N repetitions
-        max_avg_response_delay_secs=1,
+        max_task_delay=SLOW_HANDLER_DELAY_SECS,
+        max_avg_response_latency=2.0,
     )
+
+    assert app[kMAX_AVG_RESP_LATENCY] == 2.0
 
     app.router.add_routes(routes)
 
@@ -121,6 +134,14 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
     )
     return cli
 
+
+def test_diagnostics_setup(client):
+    app = client.app
+
+    assert len(app.middlewares) == 3
+    assert "monitor" in app.middlewares[0].__middleware_name__
+    assert "error" in app.middlewares[1].__middleware_name__
+    assert "envelope" in app.middlewares[2].__middleware_name__
 
 async def test_healthy_app(client, api_version_prefix):
     resp = await client.get(f"/{api_version_prefix}/")
@@ -149,35 +170,35 @@ async def test_diagnose_on_unexpected_error(client):
     resp = await client.get("/error")
     assert resp.status == web.HTTPInternalServerError.status_code
 
-    assert_health_app(client.app)
+    assert_healthy_app(client.app)
 
 
 async def test_diagnose_on_failure(client):
     resp = await client.get("/fail")
     assert resp.status == web.HTTPServiceUnavailable.status_code
 
-    assert_health_app(client.app)
-
-
-async def test_diagnose_on_cancellations(client):
-    count = client.app[K_MAX_CANCEL_RATE]  # cancelations per second
-
-    for _ in range(count):
-        resp = await client.get("/cancelled")
-        assert resp.status == web.HTTPInternalServerError.status_code
-
-    with pytest.raises(UnhealthyAppError):
-        assert_health_app(client.app)
+    assert_healthy_app(client.app)
 
 
 async def test_diagnose_on_response_delays(client):
-    secs = 1.2 * client.app[K_MAX_AVG_RESP_DELAY]
+    tmax = client.app[kMAX_AVG_RESP_LATENCY]
+    coros = [client.get(f"/delay/{1.1*tmax}") for _ in range(10)]
 
-    resp = await client.get(f"/delay/{secs}")
-    assert_status(resp, web.HTTPOk)
+    tic = time.time()
+    resps = await asyncio.gather(*coros)
+    toc = time.time() - tic # should take approx 1.1*tmax
+    assert toc < 1.2*tmax
 
-    with pytest.raises(UnhealthyAppError):
-        assert_health_app(client.app)
+    for resp in resps:
+        await assert_status(resp, web.HTTPOk)
+
+    # monitoring
+    latency_observed = client.app[kLATENCY_PROBE].value()
+    assert latency_observed > tmax
+
+    # diagnostics
+    with pytest.raises(HealthError):
+        assert_healthy_app(client.app)
 
 
 def test_read_prometheus_counter():

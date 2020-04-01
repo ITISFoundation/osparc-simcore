@@ -47,8 +47,9 @@ class DelayWindowProbe:
                 fifo.pop(0)
 
     def value(self) -> float:
-        return statistics.mean(self.last_delays)
-
+        if self.last_delays:
+            return statistics.mean(self.last_delays)
+        return 0
 
 def assert_healthy_app(app: web.Application) -> None:
     """ Diagnostics function that determins whether

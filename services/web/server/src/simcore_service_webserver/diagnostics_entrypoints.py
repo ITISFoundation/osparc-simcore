@@ -17,7 +17,6 @@ log = logging.getLogger(__name__)
 
 
 async def check_health(request: web.Request):
-
     # diagnostics of incidents
     try:
         assert_healthy_app(request.app)
@@ -50,13 +49,11 @@ async def get_diagnostics(request: web.Request):
     return web.json_response(data)
 
 
-def create_routes(specs: openapi.Spec) -> List[web.RouteDef]:
-    # TODO: consider the case in which server creates routes for both v0 and v1!!!
-    # TODO: should this be taken from servers instead?
-    # TODO: routing will be done automatically using operation_id/tags, etc...
-
+def create_rest_routes(specs: openapi.Spec) -> List[web.RouteDef]:
+    # NOTE: these are routes with paths starting with v0/* 
+   
     routes = []
-    base_path = openapi.get_base_path(specs)
+    base_path: str = openapi.get_base_path(specs)
 
     path, handle = "/", check_health
     operation_id = specs.paths[path].operations["get"].operation_id

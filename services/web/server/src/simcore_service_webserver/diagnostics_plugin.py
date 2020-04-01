@@ -6,6 +6,7 @@ from typing import Optional
 from aiohttp import web
 
 from servicelib import monitor_slow_callbacks
+from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .diagnostics_core import (
     IncidentsRegistry,
@@ -13,13 +14,20 @@ from .diagnostics_core import (
     kMAX_AVG_RESP_LATENCY,
     kMAX_TASK_DELAY,
 )
-from .diagnostics_entrypoints import create_routes
+from .diagnostics_entrypoints import create_rest_routes
 from .diagnostics_monitoring import setup_monitoring
 from .rest import APP_OPENAPI_SPECS_KEY
 
 log = logging.getLogger(__name__)
 
 
+@app_module_setup(
+    __name__,
+    ModuleCategory.ADDON,
+    depends=["simcore_service_webserver.rest"],
+    config_section="diagnostics",
+    logger=log,
+)
 def setup_diagnostics(
     app: web.Application,
     *,
@@ -64,9 +72,9 @@ def setup_diagnostics(
     app[kMAX_AVG_RESP_LATENCY] = max_avg_response_latency
     log.info("max_avg_response_latency = %3.2f secs ", max_avg_response_latency)
 
-    # 
-    # TODO: redesign ... to convoluted!!
-    registry = IncidentsRegistry(order_by=attrgetter("delay_secs")) 
+    #
+    # TODO: redesign ... too convoluted!!
+    registry = IncidentsRegistry(order_by=attrgetter("delay_secs"))
     app[kINCIDENTS_REGISTRY] = registry
 
     monitor_slow_callbacks.enable(max_task_delay, registry)
@@ -75,5 +83,5 @@ def setup_diagnostics(
     setup_monitoring(app)
 
     # adds other diagnostic routes: healthcheck, etc
-    routes = create_routes(specs=app[APP_OPENAPI_SPECS_KEY])
+    routes = create_rest_routes(specs=app[APP_OPENAPI_SPECS_KEY])
     app.router.add_routes(routes)
