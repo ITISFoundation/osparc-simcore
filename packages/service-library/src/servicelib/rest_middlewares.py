@@ -31,24 +31,28 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
     return request.path.startswith(base_path)
 
 
-def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
-    # FIXME: send info + trace to client ONLY in debug mode!!!
-    resp = create_error_response(
-        [err,], "Unexpected Server error", web.HTTPInternalServerError
-    )
+def error_middleware_factory(api_version: str = DEFAULT_API_VERSION, log_exceptions=True):
 
-    logger.exception(
-        'Unexpected server error "%s" from access: %s "%s %s". Responding with status %s',
-        type(err),
-        request.remote,
-        request.method,
-        request.path,
-        resp.status,
-    )
-    raise resp
+    def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
+        # FIXME: send info + trace to client ONLY in debug mode!!!
+        resp = create_error_response(
+            [err,], "Unexpected Server error", web.HTTPInternalServerError
+        )
+
+        if log_exceptions:
+            logger.error(
+                'Unexpected server error "%s" from access: %s "%s %s". Responding with status %s',
+                type(err),
+                request.remote,
+                request.method,
+                request.path,
+                resp.status,
+                exc_info=err,
+                stack_info=True,
+            )
+        raise resp
 
 
-def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
     @web.middleware
     async def _middleware_handler(request: web.Request, handler):
         """
