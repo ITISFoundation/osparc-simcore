@@ -1,7 +1,10 @@
 import asyncio
 import logging
+from typing import List
 
 from aiohttp import web
+
+from servicelib import openapi
 
 from . import __version__
 from .diagnostics import DiagnosticError, assert_healthy_app
@@ -16,9 +19,8 @@ async def check_health(request: web.Request):
     try:
         assert_healthy_app(request.app)
     except DiagnosticError as err:
-        msg = f"Unhealthy service: {err}"
-        log.error(msg)
-        raise web.HTTPServiceUnavailable(reason=msg)
+        log.error("Unhealthy application: %s", err)
+        raise web.HTTPServiceUnavailable()
 
     data = {
         "name": __name__.split(".")[0],
@@ -43,3 +45,23 @@ async def get_diagnostics(request: web.Request):
         data.update({"top_tracemalloc": get_tracemalloc_info(top)})
 
     return web.json_response(data)
+
+
+def create_routes(specs: openapi.Spec) -> List[web.RouteDef]:
+    # TODO: consider the case in which server creates routes for both v0 and v1!!!
+    # TODO: should this be taken from servers instead?
+    # TODO: routing will be done automatically using operation_id/tags, etc...
+
+    routes = []  
+    base_path = openapi.get_base_path(specs)
+
+    path, handle = "/", check_health
+    operation_id = specs.paths[path].operations["get"].operation_id
+    routes.append(web.get(base_path + path, handle, name=operation_id))
+
+    # NOTE: Internal. Not shown in api/docs
+    path, handle = "/diagnostics", get_diagnostics
+    operation_id = "get_diagnotics"  # specs.paths[path].operations['get'].operation_id
+    routes.append(web.get(base_path + path, handle, name=operation_id))
+
+    return routes

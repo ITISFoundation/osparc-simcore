@@ -118,7 +118,8 @@ from typing import Type
 def get_exception_total_count(app: web.Application, exception_cls: Type[Exception]) -> int:
     counter: Counter =  app[REQUEST_COUNT]
 
-    exception_cls.__name__
+    raise NotImplementedError()
+    # exception_cls.__name__
 
     total_count = 0
     for metric in counter.collect():
