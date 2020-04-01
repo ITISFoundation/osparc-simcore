@@ -116,7 +116,8 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     },
 
     getNewColor: function() {
-      const luminanceBG = osparc.utils.Utils.getColorLuminance(osparc.theme.Color.colors["table-row-background-selected"]);
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const luminanceBG = osparc.utils.Utils.getColorLuminance(colorManager.resolve("table-row-background-selected"));
       let luminanceText = null;
       let color = null;
       do {
