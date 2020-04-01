@@ -39,7 +39,7 @@ def setup_diagnostics(
     log.info("slow_duration_secs = %3.2f secs ", slow_duration_secs)
 
     #  TODO: does not have any sense ... Remove!!!
-    # Sets an upper threshold for blocking functions, i.e. 
+    # Sets an upper threshold for blocking functions, i.e.
     # slow_duration_secs < max_task_delay
     #
     if max_task_delay is None:
@@ -48,10 +48,11 @@ def setup_diagnostics(
             float(os.environ.get("WEBSERVER_DIAGNOSTICS_MAX_TASK_DELAY", 0)),
         )  # secs
 
+    app[kMAX_TASK_DELAY] = max_task_delay
     log.info("max_task_delay = %3.2f secs ", max_task_delay)
 
-    # 
-    # Sets a threashold to the mean latency of the last N request slower 
+    #
+    # Sets a threashold to the mean latency of the last N request slower
     # than 1 sec is monitored.
     # Aims to control large slowdowns in responses
     #
@@ -60,21 +61,19 @@ def setup_diagnostics(
             os.environ.get("WEBSERVER_DIAGNOSTICS_MAX_AVG_RESPONSE_LATENCY", 3)
         )  # secs
 
+    app[kMAX_AVG_RESP_LATENCY] = max_avg_response_latency
     log.info("max_avg_response_latency = %3.2f secs ", max_avg_response_latency)
 
-
-    # calls are registered with add(incident)
-    # TODO: delay_secs should be automatic
-    registry = IncidentsRegistry(order_by=attrgetter("delay_secs"))
-    monitor_slow_callbacks.enable(max_task_delay, registry)
-
-    # store
+    # 
+    # TODO: redesign ... to convoluted!!
+    registry = IncidentsRegistry(order_by=attrgetter("delay_secs")) 
     app[kINCIDENTS_REGISTRY] = registry
-    app[kMAX_TASK_DELAY] = max_task_delay
-    app[kMAX_AVG_RESP_LATENCY] = max_avg_response_latency
+
+    monitor_slow_callbacks.enable(max_task_delay, registry)
 
     # adds middleware and /metrics
     setup_monitoring(app)
+
     # adds other diagnostic routes: healthcheck, etc
     routes = create_routes(specs=app[APP_OPENAPI_SPECS_KEY])
     app.router.add_routes(routes)

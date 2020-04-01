@@ -2,7 +2,6 @@
 
 """
 import logging
-import statistics
 import time
 from typing import Coroutine
 
@@ -11,7 +10,7 @@ from aiohttp import web
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram
 from prometheus_client.registry import CollectorRegistry
 
-from .diagnostics_core import kLAST_REQUESTS_AVG_LATENCY
+from .diagnostics_core import DelayWindowProbe, kLATENCY_PROBE
 
 log = logging.getLogger(__name__)
 
@@ -22,10 +21,6 @@ kREQUEST_COUNT = f"{__name__}.request_count"
 kCANCEL_COUNT = f"{__name__}.cancel_count"
 
 kCOLLECTOR_REGISTRY = f"{__name__}.collector_registry"
-
-kLAST_REQUESTS_LATENCY = f"{__name__}.last_requests_latency"
-LAST_REQUESTS_WINDOW = 100
-
 
 
 async def metrics_handler(request: web.Request):
@@ -87,17 +82,12 @@ def middleware_factory(app_name: str) -> Coroutine:
                     resp.status,
                 )
 
-            # On-the-fly stats ---
+            # Probes for on-the-fly stats ---
             # NOTE: might implement in the future some kind of statistical accumulator
             # to perform incremental calculations on the fly
 
-            # Mean latency of the last N request slower than 1 sec
-            if resp_time_secs > 1.0:
-                fifo = request.app[kLAST_REQUESTS_LATENCY]
-                fifo.append(resp_time_secs)
-                if len(fifo) > LAST_REQUESTS_WINDOW:
-                    fifo.pop(0)
-                request.app[kLAST_REQUESTS_AVG_LATENCY] = statistics.mean(fifo)
+            # Probes request latency
+            request.app[kLATENCY_PROBE].observe(resp_time_secs)
 
         return resp
 
@@ -134,10 +124,11 @@ def setup_monitoring(app: web.Application):
     )
 
     # on-the fly stats
-    app[kLAST_REQUESTS_LATENCY] = []
+    app[kLATENCY_PROBE] = DelayWindowProbe()
 
-    # ensures is first layer but cannot guarantee the order setup is applied
-    app.middlewares.insert(0, middleware_factory("simcore_service_webserver"))
+    # WARNING: ensure ERROR middleware is over this one
+    assert len(app.middlewares) >= 1  # nosec
+    app.middlewares.append(middleware_factory("simcore_service_webserver"))
 
     # TODO: in production, it should only be accessible to backend services
     app.router.add_get("/metrics", metrics_handler)
