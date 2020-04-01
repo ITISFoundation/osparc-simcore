@@ -20,6 +20,14 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram
 log = logging.getLogger(__name__)
 
 
+async def metrics_handler(_request: web.Request):
+    # TODO: prometheus_client.generate_latest blocking! no asyhc solutin?
+    # TODO: prometheus_client access to a singleton registry! can be instead created and pass to every metric wrapper
+    resp = web.Response(body=prometheus_client.generate_latest())
+    resp.content_type = CONTENT_TYPE_LATEST
+    return resp
+
+
 def middleware_factory(app_name):
     @web.middleware
     async def middleware_handler(request: web.Request, handler):
@@ -68,22 +76,17 @@ def middleware_factory(app_name):
 
         return resp
 
-    middleware_handler.__middleware_name__ = __name__
+    middleware_handler.__middleware_name__ = __name__ # SEE check_outermost_middleware
     return middleware_handler
 
 
-async def metrics(_request):
-    # TODO: NOT async!
-    # prometheus_client access to a singleton registry!
-    resp = web.Response(body=prometheus_client.generate_latest())
-    resp.content_type = CONTENT_TYPE_LATEST
-    return resp
-
-
 async def check_outermost_middleware(app: web.Application):
-    m = app.middlewares[0]
-    ok = m and hasattr(m, "__middleware_name__") and m.__middleware_name__ == __name__
-    if not ok:
+    first_middleware = app.middlewares[0]
+    if not (
+        first_middleware
+        and hasattr(first_middleware, "__middleware_name__")
+        and first_middleware.__middleware_name__ == __name__
+    ):
         # TODO: name all middleware and list middleware in log
         log.critical(
             "Monitoring middleware expected in the outermost layer."
@@ -118,7 +121,7 @@ def setup_monitoring(app: web.Application, app_name: str):
     app.middlewares.insert(0, middleware_factory(app_name))
 
     # FIXME: this in the front-end has to be protected!
-    app.router.add_get("/metrics", metrics)
+    app.router.add_get("/metrics", metrics_handler)
 
     # Checks that middleware is in the outermost layer
     app.on_startup.append(check_outermost_middleware)
