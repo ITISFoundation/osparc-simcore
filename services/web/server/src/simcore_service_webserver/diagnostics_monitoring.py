@@ -41,18 +41,18 @@ def middleware_factory(app_name: str) -> Coroutine:
             ).inc()
 
             resp = await handler(request)
-            exception_name = None
+            unhandled_exception = None
 
         except web.HTTPException as exc:
             # Transforms exception into response object
             resp = exc
-            exception_name = None
+            unhandled_exception = None
 
         except Exception as exc:  # pylint: disable=broad-except
             # Transforms unhandled exceptions into responses with status 500
             # NOTE: Prevents issue #1025
             resp = web.HTTPInternalServerError(reason=str(exc))
-            exception_name = exc.__class__.__name__
+            unhandled_exception = exc
 
         finally:
             resp_time_secs: float = time.time() - request[kSTART_TIME]
@@ -65,16 +65,18 @@ def middleware_factory(app_name: str) -> Coroutine:
                 app_name, request.path, request.method
             ).dec()
 
+            exc_name: str = unhandled_exception.__class__.__name__ if unhandled_exception else ""
+
             request.app[kREQUEST_COUNT].labels(
-                app_name, request.method, request.path, resp.status, exception_name
+                app_name, request.method, request.path, resp.status, exc_name
             ).inc()
 
-            if exception_name:
+            if unhandled_exception:
                 # NOTE: all access to API (i.e. and not other paths as /socket, /x, etc)
                 # shall return web.HTTPErrors since processed by error_middleware_factory
                 log.exception(
                     'Unexpected server error "%s" from access: %s "%s %s" done in %3.2f secs. Responding with status %s',
-                    type(exc),
+                    type(unhandled_exception),
                     request.remote,
                     request.method,
                     request.path,
