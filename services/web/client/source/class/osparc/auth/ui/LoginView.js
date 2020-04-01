@@ -56,7 +56,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       this.__form = new qx.ui.form.Form();
 
       const atm = new qx.ui.basic.Atom().set({
-        icon: "osparc/osparc-white.svg",
+        icon: osparc.utils.Utils.getLogoPath(),
         iconPosition: "top"
       });
       atm.getChildControl("icon").set({
