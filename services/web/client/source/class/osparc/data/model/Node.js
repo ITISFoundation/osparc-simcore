@@ -756,6 +756,11 @@ qx.Class.define("osparc.data.model.Node", {
       return true;
     },
 
+    __showLoadingIFrame: function() {
+      const loadingUri = osparc.utils.Utils.createLoadingIFrame("Starting Service");
+      this.restartIFrame(loadingUri);
+    },
+
     restartIFrame: function(loadThis) {
       if (this.getIFrame() === null) {
         const iframe = new osparc.component.widget.PersistentIframe();
@@ -798,11 +803,6 @@ qx.Class.define("osparc.data.model.Node", {
           }, false);
         }
       }
-    },
-
-    __showLoadingIFrame: function() {
-      const loadingUri = osparc.utils.Utils.getLoaderUri("Starting Service");
-      this.restartIFrame(loadingUri);
     },
 
     __retrieveInputs: function(portKey) {
