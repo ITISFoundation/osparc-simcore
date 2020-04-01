@@ -2,30 +2,38 @@
 
 """
 import logging
-
-# SETUP ----
 import statistics
 import time
 from typing import Coroutine
 
+import prometheus_client
 from aiohttp import web
-from prometheus_client import Counter, Gauge, Histogram
-
-from servicelib.monitoring import metrics_handler
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram
+from prometheus_client.registry import CollectorRegistry
 
 from .diagnostics_core import kLAST_REQUESTS_AVG_LATENCY
 
 log = logging.getLogger(__name__)
 
-# APP KEYS ---
 kSTART_TIME = f"{__name__}.start_time"
 kREQUEST_IN_PROGRESS = f"{__name__}.request_in_progress"
 kREQUEST_LATENCY = f"{__name__}.request_latency"
 kREQUEST_COUNT = f"{__name__}.request_count"
 kCANCEL_COUNT = f"{__name__}.cancel_count"
 
+kCOLLECTOR_REGISTRY = f"{__name__}.collector_registry"
+
 kLAST_REQUESTS_LATENCY = f"{__name__}.last_requests_latency"
 LAST_REQUESTS_WINDOW = 100
+
+
+
+async def metrics_handler(request: web.Request):
+    # TODO: prometheus_client.generate_latest blocking! no asyhc solutin?
+    reg = request.app[kCOLLECTOR_REGISTRY]
+    resp = web.Response(body=prometheus_client.generate_latest(registry=reg))
+    resp.content_type = CONTENT_TYPE_LATEST
+    return resp
 
 
 def middleware_factory(app_name: str) -> Coroutine:
@@ -98,14 +106,15 @@ def middleware_factory(app_name: str) -> Coroutine:
 
 
 def setup_monitoring(app: web.Application):
-    # NOTE: prometheus_client registers metrics in **globals**.
-    # Therefore tests might fail when fixtures get re-created
+    # app-scope registry
+    app[kCOLLECTOR_REGISTRY] = reg = CollectorRegistry(auto_describe=True)
 
     # Total number of requests processed
     app[kREQUEST_COUNT] = Counter(
         name="http_requests_total",
         documentation="Total Request Count",
         labelnames=["app_name", "method", "endpoint", "http_status", "exception"],
+        registry=reg,
     )
 
     # Latency of a request in seconds
@@ -113,6 +122,7 @@ def setup_monitoring(app: web.Application):
         name="http_request_latency_seconds",
         documentation="Request latency",
         labelnames=["app_name", "endpoint"],
+        registry=reg,
     )
 
     # Number of requests in progress
@@ -120,6 +130,7 @@ def setup_monitoring(app: web.Application):
         name="http_requests_in_progress_total",
         documentation="Requests in progress",
         labelnames=["app_name", "endpoint", "method"],
+        registry=reg,
     )
 
     # on-the fly stats

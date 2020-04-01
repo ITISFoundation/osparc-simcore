@@ -73,5 +73,8 @@ def setup_diagnostics(
     app[kMAX_TASK_DELAY] = max_task_delay
     app[kMAX_AVG_RESP_LATENCY] = max_avg_response_latency
 
+    # adds middleware and /metrics
     setup_monitoring(app)
-    create_routes(specs=app[APP_OPENAPI_SPECS_KEY])
+    # adds other diagnostic routes: healthcheck, etc
+    routes = create_routes(specs=app[APP_OPENAPI_SPECS_KEY])
+    app.router.add_routes(routes)

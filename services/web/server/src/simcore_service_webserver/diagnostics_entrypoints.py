@@ -1,3 +1,6 @@
+""" Handler functions and routing for diagnostics entrypoints
+
+"""
 import asyncio
 import logging
 from typing import List
