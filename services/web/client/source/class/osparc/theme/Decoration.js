@@ -17,7 +17,7 @@
 ************************************************************************ */
 
 qx.Theme.define("osparc.theme.Decoration", {
-  extend: osparc.theme.osparcdark.Decoration,
+  extend: osparc.theme.osparc.Decoration,
 
   decorations: {
   }

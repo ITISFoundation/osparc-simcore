@@ -17,7 +17,7 @@
 ************************************************************************ */
 
 qx.Theme.define("osparc.theme.Font", {
-  extend: osparc.theme.osparcdark.Font,
+  extend: osparc.theme.osparc.Font,
 
   fonts: {
   }
