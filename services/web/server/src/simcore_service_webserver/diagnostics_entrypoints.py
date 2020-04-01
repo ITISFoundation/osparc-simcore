@@ -7,7 +7,7 @@ from aiohttp import web
 from servicelib import openapi
 
 from . import __version__
-from .diagnostics import DiagnosticError, assert_healthy_app
+from .diagnostics_core import HealthError, assert_healthy_app
 from .utils import get_task_info, get_tracemalloc_info
 
 log = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ async def check_health(request: web.Request):
     # diagnostics of incidents
     try:
         assert_healthy_app(request.app)
-    except DiagnosticError as err:
+    except HealthError as err:
         log.error("Unhealthy application: %s", err)
         raise web.HTTPServiceUnavailable()
 
@@ -52,7 +52,7 @@ def create_routes(specs: openapi.Spec) -> List[web.RouteDef]:
     # TODO: should this be taken from servers instead?
     # TODO: routing will be done automatically using operation_id/tags, etc...
 
-    routes = []  
+    routes = []
     base_path = openapi.get_base_path(specs)
 
     path, handle = "/", check_health

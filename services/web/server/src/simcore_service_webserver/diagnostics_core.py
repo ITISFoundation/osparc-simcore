@@ -1,42 +1,23 @@
 import logging
-
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from aiohttp import web
 
 from servicelib.incidents import LimitedOrderedStack, SlowCallback
 
-
 log = logging.getLogger(__name__)
 
 # APP KEYS ---
-
-APP_KEY = f"{__name__}.{{0}}"  # use as APP_KEY.format("variable name")
-
-K_HEALTHCHECK_RETRY = f"{__name__}.health_check_retry"
-K_REGISTRY = f"{__name__}.registry"
-K_MAX_DELAY_ALLOWED = f"{__name__}.max_delay_allowed"
-K_MAX_CANCEL_RATE = f"{__name__}.max_cancelations_rate"
-K_MAX_AVG_RESP_DELAY = f"{__name__}.max_avg_response_delay_secs"
-
-
-def get_param(app: web.Application, name: str) -> Any:
-    return app[f"{__name__}.{name}"]
-
-
-def get_params(app: web.Application) -> Dict[str, Any]:
-    params = {key: app[key] for key in app.keys() if key.startswith(f"{__name__}.")}
-    return params
+kINCIDENTS_REGISTRY = f"{__name__}.incidents_registry"
+kLAST_REQUESTS_AVG_LATENCY = f"{__name__}.last_requests_avg_latency"
+kMAX_AVG_RESP_LATENCY = f"{__name__}.max_avg_response_latency"
+kMAX_TASK_DELAY = f"{__name__}.max_task_delay"
 
 
 # ERRORS ----
 
-class DiagnosticError(Exception):
+class HealthError(Exception):
     pass
-
-class UnhealthyAppError(DiagnosticError):
-    pass
-
 
 
 class IncidentsRegistry(LimitedOrderedStack[SlowCallback]):
@@ -51,9 +32,9 @@ def assert_healthy_app(app: web.Application) -> None:
 
         raises DiagnosticError if any incient detected
     """
-    incidents: Optional[IncidentsRegistry] = app.get(K_REGISTRY)
+    incidents: Optional[IncidentsRegistry] = app.get(kINCIDENTS_REGISTRY)
     if incidents:
-        max_delay_allowed: float = app[K_MAX_DELAY_ALLOWED]
+        max_delay_allowed: float = app[kMAX_TASK_DELAY]
         max_delay: float = incidents.max_delay()
 
         # criteria 1:
@@ -61,6 +42,11 @@ def assert_healthy_app(app: web.Application) -> None:
             msg = "{:3.1f} secs delay [at most {:3.1f} secs allowed]".format(
                 max_delay, max_delay_allowed,
             )
-            raise UnhealthyAppError(msg)
+            raise HealthError(msg)
 
         # TODO: add more criteria
+
+    # Mean latency of the last N request slower than 1 sec
+    latency, max_latency = app.get(kLAST_REQUESTS_AVG_LATENCY, 0), app.get(kMAX_AVG_RESP_LATENCY, 4)
+    if max_latency < latency:
+        raise HealthError(f"Last requests latency is {latency} > {max_latency} secs")

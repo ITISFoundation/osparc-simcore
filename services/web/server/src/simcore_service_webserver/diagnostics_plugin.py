@@ -8,12 +8,10 @@ from aiohttp import web
 from servicelib import monitor_slow_callbacks
 
 from .diagnostics_core import (
-    K_HEALTHCHECK_RETRY,
-    K_MAX_AVG_RESP_DELAY,
-    K_MAX_CANCEL_RATE,
-    K_MAX_DELAY_ALLOWED,
-    K_REGISTRY,
     IncidentsRegistry,
+    kINCIDENTS_REGISTRY,
+    kMAX_AVG_RESP_LATENCY,
+    kMAX_TASK_DELAY,
 )
 from .diagnostics_entrypoints import create_routes
 from .diagnostics_monitoring import setup_monitoring
@@ -22,55 +20,58 @@ from .rest import APP_OPENAPI_SPECS_KEY
 log = logging.getLogger(__name__)
 
 
-
 def setup_diagnostics(
     app: web.Application,
     *,
-    slow_duration_secs: Optional[int] = None,
-    max_delay_allowed: Optional[int] = None,
-    max_cancelations_rate: Optional[int] = None,
-    max_avg_response_delay_secs: Optional[int] = 3,
+    slow_duration_secs: Optional[float] = None,
+    max_task_delay: Optional[float] = None,
+    max_avg_response_latency: Optional[float] = None,
 ):
-    # NOTE: keep environs check inside setup so they can be patched easier for testing
-    health_check_interval: float = float(os.environ.get("SC_HEALTHCHECK_INTERVAL", 30))
-    health_check_retry: int = int(os.environ.get("SC_HEALTHCHECK_RETRY", 3))
+    # NOTE: keep all environs getters inside setup so they can be patched easier for testing
 
-    desc = "min delay to log a callback"
+    #
+    # Any task blocked more than slow_duration_secs is logged as WARNING
+    # Aims to identify possible blocking calls
+    #
     if slow_duration_secs is None:
-        slow_duration_secs = float(os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0.2))
+        slow_duration_secs = float(os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0.3))
 
-    log.info("slow_duration_secs = %3.2f secs (%s)", slow_duration_secs, desc)
+    log.info("slow_duration_secs = %3.2f secs ", slow_duration_secs)
 
-    desc = "max delay allowed a callback"
-    if max_delay_allowed is None:
-        max_delay_allowed = max(
+    #  TODO: does not have any sense ... Remove!!!
+    # Sets an upper threshold for blocking functions, i.e. 
+    # slow_duration_secs < max_task_delay
+    #
+    if max_task_delay is None:
+        max_task_delay = max(
             10 * slow_duration_secs,
-            float(os.environ.get("WEBSERVER_DIAGNOSTICS_MAX_DELAY_SECS", 30)),
+            float(os.environ.get("WEBSERVER_DIAGNOSTICS_MAX_TASK_DELAY", 0)),
         )  # secs
 
-    log.info("max_delay_allowed = %3.2f secs (%s)", max_delay_allowed, desc)
+    log.info("max_task_delay = %3.2f secs ", max_task_delay)
 
-    desc = f"max number of task cancelations within {health_check_interval} secs"
-    if max_cancelations_rate is None:
-        max_cancelations_rate = float(
-            os.environ.get("WEBSERVER_DIAGNOSTICS_MAX_DELAY_SECS",)
-        )
+    # 
+    # Sets a threashold to the mean latency of the last N request slower 
+    # than 1 sec is monitored.
+    # Aims to control large slowdowns in responses
+    #
+    if max_avg_response_latency is None:
+        max_avg_response_latency = float(
+            os.environ.get("WEBSERVER_DIAGNOSTICS_MAX_AVG_RESPONSE_LATENCY", 3)
+        )  # secs
 
-    max_cancelations_inc = max_cancelations_rate * health_check_interval
-    log.info("max_cancelations_per_interval = %3.2f (%s)", max_cancelations_inc, desc)
+    log.info("max_avg_response_latency = %3.2f secs ", max_avg_response_latency)
 
-    # TODO: delay_secs should be automatic
-    registry = IncidentsRegistry(order_by=attrgetter("delay_secs"))
 
     # calls are registered with add(incident)
-    monitor_slow_callbacks.enable(max_delay_allowed, registry)
+    # TODO: delay_secs should be automatic
+    registry = IncidentsRegistry(order_by=attrgetter("delay_secs"))
+    monitor_slow_callbacks.enable(max_task_delay, registry)
 
-    app[K_REGISTRY] = registry
-    app[K_MAX_DELAY_ALLOWED] = max_delay_allowed
-    app[K_MAX_CANCEL_RATE] = max_cancelations_rate
-    app[K_MAX_AVG_RESP_DELAY] = max_avg_response_delay_secs
-    app[K_HEALTHCHECK_RETRY] = health_check_retry
-    app[K_HEALTHCHECK_RETRY] = health_check_interval
+    # store
+    app[kINCIDENTS_REGISTRY] = registry
+    app[kMAX_TASK_DELAY] = max_task_delay
+    app[kMAX_AVG_RESP_LATENCY] = max_avg_response_latency
 
-    create_routes(specs=app[APP_OPENAPI_SPECS_KEY])
     setup_monitoring(app)
+    create_routes(specs=app[APP_OPENAPI_SPECS_KEY])
