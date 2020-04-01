@@ -12,7 +12,6 @@ main:
   log_level: ${WEBSERVER_LOGLEVEL}
   testing: False
   studies_access_enabled: ${WEBSERVER_STUDIES_ACCESS_ENABLED}
-  monitoring_enabled: ${WEBSERVER_MONITORING_ENABLED}
 tracing:
   enabled: ${TRACING_ENABLED}
   zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
