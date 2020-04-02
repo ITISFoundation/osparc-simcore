@@ -254,6 +254,8 @@ class Executor:
                     container_data["State"]["Error"],
                 )
             else:
+                # ensure progress 1.0 is sent
+                await self._post_messages(LogType.PROGRESS, "1.0")
                 log.info("%s completed with successfully!", docker_image)
         except aiodocker.exceptions.DockerContainerError:
             log.exception(
