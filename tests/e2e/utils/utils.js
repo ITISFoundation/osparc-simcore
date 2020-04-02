@@ -142,6 +142,11 @@ async function waitForValidOutputFile(page) {
   })
 }
 
+async function waitAndClick(page, id) {
+  await page.waitForSelector(id);
+  await page.click(id);
+}
+
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -174,6 +179,7 @@ module.exports = {
   dragAndDrop,
   waitForResponse,
   waitForValidOutputFile,
+  waitAndClick,
   sleep,
   takeScreenshot,
 }

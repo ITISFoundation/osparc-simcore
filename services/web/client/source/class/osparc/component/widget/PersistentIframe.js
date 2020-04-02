@@ -28,6 +28,17 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
     this.base(arguments, source);
   },
 
+  statics: {
+    getIcon: function(maximize) {
+      const iconURL = maximize ? "window-restore" : "window-maximize";
+      return osparc.theme.osparcdark.Image.URLS[iconURL]+"/20";
+    },
+
+    getMaximizeWidgetId: function(maximize) {
+      return maximize ? "restoreBtn" : "maximizeBtn";
+    }
+  },
+
   properties: {
     /**
      * Show a Maximize Button
@@ -84,11 +95,13 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       appRoot.add(restartButton, {
         top:-10000
       });
-      let actionButton = this.__actionButton = new qx.ui.form.Button(null, osparc.theme.osparcdark.Image.URLS["window-maximize"]+"/20").set({
+      let actionButton = this.__actionButton = new qx.ui.form.Button(null).set({
+        icon: this.self().getIcon(false),
         zIndex: 20,
         backgroundColor: "transparent",
         decorator: null
       });
+      osparc.utils.Utils.setIdToWidget(actionButton, this.self().getMaximizeWidgetId(false));
       appRoot.add(actionButton, {
         top:-10000
       });
@@ -136,12 +149,12 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       if (maximize) {
         this.fireEvent("maximize");
         this.addState("maximized");
-        actionButton.setIcon(osparc.theme.osparcdark.Image.URLS["window-restore"]+"/20");
       } else {
         this.fireEvent("restore");
         this.removeState("maximized");
-        actionButton.setIcon(osparc.theme.osparcdark.Image.URLS["window-maximize"]+"/20");
       }
+      actionButton.setIcon(this.self().getIcon(maximize));
+      osparc.utils.Utils.setIdToWidget(actionButton, this.self().getMaximizeWidgetId(maximize));
       qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
     },
 

@@ -104,6 +104,10 @@ class TutorialBase {
     await utils.takeScreenshot(this.__page, this.__templateName + "_dashboardOpenFirstTemplate_after");
   }
 
+  async restoreIFrame() {
+    await auto.restoreIFrame(this.__page);
+  }
+
   async runPipeline(waitFor = 25000) {
     await utils.takeScreenshot(this.__page, this.__templateName + "_runStudy_before");
     await auto.runStudy(this.__page, waitFor);
