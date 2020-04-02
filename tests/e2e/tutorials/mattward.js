@@ -31,7 +31,7 @@ async function runTutorial () {
   await tutorial.waitForService(workbenchData["studyId"], workbenchData["nodeIds"][0]);
 
   // Wait for the output files to be pushed
-  await tutorial.waitFor(10000);
+  await tutorial.waitFor(30000);
 
   // This study opens in fullscreen mode
   await tutorial.restoreIFrame();
