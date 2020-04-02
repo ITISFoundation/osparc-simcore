@@ -1,6 +1,9 @@
+# pylint: disable=redefined-outer-name
 import logging
 import sys
 from pathlib import Path
+
+import pytest
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -17,3 +20,17 @@ pytest_plugins = [
     "pytest_simcore.simcore_storage_service",
 ]
 log = logging.getLogger(__name__)
+
+
+@pytest.fixture(scope="session")
+def mock_dir() -> Path:
+    folder = current_dir / "mock"
+    assert folder.exists()
+    return folder
+
+
+@pytest.fixture(scope="session")
+def python_sample_script(mock_dir: Path) -> Path:
+    file_path = mock_dir / "osparc_python_sample.py"
+    assert file_path.exists()
+    return file_path
