@@ -58,7 +58,8 @@ class Executor:
 
     async def run(self):
         log.debug(
-            "Running Pipeline %s:node %s:internal id %s from container",
+            "Running %s project:%s node:%s internal_id:%s from container",
+            self.task.image["name"],
             self.task.project_id,
             self.task.node_id,
             self.task.internal_id,
@@ -76,29 +77,14 @@ class Executor:
 
     async def preprocess(self):
         await self._post_messages(LogType.LOG, "[sidecar]Preprocessing...")
-        log.debug(
-            "Pre-Processing Pipeline %s:node %s:internal id %s from container",
-            self.task.project_id,
-            self.task.node_id,
-            self.task.internal_id,
-        )
+        log.debug("Pre-Processing...")
         self.shared_folders = TaskSharedVolumes.from_task(self.task)
         self.shared_folders.create()
         await logged_gather(self._process_task_inputs(), self._pull_image())
-        log.debug(
-            "Pre-Processing Pipeline DONE %s:node %s:internal id %s from container",
-            self.task.project_id,
-            self.task.node_id,
-            self.task.internal_id,
-        )
+        log.debug("Pre-Processing Pipeline DONE")
 
     async def process(self):
-        log.debug(
-            "Processing Pipeline %s:node %s:internal id %s from container",
-            self.task.project_id,
-            self.task.node_id,
-            self.task.internal_id,
-        )
+        log.debug("Processing...")
         await self._post_messages(LogType.LOG, "[sidecar]Processing...")
         # touch output file, so it's ready for the container (v0)
         log_file = self.shared_folders.log_folder / "log.dat"
@@ -113,23 +99,14 @@ class Executor:
         log_processor_task.cancel()
         await log_processor_task
 
-        log.debug(
-            "DONE Processing Pipeline %s:node %s:internal id %s from container",
-            self.task.project_id,
-            self.task.node_id,
-            self.task.internal_id,
-        )
+        log.debug("Processing DONE")
 
     async def postprocess(self):
-        log.debug(
-            "Post-Processing Pipeline %s:node %s:internal id %s from container",
-            self.task.project_id,
-            self.task.node_id,
-            self.task.internal_id,
-        )
+        log.debug("Post-Processing...")
         await self._post_messages(LogType.LOG, "[sidecar]Postprocessing...")
         await self._process_task_output()
         await self._process_task_log()
+        log.debug("Post-Processing DONE")
 
     async def _get_node_ports(self):
         if self.db_manager is None:
@@ -160,11 +137,7 @@ class Executor:
             input_ports[port.key] = port_value
 
     async def _process_task_inputs(self):
-        log.debug(
-            "Input parsing for %s and node %s from container",
-            self.task.project_id,
-            self.task.internal_id,
-        )
+        log.debug("Inputs parsing...")
 
         input_ports = dict()
         PORTS = await self._get_node_ports()
@@ -178,11 +151,10 @@ class Executor:
             ]
         )
 
-        log.debug("DUMPING json")
         if input_ports:
             file_name = self.shared_folders.input_folder / "input.json"
             file_name.write_text(json.dumps(input_ports))
-        log.debug("DUMPING DONE")
+        log.debug("Inputs parsing DONE")
 
     async def _pull_image(self):
         docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
@@ -241,7 +213,9 @@ class Executor:
                 ],
             },
         }
-
+        log.debug(
+            "Running image %s with config %s", docker_image, docker_container_config
+        )
         # volume paths for car container (w/o prefix)
         try:
             docker_client: aiodocker.Docker = aiodocker.Docker()
@@ -309,12 +283,7 @@ class Executor:
             Files will be pushed to S3 with reference in db. output.json will be parsed
             and the db updated
         """
-        log.debug(
-            "Processing task outputs %s:node %s:internal id %s from container",
-            self.task.project_id,
-            self.task.node_id,
-            self.task.internal_id,
-        )
+        log.debug("Processing outputs...")
         await self._post_messages(
             LogType.LOG, f"[sidecar]Uploading outputs...",
         )
@@ -343,20 +312,10 @@ class Executor:
             logging.exception("Error occured while setting port")
         except (OSError, IOError):
             logging.exception("Could not process output")
-        log.debug(
-            "Processing task outputs DONE %s:node %s:internal id %s from container",
-            self.task.project_id,
-            self.task.node_id,
-            self.task.internal_id,
-        )
+        log.debug("Processing outputs DONE")
 
     async def _process_task_log(self):
-        log.debug(
-            "Processing Logs %s:node %s:internal id %s from container",
-            self.task.project_id,
-            self.task.node_id,
-            self.task.internal_id,
-        )
+        log.debug("Processing Logs...")
         await self._post_messages(
             LogType.LOG, f"[sidecar]Uploading logs...",
         )
@@ -364,12 +323,7 @@ class Executor:
             await node_data.data_manager.push(
                 self.shared_folders.log_folder, rename_to="logs"
             )
-        log.debug(
-            "Processing Logs DONE %s:node %s:internal id %s from container",
-            self.task.project_id,
-            self.task.node_id,
-            self.task.internal_id,
-        )
+        log.debug("Processing Logs DONE")
 
     async def _post_messages(self, log_type: LogType, message: str):
         if log_type == LogType.LOG:
