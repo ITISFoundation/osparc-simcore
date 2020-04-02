@@ -36,6 +36,7 @@ from pathlib import Path
             LogType.LOG,
             "[task] any kind of message even with progress inside",
         ),
+        ("[PROGRESS]1.000000\n", LogType.PROGRESS, "1.000000"),
     ],
 )
 async def test_parse_line(log, expected_log_type, expected_parsed_message):

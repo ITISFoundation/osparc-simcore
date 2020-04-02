@@ -16,7 +16,7 @@ class LogType(Enum):
 
 
 progress_regexp = re.compile(
-    r"\[?progress[\]:]?\s*(0?\.\d+|\d+(%)|\d+\s*(percent)|(\d+\/\d+))"
+    r"\[?progress[\]:]?\s*([0-1]?\.\d+|\d+(%)|\d+\s*(percent)|(\d+\/\d+))"
 )
 
 
