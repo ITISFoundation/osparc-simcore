@@ -122,7 +122,7 @@ class ResponsesQueue {
   async waitUntilServiceReady(studyId, nodeId, timeout = 30000) {
     const url = "projects/" + studyId +"/nodes/" + nodeId;
     const resp = await this.waitUntilResponse(url, timeout);
-    const status = resp["service_state"];
+    const status = resp["data"]["service_state"];
     if (status !== "running") {
       throw("-- Failed starting service" + nodeId + ":" + status);
     }
