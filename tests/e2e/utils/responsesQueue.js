@@ -66,6 +66,38 @@ class ResponsesQueue {
     });
   }
 
+  addResponseServiceListener(studyId, nodeId) {
+    const url = "projects/" + studyId +"/nodes/" + nodeId;
+    this.__addRequestListener(url);
+
+    const page = this.__page;
+    const respPendingQueue = this.__respPendingQueue;
+    respPendingQueue.push(url);
+    const that = this;
+    page.on("response", function callback(resp) {
+      if (resp.url().includes(url) && resp.status() === 200) {
+        resp.json().then(data => {
+          console.log((new Date).toUTCString(), "-- Queued services status response received", resp.url(), ":");
+          const status = data["service_state"];
+          console.log("Status:", status);
+          const stopListening = [
+            "running",
+            "complete",
+            "failed"
+          ];
+          if (stopListening.includes(status)) {
+            that.__respReceivedQueue[url] = data;
+            page.removeListener("response", callback);
+            const index = respPendingQueue.indexOf(url);
+            if (index > -1) {
+              respPendingQueue.splice(index, 1);
+            }
+          }
+        });
+      }
+    });
+  }
+
   async waitUntilResponse(url, timeout = 10000) {
     let sleptFor = 0;
     const sleepFor = 100;
@@ -85,6 +117,16 @@ class ResponsesQueue {
       delete this.__respReceivedQueue[url];
       return resp;
     }
+  }
+
+  async waitUntilServiceReady(studyId, nodeId, timeout = 30000) {
+    const url = "projects/" + studyId +"/nodes/" + nodeId;
+    const resp = await this.waitUntilResponse(url, timeout);
+    const status = resp["service_state"];
+    if (status !== "running") {
+      throw("-- Failed starting service" + nodeId + ":" + status);
+    }
+    return resp;
   }
 }
 
