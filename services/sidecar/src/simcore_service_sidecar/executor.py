@@ -297,8 +297,6 @@ class Sidecar:
             raise
 
     async def _process_task_output(self):
-        # pylint: disable=too-many-branches
-
         """ There will be some files in the /output
 
                 - Maybe a output.json (should contain key value for simple things)
@@ -317,11 +315,9 @@ class Sidecar:
             LogType.LOG, f"[sidecar]Uploading outputs...",
         )
         PORTS = await self._get_node_ports()
-        directory = self.shared_folders.output_folder
-        if not directory.exists():
-            return
         try:
-            for file_path in directory.rglob("*"):
+            file_upload_tasks = []
+            for file_path in self.shared_folders.output_folder.rglob("*"):
                 if file_path.name == "output.json":
                     log.debug("POSTRO FOUND output.json")
                     # parse and compare/update with the tasks output ports from db
@@ -332,8 +328,11 @@ class Sidecar:
                             if port.key in output_ports.keys():
                                 await port.set(output_ports[port.key])
                 else:
-                    log.debug("Uploading %s", file_path)
-                    await PORTS.set_file_by_keymap(file_path)
+                    log.debug("POSTPRO Found %s", file_path)
+                    file_upload_tasks.append(PORTS.set_file_by_keymap(file_path))
+            if file_upload_tasks:
+                log.debug("POSTPRO uploading files...")
+                await logged_gather(*file_upload_tasks)
         except json.JSONDecodeError:
             logging.exception("Error occured while decoding output.json")
         except node_ports.exceptions.NodeportsException:
