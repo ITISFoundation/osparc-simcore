@@ -76,22 +76,33 @@ def middleware_factory(app_name):
 
         return resp
 
-    middleware_handler.__middleware_name__ = __name__ # SEE check_outermost_middleware
+    middleware_handler.__middleware_name__ = __name__  # SEE check_outermost_middleware
     return middleware_handler
 
 
-async def check_outermost_middleware(app: web.Application):
-    first_middleware = app.middlewares[0]
-    if not (
-        first_middleware
-        and hasattr(first_middleware, "__middleware_name__")
-        and first_middleware.__middleware_name__ == __name__
-    ):
-        # TODO: name all middleware and list middleware in log
+async def check_outermost_middleware(
+    app: web.Application, *, log_failure: bool = True
+) -> bool:
+    try:
+        ok = app.middlewares[0].__middleware_name__ == __name__
+    except (IndexError, AttributeError):
+        ok = False
+
+    if not ok and log_failure:
+
+        def _view(m) -> str:
+            try:
+                return f"{m.__middleware_name__} [{m}]"
+            except AttributeError:
+                return str(m)
+
         log.critical(
-            "Monitoring middleware expected in the outermost layer."
-            "TIP: Check setup order"
+            "Monitoring middleware expected in the outermost layer. "
+            "Middleware stack: %s. "
+            "TIP: Check setup order",
+            [_view(m) for m in app.middlewares],
         )
+    return ok
 
 
 def setup_monitoring(app: web.Application, app_name: str):
