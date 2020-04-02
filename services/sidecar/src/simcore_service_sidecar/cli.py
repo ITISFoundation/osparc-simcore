@@ -5,7 +5,7 @@ import click
 
 from .core import inspect
 from .db import DBContextManager
-from .rabbitmq import RabbitMQContextManager
+from .rabbitmq import RabbitMQ
 from .utils import wrap_async_call
 
 log = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ async def run_sidecar(
 ) -> List[str]:
 
     async with DBContextManager() as db_engine:
-        async with RabbitMQContextManager() as rabbit_mq:
+        async with RabbitMQ() as rabbit_mq:
             next_task_nodes = await inspect(
                 db_engine, rabbit_mq, job_id, user_id, project_id, node_id=node_id
             )

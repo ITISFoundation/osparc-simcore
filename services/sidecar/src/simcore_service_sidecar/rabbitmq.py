@@ -124,16 +124,3 @@ async def _wait_till_rabbit_responsive(url: str):
     connection = await aio_pika.connect(url)
     await connection.close()
     return True
-
-
-class RabbitMQContextManager:
-    def __init__(self):
-        self._rabbit_mq: RabbitMQ = None
-
-    async def __aenter__(self):
-        self._rabbit_mq = RabbitMQ()
-        await self._rabbit_mq.connect()
-        return self._rabbit_mq
-
-    async def __aexit__(self, exc_type, exc, tb):
-        await self._rabbit_mq.close()
