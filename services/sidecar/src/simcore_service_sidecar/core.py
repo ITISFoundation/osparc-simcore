@@ -18,7 +18,7 @@ from simcore_sdk import node_ports
 from simcore_sdk.node_ports import log as node_port_log
 
 from . import config, exceptions
-from .executor import Sidecar
+from .executor import Executor
 from .rabbitmq import RabbitMQ
 from .utils import execution_graph, find_entry_point, is_node_ready
 
@@ -143,7 +143,7 @@ async def inspect(
     run_result = SUCCESS
     next_task_nodes = []
     try:
-        sidecar = Sidecar(
+        sidecar = Executor(
             db_engine=db_engine, rabbit_mq=rabbit_mq, task=task, user_id=user_id,
         )
         await sidecar.run()

@@ -47,7 +47,7 @@ class TaskSharedVolumes:
 
 
 @attr.s(auto_attribs=True)
-class Sidecar:
+class Executor:
     db_engine: aiopg.sa.Engine = None
     db_manager: DBManager = None
     rabbit_mq: RabbitMQ = None
