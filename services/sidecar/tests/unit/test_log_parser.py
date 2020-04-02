@@ -1,4 +1,4 @@
-from simcore_service_sidecar.file_log_parser import (
+from simcore_service_sidecar.log_parser import (
     LogType,
     parse_line,
     monitor_logs_task,

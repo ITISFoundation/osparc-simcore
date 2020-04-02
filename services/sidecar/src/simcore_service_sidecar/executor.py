@@ -9,13 +9,14 @@ import aiodocker
 import aiopg
 import attr
 from celery.utils.log import get_task_logger
+from packaging import version
 
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_sdk import node_data, node_ports
 from simcore_sdk.node_ports.dbmanager import DBManager
 
 from . import config, exceptions
-from .file_log_parser import LogType, monitor_logs_task
+from .log_parser import LogType, monitor_logs_task
 from .rabbitmq import RabbitMQ
 
 log = get_task_logger(__name__)
@@ -55,7 +56,7 @@ class Executor:
     user_id: str = None
     stack_name: str = config.SWARM_STACK_NAME
     shared_folders: TaskSharedVolumes = None
-    integration_version: str = "0"
+    integration_version: version.Version = version.parse("0.0.0")
 
     async def run(self):
         log.debug(
@@ -87,19 +88,7 @@ class Executor:
     async def process(self):
         log.debug("Processing...")
         await self._post_messages(LogType.LOG, "[sidecar]Processing...")
-        # touch output file, so it's ready for the container (v0)
-        log_file = self.shared_folders.log_folder / "log.dat"
-        log_file.touch()
-
-        log_processor_task = fire_and_forget_task(
-            monitor_logs_task(log_file, self._post_messages)
-        )
         await self._run_container()
-
-        # stop monitoring logs now
-        log_processor_task.cancel()
-        await log_processor_task
-
         log.debug("Processing DONE")
 
     async def postprocess(self):
@@ -183,9 +172,11 @@ class Executor:
             image_cfg = await docker_client.images.inspect(docker_image)
             # NOTE: old services did not have that label
             if "io.simcore.integration-version" in image_cfg["Config"]["Labels"]:
-                self.integration_version = json.loads(
-                    image_cfg["Config"]["Labels"]["io.simcore.integration-version"]
-                )["integration-version"]
+                self.integration_version = version.parse(
+                    json.loads(
+                        image_cfg["Config"]["Labels"]["io.simcore.integration-version"]
+                    )["integration-version"]
+                )
 
         except aiodocker.exceptions.DockerError:
             msg = f"Failed to pull image '{docker_image}'"
@@ -197,6 +188,7 @@ class Executor:
         container = None
         docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
 
+        # NOTE: Env/Binds for log folder is only necessary for integraion "0"
         docker_container_config = {
             "Env": [
                 f"{name.upper()}_FOLDER=/{name}/{self.task.job_id}"
@@ -233,10 +225,24 @@ class Executor:
                 LogType.LOG,
                 f"[sidecar]Running {self.task.image['name']}:{self.task.image['tag']}...",
             )
-            container = await docker_client.containers.run(
+            container = await docker_client.containers.create(
                 config=docker_container_config
             )
+            # start monitoring logs
+            if self.integration_version == version.parse("0.0.0"):
+                # touch output file, so it's ready for the container (v0)
+                log_file = self.shared_folders.log_folder / "log.dat"
+                log_file.touch()
 
+                log_processor_task = fire_and_forget_task(
+                    monitor_logs_task(log_file, self._post_messages)
+                )
+            else:
+                log_processor_task = fire_and_forget_task(
+                    monitor_logs_task(container, self._post_messages)
+                )
+            # start the container
+            await container.start()
             # wait until the container finished, either success or fail or timeout
             container_data = await container.show()
             while container_data["State"]["Running"]:
@@ -249,19 +255,16 @@ class Executor:
                     log.error(
                         "Running container timed-out after %ss and will be stopped now\nlogs: %s",
                         config.SERVICES_TIMEOUT_SECONDS,
-                        await container.logs(stdout=True, stderr=True),
+                        container.log(stdout=True, stderr=True),
                     )
                     await container.stop()
                     break
 
-            # reload container data
+            # reload container data to check the error code with latest info
             container_data = await container.show()
             if container_data["State"]["ExitCode"] > 0:
-                log.error(
-                    "%s completed with error code %s: %s",
-                    docker_image,
-                    container_data["State"]["ExitCode"],
-                    container_data["State"]["Error"],
+                raise exceptions.SidecarException(
+                    f"{docker_image} completed with error code {container_data['State']['ExitCode']}: {container_data['State']['Error']}"
                 )
             else:
                 # ensure progress 1.0 is sent
@@ -285,6 +288,9 @@ class Executor:
             if container:
                 # clean up the container
                 await container.delete(force=True)
+            # stop monitoring logs now
+            log_processor_task.cancel()
+            await log_processor_task
 
     async def _process_task_output(self):
         """ There will be some files in the /output

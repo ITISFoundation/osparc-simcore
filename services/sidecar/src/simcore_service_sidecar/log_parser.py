@@ -3,9 +3,12 @@ import logging
 import re
 from enum import Enum
 from pathlib import Path
-from typing import Awaitable, Callable, Tuple
+from typing import Awaitable, Callable, Tuple, Union
 
 import aiofiles
+from aiodocker.containers import DockerContainer
+
+from . import exceptions
 
 log = logging.getLogger(__name__)
 
@@ -53,30 +56,45 @@ async def parse_line(line: str) -> Tuple[LogType, str]:
 
 
 async def monitor_logs_task(
-    log_file: Path, log_cb: Awaitable[Callable[[LogType, str], None]]
+    log_file_or_container: Union[Path, DockerContainer],
+    log_cb: Awaitable[Callable[[LogType, str], None]],
 ) -> None:
     try:
-        log.debug("start monitoring log in %s", log_file)
-        async with aiofiles.open(log_file, mode="r") as fp:
-            log.debug("log monitoring: opened %s", log_file)
-            await fp.seek(0, 2)
-            await monitor_logs(fp, log_cb)
+        if isinstance(log_file_or_container, Path):
+            log.debug("start monitoring log in %s", log_file_or_container)
+            await _monitor_log_file(log_file_or_container, log_cb)
+        elif isinstance(log_file_or_container, DockerContainer):
+            log.debug("start monitoring docker logs of %s", log_file_or_container)
+            await _monitor_docker_container(log_file_or_container, log_cb)
+        else:
+            raise exceptions.SidecarException("Invalid log type")
 
     except asyncio.CancelledError:
         # user cancels
-        log.debug("stop monitoring log in %s", log_file)
+        log.debug("stop monitoring logs in")
 
 
-async def monitor_logs(
-    file_pointer, log_cb: Awaitable[Callable[[LogType, str], None]]
+async def _monitor_docker_container(
+    container: DockerContainer, log_cb: Awaitable[Callable[[LogType, str], None]]
 ) -> None:
-    while True:
-        # try to read line
-        line = await file_pointer.readline()
-        if not line:
-            asyncio.sleep(1)
-            continue
-        log.debug("log monitoring: found log %s", line)
+    async for line in container.log(stdout=True, stderr=True, follow=True):
         log_type, parsed_line = await parse_line(line)
-
         await log_cb(log_type, parsed_line)
+
+
+async def _monitor_log_file(
+    log_file, log_cb: Awaitable[Callable[[LogType, str], None]]
+) -> None:
+    async with aiofiles.open(log_file, mode="r") as file_pointer:
+        log.debug("log monitoring: opened %s", log_file)
+        await file_pointer.seek(0, 2)
+        while True:
+            # try to read line
+            line = await file_pointer.readline()
+            if not line:
+                asyncio.sleep(1)
+                continue
+            log.debug("log monitoring: found log %s", line)
+            log_type, parsed_line = await parse_line(line)
+
+            await log_cb(log_type, parsed_line)
