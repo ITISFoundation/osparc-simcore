@@ -59,7 +59,11 @@ def create_pipeline(postgres_session: sa.orm.session.Session, project_id: str):
 
 
 @pytest.fixture
-def sidecar_config(postgres_dsn: Dict[str, str], docker_registry: str) -> None:
+def sidecar_config(
+    postgres_dsn: Dict[str, str],
+    docker_registry: str,
+    rabbit_config: config.RabbitConfig,
+) -> None:
     # NOTE: in integration tests the sidecar runs bare-metal which means docker volume cannot be used.
     config.SIDECAR_DOCKER_VOLUME_INPUT = Path.home() / f"input"
     config.SIDECAR_DOCKER_VOLUME_OUTPUT = Path.home() / f"output"
@@ -73,6 +77,8 @@ def sidecar_config(postgres_dsn: Dict[str, str], docker_registry: str) -> None:
     config.POSTGRES_ENDPOINT = f"{postgres_dsn['host']}:{postgres_dsn['port']}"
     config.POSTGRES_USER = postgres_dsn["user"]
     config.POSTGRES_PW = postgres_dsn["password"]
+
+    config.RABBIT_CONFIG = rabbit_config
 
 
 def _assert_incoming_data_logs(
