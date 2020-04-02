@@ -16,7 +16,7 @@ class ResponsesQueue {
     return this.__respPendingQueue.includes(url);
   }
 
-  addResponseListener(url) {
+  __addRequestListener(url) {
     const page = this.__page;
     const reqQueue = this.__reqQueue;
     const respPendingQueue = this.__respPendingQueue;
@@ -33,6 +33,12 @@ class ResponsesQueue {
         }
       }
     });
+  }
+
+  addResponseListener(url) {
+    this.__addRequestListener(url);
+
+    const respPendingQueue = this.__respPendingQueue;
     const that = this;
     page.on("response", function callback(resp) {
       if (resp.url().includes(url)) {
