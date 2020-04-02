@@ -19,6 +19,7 @@ from .rest_responses import (
 )
 from .rest_utils import EnvelopeFactory
 from .rest_validators import OpenApiValidator
+from .utils import is_production_environ
 
 DEFAULT_API_VERSION = "v0"
 
@@ -31,12 +32,17 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
     return request.path.startswith(base_path)
 
 
-def error_middleware_factory(api_version: str = DEFAULT_API_VERSION, log_exceptions=True):
+def error_middleware_factory(
+    api_version: str = DEFAULT_API_VERSION, log_exceptions=True
+):
+    _is_prod: bool = is_production_environ()
 
     def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
-        # FIXME: send info + trace to client ONLY in debug mode!!!
         resp = create_error_response(
-            [err,], "Unexpected Server error", web.HTTPInternalServerError
+            [err,],
+            "Unexpected Server error",
+            web.HTTPInternalServerError,
+            skip_internal_error_details=_is_prod,
         )
 
         if log_exceptions:
@@ -51,7 +57,6 @@ def error_middleware_factory(api_version: str = DEFAULT_API_VERSION, log_excepti
                 stack_info=True,
             )
         raise resp
-
 
     @web.middleware
     async def _middleware_handler(request: web.Request, handler):
@@ -155,6 +160,8 @@ def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
 
 
 def envelope_middleware_factory(api_version: str = DEFAULT_API_VERSION):
+    _is_prod: bool = is_production_environ()
+
     @web.middleware
     async def _middleware_handler(request: web.Request, handler):
         """
@@ -166,7 +173,9 @@ def envelope_middleware_factory(api_version: str = DEFAULT_API_VERSION):
         resp = await handler(request)
 
         if not isinstance(resp, web.Response):
-            response = create_data_response(data=resp)
+            response = create_data_response(
+                data=resp, skip_internal_error_details=_is_prod,
+            )
         else:
             # Enforced by user. Should check it is json?
             response = resp

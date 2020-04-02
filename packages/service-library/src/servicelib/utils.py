@@ -6,10 +6,21 @@ IMPORTANT: lowest level module
 """
 import asyncio
 import logging
+import os
 from pathlib import Path
 from typing import Any, Coroutine, List, Optional, Union
 
 logger = logging.getLogger(__name__)
+
+
+def is_production_environ() -> bool:
+    """ 
+        If True, this code most probably 
+        runs in a production container of one of the 
+        osparc-simcore services.
+    """
+    # WARNING: based on a convention that is not constantly verified
+    return os.environ.get("SC_BUILD_TARGET") == "production"
 
 
 def is_osparc_repo_dir(path: Path) -> bool:
