@@ -55,6 +55,7 @@ class Executor:
     user_id: str = None
     stack_name: str = config.SWARM_STACK_NAME
     shared_folders: TaskSharedVolumes = None
+    integration_version: str = "0"
 
     async def run(self):
         log.debug(
@@ -177,6 +178,15 @@ class Executor:
                     "password": config.DOCKER_PASSWORD,
                 },
             )
+
+            # get integration version
+            image_cfg = await docker_client.images.inspect(docker_image)
+            # NOTE: old services did not have that label
+            if "io.simcore.integration-version" in image_cfg["Config"]["Labels"]:
+                self.integration_version = json.loads(
+                    image_cfg["Config"]["Labels"]["io.simcore.integration-version"]
+                )["integration-version"]
+
         except aiodocker.exceptions.DockerError:
             msg = f"Failed to pull image '{docker_image}'"
             log.exception(msg)
