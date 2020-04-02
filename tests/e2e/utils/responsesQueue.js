@@ -19,9 +19,7 @@ class ResponsesQueue {
   __addRequestListener(url) {
     const page = this.__page;
     const reqQueue = this.__reqQueue;
-    const respPendingQueue = this.__respPendingQueue;
     reqQueue.push(url);
-    respPendingQueue.push(url);
     console.log("-- Expected response added to queue", url);
     page.on("request", function callback(req) {
       if (req.url().includes(url)) {
@@ -38,7 +36,9 @@ class ResponsesQueue {
   addResponseListener(url) {
     this.__addRequestListener(url);
 
+    const page = this.__page;
     const respPendingQueue = this.__respPendingQueue;
+    respPendingQueue.push(url);
     const that = this;
     page.on("response", function callback(resp) {
       if (resp.url().includes(url)) {
