@@ -8,6 +8,14 @@ class ResponsesQueue {
     this.__respReceivedQueue = {};
   }
 
+  isRequestInQueue(url) {
+    return this.__reqQueue.includes(url);
+  }
+
+  isResponseInQueue(url) {
+    return this.__respPendingQueue.includes(url);
+  }
+
   addResponseListener(url) {
     const page = this.__page;
     const reqQueue = this.__reqQueue;
@@ -50,14 +58,6 @@ class ResponsesQueue {
         }
       }
     });
-  }
-
-  isRequestInQueue(url) {
-    return this.__reqQueue.includes(url);
-  }
-
-  isResponseInQueue(url) {
-    return this.__respPendingQueue.includes(url);
   }
 
   async waitUntilResponse(url, timeout = 10000) {
