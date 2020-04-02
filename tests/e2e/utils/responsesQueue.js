@@ -78,7 +78,7 @@ class ResponsesQueue {
       if (resp.url().includes(url) && resp.status() === 200) {
         resp.json().then(data => {
           console.log((new Date).toUTCString(), "-- Queued services status response received", resp.url(), ":");
-          const status = data["service_state"];
+          const status = data["data"]["service_state"];
           console.log("Status:", status);
           const stopListening = [
             "running",
