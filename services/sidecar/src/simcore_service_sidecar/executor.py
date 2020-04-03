@@ -266,10 +266,9 @@ class Executor:
                 raise exceptions.SidecarException(
                     f"{docker_image} completed with error code {container_data['State']['ExitCode']}: {container_data['State']['Error']}"
                 )
-            else:
-                # ensure progress 1.0 is sent
-                await self._post_messages(LogType.PROGRESS, "1.0")
-                log.info("%s completed with successfully!", docker_image)
+            # ensure progress 1.0 is sent
+            await self._post_messages(LogType.PROGRESS, "1.0")
+            log.info("%s completed with successfully!", docker_image)
         except aiodocker.exceptions.DockerContainerError:
             log.exception(
                 "Error while running %s with parameters %s",
