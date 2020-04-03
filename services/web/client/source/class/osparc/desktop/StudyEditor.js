@@ -594,7 +594,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__nodeView._maximizeIFrame(false); // eslint-disable-line no-underscore-dangle
       const node = this.getStudy().getWorkbench().getNode(this.__currentNodeId);
       if (node && node.getIFrame() && !this.__nodeView.isSettingsGroupShowable()) {
-        console.log("maximizeIFrame");
         node.getIFrame().maximizeIFrame(true);
       }
     },

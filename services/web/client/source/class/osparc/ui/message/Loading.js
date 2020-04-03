@@ -152,7 +152,6 @@ qx.Class.define("osparc.ui.message.Loading", {
 
     // from osparc.component.widget.PersistentIframe
     maximizeIFrame: function(maximize) {
-      const maxButton = this.__maxButton;
       if (maximize) {
         this.fireEvent("maximize");
         this.addState("maximized");
@@ -160,6 +159,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         this.fireEvent("restore");
         this.removeState("maximized");
       }
+      const maxButton = this.__maxButton;
       maxButton.setIcon(osparc.component.widget.PersistentIframe.getIcon(maximize));
       osparc.utils.Utils.setIdToWidget(maxButton, osparc.component.widget.PersistentIframe.getMaximizeWidgetId(maximize));
       qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
