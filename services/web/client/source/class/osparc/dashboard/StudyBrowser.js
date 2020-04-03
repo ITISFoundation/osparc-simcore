@@ -129,11 +129,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __initResources: function() {
-      this.__showLoadingIFrame(this.tr("Loading studies"));
+      this.__showLoadingPage(this.tr("Loading studies"));
 
       this.__getTags()
         .then(() => {
-          this.__hideLoadingIFrame();
+          this.__hideLoadingPage();
           this.__createStudiesLayout();
           this.__reloadStudies();
           this.__attachEventHandlers();
@@ -343,7 +343,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createStudy: function(minStudyData, templateId) {
-      this.__showLoadingIFrame(this.tr("Creating Study"));
+      this.__showLoadingPage(this.tr("Creating Study"));
       if (templateId) {
         const params = {
           url: {
@@ -373,10 +373,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __startStudy: function(studyData) {
-      this.__showLoadingIFrame(this.tr("Starting Study"));
+      this.__showLoadingPage(this.tr("Starting Study"));
       osparc.store.Store.getInstance().getServices(false)
         .then(() => {
-          this.__hideLoadingIFrame();
+          this.__hideLoadingPage();
           this.__loadStudy(studyData);
         });
     },
@@ -692,8 +692,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return new osparc.ui.window.Confirmation(msg);
     },
 
-    __showLoadingIFrame: function(label) {
-      this.__hideLoadingIFrame();
+    __showLoadingPage: function(label) {
+      this.__hideLoadingPage();
 
       this.__showStudiesLayout(false);
 
@@ -707,7 +707,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
     },
 
-    __hideLoadingIFrame: function() {
+    __hideLoadingPage: function() {
       if (this.__loadingIFrame) {
         const idx = this._indexOf(this.__loadingIFrame);
         if (idx !== -1) {
