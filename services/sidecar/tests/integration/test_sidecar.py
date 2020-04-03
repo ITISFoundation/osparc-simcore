@@ -35,30 +35,6 @@ def user_id() -> int:
 
 
 @pytest.fixture
-def create_pipeline(postgres_session: sa.orm.session.Session, project_id: str):
-    def create(tasks: Dict[str, Any], dag: Dict) -> ComputationalPipeline:
-        # set the pipeline
-        pipeline = ComputationalPipeline(project_id=project_id, dag_adjacency_list=dag)
-        postgres_session.add(pipeline)
-        postgres_session.commit()
-        # now create the tasks
-        for node_uuid, service in tasks.items():
-            comp_task = ComputationalTask(
-                project_id=project_id,
-                node_id=node_uuid,
-                schema=service["schema"],
-                image=service["image"],
-                inputs={},
-                outputs={},
-            )
-            postgres_session.add(comp_task)
-            postgres_session.commit()
-        return pipeline
-
-    yield create
-
-
-@pytest.fixture
 def sidecar_config(
     postgres_dsn: Dict[str, str],
     docker_registry: str,
@@ -117,21 +93,79 @@ def _assert_incoming_data_logs(
     return (sidecar_logs, tasks_logs, progress_logs)
 
 
+@pytest.fixture
+def pipeline(
+    postgres_session: sa.orm.session.Session,
+    project_id: str,
+    osparc_service: Dict[str, str],
+    pipeline_cfg: Dict,
+) -> ComputationalPipeline:
+    """creates a full pipeline.
+        NOTE: 'pipeline', defined as parametrization
+    """
+
+    tasks = {key: osparc_service for key in pipeline_cfg.keys()}
+    dag = {key: pipeline_cfg[key]["next"] for key in pipeline_cfg.keys()}
+
+    def create(tasks: Dict[str, Any], dag: Dict) -> ComputationalPipeline:
+        # set the pipeline
+        pipeline = ComputationalPipeline(project_id=project_id, dag_adjacency_list=dag)
+        postgres_session.add(pipeline)
+        postgres_session.commit()
+        # now create the tasks
+        for node_uuid, service in tasks.items():
+            comp_task = ComputationalTask(
+                project_id=project_id,
+                node_id=node_uuid,
+                schema=service["schema"],
+                image=service["image"],
+                inputs={},
+                outputs={},
+            )
+            postgres_session.add(comp_task)
+            postgres_session.commit()
+        return pipeline
+
+    yield create(tasks, dag)
+
+
 @pytest.mark.parametrize(
-    "service_repo, service_tag",
+    "service_repo, service_tag, pipeline_cfg",
     [
-        ("itisfoundation/sleeper", "1.0.0"),
-        ("itisfoundation/osparc-python-runner", "1.0.0"),
+        (
+            "itisfoundation/sleeper",
+            "1.0.0",
+            {
+                "node_1": {"next": ["node_2", "node_3"], "inputs": [],},
+                "node_2": {"next": ["node_4"], "inputs": [],},
+                "node_3": {"next": ["node_4"], "inputs": [],},
+                "node_4": {"next": [], "inputs": [],},
+            },
+        ),
+        (
+            "itisfoundation/osparc-python-runner",
+            "1.0.0",
+            {
+                "node_1": {
+                    "next": ["node_2", "node_3"],
+                    "inputs": ["file:osparc_python_sample.py"],
+                },
+                "node_2": {"next": ["node_4"], "inputs": ["node_1:output_1"]},
+                "node_3": {"next": ["node_4"], "inputs": ["node_1:output_1"]},
+                "node_4": {"next": [], "inputs": ["node_2:output_1"]},
+            },
+        ),
     ],
 )
 async def test_run_services(
     loop,
     postgres_session: sa.orm.session.Session,
-    rabbit_queue,
+    rabbit_queue: aio_pika.Queue,
     storage_service: URL,
     osparc_service: Dict[str, str],
     sidecar_config: None,
-    create_pipeline,
+    pipeline: ComputationalPipeline,
+    pipeline_cfg: Dict,
     user_id: int,
     mocker,
 ):
@@ -145,22 +179,6 @@ async def test_run_services(
 
     job_id = 1
 
-    tasks = {
-        "node_1": osparc_service,
-        "node_2": osparc_service,
-        "node_3": osparc_service,
-        "node_4": osparc_service,
-    }
-    pipeline = create_pipeline(
-        tasks=tasks,
-        dag={
-            "node_1": ["node_2", "node_3"],
-            "node_2": ["node_4"],
-            "node_3": ["node_4"],
-            "node_4": [],
-        },
-    )
-
     from simcore_service_sidecar import cli
 
     next_task_nodes = await cli.run_sidecar(job_id, user_id, pipeline.project_id, None)
@@ -168,7 +186,7 @@ async def test_run_services(
     assert not incoming_data
 
     assert len(next_task_nodes) == 1
-    assert next_task_nodes[0] == "node_1"
+    assert next_task_nodes[0] == next(iter(pipeline_cfg))
 
     for node_id in next_task_nodes:
         job_id += 1
@@ -177,8 +195,11 @@ async def test_run_services(
         )
         if next_tasks:
             next_task_nodes.extend(next_tasks)
-    assert next_task_nodes == ["node_1", "node_2", "node_3", "node_4", "node_4"]
+    dag = [next_task_nodes[0]]
+    for key in pipeline_cfg:
+        dag.extend(pipeline_cfg[key]["next"])
+    assert next_task_nodes == dag
 
     _assert_incoming_data_logs(
-        list(tasks.keys()), incoming_data, user_id, pipeline.project_id
+        list(pipeline_cfg.keys()), incoming_data, user_id, pipeline.project_id
     )
