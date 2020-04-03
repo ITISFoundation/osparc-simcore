@@ -129,5 +129,6 @@ FROM build as development
 ENV SC_BUILD_TARGET=development
 
 WORKDIR /devel
+RUN chown -R scu:scu ${VIRTUAL_ENV}
 ENTRYPOINT [ "/bin/sh", "services/sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/sidecar/docker/boot.sh"]

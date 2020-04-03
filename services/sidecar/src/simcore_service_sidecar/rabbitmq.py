@@ -13,13 +13,22 @@ from simcore_sdk.config.rabbit import Config as RabbitConfig
 log = logging.getLogger(__file__)
 
 
-def reconnect_callback():
-    log.error("Rabbit reconnected")
-
-
-def channel_close_callback(exc: Optional[BaseException]):
+def _close_callback(exc: Optional[BaseException]):
     if exc:
-        log.error("Rabbit channel closed: %s", exc)
+        log.error("Rabbit connection closed with exception: %s", exc)
+    else:
+        log.info("Rabbit connection closed")
+
+
+def _reconnect_callback():
+    log.warning("Rabbit connection reconnected")
+
+
+def _channel_close_callback(exc: Optional[BaseException]):
+    if exc:
+        log.error("Rabbit channel closed with exception: %s", exc)
+    else:
+        log.info("Rabbit channel closed")
 
 
 class RabbitMQ(BaseModel):
@@ -36,18 +45,19 @@ class RabbitMQ(BaseModel):
     async def connect(self):
         url = self.config.broker_url
         log.debug("Connecting to %s", url)
-        await wait_till_rabbit_responsive(url)
+        await _wait_till_rabbit_responsive(url)
 
         # NOTE: to show the connection name in the rabbitMQ UI see there [https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url]
         self.connection = await aio_pika.connect_robust(
             url + f"?name={__name__}_{id(socket.gethostname())}",
             client_properties={"connection_name": "sidecar connection"},
         )
-        self.connection.add_reconnect_callback(reconnect_callback)
+        self.connection.add_close_callback(_close_callback)
+        self.connection.add_reconnect_callback(_reconnect_callback)
 
         log.debug("Creating channel")
         self.channel = await self.connection.channel(publisher_confirms=False)
-        self.channel.add_close_callback(channel_close_callback)
+        self.channel.add_close_callback(_channel_close_callback)
 
         log.debug("Declaring %s exchange", self.config.channels["log"])
         self.logs_exchange = await self.channel.declare_exchange(
@@ -101,22 +111,16 @@ class RabbitMQ(BaseModel):
             },
         )
 
+    async def __aenter__(self):
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.close()
+
 
 @tenacity.retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
-async def wait_till_rabbit_responsive(url: str):
+async def _wait_till_rabbit_responsive(url: str):
     connection = await aio_pika.connect(url)
     await connection.close()
     return True
-
-
-class RabbitMQContextManager:
-    def __init__(self):
-        self._rabbit_mq: RabbitMQ = None
-
-    async def __aenter__(self):
-        self._rabbit_mq = RabbitMQ()
-        await self._rabbit_mq.connect()
-        return self._rabbit_mq
-
-    async def __aexit__(self, exc_type, exc, tb):
-        await self._rabbit_mq.close()

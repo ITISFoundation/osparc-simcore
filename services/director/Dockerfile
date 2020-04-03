@@ -137,5 +137,6 @@ FROM build as development
 ENV SC_BUILD_TARGET=development
 ENV NODE_SCHEMA_LOCATION=../../../api/specs/common/schemas/node-meta-v0.0.1.json
 WORKDIR /devel
+RUN chown -R scu:scu ${VIRTUAL_ENV}
 ENTRYPOINT [ "/bin/sh", "services/director/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/director/docker/boot.sh"]
