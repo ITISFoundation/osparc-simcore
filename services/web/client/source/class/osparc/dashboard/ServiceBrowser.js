@@ -50,7 +50,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       flex: 1
     });
 
-    this.__initResources(loadingPage);
+    this.__initResources();
   },
 
   members: {
@@ -75,14 +75,13 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       }
     },
 
-    __initResources: function(loadingPage) {
+    __initResources: function() {
       const store = osparc.store.Store.getInstance();
       store.getServices(true)
         .then(services => {
           // Do not validate if are not taking actions
           // this.__nodeCheck(services);
           this._removeAll();
-          loadingPage.dispose();
           this.__createServicesLayout();
           this.__populateList(false);
           this.__attachEventHandlers();
