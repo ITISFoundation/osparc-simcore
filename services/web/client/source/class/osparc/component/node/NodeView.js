@@ -82,22 +82,45 @@ qx.Class.define("osparc.component.node.NodeView", {
       return false;
     },
 
-    _addIFrame: function() {
-      this._iFrameLayout.removeAll();
-
+    __iFrameChanged: function() {
+      const loadingPage = this.getNode().getLoadingPage();
       const iFrame = this.getNode().getIFrame();
-      if (iFrame) {
-        iFrame.addListener("maximize", e => {
-          this._maximizeIFrame(true);
-        }, this);
-        iFrame.addListener("restore", e => {
-          this._maximizeIFrame(false);
-        }, this);
-        this._maximizeIFrame(iFrame.hasState("maximized"));
+
+      this._iFrameLayout.removeAll();
+      const src = iFrame.getSource();
+      if (src === null || src === "about:blank") {
+        this._iFrameLayout.add(loadingPage, {
+          flex: 1
+        });
+      } else {
         this._iFrameLayout.add(iFrame, {
           flex: 1
         });
       }
+    },
+
+    _addIFrame: function() {
+      const loadingPage = this.getNode().getLoadingPage();
+      const iFrame = this.getNode().getIFrame();
+      [
+        loadingPage,
+        iFrame
+      ].forEach(widget => {
+        if (widget) {
+          widget.addListener("maximize", e => {
+            this._maximizeIFrame(true);
+          }, this);
+          widget.addListener("restore", e => {
+            this._maximizeIFrame(false);
+          }, this);
+          this._maximizeIFrame(widget.hasState("maximized"));
+        }
+      });
+      this.__iFrameChanged();
+
+      iFrame.addListener("load", () => {
+        this.__iFrameChanged();
+      });
 
       this._addToMainView(this._iFrameLayout, {
         flex: 1
