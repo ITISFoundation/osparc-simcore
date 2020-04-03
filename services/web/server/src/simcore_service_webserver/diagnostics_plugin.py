@@ -53,20 +53,20 @@ def setup_diagnostics(
     if max_task_delay is None:
         max_task_delay = max(
             10 * slow_duration_secs,
-            float(os.environ.get("WEBSERVER_DIAGNOSTICS_MAX_TASK_DELAY", 0)),
+            float(os.environ.get("DIAGNOSTICS_MAX_TASK_DELAY", 0)),
         )  # secs
 
     app[kMAX_TASK_DELAY] = max_task_delay
     log.info("max_task_delay = %3.2f secs ", max_task_delay)
 
     #
-    # Sets a threashold to the mean latency of the last N request slower
+    # Sets a threshold to the mean latency of the last N request slower
     # than 1 sec is monitored.
     # Aims to control large slowdowns in responses
     #
     if max_avg_response_latency is None:
         max_avg_response_latency = float(
-            os.environ.get("WEBSERVER_DIAGNOSTICS_MAX_AVG_RESPONSE_LATENCY", 3)
+            os.environ.get("DIAGNOSTICS_MAX_AVG_LATENCY", 3)
         )  # secs
 
     app[kMAX_AVG_RESP_LATENCY] = max_avg_response_latency
