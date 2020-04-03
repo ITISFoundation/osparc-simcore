@@ -2,7 +2,6 @@
 
 
 """
-import asyncio
 import logging
 
 from aiohttp import web
@@ -12,22 +11,16 @@ from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_utils import body_to_dict, extract_and_validate
 
 from . import __version__
-from .diagnostics import DiagnosticError, assert_healthy_app
-from .utils import get_task_info, get_tracemalloc_info
 
 log = logging.getLogger(__name__)
 
-
-async def check_health(request: web.Request):
-
-    # diagnostics of incidents
-    try:
-        assert_healthy_app(request.app)
-    except DiagnosticError as err:
-        msg = f"Unhealthy service: {err}"
-        log.error(msg)
-        raise web.HTTPServiceUnavailable(reason=msg)
-
+async def check_running(_request: web.Request):
+    #
+    # - This entry point is used as a fast way 
+    #   to check that the service is still running
+    # - Do not do add any expensive computatio here
+    # - Healthcheck has been moved to diagnostics module
+    #
     data = {
         "name": __name__.split(".")[0],
         "version": str(__version__),
@@ -35,7 +28,6 @@ async def check_health(request: web.Request):
         "api_version": str(__version__),
     }
     return data
-
 
 async def check_action(request: web.Request):
     params, query, body = await extract_and_validate(request)
@@ -79,19 +71,3 @@ async def get_config(request: web.Request):
     }
 
     return data
-
-
-async def get_diagnostics(request: web.Request):
-    """
-        Usage
-            /v0/diagnostics?top_tracemalloc=10 with display top 10 files allocating the most memory
-    """
-    # tasks in loop
-    data = {"loop_tasks": [get_task_info(task) for task in asyncio.Task.all_tasks()]}
-
-    # allocated memory
-    if request.query.get("top_tracemalloc", False):
-        top = int(request.query["top_tracemalloc"])
-        data.update({"top_tracemalloc": get_tracemalloc_info(top)})
-
-    return web.json_response(data)
