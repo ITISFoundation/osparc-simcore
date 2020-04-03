@@ -43,7 +43,7 @@ def middleware_factory(app_name: str) -> Coroutine:
             resp = await handler(request)
             log_exception = None
 
-            assert isinstance(resp, web.Response), "Forgot envelope middleware?"  # nsec
+            assert isinstance(resp, web.StreamResponse), "Forgot envelope middleware?"  # nsec
 
         except web.HTTPServerError as exc:
             # Transforms exception into response object and log exception
@@ -62,10 +62,6 @@ def middleware_factory(app_name: str) -> Coroutine:
             log_exception = exc
 
         finally:
-            assert isinstance(  # nsec
-                resp, web.Response  # nsec
-            ), "Forgot envelope middleware or transformation?"  # nsec
-
             resp_time_secs: float = time.time() - request[kSTART_TIME]
 
             exc_name = ""
@@ -73,7 +69,10 @@ def middleware_factory(app_name: str) -> Coroutine:
                 exc_name: str = log_exception.__class__.__name__
 
             # Probes request latency
-            request.app[kLATENCY_PROBE].observe(resp_time_secs)
+            # NOTE: sockets connection is long
+            # FIXME: tmp by hand, add filters directly in probe
+            if not str(request.path).startswith("/socket.io"):
+                request.app[kLATENCY_PROBE].observe(resp_time_secs)
 
             # prometheus probes
             request.app[kREQUEST_LATENCY].labels(app_name, request.path).observe(

@@ -154,9 +154,10 @@ ENV SC_BUILD_TARGET development
 ENV SIMCORE_WEB_OUTDIR /devel/services/web/client
 
 WORKDIR /devel
-VOLUME  /devel/packages
-VOLUME  /devel/services/web/server/
-VOLUME  /devel/services/web/client/
+
+# NOTE: declaring VOLUMEs here makes troubles mounting 
+#       the client's output folder to /devel/services/web/client.
+#       The latter ls no files
 
 ENTRYPOINT [ "/bin/sh", "services/web/server/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/web/server/docker/boot.sh"]
