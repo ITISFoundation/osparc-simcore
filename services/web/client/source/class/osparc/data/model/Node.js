@@ -157,6 +157,12 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: true
     },
 
+    loadingPage: {
+      check: "osparc.ui.message.Loading",
+      init: null,
+      nullable: true
+    },
+
     iFrame: {
       check: "osparc.component.widget.PersistentIframe",
       init: null,
@@ -368,7 +374,8 @@ qx.Class.define("osparc.data.model.Node", {
       }
 
       if (this.isDynamic()) {
-        this.__showLoadingIFrame();
+        this.__initLoadingIPage();
+        this.__initIFrame();
       }
     },
 
@@ -756,24 +763,22 @@ qx.Class.define("osparc.data.model.Node", {
       return true;
     },
 
-    __showLoadingIFrame: function() {
-      const loadingUri = osparc.utils.Utils.getLoaderUri("Starting Service");
-      this.__restartIFrame(loadingUri);
+    __initLoadingIPage: function() {
+      const loadingPage = new osparc.ui.message.Loading(this.tr("Starting Service"), [], true);
+      this.setLoadingPage(loadingPage);
     },
 
-    __restartIFrame: function(loadThis) {
-      if (this.getIFrame() === null) {
-        const iframe = new osparc.component.widget.PersistentIframe();
-        osparc.utils.Utils.setIdToWidget(iframe, "PersistentIframe");
-        iframe.addListener("restart", () => {
-          this.__restartIFrame();
-        }, this);
-        this.setIFrame(iframe);
-      }
-      if (loadThis) {
-        this.getIFrame().resetSource();
-        this.getIFrame().setSource(loadThis);
-      } else if (this.getServiceUrl() !== null) {
+    __initIFrame: function() {
+      const iframe = new osparc.component.widget.PersistentIframe();
+      osparc.utils.Utils.setIdToWidget(iframe, "PersistentIframe");
+      iframe.addListener("restart", () => {
+        this.__restartIFrame();
+      }, this);
+      this.setIFrame(iframe);
+    },
+
+    __restartIFrame: function() {
+      if (this.getServiceUrl() !== null) {
         this.getIFrame().resetSource();
         if (this.getKey().includes("3d-viewer")) {
           // HACK: add this argument to only load the defined colorMaps
@@ -886,7 +891,6 @@ qx.Class.define("osparc.data.model.Node", {
     addDynamicButtons: function() {
       if (this.isDynamic() && this.isRealService()) {
         this.__addRetrieveButton();
-        this.__showLoadingIFrame();
       }
       if (this.isContainer()) {
         const innerNodes = Object.values(this.getInnerNodes());
