@@ -13,5 +13,6 @@ sqlalchemy>=1.3.3   # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
 celery
 kombu
 networkx
+packaging
 pydantic
 tenacity
