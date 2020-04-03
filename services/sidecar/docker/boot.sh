@@ -18,6 +18,9 @@ then
   echo "$INFO" "Python :"
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
+  cd services/sidecar || exit 1
+  pip install --no-cache-dir -r requirements/dev.txt
+  cd - || exit 1
   echo "$INFO" "PIP :"
   pip list | sed 's/^/    /'  
 fi
