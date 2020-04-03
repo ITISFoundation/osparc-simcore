@@ -18,8 +18,12 @@ qx_packages:
 	$(docker_compose) run --rm qooxdoo-kit \
 		/bin/sh -c "qx package update && qx package install"
 
+source-output:
+	# making fast a folder to allow volume binding in dev-mode
+	mkdir $@
+
 .PHONY: compile-dev
-compile-dev: qx_packages ## qx compiles host' 'source' -> host's 'source-output'. Use 'make compile-dev flags=--watch' for continuous compilation.
+compile-dev: qx_packages source-output ## qx compiles host' 'source' -> host's 'source-output'. Use 'make compile-dev flags=--watch' for continuous compilation.
 	# qx compile 'source' $(flags) --> 'source-output' [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
 	$(docker_compose) run --rm qooxdoo-kit \
 		qx compile $(flags) \

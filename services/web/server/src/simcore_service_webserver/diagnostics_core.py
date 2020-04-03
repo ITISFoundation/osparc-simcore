@@ -34,7 +34,7 @@ class DelayWindowProbe:
         some conditions (see observe code)
     """
 
-    min_threshold_secs: int = 1
+    min_threshold_secs: int = 0.3
     max_window: int = 100
     last_delays: List = attr.ib(factory=list)
 
@@ -51,6 +51,7 @@ class DelayWindowProbe:
             return statistics.mean(self.last_delays)
         return 0
 
+
 def assert_healthy_app(app: web.Application) -> None:
     """ Diagnostics function that determins whether
         current application is healthy based on incidents
@@ -58,25 +59,38 @@ def assert_healthy_app(app: web.Application) -> None:
 
         raises DiagnosticError if any incient detected
     """
+
+    # CRITERIA 1: 
     incidents: Optional[IncidentsRegistry] = app.get(kINCIDENTS_REGISTRY)
     if incidents:
         max_delay_allowed: float = app[kMAX_TASK_DELAY]
         max_delay: float = incidents.max_delay()
 
-        # criteria 1:
+        log.debug(
+            "Max. blocking delay was %s secs [max allowed %s secs]",
+            max_delay,
+            max_delay_allowed,
+        )
+
         if max_delay > max_delay_allowed:
             msg = "{:3.1f} secs delay [at most {:3.1f} secs allowed]".format(
                 max_delay, max_delay_allowed,
             )
             raise HealthError(msg)
 
-        # TODO: add more criteria
 
     # CRITERIA 2: Mean latency of the last N request slower than 1 sec
     probe: Optional[DelayWindowProbe] = app.get(kLATENCY_PROBE)
     if probe:
         latency = probe.value()
         max_latency_allowed = app.get(kMAX_AVG_RESP_LATENCY, 4)
+
+        log.debug(
+            "Mean slow latency of last requests is %s secs [max allowed %s secs]",
+            latency,
+            max_latency_allowed,
+        )
+
         if max_latency_allowed < latency:
             raise HealthError(
                 f"Last requests average latency is {latency} secs and surpasses {max_latency_allowed} secs"
