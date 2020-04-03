@@ -25,13 +25,17 @@ from simcore_service_webserver.diagnostics_plugin import (
 )
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
+from yarl import URL
 
 logger = logging.getLogger(__name__)
+
+def health_check_path(api_version_prefix) -> URL:
+    return f"/{api_version_prefix}/health"
 
 
 async def health_check_emulator(
     client,
-    api_version_prefix,
+    health_check_path,
     *,
     min_num_checks=2,
     start_period: int = 0,
@@ -41,7 +45,7 @@ async def health_check_emulator(
 ):
     # Follows docker's health check protocol
     # SEE https://docs.docker.com/engine/reference/builder/#healthcheck
-    checkpoint: Coroutine = client.get(f"/{api_version_prefix}/")
+    checkpoint: Coroutine = client.get(health_check_path)
 
     check_count = 0
 
@@ -144,7 +148,7 @@ def test_diagnostics_setup(client):
     assert "envelope" in app.middlewares[2].__middleware_name__
 
 async def test_healthy_app(client, api_version_prefix):
-    resp = await client.get(f"/{api_version_prefix}/")
+    resp = await client.get(f"/{api_version_prefix}/health")
 
     data, error = await assert_status(resp, web.HTTPOk)
 
@@ -156,13 +160,13 @@ async def test_healthy_app(client, api_version_prefix):
 
 
 async def test_unhealthy_app_with_slow_callbacks(client, api_version_prefix):
-    resp = await client.get(f"/{api_version_prefix}/")
+    resp = await client.get(f"/{api_version_prefix}/health")
     await assert_status(resp, web.HTTPOk)
 
     resp = await client.get("/slow")  # emulates a very slow handle!
     await assert_status(resp, web.HTTPOk)
 
-    resp = await client.get(f"/{api_version_prefix}/")
+    resp = await client.get(f"/{api_version_prefix}/health")
     await assert_status(resp, web.HTTPServiceUnavailable)
 
 
