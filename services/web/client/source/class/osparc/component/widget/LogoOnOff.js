@@ -37,22 +37,19 @@ qx.Class.define("osparc.component.widget.LogoOnOff", {
 
   construct: function() {
     this.base(arguments);
-    [
-      this.self().getOffIcon(),
-      this.self().getOnIcon()
-    ].forEach(logo => {
-      const image = new qx.ui.basic.Image(logo).set({
-        width: 92,
-        height: 32,
-        scale: true
-      });
-      this.add(image);
-    }, this);
 
-    const themeManager = qx.theme.manager.Meta.getInstance();
-    themeManager.addListener("changeTheme", () => {
-      this.getSelectables()[1].setSource(this.self().getOnIcon());
-    }, this);
+    const offLogo = new qx.ui.basic.Image("osparc/osparc-red.svg").set({
+      width: 92,
+      height: 32,
+      scale: true
+    });
+    this.add(offLogo);
+
+    const onLogo = new osparc.ui.basic.OSparcLogo().set({
+      width: 92,
+      height: 32
+    });
+    this.add(onLogo);
   },
 
   properties: {
@@ -61,16 +58,6 @@ qx.Class.define("osparc.component.widget.LogoOnOff", {
       init: false,
       nullable: false,
       apply: "_applyOnLine"
-    }
-  },
-
-  statics: {
-    getOnIcon: function() {
-      return osparc.utils.Utils.getLogoPath();
-    },
-
-    getOffIcon: function() {
-      return "osparc/osparc-red.svg";
     }
   },
 
