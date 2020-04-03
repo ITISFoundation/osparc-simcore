@@ -22,10 +22,8 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     log.debug("creating %s ", __name__)
     routes = []
 
-    # TODO: routing will be done automatically using operation_id/tags, etc...
-
-    # diagnostics --
-    path, handle = "/", rest_handlers.check_health
+    # maintenance --
+    path, handle = "/", rest_handlers.check_running
     operation_id = specs.paths[path].operations["get"].operation_id
     routes.append(web.get(base_path + path, handle, name=operation_id))
 
@@ -35,11 +33,6 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
 
     path, handle = "/config", rest_handlers.get_config
     operation_id = specs.paths[path].operations["get"].operation_id
-    routes.append(web.get(base_path + path, handle, name=operation_id))
-
-    # NOTE: Internal. Not shown in api/docs
-    path, handle = "/diagnostics", rest_handlers.get_diagnostics
-    operation_id = "get_diagnotics"  # specs.paths[path].operations['get'].operation_id
     routes.append(web.get(base_path + path, handle, name=operation_id))
 
     return routes

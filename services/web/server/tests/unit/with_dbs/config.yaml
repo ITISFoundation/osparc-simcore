@@ -6,7 +6,6 @@ main:
   port: 8080
   testing: True
   studies_access_enabled: True
-  monitoring_enabled: False # For testing, application is restarted and raise ValueError: Duplicated timeseries in CollectorRegistry
 director:
   enabled: False
   host: director

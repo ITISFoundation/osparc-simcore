@@ -49,6 +49,9 @@ paths:
   # DIAGNOSTICS ---------------------------------------------------------
   /:
     $ref: "./openapi-diagnostics.yaml#/paths/~1"
+  
+  /health:
+    $ref: "./openapi-diagnostics.yaml#/paths/~1health"
 
   /check/{action}:
     $ref: "./openapi-diagnostics.yaml#/paths/~1check~1{action}"

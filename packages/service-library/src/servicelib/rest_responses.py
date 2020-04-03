@@ -1,6 +1,5 @@
-"""
+""" Utils to check, convert and compose server responses for the RESTApi
 
-FIXME: these are prototype! do not use in production
 """
 from typing import Dict, Mapping, Tuple, Optional, List
 
@@ -57,7 +56,7 @@ def unwrap_envelope(payload: Dict) -> Tuple:
 # RESPONSES FACTORIES -------------------------------
 
 
-def create_data_response(data) -> web.Response:
+def create_data_response(data, *, skip_internal_error_details=False) -> web.Response:
     response = None
     try:
         if not is_enveloped(data):
@@ -67,7 +66,12 @@ def create_data_response(data) -> web.Response:
 
         response = web.json_response(payload, dumps=jsonify)
     except (TypeError, ValueError) as err:
-        response = create_error_response([err,], str(err), web.HTTPInternalServerError)
+        response = create_error_response(
+            [err,],
+            str(err),
+            web.HTTPInternalServerError,
+            skip_internal_error_details=skip_internal_error_details,
+        )
     return response
 
 
@@ -75,16 +79,27 @@ def create_error_response(
     errors: List[Exception],
     reason: Optional[str] = None,
     error_cls: Optional[web.HTTPError] = None,
+    *,
+    skip_internal_error_details=False
 ) -> web.HTTPError:
+    """
+        - Response body conforms OAS schema model
+        - Can skip internal details when 500 status e.g. to avoid transmitting server 
+        exceptions to the client in production
+    """
     # TODO: guarantee no throw!
     if error_cls is None:
         error_cls = web.HTTPInternalServerError
 
-    # TODO: assumes openapi error model!!!
-    error = ErrorType(
-        errors=[ErrorItemType.from_error(err) for err in errors],
-        status=error_cls.status_code,
-    )
+    is_internal_error: bool = error_cls == web.HTTPInternalServerError
+
+    if is_internal_error and skip_internal_error_details:
+        error = ErrorType(errors=[], status=error_cls.status_code,)
+    else:
+        error = ErrorType(
+            errors=[ErrorItemType.from_error(err) for err in errors],
+            status=error_cls.status_code,
+        )
 
     payload = wrap_as_envelope(error=attr.asdict(error))
 
@@ -100,7 +115,7 @@ def create_log_response(msg: str, level: str) -> web.Response:
 
     Analogous to  aiohttp's web.json_response
     """
-    # TODO: link more with real logger
+    # TODO: DEPRECATE
     msg = LogMessageType(msg, level)
     response = web.json_response(data={"data": attr.asdict(msg), "error": None})
     return response

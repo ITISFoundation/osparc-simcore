@@ -19,6 +19,7 @@ from .rest_responses import (
 )
 from .rest_utils import EnvelopeFactory
 from .rest_validators import OpenApiValidator
+from .utils import is_production_environ
 
 DEFAULT_API_VERSION = "v0"
 
@@ -31,26 +32,34 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
     return request.path.startswith(base_path)
 
 
-def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
-    # FIXME: send info + trace to client ONLY in debug mode!!!
-    resp = create_error_response(
-        [err,], "Unexpected Server error", web.HTTPInternalServerError
-    )
+def error_middleware_factory(
+    api_version: str = DEFAULT_API_VERSION, log_exceptions=True
+):
+    _is_prod: bool = is_production_environ()
 
-    logger.exception(
-        'Unexpected server error "%s" from access: %s "%s %s". Responding with status %s',
-        type(err),
-        request.remote,
-        request.method,
-        request.path,
-        resp.status,
-    )
-    raise resp
+    def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
+        resp = create_error_response(
+            [err,],
+            "Unexpected Server error",
+            web.HTTPInternalServerError,
+            skip_internal_error_details=_is_prod,
+        )
 
+        if log_exceptions:
+            logger.error(
+                'Unexpected server error "%s" from access: %s "%s %s". Responding with status %s',
+                type(err),
+                request.remote,
+                request.method,
+                request.path,
+                resp.status,
+                exc_info=err,
+                stack_info=True,
+            )
+        raise resp
 
-def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
     @web.middleware
-    async def _middleware(request: web.Request, handler):
+    async def _middleware_handler(request: web.Request, handler):
         """
             Ensure all error raised are properly enveloped and json responses
         """
@@ -98,12 +107,15 @@ def error_middleware_factory(api_version: str = DEFAULT_API_VERSION):
         except Exception as err:  # pylint: disable=broad-except
             _process_and_raise_unexpected_error(request, err)
 
-    return _middleware
+    # adds identifier (mostly for debugging)
+    _middleware_handler.__middleware_name__ = f"{__name__}.error_{api_version}"
+
+    return _middleware_handler
 
 
 def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
     @web.middleware
-    async def _middleware(request: web.Request, handler):
+    async def _middleware_handler(request: web.Request, handler):
         """
             Validates requests against openapi specs and extracts body, params, etc ...
             Validate response against openapi specs
@@ -141,12 +153,17 @@ def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
 
         return response
 
-    return _middleware
+    # adds identifier (mostly for debugging)
+    _middleware_handler.__middleware_name__ = f"{__name__}.validate_{api_version}"
+
+    return _middleware_handler
 
 
 def envelope_middleware_factory(api_version: str = DEFAULT_API_VERSION):
+    _is_prod: bool = is_production_environ()
+
     @web.middleware
-    async def _middleware(request: web.Request, handler):
+    async def _middleware_handler(request: web.Request, handler):
         """
             Ensures all responses are enveloped as {'data': .. , 'error', ...} in json
         """
@@ -156,13 +173,18 @@ def envelope_middleware_factory(api_version: str = DEFAULT_API_VERSION):
         resp = await handler(request)
 
         if not isinstance(resp, web.Response):
-            response = create_data_response(data=resp)
+            response = create_data_response(
+                data=resp, skip_internal_error_details=_is_prod,
+            )
         else:
             # Enforced by user. Should check it is json?
             response = resp
         return response
 
-    return _middleware
+    # adds identifier (mostly for debugging)
+    _middleware_handler.__middleware_name__ = f"{__name__}.envelope_{api_version}"
+
+    return _middleware_handler
 
 
 def append_rest_middlewares(
