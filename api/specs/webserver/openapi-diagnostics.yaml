@@ -3,7 +3,22 @@ paths:
     get:
       tags:
         - maintenance
-      summary: Service health check
+      summary: run check
+      operationId: check_running
+      responses:
+        "200":
+          description: Service information
+          content:
+            application/json:
+              schema:
+                $ref: "./components/schemas/health_check.yaml#/HealthCheckEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+  /health:
+    get:
+      tags:
+        - maintenance
+      summary: health check
       operationId: check_health
       responses:
         "200":

@@ -22,7 +22,11 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
     log.debug("creating %s ", __name__)
     routes = []
 
-    # diagnostics --
+    # maintenance --
+    path, handle = "/", rest_handlers.check_running
+    operation_id = specs.paths[path].operations["get"].operation_id
+    routes.append(web.get(base_path + path, handle, name=operation_id))
+
     path, handle = "/check/{action}", rest_handlers.check_action
     operation_id = specs.paths[path].operations["post"].operation_id
     routes.append(web.post(base_path + path, handle, name=operation_id))

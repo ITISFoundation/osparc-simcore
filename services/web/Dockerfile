@@ -132,7 +132,7 @@ HEALTHCHECK --interval=30s \
             --timeout=120s \
             --start-period=30s \
             --retries=3 \
-            CMD ["python3", "/home/scu/services/web/server/docker/healthcheck.py", "http://localhost:8080/v0/"]
+            CMD ["python3", "/home/scu/services/web/server/docker/healthcheck.py", "http://localhost:8080/v0/health"]
 
 ENTRYPOINT [ "/bin/sh", "services/web/server/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/web/server/docker/boot.sh"]

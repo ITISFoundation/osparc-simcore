@@ -55,7 +55,7 @@ def create_rest_routes(specs: openapi.Spec) -> List[web.RouteDef]:
     routes = []
     base_path: str = openapi.get_base_path(specs)
 
-    path, handle = "/", check_health
+    path, handle = "/health", check_health
     operation_id = specs.paths[path].operations["get"].operation_id
     routes.append(web.get(base_path + path, handle, name=operation_id))
 
