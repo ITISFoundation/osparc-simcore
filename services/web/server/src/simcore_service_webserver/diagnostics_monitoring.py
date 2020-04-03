@@ -69,7 +69,10 @@ def middleware_factory(app_name: str) -> Coroutine:
                 exc_name: str = log_exception.__class__.__name__
 
             # Probes request latency
-            request.app[kLATENCY_PROBE].observe(resp_time_secs)
+            # NOTE: sockets connection is long
+            # FIXME: tmp by hand, add filters directly in probe
+            if not str(request.path).startswith("/socket.io"):
+                request.app[kLATENCY_PROBE].observe(resp_time_secs)
 
             # prometheus probes
             request.app[kREQUEST_LATENCY].labels(app_name, request.path).observe(
