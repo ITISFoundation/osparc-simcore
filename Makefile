@@ -75,10 +75,10 @@ SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),N
 .PHONY: build build-nc rebuild build-devel build-devel-nc build-devel-kit build-devel-x build-cache build-cache-kit build-cache-x build-cache-nc build-kit build-x
 
 define _docker_compose_build
-export BUILD_TARGET=$(if $(findstring -devel,$@),development,$(if $(findstring -cache,$@),cache,production)); \
+export BUILD_TARGET=$(if $(findstring -devel,$@),development,$(if $(findstring -cache,$@),cache,production));\
 $(if $(findstring -x,$@),\
 	pushd services; docker buildx bake --file docker-compose-build.yml; popd;,\
-	docker-compose -f services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,) --parallel;\
+	docker-compose -f services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,) $(if $(target),,--parallel)\
 )
 endef
 
