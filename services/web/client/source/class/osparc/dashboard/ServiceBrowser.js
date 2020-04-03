@@ -79,15 +79,13 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       const store = osparc.store.Store.getInstance();
       store.getServices(true)
         .then(services => {
-          qx.event.Timer.once(() => {
-            // Do not validate if are not taking actions
-            // this.__nodeCheck(services);
-            this._removeAll();
-            loadingPage.dispose();
-            this.__createServicesLayout();
-            this.__populateList(false);
-            this.__attachEventHandlers();
-          }, this, 40000);
+          // Do not validate if are not taking actions
+          // this.__nodeCheck(services);
+          this._removeAll();
+          loadingPage.dispose();
+          this.__createServicesLayout();
+          this.__populateList(false);
+          this.__attachEventHandlers();
         });
     },
 
