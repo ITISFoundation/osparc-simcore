@@ -94,39 +94,63 @@ def _assert_incoming_data_logs(
 
 
 @pytest.fixture
-def pipeline(
+async def pipeline(
     postgres_session: sa.orm.session.Session,
+    storage_service: URL,
     project_id: str,
     osparc_service: Dict[str, str],
     pipeline_cfg: Dict,
+    mock_dir: Path,
 ) -> ComputationalPipeline:
     """creates a full pipeline.
         NOTE: 'pipeline', defined as parametrization
     """
+    from simcore_sdk import node_ports
 
-    tasks = {key: osparc_service for key in pipeline_cfg.keys()}
-    dag = {key: pipeline_cfg[key]["next"] for key in pipeline_cfg.keys()}
+    tasks = {key: osparc_service for key in pipeline_cfg}
+    dag = {key: pipeline_cfg[key]["next"] for key in pipeline_cfg}
+    inputs = {key: pipeline_cfg[key]["inputs"] for key in pipeline_cfg}
 
-    def create(tasks: Dict[str, Any], dag: Dict) -> ComputationalPipeline:
+    async def create(
+        tasks: Dict[str, Any],
+        dag: Dict[str, List[str]],
+        inputs: Dict[str, Dict[str, Any]],
+    ) -> ComputationalPipeline:
         # set the pipeline
         pipeline = ComputationalPipeline(project_id=project_id, dag_adjacency_list=dag)
         postgres_session.add(pipeline)
         postgres_session.commit()
         # now create the tasks
         for node_uuid, service in tasks.items():
+            node_inputs = inputs[node_uuid]
+
             comp_task = ComputationalTask(
                 project_id=project_id,
                 node_id=node_uuid,
                 schema=service["schema"],
                 image=service["image"],
-                inputs={},
+                inputs=node_inputs,
                 outputs={},
             )
             postgres_session.add(comp_task)
             postgres_session.commit()
+
+            # check if file must be uploaded
+            for input_key in node_inputs:
+                if (
+                    isinstance(node_inputs[input_key], dict)
+                    and "path" in node_inputs[input_key]
+                ):
+                    # update the file to S3
+                    node_ports.node_config.PROJECT_ID = project_id
+                    node_ports.node_config.NODE_UUID = node_uuid
+                    PORTS = await node_ports.ports()
+                    await (await PORTS.inputs)[input_key].set(
+                        mock_dir / node_inputs[input_key]["path"]
+                    )
         return pipeline
 
-    yield create(tasks, dag)
+    yield await create(tasks, dag, inputs)
 
 
 @pytest.mark.parametrize(
@@ -136,10 +160,28 @@ def pipeline(
             "itisfoundation/sleeper",
             "1.0.0",
             {
-                "node_1": {"next": ["node_2", "node_3"], "inputs": [],},
-                "node_2": {"next": ["node_4"], "inputs": [],},
-                "node_3": {"next": ["node_4"], "inputs": [],},
-                "node_4": {"next": [], "inputs": [],},
+                "node_1": {"next": ["node_2", "node_3"], "inputs": {},},
+                "node_2": {
+                    "next": ["node_4"],
+                    "inputs": {
+                        "in_1": {"nodeUuid": "node_1", "output": "out_1"},
+                        "in_2": {"nodeUuid": "node_1", "output": "out_2"},
+                    },
+                },
+                "node_3": {
+                    "next": ["node_4"],
+                    "inputs": {
+                        "in_1": {"nodeUuid": "node_1", "output": "out_1"},
+                        "in_2": {"nodeUuid": "node_1", "output": "out_2"},
+                    },
+                },
+                "node_4": {
+                    "next": [],
+                    "inputs": {
+                        "in_1": {"nodeUuid": "node_2", "output": "out_1"},
+                        "in_2": {"nodeUuid": "node_3", "output": "out_2"},
+                    },
+                },
             },
         ),
         (
@@ -148,11 +190,28 @@ def pipeline(
             {
                 "node_1": {
                     "next": ["node_2", "node_3"],
-                    "inputs": ["file:osparc_python_sample.py"],
+                    "inputs": {
+                        "input_1": {"store": 0, "path": "osparc_python_sample.py"}
+                    },
                 },
-                "node_2": {"next": ["node_4"], "inputs": ["node_1:output_1"]},
-                "node_3": {"next": ["node_4"], "inputs": ["node_1:output_1"]},
-                "node_4": {"next": [], "inputs": ["node_2:output_1"]},
+                "node_2": {
+                    "next": ["node_4"],
+                    "inputs": {
+                        "input_1": {"store": 0, "path": "osparc_python_sample.py"}
+                    },
+                },
+                "node_3": {
+                    "next": ["node_4"],
+                    "inputs": {
+                        "input_1": {"store": 0, "path": "osparc_python_sample.py"}
+                    },
+                },
+                "node_4": {
+                    "next": [],
+                    "inputs": {
+                        "input_1": {"store": 0, "path": "osparc_python_sample.py"}
+                    },
+                },
             },
         ),
     ],
