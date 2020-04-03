@@ -46,7 +46,7 @@ qx.Class.define("osparc.ui.message.Loading", {
       this.setHeader(header);
     }
 
-    if (header) {
+    if (messages) {
       this.setMessages(messages);
     }
   },

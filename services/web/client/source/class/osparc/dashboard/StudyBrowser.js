@@ -697,8 +697,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this.__showStudiesLayout(false);
 
-      const iframe = this.__loadingIFrame = osparc.utils.Utils.createLoadingIFrame(label);
-      this._add(iframe, {
+      if (this.__loadingIFrame === null) {
+        this.__loadingIFrame = new osparc.ui.message.Loading(label);
+      } else {
+        this.__loadingIFrame.setHeader(label);
+      }
+      this._add(this.__loadingIFrame, {
         flex: 1
       });
     },
@@ -709,8 +713,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (idx !== -1) {
           this._remove(this.__loadingIFrame);
         }
-        this.__loadingIFrame.dispose();
-        this.__loadingIFrame = null;
       }
 
       this.__showStudiesLayout(true);
