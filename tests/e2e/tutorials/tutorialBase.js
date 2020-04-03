@@ -90,18 +90,46 @@ class TutorialBase {
     }
   }
 
+  async waitForOpen() {
+    this.__responsesQueue.addResponseListener("open");
+    let resp = null;
+    try {
+      resp = await this.__responsesQueue.waitUntilResponse("open");
+    }
+    catch(err) {
+      console.error(this.__templateName, "could not be started", err);
+    }
+    return resp;
+  }
+
   async openTemplate(waitFor = 1000) {
     await utils.takeScreenshot(this.__page, this.__templateName + "_dashboardOpenFirstTemplate_before");
     this.__responsesQueue.addResponseListener("projects?from_template=");
+    this.__responsesQueue.addResponseListener("open");
+    let resp = null;
     try {
       await auto.dashboardOpenFirstTemplate(this.__page, this.__templateName);
       await this.__responsesQueue.waitUntilResponse("projects?from_template=");
+      resp = await this.__responsesQueue.waitUntilResponse("open");
     }
     catch(err) {
       console.error(this.__templateName, "could not be started", err);
     }
     await this.__page.waitFor(waitFor);
     await utils.takeScreenshot(this.__page, this.__templateName + "_dashboardOpenFirstTemplate_after");
+    return resp;
+  }
+
+  async waitForService(studyId, nodeId) {
+    this.__responsesQueue.addResponseServiceListener(studyId, nodeId);
+    let resp = null;
+    try {
+      resp = await this.__responsesQueue.waitUntilServiceReady(studyId, nodeId);
+    }
+    catch(err) {
+      console.error(this.__templateName, "could not be started", err);
+    }
+    return resp;
   }
 
   async restoreIFrame() {

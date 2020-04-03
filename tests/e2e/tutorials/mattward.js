@@ -26,10 +26,12 @@ async function runTutorial () {
 
   await tutorial.registerIfNeeded();
   await tutorial.login();
-  await tutorial.openTemplate(1000);
+  const studyData = await tutorial.openTemplate(1000);
+  const workbenchData = utils.extractWorkbenchData(studyData["data"]);
+  await tutorial.waitForService(workbenchData["studyId"], workbenchData["nodeIds"][0]);
 
-  // Wait service to start and output files to be pushed
-  await tutorial.waitFor(60000);
+  // Wait for the output files to be pushed
+  await tutorial.waitFor(30000);
 
   // This study opens in fullscreen mode
   await tutorial.restoreIFrame();
