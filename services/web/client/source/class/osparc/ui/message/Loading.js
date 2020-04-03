@@ -36,25 +36,16 @@ qx.Class.define("osparc.ui.message.Loading", {
 
   members: {
     __buildLayout: function(header, messages) {
-      const image = new qx.ui.basic.Atom().set({
-        icon: osparc.utils.Utils.getLogoPath(),
-        iconPosition: "top"
+      const image = new osparc.ui.basic.OSparcLogo().set({
+        width: 200,
+        height: 120
       });
-      image.getChildControl("icon").set({
-        width: 250,
-        height: 150,
-        scale: true
-      });
-      const themeManager = qx.theme.manager.Meta.getInstance();
-      themeManager.addListener("changeTheme", () => {
-        image.setIcon(this.self().getOnIcon());
-      }, this);
 
       const atom = new qx.ui.basic.Atom(header).set({
         icon: "@FontAwesome5Solid/circle-notch/32",
         font: "nav-bar-label",
         alignX: "center",
-        gap: 20
+        gap: 10
       });
       atom.getChildControl("icon").getContentElement().addClass("rotate");
 

@@ -55,16 +55,11 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     _buildPage: function() {
       this.__form = new qx.ui.form.Form();
 
-      const atm = new qx.ui.basic.Atom().set({
-        icon: osparc.utils.Utils.getLogoPath(),
-        iconPosition: "top"
-      });
-      atm.getChildControl("icon").set({
+      const image = new osparc.ui.basic.OSparcLogo().set({
         width: 250,
-        height: 150,
-        scale: true
+        height: 150
       });
-      this.add(atm);
+      this.add(image);
 
       const email = new qx.ui.form.TextField().set({
         placeholder: this.tr("Your email address"),
