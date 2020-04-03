@@ -212,9 +212,6 @@ def test_read_prometheus_counter():
     def get_total():
         total_count = 0
         for metric in counter.collect():
-            import pdb
-
-            pdb.set_trace()
             for sample in metric.samples:
                 if sample.name.endswith("_total"):
                     total_count += sample.value
