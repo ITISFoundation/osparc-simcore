@@ -29,7 +29,7 @@ from simcore_service_webserver.security import setup_security
 logger = logging.getLogger(__name__)
 
 
-async def health_checker(
+async def health_check_emulator(
     client,
     api_version_prefix,
     *,
@@ -39,7 +39,7 @@ async def health_checker(
     interval: int = 30,
     retries: int = 3,
 ):
-    # Emulates healthcheck
+    # Follows docker's health check protocol
     # SEE https://docs.docker.com/engine/reference/builder/#healthcheck
     checkpoint: Coroutine = client.get(f"/{api_version_prefix}/")
 

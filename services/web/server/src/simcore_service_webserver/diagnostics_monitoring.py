@@ -24,7 +24,7 @@ kCOLLECTOR_REGISTRY = f"{__name__}.collector_registry"
 
 
 async def metrics_handler(request: web.Request):
-    # TODO: prometheus_client.generate_latest blocking! no asyhc solutin?
+    # TODO: prometheus_client.generate_latest blocking! -> Consider https://github.com/claws/aioprometheus
     reg = request.app[kCOLLECTOR_REGISTRY]
     resp = web.Response(body=prometheus_client.generate_latest(registry=reg))
     resp.content_type = CONTENT_TYPE_LATEST
