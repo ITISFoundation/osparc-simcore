@@ -25,7 +25,7 @@ source-output:
 .PHONY: compile-dev
 compile-dev: qx_packages source-output ## qx compiles host' 'source' -> host's 'source-output'. Use 'make compile-dev flags=--watch' for continuous compilation.
 	# qx compile 'source' $(flags) --> 'source-output' [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
-	$(docker_compose) run --rm qooxdoo-kit \
+	$(docker_compose) run --detach --rm qooxdoo-kit \
 		qx compile $(flags) \
 			--set-env osparc.vcsRef="${VCS_REF}" \
 			--set-env osparc.vcsRefClient="${VCS_REF_CLIENT}" \
