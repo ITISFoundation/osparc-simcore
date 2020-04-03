@@ -35,7 +35,7 @@ pip-tools==4.5.1          # via -r requirements/../../../requirements.txt
 pluggy==0.13.1            # via pytest
 psycopg2-binary==2.8.4    # via -r requirements/_migration.txt, aiopg, sqlalchemy
 py==1.8.1                 # via pytest
-pyaml==20.3.1             # via -r requirements/_test.in
+pyaml==20.4.0             # via -r requirements/_test.in
 pylint==2.4.4             # via -r requirements/../../../requirements.txt, -r requirements/_test.in
 pyparsing==2.4.6          # via packaging
 pytest-aiohttp==0.3.0     # via -r requirements/_test.in
