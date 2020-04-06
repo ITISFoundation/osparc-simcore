@@ -102,20 +102,22 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
 
   statics: {
     getLevelColorTag: function(logLevel) {
+      const colorManager = qx.theme.manager.Color.getInstance();
       for (let i=0; i<LOG_LEVEL.length; i++) {
         const logString = Object.keys(LOG_LEVEL[i])[0];
         const logNumber = LOG_LEVEL[i][logString];
         if (logNumber === logLevel) {
-          const logColor = osparc.theme.Color.colors["logger-"+logString+"-message"];
+          const logColor = colorManager.resolve("logger-"+logString+"-message");
           return logColor;
         }
       }
-      const logColorDef = osparc.theme.Color.colors["logger-info-message"];
+      const logColorDef = colorManager.resolve("logger-info-message");
       return logColorDef;
     },
 
     getNewColor: function() {
-      const luminanceBG = osparc.utils.Utils.getColorLuminance(osparc.theme.Color.colors["table-row-background-selected"]);
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const luminanceBG = osparc.utils.Utils.getColorLuminance(colorManager.resolve("table-row-background-selected"));
       let luminanceText = null;
       let color = null;
       do {

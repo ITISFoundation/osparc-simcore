@@ -27,7 +27,8 @@
       "default": true,
       "include": [
         "iconfont.material.Load",
-        "iconfont.fontawesome5.Load"
+        "iconfont.fontawesome5.Load",
+        "osparc.theme.OSparcLight"
       ],
       "bootPath": "source/boot"
     },
