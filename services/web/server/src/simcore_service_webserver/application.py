@@ -8,15 +8,14 @@ from typing import Dict
 from aiohttp import web
 
 from servicelib.application import create_safe_application
-from servicelib.application_setup import ModuleCategory, app_module_setup
-from servicelib.monitoring import setup_monitoring
+
 
 from .activity import setup_activity
 from .application_proxy import setup_app_proxy
 from .catalog import setup_catalog
 from .computation import setup_computation
 from .db import setup_db
-from .diagnostics import setup_diagnostics
+from .diagnostics_plugin import setup_diagnostics
 from .director import setup_director
 from .email import setup_email
 from .login import setup_login
@@ -36,16 +35,6 @@ from .users import setup_users
 log = logging.getLogger(__name__)
 
 
-@app_module_setup(
-    "servicelib.monitoring",
-    ModuleCategory.ADDON,
-    config_enabled="main.monitoring_enabled",
-    logger=log,
-)
-def setup_app_monitoring(app: web.Application):
-    return setup_monitoring(app, "simcore_service_webserver")
-
-
 def create_application(config: Dict) -> web.Application:
     """
         Initializes service
@@ -59,14 +48,13 @@ def create_application(config: Dict) -> web.Application:
 
     # TODO: create dependency mechanism
     # and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
-    setup_diagnostics(app)
-    setup_app_monitoring(app)
     setup_app_tracing(app)
     setup_statics(app)
     setup_db(app)
     setup_session(app)
     setup_security(app)
     setup_rest(app)
+    setup_diagnostics(app)
     setup_email(app)
     setup_computation(app)
     setup_sockets(app)

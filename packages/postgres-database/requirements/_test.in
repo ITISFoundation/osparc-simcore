@@ -6,7 +6,7 @@
 -r _migration.txt
 
 # fixtures
-pyaml
+pyyaml
 aiopg[sa]
 faker
 

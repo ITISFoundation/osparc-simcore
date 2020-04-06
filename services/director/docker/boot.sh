@@ -18,6 +18,9 @@ then
   echo "$INFO" "Python :"
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
+  cd services/director || exit 1
+  pip install --no-cache-dir -r requirements/dev.txt
+  cd - || exit 1
   echo "$INFO" "PIP :"
   pip list | sed 's/^/    /'
 fi
@@ -27,7 +30,7 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]
 then
   watchmedo auto-restart --recursive --pattern="*.py" -- \
     python3 -m ptvsd --host 0.0.0.0 --port 3000 -m \
-    simcore_service_director --loglevel=${LOGLEVEL}
+    simcore_service_director --loglevel="${LOGLEVEL}"
 else
-  exec simcore-service-director --loglevel=${LOGLEVEL}
+  exec simcore-service-director --loglevel="${LOGLEVEL}"
 fi

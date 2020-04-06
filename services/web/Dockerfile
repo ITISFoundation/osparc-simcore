@@ -52,7 +52,7 @@ ENV SC_BUILD_TARGET build
 #  libstdc++: needed in ujson https://github.com/kohlschutter/junixsocket/issues/33
 #
 RUN apk update && \
-    apk add --no-cache \
+      apk add --no-cache \
       libpq \
       libstdc++
 
@@ -94,7 +94,7 @@ COPY --chown=scu:scu services/web/server /build/services/web/server
 WORKDIR /build/services/web/server
 
 RUN $SC_PIP install -r requirements/prod.txt &&\
-    $SC_PIP list -v
+      $SC_PIP list -v
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup
@@ -110,26 +110,29 @@ ENV PYTHONOPTIMIZE=TRUE
 
 # front-end client last (image name is the path to the Dockerfile)
 COPY --from=client/tools/qooxdoo-kit/builder:latest --chown=scu:scu \
-  /project/build-output \
-  /build/services/web/client
+      /project/build-output \
+      /build/services/web/client
 
 WORKDIR /home/scu
 
 RUN mkdir -p services/web/server &&\
-    chown scu:scu services/web/server &&\
-    mv /build/services/web/server/docker services/web/server/docker &&\
-    mv /build/services/web/client ${SIMCORE_WEB_OUTDIR} &&\
-    rm -rf /build
+      chown scu:scu services/web/server &&\
+      mv /build/services/web/server/docker services/web/server/docker &&\
+      mv /build/services/web/client ${SIMCORE_WEB_OUTDIR} &&\
+      rm -rf /build
 
 RUN apk del --no-cache\
       gcc \
       git
 
+ENV SC_HEALTHCHECK_INTERVAL 30
+ENV SC_HEALTHCHECK_RETRY 3
+
 HEALTHCHECK --interval=30s \
-            --timeout=120s \
-            --start-period=30s \
-            --retries=3 \
-            CMD ["python3", "/home/scu/services/web/server/docker/healthcheck.py", "http://localhost:8080/v0/"]
+      --timeout=120s \
+      --start-period=30s \
+      --retries=3 \
+      CMD ["python3", "/home/scu/services/web/server/docker/healthcheck.py", "http://localhost:8080/v0/health"]
 
 ENTRYPOINT [ "/bin/sh", "services/web/server/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/web/server/docker/boot.sh"]
@@ -151,9 +154,10 @@ ENV SC_BUILD_TARGET development
 ENV SIMCORE_WEB_OUTDIR /devel/services/web/client
 
 WORKDIR /devel
-VOLUME  /devel/packages
-VOLUME  /devel/services/web/server/
-VOLUME  /devel/services/web/client/
+
+# NOTE: declaring VOLUMEs here makes troubles mounting 
+#       the client's output folder to /devel/services/web/client.
+#       The latter ls no files
 
 ENTRYPOINT [ "/bin/sh", "services/web/server/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/web/server/docker/boot.sh"]

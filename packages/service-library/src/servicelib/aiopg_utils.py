@@ -157,7 +157,7 @@ class PostgresRetryPolicyUponInitialization:
     """ Retry policy upon service initialization
     """
 
-    WAIT_SECS = 2
+    WAIT_SECS = 5
     ATTEMPTS_COUNT = 20
 
     def __init__(self, logger: Optional[logging.Logger] = None):

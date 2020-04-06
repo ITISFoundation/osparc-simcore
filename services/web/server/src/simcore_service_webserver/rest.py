@@ -17,12 +17,15 @@ from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 
 from servicelib import openapi
 from servicelib.application_setup import ModuleCategory, app_module_setup
-from servicelib.rest_middlewares import append_rest_middlewares
+from servicelib.rest_middlewares import (
+    envelope_middleware_factory,
+    error_middleware_factory,
+)
 from simcore_service_webserver.resources import resources
 
 from . import rest_routes
 from .__version__ import api_version_prefix
-from .rest_config import APP_OPENAPI_SPECS_KEY, get_rest_config
+from .rest_config import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY, get_rest_config
 
 log = logging.getLogger(__name__)
 
@@ -51,7 +54,7 @@ def load_openapi_specs(spec_path: Optional[Path] = None) -> OpenApiSpecs:
     depends=["simcore_service_webserver.security"],
     logger=log,
 )
-def setup(app: web.Application):
+def setup(app: web.Application, *, swagger_doc_enabled: bool = True):
     cfg = get_rest_config(app)
     api_version_dir = cfg["version"]
     spec_path = get_openapi_specs_path(api_version_dir)
@@ -65,7 +68,12 @@ def setup(app: web.Application):
 
     if f"/v{major}" != base_path:
         raise ValueError(
-            f"Basepath naming {base_path} does not fit API version {specs.info.version}"
+            f"REST API basepath {base_path} does not fit openapi.yml version {specs.info.version}"
+        )
+
+    if api_version_prefix != f"v{major}":
+        raise ValueError(
+            f"__version__.api_version_prefix {api_version_prefix} does not fit openapi.yml version {specs.info.version}"
         )
 
     # diagnostics routes
@@ -73,11 +81,22 @@ def setup(app: web.Application):
     app.router.add_routes(routes)
 
     # middlewares
-    append_rest_middlewares(app, base_path)
+    # NOTE: using safe get here since some tests use incomplete configs
+    is_diagnostics_enabled = app[APP_CONFIG_KEY].get("diagnostics",{}).get("enabled",{})
+    app.middlewares.extend(
+        [
+            error_middleware_factory(
+                api_version_prefix,
+                log_exceptions=not is_diagnostics_enabled,
+            ),
+            envelope_middleware_factory(api_version_prefix),
+        ]
+    )
 
-    # rest API doc at /api/doc
+    # rest API doc at /api/doc (optional, e.g. for testing since it can be heavy)
     log.debug("OAS loaded from %s ", spec_path)
-    setup_swagger(app, swagger_from_file=str(spec_path), ui_version=3)
+    if swagger_doc_enabled:
+        setup_swagger(app, swagger_from_file=str(spec_path), ui_version=3)
 
 
 # alias

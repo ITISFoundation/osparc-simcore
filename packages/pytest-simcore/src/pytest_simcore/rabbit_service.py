@@ -17,29 +17,33 @@ from .helpers.utils_docker import get_service_published_port
 
 
 @pytest.fixture(scope="module")
-def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> Dict:
+def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> Config:
     assert "simcore_rabbit" in docker_stack["services"]
-
-    config = {
-        "host": "127.0.0.1",
-        "port": get_service_published_port("rabbit", devel_environ["RABBIT_PORT"]),
-        "user": devel_environ["RABBIT_USER"],
-        "password": devel_environ["RABBIT_PASSWORD"],
-    }
+    rabbit_config = Config(
+        user=devel_environ["RABBIT_USER"],
+        password=devel_environ["RABBIT_PASSWORD"],
+        host="127.0.0.1",
+        port=get_service_published_port("rabbit", devel_environ["RABBIT_PORT"]),
+        channels={
+            "progress": "progress_channel",
+            "log": "logs_channel",
+            "celery": {"result_backend": ""},
+        },
+    )
 
     # sidecar takes its configuration from env variables
     os.environ["RABBIT_HOST"] = "127.0.0.1"
-    os.environ["RABBIT_PORT"] = config["port"]
+    os.environ["RABBIT_PORT"] = str(rabbit_config.port)
     os.environ["RABBIT_USER"] = devel_environ["RABBIT_USER"]
     os.environ["RABBIT_PASSWORD"] = devel_environ["RABBIT_PASSWORD"]
     os.environ["RABBIT_CHANNELS"] = devel_environ["RABBIT_CHANNELS"]
 
-    yield config
+    yield rabbit_config
 
 
 @pytest.fixture(scope="function")
-async def rabbit_service(rabbit_config: Dict, docker_stack: Dict) -> str:
-    url = "amqp://{user}:{password}@{host}:{port}".format(**rabbit_config)
+async def rabbit_service(rabbit_config: Config, docker_stack: Dict) -> str:
+    url = rabbit_config.broker_url
     await wait_till_rabbit_responsive(url)
     yield url
 
@@ -84,21 +88,21 @@ async def rabbit_channel(
 
 @pytest.fixture(scope="function")
 async def rabbit_exchange(
-    rabbit_channel: aio_pika.Channel,
+    rabbit_config: Config, rabbit_channel: aio_pika.Channel,
 ) -> Tuple[aio_pika.Exchange, aio_pika.Exchange]:
-    rb_config = Config()
 
     # declare log exchange
-    LOG_EXCHANGE_NAME: str = rb_config.channels["log"]
+    LOG_EXCHANGE_NAME: str = rabbit_config.channels["log"]
     logs_exchange = await rabbit_channel.declare_exchange(
         LOG_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
     )
+    assert logs_exchange
     # declare progress exchange
-    PROGRESS_EXCHANGE_NAME: str = rb_config.channels["progress"]
+    PROGRESS_EXCHANGE_NAME: str = rabbit_config.channels["progress"]
     progress_exchange = await rabbit_channel.declare_exchange(
         PROGRESS_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
     )
-
+    assert progress_exchange
     yield logs_exchange, progress_exchange
 
 
@@ -110,6 +114,7 @@ async def rabbit_queue(
     (logs_exchange, progress_exchange) = rabbit_exchange
     # declare queue
     queue = await rabbit_channel.declare_queue(exclusive=True)
+    assert queue
     # Binding queue to exchange
     await queue.bind(logs_exchange)
     await queue.bind(progress_exchange)

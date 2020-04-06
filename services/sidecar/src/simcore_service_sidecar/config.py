@@ -1,7 +1,7 @@
 import logging
 import multiprocessing
 import os
-
+from simcore_sdk.config.rabbit import Config as RabbitConfig
 
 SERVICES_MAX_NANO_CPUS: int = min(
     multiprocessing.cpu_count() * pow(10, 9),
@@ -40,3 +40,5 @@ POSTGRES_USER: str = os.environ.get("POSTGRES_USER", "simcore")
 logging.basicConfig(level=SIDECAR_LOGLEVEL)
 logging.getLogger("sqlalchemy.engine").setLevel(SIDECAR_LOGLEVEL)
 logging.getLogger("sqlalchemy.pool").setLevel(SIDECAR_LOGLEVEL)
+
+RABBIT_CONFIG = RabbitConfig()

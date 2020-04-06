@@ -76,7 +76,7 @@ qx.Class.define("osparc.component.widget.NodeInput", {
 
       const header = new qx.ui.basic.Label().set({
         font: "text-13",
-        textColor: "#DCDCDC",
+        textColor: "node-title-text",
         textAlign: "left",
         height: 18,
         padding: 3
@@ -84,7 +84,7 @@ qx.Class.define("osparc.component.widget.NodeInput", {
       node.bind("label", header, "value");
       const outPort = new qx.ui.basic.Label(this.tr("out")).set({
         font: "text-13",
-        textColor: "#BABABA",
+        textColor: "node-port-text",
         allowGrowX: true,
         textAlign: "right",
         padding: 5

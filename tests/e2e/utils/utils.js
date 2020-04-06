@@ -168,6 +168,18 @@ async function takeScreenshot(page, captureName) {
   })
 }
 
+function extractWorkbenchData(data) {
+  const workbenchData = {
+    studyId: null,
+    nodeIds: []
+  };
+  workbenchData.studyId = data["uuid"];
+  if ("workbench" in data) {
+    workbenchData.nodeIds = Object.keys(data["workbench"]);
+  }
+  return workbenchData;
+}
+
 module.exports = {
   getUserAndPass,
   getDomain,
@@ -182,4 +194,5 @@ module.exports = {
   waitAndClick,
   sleep,
   takeScreenshot,
+  extractWorkbenchData,
 }

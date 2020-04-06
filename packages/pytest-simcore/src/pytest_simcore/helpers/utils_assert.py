@@ -10,6 +10,9 @@ from servicelib.rest_responses import unwrap_envelope
 async def assert_status(
     response: web.Response, expected_cls: web.HTTPException, expected_msg: str = None
 ):
+    """
+        Asserts for enveloped responses
+    """
     data, error = unwrap_envelope(await response.json())
     assert response.status == expected_cls.status_code, (data, error)
 
