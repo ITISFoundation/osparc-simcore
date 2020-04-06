@@ -16,16 +16,16 @@ APP_GARBAGE_COLLECTOR_KEY = __name__ + ".resource_manager.garbage_collector_key"
 
 schema = T.Dict(
     {
-        T.Key("enabled", default=True, optional=True): T.Or(T.Bool(), T.Int()),
-        T.Key("resource_deletion_timeout_seconds", default=900, optional=True): T.Int(),
+        T.Key("enabled", default=True, optional=True): T.Or(T.Bool(), T.ToInt()),
+        T.Key("resource_deletion_timeout_seconds", default=900, optional=True): T.ToInt(),
         T.Key(
             "garbage_collection_interval_seconds", default=30, optional=True
-        ): T.Int(),
+        ): T.ToInt(),
         T.Key("redis", optional=False): T.Dict(
             {
                 T.Key("enabled", default=True, optional=True): T.Bool(),
                 T.Key("host", default="redis", optional=True): T.String(),
-                T.Key("port", default=6793, optional=True): T.Int(),
+                T.Key("port", default=6793, optional=True): T.ToInt(),
             }
         ),
     }
@@ -33,8 +33,11 @@ schema = T.Dict(
 
 
 def get_service_deletion_timeout(app: web.Application) -> int:
-    return app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]["resource_deletion_timeout_seconds"]
-
+    timeout = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME][
+        "resource_deletion_timeout_seconds"
+    ]
+    # NOTE: timeout is INT not FLOAT (timeout in expire arg at aioredis)
+    return int(timeout)
 
 def get_garbage_collector_interval(app: web.Application) -> int:
     return app[APP_CONFIG_KEY][CONFIG_SECTION_NAME][

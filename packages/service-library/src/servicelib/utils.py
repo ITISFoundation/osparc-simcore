@@ -6,10 +6,21 @@ IMPORTANT: lowest level module
 """
 import asyncio
 import logging
+import os
 from pathlib import Path
 from typing import Any, Coroutine, List, Optional, Union
 
 logger = logging.getLogger(__name__)
+
+
+def is_production_environ() -> bool:
+    """ 
+        If True, this code most probably 
+        runs in a production container of one of the 
+        osparc-simcore services.
+    """
+    # WARNING: based on a convention that is not constantly verified
+    return os.environ.get("SC_BUILD_TARGET") == "production"
 
 
 def is_osparc_repo_dir(path: Path) -> bool:
@@ -35,7 +46,7 @@ def search_osparc_repo_dir(start: Union[str, Path], max_iterations=8) -> Optiona
 
 
 # FUTURES
-def fire_and_forget_task(obj: Union[Coroutine, asyncio.Future]) -> None:
+def fire_and_forget_task(obj: Union[Coroutine, asyncio.Future]) -> asyncio.Future:
     future = asyncio.ensure_future(obj)
 
     def log_exception_callback(fut: asyncio.Future):
@@ -45,6 +56,7 @@ def fire_and_forget_task(obj: Union[Coroutine, asyncio.Future]) -> None:
             logger.exception("Error occured while running task!")
 
     future.add_done_callback(log_exception_callback)
+    return future
 
 
 # // tasks

@@ -759,6 +759,7 @@ qx.Class.define("osparc.data.model.Node", {
     restartIFrame: function(loadThis) {
       if (this.getIFrame() === null) {
         const iframe = new osparc.component.widget.PersistentIframe();
+        osparc.utils.Utils.setIdToWidget(iframe, "PersistentIframe");
         iframe.addListener("restart", () => {
           this.restartIFrame();
         }, this);
@@ -800,7 +801,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __showLoadingIFrame: function() {
-      const loadingUri = osparc.utils.Utils.getLoaderUri();
+      const loadingUri = osparc.utils.Utils.getLoaderUri("Starting Service");
       this.restartIFrame(loadingUri);
     },
 

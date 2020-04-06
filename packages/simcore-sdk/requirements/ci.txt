@@ -13,6 +13,7 @@
 ../postgres-database/
 ../s3wrapper/
 ../service-library/
+../pytest-simcore/
 ../../services/storage/client-sdk/python/ # Needed ONLY for testing
 
 

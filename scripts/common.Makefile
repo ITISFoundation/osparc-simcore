@@ -1,6 +1,8 @@
 #
-# These are common target and recipes
+# These are common target and recipes to Makefiles of packages/ and services/
+#
 # This file is included at the top of every Makefile
+#
 # $(CURDIR) in this file refers to the directory where this file is included
 #
 # SEE https://mattandre.ws/2016/05/makefile-inheritance/

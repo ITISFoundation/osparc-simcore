@@ -33,7 +33,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
   },
 
   events: {
-    "linkModified": "qx.event.type.Data"
+    "linkModified": "qx.event.type.Data",
+    "changeChildVisibility": "qx.event.type.Event"
   },
 
   statics: {
@@ -107,6 +108,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         if (retrieveField) {
           this.__changeControlVisibility(retrieveField.child, data[key]);
         }
+
+        this.fireEvent("changeChildVisibility");
       }
     },
 

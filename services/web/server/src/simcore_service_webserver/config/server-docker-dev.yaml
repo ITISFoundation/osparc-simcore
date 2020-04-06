@@ -8,7 +8,6 @@ main:
   log_level: ${WEBSERVER_LOGLEVEL}
   testing: True
   studies_access_enabled: True
-  monitoring_enabled: True
 socketio:
   enabled: True
 tracing:
@@ -46,8 +45,8 @@ rabbit:
   user: ${RABBIT_USER}
   password: ${RABBIT_PASSWORD}
   channels:
-    progress: ${RABBIT_PROGRESS_CHANNEL}
-    log: ${RABBIT_LOG_CHANNEL}
+    progress: "comp.backend.channels.progress"
+    log: "comp.backend.channels.log"
 activity:
   enabled: True
   prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}

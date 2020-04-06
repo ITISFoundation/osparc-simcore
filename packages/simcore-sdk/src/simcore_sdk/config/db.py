@@ -9,10 +9,10 @@ CONFIG_SCHEMA = T.Dict({
     "database": T.String(),
     "user": T.String(),
     "password": T.String(),
-    T.Key("minsize", default=1 ,optional=True): T.Int(),
-    T.Key("maxsize", default=4, optional=True): T.Int(),
+    T.Key("minsize", default=1 ,optional=True): T.ToInt(),
+    T.Key("maxsize", default=4, optional=True): T.ToInt(),
     "host": T.Or( T.String, T.Null),
-    "port": T.Or( T.Int, T.Null),
+    "port": T.Or( T.ToInt, T.Null),
     "endpoint": T.Or( T.String, T.Null)
 })
 

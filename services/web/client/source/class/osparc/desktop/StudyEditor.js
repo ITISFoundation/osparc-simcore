@@ -20,15 +20,16 @@
 qx.Class.define("osparc.desktop.StudyEditor", {
   extend: qx.ui.splitpane.Pane,
 
-  construct: function(study) {
+  construct: function() {
     this.base(arguments, "horizontal");
 
-    let mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
-    let sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
+    const mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
+    const sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
       minWidth: 0,
       maxWidth: 700,
       width: 400
     });
+    sidePanel.getContentElement().setStyle("border-left", "1px solid " + qx.theme.manager.Color.getInstance().resolve("material-button-background"));
 
     const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
       minWidth: 0
@@ -37,10 +38,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     this.add(mainPanel, 1); // flex 1
     this.add(scroll, 0); // flex 0
-
-    if (study) {
-      this.setStudy(study);
-    }
 
     this.__attachEventHandlers();
   },
@@ -94,6 +91,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (validNodeIds.length === 1 && preferencesSettings.getAutoOpenNode()) {
         this.nodeSelected(validNodeIds[0]);
+        // Todo Odei: A bit of a hack
+        qx.event.Timer.once(() => {
+          this.__checkMaximizeable();
+        }, this, 10);
       } else {
         this.nodeSelected(this.getStudy().getUuid());
       }
@@ -586,6 +587,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     closeStudy: function() {
       this.getStudy().closeStudy();
+    },
+
+    __checkMaximizeable: function() {
+      this.__scrollContainer.setVisibility("visible");
+      this.__nodeView._maximizeIFrame(false); // eslint-disable-line no-underscore-dangle
+      const node = this.getStudy().getWorkbench().getNode(this.__currentNodeId);
+      if (node && node.getIFrame() && !this.__nodeView.isSettingsGroupShowable()) {
+        console.log("maximizeIFrame");
+        node.getIFrame().maximizeIFrame(true);
+      }
     },
 
     __attachEventHandlers: function() {

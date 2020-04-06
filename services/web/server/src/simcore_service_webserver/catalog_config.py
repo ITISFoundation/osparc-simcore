@@ -23,7 +23,7 @@ schema = T.Dict(
     {
         T.Key("enabled", default=True, optional=True): T.Bool(),
         T.Key("host", default=_default_values["host"]): T.String(),
-        T.Key("port", default=_default_values["port"]): T.Int(),
+        T.Key("port", default=_default_values["port"]): T.ToInt(),
         T.Key("version", default="v0"): T.Regexp(
             regexp=r"^v\d+"
         ),  # catalog API version basepath

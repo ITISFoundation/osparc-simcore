@@ -50,6 +50,21 @@ qx.Class.define("osparc.desktop.SidePanel", {
       init: false,
       check: "Boolean",
       apply: "_applyCollapsed"
+    },
+
+    collapsedView: {
+      init: null,
+      check: "qx.ui.core.Widget"
+    },
+
+    collapsedMinWidth: {
+      check: "Number",
+      init: 0
+    },
+
+    collapsedWidth: {
+      check: "Number",
+      init: 20
     }
   },
 
@@ -81,15 +96,26 @@ qx.Class.define("osparc.desktop.SidePanel", {
 
     _applyCollapsed: function(collapsed) {
       this.__setDecorators("sidepanel");
+
       this.getChildren().forEach(child => child.setVisibility(collapsed ? "excluded" : "visible"));
+      if (this.getCollapsedView() !== null) {
+        if (collapsed) {
+          this.add(this.getCollapsedView(), {
+            flex: 1
+          });
+        } else {
+          this.remove(this.getCollapsedView());
+        }
+      }
+
       const splitpaneContainer = this.__getSplitpaneContainer();
       if (collapsed) {
         // Save widths
         this.__savedWidth = this.__getCssWidth();
         this.__savedMinWidth = splitpaneContainer.getMinWidth();
         splitpaneContainer.set({
-          minWidth: 0,
-          width: 20
+          minWidth: this.getCollapsedMinWidth(),
+          width: this.getCollapsedWidth()
         });
       } else {
         // Restore widths

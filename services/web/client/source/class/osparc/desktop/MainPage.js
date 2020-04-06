@@ -69,8 +69,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           return;
         }
         if (this.__studyEditor) {
-          this.__studyEditor.updateStudyDocument();
-          this.__studyEditor.closeStudy();
+          this.__studyEditor.updateStudyDocument(false, this.__studyEditor.closeStudy);
         }
         this.__showDashboard();
       }, this);

@@ -60,18 +60,13 @@ def create_schema() -> T.Dict:
             "main": T.Dict(
                 {
                     "host": T.IP,
-                    "port": T.Int(),
+                    "port": T.ToInt(),
                     "client_outdir": T.String(),
-                    "log_level": T.Enum(
-                        *logging._nameToLevel.keys()
-                    ),
+                    "log_level": T.Enum(*logging._nameToLevel.keys()),
                     "testing": T.Bool(),
                     T.Key("studies_access_enabled", default=False): T.Or(
-                        T.Bool(), T.Int
+                        T.Bool(), T.ToInt
                     ),
-                    T.Key("monitoring_enabled", default=False): T.Or(
-                        T.Bool(), T.Int
-                    ),  # Int added to use environs
                 }
             ),
             addon_section(tracing.tracing_section_name, optional=True): tracing.schema,
@@ -92,6 +87,7 @@ def create_schema() -> T.Dict:
             activity_config.CONFIG_SECTION_NAME: activity_config.schema,
             resource_manager_config.CONFIG_SECTION_NAME: resource_manager_config.schema,
             # BELOW HERE minimal sections until more options are needed
+            addon_section("diagnostics", optional=True): minimal_addon_schema(),
             addon_section("reverse_proxy", optional=True): minimal_addon_schema(),
             addon_section("application_proxy", optional=True): minimal_addon_schema(),
             addon_section("users", optional=True): minimal_addon_schema(),

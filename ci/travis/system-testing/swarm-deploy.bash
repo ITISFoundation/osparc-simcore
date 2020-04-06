@@ -13,6 +13,11 @@ IFS=$'\n\t'
 DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
 export DOCKER_IMAGE_TAG
 
+if [[ ! -v DOCKER_REGISTRY ]]; then
+    export DOCKER_REGISTRY="itisfoundation"
+fi
+
+
 before_install() {
     bash ci/travis/helpers/update-docker.bash
     bash ci/travis/helpers/install-docker-compose.bash
@@ -21,7 +26,7 @@ before_install() {
 
 install() {
     bash ci/helpers/ensure_python_pip.bash
-    pip3 install -r tests/swarm-deploy/requirements.txt
+    pushd tests/swarm-deploy; pip3 install -r requirements/ci.txt; popd
     make pull-version || ( (make pull-cache || true) && make build tag-version)
     make .env
     echo WEBSERVER_DB_INITTABLES=1 >> .env

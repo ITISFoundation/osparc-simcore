@@ -14,8 +14,7 @@ from typing import List
 
 from blackfynn import Blackfynn
 from blackfynn.models import BaseCollection, Collection, DataPackage
-from simcore_service_storage.models import (DatasetMetaData, FileMetaData,
-                                            FileMetaDataEx)
+from simcore_service_storage.models import DatasetMetaData, FileMetaData, FileMetaDataEx
 from simcore_service_storage.settings import DATCORE_ID, DATCORE_STR
 
 logger = logging.getLogger(__name__)

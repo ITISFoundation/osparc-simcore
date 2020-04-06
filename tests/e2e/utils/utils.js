@@ -142,6 +142,11 @@ async function waitForValidOutputFile(page) {
   })
 }
 
+async function waitAndClick(page, id) {
+  await page.waitForSelector(id);
+  await page.click(id);
+}
+
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -163,6 +168,18 @@ async function takeScreenshot(page, captureName) {
   })
 }
 
+function extractWorkbenchData(data) {
+  const workbenchData = {
+    studyId: null,
+    nodeIds: []
+  };
+  workbenchData.studyId = data["uuid"];
+  if ("workbench" in data) {
+    workbenchData.nodeIds = Object.keys(data["workbench"]);
+  }
+  return workbenchData;
+}
+
 module.exports = {
   getUserAndPass,
   getDomain,
@@ -174,6 +191,8 @@ module.exports = {
   dragAndDrop,
   waitForResponse,
   waitForValidOutputFile,
+  waitAndClick,
   sleep,
   takeScreenshot,
+  extractWorkbenchData,
 }

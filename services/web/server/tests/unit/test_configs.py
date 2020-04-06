@@ -5,14 +5,11 @@
 import argparse
 import importlib
 import inspect
-import re
 import unittest.mock as mock
 from pathlib import Path
 from typing import Dict, List
 
 import pytest
-import yaml
-from aiohttp import web
 
 from pytest_simcore.helpers.utils_environs import eval_service_environ, load_env
 from servicelib.application_setup import is_setup_function
@@ -216,3 +213,40 @@ def test_creation_of_login_config(configfile, service_webserver_environ):
             login_internal_cfg.configure(update_cfg)
         except ValueError as ee:
             pytest.fail(f"{ee}: \n {update_cfg}")
+
+
+
+@pytest.mark.parametrize("configfile", config_yaml_filenames)
+def test_resource_manager_config_section(configfile, service_webserver_environ):
+    parser = setup_parser(argparse.ArgumentParser("test-parser"))
+
+    with mock.patch("os.environ", service_webserver_environ):
+        app_config = parse(["-c", configfile], parser)
+
+        # NOTE: during PR #1401 some tests starting failing because these
+        # config entries were returning the wrong type.
+        # I would expect traferet to auto-cast.
+        # Let's check against multiple configs
+        #
+        # >>> import trafaret as t
+        # >>> t.Int().check(3)
+        # 3
+        # >>> t.Int().check("3")
+        # '3'
+        # >>> t.ToInt().check("3")
+        # 3
+        # >>> t.ToInt().check(3)
+        # 3
+        #
+        # NOTE: Changelog 2.0.2 https://trafaret.readthedocs.io/en/latest/changelog.html
+        #   construct for int and float will use ToInt and ToFloat
+        #
+        # RESOLVED: changing the schema from Int() -> ToInt()
+        assert isinstance(app_config["resource_manager"]["enabled"], bool)
+
+        # Checks implementations of .resource_manager.config.get_* helpers
+        assert isinstance(app_config["resource_manager"]["resource_deletion_timeout_seconds"], int)
+        assert isinstance(app_config["resource_manager"]["garbage_collection_interval_seconds"], int)
+
+
+       

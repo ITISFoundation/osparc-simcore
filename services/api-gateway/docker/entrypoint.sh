@@ -82,4 +82,4 @@ echo "$INFO Starting $* ..."
 echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
 echo "  local dir : $(ls -al)"
 
-su --preserve-environment --command "export PATH=${PATH}; $*" "$SC_USER_NAME"
+su --command "$*" "$SC_USER_NAME"
