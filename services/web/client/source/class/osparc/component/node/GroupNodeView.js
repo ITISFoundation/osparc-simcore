@@ -121,6 +121,9 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
       Object.values(innerNodes).forEach(innerNode => {
         const loadingPage = innerNode.getLoadingPage();
         const iFrame = innerNode.getIFrame();
+        if (loadingPage === null && iFrame === null) {
+          return;
+        }
         [
           loadingPage,
           iFrame
@@ -150,13 +153,15 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
         });
       });
 
-      this._iFrameLayout.add(tabView, {
-        flex: 1
-      });
+      if (tabView.getChildren()) {
+        this._iFrameLayout.add(tabView, {
+          flex: 1
+        });
 
-      this._addToMainView(this._iFrameLayout, {
-        flex: 1
-      });
+        this._addToMainView(this._iFrameLayout, {
+          flex: 1
+        });
+      }
     },
 
     _openEditAccessLevel: function() {
