@@ -33,6 +33,7 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 # imports the fixtures for the integration tests
 pytest_plugins = [
     "pytest_simcore.environs",
+    "pytest_simcore.schemas",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.docker_registry",
@@ -40,7 +41,7 @@ pytest_plugins = [
     "pytest_simcore.celery_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.redis_service",
-    "pytest_simcore.websocket_client"
+    "pytest_simcore.websocket_client",
 ]
 
 log = logging.getLogger(__name__)
