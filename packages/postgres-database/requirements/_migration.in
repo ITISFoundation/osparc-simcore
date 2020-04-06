@@ -4,7 +4,7 @@
 # frozen specs
 -r _base.txt
 
-certifi==2019.11.28 # added contraint to fit pre-installation of jupyter/base-notebook:python-3.7.3 (cannot uninstall)
+certifi==2020.4.5.1 # added contraint to fit pre-installation of jupyter/base-notebook:python-3.7.3 (cannot uninstall)
 urllib3>=1.25.8    # Vulnerability
 
 alembic
