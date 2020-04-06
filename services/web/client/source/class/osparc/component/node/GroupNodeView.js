@@ -89,9 +89,26 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
       for (let i=0; i<innerNodesArray.length && !anyVisible; i++) {
         const innerNode = innerNodesArray[i];
         const propsWidget = innerNode.getPropsWidget();
-        anyVisible = propsWidget.hasVisibleInputs();
+        if (propsWidget) {
+          anyVisible = propsWidget.hasVisibleInputs();
+        } else {
+          anyVisible = false;
+        }
       }
       return anyVisible;
+    },
+
+    __iFrameChanged: function(innerNode, tabPage) {
+      const loadingPage = innerNode.getLoadingPage();
+      const iFrame = innerNode.getIFrame();
+
+      tabPage.removeAll();
+      const src = iFrame.getSource();
+      if (src === null || src === "about:blank") {
+        tabPage.add(loadingPage);
+      } else {
+        tabPage.add(iFrame);
+      }
     },
 
     _addIFrame: function() {
@@ -102,27 +119,39 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
       });
       const innerNodes = this.getNode().getInnerNodes(true);
       Object.values(innerNodes).forEach(innerNode => {
+        const loadingPage = innerNode.getLoadingPage();
         const iFrame = innerNode.getIFrame();
-        if (iFrame) {
-          const page = new qx.ui.tabview.Page().set({
-            layout: new qx.ui.layout.Grow(),
-            showCloseButton: false
-          });
-          innerNode.bind("label", page, "label");
-          page.add(iFrame);
-          tabView.add(page);
+        [
+          loadingPage,
+          iFrame
+        ].forEach(widget => {
+          if (widget) {
+            widget.addListener("maximize", e => {
+              this._maximizeIFrame(true);
+            }, this);
+            widget.addListener("restore", e => {
+              this._maximizeIFrame(false);
+            }, this);
+            this._maximizeIFrame(widget.hasState("maximized"));
+          }
+        });
 
-          iFrame.addListener("maximize", e => {
-            this._maximizeIFrame(true);
-          }, this);
-          iFrame.addListener("restore", e => {
-            this._maximizeIFrame(false);
-          }, this);
-          this._maximizeIFrame(iFrame.hasState("maximized"));
-          this._iFrameLayout.add(tabView, {
-            flex: 1
-          });
-        }
+        const page = new qx.ui.tabview.Page().set({
+          layout: new qx.ui.layout.Grow(),
+          showCloseButton: false
+        });
+        innerNode.bind("label", page, "label");
+        tabView.add(page);
+
+        this.__iFrameChanged(innerNode, page);
+
+        iFrame.addListener("load", () => {
+          this.__iFrameChanged(innerNode, page);
+        });
+      });
+
+      this._iFrameLayout.add(tabView, {
+        flex: 1
       });
 
       this._addToMainView(this._iFrameLayout, {
