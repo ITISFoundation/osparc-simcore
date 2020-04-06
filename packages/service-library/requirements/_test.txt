@@ -29,7 +29,7 @@ openapi-spec-validator==0.2.7  # via -r requirements/_base.txt, openapi-core
 packaging==20.3           # via pytest, pytest-sugar
 pluggy==0.13.1            # via pytest
 prometheus-client==0.7.1  # via -r requirements/_base.txt
-psycopg2-binary==2.8.4    # via -r requirements/_base.txt, aiopg, sqlalchemy
+psycopg2-binary==2.8.5    # via -r requirements/_base.txt, aiopg, sqlalchemy
 py==1.8.1                 # via pytest
 pylint==2.4.4             # via -r requirements/_test.in
 pyparsing==2.4.6          # via packaging
