@@ -105,18 +105,16 @@ qx.Class.define("osparc.component.export.ExportGroup", {
         flex: 1
       });
 
-      const exportBtn = new qx.ui.toolbar.Button(this.tr("Export"));
+      const exportBtn = new osparc.ui.form.FetchButton(this.tr("Export")).set({
+        allowGrowX: false,
+        alignX: "right"
+      });
       exportBtn.addListener("execute", () => {
         if (manager.validate()) {
           this.__exportAsMacroService(exportBtn);
         }
       }, this);
-      const actionsBar = new qx.ui.toolbar.ToolBar();
-      const actionsPart = new qx.ui.toolbar.Part();
-      actionsBar.addSpacer();
-      actionsPart.add(exportBtn);
-      actionsBar.add(actionsPart);
-      this._add(actionsBar);
+      this._add(exportBtn);
     },
 
     __buildMetaDataForm: function() {
@@ -148,9 +146,7 @@ qx.Class.define("osparc.component.export.ExportGroup", {
     },
 
     __exportAsMacroService: function(exportBtn) {
-      exportBtn.setIcon("@FontAwesome5Solid/circle-notch/12");
-      exportBtn.getChildControl("icon").getContentElement()
-        .addClass("rotate");
+      exportBtn.setFetching(true);
 
       const outputNode = this.getOutputNode();
       const outputWorkbench = this.getOutputWorkbench();
@@ -176,7 +172,7 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       }
       osparc.data.Resources.fetch("groups", "post", {data: nodesGroupService})
         .then(data => {
-          const text = this.tr("Group added to the Service catalog");
+          const text = this.__groupName.getValue() + this.tr(" added to the Service catalog");
           osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
           this.fireDataEvent("finished");
         })
@@ -186,9 +182,7 @@ qx.Class.define("osparc.component.export.ExportGroup", {
           osparc.component.message.FlashMessenger.getInstance().logAs(text, "ERROR");
         })
         .finally(() => {
-          exportBtn.resetIcon();
-          exportBtn.getChildControl("icon").getContentElement()
-            .removeClass("rotate");
+          exportBtn.setFetching(false);
         });
     },
 
