@@ -181,25 +181,25 @@ qx.Class.define("osparc.store.Store", {
 
     getMyOrganizations: function() {
       return [{
-        orgId: 0,
+        shareGroupId: 0,
         label: "IT'IS Foundation"
       }, {
-        orgId: 1,
+        shareGroupId: 1,
         label: "Speag"
       }, {
-        orgId: 2,
+        shareGroupId: 2,
         label: "Zurich Med Tech"
       }, {
-        orgId: 3,
+        shareGroupId: 3,
         label: "Sim-core"
       }, {
-        orgId: 4,
+        shareGroupId: 4,
         label: "Dat-core"
       }, {
-        orgId: 5,
+        shareGroupId: 5,
         label: "Map-core"
       }, {
-        orgId: 6,
+        shareGroupId: 6,
         label: "NIH"
       }];
     },
