@@ -48,15 +48,15 @@ qx.Class.define("osparc.component.export.ShareWith", {
   members: { // eslint-disable-line qx-rules/no-refs-in-members
     __sharingOptions: {
       "private": {
-        orgId: 0,
+        shareContextId: 0,
         label: "Private"
       },
       "organization": {
-        orgId: 1,
+        shareContextId: 1,
         label: "Organizations"
       },
       "everyone": {
-        orgId: 2,
+        shareContextId: 2,
         label: "Everyone"
       }
     },
@@ -70,7 +70,7 @@ qx.Class.define("osparc.component.export.ShareWith", {
 
       for (let [sharingOptionKey, sharingOption] of Object.entries(this.__sharingOptions)) {
         const rb = new qx.ui.form.RadioButton(sharingOption.label);
-        rb.orgId = sharingOption.orgId;
+        rb.shareContextId = sharingOption.shareContextId;
         if (sharingOptionKey === "organization") {
           const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
           const myOrganizationsHB = this.__myOrganizationsHB = new osparc.component.filter.Organizations(groupId);
@@ -97,7 +97,7 @@ qx.Class.define("osparc.component.export.ShareWith", {
 
     __isOrganizationsSelected: function() {
       const selection = this.__rbManager.getSelection();
-      if (selection.length === 1 && selection[0].orgId === this.__sharingOptions["organization"].orgId) {
+      if (selection.length === 1 && selection[0].shareContextId === this.__sharingOptions["organization"].shareContextId) {
         return true;
       }
       return false;
@@ -106,7 +106,7 @@ qx.Class.define("osparc.component.export.ShareWith", {
     getShareWithId: function() {
       const selection = this.__rbManager.getSelection();
       if (selection.length) {
-        return selection[0].orgId;
+        return selection[0].shareContextId;
       }
       return null;
     },
