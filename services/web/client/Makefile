@@ -11,6 +11,7 @@ docker_compose := docker-compose -f tools/docker-compose.yml
 docker_file    := tools/qooxdoo-kit/builder/Dockerfile
 docker_image   := client/$(subst /Dockerfile,,$(docker_file)):latest
 
+container_name := qooxdoo-compiler
 
 # qx compile --------------------------
 
@@ -25,12 +26,17 @@ source-output:
 .PHONY: compile-dev
 compile-dev: qx_packages source-output ## qx compiles host' 'source' -> host's 'source-output'. Use 'make compile-dev flags=--watch' for continuous compilation.
 	# qx compile 'source' $(flags) --> 'source-output' [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
-	$(docker_compose) run --detach --rm qooxdoo-kit \
+	$(docker_compose) run --detach --rm --name=$(container_name) qooxdoo-kit \
 		qx compile $(flags) \
 			--set-env osparc.vcsRef="${VCS_REF}" \
 			--set-env osparc.vcsRefClient="${VCS_REF_CLIENT}" \
 			--set-env osparc.vcsStatusClient="${VCS_STATUS_CLIENT}" \
 			--set-env osparc.vcsOriginUrl="${VCS_URL}"
+
+.PHONY: follow-dev-logs
+follow-dev-logs: ## follow the logs of the qx compiler
+	@docker logs --follow $(container_name)
+
 
 .PHONY: compile touch upgrade
 compile compile-x: ## qx compiles host' 'source' -> image's 'build-output'

@@ -33,6 +33,13 @@ qx.Class.define("osparc.utils.Utils", {
         (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
     },
 
+    getLogoPath: function() {
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const textColor = colorManager.resolve("text");
+      const luminance = this.getColorLuminance(textColor);
+      return luminance > 0.3 ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
+    },
+
     getLoaderUri: function(arg) {
       let loadingUri = qx.util.ResourceManager.getInstance().toUri("osparc/loading/loader.html");
       if (arg) {
@@ -42,9 +49,36 @@ qx.Class.define("osparc.utils.Utils", {
       return loadingUri;
     },
 
+    __setStyleToIFrame: function(domEl) {
+      if (domEl && domEl.contentDocument && domEl.contentDocument.documentElement) {
+        const iframeDocument = domEl.contentDocument.documentElement;
+        const colorManager = qx.theme.manager.Color.getInstance();
+        const bgColor = colorManager.resolve("loading-page-background-color");
+        const textColor = colorManager.resolve("loading-page-text");
+        const spinnerColor = colorManager.resolve("loading-page-spinner");
+        iframeDocument.style.setProperty("--background-color", bgColor);
+        iframeDocument.style.setProperty("--text-color", textColor);
+        iframeDocument.style.setProperty("--spinner-color", spinnerColor);
+      }
+    },
+
     createLoadingIFrame: function(text) {
       const loadingUri = osparc.utils.Utils.getLoaderUri(text);
-      let iframe = new qx.ui.embed.Iframe(loadingUri);
+      const iframe = new qx.ui.embed.Iframe(loadingUri);
+
+      const contEle = iframe.getContentElement();
+      contEle.addListener("appear", () => {
+        qx.event.Timer.once(() => {
+          const domEl = contEle.getDomElement();
+          if (domEl) {
+            this.__setStyleToIFrame(domEl);
+            const colorManager = qx.theme.manager.Color.getInstance();
+            colorManager.addListener("changeTheme", () => {
+              this.__setStyleToIFrame(domEl);
+            });
+          }
+        }, this, 50);
+      });
       iframe.setBackgroundColor("transparent");
       return iframe;
     },

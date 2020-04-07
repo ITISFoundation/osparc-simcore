@@ -47,12 +47,13 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     this._setLayout(new qx.ui.layout.HBox(10));
 
-    const iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Services"));
-    this._add(iframe, {
+    // const iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Services"));
+    const loadingPage = new osparc.ui.message.Loading(this.tr("Loading Services"));
+    this._add(loadingPage, {
       flex: 1
     });
 
-    this.__initResources(iframe);
+    this.__initResources();
   },
 
   members: {
@@ -77,14 +78,13 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       }
     },
 
-    __initResources: function(iframe) {
+    __initResources: function() {
       const store = osparc.store.Store.getInstance();
       store.getServices(true)
         .then(services => {
           // Do not validate if are not taking actions
           // this.__nodeCheck(services);
           this._removeAll();
-          iframe.dispose();
           this.__createServicesLayout();
           this.__populateList(false);
           this.__attachEventHandlers();
