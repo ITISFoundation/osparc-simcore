@@ -105,15 +105,12 @@ qx.Class.define("osparc.component.export.ExportGroup", {
         flex: 1
       });
 
-      const exportBtn = new osparc.ui.form.FetchButton(this.tr("Export")).set({
-        allowGrowX: false,
-        alignX: "right"
+      const shareWith = new osparc.component.export.ShareWith("exportGroup");
+      this._add(shareWith, {
+        flex: 1
       });
-      exportBtn.addListener("execute", () => {
-        if (manager.validate()) {
-          this.__exportAsMacroService(exportBtn);
-        }
-      }, this);
+
+      const exportBtn = this.__getExportBtn(manager);
       this._add(exportBtn);
     },
 
@@ -143,6 +140,19 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       const innerNodes = this.getOutputWorkbench().getNodes(true);
       const settingsEditorLayout = osparc.component.node.GroupNodeView.getSettingsEditorLayout(innerNodes);
       return settingsEditorLayout;
+    },
+
+    __getExportBtn: function(manager) {
+      const exportBtn = new osparc.ui.form.FetchButton(this.tr("Export")).set({
+        allowGrowX: false,
+        alignX: "right"
+      });
+      exportBtn.addListener("execute", () => {
+        if (manager.validate()) {
+          this.__exportAsMacroService(exportBtn);
+        }
+      }, this);
+      return exportBtn;
     },
 
     __exportAsMacroService: function(exportBtn) {
