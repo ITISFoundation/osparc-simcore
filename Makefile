@@ -194,6 +194,7 @@ up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Dep
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy -c $< $(SWARM_STACK_NAME)
 	$(MAKE) .deploy-ops
+	$(MAKE) -C services/web/client follow-dev-logs
 	
 
 up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable)
