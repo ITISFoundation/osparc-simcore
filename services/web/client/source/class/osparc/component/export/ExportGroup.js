@@ -106,11 +106,17 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       });
 
       const shareWith = new osparc.component.export.ShareWith("exportGroup");
-      this._add(shareWith, {
-        flex: 1
-      });
+      this._add(shareWith);
 
-      const exportBtn = this.__getExportBtn(manager);
+      const exportBtn = this.__getExportBtn();
+      exportBtn.addListener("execute", () => {
+        if (manager.validate()) {
+          this.__exportAsMacroService(exportBtn);
+        }
+      }, this);
+      shareWith.addListener("changeReady", e => {
+        exportBtn.setEnabled(e.getData());
+      });
       this._add(exportBtn);
     },
 
@@ -142,16 +148,11 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       return settingsEditorLayout;
     },
 
-    __getExportBtn: function(manager) {
+    __getExportBtn: function() {
       const exportBtn = new osparc.ui.form.FetchButton(this.tr("Export")).set({
         allowGrowX: false,
         alignX: "right"
       });
-      exportBtn.addListener("execute", () => {
-        if (manager.validate()) {
-          this.__exportAsMacroService(exportBtn);
-        }
-      }, this);
       return exportBtn;
     },
 
