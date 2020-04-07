@@ -14,7 +14,7 @@ attrs==19.3.0             # via -r requirements/_base.txt, aiohttp, jsonschema, 
 certifi==2019.11.28       # via requests
 chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, requests
 coverage==5.0.3           # via -r requirements/_test.in, coveralls, pytest-cov
-coveralls==1.11.1         # via -r requirements/_test.in
+coveralls==2.0.0          # via -r requirements/_test.in
 docopt==0.6.2             # via coveralls
 idna==2.8                 # via -r requirements/_base.txt, requests, yarl
 isodate==0.6.0            # via -r requirements/_base.txt, openapi-core
