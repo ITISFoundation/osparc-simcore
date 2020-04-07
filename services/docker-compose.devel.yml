@@ -53,3 +53,16 @@ services:
       - ../packages:/devel/packages
     environment:
       - SC_BOOT_MODE=debug-ptvsd
+
+  traefik:
+    deploy:
+      # currently only available in devel mode as this conflicts with the external traefik dashboard
+      labels:
+        - io.simcore.zone=internal_simcore_stack
+        - traefik.enable=true
+        # traefik UI
+        - traefik.http.routers.api_internal.service=api@internal
+        - traefik.http.routers.api_internal.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api`)
+        - traefik.http.routers.api_internal.entrypoints=traefik_dashboard
+        - traefik.http.routers.api_internal.middlewares=gzip@docker
+        - traefik.http.services.api_internal.loadbalancer.server.port=8080
