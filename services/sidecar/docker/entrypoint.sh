@@ -85,7 +85,7 @@ then
     then
         echo "$WARNING docker group with $GROUPID already exists, getting group name..."
         # if group already exists in container, then reuse name
-        GROUPNAME=$(getent group "${GROUPID}" | cut --delimiters=: --fields=1)
+        GROUPNAME=$(getent group "${GROUPID}" | cut --delimiter=: --fields=1)
         echo "$WARNING docker group with $GROUPID has name $GROUPNAME"
     fi
     adduser "$SC_USER_NAME" "$GROUPNAME"

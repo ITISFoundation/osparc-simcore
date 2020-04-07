@@ -33,8 +33,8 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
     columnModel.getBehavior().setMinWidth(1, 80);
     columnModel.getBehavior().setMinWidth(2, 80);
 
-    columnModel.setDataCellRenderer(4, new osparc.ui.table.cellrenderer.Percentage("#2c7cce"));
-    columnModel.setDataCellRenderer(5, new osparc.ui.table.cellrenderer.Percentage("#358475").set({
+    columnModel.setDataCellRenderer(4, new osparc.ui.table.cellrenderer.Percentage("activitytree-background-cpu"));
+    columnModel.setDataCellRenderer(5, new osparc.ui.table.cellrenderer.Percentage("activitytree-background-memory").set({
       unit: "MB"
     }));
 
