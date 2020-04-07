@@ -477,8 +477,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       menu.addSeparator();
 
       const deleteButton = this.__getDeleteStudyMenuButton(studyData, isTemplate);
-      osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
-      menu.add(deleteButton);
+      if (deleteButton) {
+        menu.add(deleteButton);
+      }
 
       return menu;
     },
@@ -549,7 +550,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getDeleteStudyMenuButton: function(studyData, isTemplate) {
+      const isCurrentUserOwner = studyData.owner === osparc.auth.Data.getInstance().getEmail();
+      if (!isCurrentUserOwner) {
+        return null;
+      }
+
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
+      osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
       deleteButton.addListener("execute", () => {
         const win = this.__createConfirmWindow(false);
         win.center();
