@@ -431,7 +431,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const items = studyContainer.getChildren();
       for (let i=0; i<items.length; i++) {
         const item = items[i];
-        if (studyId === item.getUuid()) {
+        if (item.getUuid && studyId === item.getUuid()) {
           studyContainer.remove(item);
           return;
         }
