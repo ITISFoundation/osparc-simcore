@@ -271,19 +271,8 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __openSaveAsTemplate: function() {
-      const window = new qx.ui.window.Window(this.tr("Save as Template")).set({
-        appearance: "service-window",
-        layout: new qx.ui.layout.Grow(),
-        autoDestroy: true,
-        contentPadding: 0,
-        width: 400,
-        height: 300,
-        showMinimize: false,
-        modal: true
-      });
-
       const saveAsTemplateView = new osparc.component.export.SaveAsTemplate(this.__model.getUuid(), this.__serializeForm());
-      window.add(saveAsTemplateView);
+      const window = osparc.component.export.SaveAsTemplate.createSaveAsTemplateWindow(saveAsTemplateView);
       saveAsTemplateView.addListener("finished", e => {
         const template = e.getData();
         if (template) {
@@ -295,7 +284,6 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         }
       }, this);
 
-      window.center();
       window.open();
     },
 

@@ -33,6 +33,24 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
     this.__buildLayout();
   },
 
+  statics: {
+    createSaveAsTemplateWindow: function(saveAsTemplate) {
+      const window = new qx.ui.window.Window("Save as Template").set({
+        appearance: "service-window",
+        layout: new qx.ui.layout.Grow(),
+        autoDestroy: true,
+        contentPadding: 0,
+        width: 400,
+        height: 300,
+        showMinimize: false,
+        modal: true
+      });
+      window.add(saveAsTemplate);
+      window.center();
+      return window;
+    }
+  },
+
   events: {
     "finished": "qx.event.type.Data"
   },

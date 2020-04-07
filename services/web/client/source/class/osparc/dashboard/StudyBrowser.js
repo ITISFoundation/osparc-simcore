@@ -538,24 +538,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getSaveAsTemplateMenuButton: function(studyData) {
       const saveAsTemplateButton = new qx.ui.menu.Button(this.tr("Save as template"));
-      saveAsTemplateButton.addListener("execute", e => {
-        const params = {
-          url: {
-            "study_url": studyData.uuid
-          },
-          data: studyData
-        };
-        osparc.data.Resources.fetch("templates", "postToTemplate", params)
-          .then(() => {
-            const msg = this.tr("Successfully Saved as template");
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+      saveAsTemplateButton.addListener("execute", () => {
+        const saveAsTemplateView = new osparc.component.export.SaveAsTemplate(studyData.uuid, studyData);
+        const window = osparc.component.export.SaveAsTemplate.createSaveAsTemplateWindow(saveAsTemplateView);
+        saveAsTemplateView.addListener("finished", e => {
+          const template = e.getData();
+          if (template) {
             this.reloadTemplateStudies();
-          })
-          .catch(err => {
-            const msg = this.tr("Failed Saving as template");
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-            console.error(err);
-          });
+            window.close();
+          }
+        }, this);
+        window.open();
       }, this);
       return saveAsTemplateButton;
     },
