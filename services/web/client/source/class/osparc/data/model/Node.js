@@ -931,9 +931,14 @@ qx.Class.define("osparc.data.model.Node", {
     __onNodeState: function(data) {
       const serviceState = data["service_state"];
       switch (serviceState) {
-        case "starting":
-        case "pulling": {
+        case "starting": {
           this.setInteractiveStatus("starting");
+          const interval = 5000;
+          qx.event.Timer.once(() => this.__nodeState(), this, interval);
+          break;
+        }
+        case "pulling": {
+          this.setInteractiveStatus("pulling");
           const interval = 5000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
           break;
@@ -1028,6 +1033,7 @@ qx.Class.define("osparc.data.model.Node", {
       }, this);
       pingRequest.addListenerOnce("fail", e => {
         const error = e.getTarget().getResponse();
+        this.setInteractiveStatus("connecting");
         console.log("service not ready yet, waiting... " + error);
         const interval = 1000;
         qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
