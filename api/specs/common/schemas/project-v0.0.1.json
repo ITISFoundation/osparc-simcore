@@ -10,6 +10,7 @@
     "name",
     "description",
     "prjOwner",
+    "accessRights",
     "creationDate",
     "lastChangeDate",
     "thumbnail",
@@ -41,6 +42,10 @@
     "prjOwner": {
       "type": "string",
       "description": "user uuid"
+    },
+    "accessRights": {
+      "type": "object",
+      "description": "object containing the GroupID as key and rwx permissions as value"
     },
     "creationDate": {
       "type": "string",

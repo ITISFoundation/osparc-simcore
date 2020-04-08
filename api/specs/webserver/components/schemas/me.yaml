@@ -27,6 +27,10 @@ ProfileOutput:
         format: email
       role:
         type: string
+      organizations:
+        type: array
+        items:
+          $ref: '#/Organization'
       gravatar_id:
         type: string
   example:
@@ -47,6 +51,20 @@ ProfileEnveloped:
       nullable: true
       default: null
 
+
+Organization:
+  type: object
+  properties:
+    gid:
+      type: string
+    label:
+      type: string
+    description:
+      type: string
+  example:
+    gid: '1'
+    label: 'ITIS Foundation'
+    description: 'The Foundation for Research on Information Technologies in Society'
 
 Token:
   description: api keys for third party services
