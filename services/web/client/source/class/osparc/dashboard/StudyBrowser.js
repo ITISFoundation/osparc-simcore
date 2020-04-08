@@ -479,7 +479,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const moreInfoButton = this.__getMoreInfoMenuButton(studyData, isTemplate);
       menu.add(moreInfoButton);
 
-      const isCurrentUserOwner = studyData.prjOwner === osparc.auth.Data.getInstance().getEmail();
+      const isCurrentUserOwner = this.__amIStudyOwner(studyData);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       if (isCurrentUserOwner && !isTemplate && canCreateTemplate) {
         const saveAsTemplateButton = this.__getSaveAsTemplateMenuButton(studyData);
@@ -554,7 +554,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getDeleteStudyMenuButton: function(studyData, isTemplate) {
-      const isCurrentUserOwner = studyData.prjOwner === osparc.auth.Data.getInstance().getEmail();
+      const isCurrentUserOwner = this.__amIStudyOwner(studyData);
       if (!isCurrentUserOwner) {
         return null;
       }
@@ -665,7 +665,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (templateSelection[i] instanceof osparc.dashboard.StudyBrowserButtonNew) {
           allMine = false;
         } else {
-          const isCurrentUserOwner = templateSelection[i].getCreator() === osparc.auth.Data.getInstance().getEmail();
+          const isCurrentUserOwner = this.__amIStudyOwner(templateSelection[i]);
           allMine &= isCurrentUserOwner;
         }
       }
@@ -724,6 +724,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       this.__showStudiesLayout(true);
+    },
+
+    __amIStudyOwner: function(studyData) {
+      const myEmail = osparc.auth.Data.getInstance().getEmail();
+      if ("prjOwner" in studyData) {
+        return studyData.prjOwner === myEmail;
+      } else if ("getCreator" in studyData) {
+        return studyData.getCreator() === myEmail;
+      }
+      return false;
     }
   }
 });
