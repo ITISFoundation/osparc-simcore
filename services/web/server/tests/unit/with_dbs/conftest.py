@@ -241,20 +241,26 @@ async def security_cookie(client) -> str:
 async def socketio_client(socketio_url: str, security_cookie: str):
     clients = []
 
-    async def connect(client_session_id):
+    async def connect(client_session_id) -> socketio.AsyncClient:
         sio = socketio.AsyncClient()
-        url = str(
-            URL(socketio_url).with_query({"client_session_id": client_session_id})
-        )
-        await sio.connect(url, headers={"Cookie": security_cookie})
+        url = str(URL(socketio_url).with_query({'client_session_id': client_session_id}))
+
+        headers = {}
+        if security_cookie:
+            # WARNING: engineio fails with empty cookies. Expects "key=value"
+            headers.update({'Cookie': security_cookie})
+
+        await sio.connect(url, headers=headers)
         assert sio.sid
         clients.append(sio)
         return sio
 
     yield connect
+
     for sio in clients:
         await sio.disconnect()
         assert not sio.sid
+
 
 
 @pytest.fixture()
