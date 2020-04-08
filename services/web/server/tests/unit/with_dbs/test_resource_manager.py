@@ -8,6 +8,7 @@ from copy import deepcopy
 
 import pytest
 import socketio
+import socketio.exceptions
 from aiohttp import web
 from mock import call
 
@@ -141,8 +142,10 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
 
 # ------------------------ TESTS -------------------------------
 async def test_anonymous_websocket_connection(socketio_client, client_session_id):
-    with pytest.raises(socketio.exceptions.ConnectionError):
+    with pytest.raises(socketio.exceptions.ConnectionError) as excinfo:
+        # Client is unauthorized and socket server shall raise ConnectionRefusedError
         await socketio_client(client_session_id())
+    assert "Connection refused by the server" in str(excinfo.value)
 
 
 @pytest.mark.parametrize(

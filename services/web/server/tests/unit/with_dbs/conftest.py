@@ -244,7 +244,6 @@ async def socketio_client(socketio_url: str, security_cookie: str):
     async def connect(client_session_id) -> socketio.AsyncClient:
         sio = socketio.AsyncClient()
         url = str(URL(socketio_url).with_query({'client_session_id': client_session_id}))
-
         headers = {}
         if security_cookie:
             # WARNING: engineio fails with empty cookies. Expects "key=value"
