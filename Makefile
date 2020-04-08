@@ -87,12 +87,12 @@ endef
 
 rebuild: build-nc # alias
 build build-nc build-kit build-x: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
-ifeq ($(target),)	
+ifeq ($(target),)
 	# Compiling front-end
-	
+
 	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
 	$(MAKE_C) services/web/client compile$(if $(findstring -x,$@),-x,)
-	
+
 	# Building services
 	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
 	$(_docker_compose_build)
@@ -126,7 +126,7 @@ endif
 
 
 # TODO: should download cache if any??
-build-cache build-cache-nc build-cache-kit build-cache-x: .env ## Build cache images and tags them as 'local/{service-name}:cache'	
+build-cache build-cache-nc build-cache-kit build-cache-x: .env ## Build cache images and tags them as 'local/{service-name}:cache'
 ifeq ($(target),)
 	# Compiling front-end
 	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,)
@@ -189,13 +189,13 @@ endif
 
 
 up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
-	# Start compile+watch front-end container [front-end]	
+	# Start compile+watch front-end container [front-end]
 	$(MAKE_C) services/web/client compile-dev flags=--watch
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy -c $< $(SWARM_STACK_NAME)
 	$(MAKE) .deploy-ops
 	$(MAKE_C) services/web/client follow-dev-logs
-	
+
 
 up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Deploy stack $(SWARM_STACK_NAME)
@@ -426,31 +426,29 @@ endif
 
 git_clean_args := -dxf -e .vscode -e TODO.md -e .venv
 
-
 .check-clean:
 	@git clean -n $(git_clean_args)
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 
-clean-venv: ## Purges .venv into original configuration
+clean-venv: devenv ## Purges .venv into original configuration
 	# Cleaning your venv
-	pip-sync $(CURDIR)/requirements.txt
+	.venv/bin/pip-sync $(CURDIR)/requirements.txt
 	@pip list
 
-clean: .check-clean clean-venv ## cleans all unversioned files in project and temp files create by this makefile
+clean: .check-clean ## cleans all unversioned files in project and temp files create by this makefile
 	# Cleaning unversioned
 	@git clean $(git_clean_args)
 	# Cleaning web/client
-	@$(MAKE_C) services/web/client clean
-	# Cleaning postgres maintenance
-	@$(MAKE_C) packages/postgres-database/docker clean
+	@$(MAKE_C) services/web/client clean-files
+
 
 clean-images: ## removes all created images
 	# Cleaning all service images
 	-$(foreach service,$(SERVICES_LIST)\
 		,docker image rm -f $(shell docker images */$(service):* -q);)
 	# Cleaning webclient
-	@$(MAKE_C) services/web/client clean
+	@$(MAKE_C) services/web/client clean-images
 	# Cleaning postgres maintenance
 	@$(MAKE_C) packages/postgres-database/docker clean
 
@@ -462,6 +460,7 @@ clean-all: clean clean-images # Deep clean including .venv and produced images
 postgres-upgrade: ## initalize or upgrade postgres db to latest state
 	@$(MAKE_C) packages/postgres-database/docker build
 	@$(MAKE_C) packages/postgres-database/docker upgrade
+
 
 .PHONY: reset
 reset: ## restart docker daemon (LINUX ONLY)
