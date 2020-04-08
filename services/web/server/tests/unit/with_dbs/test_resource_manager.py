@@ -20,8 +20,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
-from simcore_service_webserver.resource_manager import (config,
-                                                        setup_resource_manager)
+from simcore_service_webserver.resource_manager import config, setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import get_registry
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
@@ -34,8 +33,9 @@ API_VERSION = "v0"
 GARBAGE_COLLECTOR_INTERVAL = 1
 SERVICE_DELETION_DELAY = 1
 
-#SEE https://github.com/miguelgrinberg/python-socketio/releases
-SIO_VERSION = tuple( digit for digit in socketio.__version__.split(".") )
+# SEE https://github.com/miguelgrinberg/python-socketio/releases
+SIO_VERSION = tuple(int(digit) for digit in socketio.__version__.split("."))
+
 
 @pytest.fixture
 def client(loop, aiohttp_client, app_cfg, postgres_service):
@@ -148,11 +148,12 @@ async def test_anonymous_websocket_connection(socketio_client, client_session_id
         # Client is unauthorized and socket server shall raise ConnectionRefusedError
         await socketio_client(client_session_id())
 
-    minor = SIO_VERSION[1]
-    if minor==3:
+    minor: int = SIO_VERSION[1]
+    if minor == 3:
         assert "Unexpected status code 401 in server response" in str(excinfo.value)
     else:
         assert "Connection refused by the server" in str(excinfo.value)
+
 
 @pytest.mark.parametrize(
     "user_role",
@@ -203,7 +204,7 @@ async def test_websocket_multiple_connections(
     NUMBER_OF_SOCKETS = 5
     # connect multiple clients
     clients = []
-    for socket_count in range(1, NUMBER_OF_SOCKETS+1):
+    for socket_count in range(1, NUMBER_OF_SOCKETS + 1):
         cur_client_session_id = client_session_id()
         sio = await socketio_client(cur_client_session_id)
         resource_key = {
@@ -214,12 +215,15 @@ async def test_websocket_multiple_connections(
         assert [sio.sid] == await socket_registry.find_resources(
             resource_key, "socket_id"
         )
-        assert len(
-            await socket_registry.find_resources(
-                {"user_id": str(logged_user["id"]), "client_session_id": "*"},
-                "socket_id",
+        assert (
+            len(
+                await socket_registry.find_resources(
+                    {"user_id": str(logged_user["id"]), "client_session_id": "*"},
+                    "socket_id",
+                )
             )
-        ) == socket_count
+            == socket_count
+        )
         clients.append(sio)
 
     # NOTE: the socket.io client needs the websockets package in order
