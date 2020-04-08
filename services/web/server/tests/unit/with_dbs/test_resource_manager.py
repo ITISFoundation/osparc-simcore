@@ -1,35 +1,26 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
 
-from asyncio import Future, sleep
+from asyncio import sleep
 from copy import deepcopy
-from typing import Dict
-from uuid import uuid4
 
 import pytest
 import socketio
 from aiohttp import web
 from mock import call
-from yarl import URL
 
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import NewProject
 from servicelib.application import create_safe_application
-from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
-from simcore_service_webserver.resource_manager import (
-    config,
-    registry,
-    setup_resource_manager,
-)
+from simcore_service_webserver.resource_manager import (config,
+                                                        setup_resource_manager)
 from simcore_service_webserver.resource_manager.registry import get_registry
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
@@ -37,7 +28,6 @@ from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_sockets
 from simcore_service_webserver.users import setup_users
-from simcore_service_webserver.utils import now_str
 
 API_VERSION = "v0"
 GARBAGE_COLLECTOR_INTERVAL = 1
@@ -204,7 +194,7 @@ async def test_websocket_multiple_connections(
     NUMBER_OF_SOCKETS = 5
     # connect multiple clients
     clients = []
-    for socket in range(NUMBER_OF_SOCKETS):
+    for socket_count in range(1, NUMBER_OF_SOCKETS+1):
         cur_client_session_id = client_session_id()
         sio = await socketio_client(cur_client_session_id)
         resource_key = {
@@ -220,15 +210,16 @@ async def test_websocket_multiple_connections(
                 {"user_id": str(logged_user["id"]), "client_session_id": "*"},
                 "socket_id",
             )
-        ) == (socket + 1)
+        ) == socket_count
         clients.append(sio)
 
-    # NOTE: the socket.io client needs the websockets package in order to upgrade to websocket transport
-    # disconnect multiple clients
+    # NOTE: the socket.io client needs the websockets package in order
+    # to upgrade to websocket transport disconnect multiple clients
     for sio in clients:
         sid = sio.sid
         await sio.disconnect()
         assert not sio.sid
+        # WARNING: this check fails randomly! Keep an eye
         assert not await socket_registry.find_keys(("socket_id", sio.sid))
         assert not sid in await socket_registry.find_resources(
             resource_key, "socket_id"
