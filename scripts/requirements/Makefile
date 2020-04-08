@@ -1,38 +1,25 @@
-# Recipes to upgrade requirements
+# Recipes to upgrade requirements in batch
 #
 # USE CAREFULLY. UNDER DEVELOPMENT
 #
-#
-#  Examples
-#
-#  - To upgrade only a package:
-#    make all upgrade=psycopg2-binary
-#
 
-ROOTDIR = $(abspath $(CURDIR)/../..)
+
+# locations
+ROOTDIR := $(abspath $(CURDIR)/../..)
+PACKAGES_DIR := $(abspath $(ROOTDIR)/packages)
+
+# tools
+MAKE_C := $(MAKE) --no-print-directory --directory
+
+# flags
 UPGRADE_OPTION:= $(if $(upgrade),--upgrade-package $(upgrade),)
 
-inputs := $(shell grep --include=*.in --recursive --files-with-match $(upgrade) $(ROOTDIR))
-outputs := $(inputs:.in=.txt)
 
+.PHONY: touch packages
+_base-in-reqs := $(shell find packages -type f -name _base.in)
 
-.DEFAULT_TARGET=info
-
-
-%.txt: %.in
-	export CUSTOM_COMPILE_COMMAND='make $(notdir $@)'; pip-compile --annotate $(UPGRADE_OPTION) --output-file $@ $<
-
-
-.PHONY: touch
 touch:
-	$(foreach p,$(inputs),touch $(p);)
+	$(foreach p,${_base-in-reqs},touch $(p);)
 
-.PHONY: all
-all: touch $(outputs)
-
-
-.PHONY: info
-info:
-	# $(inputs)
-	# ---------
-	# $(outputs)
+packages:
+	$(foreach p,${_base-in-reqs},touch $(p); $(MAKE_C) $(dir $(p)) reqs;)
