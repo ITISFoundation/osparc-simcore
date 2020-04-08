@@ -17,7 +17,7 @@ API_COMMON_JSON_SCHEMAS = $(shell find ${API_SPECS_DIR}/common/schemas -type f -
 .PHONY: .update-schemas
 .update-schemas:
 	# Convert common schemas to openapi-compatible schemas
-	@$(MAKE) --directory ${API_SPECS_DIR}/common/schemas
+	$(MAKE) --no-print-directory --directory ${API_SPECS_DIR}/common/schemas
 	# Updating ${API_SPECS_DIR}/schemas with common json-schemas
 	@cp --target-directory=${APP_API_DIR}/schemas \
 		--verbose \

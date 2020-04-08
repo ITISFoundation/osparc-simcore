@@ -10,12 +10,12 @@ export APP_VERSION = $(shell cat VERSION)
 
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)
-	@$(MAKE) --directory requirements reqs
+	@$(MAKE_C) requirements reqs
 
 
 .PHONY: openapi-specs
 openapi-specs: ## updates and validates openapi specifications
-	$(MAKE) -C $(CURDIR)/src/simcore_service_${APP_NAME}/api $@
+	$(MAKE_C) $(CURDIR)/src/simcore_service_${APP_NAME}/api $@
 
 
 .PHONY: install-dev install-prod install-ci
@@ -52,7 +52,7 @@ run-devel: ## runs app with pg service
 .PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
 build build-nc build-devel build-devel-nc build-cache build-cache-nc: openapi-specs ## docker image build in many flavours
 	# building ${APP_NAME} ...
-	@$(MAKE) --directory ${REPO_BASE_DIR} $@ target=${APP_NAME}
+	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
 
 .PHONY: tail

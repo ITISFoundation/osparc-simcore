@@ -11,7 +11,7 @@ export APP_VERSION = $(shell cat VERSION)
 
 .PHONY: reqs
 reqs: ## compiles pip requirements (.in -> .txt)
-	@$(MAKE) --directory requirements reqs
+	@$(MAKE_C) requirements reqs
 
 .PHONY: install-dev install-prod install-ci
 install-dev install-prod install-ci: _check-venv-active ## install app in development/production or CI mode
@@ -47,7 +47,7 @@ down: ## stops pg fixture
 
 .PHONY: build
 build: ## builds docker image (using main services/docker-compose-build.yml)
-	@$(MAKE) --directory ${REPO_BASE_DIR} target=${APP_NAME} $@
+	@$(MAKE_C) ${REPO_BASE_DIR} target=${APP_NAME} $@
 
 
 .PHONY: replay
