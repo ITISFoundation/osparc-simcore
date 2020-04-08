@@ -33,6 +33,8 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
     this.__userProfileData = null;
     this.__userProfileModel = null;
 
+    this.__getValuesFromServer();
+
     this.add(this.__createProfileUser());
   },
 
@@ -42,7 +44,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
 
     __createProfileUser: function() {
       // layout
-      const box = this._createSectionBox("User");
+      const box = this._createSectionBox(this.tr("User"));
 
       const email = new qx.ui.form.TextField().set({
         placeholder: this.tr("Email")
@@ -178,7 +180,6 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
         }
       }, this);
 
-      this.__getValuesFromServer();
 
       return box;
     },
