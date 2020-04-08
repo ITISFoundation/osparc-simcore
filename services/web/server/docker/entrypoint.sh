@@ -18,6 +18,8 @@ echo "$INFO" "Entrypoint for stage ${SC_BUILD_TARGET} ..."
 echo "$INFO" "User :$(id "$(whoami)")"
 echo "$INFO" "Workdir : $(pwd)"
 echo "$INFO" "User : $(id scu)"
+echo "$INFO" "python : $(command -v python)"
+echo "$INFO" "pip : $(command -v pip)"
 
 USERNAME=scu
 GROUPNAME=scu
@@ -47,9 +49,10 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
     else
       echo "$INFO" "group already exists"
     fi
-    echo "$INFO" "adding $SC_USER_NAME to group $CONT_GROUPNAME..."
+    echo "$INFO" "Adding $SC_USER_NAME to group $CONT_GROUPNAME..."
     adduser "$SC_USER_NAME" "$CONT_GROUPNAME"
 
+    echo "$WARNING" "Changing ownership [this could take some time]"
     echo "$INFO" "Changing $SC_USER_NAME:$SC_USER_NAME ($SC_USER_ID:$SC_USER_ID) to $SC_USER_NAME:$CONT_GROUPNAME ($HOST_USERID:$HOST_GROUPID)"
     usermod --uid "$HOST_USERID" --gid "$HOST_GROUPID" "$SC_USER_NAME"
 

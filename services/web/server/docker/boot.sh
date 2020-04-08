@@ -19,7 +19,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   command -v python | sed 's/^/    /'
 
   cd services/web/server || exit 1
-  pip --no-cache-dir --quiet --no-cache-dir -r requirements/dev.txt
+  pip --quiet --no-cache-dir install -r requirements/dev.txt
   cd - || exit 1
   echo "$INFO" "PIP :"
   pip list | sed 's/^/    /'
