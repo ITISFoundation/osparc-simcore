@@ -148,7 +148,8 @@ async def test_anonymous_websocket_connection(socketio_client, client_session_id
         # Client is unauthorized and socket server shall raise ConnectionRefusedError
         await socketio_client(client_session_id())
 
-    if SIO_VERSION[0]==3:
+    minor = SIO_VERSION[1]
+    if minor==3:
         assert "Unexpected status code 401 in server response" in str(excinfo.value)
     else:
         assert "Connection refused by the server" in str(excinfo.value)
