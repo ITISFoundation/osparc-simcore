@@ -26,8 +26,8 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
    *
    * @extends osparc.component.filter.UIFilter
    */
-  construct: function(label, filterId, groupId) {
-    this.base(arguments, filterId, groupId);
+  construct: function(label, filterId, filterGroupId) {
+    this.base(arguments, filterId, filterGroupId);
     this._setLayout(new qx.ui.layout.HBox());
 
     this._dropdown = new qx.ui.toolbar.MenuButton(label);

@@ -25,7 +25,7 @@
 qx.Class.define("osparc.component.export.ShareWith", {
   extend: qx.ui.groupbox.GroupBox,
 
-  construct: function(groupId) {
+  construct: function(filterGroupId) {
     this.base(arguments, this.tr("Share with"));
 
     this.set({
@@ -33,7 +33,7 @@ qx.Class.define("osparc.component.export.ShareWith", {
       layout: new qx.ui.layout.VBox(10)
     });
 
-    this.__buildLayout(groupId);
+    this.__buildLayout(filterGroupId);
   },
 
   properties: {
@@ -63,7 +63,7 @@ qx.Class.define("osparc.component.export.ShareWith", {
     __rbManager: null,
     __myOrganizationsHB: null,
 
-    __buildLayout: function(groupId) {
+    __buildLayout: function(filterGroupId) {
       this.__rbManager = new qx.ui.form.RadioGroup().set({
         allowEmptySelection: true
       });
@@ -73,7 +73,7 @@ qx.Class.define("osparc.component.export.ShareWith", {
         rb.shareContextId = sharingOption.shareContextId;
         if (sharingOptionKey === "organization") {
           const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-          const myOrganizationsHB = this.__myOrganizationsHB = new osparc.component.filter.Organizations(groupId);
+          const myOrganizationsHB = this.__myOrganizationsHB = new osparc.component.filter.Organizations(filterGroupId);
           vBox.add(rb);
           vBox.add(myOrganizationsHB);
           this.add(vBox);
