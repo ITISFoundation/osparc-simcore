@@ -297,8 +297,6 @@ push-version: tag-version
 ## PYTHON -------------------------------
 .PHONY: pylint
 
-PY_PIP = $(if $(IS_WIN),cd .venv/Scripts && pip.exe,.venv/bin/pip3)
-
 pylint: ## Runs python linter framework's wide
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 	# TODO: NOT windows friendly
@@ -315,13 +313,13 @@ pylint: ## Runs python linter framework's wide
 
 .venv:
 	python3 -m venv $@
-	$@/bin/pip3 install --upgrade \
+	$@/bin/pip3 --quiet install --upgrade \
 		pip \
 		wheel \
 		setuptools
 
 devenv: .venv ## create a python virtual environment with dev tools (e.g. linters, etc)
-	$</bin/pip3 install -r requirements.txt
+	$</bin/pip3 --quiet install -r requirements.txt
 	@echo "To activate the venv, execute 'source .venv/bin/activate'"
 
 devenv-all: devenv ## sets up extra development tools (everything else besides python)
@@ -335,7 +333,7 @@ devenv-all: devenv ## sets up extra development tools (everything else besides p
 
 .PHONY: new-service
 new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice and drops it under services/ [UNDER DEV]
-	$</bin/pip3 install cookiecutter
+	$</bin/pip3 --quiet install cookiecutter
 	.venv/bin/cookiecutter gh:itisfoundation/cookiecutter-simcore-pyservice --output-dir $(CURDIR)/services
 
 # TODO: NOT windows friendly
@@ -433,7 +431,7 @@ git_clean_args := -dxf -e .vscode -e TODO.md -e .venv
 
 clean-venv: devenv ## Purges .venv into original configuration
 	# Cleaning your venv
-	.venv/bin/pip-sync $(CURDIR)/requirements.txt
+	.venv/bin/pip-sync --quiet $(CURDIR)/requirements.txt
 	@pip list
 
 clean: .check-clean ## cleans all unversioned files in project and temp files create by this makefile
