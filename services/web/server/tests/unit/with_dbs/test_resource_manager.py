@@ -34,6 +34,8 @@ API_VERSION = "v0"
 GARBAGE_COLLECTOR_INTERVAL = 1
 SERVICE_DELETION_DELAY = 1
 
+#SEE https://github.com/miguelgrinberg/python-socketio/releases
+SIO_VERSION = tuple( digit for digit in socketio.__version__.split(".") )
 
 @pytest.fixture
 def client(loop, aiohttp_client, app_cfg, postgres_service):
@@ -145,8 +147,11 @@ async def test_anonymous_websocket_connection(socketio_client, client_session_id
     with pytest.raises(socketio.exceptions.ConnectionError) as excinfo:
         # Client is unauthorized and socket server shall raise ConnectionRefusedError
         await socketio_client(client_session_id())
-    assert "Connection refused by the server" in str(excinfo.value)
 
+    if SIO_VERSION[0]==3:
+        assert "Unexpected status code 401 in server response" in str(excinfo.value)
+    else:
+        assert "Connection refused by the server" in str(excinfo.value)
 
 @pytest.mark.parametrize(
     "user_role",
