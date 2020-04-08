@@ -42,7 +42,7 @@ qx.Class.define("osparc.component.filter.Organizations", {
       myOrganizations.sort(this.__sortByLabel);
       myOrganizations.forEach(organization => {
         const bnt = this._addOption(osparc.utils.Utils.capitalize(organization.label));
-        bnt.shareGroupId = organization.shareGroupId;
+        bnt.GID = organization.GID;
       });
     },
 
@@ -60,7 +60,7 @@ qx.Class.define("osparc.component.filter.Organizations", {
       const selectedOrganizationIDs = [];
       const activeMenuButtons = this._getActiveMenuButtons();
       activeMenuButtons.forEach(activeMenuButton => {
-        selectedOrganizationIDs.push(activeMenuButton.shareGroupId);
+        selectedOrganizationIDs.push(activeMenuButton.GID);
       });
       return selectedOrganizationIDs;
     }
