@@ -36,6 +36,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
     this.__getValuesFromServer();
 
     this.add(this.__createProfileUser());
+    this.add(this.__createOrganizations());
   },
 
   members: {
@@ -99,7 +100,12 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
         "firstName": null,
         "lastName": null,
         "email": null,
-        "role": null
+        "role": null,
+        "organizations": [{
+          GID: 7,
+          label: "IT'IS Foundation",
+          description: ""
+        }]
       };
 
       if (qx.core.Environment.get("qx.debug")) {
@@ -107,7 +113,8 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
           "firstName": "Bizzy",
           "lastName": "Zastrow",
           "email": "bizzy@itis.ethz.ch",
-          "role": "Tester"
+          "role": "Tester",
+          "organizations": []
         };
       }
       const model = this.__userProfileModel = qx.data.marshal.Json.createModel(raw);
@@ -180,6 +187,31 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
         }
       }, this);
 
+      return box;
+    },
+
+    __createOrganizations: function() {
+      // layout
+      const box = this._createSectionBox(this.tr("Organizations"));
+
+      const list = new qx.ui.form.List().set({
+        height: 150,
+        width: 150
+      });
+
+      const controller = new qx.data.controller.Object(this.__userProfileModel);
+      // const listController = new qx.data.controller.List(organizationsArray, list);
+      const listController = new qx.data.controller.List(null, list);
+      controller.addTarget(listController, "model", "organizations");
+      const delegate = {
+        bindItem: function(ctrl, item, id) {
+          ctrl.bindDefaultProperties(item, id);
+          ctrl.bindProperty("GID", "model", null, item, id);
+          // ctrl.bindProperty("description", "description", null, item, id);
+        }
+      };
+      listController.setDelegate(delegate);
+      box.add(list);
 
       return box;
     },
@@ -189,6 +221,9 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       const request = new osparc.io.request.ApiRequest("/me", "GET");
       request.addListenerOnce("success", e => {
         const data = e.getTarget().getResponse()["data"];
+        // ToDo OM: remove this part once the backend is ready
+        const store = osparc.store.Store.getInstance();
+        data["organizations"] = store.getMyOrganizations();
         this.__setDataToModel(data);
       }, this);
 
@@ -208,7 +243,8 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
           "firstName": data["first_name"] || "",
           "lastName": data["last_name"] || "",
           "email": data["login"],
-          "role": data["role"] || ""
+          "role": data["role"] || "",
+          "organizations": data["organizations"] || []
         });
       }
     },
