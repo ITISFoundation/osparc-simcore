@@ -23,6 +23,6 @@ expiringdict
 jinja_app_loader
 jsondiff
 passlib
-python-socketio
+python-socketio==4.3.1  # FIXME: fails test test_anonymous_websocket_connection https://travis-ci.com/github/ITISFoundation/osparc-simcore/jobs/317121817#L1092
 semantic_version
 aiodebug
