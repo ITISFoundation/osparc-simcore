@@ -420,12 +420,13 @@ ifneq ($(SWARM_HOSTS), )
 endif
 
 
-.PHONY: clean clean-images clean-venv clean-all
+.PHONY: clean clean-images clean-venv clean-all clean-ps
 
-git_clean_args := -dxf -e .vscode -e TODO.md -e .venv
+_git_clean_args := -dxf -e .vscode -e TODO.md -e .venv
+_running_containers = $(shell docker ps -aq)
 
 .check-clean:
-	@git clean -n $(git_clean_args)
+	@git clean -n $(_git_clean_args)
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 
@@ -436,10 +437,12 @@ clean-venv: devenv ## Purges .venv into original configuration
 
 clean: .check-clean ## cleans all unversioned files in project and temp files create by this makefile
 	# Cleaning unversioned
-	@git clean $(git_clean_args)
+	@git clean $(_git_clean_args)
 	# Cleaning web/client
 	@$(MAKE_C) services/web/client clean-files
 
+clean-ps: ## stops and deletes running containers
+	$(if $(_running_containers), docker rm -f $(_running_containers),)
 
 clean-images: ## removes all created images
 	# Cleaning all service images
@@ -450,7 +453,7 @@ clean-images: ## removes all created images
 	# Cleaning postgres maintenance
 	@$(MAKE_C) packages/postgres-database/docker clean
 
-clean-all: clean clean-images # Deep clean including .venv and produced images
+clean-all: clean clean-ps clean-images # Deep clean including .venv and produced images
 	-rm -rf .venv
 
 
