@@ -8,7 +8,7 @@ import asyncio
 import logging
 import os
 from pathlib import Path
-from typing import Any, Coroutine, List, Optional, Union
+from typing import Any, Coroutine, List, Optional, Union, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -73,3 +73,10 @@ async def logged_gather(*tasks, reraise: bool = True) -> List[Any]:
                 str(value),
             )
     return results
+
+
+def assert_type(
+    param: object, expected_type: Union[type, Tuple[Union[type, Tuple[Any, ...]], ...]]
+):
+    if not isinstance(param, expected_type):
+        raise ValueError(f"Expected {expected_type}, got {type(param)}")

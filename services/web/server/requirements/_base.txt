@@ -30,7 +30,7 @@ cryptography==2.6.1       # via -r _base.in, aiohttp-session
 expiringdict==1.2.0       # via -r _base.in
 hiredis==1.0.1            # via aioredis
 idna-ssl==1.1.0           # via aiohttp
-idna==2.8                 # via idna-ssl, yarl
+idna==2.8                 # via -r ../../../../packages/service-library/requirements/_base.txt, idna-ssl, yarl
 importlib-metadata==0.23  # via jsonschema
 isodate==0.6.0            # via openapi-core
 jinja-app-loader==1.0.2   # via -r _base.in
@@ -38,7 +38,7 @@ jinja2==2.10.1            # via aiohttp-jinja2, aiohttp-swagger
 jsondiff==1.1.2           # via -r _base.in
 jsonschema==3.2.0         # via -r ../../../../packages/service-library/requirements/_base.in, openapi-spec-validator
 kombu==4.5.0              # via celery
-lazy-object-proxy==1.4.3  # via openapi-core
+lazy-object-proxy==1.4.1  # via -r ../../../../packages/service-library/requirements/_base.txt, openapi-core
 markupsafe==1.1.1         # via jinja2
 more-itertools==7.2.0     # via zipp
 multidict==4.5.2          # via aiohttp, yarl
@@ -49,7 +49,7 @@ passlib==1.7.1            # via -r _base.in
 prometheus-client==0.7.1  # via -r ../../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.8.4    # via -r ../../../../packages/service-library/requirements/_base.in, -r _base.in, aiopg, sqlalchemy
 pycparser==2.19           # via cffi
-pyrsistent==0.15.6        # via jsonschema
+pyrsistent==0.15.2        # via -r ../../../../packages/service-library/requirements/_base.txt, jsonschema
 python-engineio==3.9.3    # via python-socketio
 python-socketio==4.3.1    # via -r _base.in
 pytz==2019.1              # via celery

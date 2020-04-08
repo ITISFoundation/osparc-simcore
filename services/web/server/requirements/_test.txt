@@ -56,7 +56,7 @@ multidict==4.5.2          # via -r _base.txt, aiohttp, yarl
 openapi-core==0.12.0      # via -r _base.txt
 openapi-spec-validator==0.2.8  # via -r _base.txt, -r _test.in, openapi-core
 packaging==20.3           # via pytest, pytest-sugar
-pamqp==2.3.0              # via -r _base.txt, aiormq
+amqp==2.3.0              # via -r _base.txt, aiormq
 passlib==1.7.1            # via -r _base.txt
 pluggy==0.13.1            # via pytest
 prometheus-client==0.7.1  # via -r _base.txt

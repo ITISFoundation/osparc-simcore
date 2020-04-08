@@ -3,7 +3,7 @@
 #
 
 -r ../../../../packages/postgres-database/requirements/_base.in
--r ../../../../packages/service-library/requirements/_base.in
+-r ../../../../packages/service-library/requirements/_base.txt
 
 psycopg2-binary     # enforces binary version
 sqlalchemy>=1.3.3   # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
