@@ -1,4 +1,5 @@
-FROM python:3.6-alpine as base
+ARG PYTHON_VERSION="3.6.10"
+FROM python:${PYTHON_VERSION}-slim as base
 #
 #  USAGE:
 #     cd sercices/web
@@ -12,26 +13,41 @@ LABEL maintainer=pcrespov
 
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
-RUN adduser -D -u 8004 -s /bin/sh -h /home/scu scu
+ENV SC_USER_ID=8004 \
+    SC_USER_NAME=scu \
+    SC_BUILD_TARGET=base \
+    SC_BOOT_MODE=default
 
-RUN apk add --no-cache \
-      su-exec
+RUN adduser \
+    --uid ${SC_USER_ID} \
+    --disabled-password \
+    --gecos "" \
+    --shell /bin/sh \
+    --home /home/${SC_USER_NAME} \
+    ${SC_USER_NAME}
 
-ENV PATH "/home/scu/.local/bin:$PATH"
 
-ENV SC_PIP  pip --no-cache-dir
+# Sets utf-8 encoding for Python et al
+ENV LANG=C.UTF-8
+# Turns off writing .pyc files; superfluous on an ephemeral container.
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    VIRTUAL_ENV=/home/scu/.venv
+# Ensures that the python and pip executables used
+# in the image will be those from our virtualenv.
+ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
+
+
 # TODO: rename with common prefix!
 ENV SIMCORE_WEB_OUTDIR /home/scu/services/web/client
 # TODO: eliminate this variable!
 ENV IS_CONTAINER_CONTEXT Yes
 
-ENV SC_BUILD_TARGET base
-ENV SC_BOOT_MODE default
 
 EXPOSE 8080
 
 # -------------------------- Build stage -------------------
-# Installs build/package management tools and third party dependencies
+# Creates and installs virtual environment
+# Contains all build tools
 #
 # + /build             WORKDIR
 #    + packages
@@ -46,36 +62,25 @@ FROM base as build
 
 ENV SC_BUILD_TARGET build
 
-# Installing client libraries and any other package you need
-#
-#  libpq: client library for PostgreSQL https://www.postgresql.org/docs/9.5/libpq.html
-#  libstdc++: needed in ujson https://github.com/kohlschutter/junixsocket/issues/33
-#
-RUN apk update && \
-      apk add --no-cache \
-      libpq \
-      libstdc++
+RUN apt-get update &&\
+    apt-get install -y --no-install-recommends \
+    build-essential
 
-RUN apk add --no-cache \
-      postgresql-dev \
-      gcc \
-      libc-dev \
-      libffi-dev
 
-RUN $SC_PIP install --upgrade \
-      pip~=20.0.2 \
-      wheel \
-      setuptools
+# NOTE: python virtualenv is used here such that installed
+# packages may be moved to production image easily by copying the venv
+RUN python -m venv ${VIRTUAL_ENV}
+
+RUN pip --no-cache-dir install --upgrade \
+    pip~=20.0.2  \
+    wheel \
+    setuptools
 
 WORKDIR /build
 
-# install base 3rd party dependencies
-COPY  --chown=scu:scu services/web/server/requirements/*.txt \
-      tmp/web/server/requirements/
-
-RUN $SC_PIP install \
-      -r tmp/web/server/requirements/_base.txt
-
+# install only base 3rd party dependencies
+COPY  --chown=scu:scu services/web/server/requirements/_base.txt requirements_base.txt
+RUN pip --no-cache-dir --quiet install -r requirements_base.txt
 
 # --------------------------Cache stage -------------------
 # CI in master buils & pushes this target to speed-up image build
@@ -93,8 +98,7 @@ COPY --chown=scu:scu services/web/server /build/services/web/server
 
 WORKDIR /build/services/web/server
 
-RUN $SC_PIP install -r requirements/prod.txt &&\
-      $SC_PIP list -v
+RUN pip --no-cache-dir --quiet install -r requirements/prod.txt
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup
@@ -103,30 +107,26 @@ RUN $SC_PIP install -r requirements/prod.txt &&\
 #  + /home/scu     $HOME = WORKDIR
 #    + docker
 #
-FROM cache as production
+FROM base as production
 
-ENV SC_BUILD_TARGET production
+ENV SC_BUILD_TARGET=production \
+    SC_BOOT_MODE=production \
+    SC_HEALTHCHECK_INTERVAL=30 \
+    SC_HEALTHCHECK_RETRY=3
+
 ENV PYTHONOPTIMIZE=TRUE
-
-# front-end client last (image name is the path to the Dockerfile)
-COPY --from=client/tools/qooxdoo-kit/builder:latest --chown=scu:scu \
-      /project/build-output \
-      /build/services/web/client
 
 WORKDIR /home/scu
 
-RUN mkdir -p services/web/server &&\
-      chown scu:scu services/web/server &&\
-      mv /build/services/web/server/docker services/web/server/docker &&\
-      mv /build/services/web/client ${SIMCORE_WEB_OUTDIR} &&\
-      rm -rf /build
+# bring installed package without build tools
+COPY --from=cache --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
-RUN apk del --no-cache\
-      gcc \
-      git
+# copy docker entrypoint and boot scripts
+COPY --chown=scu:scu services/web/server/docker services/web/server/docker
 
-ENV SC_HEALTHCHECK_INTERVAL 30
-ENV SC_HEALTHCHECK_RETRY 3
+# front-end client last (image name is the path to the Dockerfile)
+COPY --from=client/tools/qooxdoo-kit/builder:latest --chown=scu:scu \
+      /project/build-output ${SIMCORE_WEB_OUTDIR}
 
 HEALTHCHECK --interval=30s \
       --timeout=120s \
@@ -155,7 +155,9 @@ ENV SIMCORE_WEB_OUTDIR /devel/services/web/client
 
 WORKDIR /devel
 
-# NOTE: declaring VOLUMEs here makes troubles mounting 
+RUN chown -R scu:scu ${VIRTUAL_ENV}
+
+# NOTE: declaring VOLUMEs here makes troubles mounting
 #       the client's output folder to /devel/services/web/client.
 #       The latter ls no files
 
