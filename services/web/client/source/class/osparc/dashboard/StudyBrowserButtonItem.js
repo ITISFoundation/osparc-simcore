@@ -212,7 +212,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyAccessRights: function(value, old) {
       if (value) {
-        this.getChildControl("shared");
+        const image = this.getChildControl("shared");
+        image.setToolTip(Object.keys(value)[0]);
       }
     },
 
