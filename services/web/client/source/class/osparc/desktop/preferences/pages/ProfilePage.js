@@ -194,24 +194,31 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       // layout
       const box = this._createSectionBox(this.tr("Organizations"));
 
-      const list = new qx.ui.form.List().set({
+      const orgsUIList = new qx.ui.form.List().set({
         height: 150,
         width: 150
       });
 
-      const controller = new qx.data.controller.Object(this.__userProfileModel);
-      // const listController = new qx.data.controller.List(organizationsArray, list);
-      const listController = new qx.data.controller.List(null, list);
-      controller.addTarget(listController, "model", "organizations");
-      const delegate = {
-        bindItem: function(ctrl, item, id) {
-          ctrl.bindDefaultProperties(item, id);
+      const orgsModel = new qx.data.Array();
+      const orgsCtrl = new qx.data.controller.List(orgsModel, orgsUIList, "label");
+      orgsCtrl.setDelegate({
+        createItem: () => new osparc.component.widget.OrganizationListItem(),
+        bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("GID", "model", null, item, id);
-          // ctrl.bindProperty("description", "description", null, item, id);
+          ctrl.bindProperty("GID", "GID", null, item, id);
+          ctrl.bindProperty("label", "label", null, item, id);
+          ctrl.bindProperty("description", "description", null, item, id);
         }
-      };
-      listController.setDelegate(delegate);
-      box.add(list);
+      });
+
+      box.add(orgsUIList);
+
+      const store = osparc.store.Store.getInstance();
+      store.getMyOrganizations()
+        .then(orgs => {
+          orgsModel.removeAll();
+          orgs.forEach(org => orgsModel.append(qx.data.marshal.Json.createModel(org)));
+        });
 
       return box;
     },
@@ -221,9 +228,6 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       const request = new osparc.io.request.ApiRequest("/me", "GET");
       request.addListenerOnce("success", e => {
         const data = e.getTarget().getResponse()["data"];
-        // ToDo OM: remove this part once the backend is ready
-        const store = osparc.store.Store.getInstance();
-        data["organizations"] = store.getMyOrganizations();
         this.__setDataToModel(data);
       }, this);
 
