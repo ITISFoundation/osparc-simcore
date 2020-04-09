@@ -17,6 +17,7 @@ from .config import APP_CLIENT_SESSION_KEY
 from .system_utils import get_system_extra_hosts_raw
 
 SERVICE_RUNTIME_SETTINGS: str = "simcore.service.settings"
+SERVICE_REVERSE_PROXY_SETTINGS: str = "simcore.service.reverse-proxy-settings"
 SERVICE_RUNTIME_BOOTSETTINGS: str = "simcore.service.bootsettings"
 
 log = logging.getLogger(__name__)
@@ -59,30 +60,15 @@ def _check_setting_correctness(setting: Dict) -> None:
         raise exceptions.DirectorException("Invalid setting in %s" % setting)
 
 
-async def _read_service_settings(app: web.Application, key: str, tag: str) -> Dict:
-    # pylint: disable=C0103
-    image_labels = await registry_proxy.get_image_labels(app, key, tag)
-    runtime_parameters = (
-        json.loads(image_labels[SERVICE_RUNTIME_SETTINGS])
-        if SERVICE_RUNTIME_SETTINGS in image_labels
-        else {}
-    )
-    log.debug("Retrieved service runtime settings: %s", runtime_parameters)
-    return runtime_parameters
-
-
-async def _get_service_boot_parameters_labels(
-    app: web.Application, key: str, tag: str
+async def _read_service_settings(
+    app: web.Application, key: str, tag: str, settings_name: str
 ) -> Dict:
-    # pylint: disable=C0103
     image_labels = await registry_proxy.get_image_labels(app, key, tag)
-    boot_params = (
-        json.loads(image_labels[SERVICE_RUNTIME_BOOTSETTINGS])
-        if SERVICE_RUNTIME_BOOTSETTINGS in image_labels
-        else {}
+    settings = (
+        json.loads(image_labels[settings_name]) if settings_name in image_labels else {}
     )
-    log.debug("Retrieved service boot settings: %s", boot_params)
-    return boot_params
+    log.debug("Retrieved %s settings: %s", settings_name, settings)
+    return settings
 
 
 # pylint: disable=too-many-branches
@@ -100,7 +86,10 @@ async def _create_docker_service_params(
 ) -> Dict:
 
     service_parameters_labels = await _read_service_settings(
-        app, service_key, service_tag
+        app, service_key, service_tag, SERVICE_RUNTIME_SETTINGS
+    )
+    reverse_proxy_settings = await _read_service_settings(
+        app, service_key, service_tag, SERVICE_REVERSE_PROXY_SETTINGS
     )
     service_name = registry_proxy.get_service_last_names(service_key) + "_" + node_uuid
     log.debug("Converting labels to docker runtime parameters")
@@ -159,16 +148,18 @@ async def _create_docker_service_params(
         },
         "networks": [internal_network_id] if internal_network_id else [],
     }
-    if "3d-viewer" in service_name:
-        # FIXME: the exception for the 3d-viewer shall be removed once the dy-sidecar comes in
-        # Paraview visualizer needs a strip prefix here, this should be removed once dy-sidecar is in or that
-        # all dynamic services are converted to using traefik as reverse proxy instead of webserver
-        docker_params["labels"][
-            f"traefik.http.middlewares.{service_name}_stripprefixregex.stripprefixregex.regex"
-        ] = f"^/x/{node_uuid}"
-        docker_params["labels"][
-            f"traefik.http.routers.{service_name}.middlewares"
-        ] += f", {service_name}_stripprefixregex"
+    if reverse_proxy_settings:
+        # some services define strip_path:true if they need the path to be stripped away
+        if (
+            "strip_path" in reverse_proxy_settings
+            and reverse_proxy_settings["strip_path"]
+        ):
+            docker_params["labels"][
+                f"traefik.http.middlewares.{service_name}_stripprefixregex.stripprefixregex.regex"
+            ] = f"^/x/{node_uuid}"
+            docker_params["labels"][
+                f"traefik.http.routers.{service_name}.middlewares"
+            ] += f", {service_name}_stripprefixregex"
 
     for param in service_parameters_labels:
         _check_setting_correctness(param)
@@ -583,8 +574,8 @@ async def _start_docker_service(
         service = await client.services.inspect(service["ID"])
         published_port, target_port = await _get_docker_image_port_mapping(service)
         # now pass boot parameters
-        service_boot_parameters_labels = await _get_service_boot_parameters_labels(
-            app, service_key, service_tag
+        service_boot_parameters_labels = await _read_service_settings(
+            app, service_key, service_tag, SERVICE_RUNTIME_BOOTSETTINGS
         )
         service_entrypoint = _get_service_entrypoint(service_boot_parameters_labels)
         if published_port:
@@ -743,7 +734,9 @@ async def _get_node_details(
 
     # get boot parameters
     results = await asyncio.gather(
-        _get_service_boot_parameters_labels(app, service_key, service_tag),
+        _read_service_settings(
+            app, service_key, service_tag, SERVICE_RUNTIME_BOOTSETTINGS
+        ),
         _get_service_basepath_from_docker_service(service),
         _get_service_state(client, service),
     )
