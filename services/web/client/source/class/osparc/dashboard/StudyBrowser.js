@@ -447,12 +447,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         study.tags ?
           osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id)) :
           [];
+      if (isTemplate) {
+        study["accessRights"] = {
+          "asdf": "asdfasdf"
+        };
+      }
       const item = new osparc.dashboard.StudyBrowserButtonItem().set({
         isTemplate,
         uuid: study.uuid,
         studyTitle: study.name,
         studyDescription: study.description,
         creator: study.prjOwner ? study.prjOwner : null,
+        accessRights: study.accessRights ? study.accessRights : null,
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
         icon: study.thumbnail || "@FontAwesome5Solid/flask/50",
         tags

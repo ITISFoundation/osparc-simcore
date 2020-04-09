@@ -54,7 +54,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
 
   statics: {
     ITEM_WIDTH: 200,
-    ITEM_HEIGHT: 200
+    ITEM_HEIGHT: 220
   },
 
   events: {
@@ -107,6 +107,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           });
           this._mainLayout.addAt(control, 2);
           break;
+        case "shared":
+          control = new qx.ui.basic.Image().set({
+            source: "@FontAwesome5Solid/users/14"
+          });
+          this._mainLayout.addAt(control, 3);
+          break;
         case "icon":
           control = new qx.ui.basic.Image().set({
             anonymous: true,
@@ -118,7 +124,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
             allowGrowX: true,
             allowGrowY: true
           });
-          this._mainLayout.addAt(control, 3, {
+          this._mainLayout.addAt(control, 4, {
             flex: 1
           });
           break;

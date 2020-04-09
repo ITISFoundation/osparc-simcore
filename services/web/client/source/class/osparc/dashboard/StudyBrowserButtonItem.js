@@ -87,6 +87,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       nullable: true
     },
 
+    accessRights: {
+      check: "Object",
+      apply: "_applyAccessRights",
+      nullable: true
+    },
+
     lastChangeDate: {
       check: "Date",
       apply: "_applyLastChangeDate",
@@ -201,6 +207,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       if (this.getIsTemplate()) {
         const label = this.getChildControl("desc2");
         label.setValue(value);
+      }
+    },
+
+    _applyAccessRights: function(value, old) {
+      if (value) {
+        this.getChildControl("shared");
       }
     },
 
