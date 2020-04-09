@@ -58,13 +58,15 @@ qx.Class.define("osparc.component.widget.OrganizationListItem", {
       switch (id) {
         case "label":
           control = new qx.ui.basic.Label().set({
-            font: osparc.utils.Utils.getFont(14, true)
+            font: osparc.utils.Utils.getFont(14, true),
+            alignY: "bottom"
           });
           this._add(control);
           break;
         case "description":
           control = new qx.ui.basic.Label().set({
-            font: osparc.utils.Utils.getFont(12)
+            font: osparc.utils.Utils.getFont(12),
+            alignY: "bottom"
           });
           this._add(control, {
             flex: 1
@@ -80,7 +82,7 @@ qx.Class.define("osparc.component.widget.OrganizationListItem", {
         return;
       }
       const label = this.getChildControl("label");
-      label.setValue("- " + value);
+      label.setValue(value);
     },
 
     _applyDescription: function(value) {

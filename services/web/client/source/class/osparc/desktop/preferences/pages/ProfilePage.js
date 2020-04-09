@@ -195,6 +195,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       const box = this._createSectionBox(this.tr("Organizations"));
 
       const orgsUIList = new qx.ui.form.List().set({
+        spacing: 3,
         height: 150,
         width: 150
       });
