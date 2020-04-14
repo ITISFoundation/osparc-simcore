@@ -9,7 +9,7 @@ attrs==19.3.0             # via pytest, pytest-docker
 certifi==2020.4.5.1       # via -r _base.txt, minio, requests
 chardet==3.0.4            # via requests
 configparser==5.0.0       # via -r _base.txt, minio
-coverage==4.5.1           # via -r _test.in, coveralls, pytest-cov
+coverage==5.1             # via -r _test.in, coveralls, pytest-cov
 coveralls==2.0.0          # via -r _test.in
 docopt==0.6.2             # via coveralls
 idna==2.9                 # via requests

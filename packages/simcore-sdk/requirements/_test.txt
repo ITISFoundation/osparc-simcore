@@ -12,7 +12,7 @@ async-timeout==3.0.1      # via -r _base.txt, aiohttp
 attrs==19.3.0             # via -r _base.txt, aiohttp, pytest, pytest-docker
 certifi==2020.4.5.1       # via requests
 chardet==3.0.4            # via -r _base.txt, aiohttp, requests
-coverage==4.5.1           # via -r _test.in, coveralls, pytest-cov
+coverage==5.1             # via -r _test.in, coveralls, pytest-cov
 coveralls==2.0.0          # via -r _test.in
 dataclasses==0.7          # via -r _base.txt, pydantic
 decorator==4.4.2          # via -r _base.txt, networkx

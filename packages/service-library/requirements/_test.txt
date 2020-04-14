@@ -13,7 +13,7 @@ async-timeout==3.0.1      # via -r _base.txt, aiohttp
 attrs==19.3.0             # via -r _base.txt, aiohttp, jsonschema, openapi-core, pytest, pytest-docker
 certifi==2020.4.5.1       # via requests
 chardet==3.0.4            # via -r _base.txt, aiohttp, requests
-coverage==5.0.3           # via -r _test.in, coveralls, pytest-cov
+coverage==5.1             # via -r _test.in, coveralls, pytest-cov
 coveralls==2.0.0          # via -r _test.in
 docopt==0.6.2             # via coveralls
 idna-ssl==1.1.0           # via -r _base.txt, aiohttp
