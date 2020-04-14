@@ -198,15 +198,6 @@ qx.Class.define("osparc.store.Store", {
         description: "Zurich MedTech AG"
       }, {
         GID: "4",
-        label: "Sim-core"
-      }, {
-        GID: "5",
-        label: "Dat-core"
-      }, {
-        GID: "6",
-        label: "Map-core"
-      }, {
-        GID: "7",
         label: "Team Black",
         description: "Testing team"
       }];

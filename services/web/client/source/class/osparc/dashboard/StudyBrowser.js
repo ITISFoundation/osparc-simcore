@@ -446,7 +446,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (isTemplate) {
         if (study.name.toLowerCase().includes("sleep")) {
           study["accessRights"] = {
-            "7": "write"
+            "4": "write"
+          };
+        } else if (study.name.includes("Tissue Properties")) {
+          study["accessRights"] = {
+            "1": "write",
+            "4": "write"
           };
         } else {
           study["accessRights"] = {
