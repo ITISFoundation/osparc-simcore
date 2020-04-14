@@ -31,14 +31,13 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
   construct: function() {
     this.base(arguments);
     this.set({
-      width: this.self().ITEM_WIDTH,
-      height: this.self().ITEM_HEIGHT,
+      width: this.self().WIDTH,
+      height: this.self().HEIGHT,
+      padding: this.self().PADDING,
       allowGrowX: false
     });
 
     this._setLayout(new qx.ui.layout.Canvas());
-
-    this.setPadding(8);
 
     const mainLayout = this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     this._add(mainLayout, {
@@ -53,8 +52,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
   },
 
   statics: {
-    ITEM_WIDTH: 200,
-    ITEM_HEIGHT: 220
+    WIDTH: 200,
+    HEIGHT: 220,
+    PADDING: 8
   },
 
   events: {
