@@ -16,7 +16,7 @@ UPGRADE_OPTION:= $(if $(upgrade),--upgrade-package $(upgrade),)
 
 
 .PHONY: touch packages
-_base-in-reqs := $(shell find packages -type f -name _base.in)
+_base-in-reqs := $(shell find ${PACKAGES_DIR} -type f -name _base.in)
 
 touch:
 	$(foreach p,${_base-in-reqs},touch $(p);)
