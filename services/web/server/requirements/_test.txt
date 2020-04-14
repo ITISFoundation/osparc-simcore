@@ -28,7 +28,7 @@ cffi==1.14.0              # via -r _base.txt, cryptography
 change-case==0.5.2        # via -r _base.txt
 chardet==3.0.4            # via -r _base.txt, aiohttp, requests
 codecov==2.0.22           # via -r _test.in
-coverage==4.5.1           # via -r _test.in, codecov, coveralls, pytest-cov
+coverage==5.1             # via -r _test.in, codecov, coveralls, pytest-cov
 coveralls==2.0.0          # via -r _test.in
 cryptography==2.9         # via -r _base.txt, aiohttp-session
 docker==4.2.0             # via -r _test.in
