@@ -213,7 +213,15 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     _applyAccessRights: function(value, old) {
       if (value) {
         const image = this.getChildControl("shared");
-        image.setToolTip(Object.keys(value)[0]);
+        let hintText = "";
+        Object.keys(value).forEach(key => {
+          hintText += (key + "<br>");
+        });
+        const hint = new osparc.ui.hint.Hint(image, hintText).set({
+          active: false
+        });
+        image.addListener("mouseover", () => hint.show(), this);
+        image.addListener("mouseout", () => hint.exclude(), this);
       }
     },
 

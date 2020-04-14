@@ -449,7 +449,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           [];
       if (isTemplate) {
         study["accessRights"] = {
-          "asdf": "asdfasdf"
+          "All": "All desc",
+          "IT'IS Foundation": "ITIS desc"
         };
       }
       const item = new osparc.dashboard.StudyBrowserButtonItem().set({
