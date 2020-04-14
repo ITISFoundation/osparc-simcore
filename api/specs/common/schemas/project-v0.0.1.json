@@ -45,7 +45,7 @@
     },
     "accessRights": {
       "type": "object",
-      "description": "object containing the GroupID as key and rwx permissions as value"
+      "description": "object containing the GroupID as key and read/write/execution permissions as value"
     },
     "creationDate": {
       "type": "string",

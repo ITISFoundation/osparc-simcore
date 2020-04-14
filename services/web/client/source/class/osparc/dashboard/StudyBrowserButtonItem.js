@@ -213,15 +213,21 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     _applyAccessRights: function(value, old) {
       if (value) {
         const image = this.getChildControl("shared");
-        let hintText = "";
-        Object.keys(value).forEach(key => {
-          hintText += (key + "<br>");
-        });
-        const hint = new osparc.ui.hint.Hint(image, hintText).set({
-          active: false
-        });
-        image.addListener("mouseover", () => hint.show(), this);
-        image.addListener("mouseout", () => hint.exclude(), this);
+
+        const store = osparc.store.Store.getInstance();
+        store.getMyOrganizations()
+          .then(orgs => {
+            let hintText = "";
+            Object.keys(value).forEach(key => {
+              const org = orgs.find(el => el["GID"] === key);
+              hintText += (org["label"] + "<br>");
+            });
+            const hint = new osparc.ui.hint.Hint(image, hintText).set({
+              active: false
+            });
+            image.addListener("mouseover", () => hint.show(), this);
+            image.addListener("mouseout", () => hint.exclude(), this);
+          });
       }
     },
 

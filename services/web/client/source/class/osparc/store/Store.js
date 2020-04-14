@@ -181,29 +181,34 @@ qx.Class.define("osparc.store.Store", {
 
     getMyOrganizations: function() {
       const hardcodedOrgs = [{
-        GID: 1,
+        GID: "0",
+        label: "All",
+        description: "Open to the public"
+      }, {
+        GID: "1",
         label: "IT'IS Foundation",
         description: "The Foundation for Research on Information Technologies in Society"
       }, {
-        GID: 2,
+        GID: "2",
         label: "Speag",
         description: "Spin-off company of the Swiss Federal Institute of Technology"
       }, {
-        GID: 3,
+        GID: "3",
         label: "ZMT",
         description: "Zurich MedTech AG"
       }, {
-        GID: 4,
+        GID: "4",
         label: "Sim-core"
       }, {
-        GID: 5,
+        GID: "5",
         label: "Dat-core"
       }, {
-        GID: 6,
+        GID: "6",
         label: "Map-core"
       }, {
-        GID: 7,
-        label: "NIH"
+        GID: "7",
+        label: "Team Black",
+        description: "Testing team"
       }];
       return new Promise((resolve, reject) => {
         osparc.data.Resources.getOne("profile")

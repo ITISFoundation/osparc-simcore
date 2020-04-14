@@ -449,8 +449,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           [];
       if (isTemplate) {
         study["accessRights"] = {
-          "All": "All desc",
-          "IT'IS Foundation": "ITIS desc"
+          "0": "write",
+          "1": "write"
         };
       }
       const item = new osparc.dashboard.StudyBrowserButtonItem().set({
