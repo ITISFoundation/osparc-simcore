@@ -439,7 +439,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createStudyListLayout: function() {
-      return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(12, 12));
+      return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(18, 18));
     },
 
     __createStudyItem: function(study, isTemplate) {
