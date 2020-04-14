@@ -94,7 +94,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
         case "desc1":
           control = new osparc.ui.markdown.Markdown().set({
             maxHeight: 30,
-            noMargin: true,
             anonymous: true
           });
           this._mainLayout.addAt(control, 1);
