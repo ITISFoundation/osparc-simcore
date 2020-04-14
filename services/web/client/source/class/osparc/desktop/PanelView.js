@@ -75,12 +75,6 @@ qx.Class.define("osparc.desktop.PanelView", {
       apply: "_applyCollapsed"
     },
 
-    sideCollapsed: {
-      init: false,
-      check: "Boolean",
-      apply: "_applySideCollapsed"
-    },
-
     appearance: {
       init: "panelview",
       refine: true
@@ -123,10 +117,6 @@ qx.Class.define("osparc.desktop.PanelView", {
 
     toggleCollapsed: function() {
       this.setCollapsed(!this.getCollapsed());
-    },
-
-    toggleSideCollapsed: function() {
-      this.setSideCollapsed(!this.getSideCollapsed());
     },
 
     _applyCollapsed: function(collapsed) {
@@ -196,10 +186,6 @@ qx.Class.define("osparc.desktop.PanelView", {
     _applyTitle: function(title) {
       this.__titleLabel = this.getChildControl("title");
       this.__titleLabel.setLabel(title);
-    },
-
-    _applySideCollapsed: function(sideCollapse, old) {
-      this.setCollapsed(sideCollapse);
     },
 
     _applyCaretSize: function(size) {
