@@ -235,7 +235,11 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         const tagsContainer = this.getChildControl("tags");
         tagsContainer.removeAll();
-        tags.forEach(tag => tagsContainer.add(new osparc.ui.basic.Tag(tag.name, tag.color, "studyBrowser")));
+        tags.forEach(tag => {
+          const tagUI = new osparc.ui.basic.Tag(tag.name, tag.color, "studyBrowser");
+          tagUI.setFont("text-12");
+          tagsContainer.add(tagUI);
+        });
       }
     },
 

@@ -93,7 +93,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           break;
         case "desc1":
           control = new osparc.ui.markdown.Markdown().set({
-            font: "text-14",
+            font: "text-13",
             maxHeight: 32,
             anonymous: true
           });
@@ -101,7 +101,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           break;
         case "desc2":
           control = new qx.ui.basic.Label().set({
-            font: "text-14",
+            font: "text-13",
             allowGrowY: false,
             anonymous: true
           });
