@@ -97,7 +97,7 @@ qx.Class.define("osparc.data.model.Study", {
       check: "Object",
       nullable: false,
       event: "changeAccessRights",
-      init: ""
+      init: {}
     },
 
     creationDate: {
