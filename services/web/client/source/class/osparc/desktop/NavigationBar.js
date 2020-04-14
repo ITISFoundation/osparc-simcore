@@ -82,8 +82,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     this._add(wrapperContainer);
     this._add(new qx.ui.toolbar.Separator());
 
-    let dashboardBtn = this.__dashboardBtn = new qx.ui.form.Button().set({
-      rich: true
+    const dashboardBtn = this.__dashboardBtn = new qx.ui.form.Button(this.tr("Dashboard")).set({
+      font: "title-14"
     });
     osparc.utils.Utils.setIdToWidget(dashboardBtn, "dashboardBtn");
     dashboardBtn.set(commonBtnSettings);
@@ -109,11 +109,13 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     });
 
     this._add(new osparc.ui.form.LinkButton(this.tr("User manual"), "https://docs.osparc.io").set({
-      appearance: "link-button"
+      appearance: "link-button",
+      font: "text-14"
     }));
 
     this._add(new osparc.ui.form.LinkButton(this.tr("Give us feedback"), this.self().FEEDBACK_FORM_URL).set({
-      appearance: "link-button"
+      appearance: "link-button",
+      font: "text-14"
     }));
 
     const userEmail = osparc.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
@@ -123,7 +125,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     userBtn.set({
       ...commonBtnSettings,
       icon: osparc.utils.Avatar.getUrl(userEmail, NAVIGATION_BUTTON_HEIGHT),
-      label: userName
+      label: userName,
+      font: "text-14"
     });
 
     this._add(userBtn);
@@ -161,11 +164,10 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         return;
       }
 
-      const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       for (let i=0; i<nodeIds.length; i++) {
-        let btn = new qx.ui.form.Button().set({
-          rich: true,
+        const btn = new qx.ui.form.Button().set({
+          font: "text-14",
           maxHeight: NAVIGATION_BUTTON_HEIGHT
         });
         const nodeId = nodeIds[i];
@@ -183,21 +185,20 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         this.__mainViewCaptionLayout.add(btn);
 
         if (i<nodeIds.length-1) {
-          let mainViewCaption = this.__mainViewCaption = new qx.ui.basic.Label(">").set({
-            font: navBarLabelFont
+          const arrow = new qx.ui.basic.Label(">").set({
+            font: "text-14"
           });
-          this.__mainViewCaptionLayout.add(mainViewCaption);
+          this.__mainViewCaptionLayout.add(arrow);
         }
         if (i === nodeIds.length-1) {
           this.__highlightDashboard(false);
-          btn.setLabel("<b>" + btn.getLabel() + "</b>");
+          btn.setFont("title-14");
         }
       }
     },
 
     __highlightDashboard: function(highlight = true) {
-      const label = this.tr("Dashboard");
-      highlight ? this.__dashboardBtn.setLabel("<b>"+label+"</b>") : this.__dashboardBtn.setLabel(label);
+      this.__dashboardBtn.setFont(highlight ? "title-14" : "text-14");
     },
 
     studySaved: function() {
@@ -215,7 +216,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     __createUserBtn: function() {
-      const menu = new qx.ui.menu.Menu();
+      const menu = new qx.ui.menu.Menu().set({
+        font: "text-14"
+      });
 
       const activityManager = new qx.ui.menu.Button(this.tr("Activity manager"));
       activityManager.addListener("execute", this.__openActivityManager, this);
@@ -306,8 +309,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     __createStudyTitle: function() {
       const studyTitle = new osparc.ui.form.EditLabel().set({
         visibility: "excluded",
-        labelFont: "title-16",
-        inputFont: "text-16",
+        labelFont: "title-14",
+        inputFont: "text-14",
         editable: osparc.data.Permissions.getInstance().canDo("study.update")
       });
       studyTitle.addListener("editValue", evt => {
