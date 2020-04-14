@@ -84,7 +84,7 @@ async def _create_docker_service_params(
     node_base_path: str,
     internal_network_id: Optional[str],
 ) -> Dict:
-
+    # pylint: disable=too-many-statements
     service_parameters_labels = await _read_service_settings(
         app, service_key, service_tag, SERVICE_RUNTIME_SETTINGS
     )
