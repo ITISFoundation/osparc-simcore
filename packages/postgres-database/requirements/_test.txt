@@ -20,7 +20,7 @@ coverage==5.0.3           # via -r _test.in, coveralls, pytest-cov
 coveralls==2.0.0          # via -r _test.in
 docker==4.2.0             # via -r _migration.txt
 docopt==0.6.2             # via coveralls
-faker==4.0.2              # via -r _test.in
+faker==4.0.3              # via -r _test.in
 idna-ssl==1.1.0           # via aiohttp
 idna==2.9                 # via -r _migration.txt, requests, yarl
 importlib-metadata==1.6.0  # via pluggy, pytest
@@ -32,7 +32,7 @@ mccabe==0.6.1             # via pylint
 more-itertools==8.2.0     # via pytest
 multidict==4.7.5          # via -r _migration.txt, aiohttp, yarl
 packaging==20.3           # via pytest
-pathspec==0.7.0           # via black
+pathspec==0.8.0           # via black
 pip-tools==4.5.1          # via -r ../../../requirements.txt
 pluggy==0.13.1            # via pytest
 psycopg2-binary==2.8.5    # via -r _migration.txt, aiopg, sqlalchemy

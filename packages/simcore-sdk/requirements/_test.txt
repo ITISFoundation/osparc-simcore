@@ -4,7 +4,7 @@
 #
 #    pip-compile --build-isolation --output-file=_test.txt _test.in
 #
-aiofiles==0.4.0           # via -r _base.txt
+aiofiles==0.5.0           # via -r _base.txt
 aiohttp==3.6.2            # via -r _base.txt, pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r _base.txt
 astroid==2.3.3            # via pylint
