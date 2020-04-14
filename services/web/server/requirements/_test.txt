@@ -34,7 +34,7 @@ cryptography==2.9         # via -r _base.txt, aiohttp-session
 docker==4.2.0             # via -r _test.in
 docopt==0.6.2             # via coveralls
 expiringdict==1.2.0       # via -r _base.txt
-faker==4.0.2              # via -r _test.in
+faker==4.0.3              # via -r _test.in
 hiredis==1.0.1            # via -r _base.txt, aioredis
 idna-ssl==1.1.0           # via -r _base.txt, aiohttp
 idna==2.9                 # via -r _base.txt, idna-ssl, requests, yarl
@@ -42,7 +42,7 @@ importlib-metadata==1.6.0  # via -r _base.txt, jsonschema, kombu, pluggy, pytest
 isodate==0.6.0            # via -r _base.txt, openapi-core
 isort==4.3.21             # via pylint
 jinja-app-loader==1.0.2   # via -r _base.txt
-jinja2==2.11.1            # via -r _base.txt, aiohttp-jinja2, aiohttp-swagger
+jinja2==2.11.2            # via -r _base.txt, aiohttp-jinja2, aiohttp-swagger
 jsondiff==1.2.0           # via -r _base.txt
 jsonschema==3.2.0         # via -r _base.txt, -r _test.in, openapi-spec-validator
 kombu==4.6.8              # via -r _base.txt, celery

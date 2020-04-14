@@ -33,7 +33,7 @@ idna==2.9                 # via idna-ssl, yarl
 importlib-metadata==1.6.0  # via jsonschema, kombu
 isodate==0.6.0            # via openapi-core
 jinja-app-loader==1.0.2   # via -r _base.in
-jinja2==2.11.1            # via aiohttp-jinja2, aiohttp-swagger
+jinja2==2.11.2            # via aiohttp-jinja2, aiohttp-swagger
 jsondiff==1.2.0           # via -r _base.in
 jsonschema==3.2.0         # via -r ../../../../packages/service-library/requirements/_base.in, openapi-spec-validator
 kombu==4.6.8              # via celery
