@@ -113,21 +113,30 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           });
           this._mainLayout.addAt(control, 3);
           break;
-        case "icon":
+        case "icon": {
+          const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
           control = new qx.ui.basic.Image().set({
             anonymous: true,
-            scale: true,
-            allowStretchX: true,
-            allowStretchY: true,
             alignX: "center",
             alignY: "middle",
-            allowGrowX: true,
-            allowGrowY: true
+            scale: true,
+            maxWidth: this.self().WIDTH - 2*this.self().PADDING,
+            allowShrinkY: true
           });
-          this._mainLayout.addAt(control, 4, {
+          iconContainer.add(new qx.ui.core.Spacer(), {
+            flex: 2
+          });
+          iconContainer.add(control, {
+            flex: 1
+          });
+          iconContainer.add(new qx.ui.core.Spacer(), {
+            flex: 2
+          });
+          this._mainLayout.addAt(iconContainer, 4, {
             flex: 1
           });
           break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -135,8 +144,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
     _applyIcon: function(value, old) {
       let icon = this.getChildControl("icon");
       icon.set({
-        source: value,
-        paddingTop: value && value.match(/^@/) ? 30 : 0
+        source: value
       });
     },
 
