@@ -18,7 +18,7 @@ RUN apk add --no-cache \
     bash \
     postgresql
 
-COPY entrypoint.sh /home/entrypoint.sh
+COPY entrypoint.bash /home/entrypoint.bash
 
 
 ENV POSTGRES_USER=scu \
