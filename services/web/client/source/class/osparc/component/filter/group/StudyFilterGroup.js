@@ -21,11 +21,13 @@ qx.Class.define("osparc.component.filter.group.StudyFilterGroup", {
     this._setLayout(new qx.ui.layout.HBox());
 
     this.__textFilter = new osparc.component.filter.TextFilter("text", filterGroupId);
+    this.__textFilter.getChildControl("textfield").setFont("text-14");
     osparc.utils.Utils.setIdToWidget(this.__textFilter, "studyFiltersTextFld");
+    this._add(this.__textFilter);
+
     this.__tagsFilter = new osparc.component.filter.UserTagsFilter("tags", filterGroupId).set({
       visibility: osparc.data.Permissions.getInstance().canDo("study.tag") ? "visible" : "excluded"
     });
-    this._add(this.__textFilter);
     this._add(this.__tagsFilter);
   },
 

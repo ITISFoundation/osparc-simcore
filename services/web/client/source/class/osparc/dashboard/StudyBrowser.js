@@ -187,7 +187,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       this._add(studyFilters);
 
-      const studyBrowserLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      const studyBrowserLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
       const tempStudyLayout = this.__createTemplateStudiesLayout();
       studyBrowserLayout.add(tempStudyLayout);
       const userStudyLayout = this.__createUserStudiesLayout();
@@ -213,10 +213,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         marginTop: 20
       });
 
-      const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
       const studiesTitleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       const myStudyLabel = new qx.ui.basic.Label(this.tr("Recent studies")).set({
-        font: navBarLabelFont
+        font: "title-16"
       });
       studiesTitleContainer.add(myStudyLabel);
       const studiesDeleteButton = this.__createDeleteButton(false);
@@ -241,14 +240,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createTemplateStudiesLayout: function() {
-      const tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-        marginTop: 20
-      });
+      const tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
-      const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
       const templateTitleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       const tempStudyLabel = new qx.ui.basic.Label(this.tr("New studies")).set({
-        font: navBarLabelFont
+        font: "title-16"
       });
       templateTitleContainer.add(tempStudyLabel);
       const templateDeleteButton = this.__createDeleteButton(true);
@@ -439,7 +435,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createStudyListLayout: function() {
-      return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(18, 18));
+      return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(15, 15));
     },
 
     __createStudyItem: function(study, isTemplate) {
