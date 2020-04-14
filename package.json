@@ -9,6 +9,6 @@
     "eslint-plugin-qx-rules": "^0.1.0",
     "puppeteer": "^1.19.0",
     "puppeteer-to-istanbul": "^1.2.2",
-    "yargs": "^13.3.0"
+    "yargs": "^15.3.1"
   }
 }
