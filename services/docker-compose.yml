@@ -42,6 +42,7 @@ services:
       - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
       - TRACING_ENABLED=${TRACING_ENABLED:-True}
       - TRACING_ZIPKIN_ENDPOINT=${TRACING_ZIPKIN_ENDPOINT:-http://jaeger:9411}
+      - TRAEFIK_SIMCORE_ZONE=${TRAEFIK_SIMCORE_ZONE:-internal_simcore_stack}
       - LOGLEVEL=${LOG_LEVEL:-WARNING}
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
