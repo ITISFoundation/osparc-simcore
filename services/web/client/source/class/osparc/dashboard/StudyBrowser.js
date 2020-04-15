@@ -187,7 +187,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       this._add(studyFilters);
 
-      const studyBrowserLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+      const studyBrowserLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
       const tempStudyLayout = this.__createTemplateStudiesLayout();
       studyBrowserLayout.add(tempStudyLayout);
       const userStudyLayout = this.__createUserStudiesLayout();
@@ -209,24 +209,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createUserStudiesLayout: function() {
-      const userStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-        marginTop: 20
-      });
-
-      const studiesTitleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      const myStudyLabel = new qx.ui.basic.Label(this.tr("Recent studies")).set({
+      const userStudyLayout = new osparc.component.widget.CollapsibleView(this.tr("Recent studies"));
+      userStudyLayout.getChildControl("title").set({
         font: "title-16"
       });
-      studiesTitleContainer.add(myStudyLabel);
+      userStudyLayout._getLayout().setSpacing(8); // eslint-disable-line no-underscore-dangle
+
       const studiesDeleteButton = this.__createDeleteButton(false);
+      const studiesTitleContainer = userStudyLayout.getTitleBar();
+      studiesTitleContainer.add(new qx.ui.core.Spacer(20, null));
       studiesTitleContainer.add(studiesDeleteButton);
-      userStudyLayout.add(studiesTitleContainer);
 
       const userStudyContainer = this.__userStudyContainer = this.__createUserStudyList();
-      userStudyContainer.addListener("changeVisibility", e => {
-        const nVisibles = e.getData().length;
-        myStudyLabel.setVisibility(nVisibles ? "visible" : "excluded");
-      }, this);
+      userStudyLayout.setContent(userStudyContainer);
       userStudyContainer.addListener("changeSelection", e => {
         const nSelected = e.getData().length;
         this.__userStudyContainer.getChildren().forEach(userStudyItem => {
@@ -234,29 +229,24 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
         this.__updateDeleteStudiesButton(studiesDeleteButton);
       }, this);
-      userStudyLayout.add(userStudyContainer);
 
       return userStudyLayout;
     },
 
     __createTemplateStudiesLayout: function() {
-      const tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-
-      const templateTitleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      const tempStudyLabel = new qx.ui.basic.Label(this.tr("New studies")).set({
+      const tempStudyLayout = new osparc.component.widget.CollapsibleView(this.tr("New studies"));
+      tempStudyLayout.getChildControl("title").set({
         font: "title-16"
       });
-      templateTitleContainer.add(tempStudyLabel);
+      tempStudyLayout._getLayout().setSpacing(8); // eslint-disable-line no-underscore-dangle
+
       const templateDeleteButton = this.__createDeleteButton(true);
+      const templateTitleContainer = tempStudyLayout.getTitleBar();
+      templateTitleContainer.add(new qx.ui.core.Spacer(20, null));
       templateTitleContainer.add(templateDeleteButton);
-      tempStudyLayout.add(templateTitleContainer);
 
       const templateStudyContainer = this.__templateStudyContainer = this.__createTemplateStudyList();
-      templateStudyContainer.addListener("changeVisibility", e => {
-        const nVisibles = e.getData().length;
-        tempStudyLabel.setVisibility(nVisibles ? "visible" : "excluded");
-      }, this);
-
+      tempStudyLayout.setContent(templateStudyContainer);
       templateStudyContainer.addListener("changeSelection", e => {
         const nSelected = e.getData().length;
         this.__newStudyBtn.setEnabled(!nSelected);
@@ -267,7 +257,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
         this.__updateDeleteTemplatesButton(templateDeleteButton);
       }, this);
-      tempStudyLayout.add(templateStudyContainer);
 
       return tempStudyLayout;
     },
