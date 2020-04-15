@@ -25,6 +25,15 @@ DIRECTOR_REGISTRY_CACHING: bool = os.environ.get("DIRECTOR_REGISTRY_CACHING", Tr
 DIRECTOR_REGISTRY_CACHING_TTL: int = int(
     os.environ.get("DIRECTOR_REGISTRY_CACHING_TTL", 15 * 60)
 )
+
+# for passing self-signed certificate to spawned services
+DIRECTOR_SELF_SIGNED_SSL_SECRET_ID: str = os.environ.get(
+    "DIRECTOR_SELF_SIGNED_SSL_SECRET_ID", ""
+)
+DIRECTOR_SELF_SIGNED_SSL_FILENAME: str = os.environ.get(
+    "DIRECTOR_SELF_SIGNED_SSL_FILENAME", ""
+)
+
 TRAEFIK_SIMCORE_ZONE: str = os.environ.get(
     "TRAEFIK_INTERNAL_ZONE", "internal_simcore_stack"
 )
@@ -56,6 +65,8 @@ SERVICES_DEFAULT_ENVS: Dict[str, str] = {
 # some services need to know the published host to be functional (paraview)
 # TODO: please review if needed
 PUBLISHED_HOST_NAME: str = os.environ.get("PUBLISHED_HOST_NAME", "")
+
+
 # used when in devel mode vs release mode
 NODE_SCHEMA_LOCATION: str = os.environ.get(
     "NODE_SCHEMA_LOCATION", f"{API_ROOT}/{API_VERSION}/schemas/node-meta-v0.0.1.json"

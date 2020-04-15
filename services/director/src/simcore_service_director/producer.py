@@ -95,7 +95,7 @@ async def _create_docker_service_params(
     service_name = registry_proxy.get_service_last_names(service_key) + "_" + node_uuid
     log.debug("Converting labels to docker runtime parameters")
     container_spec = {
-        "Image": "{}/{}:{}".format(config.REGISTRY_URL, service_key, service_tag),
+        "Image": f"{config.REGISTRY_URL}/{service_key}:{service_tag}",
         "Env": {
             **config.SERVICES_DEFAULT_ENVS,
             "SIMCORE_USER_ID": user_id,
@@ -108,6 +108,18 @@ async def _create_docker_service_params(
         "Init": True,
         "Labels": {"user_id": user_id, "study_id": project_id, "node_id": node_uuid},
     }
+
+    if config.DIRECTOR_SELF_SIGNED_SSL and config.DIRECTOR_SELF_SIGNED_SSL_SECRET_ID:
+        # Note: this is useful for S3 client in case of self signed certificate
+        container_spec["Env"][
+            "SSL_CERT_FILE"
+        ] = config.DIRECTOR_SELF_SIGNED_SSL_FILENAME
+        container_spec["Secrets"] = [
+            {
+                "SecretID": config.DIRECTOR_SELF_SIGNED_SSL_SECRET_ID,
+                "File": {"Name": config.DIRECTOR_SELF_SIGNED_SSL_FILENAME},
+            }
+        ]
 
     docker_params = {
         "auth": await _create_auth() if config.REGISTRY_AUTH else {},
@@ -148,6 +160,7 @@ async def _create_docker_service_params(
         },
         "networks": [internal_network_id] if internal_network_id else [],
     }
+
     if reverse_proxy_settings:
         # some services define strip_path:true if they need the path to be stripped away
         if (
