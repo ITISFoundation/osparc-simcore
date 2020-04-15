@@ -112,6 +112,7 @@ async def _create_docker_service_params(
     if (
         config.DIRECTOR_SELF_SIGNED_SSL_FILENAME
         and config.DIRECTOR_SELF_SIGNED_SSL_SECRET_ID
+        and config.DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME
     ):
         # Note: this is useful for S3 client in case of self signed certificate
         container_spec["Env"][
@@ -120,7 +121,13 @@ async def _create_docker_service_params(
         container_spec["Secrets"] = [
             {
                 "SecretID": config.DIRECTOR_SELF_SIGNED_SSL_SECRET_ID,
-                "File": {"Name": config.DIRECTOR_SELF_SIGNED_SSL_FILENAME},
+                "SecretName": config.DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME,
+                "File": {
+                    "Name": config.DIRECTOR_SELF_SIGNED_SSL_FILENAME,
+                    "Mode": 444,
+                    "UID": "0",
+                    "GID": "0",
+                },
             }
         ]
 
