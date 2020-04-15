@@ -109,7 +109,10 @@ async def _create_docker_service_params(
         "Labels": {"user_id": user_id, "study_id": project_id, "node_id": node_uuid},
     }
 
-    if config.DIRECTOR_SELF_SIGNED_SSL and config.DIRECTOR_SELF_SIGNED_SSL_SECRET_ID:
+    if (
+        config.DIRECTOR_SELF_SIGNED_SSL_FILENAME
+        and config.DIRECTOR_SELF_SIGNED_SSL_SECRET_ID
+    ):
         # Note: this is useful for S3 client in case of self signed certificate
         container_spec["Env"][
             "SSL_CERT_FILE"
