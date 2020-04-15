@@ -242,7 +242,7 @@ services:
       - "--providers.docker.network=simcore_default"
       - "--providers.docker.swarmMode=true"
       - "--providers.docker.exposedByDefault=false"
-      # - "--providers.docker.constraints=Label(`io.simcore.zone`, `${TRAEFIK_SIMCORE_ZONE}`)"
+      - "--providers.docker.constraints=Label(`io.simcore.zone`, `${TRAEFIK_SIMCORE_ZONE}`)"
       - "--tracing=true"
       - "--tracing.jaeger=true"
       - "--tracing.jaeger.samplingServerURL=http://jaeger:5778/sampling"
