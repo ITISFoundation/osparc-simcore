@@ -141,7 +141,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
       switch (id) {
         case "title":
           control = new qx.ui.basic.Label().set({
-            font: osparc.utils.Utils.getFont(14, true)
+            font: "title-14"
           });
           this._add(control, {
             row: 0,
@@ -150,6 +150,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
           break;
         case "description":
           control = new osparc.ui.markdown.Markdown().set({
+            font: "text-13",
             maxHeight: 16
           });
           this._add(control, {
@@ -159,7 +160,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
           break;
         case "contact":
           control = new qx.ui.basic.Label().set({
-            font: "text-12"
+            font: "text-13"
           });
           this._add(control, {
             row: 1,
