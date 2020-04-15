@@ -35,6 +35,7 @@ docker_compose_service_names = [
     "rabbit",
     "postgres",
     "redis",
+    "traefik",
 ]
 
 stack_name = os.environ.get("SWARM_STACK_NAME", "simcore")
