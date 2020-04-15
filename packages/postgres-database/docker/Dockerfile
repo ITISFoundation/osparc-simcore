@@ -27,5 +27,5 @@ ENV POSTGRES_USER=scu \
     POSTGRES_PORT=5432 \
     POSTGRES_DB=simcoredb
 
-ENTRYPOINT [ "/bin/sh", "/home/entrypoint.sh" ]
+ENTRYPOINT [ "/bin/sh", "/home/entrypoint.bash" ]
 CMD [ "sc-pg", "upgrade" ]
