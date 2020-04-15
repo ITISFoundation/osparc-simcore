@@ -67,6 +67,7 @@ async def _read_service_settings(
     settings = (
         json.loads(image_labels[settings_name]) if settings_name in image_labels else {}
     )
+
     log.debug("Retrieved %s settings: %s", settings_name, settings)
     return settings
 
@@ -140,7 +141,7 @@ async def _create_docker_service_params(
             "type": "main" if main_service else "dependency",
             "io.simcore.zone": f"{config.TRAEFIK_SIMCORE_ZONE}",
             "traefik.enable": "true",
-            f"traefik.http.services.{service_name}.loadbalancer.server.port": 8080,
+            f"traefik.http.services.{service_name}.loadbalancer.server.port": "8080",
             f"traefik.http.routers.{service_name}.rule": f"PathPrefix(`/x/{node_uuid}`)",
             f"traefik.http.routers.{service_name}.entrypoints": "http",
             f"traefik.http.routers.{service_name}.middlewares": f"gzip@docker",
