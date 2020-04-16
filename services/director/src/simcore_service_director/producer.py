@@ -166,6 +166,7 @@ async def _create_docker_service_params(
             f"traefik.http.services.{service_name}.loadbalancer.server.port": "8080",
             f"traefik.http.routers.{service_name}.rule": f"PathPrefix(`/x/{node_uuid}`)",
             f"traefik.http.routers.{service_name}.entrypoints": "http",
+            f"traefik.http.routers.{service_name}.priority": "10",
             f"traefik.http.routers.{service_name}.middlewares": f"gzip@docker",
         },
         "networks": [internal_network_id] if internal_network_id else [],
