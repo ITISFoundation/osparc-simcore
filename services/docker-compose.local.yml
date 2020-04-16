@@ -40,7 +40,7 @@ services:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
     ports:
-      - "9081:8080"
+      - "8080"
       - "3001:3000"
 
   postgres:
@@ -81,6 +81,30 @@ services:
   traefik:
     ports:
       - target: 80
-        published: 80
+        published: 9081
       - target: 8080
         published: 8080
+    deploy:
+      labels:
+        # traefik dashboard UI accessible through http://127.0.0.1:8080/dashboard/
+        # traefik REST API accessible through for example http://127.0.0.1:8080/api/http/routers
+        - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
+        - traefik.enable=true
+        - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.service=api@internal
+        - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.entrypoints=traefik_monitor
+        - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.middlewares=gzip@docker
+        - traefik.http.services.${SWARM_STACK_NAME}_api_internal.loadbalancer.server.port=8080
+
+  whoami:
+    image: "containous/whoami"
+    # NOTE: helper service allows to better understand how the host gets forwarded inside the simcore stack
+    deploy:
+      labels:
+        # whoami accessible through http://127.0.0.1:8080/whoami
+        - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
+        - traefik.enable=true
+        - traefik.http.services.${SWARM_STACK_NAME}_whoami.loadbalancer.server.port=80
+        - traefik.http.routers.${SWARM_STACK_NAME}_whoami.rule=PathPrefix(`/whoami`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_whoami.entrypoints=traefik_monitor
+        - traefik.http.routers.${SWARM_STACK_NAME}_whoami.middlewares=gzip@docker
