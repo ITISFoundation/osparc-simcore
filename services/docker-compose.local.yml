@@ -40,7 +40,7 @@ services:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
     ports:
-      - ${SIMCORE_PORT:-9081}:8080
+      - "8080"
       - "3001:3000"
 
   postgres:
