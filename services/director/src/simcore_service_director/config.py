@@ -38,7 +38,7 @@ DIRECTOR_SELF_SIGNED_SSL_FILENAME: str = os.environ.get(
 )
 
 TRAEFIK_SIMCORE_ZONE: str = os.environ.get(
-    "TRAEFIK_INTERNAL_ZONE", "internal_simcore_stack"
+    "TRAEFIK_SIMCORE_ZONE", "internal_simcore_stack"
 )
 APP_REGISTRY_CACHE_DATA_KEY: str = __name__ + "_registry_cache_data"
 
