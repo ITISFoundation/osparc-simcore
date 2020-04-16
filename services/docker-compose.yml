@@ -90,10 +90,10 @@ services:
         # ssl header necessary so that socket.io upgrades correctly from polling to websocket mode. the middleware must be attached to the right connection.
         - traefik.http.middlewares.simcore_sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
         - traefik.enable=true
-        - traefik.http.services.webserver.loadbalancer.server.port=8080
-        - traefik.http.routers.webserver.rule=hostregexp(`{host:.+}`)
-        - traefik.http.routers.webserver.entrypoints=http
-        - traefik.http.routers.webserver.middlewares=gzip@docker, simcore_sslheader@docker
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.server.port=8080
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=hostregexp(`{host:.+}`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.entrypoints=http
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=gzip@docker, simcore_sslheader@docker
     networks:
       - default
       - interactive_services_subnet
