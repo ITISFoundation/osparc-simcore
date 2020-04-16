@@ -228,7 +228,7 @@ qx.Class.define("osparc.store.Store", {
     },
 
     getGroupsAll: function() {
-      const hardcodedMe = {
+      const hardcodedAll = {
         GID: "0",
         label: "All",
         description: "Open to all users"
@@ -237,7 +237,7 @@ qx.Class.define("osparc.store.Store", {
         osparc.data.Resources.getOne("profile")
           .then(profile => {
             console.log(profile);
-            resolve(hardcodedMe);
+            resolve(hardcodedAll);
           })
           .catch(err => {
             console.error(err);
