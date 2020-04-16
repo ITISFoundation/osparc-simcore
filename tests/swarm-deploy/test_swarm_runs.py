@@ -144,7 +144,7 @@ def test_core_service_running(
 
 
 def test_check_serve_root(make_up_prod: Dict):
-    req = urllib.request.Request("http://127.0.0.1:9081/")
+    req = urllib.request.Request("http://127.0.0.1:80/")
     try:
         resp = urllib.request.urlopen(req)
         charset = resp.info().get_content_charset()
