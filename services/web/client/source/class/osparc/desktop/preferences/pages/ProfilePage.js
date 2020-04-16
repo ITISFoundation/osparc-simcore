@@ -100,21 +100,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
         "firstName": null,
         "lastName": null,
         "email": null,
-        "role": null,
-        "groups": {
-          "me": {
-          },
-          "organizations": [{
-            GID: "1",
-            label: "IT'IS Foundation",
-            description: ""
-          }],
-          "all": {
-            GID: "0",
-            label: "All",
-            description: "Public to all users"
-          }
-        }
+        "role": null
       };
 
       if (qx.core.Environment.get("qx.debug")) {
@@ -122,8 +108,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
           "firstName": "Bizzy",
           "lastName": "Zastrow",
           "email": "bizzy@itis.ethz.ch",
-          "role": "Tester",
-          "organizations": []
+          "role": "Tester"
         };
       }
       const model = this.__userProfileModel = qx.data.marshal.Json.createModel(raw);
@@ -257,8 +242,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
           "firstName": data["first_name"] || "",
           "lastName": data["last_name"] || "",
           "email": data["login"],
-          "role": data["role"] || "",
-          "organizations": data["organizations"] || []
+          "role": data["role"] || ""
         });
       }
     },

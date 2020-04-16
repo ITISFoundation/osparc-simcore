@@ -215,12 +215,17 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         const image = this.getChildControl("shared");
 
         const store = osparc.store.Store.getInstance();
-        store.getGroupsOrganizations()
-          .then(orgs => {
+        Promise.all([
+          store.getGroupsOrganizations(),
+          store.getGroupsAll()
+        ])
+          .then(values => {
+            const groups = [...values[0]];
+            groups.push(values[1]);
             let hintText = "";
             Object.keys(value).forEach(key => {
-              const org = orgs.find(el => el["GID"] === key);
-              hintText += (org["label"] + "<br>");
+              const grp = groups.find(el => el["GID"] === key);
+              hintText += (grp["label"] + "<br>");
             });
             const hint = new osparc.ui.hint.Hint(image, hintText).set({
               active: false
