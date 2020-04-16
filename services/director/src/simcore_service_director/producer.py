@@ -162,7 +162,7 @@ async def _create_docker_service_params(
             "user_id": user_id,
             "type": "main" if main_service else "dependency",
             "io.simcore.zone": f"{config.TRAEFIK_SIMCORE_ZONE}",
-            "traefik.enable": "true",
+            "traefik.enable": "true" if main_service else "false",
             f"traefik.http.services.{service_name}.loadbalancer.server.port": "8080",
             f"traefik.http.routers.{service_name}.rule": f"PathPrefix(`/x/{node_uuid}`)",
             f"traefik.http.routers.{service_name}.entrypoints": "http",
