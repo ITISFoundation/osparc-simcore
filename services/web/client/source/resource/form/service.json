@@ -36,13 +36,19 @@
             "type": "object",
             "title": "Service information",
             "required": [
-                "description"
+                "description", 
+                "commandLine"
             ],
             "properties": {
                 "description": {
                     "type": "string",
                     "title": "Description of the service",
-                    "description": "Please provide with detailed information about how to run the service."
+                    "description": "Please provide with detailed information about how to run the service and any dependencies required."
+                },
+                "commandLine": {
+                    "type": "string",
+                    "title": "Command line interface to run service",
+                    "description": "In the command line, what command is used to run the code? E.g. In Matlab Command Window: 'myproject(input1, input2, input3)'"
                 },
                 "url": {
                     "type": "string",

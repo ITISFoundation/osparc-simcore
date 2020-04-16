@@ -7,8 +7,9 @@
     },
     "serviceInfo": {
         "description": "Universal solver that solves everything and even cooks for you",
+        "commandLine": "In linux terminal: python3 universalsolver.py input1 input2",
         "url": "keep.dreaming.com",
-        "codeVariant": "opencor"
+        "codeVariant": "python"
     },
     "serviceInterface": {
         "inputs": [
