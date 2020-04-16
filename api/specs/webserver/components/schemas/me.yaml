@@ -27,10 +27,17 @@ ProfileOutput:
         format: email
       role:
         type: string
-      organizations:
-        type: array
-        items:
-          $ref: '#/Organization'
+      groups:
+        type: object
+        properties:
+          me:
+            $ref: '#/UsersGroup'
+          organizations:
+            type: array
+            items:
+              $ref: '#/UsersGroup'
+          all:
+            $ref: '#/UsersGroup'
       gravatar_id:
         type: string
   example:
@@ -52,7 +59,7 @@ ProfileEnveloped:
       default: null
 
 
-Organization:
+UsersGroup:
   type: object
   properties:
     gid:

@@ -34,11 +34,11 @@ qx.Class.define("osparc.component.filter.Organizations", {
 
   members: {
     /**
-     * Function that uses the information in {osparc.store.Store.getMyOrganizations} to build the menu for the filter.
+     * Function that uses the information in {osparc.store.Store.getGroupsOrganizations} to build the menu for the filter.
      */
     __buildMenu: function() {
       const store = osparc.store.Store.getInstance();
-      const myOrganizations = store.getMyOrganizations();
+      const myOrganizations = store.getGroupsOrganizations();
       myOrganizations.sort(this.__sortByLabel);
       myOrganizations.forEach(organization => {
         const bnt = this._addOption(osparc.utils.Utils.capitalize(organization.label));

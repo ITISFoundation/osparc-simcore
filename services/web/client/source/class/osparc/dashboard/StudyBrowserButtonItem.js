@@ -215,7 +215,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         const image = this.getChildControl("shared");
 
         const store = osparc.store.Store.getInstance();
-        store.getMyOrganizations()
+        store.getGroupsOrganizations()
           .then(orgs => {
             let hintText = "";
             Object.keys(value).forEach(key => {

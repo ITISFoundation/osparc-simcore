@@ -101,11 +101,20 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
         "lastName": null,
         "email": null,
         "role": null,
-        "organizations": [{
-          GID: 7,
-          label: "IT'IS Foundation",
-          description: ""
-        }]
+        "groups": {
+          "me": {
+          },
+          "organizations": [{
+            GID: "1",
+            label: "IT'IS Foundation",
+            description: ""
+          }],
+          "all": {
+            GID: "0",
+            label: "All",
+            description: "Public to all users"
+          }
+        }
       };
 
       if (qx.core.Environment.get("qx.debug")) {
@@ -215,7 +224,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       box.add(orgsUIList);
 
       const store = osparc.store.Store.getInstance();
-      store.getMyOrganizations()
+      store.getGroupsOrganizations()
         .then(orgs => {
           orgsModel.removeAll();
           orgs.forEach(org => orgsModel.append(qx.data.marshal.Json.createModel(org)));
