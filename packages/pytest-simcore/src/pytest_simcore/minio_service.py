@@ -23,7 +23,7 @@ def minio_config(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
     # container onto the host network interface.
     config = {
         "client": {
-            "endpoint": f"172.17.0.1:{get_service_published_port('minio', devel_environ['S3_ENDPOINT'].split(':')[1])}",
+            "endpoint": f"172.17.0.1:{get_service_published_port('minio')}",
             "access_key": devel_environ["S3_ACCESS_KEY"],
             "secret_key": devel_environ["S3_SECRET_KEY"],
             "secure": strtobool(devel_environ["S3_SECURE"]) != 0,
