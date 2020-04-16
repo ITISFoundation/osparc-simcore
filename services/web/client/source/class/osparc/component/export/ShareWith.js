@@ -55,9 +55,9 @@ qx.Class.define("osparc.component.export.ShareWith", {
         shareContextId: 1,
         label: "Organizations"
       },
-      "everyone": {
+      "all": {
         shareContextId: 2,
-        label: "Everyone"
+        label: "All"
       }
     },
     __rbManager: null,

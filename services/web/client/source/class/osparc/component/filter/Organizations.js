@@ -38,12 +38,14 @@ qx.Class.define("osparc.component.filter.Organizations", {
      */
     __buildMenu: function() {
       const store = osparc.store.Store.getInstance();
-      const myOrganizations = store.getGroupsOrganizations();
-      myOrganizations.sort(this.__sortByLabel);
-      myOrganizations.forEach(organization => {
-        const bnt = this._addOption(osparc.utils.Utils.capitalize(organization.label));
-        bnt.GID = organization.GID;
-      });
+      store.getGroupsOrganizations()
+        .then(orgs => {
+          orgs.sort(this.__sortByLabel);
+          orgs.forEach(org => {
+            const bnt = this._addOption(osparc.utils.Utils.capitalize(org.label));
+            bnt.GID = org.GID;
+          });
+        });
     },
 
     __sortByLabel: function(org1, org2) {
