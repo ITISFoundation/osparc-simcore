@@ -93,6 +93,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.server.port=8080
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=hostregexp(`{host:.+}`)
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.entrypoints=http
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.priority=1
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=gzip@docker, simcore_sslheader@docker
     networks:
       - default
