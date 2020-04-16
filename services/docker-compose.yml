@@ -225,7 +225,7 @@ services:
       - default
 
   traefik:
-    image: traefik:v2.2
+    image: traefik:v2.2.0
     init: true
     command:
       - "--api=true"
