@@ -237,7 +237,7 @@ services:
       - "--metrics.prometheus.addServicesLabels=true"
       - "--entryPoints.metrics.address=:8082"
       - "--metrics.prometheus.entryPoint=metrics"
-      - "--entryPoints.http.address=:80"
+      - "--entryPoints.http.address=:9081"
       - "--entryPoints.traefik_dashboard.address=:8080"
       - "--providers.docker.endpoint=unix:///var/run/docker.sock"
       - "--providers.docker.network=${SWARM_STACK_NAME}_default"
