@@ -1,3 +1,5 @@
+import json
+
 from aiohttp import MultipartReader, hdrs, web
 
 from .login.decorators import RQT_USERID_KEY, login_required
@@ -20,17 +22,17 @@ async def service_submission(request: web.Request):
             continue
         raise web.HTTPUnsupportedMediaType(reason=f'One part had an unexpected type: {part.headers[hdrs.CONTENT_TYPE]}')
     # data (dict) and file (bytearray) have the necessary information to compose the email
-    print(data, filedata)
     user_id = request.get(RQT_USERID_KEY, -1)
     try:
         from .login.utils import (render_and_send_mail, common_themed)
+        from json2html import json2html
         await render_and_send_mail(
             request,
-            'support@osparc.io',
+            'pascual@itis.swiss',
             common_themed('service_submission.html'),
             {
                 'user': user_id,
-                'json': data
+                'data': json2html.convert(json=json.dumps(data), table_attributes='class="pure-table"')
             },
             filedata
         )
