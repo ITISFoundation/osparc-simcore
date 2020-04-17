@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import asyncio
 import logging
 import os
 import sys
@@ -15,6 +14,7 @@ from typing import Dict, List
 import pytest
 from docker import DockerClient
 from docker.models.services import Service
+from yarl import URL
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,8 @@ docker_compose_service_names = [
     "rabbit",
     "postgres",
     "redis",
+    "traefik",
+    "whoami",
 ]
 
 stack_name = os.environ.get("SWARM_STACK_NAME", "simcore")
@@ -143,7 +145,7 @@ def test_core_service_running(
         )
 
 
-def test_check_serve_root(make_up_prod: Dict):
+def test_check_serve_root(loop, make_up_prod: Dict, traefik_service: URL):
     req = urllib.request.Request("http://127.0.0.1:9081/")
     try:
         resp = urllib.request.urlopen(req)
