@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import os
 from typing import Dict, Tuple
 
 import aiohttp
