@@ -11,7 +11,7 @@ from .base import metadata
 
 
 groups = sa.Table(
-    "users",
+    "groups",
     metadata,
     sa.Column("gid", sa.BigInteger, nullable=False, primary_key=True),
     sa.Column("users", sa.ARRAY(sa.ForeignKey("users.id")), nullable=False),
