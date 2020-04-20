@@ -21,6 +21,10 @@ catalog:
   host: catalog
   port: 8000
   version: v0
+application_proxy:
+  enabled: False
+reverse_proxy:
+  enabled: False
 db:
   init_tables: True
   postgres:
