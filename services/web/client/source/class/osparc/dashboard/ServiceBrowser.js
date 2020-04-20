@@ -263,7 +263,6 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
           addServiceWindow.open();
         });
         form.addListener("submit", e => {
-          form.setFetching(true);
           const data = e.getData();
           const headers = new Headers();
           headers.append("Accept", "application/json");
@@ -272,8 +271,15 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
             type: "application/json"
           }));
           if (data.files && data.files.length) {
+            const size = data.files[0].size;
+            const maxSize = 10; // 10 MB
+            if (size > maxSize * 1024 * 1024) {
+              osparc.component.message.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
+              return;
+            }
             body.append("file", data.files[0], data.files[0].name);
           }
+          form.setFetching(true);
           fetch("/v0/publications/service-submission", {
             method: "POST",
             headers,

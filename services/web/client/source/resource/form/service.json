@@ -63,7 +63,7 @@
                 "files": {
                     "type": "string",
                     "title": "File upload",
-                    "description": "If your code doesn't live inside a repository, you can upload a single .zip file containing it.",
+                    "description": "If your code doesn't live inside a repository, you can upload a single .zip file containing it. Maximum size is 10MB",
                     "contentMediaType": "application/zip"
                 }
             }

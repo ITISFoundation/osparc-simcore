@@ -44,7 +44,8 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
       if (this.__schema.description) {
         this.add(new qx.ui.basic.Label(this.__schema.description).set({
           font: "text-11-italic",
-          marginTop: 3
+          marginTop: 3,
+          rich: true
         }));
       }
       return input;
