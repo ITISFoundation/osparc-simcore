@@ -18,7 +18,7 @@ RUN apk add --no-cache \
     bash \
     postgresql
 
-COPY entrypoint.sh /home/entrypoint.sh
+COPY entrypoint.bash /home/entrypoint.bash
 
 
 ENV POSTGRES_USER=scu \
@@ -27,5 +27,5 @@ ENV POSTGRES_USER=scu \
     POSTGRES_PORT=5432 \
     POSTGRES_DB=simcoredb
 
-ENTRYPOINT [ "/bin/sh", "/home/entrypoint.sh" ]
+ENTRYPOINT [ "/bin/sh", "/home/entrypoint.bash" ]
 CMD [ "sc-pg", "upgrade" ]
