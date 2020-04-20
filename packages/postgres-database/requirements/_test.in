@@ -19,7 +19,6 @@ pytest-instafail
 pytest-runner
 pytest-docker
 
-# tools
--r ../../../requirements.txt
+# CI
 pylint
 coveralls

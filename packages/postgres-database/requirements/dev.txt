@@ -11,3 +11,6 @@
 
 # current module
 -e .[migration]
+
+# basic dev tools
+-r ../../../requirements.txt

@@ -11,3 +11,6 @@
 
 # installs current package
 -e .
+
+# basic dev tools
+-r ../../../requirements.txt
