@@ -75,7 +75,8 @@ async def compose_multipart_mail(recipient: str, subject: str, body: str, filena
     await send_mail(msg)
 
 async def render_and_send_mail(
-    request: web.Request, to: str, template: str, context: Mapping, filename: str, file: bytearray
+    request: web.Request, to: str, template: str, context: Mapping,
+    filename: Optional[str] = None, file: Optional[bytearray] = None
 ):
     page = render_string(str(template), request, context)
     subject, body = page.split("\n", 1)

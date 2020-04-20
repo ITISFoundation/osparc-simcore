@@ -95,8 +95,8 @@ async def get_authorized_user(request: web.Request) -> Dict:
     from .security_api import authorized_userid
 
     db = get_storage(request.app)
-    userid = await authorized_userid(request)[0]
-    user = await db.get_user({"id": userid})
+    userid = await authorized_userid(request)
+    user = await db.get_user({"id": userid[0]})
     return user
 
 
