@@ -14,7 +14,7 @@ groups = sa.Table(
     "groups",
     metadata,
     sa.Column("gid", sa.BigInteger, nullable=False, primary_key=True),
-    sa.Column("users", sa.ARRAY(sa.ForeignKey("users.id")), nullable=False),
+    sa.Column("name", sa.String, nullable=False),
     sa.Column("created", sa.DateTime(), nullable=False, default=datetime.utcnow),
     sa.Column(
         "modified",
@@ -23,4 +23,28 @@ groups = sa.Table(
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
     ),
+)
+
+user_to_groups = sa.Table(
+    "user_to_groups",
+    metadata,
+    sa.Column(
+        "uid",
+        sa.BigInteger,
+        sa.ForeignKey("users.id", onupdate="CASCADE", ondelete="CASCADE"),
+    ),
+    sa.Column(
+        "gid",
+        sa.BigInteger,
+        sa.ForeignKey("groups.gid", onupdate="CASCADE", ondelete="CASCADE"),
+    ),
+    sa.Column("created", sa.DateTime(), nullable=False, default=datetime.utcnow),
+    sa.Column(
+        "modified",
+        sa.DateTime(),
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    ),
+    sa.UniqueConstraint("uid", "gid"),
 )

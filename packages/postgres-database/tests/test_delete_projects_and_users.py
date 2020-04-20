@@ -13,9 +13,12 @@ import sqlalchemy as sa
 from aiopg.sa.result import ResultProxy, RowProxy
 
 from simcore_postgres_database.models.base import metadata
-from simcore_postgres_database.webserver_models import (UserStatus, projects,
-                                                        user_to_projects,
-                                                        users)
+from simcore_postgres_database.webserver_models import (
+    UserStatus,
+    projects,
+    user_to_projects,
+    users,
+)
 
 fake = faker.Faker()
 
@@ -75,7 +78,6 @@ def engine(make_engine, loop):
         return engine
 
     return loop.run_until_complete(start())
-
 
 
 async def test_count_users(engine):
