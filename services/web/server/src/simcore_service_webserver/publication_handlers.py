@@ -20,6 +20,10 @@ async def service_submission(request: web.Request):
             continue
         if part.headers[hdrs.CONTENT_TYPE] == 'application/zip':
             filedata = await part.read(decode=True)
+            maxsize = 10 * 1024 * 1024 # 10MB
+            actualsize = len(filedata)
+            if actualsize > maxsize:
+                raise web.HTTPRequestEntityTooLarge(maxsize, actualsize)
             filename = part.filename
             continue
         raise web.HTTPUnsupportedMediaType(reason=f'One part had an unexpected type: {part.headers[hdrs.CONTENT_TYPE]}')
