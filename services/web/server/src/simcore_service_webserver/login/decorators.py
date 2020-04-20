@@ -4,7 +4,7 @@ from functools import wraps
 from aiohttp import web
 from aiohttp_security.api import authorized_userid
 
-from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.request_keys import RQT_USERID_KEY, RQT_USEREMAIL_KEY
 from servicelib.requests_utils import get_request
 
 
@@ -17,7 +17,8 @@ def user_to_request(handler):
     @wraps(handler)
     async def wrapped(*args, **kwargs):
         request = get_request(*args, **kwargs)
-        request[RQT_USERID_KEY] = await authorized_userid(request)
+        userid = await authorized_userid(request)
+        request[RQT_USERID_KEY] = userid[0]
         return await handler(*args)
 
     return wrapped
@@ -39,7 +40,8 @@ def login_required(handler):
         if userid is None:
             raise web.HTTPUnauthorized
 
-        request[RQT_USERID_KEY] = userid
+        request[RQT_USERID_KEY] = userid[0]
+        request[RQT_USEREMAIL_KEY] = userid[1]
         ret = await handler(*args, **kwargs)
         return ret
 

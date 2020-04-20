@@ -1,3 +1,4 @@
+import mimetypes
 import random
 from email import encoders
 from email.mime.base import MIMEBase
@@ -8,8 +9,9 @@ from os.path import join
 from pprint import pformat
 from typing import Mapping, Optional
 
-import aiosmtplib
 import attr
+
+import aiosmtplib
 import passlib.hash
 from aiohttp import web
 from aiohttp_jinja2 import render_string
@@ -47,52 +49,40 @@ def get_client_ip(request: web.Request) -> str:
     return ips.split(",")[0]
 
 
-async def send_mail(recipient: str, subject: str, body: str) -> None:
-    # TODO: move to email submodule
-    smtp_args = dict(
-        loop=cfg.APP.loop,
-        hostname=cfg.SMTP_HOST,
-        port=cfg.SMTP_PORT,
-        use_tls=bool(cfg.SMTP_TLS_ENABLED),
-    )
-    log.debug("Sending email with smtp configuration: %s", pformat(smtp_args))
-
+async def compose_mail(recipient: str, subject: str, body: str) -> None:
     msg = MIMEText(body, "html")
     msg["Subject"] = subject
     msg["From"] = cfg.SMTP_SENDER
     msg["To"] = recipient
 
-    if cfg.SMTP_PORT == 587:
-        # NOTE: aiosmtplib does not handle port 587 correctly
-        # plaintext first, then use starttls
-        # this is a workaround
-        smtp = aiosmtplib.SMTP(**smtp_args)
-        await smtp.connect(use_tls=False, port=cfg.SMTP_PORT)
-        if cfg.SMTP_TLS_ENABLED:
-            log.info("Starting TLS ...")
-            await smtp.starttls(validate_certs=False)
-        if cfg.SMTP_USERNAME:
-            log.info("Login email server ...")
-            await smtp.login(cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD)
-        await smtp.send_message(msg)
-        await smtp.quit()
-    else:
-        async with aiosmtplib.SMTP(**smtp_args) as smtp:
-            if cfg.SMTP_USERNAME:
-                log.info("Login email server ...")
-                await smtp.login(cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD)
-            await smtp.send_message(msg)
+    send_mail(msg)
 
+async def compose_multipart_mail(recipient: str, subject: str, body: str, filename: str, file: bytearray) -> None:
+    msg = MIMEMultipart('alternative')
+    msg["Subject"] = subject
+    msg["From"] = cfg.SMTP_SENDER
+    msg["To"] = recipient
+
+    part1 = MIMEText(body, 'html')
+    mimetype = mimetypes.guess_type(filename)[0].split('/')
+    part2 = MIMEBase(mimetype[0], mimetype[1])
+    part2.set_payload(file)
+    part2.add_header('Content-Disposition', f'attachment; filename="{filename}"')
+    encoders.encode_base64(part2)
+    msg.attach(part1)
+    msg.attach(part2)
+    
+    await send_mail(msg)
 
 async def render_and_send_mail(
-    request: web.Request, to: str, template: str, context: Mapping, attachment: bytearray
+    request: web.Request, to: str, template: str, context: Mapping, filename: str, file: bytearray
 ):
     page = render_string(str(template), request, context)
     subject, body = page.split("\n", 1)
-    if attachment:
-        await send_multipart_mail(to, subject.strip(), body, attachment)
+    if file:
+        await compose_multipart_mail(to, subject.strip(), body, filename, file)
     else:
-        await send_mail(to, subject.strip(), body)
+        await compose_mail(to, subject.strip(), body)
 
 
 def themed(template):
@@ -109,7 +99,7 @@ def flash_response(msg: str, level: str = "INFO") -> web.Response:
     )
     return response
 
-async def send_multipart_mail(recipient: str, subject: str, body: str, attachment: bytearray) -> None:
+async def send_mail(msg):
     smtp_args = dict(
         loop=cfg.APP.loop,
         hostname=cfg.SMTP_HOST,
@@ -117,20 +107,6 @@ async def send_multipart_mail(recipient: str, subject: str, body: str, attachmen
         use_tls=bool(cfg.SMTP_TLS_ENABLED),
     )
     log.debug("Sending email with smtp configuration: %s", pformat(smtp_args))
-
-    msg = MIMEMultipart('alternative')
-    msg["Subject"] = subject
-    msg["From"] = cfg.SMTP_SENDER
-    msg["To"] = recipient
-
-    part1 = MIMEText(body, 'html')
-    part2 = MIMEBase('application', 'zip')
-    part2.set_payload(attachment)
-    part2.add_header('Content-Disposition', 'attachment; filename="README.zip"')
-    encoders.encode_base64(part2)
-    msg.attach(part1)
-    msg.attach(part2)
-
     if cfg.SMTP_PORT == 587:
         # NOTE: aiosmtplib does not handle port 587 correctly
         # plaintext first, then use starttls

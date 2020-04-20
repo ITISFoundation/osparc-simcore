@@ -60,7 +60,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         """
         # TODO: why users.c.user_login_key!=users.c.email
         user = await self._pg_query_user(identity)
-        return user["id"] if user else None
+        return user.get('id'), user.get('email') if user else None
 
     async def permits(
         self,
