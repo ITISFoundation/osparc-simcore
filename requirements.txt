@@ -2,6 +2,9 @@
 #
 # $ make devenv
 #
+
+# Always latest versions of tooling
+
 pylint
 black
 pip-tools
