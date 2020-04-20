@@ -5,6 +5,7 @@ import pytest
 import sqlalchemy as sa
 from aiopg.sa.result import ResultProxy, RowProxy
 from sqlalchemy import literal_column
+from psycopg2.errors import UniqueViolation
 
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import (
@@ -30,7 +31,7 @@ def random_user(**overrides):
 
 
 def random_group(**overrides):
-    data = dict(name=fake.company(),)
+    data = dict(name=fake.company(), description=fake.text(),)
     data.update(overrides)
     return data
 
@@ -53,6 +54,21 @@ async def _create_user(conn, name: str, group: RowProxy) -> RowProxy:
         user_to_groups.insert().values(uid=user.id, gid=group.gid)
     )
     return user
+
+
+async def test_user_group_uniqueness(make_engine):
+    engine = await make_engine()
+    sync_engine = make_engine(False)
+    metadata.drop_all(sync_engine)
+    metadata.create_all(sync_engine)
+    async with engine.acquire() as conn:
+        rory_group = await _create_group(conn, name="Rory Storm and the Hurricanes")
+        ringo = await _create_user(conn, "Ringo", rory_group)
+        # test unique user/group pair
+        with pytest.raises(UniqueViolation, match="user_to_groups_uid_gid_key"):
+            await conn.execute(
+                user_to_groups.insert().values(uid=ringo.id, gid=rory_group.gid)
+            )
 
 
 async def test_group(make_engine):

@@ -1,8 +1,8 @@
 """new group table
 
-Revision ID: 306fed9b1375
+Revision ID: 16ea02b41c18
 Revises: f3555bb4bc34
-Create Date: 2020-04-20 14:36:50.937968+00:00
+Create Date: 2020-04-20 16:00:27.233695+00:00
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '306fed9b1375'
+revision = '16ea02b41c18'
 down_revision = 'f3555bb4bc34'
 branch_labels = None
 depends_on = None
@@ -21,6 +21,7 @@ def upgrade():
     op.create_table('groups',
     sa.Column('gid', sa.BigInteger(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
+    sa.Column('description', sa.String(), nullable=False),
     sa.Column('created', sa.DateTime(), nullable=False),
     sa.Column('modified', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('gid')

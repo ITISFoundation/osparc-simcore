@@ -15,6 +15,7 @@ groups = sa.Table(
     metadata,
     sa.Column("gid", sa.BigInteger, nullable=False, primary_key=True),
     sa.Column("name", sa.String, nullable=False),
+    sa.Column("description", sa.String, nullable=False),
     sa.Column("created", sa.DateTime(), nullable=False, default=datetime.utcnow),
     sa.Column(
         "modified",
