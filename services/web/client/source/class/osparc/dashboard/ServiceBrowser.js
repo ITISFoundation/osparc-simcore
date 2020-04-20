@@ -245,7 +245,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       });
       let formData = null;
       const displayForm = () => {
-        const addServiceWindow = new qx.ui.window.Window(this.tr("Create a new service")).set({
+        const addServiceWindow = new qx.ui.window.Window(this.tr("Submit a new service")).set({
           appearance: "service-window",
           modal: true,
           autoDestroy: true,
@@ -297,7 +297,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         });
         scroll.add(form);
       };
-      const addServiceButton = new qx.ui.form.Button(this.tr("Add service"), "@FontAwesome5Solid/plus-circle/14");
+      const addServiceButton = new qx.ui.form.Button(this.tr("Submit a new service"), "@FontAwesome5Solid/plus-circle/14");
       const testDataButton = new qx.ui.form.Button(this.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");
       addServiceButton.addListener("execute", () => {
         formData = null;
