@@ -42,8 +42,7 @@ async def service_submission(request: web.Request):
                 'data': json2html.convert(json=json.dumps(data), table_attributes='class="pure-table"'),
                 'subject': subject if 'production' in os.environ.get("SWARM_STACK_NAME") else 'TEST: ' + subject
             },
-            filename,
-            filedata
+            [(filename, filedata)]
         )
     except Exception:
         raise web.HTTPServiceUnavailable()
