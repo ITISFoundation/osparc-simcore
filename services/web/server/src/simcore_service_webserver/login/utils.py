@@ -55,7 +55,7 @@ async def compose_mail(recipient: str, subject: str, body: str) -> None:
     msg["From"] = cfg.SMTP_SENDER
     msg["To"] = recipient
 
-    send_mail(msg)
+    await send_mail(msg)
 
 async def compose_multipart_mail(recipient: str, subject: str, body: str, filename: str, file: bytearray) -> None:
     msg = MIMEMultipart('alternative')
