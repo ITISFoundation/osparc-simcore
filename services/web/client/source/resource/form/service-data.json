@@ -6,9 +6,9 @@
         "affiliation": "Universidad Politécnica de Valencia"
     },
     "serviceInfo": {
-        "description": "Universal solver that solves everything and even cooks for you",
+        "description": "Universal solver that solves everything",
         "commandLine": "In linux terminal: python3 universalsolver.py input1 input2",
-        "url": "keep.dreaming.com",
+        "url": "example.github.com",
         "codeVariant": "python"
     },
     "serviceInterface": {
