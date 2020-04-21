@@ -297,22 +297,28 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         });
         scroll.add(form);
       };
-      const addServiceButton = new qx.ui.form.Button(this.tr("Submit a new service"), "@FontAwesome5Solid/plus-circle/14");
-      const testDataButton = new qx.ui.form.Button(this.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");
+
+      osparc.utils.LibVersions.getPlatformName()
+        .then(platformName => {
+          if (platformName === 'dev') {
+            const testDataButton = new qx.ui.form.Button(this.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");
+            testDataButton.addListener("execute", () => {
+              osparc.utils.Utils.fetchJSON("/resource/form/service-data.json")
+              .then(data => {
+                formData = data;
+                displayForm();
+              });
+            });
+            header.add(testDataButton);
+          }
+        })
+
+      const addServiceButton = new qx.ui.form.Button(this.tr("Submit new service"), "@FontAwesome5Solid/plus-circle/14");
       addServiceButton.addListener("execute", () => {
         formData = null;
         displayForm();
       });
-
-      testDataButton.addListener("execute", () => {
-        osparc.utils.Utils.fetchJSON("/resource/form/service-data.json")
-          .then(data => {
-            formData = data;
-            displayForm();
-          });
-      });
-      header.add(testDataButton);
-
+      
       header.add(addServiceButton);
       vBoxLayout.add(header);
 
