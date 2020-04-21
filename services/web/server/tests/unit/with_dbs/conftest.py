@@ -173,7 +173,7 @@ def path_mail(monkeypatch):
     async def send_mail(*args):
         print("=== EMAIL TO: {}\n=== SUBJECT: {}\n=== BODY:\n{}".format(*args))
 
-    monkeypatch.setattr(simcore_service_webserver.login.utils, "send_mail", send_mail)
+    monkeypatch.setattr(simcore_service_webserver.login.utils, "compose_mail", send_mail)
 
 
 def is_postgres_responsive(url):
