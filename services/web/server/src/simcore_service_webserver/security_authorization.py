@@ -52,7 +52,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             self.timed_cache[identity] = row
         return row
 
-    async def authorized_userid(self, identity: str) -> Optional[str]:
+    async def authorized_userid(self, identity: str) -> Optional[Tuple[str, str]]:
         """ Retrieve authorized user id.
 
         Return the user_id of the user identified by the identity
