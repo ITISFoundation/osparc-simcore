@@ -63,6 +63,10 @@ qx.Class.define("osparc.component.service.NodeStatus", {
             return this.tr("Starting...");
           } else if (status === "pending") {
             return this.tr("Pending...");
+          } else if (status === "pulling") {
+            return this.tr("Pulling...");
+          } else if (status === "connecting") {
+            return this.tr("Connecting...");
           }
           return this.tr("Idle");
         }
@@ -77,6 +81,10 @@ qx.Class.define("osparc.component.service.NodeStatus", {
           } else if (status === "starting") {
             return "@FontAwesome5Solid/circle-notch/12";
           } else if (status === "pending") {
+            return "@FontAwesome5Solid/circle-notch/12";
+          } else if (status === "pulling") {
+            return "@FontAwesome5Solid/circle-notch/12";
+          } else if (status === "connecting") {
             return "@FontAwesome5Solid/circle-notch/12";
           }
           return "@FontAwesome5Solid/check/12";

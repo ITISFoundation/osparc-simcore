@@ -11,7 +11,7 @@ class MinioRetryPolicyUponInitialization:
     """
 
     WAIT_SECS = 2
-    ATTEMPTS_COUNT = 20
+    ATTEMPTS_COUNT = 40
 
     def __init__(self, logger: Optional[logging.Logger] = None):
         logger = logger or log
