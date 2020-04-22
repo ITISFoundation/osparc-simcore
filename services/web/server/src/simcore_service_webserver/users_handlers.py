@@ -6,11 +6,12 @@ import logging
 import sqlalchemy as sa
 import sqlalchemy.sql as sql
 from aiohttp import web
-from servicelib.aiopg_utils import PostgresRetryPolicyUponOperation
-from servicelib.application_keys import APP_DB_ENGINE_KEY
 from tenacity import retry
 
-from .db_models import tokens, users
+from servicelib.aiopg_utils import PostgresRetryPolicyUponOperation
+from servicelib.application_keys import APP_DB_ENGINE_KEY
+
+from .db_models import groups, tokens, users
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_api import check_permission
 from .utils import gravatar_hash
@@ -26,8 +27,20 @@ async def get_my_profile(request: web.Request):
     @retry(**PostgresRetryPolicyUponOperation(logger).kwargs)
     async def _query_db(uid, engine):
         async with engine.acquire() as conn:
-            query = sa.select([users.c.email, users.c.role, users.c.name]).where(
-                users.c.id == uid
+            query = (
+                sa.select(
+                    [
+                        users.c.email,
+                        users.c.role,
+                        users.c.name,
+                        users.c.primary_gid,
+                        groups.c.name,
+                        groups.c.description,
+                    ],
+                    use_labels=True,
+                )
+                .select_from(users.join(groups))
+                .where(users.c.id == uid)
             )
             result = await conn.execute(query)
             return await result.first()
@@ -35,14 +48,21 @@ async def get_my_profile(request: web.Request):
     row = await _query_db(
         uid=request[RQT_USERID_KEY], engine=request.app[APP_DB_ENGINE_KEY]
     )
-    parts = row["name"].split(".") + [""]
+    parts = row["users_name"].split(".") + [""]
 
     return {
-        "login": row["email"],
+        "login": row["users_email"],
         "first_name": parts[0],
         "last_name": parts[1],
-        "role": row["role"].name.capitalize(),
-        "gravatar_id": gravatar_hash(row["email"]),
+        "role": row["users_role"].name.capitalize(),
+        "gravatar_id": gravatar_hash(row["users_email"]),
+        "groups": {
+            "me": {
+                "gid": row["users_primary_gid"],
+                "label": row["groups_name"],
+                "description": row["groups_description"],
+            }
+        },
     }
 
 
