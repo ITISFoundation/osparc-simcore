@@ -16,5 +16,5 @@ default_context:
     project_name:              'Public API Gateway'
     project_short_description: "Platform's API Gateway for external clients"
     project_slug:              'api-gateway'
-    version:                   '0.1.0'
+    version:                   '0.1.1'
     year:                      '2020'
