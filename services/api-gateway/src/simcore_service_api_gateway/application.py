@@ -13,7 +13,6 @@ from .__version__ import api_version, api_vtag
 from .settings import AppSettings
 
 
-
 def create(settings: AppSettings) -> FastAPI:
     # factory
     app = FastAPI(

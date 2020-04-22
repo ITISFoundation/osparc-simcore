@@ -11,10 +11,8 @@ async def service_info():
         "name": __name__.split(".")[0],
         "version": api_version,
         # TODO: a way to get first part of the url?? "version_prefix": f"/{api_vtag}",
-         # TODO: sync this info
-        "released": {
-            api_vtag: api_version
-        }
+        # TODO: sync this info
+        "released": {api_vtag: api_version},
     }
 
 
