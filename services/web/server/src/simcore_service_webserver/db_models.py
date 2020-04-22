@@ -10,6 +10,7 @@ from simcore_postgres_database.webserver_models import (
     tokens,
     users,
     groups,
+    user_to_groups,
     tags,
     study_tags,
 )
@@ -22,6 +23,7 @@ __all__ = (
     "ConfirmationAction",
     "users",
     "groups",
+    "user_to_groups",
     "confirmations",
     "tokens",
     "metadata",
