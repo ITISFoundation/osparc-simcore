@@ -16,6 +16,7 @@ from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from .application import FastAPI, get_settings
 from .settings import AppSettings
+from .utils.fastapi_shortcuts import add_event_on_shutdown, add_event_on_startup
 
 ## from .orm.base import Base
 
@@ -83,6 +84,7 @@ async def start_db(app: FastAPI):
     #    log.info("Creating db tables (testing mode)")
     #    create_tables()
 
+
 def shutdown_db(app: FastAPI):
     # TODO: tmp disabled
     log.debug("DUMMY: Shutting down db in %s", app)
@@ -90,8 +92,8 @@ def shutdown_db(app: FastAPI):
 
 
 def setup_db(app: FastAPI):
-    app.router.add_event_handler("startup", asyncio.coroutine(partial(start_db, app)))
-    app.router.add_event_handler("shutdown", partial(shutdown_db, app))
+    add_event_on_startup(app, start_db)
+    add_event_on_shutdown(app, shutdown_db)
 
 
 __all__ = ("Engine", "ResultProxy", "RowProxy", "SAConnection")
