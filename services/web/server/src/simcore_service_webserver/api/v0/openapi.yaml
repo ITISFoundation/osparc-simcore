@@ -8324,17 +8324,8 @@ paths:
                   type: string
                   format: binary
       responses:
-        '200':
+        '204':
           description: Submission has been registered
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    type: boolean
         default:
           description: Default http error response body
           content:

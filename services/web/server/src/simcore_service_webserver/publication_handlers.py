@@ -1,9 +1,14 @@
 import json
+import logging
 import os
 
 from aiohttp import MultipartReader, hdrs, web
+from json2html import json2html
 
 from .login.decorators import RQT_USEREMAIL_KEY, login_required
+from .login.utils import common_themed, render_and_send_mail
+
+log = logging.getLogger(__name__)
 
 support_email_address = 'support@osparc.io'
 email_template_name = 'service_submission.html'
@@ -32,11 +37,9 @@ async def service_submission(request: web.Request):
             continue
         raise web.HTTPUnsupportedMediaType(reason=f'One part had an unexpected type: {part.headers[hdrs.CONTENT_TYPE]}')
     # data (dict) and file (bytearray) have the necessary information to compose the email
-    user_email = request.get(RQT_USEREMAIL_KEY, -1)
+    user_email = request.get(RQT_USEREMAIL_KEY)
     try:
         # send email
-        from .login.utils import (render_and_send_mail, common_themed)
-        from json2html import json2html
         subject = 'New service submission'
         is_real_usage = any([env in os.environ.get("SWARM_STACK_NAME") for env in ('production', 'staging')])
         await render_and_send_mail(
@@ -51,6 +54,7 @@ async def service_submission(request: web.Request):
             [(filename, filedata)] if filedata else None
         )
     except Exception:
+        log.exception("Error while sending the 'new service submission' mail.")
         raise web.HTTPServiceUnavailable()
 
-    return True
+    raise web.HTTPNoContent(content_type="application/json")

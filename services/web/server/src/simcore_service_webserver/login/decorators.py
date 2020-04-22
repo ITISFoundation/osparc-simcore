@@ -39,9 +39,7 @@ def login_required(handler):
         userid = await authorized_userid(request)
         if userid is None:
             raise web.HTTPUnauthorized
-
-        request[RQT_USERID_KEY] = userid[0]
-        request[RQT_USEREMAIL_KEY] = userid[1]
+        request[RQT_USERID_KEY], request[RQT_USEREMAIL_KEY] = userid
         ret = await handler(*args, **kwargs)
         return ret
 
