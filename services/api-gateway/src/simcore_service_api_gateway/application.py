@@ -1,5 +1,6 @@
 """ Helpers wrapping or producing FastAPI's app
 
+    These helpers are typically used with main.the_app singleton instance
 """
 import json
 from pathlib import Path
@@ -8,7 +9,7 @@ from typing import Callable
 import yaml
 from fastapi import FastAPI
 
-from .__version__ import api_version, api_version_prefix
+from .__version__ import api_version, api_vtag
 from .settings import AppSettings
 
 
@@ -19,7 +20,7 @@ def create(settings: AppSettings) -> FastAPI:
         title="Public API Gateway",
         description="Platform's API Gateway for external clients",
         version=api_version,
-        openapi_url=f"/api/{api_version_prefix}/openapi.json",
+        openapi_url=f"/api/{api_vtag}/openapi.json",
     )
     app.state.settings = settings
 

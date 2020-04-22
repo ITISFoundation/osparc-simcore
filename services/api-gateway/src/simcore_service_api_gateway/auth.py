@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 
 from . import crud_users as crud
-from .__version__ import api_version_prefix
+from .__version__ import api_vtag
 from .auth_security import get_access_token_data
 from .schemas import TokenData, User, UserInDB
 
@@ -37,7 +37,7 @@ log = logging.getLogger(__name__)
 
 # callable with request as argument -> extracts token from Authentication header
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=f"{api_version_prefix}/token",
+    tokenUrl=f"{api_vtag}/token",
     scopes={
         "me": "Read information about the current user.",
         "projects": "Read projects.",

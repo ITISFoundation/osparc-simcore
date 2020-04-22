@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI
 
 from . import application, endpoints_auth, endpoints_check, endpoints_user
-from .__version__ import api_version_prefix
+from .__version__ import api_vtag
 from .db import setup_db
 from .utils.remote_debug import setup_remote_debugging
 from .settings import AppSettings
@@ -32,10 +32,10 @@ def build_app() -> FastAPI:
     app.include_router(endpoints_check.router, tags=["check"])
 
     app.include_router(
-        endpoints_auth.router, tags=["auth"], prefix=f"/{api_version_prefix}"
+        endpoints_auth.router, tags=["auth"], prefix=f"/{api_vtag}"
     )
     app.include_router(
-        endpoints_user.router, tags=["users"], prefix=f"/{api_version_prefix}"
+        endpoints_user.router, tags=["users"], prefix=f"/{api_vtag}"
     )
 
     # SUBMODULES setups
