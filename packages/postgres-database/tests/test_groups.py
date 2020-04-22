@@ -4,8 +4,8 @@ import faker
 import pytest
 import sqlalchemy as sa
 from aiopg.sa.result import ResultProxy, RowProxy
+from psycopg2.errors import ForeignKeyViolation, UniqueViolation
 from sqlalchemy import literal_column
-from psycopg2.errors import UniqueViolation
 
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import (
@@ -71,6 +71,46 @@ async def test_user_group_uniqueness(make_engine):
             )
 
 
+async def test_own_group(make_engine):
+    engine = await make_engine()
+    sync_engine = make_engine(False)
+    metadata.drop_all(sync_engine)
+    metadata.create_all(sync_engine)
+    async with engine.acquire() as conn:
+        result = await conn.execute(
+            users.insert().values(**random_user()).returning(literal_column("*"))
+        )
+        user: RowProxy = await result.fetchone()
+        assert not user.primary_gid
+
+        # now fetch the same user that shall have a primary group set by the db
+        result = await conn.execute(users.select().where(users.c.id == user.id))
+        user: RowProxy = await result.fetchone()
+
+        # now check there is a primary group
+        assert user.primary_gid
+        groups_count = await conn.scalar(
+            groups.count().where(groups.c.gid == user.primary_gid)
+        )
+        assert groups_count == 1
+
+        relations_count = await conn.scalar(user_to_groups.count())
+        assert relations_count == 1
+
+        # try removing the primary group
+        with pytest.raises(ForeignKeyViolation):
+            await conn.execute(groups.delete().where(groups.c.gid == user.primary_gid))
+
+        # now remove the users should remove the primary group
+        await conn.execute(users.delete().where(users.c.id == user.id))
+        users_count = await conn.scalar(users.count())
+        assert users_count == 0
+        groups_count = await conn.scalar(groups.count())
+        assert groups_count == 0
+        relations_count = await conn.scalar(user_to_groups.count())
+        assert relations_count == (users_count + users_count)
+
+
 async def test_group(make_engine):
     engine = await make_engine()
     sync_engine = make_engine(False)
@@ -85,13 +125,14 @@ async def test_group(make_engine):
         pete = await _create_user(conn, "Pete", quarrymen_group)
         ringo = await _create_user(conn, "Ringo", rory_group)
 
+        # rationale: following linux user/group system, each user has its own group (primary group) + whatever other group (secondary groups)
         # check DB contents
-        groups_count = await conn.scalar(groups.count())
-        assert groups_count == 2
         users_count = await conn.scalar(users.count())
         assert users_count == 5
+        groups_count = await conn.scalar(groups.count())
+        assert groups_count == (users_count + 2)
         relations_count = await conn.scalar(user_to_groups.count())
-        assert relations_count == 5
+        assert relations_count == (users_count + users_count)
 
         # change group name
         result = await conn.execute(
@@ -107,12 +148,12 @@ async def test_group(make_engine):
         await conn.execute(users.delete().where(users.c.id == pete.id))
 
         # check DB contents
-        groups_count = await conn.scalar(groups.count())
-        assert groups_count == 2
         users_count = await conn.scalar(users.count())
         assert users_count == 4
+        groups_count = await conn.scalar(groups.count())
+        assert groups_count == (users_count + 2)
         relations_count = await conn.scalar(user_to_groups.count())
-        assert relations_count == 4
+        assert relations_count == (users_count + users_count)
 
         # add one user to another group
         await conn.execute(
@@ -120,31 +161,31 @@ async def test_group(make_engine):
         )
 
         # check DB contents
-        groups_count = await conn.scalar(groups.count())
-        assert groups_count == 2
         users_count = await conn.scalar(users.count())
         assert users_count == 4
+        groups_count = await conn.scalar(groups.count())
+        assert groups_count == (users_count + 2)
         relations_count = await conn.scalar(user_to_groups.count())
-        assert relations_count == 5
+        assert relations_count == (users_count + users_count + 1)
 
         # delete 1 group
         await conn.execute(groups.delete().where(groups.c.gid == rory_group.gid))
 
         # check DB contents
-        groups_count = await conn.scalar(groups.count())
-        assert groups_count == 1
         users_count = await conn.scalar(users.count())
         assert users_count == 4
+        groups_count = await conn.scalar(groups.count())
+        assert groups_count == (users_count + 1)
         relations_count = await conn.scalar(user_to_groups.count())
-        assert relations_count == 4
+        assert relations_count == (users_count + users_count)
 
         # delete the other group
         await conn.execute(groups.delete().where(groups.c.gid == beatles_group.gid))
 
         # check DB contents
-        groups_count = await conn.scalar(groups.count())
-        assert groups_count == 0
         users_count = await conn.scalar(users.count())
         assert users_count == 4
+        groups_count = await conn.scalar(groups.count())
+        assert groups_count == (users_count + 0)
         relations_count = await conn.scalar(user_to_groups.count())
-        assert relations_count == (groups_count * users_count)
+        assert relations_count == (users_count)
