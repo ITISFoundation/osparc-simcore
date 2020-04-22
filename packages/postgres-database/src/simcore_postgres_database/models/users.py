@@ -61,6 +61,16 @@ users = sa.Table(
     sa.Column("email", sa.String, nullable=False),
     sa.Column("password_hash", sa.String, nullable=False),
     sa.Column(
+        "primary_gid",
+        sa.BigInteger,
+        sa.ForeignKey(
+            "groups.gid",
+            name="fk_users_gid_groups",
+            onupdate="CASCADE",
+            ondelete="RESTRICT",
+        ),
+    ),
+    sa.Column(
         "status",
         sa.Enum(UserStatus),
         nullable=False,
