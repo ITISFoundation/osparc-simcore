@@ -84,7 +84,6 @@ qx.Class.define("osparc.auth.ui.LoginView", {
 
       const loginBtn = this.__loginBtn = new osparc.ui.form.FetchButton(this.tr("Sign in"));
       loginBtn.addListener("execute", () => {
-        loginBtn.setFetching(true);
         this.__login(loginBtn);
       }, this);
       osparc.utils.Utils.setIdToWidget(loginBtn, "loginSubmitBtn");
@@ -156,6 +155,8 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       if (!this.__form.validate()) {
         return;
       }
+
+      this.__loginBtn.setFetching(true);
 
       const email = this.__form.getItems().email;
       const pass = this.__form.getItems().password;
