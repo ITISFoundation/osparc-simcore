@@ -100,7 +100,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
             if (config["invitation_required"]) {
               let text = this.tr("Registration is currently only available with an invitation.");
               text += "<br>";
-              text += this.tr("Please contact info@itis.swiss");
+              text += this.tr("Please contact support@osparc.io");
               osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
             } else {
               this.fireEvent("toRegister");
