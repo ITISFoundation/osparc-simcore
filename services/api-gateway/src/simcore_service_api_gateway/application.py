@@ -13,6 +13,7 @@ from .__version__ import api_version, api_vtag
 from .settings import AppSettings
 
 
+
 def create(settings: AppSettings) -> FastAPI:
     # factory
     app = FastAPI(
@@ -33,6 +34,8 @@ def get_settings(app: FastAPI) -> AppSettings:
 
 
 def add_startup_handler(app: FastAPI, startup_event: Callable):
+    # TODO: this is different from fastapi_shortcuts
+    # Add Callable with and w/o arguments?
     app.router.add_event_handler("startup", startup_event)
 
 

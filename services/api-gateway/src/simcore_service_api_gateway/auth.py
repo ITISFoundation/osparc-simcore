@@ -1,3 +1,27 @@
+""" This submodule includes responsibilities from authorization server
+
+ +--------+                               +---------------+
+ |        |--(A)- Authorization Request ->|   Resource    |
+ |        |                               |     Owner     | Authorization request
+ |        |<-(B)-- Authorization Grant ---|               |
+ |        |                               +---------------+
+ |        |
+ |        |                               +---------------+
+ |        |--(C)-- Authorization Grant -->| Authorization |
+ | Client |                               |     Server    | Token request
+ |        |<-(D)----- Access Token -------|               |
+ |        |                               +---------------+
+ |        |
+ |        |                               +---------------+
+ |        |--(E)----- Access Token ------>|    Resource   |
+ |        |                               |     Server    |
+ |        |<-(F)--- Protected Resource ---|               |
+ +--------+                               +---------------+
+
+                 Figure 1: Abstract Protocol Flow
+"""
+# TODO: this module shall delegate the auth functionality to a separate service
+
 import logging
 from typing import Optional
 
@@ -10,30 +34,6 @@ from .auth_security import get_access_token_data
 from .schemas import TokenData, User, UserInDB
 
 log = logging.getLogger(__name__)
-
-
-# Resource SERVER ----------------------------------------------
-#
-#  +--------+                               +---------------+
-#  |        |--(A)- Authorization Request ->|   Resource    |
-#  |        |                               |     Owner     | Authorization request
-#  |        |<-(B)-- Authorization Grant ---|               |
-#  |        |                               +---------------+
-#  |        |
-#  |        |                               +---------------+
-#  |        |--(C)-- Authorization Grant -->| Authorization |
-#  | Client |                               |     Server    | Token request
-#  |        |<-(D)----- Access Token -------|               |
-#  |        |                               +---------------+
-#  |        |
-#  |        |                               +---------------+
-#  |        |--(E)----- Access Token ------>|    Resource   |
-#  |        |                               |     Server    |
-#  |        |<-(F)--- Protected Resource ---|               |
-#  +--------+                               +---------------+
-#
-#                  Figure 1: Abstract Protocol Flow
-
 
 # callable with request as argument -> extracts token from Authentication header
 oauth2_scheme = OAuth2PasswordBearer(
@@ -60,7 +60,7 @@ async def get_current_user(
         headers={"WWW-Authenticate": authenticate_value},
     )
 
-    # validates and decode jwt-based access token
+    # decodes and validates jwt-based access token
     token_data: Optional[TokenData] = get_access_token_data(access_token)
     if token_data is None:
         raise credentials_exception

@@ -30,8 +30,7 @@ def client(monkeypatch) -> TestClient:
         yield cli
 
 
-def test_read_healthcheck(client: TestClient):
+def test_read_service_info(client: TestClient):
     response = client.get("/")
     assert response.status_code == 200
-    assert "api_version" in response.json()
-    assert response.json()["api_version"] == api_version
+    assert response.json()["version"] == api_version

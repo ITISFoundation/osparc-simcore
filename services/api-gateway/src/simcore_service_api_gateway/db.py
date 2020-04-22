@@ -1,9 +1,8 @@
 """ Access to postgres service
  DUMMY!
 """
-import asyncio
+
 import logging
-from functools import partial
 from typing import Dict, Optional
 
 import aiopg.sa

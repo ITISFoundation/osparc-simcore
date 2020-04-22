@@ -21,4 +21,4 @@ async def service_info():
 @router.get("/health")
 async def health_check():
     # TODO: if not, raise ServiceUnavailable (use diagnostic concept as in webserver)
-    return True
+    return

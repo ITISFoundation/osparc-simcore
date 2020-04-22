@@ -40,7 +40,6 @@ run-devel: .env-devel down ## runs app on host with pg fixture for development
 	docker-compose -f $(CURDIR)/tests/utils/docker-compose.yml up --detach; \
 	uvicorn simcore_service_api_gateway.main:the_app --reload --port=8001 --host=0.0.0.0
 
-
 down: ## stops pg fixture
 	docker-compose -f $(CURDIR)/tests/utils/docker-compose.yml down
 

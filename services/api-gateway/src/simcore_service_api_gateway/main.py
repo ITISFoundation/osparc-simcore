@@ -31,7 +31,7 @@ def build_app() -> FastAPI:
         setup_remote_debugging()
 
     # ROUTES
-    app.include_router(endpoints_check.router, tags=["check"])
+    app.include_router(endpoints_check.router)
 
     app.include_router(
         endpoints_auth.router, tags=["auth"], prefix=f"/{api_vtag}"
