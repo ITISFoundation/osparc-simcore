@@ -2,7 +2,8 @@
 
     When to add here a function? These are the goals:
         - overcome common mistakes
-        - shortcuts
+        - shortcuts to code faster
+        - replicates rationale in aiohttp
 
     And these are the non-goals:
         - replace FastAPI interface

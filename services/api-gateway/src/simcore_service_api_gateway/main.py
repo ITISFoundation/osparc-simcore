@@ -21,6 +21,8 @@ def build_app() -> FastAPI:
     """
     app_settings = AppSettings()
 
+    logging.root.setLevel(app_settings.loglevel)
+
     app: FastAPI = application.create(settings=app_settings)
 
     @app.on_event("startup")
@@ -40,7 +42,9 @@ def build_app() -> FastAPI:
 
     # SUBMODULES setups
     setup_db(app)
-    # add new here!
+    # NOTE: add new here!
+    #  ...
+
 
     @app.on_event("shutdown")
     def shutdown_event():  # pylint: disable=unused-variable
