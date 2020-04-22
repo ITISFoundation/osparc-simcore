@@ -5,10 +5,10 @@
     them different access levels to it
 """
 import itertools
-from datetime import datetime
 from enum import Enum
 
 import sqlalchemy as sa
+from sqlalchemy.sql import func
 
 from .base import metadata
 
@@ -77,9 +77,51 @@ users = sa.Table(
         default=UserStatus.CONFIRMATION_PENDING,
     ),
     sa.Column("role", sa.Enum(UserRole), nullable=False, default=UserRole.USER),
-    sa.Column("created_at", sa.DateTime(), nullable=False, default=datetime.utcnow),
+    sa.Column("created_at", sa.DateTime(), nullable=False, server_default=func.now()),
+    sa.Column(
+        "modified",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),  # this will auto-update on modification
+    ),
     sa.Column("created_ip", sa.String(), nullable=True),
     #
     sa.PrimaryKeyConstraint("id", name="user_pkey"),
     sa.UniqueConstraint("email", name="user_login_key"),
+)
+
+new_user_trigger = sa.DDL(
+    f"""
+DROP TRIGGER IF EXISTS user_modification on users;
+CREATE TRIGGER user_modification
+AFTER INSERT OR UPDATE OR DELETE ON users
+    FOR EACH ROW
+    EXECUTE PROCEDURE set_user_primary_group();
+"""
+)
+
+set_user_primary_group_procedure = sa.DDL(
+    f"""
+CREATE OR REPLACE FUNCTION set_user_primary_group() RETURNS TRIGGER AS $$
+DECLARE
+    group_id BIGINT;
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO "groups" ("name", "description") VALUES (NEW.name, 'primary group') RETURNING gid INTO group_id;
+        INSERT INTO "user_to_groups" ("uid", "gid") VALUES (NEW.id, group_id);
+        UPDATE "users" SET "primary_gid" = group_id WHERE "id" = NEW.id;
+    ELSIF TG_OP = 'UPDATE' THEN
+        UPDATE "groups" SET "name" = NEW.name WHERE "gid" = NEW.primary_gid;
+    ELSEIF TG_OP = 'DELETE' THEN
+        DELETE FROM "groups" WHERE "gid" = OLD.primary_gid;
+    END IF;
+    RETURN NULL;
+END; $$ LANGUAGE 'plpgsql';
+"""
+)
+
+sa.event.listen(users, "after_create", set_user_primary_group_procedure)
+sa.event.listen(
+    users, "after_create", new_user_trigger,
 )

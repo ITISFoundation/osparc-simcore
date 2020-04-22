@@ -30,12 +30,22 @@ user_to_groups = sa.Table(
     sa.Column(
         "uid",
         sa.BigInteger,
-        sa.ForeignKey("users.id", onupdate="CASCADE", ondelete="CASCADE"),
+        sa.ForeignKey(
+            "users.id",
+            name="fk_user_to_groups_id_users",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
     ),
     sa.Column(
         "gid",
         sa.BigInteger,
-        sa.ForeignKey("groups.gid", onupdate="CASCADE", ondelete="CASCADE"),
+        sa.ForeignKey(
+            "groups.gid",
+            name="fk_user_to_groups_gid_groups",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
     ),
     sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
     sa.Column(
