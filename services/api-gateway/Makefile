@@ -35,13 +35,11 @@ tests-integration: ## runs integration tests against local+production images
 
 
 .PHONY: run-devel down
-run-devel: down ## runs app on host with pg fixture for development
-	# starting pg database ...
-	docker-compose -f $(CURDIR)/tests/utils/docker-compose.yml up --detach
-	# starting service
-	export SECRET_KEY="d0d0397de2c85ad26ffd4a0f9643dfe3a0ca3937f99cf3c2e174e11b5ef79880"; \
+run-devel: .env-devel down ## runs app on host with pg fixture for development
+	export $(shell grep -v '^#' $< | xargs  -d '\n'); \
+	docker-compose -f $(CURDIR)/tests/utils/docker-compose.yml up --detach; \
 	uvicorn simcore_service_api_gateway.main:the_app --reload --port=8001 --host=0.0.0.0
-	# stop
+
 
 down: ## stops pg fixture
 	docker-compose -f $(CURDIR)/tests/utils/docker-compose.yml down
