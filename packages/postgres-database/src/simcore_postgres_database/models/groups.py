@@ -3,26 +3,24 @@
     - List of groups in the framework
     - Groups have a ID, name and a list of users that belong to the group
 """
-from datetime import datetime
-
 import sqlalchemy as sa
-
+from sqlalchemy.sql import func
 from .base import metadata
 
-
+# NOTE: using func.now() insted of python datetime ensure the time is computed server side
 groups = sa.Table(
     "groups",
     metadata,
     sa.Column("gid", sa.BigInteger, nullable=False, primary_key=True),
     sa.Column("name", sa.String, nullable=False),
     sa.Column("description", sa.String, nullable=False),
-    sa.Column("created", sa.DateTime(), nullable=False, default=datetime.utcnow),
+    sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
     sa.Column(
         "modified",
         sa.DateTime(),
         nullable=False,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        server_default=func.now(),
+        onupdate=func.now(),  # this will auto-update on modification
     ),
 )
 
@@ -39,13 +37,13 @@ user_to_groups = sa.Table(
         sa.BigInteger,
         sa.ForeignKey("groups.gid", onupdate="CASCADE", ondelete="CASCADE"),
     ),
-    sa.Column("created", sa.DateTime(), nullable=False, default=datetime.utcnow),
+    sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
     sa.Column(
         "modified",
         sa.DateTime(),
         nullable=False,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        server_default=func.now(),
+        onupdate=func.now(),
     ),
     sa.UniqueConstraint("uid", "gid"),
 )
