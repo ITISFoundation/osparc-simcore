@@ -1,12 +1,11 @@
 import json
-import logging
 import os
+import logging
 
 from aiohttp import MultipartReader, hdrs, web
 from json2html import json2html
 
 from .login.decorators import RQT_USEREMAIL_KEY, login_required
-from .login.utils import common_themed, render_and_send_mail
 
 log = logging.getLogger(__name__)
 
@@ -39,6 +38,7 @@ async def service_submission(request: web.Request):
     # data (dict) and file (bytearray) have the necessary information to compose the email
     user_email = request.get(RQT_USEREMAIL_KEY)
     try:
+        from .login.utils import common_themed, render_and_send_mail
         # send email
         subject = 'New service submission'
         is_real_usage = any([env in os.environ.get("SWARM_STACK_NAME") for env in ('production', 'staging')])
