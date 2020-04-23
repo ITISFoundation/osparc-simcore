@@ -1,6 +1,7 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=unused-variable
+# pylint: disable=unused-argument
+# pylint: disable=redefined-outer-name
+
 import pytest
 from starlette.testclient import TestClient
 
