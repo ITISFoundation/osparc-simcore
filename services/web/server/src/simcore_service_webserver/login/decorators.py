@@ -1,10 +1,8 @@
 import asyncio
 from functools import wraps
 
-from aiohttp import web
-from aiohttp_security.api import authorized_userid
-
-from servicelib.request_keys import RQT_USERID_KEY, RQT_USEREMAIL_KEY
+from aiohttp_security.api import check_authorized
+from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.requests_utils import get_request
 
 
@@ -17,8 +15,8 @@ def user_to_request(handler):
     @wraps(handler)
     async def wrapped(*args, **kwargs):
         request = get_request(*args, **kwargs)
-        userid = await authorized_userid(request)
-        request[RQT_USERID_KEY] = userid[0]
+        userid = await check_authorized(request)
+        request[RQT_USERID_KEY] = userid
         return await handler(*args)
 
     return wrapped
@@ -27,8 +25,7 @@ def user_to_request(handler):
 def login_required(handler):
     """Decorator that restrict access only for authorized users.
 
-    User is considered authorized if authorized_userid
-    returns some value.
+    User is considered authorized if check_authorized(request) raises no exception
 
     Keeps userid in request[RQT_USERID_KEY]
     """
@@ -36,10 +33,8 @@ def login_required(handler):
     @wraps(handler)
     async def wrapped(*args, **kwargs):
         request = get_request(*args, **kwargs)
-        userid = await authorized_userid(request)
-        if userid is None:
-            raise web.HTTPUnauthorized
-        request[RQT_USERID_KEY], request[RQT_USEREMAIL_KEY] = userid
+        userid = await check_authorized(request)
+        request[RQT_USERID_KEY] = userid
         ret = await handler(*args, **kwargs)
         return ret
 

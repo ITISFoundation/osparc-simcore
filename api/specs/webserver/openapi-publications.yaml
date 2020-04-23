@@ -11,12 +11,12 @@ paths:
             schema:
               type: object
               required:
-                - data
+                - metadata
               properties:
-                data:
+                metadata:
                   type: string
                   format: binary
-                file:
+                attachment:
                   type: string
                   format: binary
       responses:

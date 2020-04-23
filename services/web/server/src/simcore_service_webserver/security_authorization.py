@@ -52,7 +52,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             self.timed_cache[identity] = row
         return row
 
-    async def authorized_userid(self, identity: str) -> Optional[Tuple[str, str]]:
+    async def authorized_userid(self, identity: str) -> Optional[str]:
         """ Retrieve authorized user id.
 
         Return the user_id of the user identified by the identity
@@ -60,7 +60,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         """
         # TODO: why users.c.user_login_key!=users.c.email
         user = await self._pg_query_user(identity)
-        return user.get('id'), user.get('email') if user else None
+        return user['id'] if user else None
 
     async def permits(
         self,
