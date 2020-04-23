@@ -246,23 +246,23 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
       osparc.utils.LibVersions.getPlatformName()
         .then(platformName => {
-          if (platformName === 'dev') {
+          if (platformName === "dev") {
             const testDataButton = new qx.ui.form.Button(this.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");
             testDataButton.addListener("execute", () => {
               osparc.utils.Utils.fetchJSON("/resource/form/service-data.json")
-              .then(data => {
-                this.__displayServiceSubmissionForm(data);
-              });
+                .then(data => {
+                  this.__displayServiceSubmissionForm(data);
+                });
             });
             header.add(testDataButton);
           }
-        })
+        });
 
       const addServiceButton = new qx.ui.form.Button(this.tr("Submit new service"), "@FontAwesome5Solid/plus-circle/14");
       addServiceButton.addListener("execute", () => {
         this.__displayServiceSubmissionForm();
       });
-      
+
       header.add(addServiceButton);
       vBoxLayout.add(header);
 

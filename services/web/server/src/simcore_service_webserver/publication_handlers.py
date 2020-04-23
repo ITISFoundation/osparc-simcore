@@ -13,7 +13,6 @@ log = logging.getLogger(__name__)
 
 email_template_name = 'service_submission.html'
 
-is_real_usage = any([env in os.environ.get("SWARM_STACK_NAME") for env in ('production', 'staging')])
 
 @login_required
 async def service_submission(request: web.Request):
@@ -42,6 +41,7 @@ async def service_submission(request: web.Request):
     session = await get_session(request)
     user_email = session.get('user')['email']
     support_email_address = request.app[APP_CONFIG_KEY]['smtp']['sender']
+    is_real_usage = any([env in os.environ.get("SWARM_STACK_NAME") for env in ('production', 'staging')])
     try:
         from .login.utils import common_themed, render_and_send_mail
         # send email
