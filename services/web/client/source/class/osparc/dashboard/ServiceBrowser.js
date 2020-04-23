@@ -243,60 +243,6 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       header.add(label, {
         flex: 1
       });
-      let formData = null;
-      const displayForm = () => {
-        const addServiceWindow = new qx.ui.window.Window(this.tr("Submit a new service")).set({
-          appearance: "service-window",
-          modal: true,
-          autoDestroy: true,
-          showMinimize: false,
-          allowMinimize: false,
-          centerOnAppear: true,
-          layout: new qx.ui.layout.Grow(),
-          width: 600,
-          height: 660
-        });
-        const scroll = new qx.ui.container.Scroll();
-        addServiceWindow.add(scroll);
-        const form = new osparc.component.form.json.JsonSchemaForm("/resource/form/service.json", formData);
-        form.addListener("ready", () => {
-          addServiceWindow.open();
-        });
-        form.addListener("submit", e => {
-          const data = e.getData();
-          const headers = new Headers();
-          headers.append("Accept", "application/json");
-          const body = new FormData();
-          body.append("data", new Blob([JSON.stringify(data.json)], {
-            type: "application/json"
-          }));
-          if (data.files && data.files.length) {
-            const size = data.files[0].size;
-            const maxSize = 10; // 10 MB
-            if (size > maxSize * 1024 * 1024) {
-              osparc.component.message.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
-              return;
-            }
-            body.append("file", data.files[0], data.files[0].name);
-          }
-          form.setFetching(true);
-          fetch("/v0/publications/service-submission", {
-            method: "POST",
-            headers,
-            body
-          })
-            .then(resp => {
-              if (resp.ok) {
-                osparc.component.message.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
-                addServiceWindow.close();
-              } else {
-                osparc.component.message.FlashMessenger.logAs("A problem occured while processing your data", "ERROR");
-              }
-            })
-            .finally(() => form.setFetching(false));
-        });
-        scroll.add(form);
-      };
 
       osparc.utils.LibVersions.getPlatformName()
         .then(platformName => {
@@ -305,8 +251,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
             testDataButton.addListener("execute", () => {
               osparc.utils.Utils.fetchJSON("/resource/form/service-data.json")
               .then(data => {
-                formData = data;
-                displayForm();
+                this.__displayServiceSubmissionForm(data);
               });
             });
             header.add(testDataButton);
@@ -315,14 +260,67 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
       const addServiceButton = new qx.ui.form.Button(this.tr("Submit new service"), "@FontAwesome5Solid/plus-circle/14");
       addServiceButton.addListener("execute", () => {
-        formData = null;
-        displayForm();
+        this.__displayServiceSubmissionForm();
       });
       
       header.add(addServiceButton);
       vBoxLayout.add(header);
 
       return vBoxLayout;
+    },
+
+    __displayServiceSubmissionForm: function(formData) {
+      const addServiceWindow = new qx.ui.window.Window(this.tr("Submit a new service")).set({
+        appearance: "service-window",
+        modal: true,
+        autoDestroy: true,
+        showMinimize: false,
+        allowMinimize: false,
+        centerOnAppear: true,
+        layout: new qx.ui.layout.Grow(),
+        width: 600,
+        height: 660
+      });
+      const scroll = new qx.ui.container.Scroll();
+      addServiceWindow.add(scroll);
+      const form = new osparc.component.form.json.JsonSchemaForm("/resource/form/service.json", formData);
+      form.addListener("ready", () => {
+        addServiceWindow.open();
+      });
+      form.addListener("submit", e => {
+        const data = e.getData();
+        const headers = new Headers();
+        headers.append("Accept", "application/json");
+        const body = new FormData();
+        body.append("metadata", new Blob([JSON.stringify(data.json)], {
+          type: "application/json"
+        }));
+        if (data.files && data.files.length) {
+          const size = data.files[0].size;
+          const maxSize = 10; // 10 MB
+          if (size > maxSize * 1024 * 1024) {
+            osparc.component.message.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
+            return;
+          }
+          body.append("attachment", data.files[0], data.files[0].name);
+        }
+        form.setFetching(true);
+        fetch("/v0/publications/service-submission", {
+          method: "POST",
+          headers,
+          body
+        })
+          .then(resp => {
+            if (resp.ok) {
+              osparc.component.message.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
+              addServiceWindow.close();
+            } else {
+              osparc.component.message.FlashMessenger.logAs("A problem occured while processing your data", "ERROR");
+            }
+          })
+          .finally(() => form.setFetching(false));
+      });
+      scroll.add(form);
     },
 
     __attachEventHandlers: function() {

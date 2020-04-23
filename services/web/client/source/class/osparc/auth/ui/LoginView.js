@@ -84,7 +84,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
 
       const loginBtn = this.__loginBtn = new osparc.ui.form.FetchButton(this.tr("Sign in"));
       loginBtn.addListener("execute", () => {
-        this.__login(loginBtn);
+        this.__login();
       }, this);
       osparc.utils.Utils.setIdToWidget(loginBtn, "loginSubmitBtn");
       this.add(loginBtn);
@@ -151,7 +151,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       return grp;
     },
 
-    __login: function(loginBtn) {
+    __login: function() {
       if (!this.__form.validate()) {
         return;
       }
@@ -162,7 +162,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const pass = this.__form.getItems().password;
 
       const successFun = function(log) {
-        loginBtn.setFetching(false);
+        this.__loginBtn.setFetching(false);
         this.fireDataEvent("done", log.message);
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
@@ -171,7 +171,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       };
 
       const failFun = function(msg) {
-        loginBtn.setFetching(false);
+        this.__loginBtn.setFetching(false);
         // TODO: can get field info from response here
         msg = String(msg) || this.tr("Introduced an invalid email or password");
         [email, pass].forEach(item => {
