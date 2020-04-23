@@ -25,7 +25,7 @@ celery==4.4.2             # via -r _base.in
 cffi==1.14.0              # via cryptography
 change-case==0.5.2        # via -r _base.in
 chardet==3.0.4            # via aiohttp
-cryptography==2.9         # via -r _base.in, aiohttp-session
+cryptography==2.9.1       # via -r _base.in, aiohttp-session
 expiringdict==1.2.0       # via -r _base.in
 hiredis==1.0.1            # via aioredis
 idna-ssl==1.1.0           # via aiohttp
@@ -49,7 +49,7 @@ psycopg2-binary==2.8.5    # via -r ../../../../packages/service-library/requirem
 pycparser==2.20           # via cffi
 pyrsistent==0.16.0        # via jsonschema
 python-engineio==3.12.1   # via python-socketio
-python-socketio==4.3.1    # via -r _base.in
+python-socketio==4.5.1    # via -r _base.in
 pytz==2019.3              # via celery
 pyyaml==5.3.1             # via -r ../../../../packages/service-library/requirements/_base.in, aiohttp-swagger, openapi-spec-validator
 semantic-version==2.8.4   # via -r _base.in

@@ -143,16 +143,27 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
 
 
 # ------------------------ TESTS -------------------------------
-async def test_anonymous_websocket_connection(socketio_client, client_session_id):
-    with pytest.raises(socketio.exceptions.ConnectionError) as excinfo:
-        # Client is unauthorized and socket server shall raise ConnectionRefusedError
-        await socketio_client(client_session_id())
+async def test_anonymous_websocket_connection(
+    client_session_id, socketio_url: str, security_cookie, mocker
+):
+    from yarl import URL
 
-    minor: int = SIO_VERSION[1]
-    if minor == 3:
-        assert "Unexpected status code 401 in server response" in str(excinfo.value)
-    else:
-        assert "Connection refused by the server" in str(excinfo.value)
+    sio = socketio.AsyncClient(
+        ssl_verify=False
+    )  # enginio 3.10.0 introduced ssl verification
+    url = str(URL(socketio_url).with_query({"client_session_id": client_session_id()}))
+    headers = {}
+    if security_cookie:
+        # WARNING: engineio fails with empty cookies. Expects "key=value"
+        headers.update({"Cookie": security_cookie})
+
+    socket_connect_error = mocker.Mock()
+    sio.on("connect_error", handler=socket_connect_error)
+    await sio.connect(url, headers=headers)
+    assert sio.sid
+    socket_connect_error.assert_called_once()
+    await sio.disconnect()
+    assert not sio.sid
 
 
 @pytest.mark.parametrize(
@@ -226,13 +237,12 @@ async def test_websocket_multiple_connections(
         )
         clients.append(sio)
 
-    # NOTE: the socket.io client needs the websockets package in order
-    # to upgrade to websocket transport disconnect multiple clients
     for sio in clients:
         sid = sio.sid
         await sio.disconnect()
+        # need to attend the disconnect event to pass through the socketio internal queues
+        await sleep(0.1)  # must be >= 0.01 to work without issues, added some padding
         assert not sio.sid
-        # WARNING: this check fails randomly! Keep an eye
         assert not await socket_registry.find_keys(("socket_id", sio.sid))
         assert not sid in await socket_registry.find_resources(
             resource_key, "socket_id"

@@ -242,7 +242,7 @@ async def socketio_client(socketio_url: str, security_cookie: str):
     clients = []
 
     async def connect(client_session_id) -> socketio.AsyncClient:
-        sio = socketio.AsyncClient()
+        sio = socketio.AsyncClient(ssl_verify=False)    # enginio 3.10.0 introduced ssl verification
         url = str(URL(socketio_url).with_query({'client_session_id': client_session_id}))
         headers = {}
         if security_cookie:
