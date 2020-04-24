@@ -1,3 +1,45 @@
+# Contributing guidelines
+
+We adhere to the [Contributor Covenant Code of Conduct](#contributor-covenant-code-of-conduct) found below.
+
+### To add a new feature
+
+- fork to your private github
+- create a new branch with a name meaningful for the feature at hand
+- commit all your work on that branch as you are progressing through the feature
+- when ready to push, create a pull request to the `master` branch
+
+### CI notes
+
+For GitHub Actions, the CI needs to pull and push docker images to a repository. We strongly suggest using 
+[docker hub](https://hub.docker.com).
+Please note that the project will `create` and `push` images in the following repositories:
+
+- webserver
+- director
+- storage 
+- catalog
+- sidecar
+- api-gateway
+
+**Note: make sure these names are not used to avoid possible collisions**
+
+
+To enable GitHub Actions on your forked repository:
+
+- go to the `Actions` page and enable them 
+- go to the repo's `Settings` page and the click on `Secrets`
+- you have to add the following:
+    - `DOCKER_USERNAME` docker hub username
+    - `DOCKER_REGISTRY` docker hub username
+    - `DOCKER_PASSWORD` docker hub access token **(we advise against using your password)**
+
+### Code styles
+
+We are currently using [ESLint](https://eslint.org) for `JavaScript` (have a look in the root of the project for 
+configuration details) and [Black](https://black.readthedocs.io/en/stable/) for `Python`.
+
+---
 
 # Contributor Covenant Code of Conduct
 
@@ -61,7 +103,7 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement at
-[INSERT CONTACT METHOD].
+[code-of-conduct@osparc.io](mailto:code-of-conduct@osparc.io).
 All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the
