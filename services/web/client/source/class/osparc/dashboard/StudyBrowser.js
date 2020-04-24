@@ -427,7 +427,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createStudyListLayout: function() {
-      return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(12, 12));
+      const spacing = osparc.dashboard.StudyBrowserButtonBase.SPACING;
+      return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
     },
 
     __createStudyItem: function(study, isTemplate) {

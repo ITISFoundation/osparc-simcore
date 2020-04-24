@@ -54,7 +54,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
 
   statics: {
     ITEM_WIDTH: 200,
-    ITEM_HEIGHT: 200
+    ITEM_HEIGHT: 200,
+    SPACING: 12
   },
 
   events: {
