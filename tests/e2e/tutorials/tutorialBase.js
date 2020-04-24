@@ -54,7 +54,8 @@ class TutorialBase {
 
     let resp = null;
     try {
-      resp = await this.__responsesQueue.waitUntilResponse("open");
+      const openStudyTimeout = 20000;
+      resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
     }
     catch(err) {
       console.error(this.__templateName, "could not be started", err);
