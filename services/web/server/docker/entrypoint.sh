@@ -73,4 +73,4 @@ echo "$INFO Starting $* ..."
 echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
 echo "  local dir : $(ls -al)"
 
-su --command "$*" "$SC_USER_NAME"
+exec su --command "$*" "$SC_USER_NAME"

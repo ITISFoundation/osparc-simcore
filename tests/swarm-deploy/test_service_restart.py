@@ -66,14 +66,30 @@ def deployed_simcore_stack(make_up_prod: Dict, docker_client: DockerClient) -> L
     'simcore_webserver',
     'simcore_storage',
     'simcore_catalog',
+    # 'simcore_director',
 ])
 def test_graceful_restart_services(
     service_name: str,
     deployed_simcore_stack: List[Service],
     make_up_prod: Dict):
     """
+        This tests kills a service and expects it to shut-down gracefuly returning
+        statuscode 0.
+
         NOTE: loop fixture makes this test async
         NOTE: needs to run AFTER test_core_service_running
+
+
+        Did this case FAILED? These are the typical reasons:
+
+        - check boot.sh and entrypoint.sh and make sure service starts a single process
+        instead of spawming several. SEE
+            - Check this by entering the container and ps -aux or simply
+            checking container statistcs in portainer. There is a processes section there.
+        - make sure Docker has tini in cmd or  runs with init=True
+
+        - do some reading: https://kkc.github.io/2018/06/06/gracefully-shutdown-docker-container/
+
     """
     service = next( s for s in deployed_simcore_stack if s.name == service_name )
 
