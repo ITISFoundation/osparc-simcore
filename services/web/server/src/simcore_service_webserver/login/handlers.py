@@ -10,12 +10,20 @@ from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..security_api import check_password, encrypt_password, forget, remember
 from .cfg import APP_LOGIN_CONFIG, cfg, get_storage
 from .config import get_login_config
-from .confirmation import (is_confirmation_allowed, make_confirmation_link,
-                           validate_confirmation_code)
+from .confirmation import (
+    is_confirmation_allowed,
+    make_confirmation_link,
+    validate_confirmation_code,
+)
 from .decorators import RQT_USERID_KEY, login_required
 from .registration import check_invitation, check_registration
-from .utils import (common_themed, flash_response, get_client_ip,
-                    render_and_send_mail, themed)
+from .utils import (
+    common_themed,
+    flash_response,
+    get_client_ip,
+    render_and_send_mail,
+    themed,
+)
 
 # FIXME: do not use cfg singleton. use instead cfg = request.app[APP_LOGIN_CONFIG]
 
@@ -144,10 +152,7 @@ async def login(request: web.Request):
 
     # Store useful user information in the encrypted session
     session = await new_session(request)
-    session['user'] = {
-        'email': user['email'],
-        'id': user['id']
-    }
+    session["user"] = {"email": user["email"], "id": user["id"]}
 
     await remember(request, response, identity)
     return response

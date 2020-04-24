@@ -50,8 +50,8 @@ async def get_diagnostics(request: web.Request):
 
 
 def create_rest_routes(specs: openapi.Spec) -> List[web.RouteDef]:
-    # NOTE: these are routes with paths starting with v0/* 
-   
+    # NOTE: these are routes with paths starting with v0/*
+
     routes = []
     base_path: str = openapi.get_base_path(specs)
 

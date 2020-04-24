@@ -15,8 +15,7 @@ def user_to_request(handler):
     @wraps(handler)
     async def wrapped(*args, **kwargs):
         request = get_request(*args, **kwargs)
-        userid = await check_authorized(request)
-        request[RQT_USERID_KEY] = userid
+        request[RQT_USERID_KEY] = await check_authorized(request)
         return await handler(*args)
 
     return wrapped
@@ -33,8 +32,7 @@ def login_required(handler):
     @wraps(handler)
     async def wrapped(*args, **kwargs):
         request = get_request(*args, **kwargs)
-        userid = await check_authorized(request)
-        request[RQT_USERID_KEY] = userid
+        request[RQT_USERID_KEY] = await check_authorized(request)
         ret = await handler(*args, **kwargs)
         return ret
 

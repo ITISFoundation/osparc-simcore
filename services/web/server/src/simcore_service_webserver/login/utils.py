@@ -57,29 +57,37 @@ async def compose_mail(recipient: str, subject: str, body: str) -> None:
 
     await send_mail(msg)
 
-async def compose_multipart_mail(recipient: str, subject: str, body: str, attachments: List[Tuple[str, bytearray]]) -> None:
-    msg = MIMEMultipart('alternative')
+
+async def compose_multipart_mail(
+    recipient: str, subject: str, body: str, attachments: List[Tuple[str, bytearray]]
+) -> None:
+    msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = cfg.SMTP_SENDER
     msg["To"] = recipient
 
-    part1 = MIMEText(body, 'html')
+    part1 = MIMEText(body, "html")
     msg.attach(part1)
 
     for attachment in attachments:
         filename = attachment[0]
         payload = attachment[1]
-        mimetype = mimetypes.guess_type(filename)[0].split('/')
+        mimetype = mimetypes.guess_type(filename)[0].split("/")
         part = MIMEBase(mimetype[0], mimetype[1])
         part.set_payload(payload)
-        part.add_header('Content-Disposition', f'attachment; filename="{filename}"')
+        part.add_header("Content-Disposition", f'attachment; filename="{filename}"')
         encoders.encode_base64(part)
         msg.attach(part)
-    
+
     await send_mail(msg)
 
+
 async def render_and_send_mail(
-    request: web.Request, to: str, template: str, context: Mapping, attachments: Optional[List[Tuple[str, bytearray]]] = None
+    request: web.Request,
+    to: str,
+    template: str,
+    context: Mapping,
+    attachments: Optional[List[Tuple[str, bytearray]]] = None,
 ):
     page = render_string(str(template), request, context)
     subject, body = page.split("\n", 1)
@@ -102,6 +110,7 @@ def flash_response(msg: str, level: str = "INFO") -> web.Response:
         data={"data": attr.asdict(LogMessageType(msg, level)), "error": None}
     )
     return response
+
 
 async def send_mail(msg):
     smtp_args = dict(

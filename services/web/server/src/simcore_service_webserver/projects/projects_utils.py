@@ -50,6 +50,7 @@ def clone_project_document(
     project_copy["workbench"] = _replace_uuids(project_copy.get("workbench", {}))
     return project_copy, nodes_map
 
+
 @safe_return(if_fails_return=False, logger=log)
 def substitute_parameterized_inputs(
     parameterized_project: Dict, parameters: Dict
@@ -74,7 +75,10 @@ def substitute_parameterized_inputs(
             return s
 
     def _get_param_input_match(name, value, access) -> Optional[Match[AnyStr]]:
-        if isinstance(value, str) and access.get(name, "ReadAndWrite") == "ReadAndWrite":
+        if (
+            isinstance(value, str)
+            and access.get(name, "ReadAndWrite") == "ReadAndWrite"
+        ):
             match = variable_pattern.match(value)
             return match
         return None
