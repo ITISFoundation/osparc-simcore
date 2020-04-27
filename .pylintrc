@@ -134,8 +134,7 @@ disable=print-statement,
         too-many-locals,
         C,
         fixme,
-        import-error
-
+        import-error,
 
 
 # Enable the message, report, category or checker with the given id(s). You can

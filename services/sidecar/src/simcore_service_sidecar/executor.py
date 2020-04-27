@@ -132,7 +132,7 @@ class Executor:
         input_ports = dict()
         PORTS = await self._get_node_ports()
         await self._post_messages(
-            LogType.LOG, f"[sidecar]Downloading inputs...",
+            LogType.LOG, "[sidecar]Downloading inputs...",
         )
         await logged_gather(
             *[
@@ -302,7 +302,7 @@ class Executor:
         """
         log.debug("Processing outputs...")
         await self._post_messages(
-            LogType.LOG, f"[sidecar]Uploading outputs...",
+            LogType.LOG, "[sidecar]Uploading outputs...",
         )
         PORTS = await self._get_node_ports()
         try:
@@ -334,7 +334,7 @@ class Executor:
     async def _process_task_log(self):
         log.debug("Processing Logs...")
         await self._post_messages(
-            LogType.LOG, f"[sidecar]Uploading logs...",
+            LogType.LOG, "[sidecar]Uploading logs...",
         )
         if self.shared_folders.log_folder.exists():
             await node_data.data_manager.push(
