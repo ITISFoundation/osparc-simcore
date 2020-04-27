@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Dict
 
 import pytest
-from yarl import URL
 
 # TODO: search ujson in all _base.txt and add here all services that contains it
 SERVICES_WITH_EXTERNALS = "director webserver storage catalog".split()
@@ -36,14 +35,14 @@ async def test_ujson_installation(
     image_name = simcore_docker_compose["services"][service]["image"]
 
     if "alpine" in docker_base_name:
-        assert subprocess.run(
-            f"docker run -t --rm {image_name} python -c 'import ujson; print(ujson.__version__)'",
-            shell=True,
-            check=True,
-        )
+        cmd = f"docker run -t --rm {image_name} python -c 'import ujson; print(ujson.__version__)'"
     else:
-        assert subprocess.run(
-            f"docker run -t --rm {image_name} \"python -c 'import ujson; print(ujson.__version__)'\"",
-            shell=True,
-            check=True,
-        )
+        cmd = f"docker run -t --rm {image_name} python -c \"import ujson; print(ujson.__version__)\""
+
+    print(cmd)
+
+    assert subprocess.run(
+        cmd,
+        shell=True,
+        check=True,
+    )
