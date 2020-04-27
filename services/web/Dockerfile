@@ -11,6 +11,13 @@ FROM python:${PYTHON_VERSION}-slim as base
 
 LABEL maintainer=pcrespov
 
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y gosu; \
+	rm -rf /var/lib/apt/lists/*; \
+# verify that the binary works
+	gosu nobody true
+
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
@@ -123,6 +130,7 @@ COPY --from=cache --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/web/server/docker services/web/server/docker
+RUN chmod +x services/web/server/docker/*.sh
 
 # front-end client last (image name is the path to the Dockerfile)
 COPY --from=client/tools/qooxdoo-kit/builder:latest --chown=scu:scu \
@@ -134,8 +142,8 @@ HEALTHCHECK --interval=30s \
       --retries=3 \
       CMD ["python3", "/home/scu/services/web/server/docker/healthcheck.py", "http://localhost:8080/v0/health"]
 
-ENTRYPOINT [ "/bin/sh", "services/web/server/docker/entrypoint.sh" ]
-CMD ["/bin/sh", "services/web/server/docker/boot.sh"]
+ENTRYPOINT [ "services/web/server/docker/entrypoint.sh" ]
+CMD ["services/web/server/docker/boot.sh"]
 
 
 

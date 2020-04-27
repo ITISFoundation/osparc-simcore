@@ -73,22 +73,27 @@ def test_graceful_restart_services(
     deployed_simcore_stack: List[Service],
     make_up_prod: Dict):
     """
-        This tests kills a service and expects it to shut-down gracefuly returning
-        statuscode 0.
+        This tests ensures that the applications running in the service above
+        can be properly restarted.
+        The test sends a kill signal and expects the app process inside to
+        receive it and shut-down gracefuly returning statuscode 0.
 
-        NOTE: loop fixture makes this test async
         NOTE: needs to run AFTER test_core_service_running
 
 
-        Did this case FAILED? These are the typical reasons:
+    Did this case FAILED? These are the typical reasons:
 
-        - check boot.sh and entrypoint.sh and make sure service starts a single process
-        instead of spawming several. SEE
-            - Check this by entering the container and ps -aux or simply
-            checking container statistcs in portainer. There is a processes section there.
-        - make sure Docker has tini in cmd or  runs with init=True
+    Check good practices:
+        - use exec form for ENTRYPOINT in Dockerfile, i.e ["executable", "arg1", "arg2"]
+        - if entrypoint is a shell-script, then exec the app
+        - start docker with tini as PID1, i.e. docker run with --init
+        - use gosu utility in ENTRYPOINT instead of sudo/su
 
-        - do some reading: https://kkc.github.io/2018/06/06/gracefully-shutdown-docker-container/
+    GOOD References worth reading to understand this topic:
+        https://blog.container-solutions.com/6-dockerfile-tips-official-images
+        https://hynek.me/articles/docker-signals/
+        https://kkc.github.io/2018/06/06/gracefully-shutdown-docker-container/
+        https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
 
     """
     service = next( s for s in deployed_simcore_stack if s.name == service_name )
