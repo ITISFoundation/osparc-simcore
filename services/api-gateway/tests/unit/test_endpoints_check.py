@@ -31,7 +31,7 @@ def client(monkeypatch) -> TestClient:
         yield cli
 
 
-def test_read_service_info(client: TestClient):
-    response = client.get("/")
+def test_read_service_meta(client: TestClient):
+    response = client.get("/meta")
     assert response.status_code == 200
     assert response.json()["version"] == api_version

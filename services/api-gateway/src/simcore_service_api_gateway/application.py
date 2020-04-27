@@ -41,7 +41,7 @@ def _custom_openapi(zelf: FastAPI) -> Dict:
         # TODO: load code samples add if function is contained in sample
         # TODO: See if openapi-cli does this already
         #
-        openapi_schema["paths"]["/"]["get"]["x-code-samples"] = [
+        openapi_schema["paths"]["/meta"]["get"]["x-code-samples"] = [
             {"lang": "python", "source": "print('hello world')",},
         ]
 

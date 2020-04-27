@@ -5,8 +5,8 @@ from .__version__ import __version__, api_version, api_vtag
 router = APIRouter()
 
 
-@router.get("/")
-async def service_info():
+@router.get("/meta")
+async def get_service_metadata():
     return {
         "name": __name__.split(".")[0],
         "version": api_version,
@@ -17,6 +17,6 @@ async def service_info():
 
 
 @router.get("/health")
-async def health_check():
+async def check_service_health():
     # TODO: if not, raise ServiceUnavailable (use diagnostic concept as in webserver)
     return
