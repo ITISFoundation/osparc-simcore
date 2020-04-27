@@ -66,7 +66,7 @@ def deployed_simcore_stack(make_up_prod: Dict, docker_client: DockerClient) -> L
     'simcore_webserver',
     'simcore_storage',
     'simcore_catalog',
-    'simcore_director',
+    # 'simcore_director', TODO: uncomment when https://github.com/ITISFoundation/osparc-simcore/issues/1466 is FIXED
 ])
 def test_graceful_restart_services(
     service_name: str,
