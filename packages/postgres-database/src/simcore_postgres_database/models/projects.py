@@ -5,9 +5,9 @@
 """
 import enum
 import logging
-from datetime import datetime
 
 import sqlalchemy as sa
+from sqlalchemy.sql import func
 
 from .base import metadata
 
@@ -35,11 +35,28 @@ projects = sa.Table(
     sa.Column("name", sa.String, nullable=False),
     sa.Column("description", sa.String, nullable=True),
     sa.Column("thumbnail", sa.String, nullable=True),
-    sa.Column("prj_owner", sa.String, nullable=False),
-    sa.Column("creation_date", sa.DateTime(), nullable=False, default=datetime.utcnow),
     sa.Column(
-        "last_change_date", sa.DateTime(), nullable=False, default=datetime.utcnow
+        "prj_owner",
+        sa.BigInteger,
+        sa.ForeignKey(
+            "users.id",
+            name="fk_projects_prj_owner_users",
+            onupdate="CASCADE",
+            ondelete="RESTRICT",
+        ),
+        nullable=False,
     ),
+    sa.Column(
+        "creation_date", sa.DateTime(), nullable=False, server_default=func.now()
+    ),
+    sa.Column(
+        "last_change_date",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),  # this will auto-update on modification
+    ),
+    sa.Column("access_rights", sa.JSON, nullable=False),
     sa.Column("workbench", sa.JSON, nullable=False),
     sa.Column("published", sa.Boolean, nullable=False, default=False),
 )
