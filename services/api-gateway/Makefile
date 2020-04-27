@@ -36,12 +36,16 @@ tests-integration: ## runs integration tests against local+production images
 
 .PHONY: run-devel down
 run-devel: .env-devel down ## runs app on host with pg fixture for development
+	# running current app
 	export $(shell grep -v '^#' $< | xargs  -d '\n'); \
 	docker-compose -f $(CURDIR)/tests/utils/docker-compose.yml up --detach; \
 	uvicorn simcore_service_api_gateway.main:the_app --reload --port=8001 --host=0.0.0.0
 
 down: ## stops pg fixture
-	docker-compose -f $(CURDIR)/tests/utils/docker-compose.yml down
+	# stopping extra services
+	-@docker-compose -f $(CURDIR)/tests/utils/docker-compose.yml down
+	# killing any process using port 8001
+	-@fuser --kill --verbose --namespace tcp 8001
 
 
 .PHONY: build

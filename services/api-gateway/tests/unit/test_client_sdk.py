@@ -179,6 +179,7 @@ async def test_client_sdk():
         me: Dict = await api.me.get()
         pprint(me)
 
+        # can update SOME entries
         await api.me.update(name="pcrespov", full_name="Pedro Crespo")
 
         # corresponds to the studies I have access ??
