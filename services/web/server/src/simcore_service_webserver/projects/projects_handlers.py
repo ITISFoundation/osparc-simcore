@@ -227,7 +227,8 @@ async def delete_project(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     try:
-        project = await projects_api.get_project_for_user(
+        # used to check exists
+        await projects_api.get_project_for_user(
             request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True
         )
         with managed_resource(user_id, None, request.app) as rt:
@@ -293,7 +294,7 @@ async def close_project(request: web.Request) -> web.Response:
         from .projects_api import get_project_for_user
 
         with managed_resource(user_id, client_session_id, request.app) as rt:
-            project = await get_project_for_user(
+            await get_project_for_user(
                 request.app,
                 project_uuid=project_uuid,
                 user_id=user_id,
