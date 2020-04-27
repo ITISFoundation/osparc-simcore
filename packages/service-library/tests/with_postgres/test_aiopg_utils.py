@@ -126,14 +126,14 @@ async def test_engine_when_idle_for_some_time():
     # pylint: disable=no-value-for-parameter
     async with engine.acquire() as conn:
         # writes
-        await conn.execute(tbl.insert().values(val=f"first"))
+        await conn.execute(tbl.insert().values(val="first"))
 
     # by default docker swarm kills connections that are idle for more than 15 minutes
     await asyncio.sleep(901)
     # import pdb; pdb.set_trace()
 
     async with engine.acquire() as conn:
-        await conn.execute(tbl.insert().values(val=f"third"))
+        await conn.execute(tbl.insert().values(val="third"))
 
     # import pdb; pdb.set_trace()
 
