@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Security
+from fastapi import APIRouter, Depends
 
 from .auth import get_current_active_user
 from .schemas import User

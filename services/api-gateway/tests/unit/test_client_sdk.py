@@ -166,7 +166,7 @@ class ApiSession:
 
 
 # ----------------------------------------------------
-
+@pytest.mark.skip(reason="Under dev")
 async def test_client_sdk():
     # TODO: design SDK for these calls
     # TODO: these examples should run test tests and automaticaly added to redoc
