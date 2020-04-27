@@ -39,6 +39,9 @@
 A graph view of services, ports, volumes and service dependencies:
 ![](docs/img/docker-compose-wo-networks.png)
 
+## Contributing
+
+Would you like to make a change or add something new? Please read the [contributing guidelines](CONTRIBUTING.md).
 ## Usage
 
 ```bash
