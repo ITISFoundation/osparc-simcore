@@ -6,6 +6,7 @@ import logging
 import sqlalchemy as sa
 import sqlalchemy.sql as sql
 from aiohttp import web
+from aiohttp_session import get_session
 from servicelib.aiopg_utils import PostgresRetryPolicyUponOperation
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from tenacity import retry
@@ -36,6 +37,9 @@ async def get_my_profile(request: web.Request):
         uid=request[RQT_USERID_KEY], engine=request.app[APP_DB_ENGINE_KEY]
     )
     parts = row["name"].split(".") + [""]
+
+    session = await get_session(request)
+    session["user_email"] = row["email"]
 
     return {
         "login": row["email"],

@@ -41,7 +41,7 @@ async def service_submission(request: web.Request):
         )
     # data (dict) and file (bytearray) have the necessary information to compose the email
     session = await get_session(request)
-    user_email = session.get("user")["email"]
+    user_email = session.get("user_email")
     support_email_address = request.app[APP_CONFIG_KEY]["smtp"]["sender"]
     is_real_usage = any(
         [env in os.environ.get("SWARM_STACK_NAME") for env in ("production", "staging")]
