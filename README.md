@@ -76,6 +76,8 @@ To develop, in addition:
 
 - python 3.6 (this dependency will be deprecated soon)
 - nodejs for client part (this dependency will be deprecated soon)
+- swagger-cli (make sure to have a recent version of nodejs)
+- on MacOS you might need to [replace your MacOS utilities with GNU utils](https://apple.stackexchange.com/a/69332) 
 - [vscode] (highly recommended)
 
 This project works and is developed mainly under **linux** but, with some adjustments, it can also be done under windows (see notes below).
