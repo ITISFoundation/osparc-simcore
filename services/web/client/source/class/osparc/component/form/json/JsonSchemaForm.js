@@ -71,7 +71,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
         this.__submitBtn = new osparc.ui.form.FetchButton(this.tr("Submit"));
         this.__submitBtn.addListener("execute", () => {
-          if (this.__validationManager.validate()) {
+          if (this.__isValidData()) {
             const formData = this.toObject();
             if (this.__validate(schema, formData.json)) {
               this.fireDataEvent("submit", formData);
@@ -235,6 +235,19 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
      */
     setFetching: function(isFetching) {
       this.__submitBtn.setFetching(isFetching);
+    },
+    /**
+     * Validates fields' data and returns the result.
+     */
+    __isValidData: function() {
+      // Clean garbage (deleted inputs)
+      const validatedItems = this.__validationManager.getItems();
+      validatedItems.forEach(item => {
+        if (!this.getContentElement().getDomElement().contains(item.getContentElement().getDomElement())) {
+          this.__validationManager.remove(item);
+        }
+      });
+      return this.__validationManager.validate()
     }
   }
 });

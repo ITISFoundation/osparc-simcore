@@ -3,39 +3,17 @@
         "firstName": "Ignacio",
         "lastName": "Pascual",
         "email": "pascual@itis.swiss",
-        "affiliation": "Universidad Politécnica de Valencia"
+        "affiliation": "ITIS Foundation"
     },
     "serviceInfo": {
-        "description": "Universal solver that solves everything",
-        "commandLine": "In linux terminal: python3 universalsolver.py input1 input2",
-        "url": "example.github.com",
-        "codeVariant": "python"
+        "description": "Guyton antidiuretic hormone module",
+        "commandLine": "Not applicable",
+        "url": "",
+        "codeVariant": "opencor"
     },
     "serviceInterface": {
-        "inputs": [
-            {
-                "name": "input1",
-                "type": "complex",
-                "defaultValue": "null",
-                "label": "input #1",
-                "description": "Input number one"
-            }, {
-                "name": "input2",
-                "type": "complex",
-                "defaultValue": "null",
-                "label": "input #2",
-                "description": "Input number two"
-            }
-        ],
-        "outputs": [
-            {
-                "name": "output1",
-                "type": "complex",
-                "defaultValue": "null",
-                "label": "Output #1",
-                "description": "Output number one"
-            }
-        ]
+        "inputs": [],
+        "outputs": []
     },
     "authors": [
         {
