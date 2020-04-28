@@ -92,7 +92,7 @@ async def create_projects(request: web.Request):
     except ValidationError:
         raise web.HTTPBadRequest(reason="Invalid project data")
     except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason=f"Project not found")
+        raise web.HTTPNotFound(reason="Project not found")
     except ProjectInvalidRightsError:
         raise web.HTTPUnauthorized
 
@@ -336,7 +336,7 @@ async def get_active_project(request: web.Request) -> web.Response:
 
         return {"data": project}
     except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason=f"Project not found")
+        raise web.HTTPNotFound(reason="Project not found")
 
 
 @login_required

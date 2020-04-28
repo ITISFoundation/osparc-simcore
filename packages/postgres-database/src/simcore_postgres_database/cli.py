@@ -122,7 +122,7 @@ def discover(**cli_inputs):
     # NOTE: Do not add defaults to user, password so we get a chance to ping urls
     # TODO: if multiple candidates online, then query user to select
 
-    click.echo(f"Discovering database ...")
+    click.echo("Discovering database ...")
     cli_cfg = {key: value for key, value in cli_inputs.items() if value is not None}
 
     def _test_cached():

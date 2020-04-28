@@ -167,7 +167,7 @@ async def _create_docker_service_params(
             f"traefik.http.routers.{service_name}.rule": f"PathPrefix(`/x/{node_uuid}`)",
             f"traefik.http.routers.{service_name}.entrypoints": "http",
             f"traefik.http.routers.{service_name}.priority": "10",
-            f"traefik.http.routers.{service_name}.middlewares": f"gzip@docker",
+            f"traefik.http.routers.{service_name}.middlewares": "gzip@docker",
         },
         "networks": [internal_network_id] if internal_network_id else [],
     }
@@ -251,7 +251,7 @@ async def _create_docker_service_params(
         swarm_network_id = swarm_network["Id"]
         swarm_network_name = swarm_network["Name"]
         docker_params["networks"].append(swarm_network_id)
-        docker_params["labels"][f"traefik.docker.network"] = swarm_network_name
+        docker_params["labels"]["traefik.docker.network"] = swarm_network_name
 
     except exceptions.DirectorException:
         log.exception("Could not find swarm network")
