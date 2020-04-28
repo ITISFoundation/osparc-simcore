@@ -324,7 +324,7 @@ class Executor:
             file_upload_tasks = []
             for file_path in self.shared_folders.output_folder.rglob("*"):
                 if file_path.name == f"{STEM_OUTPUTS}.json":
-                    log.debug(f"POSTRO FOUND {STEM_OUTPUTS}.json")
+                    log.debug("POSTRO FOUND %s.json", STEM_OUTPUTS)
                     # parse and compare/update with the tasks output ports from db
                     with file_path.open() as fp:
                         output_ports = json.load(fp)
