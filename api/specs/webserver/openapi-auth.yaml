@@ -252,6 +252,8 @@ paths:
 
     delete:
       summary: deletes API key by name
+      tags:
+        - authentication
       operationId: delete_api_key
       requestBody:
         description: deletes given api key by name
