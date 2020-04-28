@@ -240,7 +240,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
      * Validates fields' data and returns the result.
      */
     __isValidData: function() {
-      // Clean garbage (deleted inputs)
+      // Clean garbage from validator (deleted inputs)
       const validatedItems = this.__validationManager.getItems();
       validatedItems.forEach(item => {
         if (!this.getContentElement().getDomElement().contains(item.getContentElement().getDomElement())) {
