@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "osparc-simcore RESTful API"
-  version: 0.5.0
+  version: 0.5.1
   description: "RESTful API designed for web clients"
   contact:
     name: IT'IS Foundation
