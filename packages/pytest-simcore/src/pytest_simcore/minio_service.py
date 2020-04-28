@@ -34,8 +34,8 @@ def minio_config(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
     # nodeports takes its configuration from env variables
     for key, value in config["client"].items():
         os.environ[f"S3_{key.upper()}"] = str(value)
-    os.environ[f"S3_SECURE"] = devel_environ["S3_SECURE"]
-    os.environ[f"S3_BUCKET_NAME"] = devel_environ["S3_BUCKET_NAME"]
+    os.environ["S3_SECURE"] = devel_environ["S3_SECURE"]
+    os.environ["S3_BUCKET_NAME"] = devel_environ["S3_BUCKET_NAME"]
 
     return config
 
