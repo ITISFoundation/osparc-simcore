@@ -40,7 +40,7 @@ async def fake_user_api_keys(client, logged_user):
         def get(self, *_args):
             return self.userid
 
-    crud = ApiKeysCRUD(Adapter(client.app, logged_user['id']))
+    crud = ApiKeysCRUD(Adapter(client.app, logged_user["id"]))
 
     for name in names:
         await crud.create(name, api_key=f"{name}-key", api_secret=f"{name}-secret")
@@ -90,12 +90,15 @@ async def test_create_api_keys(client, logged_user, user_role, expected):
         ]
 
 
-@pytest.mark.parametrize("user_role,expected", [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
-    (UserRole.USER, web.HTTPNoContent),
-    (UserRole.TESTER, web.HTTPNoContent),
-])
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPNoContent),
+        (UserRole.TESTER, web.HTTPNoContent),
+    ],
+)
 async def test_delete_api_keys(
     client, fake_user_api_keys, logged_user, user_role, expected
 ):
