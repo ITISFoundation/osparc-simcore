@@ -10,7 +10,7 @@ from starlette import status
 
 
 # TODO: app is init globally ... which is bad!
-from simcore_service_api_gateway.main import api_version, app, api_version_prefix
+from simcore_service_api_gateway.main import api_version, app, api_vtag
 
 
 @pytest.fixture
@@ -21,12 +21,12 @@ def client(environ_context, postgres_service):
 
 
 def test_list_{{ rnp }}(client):
-    response = client.get(f"/{api_version_prefix}/{{ rnp }}")
+    response = client.get(f"/{api_vtag}/{{ rnp }}")
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == []
 
     # inject three dagin
-    response = client.get(f"/{api_version_prefix}/{{ rnp }}")
+    response = client.get(f"/{api_vtag}/{{ rnp }}")
     assert response.status_code == status.HTTP_200_OK
     # TODO: assert i can list them as dagouts
 
@@ -35,12 +35,12 @@ def test_list_{{ rnp }}(client):
 
 def test_standard_operations_on_resource(client, fake_data_dag_in):
 
-    response = client.post(f"/{api_version_prefix}/{{ rnp }}", json=fake_data_dag_in)
+    response = client.post(f"/{api_vtag}/{{ rnp }}", json=fake_data_dag_in)
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json() == 1
 
     # list
-    response = client.get(f"/{api_version_prefix}/{{ rnp }}")
+    response = client.get(f"/{api_vtag}/{{ rnp }}")
     assert response.status_code == status.HTTP_200_OK
     got = response.json()
 
@@ -52,10 +52,10 @@ def test_standard_operations_on_resource(client, fake_data_dag_in):
     assert data_out["id"] == 1  # extra key, once in db
 
     # get
-    response = client.get(f"/{api_version_prefix}/{{ rnp }}/1")
+    response = client.get(f"/{api_vtag}/{{ rnp }}/1")
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == data_out
 
     # delete
-    response = client.delete(f"/{api_version_prefix}/{{ rnp }}/1")
+    response = client.delete(f"/{api_vtag}/{{ rnp }}/1")
     assert response.status_code == status.HTTP_204_NO_CONTENT

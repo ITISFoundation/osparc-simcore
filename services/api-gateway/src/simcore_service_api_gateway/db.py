@@ -1,8 +1,8 @@
 """ Access to postgres service
  DUMMY!
 """
+
 import logging
-from functools import partial
 from typing import Dict, Optional
 
 import aiopg.sa
@@ -15,6 +15,7 @@ from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from .application import FastAPI, get_settings
 from .settings import AppSettings
+from .utils.fastapi_shortcuts import add_event_on_shutdown, add_event_on_startup
 
 ## from .orm.base import Base
 
@@ -78,20 +79,20 @@ async def start_db(app: FastAPI):
     async def _go():
         await setup_engine(app)
 
-    #if False:
+    # if False:
     #    log.info("Creating db tables (testing mode)")
     #    create_tables()
 
 
-async def shutdown_db(app: FastAPI):
+def shutdown_db(app: FastAPI):
     # TODO: tmp disabled
     log.debug("DUMMY: Shutting down db in %s", app)
     # await teardown_engine(app)
 
 
 def setup_db(app: FastAPI):
-    app.router.add_event_handler("startup", partial(start_db, app))
-    app.router.add_event_handler("shutdown", partial(shutdown_db, app))
+    add_event_on_startup(app, start_db)
+    add_event_on_shutdown(app, shutdown_db)
 
 
 __all__ = ("Engine", "ResultProxy", "RowProxy", "SAConnection")

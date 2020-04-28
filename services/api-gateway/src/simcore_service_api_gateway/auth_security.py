@@ -68,6 +68,7 @@ def decode_token(encoded_jwt: str) -> Dict:
 def get_access_token_data(encoded_jwt: str) -> Optional[TokenData]:
     """
         Decodes and validates JWT and returns TokenData
+        Returns None, if invalid token
     """
     try:
         # decode JWT [header.payload.signature] and get payload:
