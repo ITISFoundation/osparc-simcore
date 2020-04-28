@@ -44,17 +44,17 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
 
     __createInternalTokensSection: function() {
       // layout
-      const box = this._createSectionBox(this.tr("oSPARC API Tokens"));
+      const box = this._createSectionBox(this.tr("API Keys"));
 
       const label = this._createHelpLabel(this.tr(
-        "Tokens to access oSPARC API."
+        "List API keys associated to your account."
       ));
       box.add(label);
 
       const tokensList = this.__internalTokensList = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
       box.add(tokensList);
 
-      const requestTokenBtn = this.__requestTokenBtn = new osparc.ui.form.FetchButton(this.tr("Create oSPARC Token")).set({
+      const requestTokenBtn = this.__requestTokenBtn = new osparc.ui.form.FetchButton(this.tr("Create API Key")).set({
         allowGrowX: false
       });
       requestTokenBtn.addListener("execute", () => {
@@ -89,7 +89,7 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
             console.log(data);
           })
           .catch(err => {
-            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed creating oSPARC API token"), "ERROR");
+            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed creating API token"), "ERROR");
             console.error(err);
           })
           .finally(() => this.__requestTokenBtn.setFetching(false));
@@ -99,7 +99,7 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
 
     __createExternalTokensSection: function() {
       // layout
-      const box = this._createSectionBox(this.tr("External service Tokens"));
+      const box = this._createSectionBox(this.tr("External Service Tokens"));
 
       const label = this._createHelpLabel(this.tr(
         "List of API tokens to access external services. Currently, \

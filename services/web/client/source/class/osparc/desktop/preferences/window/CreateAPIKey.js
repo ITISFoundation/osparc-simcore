@@ -17,7 +17,7 @@ qx.Class.define("osparc.desktop.preferences.window.CreateAPIKey", {
   extend: osparc.desktop.preferences.window.APIKeyBase,
 
   construct: function() {
-    const caption = this.tr("Create oSPARC API Key");
+    const caption = this.tr("Create API Key");
     const infoText = this.tr("Key names must be unique.");
     this.base(arguments, caption, infoText);
 

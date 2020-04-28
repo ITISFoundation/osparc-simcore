@@ -17,7 +17,7 @@ qx.Class.define("osparc.desktop.preferences.window.ShowAPIKey", {
   extend: osparc.desktop.preferences.window.APIKeyBase,
 
   construct: function(key, secret) {
-    const caption = this.tr("oSPARC API Key");
+    const caption = this.tr("API Key");
     const infoText = this.tr("For your protection, store your access keys securely and do not share them. You will not be able to access the key again once this window is closed.");
     this.base(arguments, caption, infoText);
 
