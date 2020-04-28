@@ -55,7 +55,7 @@ async def fake_user_api_keys(client, logged_user):
 
 USER_ACCESS_PARAMETERS = [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-   # TODO: (UserRole.GUEST, web.HTTPUnauthorized),
+    (UserRole.GUEST, web.HTTPUnauthorized),
     (UserRole.USER, web.HTTPOk),
     (UserRole.TESTER, web.HTTPOk),
 ]
@@ -92,7 +92,7 @@ async def test_create_api_keys(client, logged_user, user_role, expected):
 
 @pytest.mark.parametrize("user_role,expected", [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPNoContent),
+    (UserRole.GUEST, web.HTTPUnauthorized),
     (UserRole.USER, web.HTTPNoContent),
     (UserRole.TESTER, web.HTTPNoContent),
 ])

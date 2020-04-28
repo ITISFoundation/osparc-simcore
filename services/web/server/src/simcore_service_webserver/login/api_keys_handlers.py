@@ -4,13 +4,13 @@ from typing import Dict, List
 
 import sqlalchemy as sa
 from aiohttp import web
-
-import simcore_postgres_database.webserver_models as orm
-from servicelib.application_keys import APP_DB_ENGINE_KEY
-from servicelib.aiopg_utils import DatabaseError
-
 from aiopg.sa.result import ResultProxy, RowProxy
 
+import simcore_postgres_database.webserver_models as orm
+from servicelib.aiopg_utils import DatabaseError
+from servicelib.application_keys import APP_DB_ENGINE_KEY
+
+from ..security_api import check_permission
 from .decorators import RQT_USERID_KEY, login_required
 from .utils import get_random_string
 
@@ -55,7 +55,6 @@ class CRUD:
             res: ResultProxy = await conn.execute(stmt)
             print(res)
 
-
     async def delete_api_key(self, name: str):
         async with self.engine.acquire() as conn:
             stmt = orm.api_keys.delete().where(
@@ -72,6 +71,8 @@ async def list_api_keys(request: web.Request):
     """
         GET /auth/api-keys
     """
+    await check_permission(request, "user.apikey.*")
+
     crud = CRUD(request)
     names = await crud.list_api_key_names()
     return names
@@ -82,6 +83,8 @@ async def create_api_key(request: web.Request):
     """
         POST /auth/api-keys
     """
+    await check_permission(request, "user.apikey.*")
+
     body = await request.json()
     display_name = body.get("display_name")
 
@@ -105,6 +108,7 @@ async def delete_api_key(request: web.Request):
     """
         DELETE /auth/api-keys
     """
+    await check_permission(request, "user.apikey.*")
 
     body = await request.json()
     display_name = body.get("display_name")
