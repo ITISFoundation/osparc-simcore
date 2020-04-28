@@ -7,7 +7,7 @@
 alembic==1.4.2            # via -r requirements/_migration.in
 certifi==2019.11.28       # via -r requirements/_migration.in, requests
 chardet==3.0.4            # via requests
-click==7.1.1              # via -r requirements/_migration.in
+click==7.1.2              # via -r requirements/_migration.in
 docker==4.2.0             # via -r requirements/_migration.in
 idna==2.8                 # via -r requirements/_base.txt, requests, yarl
 mako==1.0.12              # via alembic
