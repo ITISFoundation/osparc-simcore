@@ -315,7 +315,7 @@ class Executor:
             LogType.LOG, "[sidecar]Uploading outputs...",
         )
         PORTS = await self._get_node_ports()
-        STEM_OUTPUTS = (
+        stem = (
             "output"
             if self.integration_version == version.parse("0.0.0")
             else "outputs"
@@ -323,8 +323,8 @@ class Executor:
         try:
             file_upload_tasks = []
             for file_path in self.shared_folders.output_folder.rglob("*"):
-                if file_path.name == f"{STEM_OUTPUTS}.json":
-                    log.debug("POSTRO FOUND %s.json", STEM_OUTPUTS)
+                if file_path.name == f"{stem}.json":
+                    log.debug("POSTRO FOUND %s.json", stem)
                     # parse and compare/update with the tasks output ports from db
                     with file_path.open() as fp:
                         output_ports = json.load(fp)
