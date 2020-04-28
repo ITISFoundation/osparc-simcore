@@ -1,6 +1,6 @@
 import logging
 import uuid as uuidlib
-from typing import Dict
+from typing import Dict, List
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -8,6 +8,8 @@ from aiohttp import web
 import simcore_postgres_database.webserver_models as orm
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiopg_utils import DatabaseError
+
+from aiopg.sa.result import ResultProxy, RowProxy
 
 from .decorators import RQT_USERID_KEY, login_required
 from .utils import get_random_string
@@ -32,15 +34,16 @@ class CRUD:
 
     async def list_api_key_names(self):
         async with self.engine.acquire() as conn:
-            stmt = orm.api_keys.select([orm.api_keys.c.display_name]).where(
-                orm.users.c.user_id == self.userid
+            stmt = sa.select([orm.api_keys.c.display_name,]).where(
+                orm.api_keys.c.user_id == self.userid
             )
 
-            res = await conn.execute(stmt)
-            rows = await res.fetchall()
-            return list(rows)
+            res: ResultProxy = await conn.execute(stmt)
+            rows: List[RowProxy] = await res.fetchall()
+            return [row.get(0) for row in rows] if rows else []
 
     async def create(self, name: str, *, api_key: str, api_secret: str):
+
         async with self.engine.acquire() as conn:
             stmt = orm.api_keys.insert().values(
                 display_name=name,
@@ -48,13 +51,16 @@ class CRUD:
                 api_key=api_key,
                 api_secret=api_secret,
             )
-            await conn.execute(stmt)
+
+            res: ResultProxy = await conn.execute(stmt)
+            print(res)
+
 
     async def delete_api_key(self, name: str):
         async with self.engine.acquire() as conn:
             stmt = orm.api_keys.delete().where(
                 sa.and_(
-                    orm.users.c.user_id == self.userid,
+                    orm.api_keys.c.user_id == self.userid,
                     orm.api_keys.c.display_name == name,
                 )
             )
@@ -85,7 +91,7 @@ async def create_api_key(request: web.Request):
         await crud.create(display_name, **credentials)
     except DatabaseError as err:
         log.warning("Failed to create API key %d", display_name, exc_info=err)
-        raise web.HTTPBadRequest(reason="Invalid API key name: already exists")
+        raise web.HTTPBadRequest(reason="Invalid API key name: already exists") from err
 
     return {
         "display_name": display_name,
