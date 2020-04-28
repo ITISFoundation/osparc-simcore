@@ -19,6 +19,10 @@
  +--------+                               +---------------+
 
                  Figure 1: Abstract Protocol Flow
+
+SEE
+    - https://oauth.net/2/
+    - https://tools.ietf.org/html/rfc6749
 """
 # TODO: this module shall delegate the auth functionality to a separate service
 
