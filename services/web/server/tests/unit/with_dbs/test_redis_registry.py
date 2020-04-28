@@ -72,10 +72,10 @@ async def test_redis_registry(loop, redis_registry):
     random_value = randint(1, 10)
     key = {f"key_{x}": f"value_{x}" for x in range(random_value)}
     second_key = {f"sec_key_{x}": f"sec_value_{x}" for x in range(random_value)}
-    invalid_key = {f"invalid_key": f"invalid_value"}
+    invalid_key = {"invalid_key": "invalid_value"}
     NUM_RESOURCES = 7
     resources = [(f"res_key{x}", f"res_value{x}") for x in range(NUM_RESOURCES)]
-    invalid_resource = (f"invalid_res_key", f"invalid_res_value")
+    invalid_resource = ("invalid_res_key", "invalid_res_value")
 
     # create resources
     for res in resources:
