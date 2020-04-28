@@ -2022,7 +2022,9 @@ paths:
                 items:
                   type: string
         '401':
-          description: unauthorized to list keys
+          description: requires login to  list keys
+        '403':
+          description: not enough permissions to list keys
     post:
       summary: creates API keys to access public API
       tags:
@@ -2054,7 +2056,9 @@ paths:
         '400':
           description: key name requested is invalid
         '401':
-          description: unauthorized to create a key
+          description: requires login to  create a key
+        '403':
+          description: not enough permissions to create a key
     delete:
       summary: deletes API key by name
       tags:
@@ -2073,7 +2077,9 @@ paths:
         '204':
           description: api key successfully deleted
         '401':
-          description: unauthorized to delete a key
+          description: requires login to  delete a key
+        '403':
+          description: not enough permissions to delete a key
   /me:
     get:
       operationId: get_my_profile
