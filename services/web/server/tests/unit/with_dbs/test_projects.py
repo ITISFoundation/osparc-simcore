@@ -19,8 +19,7 @@ from yarl import URL
 
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
-from pytest_simcore.helpers.utils_projects import (NewProject,
-                                                   delete_all_projects)
+from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
@@ -700,9 +699,7 @@ async def test_close_project(
         calls = [
             call(client.server.app, user_project["uuid"], logged_user["id"]),
         ]
-        mocked_director_subsystem[
-            "get_running_interactive_services"
-        ].has_calls(calls)
+        mocked_director_subsystem["get_running_interactive_services"].has_calls(calls)
         mocked_director_subsystem["get_running_interactive_services"].reset_mock()
 
     # close project
@@ -717,7 +714,6 @@ async def test_close_project(
         mocked_director_subsystem["get_running_interactive_services"].has_calls(calls)
         calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
         mocked_director_subsystem["stop_service"].has_calls(calls)
-
 
 
 @pytest.mark.parametrize(
