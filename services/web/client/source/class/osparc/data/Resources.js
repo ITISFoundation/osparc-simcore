@@ -214,6 +214,25 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * API-KEYS
+       */
+      apiKeys: {
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/auth/api-keys"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/auth/api-keys"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/auth/api-keys"
+          }
+        }
+      },
+      /*
        * TOKENS
        */
       tokens: {

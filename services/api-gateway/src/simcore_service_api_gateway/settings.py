@@ -1,5 +1,7 @@
 # pylint: disable=no-name-in-module
 
+# NOTE: SEE https://pydantic-docs.helpmanual.io/usage/settings/ for usage
+
 from pydantic import BaseSettings, Field, SecretStr, validator
 from enum import Enum
 from typing import Optional

@@ -13,6 +13,8 @@ from .models.tags import study_tags, tags
 from .models.tokens import tokens
 from .models.user_to_projects import user_to_projects
 from .models.users import UserRole, UserStatus, users
+from .models.tags import tags, study_tags
+from .models.api_keys import api_keys
 
 __all__ = [
     "users",
@@ -30,4 +32,5 @@ __all__ = [
     "comp_pipeline",
     "tags",
     "study_tags",
+    "api_keys",
 ]
