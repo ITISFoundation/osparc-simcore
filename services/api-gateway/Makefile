@@ -13,8 +13,9 @@ export APP_VERSION = $(shell cat VERSION)
 reqs: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
 
+
 .PHONY: install-dev install-prod install-ci
-install-dev install-prod install-ci: _check-venv-active ## install app in development/production or CI mode
+install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
 	pip-sync requirements/$(subst install-,,$@).txt
 
@@ -34,16 +35,18 @@ tests-integration: ## runs integration tests against local+production images
 
 
 .PHONY: run-devel down
-run-devel: down ## runs app with pg fixture for development
-	# starting pg database ...
-	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml up --detach
-	# starting service
-	export SECRET_KEY="d0d0397de2c85ad26ffd4a0f9643dfe3a0ca3937f99cf3c2e174e11b5ef79880"; \
+run-devel: .env-devel down ## runs app on host with pg fixture for development
+	# running current app
+	export $(shell grep -v '^#' $< | xargs  -d '\n'); \
+	docker-compose -f $(CURDIR)/tests/utils/docker-compose.yml up --detach; \
 	uvicorn simcore_service_api_gateway.main:the_app --reload --port=8001 --host=0.0.0.0
-	# stop
 
 down: ## stops pg fixture
-	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml down
+	# stopping extra services
+	-@docker-compose -f $(CURDIR)/tests/utils/docker-compose.yml down
+	# killing any process using port 8001
+	-@fuser --kill --verbose --namespace tcp 8001
+
 
 .PHONY: build
 build: ## builds docker image (using main services/docker-compose-build.yml)
@@ -51,6 +54,7 @@ build: ## builds docker image (using main services/docker-compose-build.yml)
 
 
 .PHONY: replay
+# TODO: replay shall point to online cookiecutter
 replay: .cookiecutterrc ## re-applies cookiecutter
 	# Replaying /home/crespo/devp/osparc-simcore/services/api-gateway/../../../cookiecutter-simcore-py-fastapi ...
 	@cookiecutter --no-input --overwrite-if-exists \

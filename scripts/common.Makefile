@@ -83,11 +83,12 @@ info: ## displays basic info
 	@echo ' NOW_TIMESTAMP    : ${NOW_TIMESTAMP}'
 	@echo ' VCS_URL          : ${VCS_URL}'
 	@echo ' VCS_REF          : ${VCS_REF}'
-	# installed
+	# installed in .venv
 	@pip list
-	# version
-	@cat setup.py | grep name=
-	@cat setup.py | grep version=
+	# package
+	-@echo ' name         : ' $(shell python ${CURDIR}/setup.py --name)
+	-@echo ' version      : ' $(shell python ${CURDIR}/setup.py --version)
+
 
 
 .PHONY: autoformat
