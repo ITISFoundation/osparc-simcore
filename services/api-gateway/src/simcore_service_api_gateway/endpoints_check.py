@@ -16,7 +16,7 @@ async def get_service_metadata():
     }
 
 
-@router.get("/health")
+@router.get("/health", include_in_schema=False)
 async def check_service_health():
     # TODO: if not, raise ServiceUnavailable (use diagnostic concept as in webserver)
     return

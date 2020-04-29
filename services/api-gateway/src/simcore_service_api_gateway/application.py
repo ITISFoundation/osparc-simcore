@@ -22,11 +22,16 @@ PYTHON_CODE_SAMPLES_BASE_URL = "https://raw.githubusercontent.com/ITISFoundation
 
 def _custom_openapi(zelf: FastAPI) -> Dict:
     if not zelf.openapi_schema:
+        desc  = f"**{zelf.description}**\n"
+        desc += "## Python Client\n"
+        desc += "- Github [repo](https://github.com/ITISFoundation/osparc-simcore-python-client)\n"
+        desc += "- Quick install: ``pip install git+https://github.com/ITISFoundation/osparc-simcore-python-client.git``\n"
+
         openapi_schema = get_openapi(
             title=zelf.title,
             version=zelf.version,
             openapi_version=zelf.openapi_version,
-            description=zelf.description,
+            description=desc,
             routes=zelf.routes,
             openapi_prefix=zelf.openapi_prefix,
         )
