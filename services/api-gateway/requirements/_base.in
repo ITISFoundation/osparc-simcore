@@ -3,6 +3,8 @@
 #
 # NOTE: ALL version constraints MUST be commented
 
+-r ../../../packages/postgres-database/requirements/_base.in
+
 fastapi[all]
 aiopg[sa]
 tenacity
