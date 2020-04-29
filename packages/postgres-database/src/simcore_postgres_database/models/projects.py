@@ -56,7 +56,7 @@ projects = sa.Table(
         server_default=func.now(),
         onupdate=func.now(),  # this will auto-update on modification
     ),
-    sa.Column("access_rights", sa.JSON, nullable=False),
+    sa.Column("access_rights", sa.dialects.postgresql.JSONB, nullable=False),
     sa.Column("workbench", sa.JSON, nullable=False),
     sa.Column("published", sa.Boolean, nullable=False, default=False),
 )
