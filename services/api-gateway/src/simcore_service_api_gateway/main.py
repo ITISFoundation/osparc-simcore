@@ -4,11 +4,17 @@ from pathlib import Path
 
 from fastapi import FastAPI
 
-from . import application, endpoints_auth, endpoints_check, endpoints_user
-from .__version__ import api_version_prefix
+from . import (
+    application,
+    endpoints_auth,
+    endpoints_check,
+    endpoints_studies,
+    endpoints_user,
+)
+from .__version__ import api_vtag
 from .db import setup_db
-from .utils.remote_debug import setup_remote_debugging
 from .settings import AppSettings
+from .utils.remote_debug import setup_remote_debugging
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -21,6 +27,8 @@ def build_app() -> FastAPI:
     """
     app_settings = AppSettings()
 
+    logging.root.setLevel(app_settings.loglevel)
+
     app: FastAPI = application.create(settings=app_settings)
 
     @app.on_event("startup")
@@ -29,18 +37,18 @@ def build_app() -> FastAPI:
         setup_remote_debugging()
 
     # ROUTES
-    app.include_router(endpoints_check.router, tags=["check"])
+    app.include_router(endpoints_check.router)
 
+    app.include_router(endpoints_auth.router, tags=["Token"], prefix=f"/{api_vtag}")
+    app.include_router(endpoints_user.router, tags=["User"], prefix=f"/{api_vtag}")
     app.include_router(
-        endpoints_auth.router, tags=["auth"], prefix=f"/{api_version_prefix}"
-    )
-    app.include_router(
-        endpoints_user.router, tags=["users"], prefix=f"/{api_version_prefix}"
+        endpoints_studies.router, tags=["Studies"], prefix=f"/{api_vtag}"
     )
 
     # SUBMODULES setups
     setup_db(app)
-    # add new here!
+    # NOTE: add new here!
+    #  ...
 
     @app.on_event("shutdown")
     def shutdown_event():  # pylint: disable=unused-variable

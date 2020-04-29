@@ -41,9 +41,9 @@ def sidecar_config(
     rabbit_config: config.RabbitConfig,
 ) -> None:
     # NOTE: in integration tests the sidecar runs bare-metal which means docker volume cannot be used.
-    config.SIDECAR_DOCKER_VOLUME_INPUT = Path.home() / f"input"
-    config.SIDECAR_DOCKER_VOLUME_OUTPUT = Path.home() / f"output"
-    config.SIDECAR_DOCKER_VOLUME_LOG = Path.home() / f"log"
+    config.SIDECAR_DOCKER_VOLUME_INPUT = Path.home() / "input"
+    config.SIDECAR_DOCKER_VOLUME_OUTPUT = Path.home() / "output"
+    config.SIDECAR_DOCKER_VOLUME_LOG = Path.home() / "log"
 
     config.DOCKER_REGISTRY = docker_registry
     config.DOCKER_USER = "simcore"

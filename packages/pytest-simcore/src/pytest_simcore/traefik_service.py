@@ -19,7 +19,7 @@ def traefik_endpoints(docker_stack: Dict, devel_environ: Dict) -> Tuple[URL, URL
     """get the endpoint for the given simcore_service.
     NOTE: simcore_service defined as a parametrization
     """
-    assert f"simcore_traefik" in docker_stack["services"]
+    assert "simcore_traefik" in docker_stack["services"]
     api_endpoint = f"127.0.0.1:{get_service_published_port('traefik', 8080)}"
     webserver_endpoint = f"127.0.0.1:{get_service_published_port('traefik', 80)}"
     return (URL(f"http://{api_endpoint}"), URL(f"http://{webserver_endpoint}"))

@@ -29,5 +29,5 @@ def create_secret_key() -> str:
             "openssl rand -hex 32", check=True, shell=True
         )
     except (CalledProcessError, FileNotFoundError) as why:
-        raise ValueError(f"Cannot create secret key") from why
+        raise ValueError("Cannot create secret key") from why
     return str(proc.stdout).strip()
