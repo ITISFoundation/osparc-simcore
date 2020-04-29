@@ -14,11 +14,12 @@ class TokenData(BaseModel):
 
 
 class User(BaseModel):
-    username: str
+    name: str
     email: str = None
-    full_name: str = None
+    # role: str = None
 
 
+# DUMMY
 class UserInDB(User):
     hashed_password: str
     disabled: bool = None
