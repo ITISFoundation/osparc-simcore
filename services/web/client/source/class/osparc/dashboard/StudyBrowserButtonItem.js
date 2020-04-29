@@ -170,8 +170,16 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyStudyTitle: function(value, old) {
-      let label = this.getChildControl("title");
+      const label = this.getChildControl("title");
       label.setValue(value);
+      label.addListener("appear", () => {
+        qx.event.Timer.once(() => {
+          const labelDom = label.getContentElement().getDomElement();
+          if (label.getMaxWidth() === parseInt(labelDom.style.width)) {
+            label.setToolTipText(value);
+          }
+        }, this, 50);
+      });
     },
 
     _applyStudyDescription: function(value, old) {
