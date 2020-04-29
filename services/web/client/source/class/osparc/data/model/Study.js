@@ -134,6 +134,7 @@ qx.Class.define("osparc.data.model.Study", {
         description: "",
         thumbnail: "",
         prjOwner: "",
+        accessRights: {},
         creationDate: new Date(),
         lastChangeDate: new Date(),
         workbench: {},
