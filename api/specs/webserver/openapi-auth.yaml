@@ -210,6 +210,70 @@ paths:
         "3XX":
           description: redirection to specific ui application page
 
+  /auth/api-keys:
+    get:
+      summary: lists display names of API keys by this user
+      tags:
+        - authentication
+      operationId: list_api_keys
+      responses:
+        "200":
+          description: returns the display names of API keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        "401":
+          description: requires login to  list keys
+        "403":
+          description: not enough permissions to list keys
+
+    post:
+      summary: creates API keys to access public API
+      tags:
+        - authentication
+      operationId: create_api_key
+      requestBody:
+        description: user registration
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyName"
+      responses:
+        "200":
+          description: Authorization granted returning API key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyGranted"
+        "400":
+          description: key name requested is invalid
+        "401":
+          description: requires login to  create a key
+        "403":
+          description: not enough permissions to create a key
+
+    delete:
+      summary: deletes API key by name
+      tags:
+        - authentication
+      operationId: delete_api_key
+      requestBody:
+        description: deletes given api key by name
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyName"
+      responses:
+        "204":
+          description: api key successfully deleted
+        "401":
+          description: requires login to  delete a key
+        "403":
+          description: not enough permissions to delete a key
+
 components:
   responses:
     DefaultErrorResponse:
@@ -221,3 +285,17 @@ components:
         client_session_id:
           type: string
           example: 5ac57685-c40f-448f-8711-70be1936fd63
+    ApiKeyName:
+      type: object
+      properties:
+        display_name:
+          type: string
+    ApiKeyGranted:
+      type: object
+      properties:
+        display_name:
+          type: string
+        api_key:
+          type: string
+        api_secret:
+          type: string
