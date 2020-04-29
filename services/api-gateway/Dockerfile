@@ -36,7 +36,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
-EXPOSE 8000
+EXPOSE 8001
 EXPOSE 3000
 
 # -------------------------- Build stage -------------------

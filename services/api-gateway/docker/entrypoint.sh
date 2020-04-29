@@ -82,4 +82,6 @@ echo "$INFO Starting $* ..."
 echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
 echo "  local dir : $(ls -al)"
 
+
+# TODO: replace with gosu
 su --command "$*" "$SC_USER_NAME"
