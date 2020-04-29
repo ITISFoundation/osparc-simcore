@@ -87,8 +87,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           control = new qx.ui.basic.Label().set({
             margin: [5, 0],
             font: "title-14",
-            rich : true,
-            anonymous: true
+            maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING - 30,
+            breakWithinWords: true
           });
           this._mainLayout.addAt(control, 0);
           break;
