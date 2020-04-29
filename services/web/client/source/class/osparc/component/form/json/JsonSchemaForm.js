@@ -247,7 +247,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
           this.__validationManager.remove(item);
         }
       });
-      return this.__validationManager.validate()
+      return this.__validationManager.validate();
     }
   }
 });
