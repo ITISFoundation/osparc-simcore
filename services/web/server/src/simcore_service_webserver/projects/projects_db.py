@@ -38,6 +38,7 @@ log = logging.getLogger(__name__)
 APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
 DB_EXCLUSIVE_COLUMNS = ["type", "id", "published"]
 
+
 # TODO: check here how schema to model db works!?
 def _convert_to_db_names(project_document_data: Dict) -> Dict:
     converted_args = {}
@@ -55,6 +56,8 @@ def _convert_to_schema_names(project_database_data: Mapping) -> Dict:
         converted_value = value
         if isinstance(value, datetime):
             converted_value = format_datetime(value)
+        elif key == "prj_owner":
+            converted_value = str(value)
         converted_args[ChangeCase.snake_to_camel(key)] = converted_value
     return converted_args
 
@@ -100,8 +103,8 @@ class ProjectDBAPI:
         log.info("adding projects to database for user %s", user_id)
         uuids = []
         for prj in projects_list:
-            prj_uuid = await self.add_project(prj, user_id)
-            uuids.append(prj_uuid)
+            prj = await self.add_project(prj, user_id)
+            uuids.append(prj["uuid"])
         return uuids
 
     async def add_project(
@@ -111,7 +114,7 @@ class ProjectDBAPI:
         *,
         force_project_uuid=False,
         force_as_template=False
-    ) -> str:
+    ) -> Dict:
         """ Inserts a new project in the database and, if a user is specified, it assigns ownership
 
         - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
@@ -132,7 +135,6 @@ class ProjectDBAPI:
         # pylint: disable=no-value-for-parameter
 
         async with self.engine.acquire() as conn:
-            user_email = await self._get_user_email(conn, user_id)
 
             # TODO: check security of this query with args. Hard-code values?
             # TODO: check best rollback design. see transaction.begin...
@@ -141,7 +143,7 @@ class ProjectDBAPI:
                 {
                     "creationDate": now_str(),
                     "lastChangeDate": now_str(),
-                    "prjOwner": user_email,
+                    "prjOwner": user_id,
                 }
             )
             kargs = _convert_to_db_names(prj)
@@ -196,8 +198,8 @@ class ProjectDBAPI:
                     raise ProjectInvalidRightsError(user_id, prj["uuid"]) from exc
 
             # Updated values
-            prj["uuid"] = kargs["uuid"]
-            return prj["uuid"]
+            prj = _convert_to_schema_names(kargs)
+            return prj
 
     async def load_user_projects(
         self, user_id: str, *, exclude_templates=True
