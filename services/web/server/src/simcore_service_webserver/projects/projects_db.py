@@ -23,7 +23,7 @@ from sqlalchemy.sql import and_, select
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
-from ..db_models import study_tags, users
+from ..db_models import study_tags, users, user_to_groups
 from ..utils import format_datetime, now_str
 from .projects_exceptions import (
     ProjectInvalidRightsError,
@@ -113,7 +113,7 @@ class ProjectDBAPI:
         user_id: str,
         *,
         force_project_uuid=False,
-        force_as_template=False
+        force_as_template=False,
     ) -> Dict:
         """ Inserts a new project in the database and, if a user is specified, it assigns ownership
 
@@ -201,30 +201,36 @@ class ProjectDBAPI:
             prj = _convert_to_schema_names(kargs)
             return prj
 
-    async def load_user_projects(
-        self, user_id: str, *, exclude_templates=True
-    ) -> List[Dict]:
+    async def load_user_projects(self, user_id: str) -> List[Dict]:
         log.info("Loading projects for user %s", user_id)
 
-        condition = user_to_projects.c.user_id == user_id
-        if exclude_templates:
-            condition = and_(condition, projects.c.type != ProjectType.TEMPLATE)
-
-        joint_table = user_to_projects.join(projects)
-        query = select([projects]).select_from(joint_table).where(condition)
+        query = (
+            select([projects])
+            .select_from(user_to_projects.join(projects))
+            .where(
+                and_(
+                    user_to_projects.c.user_id == user_id,
+                    projects.c.type != ProjectType.TEMPLATE,
+                )
+            )
+        )
 
         async with self.engine.acquire() as conn:
             projects_list = await self.__load_projects(conn, query)
 
         return projects_list
 
-    async def load_template_projects(self, *, only_published=False) -> List[Dict]:
+    async def load_template_projects(
+        self, user_id: str, *, only_published=False
+    ) -> List[Dict]:
         log.info("Loading public template projects")
 
         # TODO: eliminate this and use mock to replace get_user_project instead
         projects_list = [prj.data for prj in Fake.projects.values() if prj.template]
 
         async with self.engine.acquire() as conn:
+            user_groups: List[str] = await self.__load_user_groups(conn, user_id)
+
             if only_published:
                 expression = and_(
                     projects.c.type == ProjectType.TEMPLATE,
@@ -234,9 +240,25 @@ class ProjectDBAPI:
                 expression = projects.c.type == ProjectType.TEMPLATE
 
             query = select([projects]).where(expression)
-            projects_list.extend(await self.__load_projects(conn, query))
+            db_projects: List[Dict] = await self.__load_projects(conn, query)
+
+            # filter with group access
+            def _filter_by_group_access(project: Dict) -> bool:
+                return any(
+                    f"{group}" in project["accessRights"] for group in user_groups
+                )
+
+            db_projects = filter(_filter_by_group_access, db_projects)
+            projects_list.extend(db_projects)
 
         return projects_list
+
+    async def __load_user_groups(self, conn: SAConnection, user_id: str) -> List[str]:
+        user_groups: List[str] = []
+        query = select([user_to_groups.c.gid]).where(user_to_groups.c.uid == user_id)
+        async for row in conn.execute(query):
+            user_groups.append(row[user_to_groups.c.gid])
+        return user_groups
 
     async def __load_projects(self, conn: SAConnection, query) -> List[Dict]:
         api_projects: List[Dict] = []  # API model-compatible projects

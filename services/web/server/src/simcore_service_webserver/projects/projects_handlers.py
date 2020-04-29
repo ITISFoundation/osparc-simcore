@@ -113,12 +113,10 @@ async def list_projects(request: web.Request):
     # TODO: improve dbapi to list project
     projects_list = []
     if ptype in ("template", "all"):
-        projects_list += await db.load_template_projects()
+        projects_list += await db.load_template_projects(user_id=user_id)
 
     if ptype in ("user", "all"):  # standard only (notice that templates will only)
-        projects_list += await db.load_user_projects(
-            user_id=user_id, exclude_templates=True
-        )
+        projects_list += await db.load_user_projects(user_id=user_id)
 
     start = int(request.query.get("start", 0))
     count = int(request.query.get("count", len(projects_list)))
