@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "osparc-simcore RESTful API"
-  version: 0.4.1
+  version: 0.5.1
   description: "RESTful API designed for web clients"
   contact:
     name: IT'IS Foundation
@@ -53,7 +53,7 @@ paths:
   # DIAGNOSTICS ---------------------------------------------------------
   /:
     $ref: "./openapi-diagnostics.yaml#/paths/~1"
-  
+
   /health:
     $ref: "./openapi-diagnostics.yaml#/paths/~1health"
 
@@ -89,6 +89,8 @@ paths:
   /auth/confirmation/{code}:
     $ref: "./openapi-auth.yaml#/paths/~1auth~1confirmation~1{code}"
 
+  /auth/api-keys:
+    $ref: "./openapi-auth.yaml#/paths/~1auth~1api-keys"
   # USER SETTINGS ------------------------------------------------------------------
 
   /me:

@@ -14,3 +14,10 @@ Platform's API Gateway for external clients
 [image-version]https://images.microbadger.com/badges/version/itisfoundation/api-gateway.svg
 [image-commit]:https://images.microbadger.com/badges/commit/itisfoundation/api-gateway.svg
 <!------------------------->
+
+
+
+## References
+
+- [Design patterns for modern web APIs](https://blog.feathersjs.com/design-patterns-for-modern-web-apis-1f046635215) by D. Luecke
+- [API Design Guide](https://cloud.google.com/apis/design/) by Google Cloud

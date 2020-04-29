@@ -11,6 +11,7 @@ from simcore_postgres_database.webserver_models import (
     users,
     tags,
     study_tags,
+    api_keys,
 )
 
 # TODO: roles table that maps every role with allowed tasks e.g. read/write,...??
@@ -25,4 +26,5 @@ __all__ = (
     "metadata",
     "tags",
     "study_tags",
+    "api_keys",
 )

@@ -23,7 +23,7 @@ test_requirements = read_reqs(current_dir / "requirements" / "_test.txt")
 
 setup(
     name="simcore-service-webserver",
-    version="0.4.1",
+    version="0.5.1",
     packages=find_packages(where="src"),
     package_dir={"": "src",},
     include_package_data=True,
