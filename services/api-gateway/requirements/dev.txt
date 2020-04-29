@@ -12,5 +12,6 @@
 # installs current package
 -e .
 
-# common dev-tools as well
+# basic dev tools
 -r ../../../requirements.txt
+watchdog[watchmedo]
