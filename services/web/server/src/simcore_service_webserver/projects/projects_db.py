@@ -230,25 +230,13 @@ class ProjectDBAPI:
 
         async with self.engine.acquire() as conn:
             user_groups: List[str] = await self.__load_user_groups(conn, user_id)
-
-            if only_published:
-                expression = and_(
-                    projects.c.type == ProjectType.TEMPLATE,
-                    projects.c.published == True,
-                )
-            else:
-                expression = projects.c.type == ProjectType.TEMPLATE
-
-            query = select([projects]).where(expression)
-            db_projects: List[Dict] = await self.__load_projects(conn, query)
-
-            # filter with group access
-            def _filter_by_group_access(project: Dict) -> bool:
-                return any(
-                    f"{group}" in project["accessRights"] for group in user_groups
-                )
-
-            db_projects = filter(_filter_by_group_access, db_projects)
+            # NOTE: in order to use specific postgresql function jsonb_exists_any we use raw call here
+            query = f"""
+SELECT *
+FROM projects
+WHERE projects.type = 'TEMPLATE' {'AND projects.published ' if only_published else ''}AND jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group}'" for group in user_groups)}])
+            """
+            db_projects = await self.__load_projects(conn, query)
             projects_list.extend(db_projects)
 
         return projects_list
