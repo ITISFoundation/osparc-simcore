@@ -17,6 +17,7 @@ from .settings import AppSettings
 
 FAVICON = "https://osparc.io/resource/osparc/favicon.png"
 LOGO = "https://raw.githubusercontent.com/ITISFoundation/osparc-manual/b809d93619512eb60c827b7e769c6145758378d0/_media/osparc-logo.svg"
+PYTHON_CODE_SAMPLES_BASE_URL = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore-python-client/master/code_samples"
 
 
 def _custom_openapi(zelf: FastAPI) -> Dict:
@@ -40,9 +41,12 @@ def _custom_openapi(zelf: FastAPI) -> Dict:
         #
         # TODO: load code samples add if function is contained in sample
         # TODO: See if openapi-cli does this already
-        #
+        # TODO: check that all url are available before exposing
         openapi_schema["paths"]["/meta"]["get"]["x-code-samples"] = [
-            {"lang": "python", "source": "print('hello world')",},
+            {
+                "lang": "python",
+                "source": {"$ref": f"{PYTHON_CODE_SAMPLES_BASE_URL}/meta/get.py"},
+            },
         ]
 
         zelf.openapi_schema = openapi_schema

@@ -61,3 +61,61 @@ replay: .cookiecutterrc ## re-applies cookiecutter
 		--config-file=$< \
 		--output-dir="$(abspath $(CURDIR)/..)" \
 		"/home/crespo/devp/osparc-simcore/services/api-gateway/../../../cookiecutter-simcore-py-fastapi"
+
+
+
+# GENERATION python client -------------------------------------------------
+.PHONY: python-client generator-help
+# SEE https://openapi-generator.tech/docs/usage#generate
+# SEE https://openapi-generator.tech/docs/generators/python
+
+GIT_USER_ID := ITISFoundation
+GIT_REPO_ID := osparc-simcore-python-client
+
+SCRIPTS_DIR := $(abspath $(CURDIR)/../../scripts)
+GENERATOR_NAME := python
+
+# TODO: put instead to additional-props.yaml and --config=openapi-generator/python-config.yaml
+ADDITIONAL_PROPS := \
+	generateSourceCodeOnly=false\
+	hideGenerationTimestamp=true\
+	library=urllib3\
+	packageName=osparc\
+	packageUrl=https://github.com/$(GIT_USER_ID)/${GIT_REPO_ID}.git\
+	packageVersion=$(APP_VERSION)\
+	projectName=osparc-simcore-python-api
+ADDITIONAL_PROPS := $(foreach prop,$(ADDITIONAL_PROPS),$(strip $(prop)))
+
+null  :=
+space := $(null) #
+comma := ,
+
+openapi.json:
+	wget http://localhost:8001/api/v0/openapi.json
+
+# TODO: code_samples still added by hand!
+client:
+	# cloning client repo
+	git clone git@github.com:$(GIT_USER_ID)/$(GIT_REPO_ID).git $@
+
+python-client: openapi.json client ## runs python client generator
+	# running python generator on $(word 2,$^)
+	cd $(CURDIR); \
+	$(SCRIPTS_DIR)/openapi-generator-cli.bash generate \
+		--input-spec=/local/$< \
+		--generator-name=$(GENERATOR_NAME) \
+		--output=/local/$(word 2,$^) \
+		--git-user-id=$(GIT_USER_ID)\
+		--git-repo-id=$(GIT_REPO_ID)\
+		--minimal-update\
+		--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS)))\
+		--package-name=osparc\
+		--release-note="Updated tof $(APP_VERSION)"\
+		--remove-operation-id-prefix
+
+
+generator-help: ## help on client-api generator
+	# generate help
+	@$(SCRIPTS_DIR)/openapi-generator-cli.bash help generate
+	# generator config help
+	@$(SCRIPTS_DIR)/openapi-generator-cli.bash config-help -g $(GENERATOR_NAME)
