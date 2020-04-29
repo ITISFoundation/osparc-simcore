@@ -69,6 +69,7 @@ replay: .cookiecutterrc ## re-applies cookiecutter
 # SEE https://openapi-generator.tech/docs/usage#generate
 # SEE https://openapi-generator.tech/docs/generators/python
 
+# NOTE: assumes this repo exists
 GIT_USER_ID := ITISFoundation
 GIT_REPO_ID := osparc-simcore-python-client
 
@@ -90,12 +91,13 @@ null  :=
 space := $(null) #
 comma := ,
 
+# TODO: fix this, shall be generated upon start when flag is provided
 openapi.json:
 	wget http://localhost:8001/api/v0/openapi.json
 
 # TODO: code_samples still added by hand!
 client:
-	# cloning client repo
+	# cloning $(GIT_USER_ID)/$(GIT_REPO_ID) -> $@
 	git clone git@github.com:$(GIT_USER_ID)/$(GIT_REPO_ID).git $@
 
 python-client: openapi.json client ## runs python client generator
