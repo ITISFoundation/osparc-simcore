@@ -26,7 +26,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     const mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
     const sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
       minWidth: 0,
-      maxWidth: 700,
       width: 400
     });
     sidePanel.getContentElement().setStyle("border-left", "1px solid " + qx.theme.manager.Color.getInstance().resolve("material-button-background"));
