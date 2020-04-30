@@ -13,6 +13,7 @@ from servicelib import openapi
 from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
 
 from . import handlers as login_handlers
+from . import api_keys_handlers
 
 log = logging.getLogger(__name__)
 
@@ -42,6 +43,9 @@ def create(specs: openapi.Spec) -> List[web.RouteDef]:
         "auth_change_email": login_handlers.change_email,
         "auth_change_password": login_handlers.change_password,
         "auth_confirmation": login_handlers.email_confirmation,
+        "create_api_key": api_keys_handlers.create_api_key,
+        "delete_api_key": api_keys_handlers.delete_api_key,
+        "list_api_keys": api_keys_handlers.list_api_keys,
     }
 
     routes = map_handlers_with_operations(

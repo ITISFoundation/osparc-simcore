@@ -136,6 +136,8 @@ qx.Class.define("osparc.data.Permissions", {
           "studies.user.create",
           "storage.datcore.read",
           "preferences.user.update",
+          "preferences.apikey.create",
+          "preferences.apikey.delete",
           "preferences.token.create",
           "preferences.token.delete",
           "preferences.tag",

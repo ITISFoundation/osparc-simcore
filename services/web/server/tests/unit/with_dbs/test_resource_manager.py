@@ -1,35 +1,26 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
 
-from asyncio import Future, sleep
+from asyncio import sleep
 from copy import deepcopy
-from typing import Dict
-from uuid import uuid4
 
 import pytest
 import socketio
+import socketio.exceptions
 from aiohttp import web
 from mock import call
-from yarl import URL
 
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import NewProject
 from servicelib.application import create_safe_application
-from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
-from simcore_service_webserver.resource_manager import (
-    config,
-    registry,
-    setup_resource_manager,
-)
+from simcore_service_webserver.resource_manager import config, setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import get_registry
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
@@ -37,11 +28,13 @@ from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_sockets
 from simcore_service_webserver.users import setup_users
-from simcore_service_webserver.utils import now_str
 
 API_VERSION = "v0"
 GARBAGE_COLLECTOR_INTERVAL = 1
 SERVICE_DELETION_DELAY = 1
+
+# SEE https://github.com/miguelgrinberg/python-socketio/releases
+SIO_VERSION = tuple(int(digit) for digit in socketio.__version__.split("."))
 
 
 @pytest.fixture
@@ -150,9 +143,27 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
 
 
 # ------------------------ TESTS -------------------------------
-async def test_anonymous_websocket_connection(socketio_client, client_session_id):
-    with pytest.raises(socketio.exceptions.ConnectionError):
-        await socketio_client(client_session_id())
+async def test_anonymous_websocket_connection(
+    client_session_id, socketio_url: str, security_cookie, mocker
+):
+    from yarl import URL
+
+    sio = socketio.AsyncClient(
+        ssl_verify=False
+    )  # enginio 3.10.0 introduced ssl verification
+    url = str(URL(socketio_url).with_query({"client_session_id": client_session_id()}))
+    headers = {}
+    if security_cookie:
+        # WARNING: engineio fails with empty cookies. Expects "key=value"
+        headers.update({"Cookie": security_cookie})
+
+    socket_connect_error = mocker.Mock()
+    sio.on("connect_error", handler=socket_connect_error)
+    await sio.connect(url, headers=headers)
+    assert sio.sid
+    socket_connect_error.assert_called_once()
+    await sio.disconnect()
+    assert not sio.sid
 
 
 @pytest.mark.parametrize(
@@ -204,7 +215,7 @@ async def test_websocket_multiple_connections(
     NUMBER_OF_SOCKETS = 5
     # connect multiple clients
     clients = []
-    for socket in range(NUMBER_OF_SOCKETS):
+    for socket_count in range(1, NUMBER_OF_SOCKETS + 1):
         cur_client_session_id = client_session_id()
         sio = await socketio_client(cur_client_session_id)
         resource_key = {
@@ -215,19 +226,22 @@ async def test_websocket_multiple_connections(
         assert [sio.sid] == await socket_registry.find_resources(
             resource_key, "socket_id"
         )
-        assert len(
-            await socket_registry.find_resources(
-                {"user_id": str(logged_user["id"]), "client_session_id": "*"},
-                "socket_id",
+        assert (
+            len(
+                await socket_registry.find_resources(
+                    {"user_id": str(logged_user["id"]), "client_session_id": "*"},
+                    "socket_id",
+                )
             )
-        ) == (socket + 1)
+            == socket_count
+        )
         clients.append(sio)
 
-    # NOTE: the socket.io client needs the websockets package in order to upgrade to websocket transport
-    # disconnect multiple clients
     for sio in clients:
         sid = sio.sid
         await sio.disconnect()
+        # need to attend the disconnect event to pass through the socketio internal queues
+        await sleep(0.1)  # must be >= 0.01 to work without issues, added some padding
         assert not sio.sid
         assert not await socket_registry.find_keys(("socket_id", sio.sid))
         assert not sid in await socket_registry.find_resources(

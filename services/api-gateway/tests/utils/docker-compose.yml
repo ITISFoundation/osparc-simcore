@@ -1,0 +1,27 @@
+version: '3.4'
+services:
+  postgres:
+    image: postgres:10
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-test}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-test}
+      - POSTGRES_DB=${POSTGRES_PASSWORD:-test}
+      - POSTGRES_HOST=${POSTGRES_HOST:-localhost}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+    ports:
+      - "5432:5432"
+    # https://www.postgresql.org/docs/10/runtime-config-logging.html#GUC-LOG-STATEMENT
+    command:
+      [
+        "postgres",
+        "-c", "log_connections=true",
+        "-c", "log_disconnections=true",
+        "-c", "log_duration=true",
+        "-c", "log_line_prefix=[%p] [%a] [%c] [%x] "
+      ]
+  adminer:
+    image: adminer
+    ports:
+      - 18080:8080
+    depends_on:
+      - postgres

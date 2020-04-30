@@ -11,7 +11,7 @@ export APP_VERSION = $(shell cat VERSION)
 
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)
-	@$(MAKE) --directory requirements reqs
+	@$(MAKE_C) requirements reqs
 
 
 .PHONY: install-dev install-prod install-ci
@@ -58,7 +58,7 @@ down-pg: ## stops pg fixture
 .PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
 build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## docker image build in many flavours
 	# building ${APP_NAME} ...
-	@$(MAKE) --directory ${REPO_BASE_DIR} $@ target=${APP_NAME}
+	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
 
 .PHONY: openapi-specs

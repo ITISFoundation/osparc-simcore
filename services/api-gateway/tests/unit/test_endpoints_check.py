@@ -1,6 +1,7 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=unused-variable
+# pylint: disable=unused-argument
+# pylint: disable=redefined-outer-name
+
 import pytest
 from starlette.testclient import TestClient
 
@@ -30,8 +31,7 @@ def client(monkeypatch) -> TestClient:
         yield cli
 
 
-def test_read_healthcheck(client: TestClient):
-    response = client.get("/")
+def test_read_service_meta(client: TestClient):
+    response = client.get("/meta")
     assert response.status_code == 200
-    assert "api_version" in response.json()
-    assert response.json()["api_version"] == api_version
+    assert response.json()["version"] == api_version
