@@ -62,7 +62,7 @@ async def service_submission(request: web.Request):
                 ),
                 "subject": subject if is_real_usage else "TEST: " + subject,
             },
-            [(filename, filedata)] if filedata else None,
+            [(filename, filedata), ("metadata.json", json.dumps(data, indent=4))] if filedata else None,
         )
     except Exception:
         log.exception("Error while sending the 'new service submission' mail.")
