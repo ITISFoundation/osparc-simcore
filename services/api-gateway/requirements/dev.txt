@@ -15,3 +15,11 @@
 # basic dev tools
 -r ../../../requirements.txt
 watchdog[watchmedo]
+
+## NOTE: Copied from ../../../requirements.txt to avoid mounting
+#        basedir in docker during devel-mode.
+#  TODO: Better solution needed!
+black
+pip-tools
+bump2version
+rope
