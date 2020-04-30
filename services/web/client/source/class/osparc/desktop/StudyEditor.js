@@ -180,41 +180,45 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }
       });
       nodesTree.addListener("exportNode", e => {
-        if (!osparc.data.Permissions.getInstance().canDo("study.node.export", true)) {
-          return;
-        }
         const nodeId = e.getData();
-        const node = this.getStudy().getWorkbench().getNode(nodeId);
-        if (node && node.isContainer()) {
-          const exportGroupView = new osparc.component.export.ExportGroup(node);
-          const window = new qx.ui.window.Window(this.tr("Export: ") + node.getLabel()).set({
-            appearance: "service-window",
-            layout: new qx.ui.layout.Grow(),
-            autoDestroy: true,
-            contentPadding: 0,
-            width: 700,
-            height: 700,
-            showMinimize: false,
-            modal: true
-          });
-          window.add(exportGroupView);
-          window.center();
-          window.open();
-
-          window.addListener("close", () => {
-            exportGroupView.tearDown();
-          }, this);
-
-          exportGroupView.addListener("finished", () => {
-            window.close();
-          }, this);
-        }
+        this.__exportMacro(nodeId);
       });
 
       workbenchUI.addListener("changeSelectedNode", e => {
         const nodeId = e.getData();
         nodesTree.nodeSelected(nodeId);
       });
+    },
+
+    __exportMacro: function(nodeId) {
+      if (!osparc.data.Permissions.getInstance().canDo("study.node.export", true)) {
+        return;
+      }
+      const node = this.getStudy().getWorkbench().getNode(nodeId);
+      if (node && node.isContainer()) {
+        const exportGroupView = new osparc.component.export.ExportGroup(node);
+        const window = new qx.ui.window.Window(this.tr("Export: ") + node.getLabel()).set({
+          appearance: "service-window",
+          layout: new qx.ui.layout.Grow(),
+          autoDestroy: true,
+          contentPadding: 0,
+          width: 700,
+          height: 700,
+          showMinimize: false,
+          modal: true
+        });
+        window.add(exportGroupView);
+        window.center();
+        window.open();
+
+        window.addListener("close", () => {
+          exportGroupView.tearDown();
+        }, this);
+
+        exportGroupView.addListener("finished", () => {
+          window.close();
+        }, this);
+      }
     },
 
     nodeSelected: function(nodeId) {
