@@ -23,7 +23,7 @@ then
 fi
 
 # RUNNING application ----------------------------------------
-if [ "${SC_BOOT_MODE}" == "debug-ptvsd" ]
+if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]
 then
   # NOTE: ptvsd is programmatically enabled inside of the service
   # this way we can have reload in place as well

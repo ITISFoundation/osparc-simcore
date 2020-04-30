@@ -80,5 +80,5 @@ async def delete_tag(request: web.Request):
     async with engine.acquire() as conn:
         # pylint: disable=no-value-for-parameter
         query = tags.delete().where(and_(tags.c.id == tag_id, tags.c.user_id == uid))
-        async with conn.execute(query) as result:
+        async with conn.execute(query):
             raise web.HTTPNoContent(content_type="application/json")

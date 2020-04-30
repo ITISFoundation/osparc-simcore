@@ -8,7 +8,7 @@ VENV_DIR ?= $(abspath $(ROOT_DIR)/.venv)
 
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)
-	@$(MAKE) --directory requirements reqs
+	@$(MAKE_C) requirements reqs
 
 
 .PHONY: install

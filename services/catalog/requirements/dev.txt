@@ -6,6 +6,9 @@
 #   pip install -r requirements/dev.txt
 #
 
+# basic dev tools
+-r ../../../requirements.txt
+
 # installs base + tests requirements
 -r _test.txt
 
