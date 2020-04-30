@@ -6,10 +6,6 @@
 #   pip install -r requirements/dev.txt
 #
 
-# tools
-bump2version
-watchdog[watchmedo]
-
 # installs base + tests requirements
 -r _test.txt
 
@@ -22,3 +18,7 @@ watchdog[watchmedo]
 
 # installs current package
 -e .
+
+# basic dev tools
+-r ../../../../requirements.txt
+watchdog[watchmedo]

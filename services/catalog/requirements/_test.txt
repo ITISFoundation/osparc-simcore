@@ -8,17 +8,14 @@ aiofiles==0.4.0           # via -r _base.txt, fastapi
 aiohttp==3.6.2            # via pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r _base.txt
 aniso8601==7.0.0          # via -r _base.txt, graphene
-appdirs==1.4.3            # via black
 astroid==2.3.3            # via pylint
 async-exit-stack==1.0.1   # via -r _base.txt, fastapi
 async-generator==1.10     # via -r _base.txt, fastapi
 async-timeout==3.0.1      # via aiohttp
-attrs==19.3.0             # via aiohttp, black, pytest, pytest-docker
-black==19.10b0            # via -r ../../../requirements.txt
-bump2version==1.0.0       # via -r ../../../requirements.txt
+attrs==19.3.0             # via aiohttp, pytest, pytest-docker
 certifi==2019.11.28       # via -r _base.txt, requests
 chardet==3.0.4            # via -r _base.txt, aiohttp, requests
-click==7.0                # via -r _base.txt, black, pip-tools, uvicorn
+click==7.0                # via -r _base.txt, uvicorn
 codecov==2.0.16           # via -r _test.in
 coverage==5.0.3           # via codecov, coveralls, pytest-cov
 coveralls==1.11.1         # via -r _test.in
@@ -45,8 +42,6 @@ mccabe==0.6.1             # via pylint
 more-itertools==8.2.0     # via pytest
 multidict==4.7.4          # via -r _base.txt, aiohttp, yarl
 packaging==20.3           # via pytest
-pathspec==0.7.0           # via black
-pip-tools==4.5.1          # via -r ../../../requirements.txt
 pluggy==0.13.1            # via pytest
 promise==2.3              # via -r _base.txt, graphql-core, graphql-relay
 psycopg2-binary==2.8.4    # via -r _base.txt, aiopg, sqlalchemy
@@ -64,17 +59,14 @@ pytest==5.3.5             # via -r _test.in, pytest-aiohttp, pytest-cov, pytest-
 python-dateutil==2.8.1    # via faker
 python-multipart==0.0.5   # via -r _base.txt, fastapi
 pyyaml==5.3               # via -r _base.txt, fastapi
-regex==2020.2.20          # via black
 requests==2.22.0          # via -r _base.txt, codecov, coveralls, fastapi
-rope==0.16.0              # via -r ../../../requirements.txt
 rx==1.6.1                 # via -r _base.txt, graphql-core
-six==1.14.0               # via -r _base.txt, astroid, graphene, graphql-core, graphql-relay, packaging, pip-tools, promise, python-dateutil, python-multipart, tenacity
+six==1.14.0               # via -r _base.txt, astroid, graphene, graphql-core, graphql-relay, packaging, promise, python-dateutil, python-multipart, tenacity
 sqlalchemy[postgresql_psycopg2binary]==1.3.13  # via -r _base.txt, aiopg
 starlette==0.12.9         # via -r _base.txt, fastapi
 tenacity==6.0.0           # via -r _base.txt
 text-unidecode==1.3       # via faker
-toml==0.10.0              # via black
-typed-ast==1.4.1          # via astroid, black
+typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.1  # via aiohttp
 ujson==1.35               # via -r _base.txt, fastapi
 urllib3==1.25.8           # via -r _base.txt, requests
