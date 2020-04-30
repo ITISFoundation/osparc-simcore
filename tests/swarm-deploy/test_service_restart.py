@@ -66,14 +66,35 @@ def deployed_simcore_stack(make_up_prod: Dict, docker_client: DockerClient) -> L
     'simcore_webserver',
     'simcore_storage',
     'simcore_catalog',
+    # 'simcore_director', TODO: uncomment when https://github.com/ITISFoundation/osparc-simcore/issues/1466 is FIXED
 ])
 def test_graceful_restart_services(
     service_name: str,
     deployed_simcore_stack: List[Service],
     make_up_prod: Dict):
     """
-        NOTE: loop fixture makes this test async
+        This tests ensures that the applications running in the service above
+        can be properly restarted.
+        The test sends a kill signal and expects the app process inside to
+        receive it and shut-down gracefuly returning statuscode 0.
+
         NOTE: needs to run AFTER test_core_service_running
+
+
+    Did this case FAILED? These are the typical reasons:
+
+    Check good practices:
+        - use exec form for ENTRYPOINT in Dockerfile, i.e ["executable", "arg1", "arg2"]
+        - if entrypoint is a shell-script, then exec the app
+        - start docker with tini as PID1, i.e. docker run with --init
+        - use gosu utility in ENTRYPOINT instead of sudo/su
+
+    GOOD References worth reading to understand this topic:
+        https://blog.container-solutions.com/6-dockerfile-tips-official-images
+        https://hynek.me/articles/docker-signals/
+        https://kkc.github.io/2018/06/06/gracefully-shutdown-docker-container/
+        https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+
     """
     service = next( s for s in deployed_simcore_stack if s.name == service_name )
 

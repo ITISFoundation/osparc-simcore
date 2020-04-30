@@ -6,7 +6,7 @@ include ../../scripts/common.Makefile
 
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)
-	@$(MAKE) --directory requirements reqs
+	@$(MAKE_C) requirements reqs
 
 
 .PHONY: install-dev install-prod install-ci
