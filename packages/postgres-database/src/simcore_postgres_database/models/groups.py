@@ -121,8 +121,6 @@ END; $$ LANGUAGE 'plpgsql';
 )
 
 
-# TODO: add protection against removal of everyone group and primary groups?
-
 sa.event.listen(groups, "before_create", set_check_uniqueness_procedure, insert=True)
 sa.event.listen(groups, "after_create", set_add_unique_everyone_group)
 sa.event.listen(groups, "after_create", set_group_delete_procedure)
