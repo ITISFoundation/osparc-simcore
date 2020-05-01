@@ -40,7 +40,7 @@ groups = sa.Table(
         server_default=func.now(),
         onupdate=func.now(),  # this will auto-update on modification
     ),
-    sa.CheckConstraint("check_group_uniqueness(name, type) = 0"),
+    sa.CheckConstraint("check_group_uniqueness(name, text(type)) = 0"),
 )
 
 user_to_groups = sa.Table(
