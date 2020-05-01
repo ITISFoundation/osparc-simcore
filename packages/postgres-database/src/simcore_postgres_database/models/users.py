@@ -113,7 +113,7 @@ DECLARE
 BEGIN
     IF TG_OP = 'INSERT' THEN
         -- set primary group
-        INSERT INTO "groups" ("name", "description") VALUES (NEW.name, 'primary group') RETURNING gid INTO group_id;
+        INSERT INTO "groups" ("name", "description", "type") VALUES (NEW.name, 'primary group', 'PRIMARY') RETURNING gid INTO group_id;
         INSERT INTO "user_to_groups" ("uid", "gid") VALUES (NEW.id, group_id);
         UPDATE "users" SET "primary_gid" = group_id WHERE "id" = NEW.id;
         -- set everyone goup

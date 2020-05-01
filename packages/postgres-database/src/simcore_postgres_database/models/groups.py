@@ -77,6 +77,18 @@ user_to_groups = sa.Table(
     sa.UniqueConstraint("uid", "gid"),
 )
 
+# ------------------------ TRIGGERS
+
+group_delete_trigger = sa.DDL(
+    f"""
+DROP TRIGGER IF EXISTS group_delete_trigger on groups;
+CREATE TRIGGER group_delete_trigger
+BEFORE DELETE ON groups
+    FOR EACH ROW
+    EXECUTE PROCEDURE group_delete_procedure();
+"""
+)
+
 # ---------------- PROCEDURES
 set_check_uniqueness_procedure = sa.DDL(
     """
@@ -96,8 +108,22 @@ INSERT INTO "groups" ("name", "description", "type") VALUES ('Everyone', 'all us
 """
 )
 
+set_group_delete_procedure = sa.DDL(
+    """
+CREATE OR REPLACE FUNCTION group_delete_procedure() RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.type = 'EVERYONE' THEN
+        RAISE EXCEPTION 'Everyone group cannot be deleted';
+    END IF;
+    RETURN OLD;
+END; $$ LANGUAGE 'plpgsql';
+"""
+)
+
 
 # TODO: add protection against removal of everyone group and primary groups?
 
-sa.event.listen(groups, "before_create", set_check_uniqueness_procedure)
+sa.event.listen(groups, "before_create", set_check_uniqueness_procedure, insert=True)
 sa.event.listen(groups, "after_create", set_add_unique_everyone_group)
+sa.event.listen(groups, "after_create", set_group_delete_procedure)
+sa.event.listen(groups, "after_create", group_delete_trigger)

@@ -107,6 +107,16 @@ AFTER INSERT OR UPDATE OR DELETE ON users
 """
     )
 
+    group_delete_trigger = sa.DDL(
+    f"""
+DROP TRIGGER IF EXISTS group_delete_trigger on groups;
+CREATE TRIGGER group_delete_trigger
+BEFORE DELETE ON groups
+    FOR EACH ROW
+    EXECUTE PROCEDURE group_delete_procedure();
+"""
+    )
+
     set_user_groups_procedure = sa.DDL(
         f"""
 CREATE OR REPLACE FUNCTION set_user_groups() RETURNS TRIGGER AS $$
@@ -115,7 +125,7 @@ DECLARE
 BEGIN
     IF TG_OP = 'INSERT' THEN
         -- set primary group
-        INSERT INTO "groups" ("name", "description") VALUES (NEW.name, 'primary group') RETURNING gid INTO group_id;
+        INSERT INTO "groups" ("name", "description", "type") VALUES (NEW.name, 'primary group', 'PRIMARY') RETURNING gid INTO group_id;
         INSERT INTO "user_to_groups" ("uid", "gid") VALUES (NEW.id, group_id);
         UPDATE "users" SET "primary_gid" = group_id WHERE "id" = NEW.id;
         -- set everyone goup        
@@ -135,7 +145,22 @@ END; $$ LANGUAGE 'plpgsql';
 INSERT INTO "groups" ("name", "description", "type") VALUES ('Everyone', 'all users', 'EVERYONE') ON CONFLICT DO NOTHING;
 """
     )
+
+    set_group_delete_procedure = sa.DDL(
+    """
+CREATE OR REPLACE FUNCTION group_delete_procedure() RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.type = 'EVERYONE' THEN
+        RAISE EXCEPTION 'Everyone group cannot be deleted';
+    END IF;
+    RETURN OLD;
+END; $$ LANGUAGE 'plpgsql';
+"""
+    )
+
     op.execute(set_add_unique_everyone_group)
+    op.execute(set_group_delete_procedure)
+    op.execute(group_delete_trigger)
     op.execute(set_user_groups_procedure)
     op.execute(new_user_trigger)
 
@@ -153,5 +178,7 @@ def downgrade():
     # manually added migration
     op.execute("DROP TRIGGER IF EXISTS user_modification on users;")
     op.execute("DROP FUNCTION set_user_groups()")
+    op.execute("DROP TRIGGER IF EXISTS group_delete_trigger on groups")
+    op.execute("DROP FUNCTION group_delete_procedure()")
     op.execute("DROP FUNCTION check_group_uniqueness(name text, type text)")
     op.alter_column("users", "created_at", server_default=None)
