@@ -103,20 +103,23 @@ DROP TRIGGER IF EXISTS user_modification on users;
 CREATE TRIGGER user_modification
 AFTER INSERT OR UPDATE OR DELETE ON users
     FOR EACH ROW
-    EXECUTE PROCEDURE set_user_primary_group();
+    EXECUTE PROCEDURE set_user_groups();
 """
     )
 
-    set_user_primary_group_procedure = sa.DDL(
+    set_user_groups_procedure = sa.DDL(
         f"""
-CREATE OR REPLACE FUNCTION set_user_primary_group() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION set_user_groups() RETURNS TRIGGER AS $$
 DECLARE
     group_id BIGINT;
 BEGIN
     IF TG_OP = 'INSERT' THEN
+        -- set primary group
         INSERT INTO "groups" ("name", "description") VALUES (NEW.name, 'primary group') RETURNING gid INTO group_id;
         INSERT INTO "user_to_groups" ("uid", "gid") VALUES (NEW.id, group_id);
         UPDATE "users" SET "primary_gid" = group_id WHERE "id" = NEW.id;
+        -- set everyone goup        
+        INSERT INTO "user_to_groups" ("uid", "gid") VALUES (NEW.id, (SELECT "gid" FROM "groups" WHERE "type" = 'EVERYONE'));
     ELSIF TG_OP = 'UPDATE' THEN
         UPDATE "groups" SET "name" = NEW.name WHERE "gid" = NEW.primary_gid;
     ELSEIF TG_OP = 'DELETE' THEN
@@ -127,7 +130,13 @@ END; $$ LANGUAGE 'plpgsql';
 """
     )
 
-    op.execute(set_user_primary_group_procedure)
+    set_add_unique_everyone_group = sa.DDL(
+        """
+INSERT INTO "groups" ("name", "description", "type") VALUES ('Everyone', 'all users', 'EVERYONE') ON CONFLICT DO NOTHING;
+"""
+    )
+    op.execute(set_add_unique_everyone_group)
+    op.execute(set_user_groups_procedure)
     op.execute(new_user_trigger)
 
     op.alter_column("users", "created_at", server_default=sa.text("now()"))
@@ -143,6 +152,6 @@ def downgrade():
     # ### end Alembic commands ###
     # manually added migration
     op.execute("DROP TRIGGER IF EXISTS user_modification on users;")
-    op.execute("DROP FUNCTION set_user_primary_group()")
+    op.execute("DROP FUNCTION set_user_groups()")
     op.execute("DROP FUNCTION check_group_uniqueness(name text, type text)")
     op.alter_column("users", "created_at", server_default=None)

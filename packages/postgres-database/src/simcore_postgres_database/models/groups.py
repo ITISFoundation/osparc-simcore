@@ -90,4 +90,14 @@ END; $$ LANGUAGE 'plpgsql';
 """
 )
 
+set_add_unique_everyone_group = sa.DDL(
+    """
+INSERT INTO "groups" ("name", "description", "type") VALUES ('Everyone', 'all users', 'EVERYONE') ON CONFLICT DO NOTHING;
+"""
+)
+
+
+# TODO: add protection against removal of everyone group and primary groups?
+
 sa.event.listen(groups, "before_create", set_check_uniqueness_procedure)
+sa.event.listen(groups, "after_create", set_add_unique_everyone_group)
