@@ -1,7 +1,7 @@
 """add groups table
 
 Revision ID: 64614dc0fada
-Revises: f3555bb4bc34
+Revises: 16ee7d73b9cc
 Create Date: 2020-04-22 13:42:06.572011+00:00
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "64614dc0fada"
-down_revision = "f3555bb4bc34"
+down_revision = "16ee7d73b9cc"
 branch_labels = None
 depends_on = None
 
