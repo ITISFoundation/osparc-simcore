@@ -37,7 +37,7 @@ log = logging.getLogger(__name__)
 
 APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
 DB_EXCLUSIVE_COLUMNS = ["type", "id", "published"]
-
+OTHERS_GROUP = "others"
 
 # TODO: check here how schema to model db works!?
 def _convert_to_db_names(project_document_data: Dict) -> Dict:
@@ -242,7 +242,7 @@ WHERE projects.type = 'TEMPLATE' {'AND projects.published ' if only_published el
         return projects_list
 
     async def __load_user_groups(self, conn: SAConnection, user_id: str) -> List[str]:
-        user_groups: List[str] = []
+        user_groups: List[str] = [OTHERS_GROUP]
         query = select([user_to_groups.c.gid]).where(user_to_groups.c.uid == user_id)
         async for row in conn.execute(query):
             user_groups.append(row[user_to_groups.c.gid])
