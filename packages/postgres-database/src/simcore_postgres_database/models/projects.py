@@ -8,6 +8,7 @@ import logging
 
 import sqlalchemy as sa
 from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import metadata
 
@@ -56,7 +57,7 @@ projects = sa.Table(
         server_default=func.now(),
         onupdate=func.now(),  # this will auto-update on modification
     ),
-    sa.Column("access_rights", sa.dialects.postgresql.JSONB, nullable=False),
+    sa.Column("access_rights", JSONB, nullable=False),
     sa.Column("workbench", sa.JSON, nullable=False),
     sa.Column("published", sa.Boolean, nullable=False, default=False),
 )
