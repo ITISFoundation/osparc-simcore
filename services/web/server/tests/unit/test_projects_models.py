@@ -100,7 +100,7 @@ async def test_add_projects(fake_project, user_id, mocker, mock_db_engine):
 
     db_engine.acquire.assert_called()
     mock_connection.execute.assert_called()
-    assert mock_connection.execute.call_count == 3
+    assert mock_connection.execute.call_count == 2
 
 
 # not sure this is useful...
