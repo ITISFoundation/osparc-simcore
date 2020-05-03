@@ -216,7 +216,7 @@ async def test_access_study_anonymously(
     assert real_url.endswith("#/study/%s" % guest_project["uuid"])
     _assert_same_projects(guest_project, published_project)
 
-    assert guest_project["prjOwner"] == data["login"]
+    assert guest_project["prjOwner"] == "1"
 
 
 async def test_access_study_by_logged_user(
@@ -247,4 +247,4 @@ async def test_access_study_by_logged_user(
 
     _assert_same_projects(user_project, published_project)
 
-    assert user_project["prjOwner"] == logged_user["email"]
+    assert user_project["prjOwner"] == str(logged_user["id"])
