@@ -45,7 +45,7 @@ projects = sa.Table(
             onupdate="CASCADE",
             ondelete="RESTRICT",
         ),
-        nullable=False,
+        nullable=True,
     ),
     sa.Column(
         "creation_date", sa.DateTime(), nullable=False, server_default=func.now()

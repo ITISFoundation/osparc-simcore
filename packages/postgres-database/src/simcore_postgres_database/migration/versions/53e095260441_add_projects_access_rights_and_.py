@@ -47,6 +47,7 @@ $BODY$
         "projects",
         "prj_owner",
         type_=sa.BigInteger,
+        nullable=True,
         postgresql_using="convert_prj_owner_fct(prj_owner)",
         # postgresql_using="prj_owner::bigint",
     )
@@ -82,6 +83,7 @@ $BODY$
         "projects",
         "prj_owner",
         type_=sa.String,
+        nullable=False,
         postgresql_using="convert_prj_owner_fct(prj_owner)",
         # postgresql_using="prj_owner::bigint",
     )
