@@ -234,7 +234,10 @@ class ProjectDBAPI:
             query = f"""
 SELECT *
 FROM projects
-WHERE projects.type = 'TEMPLATE' {'AND projects.published ' if only_published else ''}AND jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group}'" for group in user_groups)}])
+WHERE projects.type = 'TEMPLATE' 
+{'AND projects.published ' if only_published else ''}
+AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group}'" for group in user_groups)}])
+OR prj_owner = {user_id})
             """
             db_projects = await self.__load_projects(conn, query)
             projects_list.extend(db_projects)
