@@ -14,7 +14,7 @@ from tenacity import retry
 from servicelib.aiopg_utils import PostgresRetryPolicyUponOperation
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
-from .db_models import groups, tokens, user_to_groups, users
+from .db_models import groups, GroupType, tokens, user_to_groups, users
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_api import check_permission
 from .utils import gravatar_hash
@@ -40,6 +40,7 @@ async def get_my_profile(request: web.Request):
                         groups.c.gid,
                         groups.c.name,
                         groups.c.description,
+                        groups.c.type,
                     ],
                     use_labels=True,
                 )
@@ -65,12 +66,16 @@ async def get_my_profile(request: web.Request):
     if not user_groups:
         raise web.HTTPServerError(reason="could not find profile!")
 
-    # get the primary group
-    user_primary_group = user_groups[0]
+    # get the primary group and the all group
+    user_primary_group = all_group = {}
+    other_groups = []
     for user_group in user_groups:
         if user_group["users_primary_gid"] == user_group["groups_gid"]:
-            user_primary_group = user_groups.pop(user_groups.index(user_group))
-            break
+            user_primary_group = user_group
+        elif user_group["groups_type"] == GroupType.EVERYONE:
+            all_group = user_group
+        else:
+            other_groups.append(user_group)
 
     parts = user_primary_group["users_name"].split(".") + [""]
     return {
@@ -81,18 +86,23 @@ async def get_my_profile(request: web.Request):
         "gravatar_id": gravatar_hash(user_primary_group["users_email"]),
         "groups": {
             "me": {
-                "gid": user_primary_group["users_primary_gid"],
+                "gid": user_primary_group["groups_gid"],
                 "label": user_primary_group["groups_name"],
                 "description": user_primary_group["groups_description"],
             },
             "organizations": [
                 {
-                    "gid": user_group["groups_gid"],
-                    "label": user_group["groups_name"],
-                    "description": user_group["groups_description"],
+                    "gid": group["groups_gid"],
+                    "label": group["groups_name"],
+                    "description": group["groups_description"],
                 }
-                for user_group in user_groups
+                for group in other_groups
             ],
+            "all": {
+                "gid": all_group["groups_gid"],
+                "label": all_group["groups_name"],
+                "description": all_group["groups_description"],
+            },
         },
     }
 
