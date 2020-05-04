@@ -331,7 +331,18 @@ async def mocked_dynamic_service(loop, client, mocked_director_api):
 
 
 @pytest.fixture
+async def primary_group(client, logged_user) -> Dict[str, str]:
+    primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
+    return primary_group
+
+
+@pytest.fixture
+async def standard_groups(client, logged_user) -> List[Dict[str, str]]:
+    _, standard_groups, _ = await list_user_groups(client.app, logged_user["id"])
+    return standard_groups
+
+
+@pytest.fixture
 async def all_group(client, logged_user) -> Dict[str, str]:
-    # FIXME: get from DB instead
     _, _, all_group = await list_user_groups(client.app, logged_user["id"])
     return all_group
