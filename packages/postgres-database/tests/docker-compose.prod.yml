@@ -1,0 +1,9 @@
+version: "3.4"
+services:
+  postgres:
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  volumes:
+    postgres_data:
+      external: true
+      name: ${POSTGRES_DATA_VOLUME}
