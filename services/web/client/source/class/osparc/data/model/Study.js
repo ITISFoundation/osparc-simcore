@@ -193,8 +193,7 @@ qx.Class.define("osparc.data.model.Study", {
       const properties = this.constructor.$$properties;
       for (let key in properties) {
         const value = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
-        // ToDo OM: remove this when backend supports accessRights
-        if (value !== null && key !== "accessRights") {
+        if (value !== null) {
           // only put the value in the payload if there is a value
           jsonObject[key] = value;
         }
