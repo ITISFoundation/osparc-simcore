@@ -32,7 +32,7 @@ qx.Class.define("osparc.component.widget.OrganizationListItem", {
   },
 
   properties: {
-    GID: {
+    gid: {
       check: "String",
       nullable: false
     },
