@@ -2,15 +2,12 @@
 # Specifies third-party dependencies for 'services/web/server/src'
 #
 
+# NOTE: These input-requirements under packages are tested using latest updates
 -r ../../../../packages/postgres-database/requirements/_base.in
 -r ../../../../packages/service-library/requirements/_base.in
 
-psycopg2-binary     # enforces binary version
-sqlalchemy>=1.3.3   # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
-
 
 aio-pika
-aiohttp
 aiohttp_jinja2
 aiohttp_session[secure]
 aiohttp_security
@@ -28,7 +25,4 @@ jsondiff
 passlib
 python-socketio
 semantic_version
-tenacity
-trafaret
-trafaret_config
 aiodebug

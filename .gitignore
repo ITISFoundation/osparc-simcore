@@ -129,7 +129,7 @@ services/docker-compose.stack.*.yml
 
 # Any generated output folder (e.g. codegen, build, ...)
 out/
-tmp/
+**/tmp/
 
 # See .vscode-template
 pytest.ini
@@ -149,4 +149,3 @@ prof/
 
 # outputs from make
 .stack-*.yml
-services/web/server/tests/data/static/resource/statics.json

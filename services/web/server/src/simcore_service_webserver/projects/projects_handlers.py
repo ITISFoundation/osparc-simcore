@@ -289,7 +289,7 @@ async def close_project(request: web.Request) -> web.Response:
         from .projects_api import get_project_for_user
 
         with managed_resource(user_id, client_session_id, request.app) as rt:
-            project = await get_project_for_user(
+            await get_project_for_user(
                 request.app,
                 project_uuid=project_uuid,
                 user_id=user_id,

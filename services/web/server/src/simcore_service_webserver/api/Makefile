@@ -17,7 +17,7 @@ API_COMMON_JSON_SCHEMAS = $(shell find ${API_SPECS_DIR}/common/schemas -type f -
 .PHONY: .update-schemas
 .update-schemas:
 	# Convert common schemas to openapi-compatible schemas
-	@$(MAKE) --directory ${API_SPECS_DIR}/common/schemas
+	$(MAKE) --no-print-directory --directory ${API_SPECS_DIR}/common/schemas
 	# Updating ${API_SPECS_DIR}/schemas with common json-schemas (CP fails in MacOS)
 	@cp --target-directory=${APP_API_DIR}/schemas \
 		--verbose \
@@ -37,4 +37,4 @@ ${OAS_TARGET}: ${OAS_SOURCES} .update-schemas
 .PHONY: openapi-specs
 openapi-specs: ${OAS_TARGET} ## creates and validates OpenAPI specs
 	# Validating bundled '${OAS_TARGET}'
-	@swagger-cli validate $<
+	swagger-cli validate $<
