@@ -58,7 +58,10 @@ async def create_project(
     new_project = await db.add_project(
         project_data, user_id, force_project_uuid=force_uuid
     )
-    assert new_project["uuid"] == project_data["uuid"]
+    if "template-uuid-" in project_data["uuid"]:
+        assert new_project["uuid"] != project_data["uuid"]
+    else:
+        assert new_project["uuid"] == project_data["uuid"]
 
     for key in DB_EXCLUSIVE_COLUMNS:
         project_data.pop(key, None)
