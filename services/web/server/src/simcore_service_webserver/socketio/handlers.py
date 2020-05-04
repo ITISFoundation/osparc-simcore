@@ -21,6 +21,7 @@ from ..resource_manager.websocket_manager import managed_resource, get_registry
 from ..resource_manager.config import get_service_deletion_timeout
 from .config import get_socket_server
 from .handlers_utils import register_socketio_handler
+from .events import post_messages
 
 ANONYMOUS_USER_ID = -1
 _SOCKET_IO_AIOHTTP_REQUEST_KEY = "aiohttp.request"
@@ -48,6 +49,16 @@ async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
         raise SocketIOConnectionError("authentification failed")
     except Exception as exc:  # pylint: disable=broad-except
         raise SocketIOConnectionError(f"Unexpected error: {exc}")
+
+    # send service_deletion_timeout to client
+    sio = get_socket_server(app)
+    # the interval should be < get_service_deletion_timeout(app) to avoid
+    # issues, assuming half of the interval and not less the 2 seconds
+    emit_interval: int = max(2, get_service_deletion_timeout(app) // 2)
+    log.info("Sending set_heartbeat_emit_interval with %s" % emit_interval)
+
+    user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
+    await post_messages(app, user_id, {'set_heartbeat_emit_interval': emit_interval})
 
     return True
 
