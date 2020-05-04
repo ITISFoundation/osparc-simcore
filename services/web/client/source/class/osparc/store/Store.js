@@ -183,47 +183,29 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getGroupsMe: function() {
-      const hardcodedMe = {
-        GID: "27",
-        label: "Odei Maiz",
-        description: "Odei Maiz Barandiaran"
-      };
+    __getGroups: function(group) {
       return new Promise((resolve, reject) => {
         osparc.data.Resources.getOne("profile")
           .then(profile => {
             console.log(profile);
-            resolve(hardcodedMe);
+            resolve(profile["groups"][group]);
           })
           .catch(err => {
             console.error(err);
           });
       });
+    },
+
+    getGroupsMe: function() {
+      return this.__getGroups("me");
     },
 
     getGroupsOrganizations: function() {
-      return new Promise((resolve, reject) => {
-        osparc.data.Resources.getOne("profile")
-          .then(profile => {
-            resolve(profile["groups"]);
-          })
-          .catch(err => {
-            console.error(err);
-          });
-      });
+      return this.__getGroups("organizations");
     },
 
     getGroupsAll: function() {
-      return new Promise((resolve, reject) => {
-        osparc.data.Resources.getOne("profile")
-          .then(profile => {
-            console.log(profile);
-            resolve(profile["groups"]["all"]);
-          })
-          .catch(err => {
-            console.error(err);
-          });
-      });
+      return this.__getGroups("all");
     },
 
     /**
