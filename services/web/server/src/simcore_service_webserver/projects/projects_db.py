@@ -23,7 +23,7 @@ from sqlalchemy.sql import and_, select
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
-from ..db_models import study_tags, users
+from ..db_models import study_tags, users, user_to_groups
 from ..utils import format_datetime, now_str
 from .projects_exceptions import (
     ProjectInvalidRightsError,
@@ -55,6 +55,8 @@ def _convert_to_schema_names(project_database_data: Mapping) -> Dict:
         converted_value = value
         if isinstance(value, datetime):
             converted_value = format_datetime(value)
+        elif key == "prj_owner":
+            converted_value = str(value) if value else None
         converted_args[ChangeCase.snake_to_camel(key)] = converted_value
     return converted_args
 
@@ -100,8 +102,8 @@ class ProjectDBAPI:
         log.info("adding projects to database for user %s", user_id)
         uuids = []
         for prj in projects_list:
-            prj_uuid = await self.add_project(prj, user_id)
-            uuids.append(prj_uuid)
+            prj = await self.add_project(prj, user_id)
+            uuids.append(prj["uuid"])
         return uuids
 
     async def add_project(
@@ -110,8 +112,8 @@ class ProjectDBAPI:
         user_id: str,
         *,
         force_project_uuid=False,
-        force_as_template=False
-    ) -> str:
+        force_as_template=False,
+    ) -> Dict:
         """ Inserts a new project in the database and, if a user is specified, it assigns ownership
 
         - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
@@ -130,9 +132,7 @@ class ProjectDBAPI:
         :rtype: str
         """
         # pylint: disable=no-value-for-parameter
-
         async with self.engine.acquire() as conn:
-            user_email = await self._get_user_email(conn, user_id)
 
             # TODO: check security of this query with args. Hard-code values?
             # TODO: check best rollback design. see transaction.begin...
@@ -141,7 +141,7 @@ class ProjectDBAPI:
                 {
                     "creationDate": now_str(),
                     "lastChangeDate": now_str(),
-                    "prjOwner": user_email,
+                    "prjOwner": str(user_id) if user_id else None,
                 }
             )
             kargs = _convert_to_db_names(prj)
@@ -196,45 +196,58 @@ class ProjectDBAPI:
                     raise ProjectInvalidRightsError(user_id, prj["uuid"]) from exc
 
             # Updated values
-            prj["uuid"] = kargs["uuid"]
-            return prj["uuid"]
+            prj = _convert_to_schema_names(kargs)
+            return prj
 
-    async def load_user_projects(
-        self, user_id: str, *, exclude_templates=True
-    ) -> List[Dict]:
+    async def load_user_projects(self, user_id: str) -> List[Dict]:
         log.info("Loading projects for user %s", user_id)
 
-        condition = user_to_projects.c.user_id == user_id
-        if exclude_templates:
-            condition = and_(condition, projects.c.type != ProjectType.TEMPLATE)
-
-        joint_table = user_to_projects.join(projects)
-        query = select([projects]).select_from(joint_table).where(condition)
+        query = (
+            select([projects])
+            .select_from(user_to_projects.join(projects))
+            .where(
+                and_(
+                    user_to_projects.c.user_id == user_id,
+                    projects.c.type != ProjectType.TEMPLATE,
+                )
+            )
+        )
 
         async with self.engine.acquire() as conn:
             projects_list = await self.__load_projects(conn, query)
 
         return projects_list
 
-    async def load_template_projects(self, *, only_published=False) -> List[Dict]:
+    async def load_template_projects(
+        self, user_id: str, *, only_published=False
+    ) -> List[Dict]:
         log.info("Loading public template projects")
 
         # TODO: eliminate this and use mock to replace get_user_project instead
         projects_list = [prj.data for prj in Fake.projects.values() if prj.template]
 
         async with self.engine.acquire() as conn:
-            if only_published:
-                expression = and_(
-                    projects.c.type == ProjectType.TEMPLATE,
-                    projects.c.published == True,
-                )
-            else:
-                expression = projects.c.type == ProjectType.TEMPLATE
-
-            query = select([projects]).where(expression)
-            projects_list.extend(await self.__load_projects(conn, query))
+            user_groups: List[str] = await self.__load_user_groups(conn, user_id)
+            # NOTE: in order to use specific postgresql function jsonb_exists_any we use raw call here
+            query = f"""
+SELECT *
+FROM projects
+WHERE projects.type = 'TEMPLATE' 
+{'AND projects.published ' if only_published else ''}
+AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group}'" for group in user_groups)}])
+OR prj_owner = {user_id})
+            """
+            db_projects = await self.__load_projects(conn, query)
+            projects_list.extend(db_projects)
 
         return projects_list
+
+    async def __load_user_groups(self, conn: SAConnection, user_id: str) -> List[str]:
+        user_groups: List[str] = []
+        query = select([user_to_groups.c.gid]).where(user_to_groups.c.uid == user_id)
+        async for row in conn.execute(query):
+            user_groups.append(row[user_to_groups.c.gid])
+        return user_groups
 
     async def __load_projects(self, conn: SAConnection, query) -> List[Dict]:
         api_projects: List[Dict] = []  # API model-compatible projects

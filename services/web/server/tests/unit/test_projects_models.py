@@ -51,6 +51,11 @@ def test_convert_to_schema_names(fake_db_dict):
     assert db_entries["timeEntry"] == "{}Z".format(
         date.isoformat(timespec="milliseconds")
     )
+    # test conversion of prj owner int to string
+    fake_db_dict["prj_owner"] = 1
+    db_entries = _convert_to_schema_names(fake_db_dict)
+    assert "prjOwner" in db_entries
+    assert db_entries["prjOwner"] == "1"
 
 
 @pytest.fixture
@@ -100,7 +105,7 @@ async def test_add_projects(fake_project, user_id, mocker, mock_db_engine):
 
     db_engine.acquire.assert_called()
     mock_connection.execute.assert_called()
-    assert mock_connection.execute.call_count == 3
+    assert mock_connection.execute.call_count == 2
 
 
 # not sure this is useful...

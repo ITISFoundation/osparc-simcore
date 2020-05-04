@@ -2114,6 +2114,68 @@ paths:
                             format: email
                           role:
                             type: string
+                          groups:
+                            type: object
+                            properties:
+                              me:
+                                type: object
+                                properties:
+                                  gid:
+                                    type: string
+                                  label:
+                                    type: string
+                                  description:
+                                    type: string
+                                example:
+                                  - gid: '27'
+                                    label: A user
+                                    description: A very special user
+                                  - gid: '1'
+                                    label: ITIS Foundation
+                                    description: The Foundation for Research on Information Technologies in Society
+                                  - gid: '0'
+                                    label: All
+                                    description: Open to all users
+                              organizations:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    gid:
+                                      type: string
+                                    label:
+                                      type: string
+                                    description:
+                                      type: string
+                                  example:
+                                    - gid: '27'
+                                      label: A user
+                                      description: A very special user
+                                    - gid: '1'
+                                      label: ITIS Foundation
+                                      description: The Foundation for Research on Information Technologies in Society
+                                    - gid: '0'
+                                      label: All
+                                      description: Open to all users
+                              all:
+                                type: object
+                                properties:
+                                  gid:
+                                    type: string
+                                  label:
+                                    type: string
+                                  description:
+                                    type: string
+                                example:
+                                  - gid: '27'
+                                    label: A user
+                                    description: A very special user
+                                  - gid: '1'
+                                    label: ITIS Foundation
+                                    description: The Foundation for Research on Information Technologies in Society
+                                  - gid: '0'
+                                    label: All
+                                    description: Open to all users
                           gravatar_id:
                             type: string
                     example:
@@ -4270,6 +4332,7 @@ paths:
                         - name
                         - description
                         - prjOwner
+                        - accessRights
                         - creationDate
                         - lastChangeDate
                         - thumbnail
@@ -4290,6 +4353,9 @@ paths:
                         prjOwner:
                           type: string
                           description: user uuid
+                        accessRights:
+                          type: object
+                          description: object containing the GroupID as key and read/write/execution permissions as value
                         creationDate:
                           type: string
                           description: project creation date
@@ -4582,6 +4648,7 @@ paths:
                 - name
                 - description
                 - prjOwner
+                - accessRights
                 - creationDate
                 - lastChangeDate
                 - thumbnail
@@ -4602,6 +4669,9 @@ paths:
                 prjOwner:
                   type: string
                   description: user uuid
+                accessRights:
+                  type: object
+                  description: object containing the GroupID as key and read/write/execution permissions as value
                 creationDate:
                   type: string
                   description: project creation date
@@ -4799,6 +4869,7 @@ paths:
                       - name
                       - description
                       - prjOwner
+                      - accessRights
                       - creationDate
                       - lastChangeDate
                       - thumbnail
@@ -4819,6 +4890,9 @@ paths:
                       prjOwner:
                         type: string
                         description: user uuid
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
                       creationDate:
                         type: string
                         description: project creation date
@@ -5108,6 +5182,7 @@ paths:
                       - name
                       - description
                       - prjOwner
+                      - accessRights
                       - creationDate
                       - lastChangeDate
                       - thumbnail
@@ -5128,6 +5203,9 @@ paths:
                       prjOwner:
                         type: string
                         description: user uuid
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
                       creationDate:
                         type: string
                         description: project creation date
@@ -5423,6 +5501,7 @@ paths:
                       - name
                       - description
                       - prjOwner
+                      - accessRights
                       - creationDate
                       - lastChangeDate
                       - thumbnail
@@ -5443,6 +5522,9 @@ paths:
                       prjOwner:
                         type: string
                         description: user uuid
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
                       creationDate:
                         type: string
                         description: project creation date
@@ -5730,6 +5812,7 @@ paths:
                 - name
                 - description
                 - prjOwner
+                - accessRights
                 - creationDate
                 - lastChangeDate
                 - thumbnail
@@ -5750,6 +5833,9 @@ paths:
                 prjOwner:
                   type: string
                   description: user uuid
+                accessRights:
+                  type: object
+                  description: object containing the GroupID as key and read/write/execution permissions as value
                 creationDate:
                   type: string
                   description: project creation date
@@ -5947,6 +6033,7 @@ paths:
                       - name
                       - description
                       - prjOwner
+                      - accessRights
                       - creationDate
                       - lastChangeDate
                       - thumbnail
@@ -5967,6 +6054,9 @@ paths:
                       prjOwner:
                         type: string
                         description: user uuid
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
                       creationDate:
                         type: string
                         description: project creation date
@@ -6278,6 +6368,7 @@ paths:
                       - name
                       - description
                       - prjOwner
+                      - accessRights
                       - creationDate
                       - lastChangeDate
                       - thumbnail
@@ -6298,6 +6389,9 @@ paths:
                       prjOwner:
                         type: string
                         description: user uuid
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
                       creationDate:
                         type: string
                         description: project creation date
@@ -7289,6 +7383,7 @@ paths:
                       - name
                       - description
                       - prjOwner
+                      - accessRights
                       - creationDate
                       - lastChangeDate
                       - thumbnail
@@ -7309,6 +7404,9 @@ paths:
                       prjOwner:
                         type: string
                         description: user uuid
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
                       creationDate:
                         type: string
                         description: project creation date
@@ -7597,6 +7695,7 @@ paths:
                       - name
                       - description
                       - prjOwner
+                      - accessRights
                       - creationDate
                       - lastChangeDate
                       - thumbnail
@@ -7617,6 +7716,9 @@ paths:
                       prjOwner:
                         type: string
                         description: user uuid
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
                       creationDate:
                         type: string
                         description: project creation date

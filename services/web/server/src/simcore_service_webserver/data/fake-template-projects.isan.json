@@ -7,6 +7,7 @@
     "prjOwner": "maiz",
     "creationDate": "2019-05-24T10:36:57.813Z",
     "lastChangeDate": "2019-05-24T11:36:12.015Z",
+    "accessRights": {},
     "workbench": {
       "template-uuid-48eb-a9d2-aaad6b72400a": {
         "key": "simcore/services/frontend/file-picker",
@@ -49,7 +50,8 @@
         }
       }
     }
-  }, {
+  },
+  {
     "uuid": "template-uuid-4d5e-b80e-401c8066781f",
     "name": "ISAN: 3D Paraview",
     "description": "3D Paraview viewer with two inputs",
@@ -57,6 +59,7 @@
     "prjOwner": "maiz",
     "creationDate": "2019-05-24T10:36:57.813Z",
     "lastChangeDate": " 2019-05-24T10:38:12.888Z",
+    "accessRights": {},
     "workbench": {
       "template-uuid-403e-865a-8c5ca30671c6": {
         "key": "simcore/services/frontend/file-picker",
@@ -123,7 +126,8 @@
         }
       }
     }
-  }, {
+  },
+  {
     "uuid": "template-uuid-420d-b82d-e80bfa272ebd",
     "name": "ISAN: MattWard use case",
     "description": "MattWard Solver/PostPro viewer",
@@ -131,6 +135,7 @@
     "prjOwner": "MattWard",
     "creationDate": "2019-04-30T08:52:20.937Z",
     "lastChangeDate": "2019-04-30T08:59:26.090Z",
+    "accessRights": {},
     "workbench": {
       "template-uuid-4021-b2ef-b2e163bfbd16": {
         "key": "simcore/services/dynamic/mattward-viewer",
@@ -147,7 +152,8 @@
         }
       }
     }
-  }, {
+  },
+  {
     "uuid": "template-uuid-1234-a1a7-f7d4f3a8f26b",
     "name": "ISAN: UCDavis use case: 0D",
     "description": "Colleen Clancy Single Cell solver with a file picker and PostPro viewer",
@@ -155,6 +161,7 @@
     "prjOwner": "Colleen Clancy",
     "creationDate": "2018-10-22T09:13:13.360Z",
     "lastChangeDate": "2018-10-22T09:33:41.858Z",
+    "accessRights": {},
     "workbench": {
       "template-uuid-4674-b758-946151cae351": {
         "key": "simcore/services/frontend/file-picker",

@@ -13,9 +13,13 @@ import sqlalchemy as sa
 from aiopg.sa.result import ResultProxy, RowProxy
 
 from simcore_postgres_database.models.base import metadata
-from simcore_postgres_database.webserver_models import (UserStatus, projects,
-                                                        user_to_projects,
-                                                        users)
+from psycopg2.errors import ForeignKeyViolation  # pylint: disable=no-name-in-module
+from simcore_postgres_database.webserver_models import (
+    UserStatus,
+    projects,
+    user_to_projects,
+    users,
+)
 
 fake = faker.Faker()
 
@@ -37,7 +41,8 @@ def random_project(**overrides):
         uuid=uuid4(),
         name=fake.word(),
         description=fake.sentence(),
-        prj_owner=fake.email(),
+        prj_owner=fake.pyint(),
+        access_rights={},
         workbench={},
         published=False,
     )
@@ -58,9 +63,11 @@ def engine(make_engine, loop):
             await conn.execute(users.insert().values(**random_user()))
             await conn.execute(users.insert().values(**random_user()))
 
-            await conn.execute(projects.insert().values(**random_project()))
-            await conn.execute(projects.insert().values(**random_project()))
-            await conn.execute(projects.insert().values(**random_project()))
+            await conn.execute(projects.insert().values(**random_project(prj_owner=1)))
+            await conn.execute(projects.insert().values(**random_project(prj_owner=2)))
+            await conn.execute(projects.insert().values(**random_project(prj_owner=3)))
+            with pytest.raises(ForeignKeyViolation):
+                await conn.execute(projects.insert().values(**random_project(prj_owner=4)))
 
             await conn.execute(
                 user_to_projects.insert().values(user_id=1, project_id=1)
@@ -75,7 +82,6 @@ def engine(make_engine, loop):
         return engine
 
     return loop.run_until_complete(start())
-
 
 
 async def test_count_users(engine):

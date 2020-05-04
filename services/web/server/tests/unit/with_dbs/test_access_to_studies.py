@@ -131,8 +131,8 @@ async def published_project(client, fake_project):
 @pytest.fixture
 async def unpublished_project(client, fake_project):
     project_data = deepcopy(fake_project)
-    project_data["name"] = "Tempalte Unpublished project"
-    project_data["uuid"] = "'b134a337-a74f-40ff-a127-b36a1ccbede6"
+    project_data["name"] = "Template Unpublished project"
+    project_data["uuid"] = "b134a337-a74f-40ff-a127-b36a1ccbede6"
     project_data["published"] = False
 
     async with NewProject(
@@ -216,7 +216,7 @@ async def test_access_study_anonymously(
     assert real_url.endswith("#/study/%s" % guest_project["uuid"])
     _assert_same_projects(guest_project, published_project)
 
-    assert guest_project["prjOwner"] == data["login"]
+    assert guest_project["prjOwner"] == "1"
 
 
 async def test_access_study_by_logged_user(
@@ -247,4 +247,4 @@ async def test_access_study_by_logged_user(
 
     _assert_same_projects(user_project, published_project)
 
-    assert user_project["prjOwner"] == logged_user["email"]
+    assert user_project["prjOwner"] == str(logged_user["id"])

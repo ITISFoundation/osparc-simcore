@@ -131,10 +131,17 @@ async def user_project(client, fake_project, logged_user):
 
 
 @pytest.fixture
-async def template_project(client, fake_project):
+def all_group(client) -> Dict[str, str]:
+    # FIXME: get from DB instead
+    return {"gid": "1", "label": "Everyone", "description": "all users"}
+
+
+@pytest.fixture
+async def template_project(client, fake_project, all_group: Dict[str, str]):
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
     project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"
+    project_data["accessRights"] = {all_group["gid"]: "rwx"}
 
     async with NewProject(
         project_data, client.app, user_id=None, clear_all=True
