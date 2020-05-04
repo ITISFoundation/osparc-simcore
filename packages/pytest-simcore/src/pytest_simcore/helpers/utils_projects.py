@@ -8,6 +8,7 @@ SEE services/web/server/src/simcore_service_webserver/projects/projects_models.p
 
 import json
 import re
+import uuid as uuidlib
 from typing import Dict
 
 from aiohttp import web
@@ -58,12 +59,13 @@ async def create_project(
     new_project = await db.add_project(
         project_data, user_id, force_project_uuid=force_uuid
     )
-    if "template-uuid-" in project_data["uuid"]:
+    try:
+        uuidlib.UUID(project_data["uuid"])
+        assert new_project["uuid"] == project_data["uuid"]
+    except ValueError:
         # in that case the uuid gets replaced
         assert new_project["uuid"] != project_data["uuid"]
         project_data["uuid"] = new_project["uuid"]
-    else:
-        assert new_project["uuid"] == project_data["uuid"]
 
     for key in DB_EXCLUSIVE_COLUMNS:
         project_data.pop(key, None)
