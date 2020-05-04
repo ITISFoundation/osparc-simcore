@@ -83,7 +83,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __createButtons: function() {
-      const isCurrentUserOwner = this.__isCurrentUserOwner();
+      const isCurrentUserOwner = this.__isUserOwner();
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       const canUpdateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.update");
 
@@ -127,7 +127,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __createEditView: function() {
-      const isCurrentUserOwner = this.__isCurrentUserOwner();
+      const isCurrentUserOwner = this.__isUserOwner();
       const canUpdateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.update");
       const fieldIsEnabled = isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate);
 
@@ -323,7 +323,10 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       }
     },
 
-    __isCurrentUserOwner: function() {
+    __isUserOwner: function() {
+      // return true until fine grain operation right are implemented. For now: I get it, I can write it
+      return true;
+
       if (this.__model) {
         return this.__model.getPrjOwner() === osparc.auth.Data.getInstance().getEmail();
       }

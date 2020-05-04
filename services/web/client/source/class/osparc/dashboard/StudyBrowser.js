@@ -481,7 +481,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const moreInfoButton = this.__getMoreInfoMenuButton(studyData, isTemplate);
       menu.add(moreInfoButton);
 
-      const isCurrentUserOwner = this.__amIStudyOwner(studyData);
+      const isCurrentUserOwner = this.__isUserOwner(studyData);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       if (isCurrentUserOwner && !isTemplate && canCreateTemplate) {
         const saveAsTemplateButton = this.__getSaveAsTemplateMenuButton(studyData);
@@ -556,7 +556,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getDeleteStudyMenuButton: function(studyData, isTemplate) {
-      const isCurrentUserOwner = this.__amIStudyOwner(studyData);
+      const isCurrentUserOwner = this.__isUserOwner(studyData);
       if (!isCurrentUserOwner) {
         return null;
       }
@@ -667,7 +667,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (templateSelection[i] instanceof osparc.dashboard.StudyBrowserButtonNew) {
           allMine = false;
         } else {
-          const isCurrentUserOwner = this.__amIStudyOwner(templateSelection[i]);
+          const isCurrentUserOwner = this.__isUserOwner(templateSelection[i]);
           allMine &= isCurrentUserOwner;
         }
       }
@@ -728,7 +728,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__showStudiesLayout(true);
     },
 
-    __amIStudyOwner: function(studyData) {
+    __isUserOwner: function(studyData) {
+      // return true until fine grain operation rights are implemented. For now: I get it, I can write it
+      return true;
+
       const myEmail = osparc.auth.Data.getInstance().getEmail();
       if ("prjOwner" in studyData) {
         return studyData.prjOwner === myEmail;
