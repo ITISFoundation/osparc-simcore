@@ -32,7 +32,9 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
     // Title bar
     this.__titleBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
       alignY: "middle"
-    }));
+    })).set({
+      allowGrowX: false
+    });
     this._add(this.__titleBar);
 
     this.__caret = this.getChildControl("caret");
