@@ -21,6 +21,15 @@ tests: ## runs unit tests
 	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests
 
 
+.PHONY: setup-prod
+setup-prod: install-dev up-prod  ## sets up a database using an external postgres volume to test migration
+	# discovering
+	sc-pg --help
+	sc-pg discover -u test -p test -d test
+	# some info
+	sc-pg info
+	@echo "To test migration, sc-pg upgrade"
+
 .PHONY: setup-commit
 setup-commit: install-dev up-pg ## sets up a database to create a new commit into migration history
 	# discovering
@@ -46,11 +55,12 @@ migrate: $(DOT_ENV_FILE) ## basic migration update (use ONLY for development pur
 
 
 
-.PHONY: up-pg down-pg
-DOCKER_COMPOSE_CONFIG := tests/docker-compose.yml
+.PHONY: up-pg down-pg up-prod down-prod
+docker-compose-configs = $(wildcard tests/docker-compose*.yml)
+up-pg up-prod: $(docker-compose-configs) ## starts pg server
+	docker-compose -f tests/docker-compose.yml $(findstring -prod,-f tests/docker-compose.prod.yml,) up -d
 
-up-pg: $(DOCKER_COMPOSE_CONFIG) ## starts pg server
-	docker-compose -f $< up -d
+down-pg down-prod: $(docker-compose-configs) ## stops pg server
+	docker-compose -f tests/docker-compose.yml  $(findstring -prod,-f tests/docker-compose.prod.yml,) down
 
-down-pg: $(DOCKER_COMPOSE_CONFIG) ## stops pg server
-	docker-compose -f $< down
+
