@@ -26,7 +26,7 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
     this.base(arguments);
 
     this.__studyId = studyId;
-    this.__formData = formData;
+    this.__formData = osparc.utils.Utils.deepCloneObject(formData);
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
