@@ -21,14 +21,19 @@ tests: ## runs unit tests
 	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests
 
 
+.PHONY: import-db
+export SOURCE_HOST ?= undefined
+export SOURCE_DATA_VOLUME ?= simcore_postgres_data
+export TARGET_DATA_VOLUME ?= simcore_postgres_data
+import-db: scripts/copy_database_volume.sh
+	@echo "will copy volume $(SOURCE_DATA_VOLUME) from $(SOURCE_HOST) into local $(TARGET_DATA_VOLUME)
+	./scripts/copy_database_volume.sh
 .PHONY: setup-prod
+export POSTGRES_DATA_VOLUME = $(TARGET_DATA_VOLUME)
 setup-prod: install-dev up-prod  ## sets up a database using an external postgres volume to test migration
 	# discovering
 	sc-pg --help
-	sc-pg discover -u test -p test -d test
-	# some info
-	sc-pg info
-	@echo "To test migration, sc-pg upgrade"
+	@echo "To test migration, sc-pg discover -u USER -p PASSWORD, then sc-pg upgrade"
 
 .PHONY: setup-commit
 setup-commit: install-dev up-pg ## sets up a database to create a new commit into migration history
@@ -58,9 +63,9 @@ migrate: $(DOT_ENV_FILE) ## basic migration update (use ONLY for development pur
 .PHONY: up-pg down-pg up-prod down-prod
 docker-compose-configs = $(wildcard tests/docker-compose*.yml)
 up-pg up-prod: $(docker-compose-configs) ## starts pg server
-	docker-compose -f tests/docker-compose.yml $(findstring -prod,-f tests/docker-compose.prod.yml,) up -d
+	docker-compose -f tests/docker-compose.yml $(if $(findstring -prod,$@),-f tests/docker-compose.prod.yml,) up -d
 
 down-pg down-prod: $(docker-compose-configs) ## stops pg server
-	docker-compose -f tests/docker-compose.yml  $(findstring -prod,-f tests/docker-compose.prod.yml,) down
+	docker-compose -f tests/docker-compose.yml  $(if $(findstring -prod,$@),-f tests/docker-compose.prod.yml,) down
 
 
