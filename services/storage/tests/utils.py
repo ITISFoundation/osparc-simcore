@@ -125,6 +125,18 @@ def create_full_tables(url):
     meta.drop_all(
         bind=engine,
         tables=[
+            user_to_groups,
+            file_meta_data,
+            projects,
+            user_to_projects,
+            users,
+            groups,
+        ],
+        checkfirst=True,
+    )
+    meta.create_all(
+        bind=engine,
+        tables=[
             file_meta_data,
             projects,
             user_to_projects,
@@ -132,10 +144,6 @@ def create_full_tables(url):
             groups,
             user_to_groups,
         ],
-        checkfirst=True,
-    )
-    meta.create_all(
-        bind=engine, tables=[file_meta_data, projects, user_to_projects, users]
     )
 
     for t in ["file_meta_data", "projects", "users", "user_to_projects"]:
@@ -181,6 +189,14 @@ def drop_all_tables(url):
     engine = sa.create_engine(url)
 
     meta.drop_all(
-        bind=engine, tables=[file_meta_data, projects, user_to_projects, users]
+        bind=engine,
+        tables=[
+            file_meta_data,
+            projects,
+            user_to_projects,
+            users,
+            groups,
+            user_to_groups,
+        ],
     )
     engine.dispose()

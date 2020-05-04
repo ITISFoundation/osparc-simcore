@@ -1,167 +1,169 @@
 [
   {
-  "uuid": "template-uuid-518d-a25d-8887bcae93f8",
-  "name": "ISAN2019: 3D Paraview",
-  "description": "3D Paraview viewer with two inputs",
-  "thumbnail": "https://user-images.githubusercontent.com/33152403/60168939-073a5580-9806-11e9-8dad-8a7caa3eb5ab.png",
-  "prjOwner": "maiz@itis.swiss",
-  "creationDate": "2019-06-06 14:33:43.065",
-  "lastChangeDate": "2019-06-06 14:33:44.747",
-  "workbench": {
-    "template-uuid-5753-af37-e6aec8120bf2": {
-      "key": "simcore/services/frontend/file-picker",
-      "version": "1.0.0",
-      "label": "File Picker 1",
-      "inputs": {},
-      "inputNodes": [],
-      "outputs": {
-        "outFile": {
-          "store": 1,
-          "path": "Shared Data/HField_Big.vtk"
-        }
-      },
-      "progress": 100,
-      "thumbnail": "",
-      "position": {
-        "x": 100,
-        "y": 100
-      }
-    },
-    "template-uuid-522c-a377-dd8d7cd1265b": {
-      "key": "simcore/services/frontend/file-picker",
-      "version": "1.0.0",
-      "label": "File Picker 2",
-      "inputs": {},
-      "inputNodes": [],
-      "outputs": {
-        "outFile": {
-          "store": 1,
-          "path": "Shared Data/bunny.vtk"
-        }
-      },
-      "progress": 100,
-      "thumbnail": "",
-      "position": {
-        "x": 100,
-        "y": 250
-      }
-    },
-    "template-uuid-9b0f-67677a20996c": {
-      "key": "simcore/services/dynamic/3d-viewer",
-      "version": "2.10.0",
-      "label": "3D ParaViewer",
-      "inputs": {
-        "A": {
-          "nodeUuid": "template-uuid-5753-af37-e6aec8120bf2",
-          "output": "outFile"
+    "uuid": "template-uuid-518d-a25d-8887bcae93f8",
+    "name": "ISAN2019: 3D Paraview",
+    "description": "3D Paraview viewer with two inputs",
+    "thumbnail": "https://user-images.githubusercontent.com/33152403/60168939-073a5580-9806-11e9-8dad-8a7caa3eb5ab.png",
+    "prjOwner": "",
+    "creationDate": "2019-06-06 14:33:43.065",
+    "lastChangeDate": "2019-06-06 14:33:44.747",
+    "accessRights": {},
+    "workbench": {
+      "template-uuid-5753-af37-e6aec8120bf2": {
+        "key": "simcore/services/frontend/file-picker",
+        "version": "1.0.0",
+        "label": "File Picker 1",
+        "inputs": {},
+        "inputNodes": [],
+        "outputs": {
+          "outFile": {
+            "store": 1,
+            "path": "Shared Data/HField_Big.vtk"
+          }
         },
-        "B": {
-          "nodeUuid": "template-uuid-522c-a377-dd8d7cd1265b",
-          "output": "outFile"
+        "progress": 100,
+        "thumbnail": "",
+        "position": {
+          "x": 100,
+          "y": 100
         }
       },
-      "inputNodes": [
-        "template-uuid-5753-af37-e6aec8120bf2",
-        "template-uuid-522c-a377-dd8d7cd1265b"
-      ],
-      "outputs": {},
-      "progress": 85,
-      "thumbnail": "",
-      "position": {
-        "x": 400,
-        "y": 175
+      "template-uuid-522c-a377-dd8d7cd1265b": {
+        "key": "simcore/services/frontend/file-picker",
+        "version": "1.0.0",
+        "label": "File Picker 2",
+        "inputs": {},
+        "inputNodes": [],
+        "outputs": {
+          "outFile": {
+            "store": 1,
+            "path": "Shared Data/bunny.vtk"
+          }
+        },
+        "progress": 100,
+        "thumbnail": "",
+        "position": {
+          "x": 100,
+          "y": 250
+        }
+      },
+      "template-uuid-9b0f-67677a20996c": {
+        "key": "simcore/services/dynamic/3d-viewer",
+        "version": "2.10.0",
+        "label": "3D ParaViewer",
+        "inputs": {
+          "A": {
+            "nodeUuid": "template-uuid-5753-af37-e6aec8120bf2",
+            "output": "outFile"
+          },
+          "B": {
+            "nodeUuid": "template-uuid-522c-a377-dd8d7cd1265b",
+            "output": "outFile"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-5753-af37-e6aec8120bf2",
+          "template-uuid-522c-a377-dd8d7cd1265b"
+        ],
+        "outputs": {},
+        "progress": 85,
+        "thumbnail": "",
+        "position": {
+          "x": 400,
+          "y": 175
+        }
+      }
+    }
+  },
+  {
+    "uuid": "template-uuid-5d82-b08d-d39c436ca738",
+    "name": "ISAN: UCDavis use case: 0D",
+    "description": "Colleen Clancy Single Cell solver with a file picker and PostPro viewer",
+    "thumbnail": "https://user-images.githubusercontent.com/33152403/60168940-073a5580-9806-11e9-9a44-ae5266eeb020.png",
+    "prjOwner": "",
+    "creationDate": "2019-06-06 14:33:51.94",
+    "lastChangeDate": "2019-06-06 14:33:54.329",
+    "accessRights": {},
+    "workbench": {
+      "template-uuid-59d6-b1a5-6e7b2773636b": {
+        "key": "simcore/services/frontend/file-picker",
+        "version": "1.0.0",
+        "label": "File Picker 0D",
+        "inputs": {},
+        "inputNodes": [],
+        "outputs": {
+          "outFile": {
+            "store": 1,
+            "path": "Shared Data/initial_WStates"
+          }
+        },
+        "progress": 100,
+        "thumbnail": "",
+        "position": {
+          "x": 50,
+          "y": 150
+        }
+      },
+      "template-uuid-562f-afd1-cca5105c8844": {
+        "key": "simcore/services/comp/ucdavis-singlecell-cardiac-model",
+        "version": "1.0.0",
+        "label": "DBP-Clancy-Rabbit-Single-Cell solver",
+        "inputs": {
+          "Na": 0,
+          "Kr": 0,
+          "BCL": 200,
+          "NBeats": 5,
+          "Ligand": 0,
+          "cAMKII": "WT",
+          "initfile": {
+            "nodeUuid": "template-uuid-59d6-b1a5-6e7b2773636b",
+            "output": "outFile"
+          }
+        },
+        "inputAccess": {
+          "Na": "ReadAndWrite",
+          "Kr": "ReadOnly",
+          "BCL": "ReadAndWrite",
+          "NBeats": "ReadOnly",
+          "Ligand": "Invisible",
+          "cAMKII": "Invisible"
+        },
+        "inputNodes": [
+          "template-uuid-59d6-b1a5-6e7b2773636b"
+        ],
+        "outputs": {},
+        "progress": 0,
+        "thumbnail": "",
+        "position": {
+          "x": 300,
+          "y": 150
+        }
+      },
+      "template-uuid-5fdd-9daa-cb03c51d8138": {
+        "key": "simcore/services/dynamic/cc-0d-viewer",
+        "version": "2.8.0",
+        "label": "cc-0d-viewer",
+        "inputs": {
+          "vm_1Hz": {
+            "nodeUuid": "template-uuid-562f-afd1-cca5105c8844",
+            "output": "out_4"
+          },
+          "all_results_1Hz": {
+            "nodeUuid": "template-uuid-562f-afd1-cca5105c8844",
+            "output": "out_1"
+          }
+        },
+        "inputNodes": [
+          "template-uuid-562f-afd1-cca5105c8844"
+        ],
+        "outputs": {},
+        "progress": 20,
+        "thumbnail": "",
+        "position": {
+          "x": 550,
+          "y": 150
+        }
       }
     }
   }
-},
-{
-  "uuid": "template-uuid-5d82-b08d-d39c436ca738",
-  "name": "ISAN: UCDavis use case: 0D",
-  "description": "Colleen Clancy Single Cell solver with a file picker and PostPro viewer",
-  "thumbnail": "https://user-images.githubusercontent.com/33152403/60168940-073a5580-9806-11e9-9a44-ae5266eeb020.png",
-  "prjOwner": "maiz@itis.swiss",
-  "creationDate": "2019-06-06 14:33:51.94",
-  "lastChangeDate": "2019-06-06 14:33:54.329",
-  "workbench": {
-    "template-uuid-59d6-b1a5-6e7b2773636b": {
-      "key": "simcore/services/frontend/file-picker",
-      "version": "1.0.0",
-      "label": "File Picker 0D",
-      "inputs": {},
-      "inputNodes": [],
-      "outputs": {
-        "outFile": {
-          "store": 1,
-          "path": "Shared Data/initial_WStates"
-        }
-      },
-      "progress": 100,
-      "thumbnail": "",
-      "position": {
-        "x": 50,
-        "y": 150
-      }
-    },
-    "template-uuid-562f-afd1-cca5105c8844": {
-      "key": "simcore/services/comp/ucdavis-singlecell-cardiac-model",
-      "version": "1.0.0",
-      "label": "DBP-Clancy-Rabbit-Single-Cell solver",
-      "inputs": {
-        "Na": 0,
-        "Kr": 0,
-        "BCL": 200,
-        "NBeats": 5,
-        "Ligand": 0,
-        "cAMKII": "WT",
-        "initfile": {
-          "nodeUuid": "template-uuid-59d6-b1a5-6e7b2773636b",
-          "output": "outFile"
-        }
-      },
-      "inputAccess": {
-        "Na": "ReadAndWrite",
-        "Kr": "ReadOnly",
-        "BCL": "ReadAndWrite",
-        "NBeats": "ReadOnly",
-        "Ligand": "Invisible",
-        "cAMKII": "Invisible"
-      },
-      "inputNodes": [
-        "template-uuid-59d6-b1a5-6e7b2773636b"
-      ],
-      "outputs": {},
-      "progress": 0,
-      "thumbnail": "",
-      "position": {
-        "x": 300,
-        "y": 150
-      }
-    },
-    "template-uuid-5fdd-9daa-cb03c51d8138": {
-      "key": "simcore/services/dynamic/cc-0d-viewer",
-      "version": "2.8.0",
-      "label": "cc-0d-viewer",
-      "inputs": {
-        "vm_1Hz": {
-          "nodeUuid": "template-uuid-562f-afd1-cca5105c8844",
-          "output": "out_4"
-        },
-        "all_results_1Hz": {
-          "nodeUuid": "template-uuid-562f-afd1-cca5105c8844",
-          "output": "out_1"
-        }
-      },
-      "inputNodes": [
-        "template-uuid-562f-afd1-cca5105c8844"
-      ],
-      "outputs": {},
-      "progress": 20,
-      "thumbnail": "",
-      "position": {
-        "x": 550,
-        "y": 150
-      }
-    }
-  }
-}
 ]
