@@ -199,8 +199,8 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       orgsCtrl.setDelegate({
         createItem: () => new osparc.component.widget.OrganizationListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("GID", "model", null, item, id);
-          ctrl.bindProperty("GID", "GID", null, item, id);
+          ctrl.bindProperty("gid", "model", null, item, id);
+          ctrl.bindProperty("gid", "gid", null, item, id);
           ctrl.bindProperty("label", "label", null, item, id);
           ctrl.bindProperty("description", "description", null, item, id);
         }

@@ -211,7 +211,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyAccessRights: function(value, old) {
-      if (value) {
+      if (value && Object.keys(value).length) {
         const image = this.getChildControl("shared");
 
         const store = osparc.store.Store.getInstance();
@@ -224,9 +224,16 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             groups.push(values[1]);
             let hintText = "";
             Object.keys(value).forEach(key => {
-              const grp = groups.find(el => el["GID"] === key);
-              hintText += (grp["label"] + "<br>");
+              const grp = groups.find(el => el["gid"] === parseInt(key));
+              if (grp) {
+                hintText += (grp["label"] + "<br>");
+              }
             });
+            if (hintText === "") {
+              image.exclude();
+              return;
+            }
+
             const hint = new osparc.ui.hint.Hint(image, hintText).set({
               active: false
             });

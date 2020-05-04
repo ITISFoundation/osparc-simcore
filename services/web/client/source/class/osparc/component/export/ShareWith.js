@@ -33,7 +33,21 @@ qx.Class.define("osparc.component.export.ShareWith", {
       layout: new qx.ui.layout.VBox(10)
     });
 
-    this.__buildLayout(filterGroupId);
+    const store = osparc.store.Store.getInstance();
+    Promise.all([
+      store.getGroupsMe(),
+      store.getGroupsOrganizations(),
+      store.getGroupsAll()
+    ])
+      .then(values => {
+        const groupMe = values[0];
+        const groupOrg = values[1];
+        const groupAll = values[2];
+        console.log(groupOrg);
+        this.__sharingOptions["me"]["gid"] = groupMe["gid"];
+        this.__sharingOptions["all"]["gid"] = groupAll["gid"];
+        this.__buildLayout(filterGroupId);
+      });
   },
 
   properties: {
@@ -47,17 +61,20 @@ qx.Class.define("osparc.component.export.ShareWith", {
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members
     __sharingOptions: {
-      "private": {
+      "me": {
         shareContextId: 0,
-        label: "Private"
+        label: "Private",
+        gid: null
       },
-      "organization": {
+      "orgs": {
         shareContextId: 1,
-        label: "Organizations"
+        label: "Organizations",
+        gid: null
       },
       "all": {
         shareContextId: 2,
-        label: "All"
+        label: "Everyone",
+        gid: null
       }
     },
     __rbManager: null,
@@ -71,13 +88,14 @@ qx.Class.define("osparc.component.export.ShareWith", {
       for (let [sharingOptionKey, sharingOption] of Object.entries(this.__sharingOptions)) {
         const rb = new qx.ui.form.RadioButton(sharingOption.label);
         rb.shareContextId = sharingOption.shareContextId;
-        if (sharingOptionKey === "organization") {
+        if (sharingOptionKey === "orgs") {
           const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
           const myOrganizationsHB = this.__myOrganizationsHB = new osparc.component.filter.Organizations(filterGroupId);
           vBox.add(rb);
           vBox.add(myOrganizationsHB);
           this.add(vBox);
         } else {
+          rb.gid = sharingOption["gid"];
           this.add(rb);
         }
         this.__rbManager.add(rb);
@@ -91,31 +109,40 @@ qx.Class.define("osparc.component.export.ShareWith", {
       const selection = this.__rbManager.getSelection();
       this.setReady(Boolean(selection.length));
 
-      const isOrganizationsSelected = this.__isOrganizationsSelected();
+      const isOrganizationsSelected = this.__isGroupSelected("orgs");
       this.__myOrganizationsHB.setVisibility(isOrganizationsSelected ? "visible" : "excluded");
     },
 
-    __isOrganizationsSelected: function() {
+    __isGroupSelected: function(groupKey) {
       const selection = this.__rbManager.getSelection();
-      if (selection.length === 1 && selection[0].shareContextId === this.__sharingOptions["organization"].shareContextId) {
+      if (selection.length === 1 && selection[0].shareContextId === this.__sharingOptions[groupKey].shareContextId) {
         return true;
       }
       return false;
     },
 
-    getShareWithId: function() {
-      const selection = this.__rbManager.getSelection();
-      if (selection.length) {
-        return selection[0].shareContextId;
-      }
-      return null;
-    },
-
-    getSelectedOrganizationIDs: function() {
-      if (this.__isOrganizationsSelected()) {
+    __getSelectedOrganizationIDs: function() {
+      if (this.__isGroupSelected("orgs")) {
         return this.__myOrganizationsHB.getSelectedOrganizationIDs();
       }
       return [];
+    },
+
+    getSelectedGroups: function() {
+      let groupIDs = [];
+      const selection = this.__rbManager.getSelection();
+      if (selection.length) {
+        switch (selection[0].shareContextId) {
+          case 0:
+          case 2:
+            groupIDs = [selection[0].gid];
+            break;
+          case 1:
+            groupIDs = this.__getSelectedOrganizationIDs();
+            break;
+        }
+      }
+      return groupIDs;
     }
   }
 });

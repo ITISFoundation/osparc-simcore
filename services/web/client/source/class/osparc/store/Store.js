@@ -183,70 +183,29 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getGroupsMe: function() {
-      const hardcodedMe = {
-        GID: "27",
-        label: "Odei Maiz",
-        description: "Odei Maiz Barandiaran"
-      };
+    __getGroups: function(group) {
       return new Promise((resolve, reject) => {
         osparc.data.Resources.getOne("profile")
           .then(profile => {
             console.log(profile);
-            resolve(hardcodedMe);
+            resolve(profile["groups"][group]);
           })
           .catch(err => {
             console.error(err);
           });
       });
+    },
+
+    getGroupsMe: function() {
+      return this.__getGroups("me");
     },
 
     getGroupsOrganizations: function() {
-      const hardcodedOrgs = [{
-        GID: "1",
-        label: "IT'IS Foundation",
-        description: "The Foundation for Research on Information Technologies in Society"
-      }, {
-        GID: "2",
-        label: "Speag",
-        description: "Spin-off company of the Swiss Federal Institute of Technology"
-      }, {
-        GID: "3",
-        label: "ZMT",
-        description: "Zurich MedTech AG"
-      }, {
-        GID: "4",
-        label: "Team Black",
-        description: "Testing team"
-      }];
-      return new Promise((resolve, reject) => {
-        osparc.data.Resources.getOne("profile")
-          .then(profile => {
-            console.log(profile);
-            resolve(hardcodedOrgs);
-          })
-          .catch(err => {
-            console.error(err);
-          });
-      });
+      return this.__getGroups("organizations");
     },
 
     getGroupsAll: function() {
-      const hardcodedAll = {
-        GID: "0",
-        label: "All",
-        description: "Open to all users"
-      };
-      return new Promise((resolve, reject) => {
-        osparc.data.Resources.getOne("profile")
-          .then(profile => {
-            console.log(profile);
-            resolve(hardcodedAll);
-          })
-          .catch(err => {
-            console.error(err);
-          });
-      });
+      return this.__getGroups("all");
     },
 
     /**

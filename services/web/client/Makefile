@@ -1,5 +1,8 @@
+.DEFAULT_GOAL := help
+
 # qooxdoo-kit's versions to use. See https://hub.docker.com/r/itisfoundation/qooxdoo-kit/tags
 export QOOXDOO_KIT_TAG=latest
+
 
 # version controled
 export VCS_URL:=$(shell git config --get remote.origin.url)
@@ -90,7 +93,6 @@ shell: ## runs /bin/sh in 'itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}'
 	@$(docker_compose) run --rm qooxdoo-kit /bin/sh
 
 
-
 .PHONY: info
 info: ## this colorful help
 	# toolkit image 'itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}'
@@ -111,15 +113,17 @@ help: ## this colorful help
 	@echo ""
 
 
-.DEFAULT_GOAL := help
-
-.PHONY: clean
-clean: ## Forces clean of all outputs (files and images)
-	# tear down docker-compose
-	@${docker_compose} down
-	# remove build
-	@docker image rm -f $(docker_image)
+.PHONY: clean clean-files clean-images
+clean-files:
 	# remove generated outputs
 	@-rm -rf qx_packages .qooxdoo source-output
 	# remove unversioned
 	@git clean -dXf
+
+clean-images:
+	# tear down docker-compose
+	@${docker_compose} down
+	# remove build
+	@docker image rm -f $(docker_image)
+
+clean: clean-images clean-files ## Forces clean of all outputs (files and images)

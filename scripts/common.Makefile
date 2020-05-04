@@ -39,8 +39,15 @@ REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 VENV_DIR      := $(abspath $(REPO_BASE_DIR)/.venv)
 
 #
+# SHORTCUTS
+#
+
+MAKE_C := $(MAKE) --no-print-directory --directory
+
+#
 # COMMON TASKS
 #
+
 
 .PHONY: help
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
@@ -55,7 +62,7 @@ help:
 
 .PHONY: devenv
 devenv: ## build development environment (using main services/docker-compose-build.yml)
-	@$(MAKE) --directory ${REPO_BASE_DIR} --no-print-directory $@
+	@$(MAKE_C) $@
 
 
 .PHONY: clean
@@ -103,17 +110,17 @@ version-major: ## commits version with backwards-INcompatible addition or change
 
 buil%: ## builds docker image (using main services/docker-compose-build.yml)
 	# building docker image for ${APP_NAME}
-	@$(MAKE) --directory ${REPO_BASE_DIR} --no-print-directory build target=${APP_NAME}
+	@$(MAKE_C) ${REPO_BASE_DIR} build target=${APP_NAME}
 
 # FIXME:
 #.PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
 #build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## docker image build in many flavours
 #	# building docker image for ${APP_NAME} ...
-#	@$(MAKE) --directory ${REPO_BASE_DIR} $@ target=${APP_NAME}
+#	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
 .PHONY: shell
 shell: ## runs shell in production container
-	@$(MAKE) --directory ${REPO_BASE_DIR} --no-print-directory shell target=${APP_NAME}
+	@$(MAKE_C) ${REPO_BASE_DIR} shell target=${APP_NAME}
 
 #
 # SUBTASKS

@@ -42,8 +42,8 @@ qx.Class.define("osparc.component.filter.Organizations", {
         .then(orgs => {
           orgs.sort(this.__sortByLabel);
           orgs.forEach(org => {
-            const bnt = this._addOption(osparc.utils.Utils.capitalize(org.label));
-            bnt.GID = org.GID;
+            const bnt = this._addOption(osparc.utils.Utils.capitalize(org["label"]));
+            bnt.gid = org["gid"];
           });
         });
     },
@@ -62,7 +62,7 @@ qx.Class.define("osparc.component.filter.Organizations", {
       const selectedOrganizationIDs = [];
       const activeMenuButtons = this._getActiveMenuButtons();
       activeMenuButtons.forEach(activeMenuButton => {
-        selectedOrganizationIDs.push(activeMenuButton.GID);
+        selectedOrganizationIDs.push(activeMenuButton.gid);
       });
       return selectedOrganizationIDs;
     }

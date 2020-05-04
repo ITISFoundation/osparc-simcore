@@ -39,7 +39,7 @@ qx.Class.define("osparc.data.model.Study", {
   /**
     * @param studyData {Object} Object containing the serialized Project Data
     */
-  construct: function (studyData) {
+  construct: function(studyData) {
     this.base(arguments);
 
     this.set({
@@ -126,7 +126,7 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   statics: {
-    createMinimumStudyObject: function () {
+    createMinimumStudyObject: function() {
       // TODO: Check if this can be automatically generated from schema
       return {
         uuid: "",
@@ -141,7 +141,7 @@ qx.Class.define("osparc.data.model.Study", {
         tags: []
       };
     },
-    updateStudy: function (params) {
+    updateStudy: function(params) {
       return osparc.data.Resources.fetch("studies", "put", {
         url: {
           projectId: params.uuid
@@ -155,11 +155,11 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
-    buildWorkbench: function () {
+    buildWorkbench: function() {
       this.getWorkbench().buildWorkbench();
     },
 
-    openStudy: function () {
+    openStudy: function() {
       const params = {
         url: {
           projectId: this.getUuid()
@@ -171,7 +171,7 @@ qx.Class.define("osparc.data.model.Study", {
         .catch(err => console.error(err));
     },
 
-    closeStudy: function () {
+    closeStudy: function() {
       const params = {
         url: {
           projectId: this.getUuid()
@@ -188,7 +188,7 @@ qx.Class.define("osparc.data.model.Study", {
       }
     },
 
-    serializeStudy: function () {
+    serializeStudy: function() {
       let jsonObject = {};
       const properties = this.constructor.$$properties;
       for (let key in properties) {
@@ -201,7 +201,7 @@ qx.Class.define("osparc.data.model.Study", {
       return jsonObject;
     },
 
-    updateStudy: function (params) {
+    updateStudy: function(params) {
       return this.self().updateStudy({
         ...this.serializeStudy(),
         ...params

@@ -6,13 +6,16 @@
 .PHONY: reqs check clean help
 .DEFAULT_GOAL := help
 
+UPGRADE_OPTION := $(if $(upgrade),--upgrade-package $(upgrade),--upgrade)
+
+
 objects = $(wildcard *.in)
 outputs := $(objects:.in=.txt)
 
-reqs: $(outputs) ## pip-compiles all requirements/*.in -> requirements/*.txt
+reqs: $(outputs) ## pip-compiles all requirements/*.in -> requirements/*.txt; make reqs upgrade=foo will only upgrade package foo
 
 %.txt: %.in
-	pip-compile --upgrade --build-isolation --output-file $@ $<
+	pip-compile $(UPGRADE_OPTION) --build-isolation --output-file $@ $<
 
 _test.txt: _base.txt
 

@@ -1,8 +1,23 @@
-# Python tools installed in .venv for development
+# COMMON python tools installed in .venv for development
 #
 # $ make devenv
 #
+# - Common tools used during development
+# - Always latest versions of tooling
+# - This file SHALL be included in requirements/dev.txt
+#
+# NOTE: None of thes tools are part of the automatic testing
+# NOTE: pylint is already included as test dependency
+
+# FIXME: this file cannot be referenced by services/{}/requirements/dev.txt
+#        because it is NOT mounted in devel container. Therefore the question is
+#        how to sync??
+
+# formatter
 black
+# dependency manager
 pip-tools
-rope
+# version manager
 bump2version
+# renaming
+rope
