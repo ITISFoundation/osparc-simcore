@@ -56,6 +56,8 @@ ROLES_PERMISSIONS = {
             "project.tag.*",  # "study.tag"
             "user.profile.update",  # "preferences.user.update",
             # "preferences.role.update"
+            "user.apikey.*",  # "preferences.apikey.create",
+            # "preferences.apikey.delete"
             "user.tokens.*",  # "preferences.token.create",
             # "preferences.token.delete"
             "tag.crud.*"  # "preferences.tag"
@@ -85,6 +87,8 @@ ROLES_PERMISSIONS = {
 ###   "studies.user.create",
 ###   "storage.datcore.read",
 ###   "preferences.user.update",
+###   "preferences.apikey.create",
+###   "preferences.apikey.delete",
 ###   "preferences.token.create",
 ###   "preferences.token.delete",
 ###   "study.node.create",

@@ -82,7 +82,8 @@ class Executor:
         log.debug("Pre-Processing...")
         self.shared_folders = TaskSharedVolumes.from_task(self.task)
         self.shared_folders.create()
-        await logged_gather(self._process_task_inputs(), self._pull_image())
+        results = await logged_gather(self._process_task_inputs(), self._pull_image())
+        await self._write_input_file(results[0])
         log.debug("Pre-Processing Pipeline DONE")
 
     async def process(self):
@@ -126,13 +127,13 @@ class Executor:
         else:
             input_ports[port.key] = port_value
 
-    async def _process_task_inputs(self):
+    async def _process_task_inputs(self) -> Dict:
         log.debug("Inputs parsing...")
 
         input_ports = dict()
         PORTS = await self._get_node_ports()
         await self._post_messages(
-            LogType.LOG, f"[sidecar]Downloading inputs...",
+            LogType.LOG, "[sidecar]Downloading inputs...",
         )
         await logged_gather(
             *[
@@ -140,11 +141,20 @@ class Executor:
                 for port in (await PORTS.inputs)
             ]
         )
-
-        if input_ports:
-            file_name = self.shared_folders.input_folder / "input.json"
-            file_name.write_text(json.dumps(input_ports))
         log.debug("Inputs parsing DONE")
+        return input_ports
+
+    async def _write_input_file(self, inputs: Dict) -> None:
+        if inputs:
+            log.debug("Writing input file...")
+            stem = (
+                "input"
+                if self.integration_version == version.parse("0.0.0")
+                else "inputs"
+            )
+            file_name = self.shared_folders.input_folder / f"{stem}.json"
+            file_name.write_text(json.dumps(inputs))
+            log.debug("Writing input file DONE")
 
     async def _pull_image(self):
         docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
@@ -302,14 +312,19 @@ class Executor:
         """
         log.debug("Processing outputs...")
         await self._post_messages(
-            LogType.LOG, f"[sidecar]Uploading outputs...",
+            LogType.LOG, "[sidecar]Uploading outputs...",
         )
         PORTS = await self._get_node_ports()
+        stem = (
+            "output"
+            if self.integration_version == version.parse("0.0.0")
+            else "outputs"
+        )
         try:
             file_upload_tasks = []
             for file_path in self.shared_folders.output_folder.rglob("*"):
-                if file_path.name == "output.json":
-                    log.debug("POSTRO FOUND output.json")
+                if file_path.name == f"{stem}.json":
+                    log.debug("POSTRO FOUND %s.json", stem)
                     # parse and compare/update with the tasks output ports from db
                     with file_path.open() as fp:
                         output_ports = json.load(fp)
@@ -334,7 +349,7 @@ class Executor:
     async def _process_task_log(self):
         log.debug("Processing Logs...")
         await self._post_messages(
-            LogType.LOG, f"[sidecar]Uploading logs...",
+            LogType.LOG, "[sidecar]Uploading logs...",
         )
         if self.shared_folders.log_folder.exists():
             await node_data.data_manager.push(

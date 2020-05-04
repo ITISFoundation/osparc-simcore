@@ -29,6 +29,7 @@
   },
   "python.testing.pyTestEnabled": true,
   "autoDocstring.docstringFormat": "sphinx",
+  "hadolint.hadolintPath": "${workspaceFolder}/scripts/hadolint.bash",
   "shellcheck.executablePath": "${workspaceFolder}/scripts/shellcheck.bash",
   "shellcheck.run": "onSave",
   "shellcheck.enableQuickFix": true,

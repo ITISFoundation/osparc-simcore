@@ -2,5 +2,4 @@
 # Specifies third-party dependencies for 'simcore-postgres-database'
 #
 sqlalchemy[postgresql_psycopg2binary]>=1.3.3  # binary + Vulnerability
-
 yarl

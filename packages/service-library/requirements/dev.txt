@@ -11,3 +11,6 @@
 
 # current module
 -e .
+
+# basic dev tools
+-r ../../../requirements.txt

@@ -23,7 +23,7 @@ def storage_endpoint(docker_stack: Dict, devel_environ: Dict) -> URL:
     endpoint = f"127.0.0.1:{get_service_published_port('storage', default_port)}"
 
     # nodeports takes its configuration from env variables
-    os.environ[f"STORAGE_ENDPOINT"] = endpoint
+    os.environ["STORAGE_ENDPOINT"] = endpoint
 
     return URL(f"http://{endpoint}")
 

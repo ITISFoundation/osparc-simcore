@@ -17,20 +17,20 @@ from pathlib import Path
 from typing import Dict
 from uuid import uuid4
 
+import aioredis
 import pytest
+import redis
+import socketio
 import sqlalchemy as sa
+import trafaret_config
 from yarl import URL
 
-import aioredis
-import redis
+import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
-import socketio
-import trafaret_config
 from servicelib.aiopg_utils import DSN
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_config import app_schema as app_schema
-from simcore_service_webserver.db_models import confirmations, metadata, users
 
 ## current directory
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -117,11 +117,15 @@ def postgres_db(app_cfg, postgres_service):
     # Configures db and initializes tables
     # Uses syncrounous engine for that
     engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
-    metadata.create_all(bind=engine, tables=[users, confirmations], checkfirst=True)
+    orm.metadata.create_all(
+        bind=engine,
+        tables=[orm.users, orm.confirmations, orm.api_keys],
+        checkfirst=True,
+    )
 
     yield engine
 
-    metadata.drop_all(engine)
+    orm.metadata.drop_all(engine)
     engine.dispose()
 
 
@@ -241,20 +245,25 @@ async def security_cookie(client) -> str:
 async def socketio_client(socketio_url: str, security_cookie: str):
     clients = []
 
-    async def connect(client_session_id):
-        sio = socketio.AsyncClient()
-        url = str(
-            URL(socketio_url).with_query({"client_session_id": client_session_id})
-        )
-        await sio.connect(url, headers={"Cookie": security_cookie})
+    async def connect(client_session_id) -> socketio.AsyncClient:
+        sio = socketio.AsyncClient(ssl_verify=False)    # enginio 3.10.0 introduced ssl verification
+        url = str(URL(socketio_url).with_query({'client_session_id': client_session_id}))
+        headers = {}
+        if security_cookie:
+            # WARNING: engineio fails with empty cookies. Expects "key=value"
+            headers.update({'Cookie': security_cookie})
+
+        await sio.connect(url, headers=headers)
         assert sio.sid
         clients.append(sio)
         return sio
 
     yield connect
+
     for sio in clients:
         await sio.disconnect()
         assert not sio.sid
+
 
 
 @pytest.fixture()

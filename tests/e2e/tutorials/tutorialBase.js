@@ -47,6 +47,22 @@ class TutorialBase {
     await utils.takeScreenshot(this.__page, this.__templateName + "_landingPage_" + domain);
   }
 
+  async openStudyLink() {
+    this.__responsesQueue.addResponseListener("open");
+
+    await this.goTo();
+
+    let resp = null;
+    try {
+      const openStudyTimeout = 20000;
+      resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
+    }
+    catch(err) {
+      console.error(this.__templateName, "could not be started", err);
+    }
+    return resp;
+  }
+
   async registerIfNeeded() {
     if (this.__newUser) {
       await auto.register(this.__page, this.__user, this.__pass);

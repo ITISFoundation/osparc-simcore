@@ -93,7 +93,7 @@ async def create_projects(request: web.Request):
     except ValidationError:
         raise web.HTTPBadRequest(reason="Invalid project data")
     except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason=f"Project not found")
+        raise web.HTTPNotFound(reason="Project not found")
     except ProjectInvalidRightsError:
         raise web.HTTPUnauthorized
 
@@ -161,7 +161,7 @@ async def get_project(request: web.Request):
         return {"data": project}
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
-    
+
 
 
 @login_required
@@ -227,7 +227,8 @@ async def delete_project(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     try:
-        project = await projects_api.get_project_for_user(
+        # used to check exists
+        await projects_api.get_project_for_user(
             request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True
         )
         with managed_resource(user_id, None, request.app) as rt:
@@ -241,11 +242,11 @@ async def delete_project(request: web.Request):
                 # we cannot delete that project
                 raise web.HTTPForbidden(reason=message)
 
-    
+
         await projects_api.delete_project(request, project_uuid, user_id)
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
-    
+
 
     raise web.HTTPNoContent(content_type="application/json")
 
@@ -293,7 +294,7 @@ async def close_project(request: web.Request) -> web.Response:
         from .projects_api import get_project_for_user
 
         with managed_resource(user_id, client_session_id, request.app) as rt:
-            project = await get_project_for_user(
+            await get_project_for_user(
                 request.app,
                 project_uuid=project_uuid,
                 user_id=user_id,
@@ -312,7 +313,7 @@ async def close_project(request: web.Request) -> web.Response:
         raise web.HTTPNoContent(content_type="application/json")
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
-    
+
 
 
 @login_required
@@ -339,7 +340,7 @@ async def get_active_project(request: web.Request) -> web.Response:
 
         return {"data": project}
     except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason=f"Project not found")
+        raise web.HTTPNotFound(reason="Project not found")
 
 
 @login_required
@@ -371,7 +372,7 @@ async def create_node(request: web.Request) -> web.Response:
         return web.json_response({"data": data}, status=web.HTTPCreated.status_code)
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
-    
+
 
 
 @login_required
@@ -396,7 +397,7 @@ async def get_node(request: web.Request) -> web.Response:
         return {"data": node_details}
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
-    
+
 
 
 @login_required

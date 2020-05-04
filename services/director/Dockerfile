@@ -10,6 +10,13 @@ FROM python:${PYTHON_VERSION}-slim as base
 
 LABEL maintainer=sanderegg
 
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y gosu; \
+	rm -rf /var/lib/apt/lists/*; \
+# verify that the binary works
+	gosu nobody true
+
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
       SC_USER_NAME=scu \
@@ -111,8 +118,10 @@ WORKDIR /home/scu
 
 # bring installed package without build tools
 COPY --from=cache --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/director/docker services/director/docker
+RUN chmod +x services/director/docker/*.sh
 
 HEALTHCHECK --interval=30s \
       --timeout=120s \
@@ -120,8 +129,8 @@ HEALTHCHECK --interval=30s \
       --retries=3 \
       CMD ["python3", "/home/scu/services/director/docker/healthcheck.py", "http://localhost:8080/v0/"]
 
-ENTRYPOINT [ "/bin/sh", "services/director/docker/entrypoint.sh" ]
-CMD ["/bin/sh", "services/director/docker/boot.sh"]
+ENTRYPOINT [ "services/director/docker/entrypoint.sh" ]
+CMD ["services/director/docker/boot.sh"]
 
 
 # --------------------------Development stage -------------------
