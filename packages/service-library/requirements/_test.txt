@@ -43,7 +43,7 @@ pytest-instafail==0.4.1.post0  # via -r requirements/_test.in
 pytest-mock==3.1.0        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.3       # via -r requirements/_test.in
-pytest==5.4.1             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-mock, pytest-sugar
+pytest==5.3.5             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-mock, pytest-sugar
 pyyaml==5.3.1             # via -r requirements/_base.txt, openapi-spec-validator
 requests==2.23.0          # via coveralls
 six==1.14.0               # via -r requirements/_base.txt, astroid, isodate, jsonschema, openapi-core, openapi-spec-validator, packaging, pyrsistent, tenacity
