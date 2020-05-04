@@ -36,6 +36,25 @@ qx.Class.define("osparc.io.WatchDog", {
 
   type : "singleton",
 
+  statics : {
+    HEARTBEAT_EMIT_INTERVAL: 2 * 1000,  // in millisencond
+  },
+
+  construct: function() {
+    this.__clientHeartbeatPinger = new qx.event.Timer(
+      osparc.io.WatchDog.HEARTBEAT_EMIT_INTERVAL
+    );
+    this.__clientHeartbeatPinger.addListener("interval", function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      try{
+        socket.emit("client_heartbeat");
+      }catch(error) {
+        // no need to handle the error, nor does it need to cause further issues
+        // it is ok to eat it up
+      }
+    }, this);
+  },
+
   properties: {
     onLine: {
       check: "Boolean",
@@ -51,6 +70,7 @@ qx.Class.define("osparc.io.WatchDog", {
       if (logo) {
         logo.setOnLine(value);
       }
+      value ? this.__clientHeartbeatPinger.start() : this.__clientHeartbeatPinger.stop();
     }
   } // members
 });

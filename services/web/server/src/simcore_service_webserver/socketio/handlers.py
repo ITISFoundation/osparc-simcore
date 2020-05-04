@@ -8,7 +8,7 @@
 
 import asyncio
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from aiohttp import web
 
@@ -17,7 +17,8 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
 
 from ..login.decorators import RQT_USERID_KEY, login_required
-from ..resource_manager.websocket_manager import managed_resource
+from ..resource_manager.websocket_manager import managed_resource, get_registry
+from ..resource_manager.config import get_service_deletion_timeout
 from .config import get_socket_server
 from .handlers_utils import register_socketio_handler
 
@@ -135,3 +136,22 @@ async def disconnect(sid: str, app: web.Application) -> None:
                 sid,
                 str(socketio_session),
             )
+
+@register_socketio_handler
+async def client_heartbeat(sid: str, _: Any, app: web.Application) -> None:
+    """JS client invokes this handler to signal its presence.
+
+    Each time this event is received the alive key's TTL is updated in
+    Redis. Once the key expires, resources will be garbage collected.
+
+    Arguments:
+        sid {str} -- the socket ID
+        _ {Any} -- the data is ignored for this handler
+        app {web.Application} -- the aiohttp app
+    """
+    sio = get_socket_server(app)
+    async with sio.session(sid) as socketio_session:
+        registry = get_registry(app)
+        await registry.set_key_alive(
+            socketio_session, False, get_service_deletion_timeout(app)
+        )
