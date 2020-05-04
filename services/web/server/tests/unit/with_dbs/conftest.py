@@ -23,6 +23,8 @@ import redis
 import socketio
 import sqlalchemy as sa
 import trafaret_config
+from aiohttp import web
+from aiohttp_session import get_session as get_aiohttp_session
 from yarl import URL
 
 import simcore_service_webserver.db_models as orm
@@ -30,7 +32,8 @@ import simcore_service_webserver.utils
 from servicelib.aiopg_utils import DSN
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.application_config import app_schema as app_schema
+from simcore_service_webserver.application_config import \
+    app_schema as app_schema
 
 ## current directory
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -132,6 +135,17 @@ def postgres_db(app_cfg, postgres_service):
 @pytest.fixture
 def web_server(loop, aiohttp_server, app_cfg, monkeypatch, postgres_db):
     app = create_application(app_cfg)
+
+    async def return_session(request: web.Request):
+        session = await get_aiohttp_session(request)
+        return web.json_response(dict(session))
+    app.router.add_get("/session", return_session)
+    async def delete_user_email(request: web.Request):
+        session = await get_aiohttp_session(request)
+        del session["user_email"]
+        return web.HTTPOk()
+    app.router.add_get("/delete_user_email", delete_user_email)
+
     path_mail(monkeypatch)
     server = loop.run_until_complete(aiohttp_server(app, port=app_cfg["main"]["port"]))
     return server
