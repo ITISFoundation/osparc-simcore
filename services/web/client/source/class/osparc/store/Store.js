@@ -202,28 +202,10 @@ qx.Class.define("osparc.store.Store", {
     },
 
     getGroupsOrganizations: function() {
-      const hardcodedOrgs = [{
-        GID: "1",
-        label: "IT'IS Foundation",
-        description: "The Foundation for Research on Information Technologies in Society"
-      }, {
-        GID: "2",
-        label: "Speag",
-        description: "Spin-off company of the Swiss Federal Institute of Technology"
-      }, {
-        GID: "3",
-        label: "ZMT",
-        description: "Zurich MedTech AG"
-      }, {
-        GID: "4",
-        label: "Team Black",
-        description: "Testing team"
-      }];
       return new Promise((resolve, reject) => {
         osparc.data.Resources.getOne("profile")
           .then(profile => {
-            console.log(profile);
-            resolve(hardcodedOrgs);
+            resolve(profile["groups"]);
           })
           .catch(err => {
             console.error(err);
@@ -232,16 +214,11 @@ qx.Class.define("osparc.store.Store", {
     },
 
     getGroupsAll: function() {
-      const hardcodedAll = {
-        GID: "0",
-        label: "All",
-        description: "Open to all users"
-      };
       return new Promise((resolve, reject) => {
         osparc.data.Resources.getOne("profile")
           .then(profile => {
             console.log(profile);
-            resolve(hardcodedAll);
+            resolve(profile["groups"]["all"]);
           })
           .catch(err => {
             console.error(err);
