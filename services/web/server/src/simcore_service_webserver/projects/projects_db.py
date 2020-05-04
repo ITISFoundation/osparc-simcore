@@ -133,7 +133,6 @@ class ProjectDBAPI:
         :rtype: str
         """
         # pylint: disable=no-value-for-parameter
-
         async with self.engine.acquire() as conn:
 
             # TODO: check security of this query with args. Hard-code values?
@@ -143,7 +142,7 @@ class ProjectDBAPI:
                 {
                     "creationDate": now_str(),
                     "lastChangeDate": now_str(),
-                    "prjOwner": user_id,
+                    "prjOwner": str(user_id),
                 }
             )
             kargs = _convert_to_db_names(prj)
