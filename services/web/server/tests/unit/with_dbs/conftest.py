@@ -31,6 +31,7 @@ from servicelib.aiopg_utils import DSN
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_config import app_schema as app_schema
+from simcore_service_webserver.users_api import list_user_groups
 
 ## current directory
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -108,7 +109,7 @@ def postgres_service(docker_services, docker_ip, default_app_cfg):
 
 
 @pytest.fixture
-def postgres_db(app_cfg, postgres_service):
+def postgres_db(app_cfg: Dict, postgres_service: str) -> sa.engine.Engine:
     cfg = app_cfg["db"]["postgres"]
     url_from_cfg = DSN.format(**cfg)
 
@@ -321,3 +322,10 @@ async def mocked_dynamic_service(loop, client, mocked_director_api):
         return running_service_dict
 
     return create
+
+
+@pytest.fixture
+async def all_group(client, logged_user) -> Dict[str, str]:
+    # FIXME: get from DB instead
+    _, _, all_group = await list_user_groups(client.app, logged_user["id"])
+    return all_group

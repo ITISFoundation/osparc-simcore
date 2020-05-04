@@ -56,7 +56,7 @@ def _convert_to_schema_names(project_database_data: Mapping) -> Dict:
         if isinstance(value, datetime):
             converted_value = format_datetime(value)
         elif key == "prj_owner":
-            converted_value = str(value) if value else None
+            converted_value = str(value)
         converted_args[ChangeCase.snake_to_camel(key)] = converted_value
     return converted_args
 
@@ -197,6 +197,8 @@ class ProjectDBAPI:
 
             # Updated values
             prj = _convert_to_schema_names(kargs)
+            if not "tags" in prj:
+                prj["tags"] = []
             return prj
 
     async def load_user_projects(self, user_id: str) -> List[Dict]:

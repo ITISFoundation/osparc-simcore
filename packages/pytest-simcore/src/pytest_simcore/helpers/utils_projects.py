@@ -59,14 +59,16 @@ async def create_project(
         project_data, user_id, force_project_uuid=force_uuid
     )
     if "template-uuid-" in project_data["uuid"]:
+        # in that case the uuid gets replaced
         assert new_project["uuid"] != project_data["uuid"]
+        project_data["uuid"] = new_project["uuid"]
     else:
         assert new_project["uuid"] == project_data["uuid"]
 
     for key in DB_EXCLUSIVE_COLUMNS:
         project_data.pop(key, None)
 
-    return project_data
+    return new_project
 
 
 async def delete_all_projects(app: web.Application):

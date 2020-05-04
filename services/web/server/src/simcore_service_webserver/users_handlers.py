@@ -14,7 +14,7 @@ from tenacity import retry
 from servicelib.aiopg_utils import PostgresRetryPolicyUponOperation
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
-from .db_models import groups, GroupType, tokens, user_to_groups, users
+from .db_models import GroupType, groups, tokens, user_to_groups, users
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_api import check_permission
 from .utils import gravatar_hash
@@ -234,3 +234,11 @@ async def delete_token(request: web.Request):
         await conn.execute(query)
 
     raise web.HTTPNoContent(content_type="application/json")
+
+
+# @login_required
+# async def list_groups(request: web.Request) -> List[Dict[str, str]]:
+#     await check_permission(request, "user.groups.*")
+#     uid = request[RQT_USERID_KEY]
+#     primary_group, user_groups, all_group = users_api.list_user_groups(request.app, uid)
+#     return {"me": primary_group, "organizations": user_groups, "all": all_group}
