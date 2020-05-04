@@ -38,6 +38,7 @@ async def get_my_profile(request: web.Request):
     )
     parts = row["name"].split(".") + [""]
 
+    # Added in case a user has an active session but hasn't logged in
     session = await get_session(request)
     session["user_email"] = row["email"]
 
