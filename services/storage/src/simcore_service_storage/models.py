@@ -175,4 +175,6 @@ __all__ = [
     "projects",
     "users",
     "user_to_projects",
+    "groups",
+    "user_to_groups",
 ]
