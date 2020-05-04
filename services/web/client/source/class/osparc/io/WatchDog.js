@@ -37,7 +37,7 @@ qx.Class.define("osparc.io.WatchDog", {
   type : "singleton",
 
   statics : {
-    HEARTBEAT_EMIT_INTERVAL: 2 * 1000,  // in millisencond
+    HEARTBEAT_EMIT_INTERVAL: 2 * 1000 // in millisencond
   },
 
   construct: function() {
@@ -46,9 +46,9 @@ qx.Class.define("osparc.io.WatchDog", {
     );
     this.__clientHeartbeatPinger.addListener("interval", function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
-      try{
+      try {
         socket.emit("client_heartbeat");
-      }catch(error) {
+      } catch (error) {
         // no need to handle the error, nor does it need to cause further issues
         // it is ok to eat it up
       }
