@@ -22,12 +22,15 @@ tests: ## runs unit tests
 
 
 .PHONY: import-db
-export SOURCE_HOST ?= undefined
-export SOURCE_DATA_VOLUME ?= simcore_postgres_data
-export TARGET_DATA_VOLUME ?= simcore_postgres_data
-import-db: scripts/copy_database_volume.sh
-	@echo "will copy volume $(SOURCE_DATA_VOLUME) from $(SOURCE_HOST) into local $(TARGET_DATA_VOLUME)
+import-db: scripts/copy_database_volume.sh guard-SOURCE_HOST guard-SOURCE_DATA_VOLUME guard-TARGET_DATA_VOLUME ## copy volume $(SOURCE_DATA_VOLUME) from $(SOURCE_HOST) into local $(TARGET_DATA_VOLUME)
 	./scripts/copy_database_volume.sh
+
+guard-%:
+	@ if [ "${${*}}" = "" ]; then \
+		echo "Environment variable $* not set"; \
+		exit 1; \
+	fi
+
 .PHONY: setup-prod
 export POSTGRES_DATA_VOLUME = $(TARGET_DATA_VOLUME)
 setup-prod: install-dev up-prod  ## sets up a database using an external postgres volume to test migration
