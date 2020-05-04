@@ -81,11 +81,11 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
-    servicesTodo: {
+    services: {
       check: "Array",
       init: []
     },
-    groups: {
+    dags: {
       check: "Array",
       init: []
     },
@@ -165,9 +165,9 @@ qx.Class.define("osparc.store.Store", {
     getServices: function(reload) {
       return new Promise((resolve, reject) => {
         const allServices = osparc.utils.Services.getBuiltInServices();
-        const servicesPromise = osparc.data.Resources.get("servicesTodo", null, !reload);
-        const groupsPromise = osparc.data.Resources.get("groups", null, !reload);
-        Promise.all([servicesPromise, groupsPromise])
+        const servicesPromise = osparc.data.Resources.get("services", null, !reload);
+        const dagsPromise = osparc.data.Resources.get("dags", null, !reload);
+        Promise.all([servicesPromise, dagsPromise])
           .then(values => {
             allServices.push(...values[0], ...values[1]);
           })
@@ -187,7 +187,6 @@ qx.Class.define("osparc.store.Store", {
       return new Promise((resolve, reject) => {
         osparc.data.Resources.getOne("profile")
           .then(profile => {
-            console.log(profile);
             resolve(profile["groups"][group]);
           })
           .catch(err => {
