@@ -37,7 +37,6 @@ log = logging.getLogger(__name__)
 
 APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
 DB_EXCLUSIVE_COLUMNS = ["type", "id", "published"]
-OTHERS_GROUP = "others"
 
 # TODO: check here how schema to model db works!?
 def _convert_to_db_names(project_document_data: Dict) -> Dict:
@@ -57,7 +56,7 @@ def _convert_to_schema_names(project_database_data: Mapping) -> Dict:
         if isinstance(value, datetime):
             converted_value = format_datetime(value)
         elif key == "prj_owner":
-            converted_value = str(value)
+            converted_value = str(value) if value else None
         converted_args[ChangeCase.snake_to_camel(key)] = converted_value
     return converted_args
 
@@ -142,7 +141,7 @@ class ProjectDBAPI:
                 {
                     "creationDate": now_str(),
                     "lastChangeDate": now_str(),
-                    "prjOwner": str(user_id),
+                    "prjOwner": str(user_id) if user_id else None,
                 }
             )
             kargs = _convert_to_db_names(prj)
@@ -244,7 +243,7 @@ OR prj_owner = {user_id})
         return projects_list
 
     async def __load_user_groups(self, conn: SAConnection, user_id: str) -> List[str]:
-        user_groups: List[str] = [OTHERS_GROUP]
+        user_groups: List[str] = []
         query = select([user_to_groups.c.gid]).where(user_to_groups.c.uid == user_id)
         async for row in conn.execute(query):
             user_groups.append(row[user_to_groups.c.gid])
