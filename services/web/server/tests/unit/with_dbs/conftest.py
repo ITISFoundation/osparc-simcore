@@ -14,7 +14,7 @@ import sys
 from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 from uuid import uuid4
 
 import aioredis
