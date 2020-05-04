@@ -14,6 +14,8 @@ from simcore_service_storage.models import (
     projects,
     user_to_projects,
     users,
+    groups,
+    user_to_groups,
 )
 
 log = logging.getLogger(__name__)
@@ -122,7 +124,14 @@ def create_full_tables(url):
 
     meta.drop_all(
         bind=engine,
-        tables=[file_meta_data, projects, user_to_projects, users],
+        tables=[
+            file_meta_data,
+            projects,
+            user_to_projects,
+            users,
+            groups,
+            user_to_groups,
+        ],
         checkfirst=True,
     )
     meta.create_all(
