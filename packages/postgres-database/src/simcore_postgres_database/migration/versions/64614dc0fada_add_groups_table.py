@@ -108,7 +108,7 @@ AFTER INSERT OR UPDATE OR DELETE ON users
     )
 
     group_delete_trigger = sa.DDL(
-    f"""
+        f"""
 DROP TRIGGER IF EXISTS group_delete_trigger on groups;
 CREATE TRIGGER group_delete_trigger
 BEFORE DELETE ON groups
@@ -147,7 +147,7 @@ INSERT INTO "groups" ("name", "description", "type") VALUES ('Everyone', 'all us
     )
 
     set_group_delete_procedure = sa.DDL(
-    """
+        """
 CREATE OR REPLACE FUNCTION group_delete_procedure() RETURNS TRIGGER AS $$
 BEGIN
     IF OLD.type = 'EVERYONE' THEN
@@ -158,11 +158,28 @@ END; $$ LANGUAGE 'plpgsql';
 """
     )
 
+    upgrade_users_primary_gid_column = sa.DDL(
+        """
+ALTER TABLE groups ADD COLUMN uid BIGINT;
+INSERT INTO groups (name, description, type, uid) SELECT name, 'primary group', 'PRIMARY', id FROM users ORDER BY id;
+INSERT INTO user_to_groups (uid, gid) SELECT uid, gid FROM groups WHERE groups.type = 'PRIMARY' ORDER BY gid;
+UPDATE users SET primary_gid = groups.gid FROM groups WHERE groups.uid = users.id;
+ALTER TABLE groups DROP COLUMN uid;
+    """
+    )
+    insert_users_in_all_group = sa.DDL(
+        """
+INSERT INTO user_to_groups (uid, gid) SELECT id, 1 FROM users ORDER BY id;
+    """
+    )
+
     op.execute(set_add_unique_everyone_group)
     op.execute(set_group_delete_procedure)
     op.execute(group_delete_trigger)
     op.execute(set_user_groups_procedure)
     op.execute(new_user_trigger)
+    op.execute(upgrade_users_primary_gid_column)
+    op.execute(insert_users_in_all_group)
 
     op.alter_column("users", "created_at", server_default=sa.text("now()"))
 
@@ -181,4 +198,5 @@ def downgrade():
     op.execute("DROP TRIGGER IF EXISTS group_delete_trigger on groups")
     op.execute("DROP FUNCTION group_delete_procedure()")
     op.execute("DROP FUNCTION check_group_uniqueness(name text, type text)")
+    op.execute("DROP TYPE IF EXISTS grouptype")
     op.alter_column("users", "created_at", server_default=None)
