@@ -80,10 +80,10 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
     __saveAsTemplate: function(btn) {
       btn.setFetching(true);
 
-      const shareContextId = this.__shareWith.getShareWithId();
-      const selectedOrganizationIDs = this.__shareWith.getSelectedOrganizationIDs();
-      console.log(shareContextId);
-      console.log(selectedOrganizationIDs);
+      const selectedGroupIDs = this.__shareWith.getSelectedGroups();
+      selectedGroupIDs.forEach(selectedGroupID => {
+        this.__formData["accessRights"][selectedGroupID] = "rwx";
+      });
 
       const params = {
         url: {
