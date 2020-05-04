@@ -120,7 +120,13 @@ def postgres_db(app_cfg: Dict, postgres_service: str) -> sa.engine.Engine:
     engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
     orm.metadata.create_all(
         bind=engine,
-        tables=[orm.users, orm.confirmations, orm.api_keys],
+        tables=[
+            orm.users,
+            orm.confirmations,
+            orm.api_keys,
+            orm.groups,
+            orm.user_to_groups,
+        ],
         checkfirst=True,
     )
 
