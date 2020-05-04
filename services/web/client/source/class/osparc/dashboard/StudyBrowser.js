@@ -432,22 +432,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         study.tags ?
           osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id)) :
           [];
-      if (isTemplate) {
-        if (study.name.toLowerCase().includes("sleep")) {
-          study["accessRights"] = {
-            "4": "write"
-          };
-        } else if (study.name.includes("Tissue Properties")) {
-          study["accessRights"] = {
-            "1": "write",
-            "4": "write"
-          };
-        } else {
-          study["accessRights"] = {
-            "0": "write"
-          };
-        }
-      }
       const item = new osparc.dashboard.StudyBrowserButtonItem().set({
         isTemplate,
         uuid: study.uuid,
