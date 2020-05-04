@@ -224,7 +224,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             groups.push(values[1]);
             let hintText = "";
             Object.keys(value).forEach(key => {
-              const grp = groups.find(el => el["GID"] === key);
+              const grp = groups.find(el => el["gid"] === parseInt(key));
               hintText += (grp["label"] + "<br>");
             });
             const hint = new osparc.ui.hint.Hint(image, hintText).set({
