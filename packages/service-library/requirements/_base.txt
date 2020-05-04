@@ -4,36 +4,32 @@
 #
 #    pip-compile --output-file=_base.txt _base.in
 #
-aiodebug==1.1.2           # via -r _base.in
-aiohttp==3.6.2            # via -r _base.in, aiozipkin
-aiopg[sa]==1.0.0          # via -r _base.in
-aiozipkin==0.6.0          # via -r _base.in
+aiodebug==1.1.2           # via -r requirements/_base.in
+aiohttp==3.6.2            # via -r requirements/_base.in, aiozipkin
+aiopg[sa]==1.0.0          # via -r requirements/_base.in
+aiozipkin==0.6.0          # via -r requirements/_base.in
 async-timeout==3.0.1      # via aiohttp
-attrs==19.3.0             # via -r _base.in, aiohttp, jsonschema, openapi-core
+attrs==19.3.0             # via -r requirements/_base.in, aiohttp, jsonschema, openapi-core
 chardet==3.0.4            # via aiohttp
-idna-ssl==1.1.0           # via aiohttp
-idna==2.9                 # via idna-ssl, yarl
-importlib-metadata==1.6.0  # via jsonschema
+idna==2.9                 # via yarl
 isodate==0.6.0            # via openapi-core
-jsonschema==3.2.0         # via -r _base.in, openapi-spec-validator
+jsonschema==3.2.0         # via -r requirements/_base.in, openapi-spec-validator
 lazy-object-proxy==1.4.3  # via openapi-core
 multidict==4.7.5          # via aiohttp, yarl
-openapi-core==0.12.0      # via -r _base.in
+openapi-core==0.12.0      # via -r requirements/_base.in
 openapi-spec-validator==0.2.8  # via openapi-core
-prometheus-client==0.7.1  # via -r _base.in
-psycopg2-binary==2.8.5    # via -r _base.in, aiopg, sqlalchemy
+prometheus-client==0.7.1  # via -r requirements/_base.in
+psycopg2-binary==2.8.5    # via -r requirements/_base.in, aiopg, sqlalchemy
 pyrsistent==0.16.0        # via jsonschema
-pyyaml==5.3.1             # via -r _base.in, openapi-spec-validator
+pyyaml==5.3.1             # via -r requirements/_base.in, openapi-spec-validator
 six==1.14.0               # via isodate, jsonschema, openapi-core, openapi-spec-validator, pyrsistent, tenacity
-sqlalchemy[postgresql_psycopg2binary]==1.3.16  # via -r _base.in, aiopg
+sqlalchemy[postgresql_psycopg2binary]==1.3.16  # via -r requirements/_base.in, aiopg
 strict-rfc3339==0.7       # via openapi-core
-tenacity==6.1.0           # via -r _base.in
-trafaret==2.0.2           # via -r _base.in
-typing-extensions==3.7.4.2  # via aiohttp
-ujson==2.0.3              # via -r _base.in
-werkzeug==1.0.1           # via -r _base.in
+tenacity==6.2.0           # via -r requirements/_base.in
+trafaret==2.0.2           # via -r requirements/_base.in
+ujson==2.0.3              # via -r requirements/_base.in
+werkzeug==1.0.1           # via -r requirements/_base.in
 yarl==1.4.2               # via aiohttp
-zipp==3.1.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
