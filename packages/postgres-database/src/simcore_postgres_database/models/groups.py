@@ -80,7 +80,7 @@ user_to_groups = sa.Table(
 # ------------------------ TRIGGERS
 
 group_delete_trigger = sa.DDL(
-    f"""
+    """
 DROP TRIGGER IF EXISTS group_delete_trigger on groups;
 CREATE TRIGGER group_delete_trigger
 BEFORE DELETE ON groups
