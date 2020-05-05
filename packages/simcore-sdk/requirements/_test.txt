@@ -33,7 +33,7 @@ pluggy==0.13.1            # via pytest
 psycopg2-binary==2.8.5    # via -r requirements/_base.txt, aiopg, sqlalchemy
 py==1.8.1                 # via pytest
 pydantic==1.5.1           # via -r requirements/_base.txt
-pylint==2.5.2             # via -r requirements/_test.in
+pylint==2.5.0             # via -r requirements/_test.in
 pyparsing==2.4.7          # via packaging
 pytest-aiohttp==0.3.0     # via -r requirements/_test.in
 pytest-cov==2.8.1         # via -r requirements/_test.in
