@@ -17,8 +17,8 @@ from servicelib.utils import logged_gather
 from .config import APP_GARBAGE_COLLECTOR_KEY, get_garbage_collector_interval
 from .registry import RedisResourceRegistry, get_registry
 from simcore_service_webserver.projects.projects_api import delete_project_from_db
-from simcore_service_webserver.login.cfg import get_storage
-from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.users_api import is_user_guest, delete_user
+from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -73,35 +73,27 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
                 )
 
                 await remove_resources_if_guest_user(
-                    app=app,
-                    project_uuid=resource_value,
-                    user_id=int(key['user_id'])
+                    app=app, project_uuid=resource_value, user_id=int(key["user_id"])
                 )
 
 
 async def remove_resources_if_guest_user(
-    app: web.Application,
-    project_uuid: str,
-    user_id: int
-):
+    app: web.Application, project_uuid: str, user_id: int
+) -> None:
     """When a guest user finishes using the platform its Posgtres
     and S3/MinIO entries need to be removed
     """
-    logger.debug("Will try to remove resoruces if guest for user id '%s'", user_id)
-    db = get_storage(app)
-    user = await db.get_user({"id": user_id})
-    logger.debug("Detected user %s", user)
-    if not user:
-        logger.debug("Could not find the user with id %s, skipping", user_id)
-        return
+    logger.debug(
+        "Removing project '%s' from the database", project_uuid,
+    )
+    try:
+        await delete_project_from_db(app, project_uuid, user_id)
+    except ProjectNotFoundError:
+        logging.warning("Project '%s' not found, skipping removal", project_uuid)
 
-    logger.debug("Found user '%s' with role '%s'", user["email"], user["role"])
-    if UserRole(user["role"]) != UserRole.GUEST:
-        return
-
-    logger.info("Removing guest user's '%s' db entries.", user["email"])
-    await delete_project_from_db(app, project_uuid, user_id)
-    await db.delete_user(user)
+    logger.debug("Will try to remove resoruces for user '%s' if GUEST", user_id)
+    if await is_user_guest(app, user_id):
+        await delete_user(app, user_id)
 
 
 async def garbage_collector_task(app: web.Application):
