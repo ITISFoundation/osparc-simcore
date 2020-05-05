@@ -208,6 +208,29 @@ qx.Class.define("osparc.store.Store", {
       return this.__getGroups("all");
     },
 
+    getGroups: function(withMySelf = true) {
+      return new Promise((resolve, reject) => {
+        const promises = [];
+        promises.push(this.getGroupsOrganizations());
+        promises.push(this.getGroupsAll());
+        if (withMySelf) {
+          promises.push(this.getGroupsMe());
+        }
+        Promise.all(promises)
+          .then(values => {
+            const groups = [];
+            values[0].forEach(value => {
+              groups.push(value);
+            });
+            groups.push(values[1]);
+            if (withMySelf) {
+              groups.push(values[2]);
+            }
+            resolve(groups);
+          });
+      });
+    },
+
     /**
      * Invalidates the cache for the given resources.
      * If resource is a string, it will invalidate that resource.
