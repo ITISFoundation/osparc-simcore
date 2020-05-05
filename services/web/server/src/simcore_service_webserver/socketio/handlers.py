@@ -50,12 +50,11 @@ async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
     except Exception as exc:  # pylint: disable=broad-except
         raise SocketIOConnectionError(f"Unexpected error: {exc}")
 
-    # send service_deletion_timeout to client
-    sio = get_socket_server(app)
+    # Send service_deletion_timeout to client
     # the interval should be < get_service_deletion_timeout(app) to avoid
     # issues, assuming half of the interval and not less the 2 seconds
     emit_interval: int = max(2, get_service_deletion_timeout(app) // 2)
-    log.info("Sending set_heartbeat_emit_interval with %s" % emit_interval)
+    log.info("Sending set_heartbeat_emit_interval with %s", emit_interval)
 
     user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     await post_messages(app, user_id, {'set_heartbeat_emit_interval': emit_interval})
