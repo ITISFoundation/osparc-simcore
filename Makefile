@@ -470,5 +470,6 @@ reset: ## restart docker daemon (LINUX ONLY)
 .PHONY: auto-doc
 auto-doc: .stack-simcore-version.yml ## updates diagrams for README.md
 	# Parsing docker-compose config $< and creating graph
-	./scripts/docker-compose-viz.bash $<
-	mv $<.png docs/img/
+	@./scripts/docker-compose-viz.bash $<
+	# Updating docs/img
+	@mv --verbose $<.png docs/img/

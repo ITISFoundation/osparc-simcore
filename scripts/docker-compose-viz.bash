@@ -1,15 +1,28 @@
 #!/bin/bash
 #
-# Creates a graph out of a docker-compose.yml
+# Creates a graph out of a docker-compose.yml (passed as a first argument)
+#
 # See https://github.com/pmsipilot/docker-compose-viz
 #
-#
-# Examples
-#
-# $ make .stack-simcore-version.yml
-# $  ../scripts/docker-compose-viz.bash .stack-simcore-version.yml
-#
-#
+
+set -euo pipefail
+IFS=$'\n\t'
+
+USERID=$(stat --format=%u "$PWD")
+GROUPID=$(stat --format=%g "$PWD")
+
+exec docker run -it \
+  --name dcv \
+  --rm \
+  --user "$USERID:$GROUPID" \
+  --volume "$PWD:/input" \
+  pmsipilot/docker-compose-viz render \
+  --output-format=image \
+  --output-file="$1.png" \
+  --horizontal  \
+  --no-ports \
+  --verbose \
+  --force "$1"
 
 
 #
@@ -39,26 +52,3 @@
 #   -n, --no-interaction               Do not ask any interactive question
 #   -v|vv|vvv, --verbose               Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
 #
-
-set -euo pipefail
-IFS=$'\n\t'
-
-USERID=$(stat --format=%u "$PWD")
-GROUPID=$(stat --format=%g "$PWD")
-
-# FIXME: replaces automatically $PWD by /local so it maps correctly in the container
-#PATTERN=s+$PWD+/local+
-#CMD=$(echo "$@" | sed $PATTERN)
-
-
-exec docker run -it \
-  --name dcv \
-  --rm \
-  --user "$USERID:$GROUPID" \
-  --volume "$PWD:/input" \
-  pmsipilot/docker-compose-viz render \
-  --output-format=image \
-  --output-file="$1.png" \
-  --horizontal  \
-  --no-ports \
-  --force "$1"
