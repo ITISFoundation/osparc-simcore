@@ -87,7 +87,7 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
 
       const params = {
         url: {
-          "study_url": this.__studyId
+          "study_id": this.__studyId
         },
         data: this.__formData
       };
