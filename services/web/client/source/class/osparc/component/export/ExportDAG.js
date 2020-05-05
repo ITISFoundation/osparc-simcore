@@ -12,7 +12,7 @@
  * - The exported group is added to the catalog
  */
 
-qx.Class.define("osparc.component.export.ExportGroup", {
+qx.Class.define("osparc.component.export.ExportDAG", {
   extend: qx.ui.core.Widget,
 
   /**
