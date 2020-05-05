@@ -158,9 +158,9 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * SERVICES (TODO: remove frontend processing. This is unusable for the moment)
+       * SERVICES
        */
-      servicesTodo: {
+      services: {
         useCache: true,
         endpoints: {
           get: {

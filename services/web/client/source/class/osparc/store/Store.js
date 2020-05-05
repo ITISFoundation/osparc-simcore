@@ -81,7 +81,7 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
-    servicesTodo: {
+    services: {
       check: "Array",
       init: []
     },
@@ -159,20 +159,20 @@ qx.Class.define("osparc.store.Store", {
     },
 
     /**
-     * This functions does the needed processing in order to have a working list of services. Could use a refactor.
+     * This functions does the needed processing in order to have a working list of services and DAGs.
      * @param {Boolean} reload ?
      */
-    getServices: function(reload) {
+    getServicesDAGs: function(reload) {
       return new Promise((resolve, reject) => {
         const allServices = osparc.utils.Services.getBuiltInServices();
-        const servicesPromise = osparc.data.Resources.get("servicesTodo", null, !reload);
+        const servicesPromise = osparc.data.Resources.get("services", null, !reload);
         const groupsPromise = osparc.data.Resources.get("groups", null, !reload);
         Promise.all([servicesPromise, groupsPromise])
           .then(values => {
             allServices.push(...values[0], ...values[1]);
           })
           .catch(err => {
-            console.error("getServices failed", err);
+            console.error("getServicesDAGs failed", err);
           })
           .finally(() => {
             const servicesObj = osparc.utils.Services.convertArrayToObject(allServices);

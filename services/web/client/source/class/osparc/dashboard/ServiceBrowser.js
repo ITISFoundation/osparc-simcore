@@ -76,7 +76,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     __initResources: function() {
       const store = osparc.store.Store.getInstance();
-      store.getServices(true)
+      store.getServicesDAGs(true)
         .then(services => {
           // Do not validate if are not taking actions
           // this.__nodeCheck(services);
@@ -91,7 +91,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this.__reloadBtn.setFetching(true);
 
       const store = osparc.store.Store.getInstance();
-      store.getServices(reload)
+      store.getServicesDAGs(reload)
         .then(services => {
           this.__allServices = services;
           this.__latestServicesModel.removeAll();
