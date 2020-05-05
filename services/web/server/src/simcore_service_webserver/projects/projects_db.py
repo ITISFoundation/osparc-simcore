@@ -494,7 +494,9 @@ OR prj_owner = {user_id})
                     break
         return project_uuid
 
-    async def _get_user_email(self, conn: SAConnection, user_id: str) -> str:
+    async def _get_user_email(self, conn: SAConnection, user_id: Optional[str]) -> str:
+        if not user_id:
+            return "not_a_user@unknown.com"
         stmt = sa.select([users.c.email]).where(users.c.id == user_id)
         result: ResultProxy = await conn.execute(stmt)
         row: RowProxy = await result.first()
