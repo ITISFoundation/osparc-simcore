@@ -2,6 +2,7 @@ from aiohttp import web
 
 APP_LOGIN_CONFIG = __name__ + ".config"
 
+_DAYS = 1.0
 _MINUTES = 1.0 / 24.0 / 60.0
 
 REQUIRED = object()
@@ -19,11 +20,11 @@ DEFAULTS = {
     "SMTP_TLS_ENABLED": False,
     "SMTP_USERNAME": None,
     "SMTP_PASSWORD": None,
-    # email confirmation links lifetime in days
-    "REGISTRATION_CONFIRMATION_LIFETIME": 5,
-    "INVITATION_CONFIRMATION_LIFETIME": 5,
+    # lifetime limits are in days
+    "REGISTRATION_CONFIRMATION_LIFETIME": 5 * _DAYS,
+    "INVITATION_CONFIRMATION_LIFETIME": 15 * _DAYS,
     "RESET_PASSWORD_CONFIRMATION_LIFETIME": 20 * _MINUTES,
-    "CHANGE_EMAIL_CONFIRMATION_LIFETIME": 5,
+    "CHANGE_EMAIL_CONFIRMATION_LIFETIME": 5 * _DAYS,
     "MSG_LOGGED_IN": "You are logged in",
     "MSG_LOGGED_OUT": "You are logged out",
     "MSG_ACTIVATED": "Your account is activated",
