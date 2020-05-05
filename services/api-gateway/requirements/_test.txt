@@ -8,7 +8,7 @@ aiofiles==0.5.0           # via -r _base.txt, fastapi
 aiohttp==3.6.2            # via pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r _base.txt
 aniso8601==7.0.0          # via -r _base.txt, graphene
-astroid==2.4.0            # via pylint
+astroid==2.4.1            # via pylint
 async-exit-stack==1.0.1   # via -r _base.txt, fastapi
 async-generator==1.10     # via -r _base.txt, fastapi
 async-timeout==3.0.1      # via aiohttp
@@ -54,7 +54,7 @@ py==1.8.1                 # via pytest
 pycparser==2.20           # via -r _base.txt, cffi
 pydantic==1.5.1           # via -r _base.txt, fastapi
 pyjwt==1.7.1              # via -r _base.txt
-pylint==2.5.0             # via -r _test.in
+pylint==2.5.2             # via -r _test.in
 pyparsing==2.4.7          # via packaging
 pytest-aiohttp==0.3.0     # via -r _test.in
 pytest-cov==2.8.1         # via -r _test.in
