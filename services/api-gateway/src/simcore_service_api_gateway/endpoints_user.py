@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Security
 
 from .auth import get_current_active_user
 from .schemas import User
-from . import crud_users as crud
+# from . import crud_users as crud
 
 router = APIRouter()
 
@@ -17,5 +17,5 @@ async def get_my_profile(current_user: User = Depends(get_current_active_user)):
 
 
 @router.patch("/user", response_model=User)
-async def update_my_profile(current_user: User = Depends(get_current_active_user)):
+async def update_my_profile(current_user: User = Security(get_current_active_user, scopes=["write"])):
     return current_user
