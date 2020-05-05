@@ -490,7 +490,7 @@ async def test_deep_copy_project_simcore_s3(
         "name": "ISAN: 2D Plot",
         "description": "2D RawGraphs viewer with one input",
         "thumbnail": "",
-        "prjOwner": "",
+        "prjOwner": "my.email@osparc.io",
         "creationDate": "2019-05-24T10:36:57.813Z",
         "lastChangeDate": "2019-05-24T11:36:12.015Z",
         "workbench": {

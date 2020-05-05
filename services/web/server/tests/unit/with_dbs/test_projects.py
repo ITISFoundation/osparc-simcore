@@ -349,7 +349,7 @@ async def test_new_project_from_template(
         modified = ["prjOwner", "creationDate", "lastChangeDate", "uuid"]
 
         # different ownership
-        assert project["prjOwner"] == str(logged_user["id"])
+        assert project["prjOwner"] == logged_user["email"]
         assert project["prjOwner"] != template_project["prjOwner"]
 
         # different timestamps
@@ -421,7 +421,7 @@ async def test_new_project_from_template_with_body(
         modified = ["prjOwner", "creationDate", "lastChangeDate", "uuid"]
 
         # different ownership
-        assert project["prjOwner"] == str(logged_user["id"])
+        assert project["prjOwner"] == logged_user["email"]
         assert project["prjOwner"] != template_project["prjOwner"]
 
         # different timestamps

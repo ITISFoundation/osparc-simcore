@@ -4352,7 +4352,8 @@ paths:
                           example: Dabbling in temporal transitions ...
                         prjOwner:
                           type: string
-                          description: user uuid
+                          format: idn-email
+                          description: user email
                         accessRights:
                           type: object
                           description: object containing the GroupID as key and read/write/execution permissions as value
@@ -4668,7 +4669,8 @@ paths:
                   example: Dabbling in temporal transitions ...
                 prjOwner:
                   type: string
-                  description: user uuid
+                  format: idn-email
+                  description: user email
                 accessRights:
                   type: object
                   description: object containing the GroupID as key and read/write/execution permissions as value
@@ -4889,7 +4891,8 @@ paths:
                         example: Dabbling in temporal transitions ...
                       prjOwner:
                         type: string
-                        description: user uuid
+                        format: idn-email
+                        description: user email
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
@@ -5202,7 +5205,8 @@ paths:
                         example: Dabbling in temporal transitions ...
                       prjOwner:
                         type: string
-                        description: user uuid
+                        format: idn-email
+                        description: user email
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
@@ -5521,7 +5525,8 @@ paths:
                         example: Dabbling in temporal transitions ...
                       prjOwner:
                         type: string
-                        description: user uuid
+                        format: idn-email
+                        description: user email
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
@@ -5832,7 +5837,8 @@ paths:
                   example: Dabbling in temporal transitions ...
                 prjOwner:
                   type: string
-                  description: user uuid
+                  format: idn-email
+                  description: user email
                 accessRights:
                   type: object
                   description: object containing the GroupID as key and read/write/execution permissions as value
@@ -6053,7 +6059,8 @@ paths:
                         example: Dabbling in temporal transitions ...
                       prjOwner:
                         type: string
-                        description: user uuid
+                        format: idn-email
+                        description: user email
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
@@ -6388,7 +6395,8 @@ paths:
                         example: Dabbling in temporal transitions ...
                       prjOwner:
                         type: string
-                        description: user uuid
+                        format: idn-email
+                        description: user email
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
@@ -7403,7 +7411,8 @@ paths:
                         example: Dabbling in temporal transitions ...
                       prjOwner:
                         type: string
-                        description: user uuid
+                        format: idn-email
+                        description: user email
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
@@ -7715,7 +7724,8 @@ paths:
                         example: Dabbling in temporal transitions ...
                       prjOwner:
                         type: string
-                        description: user uuid
+                        format: idn-email
+                        description: user email
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
