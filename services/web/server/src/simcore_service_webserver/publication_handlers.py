@@ -5,13 +5,15 @@ import os
 from aiohttp import MultipartReader, hdrs, web
 from aiohttp_session import get_session
 from json2html import json2html
+
 from servicelib.application_keys import APP_CONFIG_KEY
 
 from .login.decorators import login_required
+from .login.utils import common_themed
 
 log = logging.getLogger(__name__)
 
-email_template_name = "service_submission.html"
+EMAIL_TEMPLATE_NAME = "service_submission.html"
 
 
 @login_required
@@ -19,6 +21,7 @@ async def service_submission(request: web.Request):
     reader = MultipartReader.from_response(request)
     data = None
     filedata = None
+
     # Read multipart email
     while True:
         part = await reader.next()
@@ -39,30 +42,39 @@ async def service_submission(request: web.Request):
         raise web.HTTPUnsupportedMediaType(
             reason=f"One part had an unexpected type: {part.headers[hdrs.CONTENT_TYPE]}"
         )
+
     # data (dict) and file (bytearray) have the necessary information to compose the email
     session = await get_session(request)
     user_email = session.get("user_email")
     support_email_address = request.app[APP_CONFIG_KEY]["smtp"]["sender"]
     is_real_usage = any(
-        [env in os.environ.get("SWARM_STACK_NAME") for env in ("production", "staging")]
+        env in os.environ.get("SWARM_STACK_NAME", "")
+        for env in ("production", "staging")
     )
+
     try:
-        from .login.utils import common_themed, render_and_send_mail
+        # NOTE: temporarily internal import to avoid render_and_send_mail to be interpreted as handler
+        # TODO: Move outside when get_handlers_from_namespace is fixed
+        from .login.utils import render_and_send_mail
 
         # send email
-        subject = "New service submission"
         await render_and_send_mail(
             request,
-            support_email_address if is_real_usage else user_email,
-            common_themed(email_template_name),
-            {
+            to=support_email_address if is_real_usage else user_email,
+            template=common_themed(EMAIL_TEMPLATE_NAME),
+            context={
                 "user": user_email,
                 "data": json2html.convert(
                     json=json.dumps(data), table_attributes='class="pure-table"'
                 ),
-                "subject": subject if is_real_usage else "TEST: " + subject,
+                "subject": "TEST: " * is_real_usage + "New service submission",
             },
-            [(filename, filedata), ("metadata.json", json.dumps(data, indent=4))] if filedata else None,
+            attachments=[
+                (filename, filedata),
+                ("metadata.json", json.dumps(data, indent=4)),
+            ]
+            if filedata
+            else None,
         )
     except Exception:
         log.exception("Error while sending the 'new service submission' mail.")
