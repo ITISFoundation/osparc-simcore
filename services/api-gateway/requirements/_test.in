@@ -17,7 +17,7 @@ pytest-mock
 pytest-runner
 
 # fixtures
-Faker
+faker
 
 # tools
 pylint
