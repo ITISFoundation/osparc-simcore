@@ -2,8 +2,7 @@
 
 import faker
 import pytest
-import sqlalchemy as sa
-from aiopg.sa.result import ResultProxy, RowProxy
+from aiopg.sa.result import RowProxy
 from psycopg2.errors import ForeignKeyViolation, RaiseException, UniqueViolation
 from sqlalchemy import literal_column
 
@@ -71,6 +70,7 @@ async def test_user_group_uniqueness(make_engine):
                 user_to_groups.insert().values(uid=ringo.id, gid=rory_group.gid)
             )
 
+
 async def test_all_group(make_engine):
     engine = await make_engine()
     sync_engine = make_engine(False)
@@ -78,16 +78,14 @@ async def test_all_group(make_engine):
     metadata.create_all(sync_engine)
     async with engine.acquire() as conn:
         # now check the only available group is the all group
-        groups_count = await conn.scalar(
-            groups.count()
-        )
+        groups_count = await conn.scalar(groups.count())
         assert groups_count == 1
 
         result = await conn.execute(
             groups.select().where(groups.c.type == GroupType.EVERYONE)
         )
         all_group_gid = (await result.fetchone()).gid
-        assert all_group_gid == 1 # it's the first group so it gets a 1
+        assert all_group_gid == 1  # it's the first group so it gets a 1
         # try removing the all group
         with pytest.raises(RaiseException):
             await conn.execute(groups.delete().where(groups.c.gid == all_group_gid))
@@ -115,16 +113,13 @@ async def test_all_group(make_engine):
         assert users_count == 0
 
         # check the all group still exists
-        groups_count = await conn.scalar(
-            groups.count()
-        )
+        groups_count = await conn.scalar(groups.count())
         assert groups_count == 1
         result = await conn.execute(
             groups.select().where(groups.c.type == GroupType.EVERYONE)
         )
         all_group_gid = (await result.fetchone()).gid
-        assert all_group_gid == 1 # it's the first group so it gets a 1
-
+        assert all_group_gid == 1  # it's the first group so it gets a 1
 
 
 async def test_own_group(make_engine):
@@ -150,14 +145,14 @@ async def test_own_group(make_engine):
         )
         primary_group: RowProxy = await result.fetchone()
         assert primary_group.gid == user.primary_gid
-        
+
         groups_count = await conn.scalar(
             groups.count().where(groups.c.gid == user.primary_gid)
         )
         assert groups_count == 1
 
         relations_count = await conn.scalar(user_to_groups.count())
-        assert relations_count == 2 # own group + all group
+        assert relations_count == 2  # own group + all group
 
         # try removing the primary group
         with pytest.raises(ForeignKeyViolation):
@@ -168,7 +163,7 @@ async def test_own_group(make_engine):
         users_count = await conn.scalar(users.count())
         assert users_count == 0
         groups_count = await conn.scalar(groups.count())
-        assert groups_count == 1 # the all group is still around
+        assert groups_count == 1  # the all group is still around
         relations_count = await conn.scalar(user_to_groups.count())
         assert relations_count == (users_count + users_count)
 
@@ -192,7 +187,9 @@ async def test_group(make_engine):
         users_count = await conn.scalar(users.count())
         assert users_count == 5
         groups_count = await conn.scalar(groups.count())
-        assert groups_count == (users_count + 2 + 1) # user primary groups, other groups, all group
+        assert groups_count == (
+            users_count + 2 + 1
+        )  # user primary groups, other groups, all group
         relations_count = await conn.scalar(user_to_groups.count())
         assert relations_count == (users_count + users_count + users_count)
 

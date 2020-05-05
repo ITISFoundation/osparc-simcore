@@ -6,6 +6,7 @@
 import random
 from copy import deepcopy
 from itertools import repeat
+from typing import Dict, List
 from unittest.mock import MagicMock
 
 import faker
@@ -128,7 +129,15 @@ PREFIX = "/" + API_VERSION + "/me"
         (UserRole.TESTER, web.HTTPOk),
     ],
 )
-async def test_get_profile(logged_user, client, role, expected):
+async def test_get_profile(
+    logged_user,
+    client,
+    role,
+    expected,
+    primary_group: Dict[str, str],
+    standard_groups: List[Dict[str, str]],
+    all_group: Dict[str, str],
+):
     url = client.app.router["get_my_profile"].url_for()
     assert str(url) == "/v0/me"
 
@@ -141,6 +150,11 @@ async def test_get_profile(logged_user, client, role, expected):
         assert data["first_name"] == logged_user["name"]
         assert data["last_name"] == ""
         assert data["role"] == role.name.capitalize()
+        assert data["groups"] == {
+            "me": primary_group,
+            "organizations": standard_groups,
+            "all": all_group,
+        }
 
 
 @pytest.mark.parametrize(

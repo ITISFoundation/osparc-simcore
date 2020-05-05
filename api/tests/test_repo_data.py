@@ -16,8 +16,8 @@ import yaml
 from utils import current_repo_dir
 
 SYNCED_VERSIONS_SUFFIX = [
-    ".json",                 # json-schema specs file
-    "-converted.yaml"        # equivalent openapi specs file (see scripts/json-schema-to-openapi-schema)
+    ".json",  # json-schema specs file
+    "-converted.yaml",  # equivalent openapi specs file (see scripts/json-schema-to-openapi-schema)
 ]
 
 
@@ -38,28 +38,32 @@ PROJECTS_PATHS = [
 # ./tests/integration/computation/workbench_sleeper_dag_adjacency_list.json
 # ./tests/integration/computation/workbench_sleeper_payload.json
 
+
 def _load_data(fpath: Path):
     with open(fpath) as fh:
         try:
             data = json.load(fh)
         except json.JSONDecodeError:
             fh.seek(0)
-            data = yaml.load(fh)
+            data = yaml.safe_load(fh)
     return data
 
 
 @pytest.fixture(
     scope="module",
-    params= [ str(schema_path)
+    params=[
+        str(schema_path)
         for suffix in SYNCED_VERSIONS_SUFFIX
         for schema_path in current_repo_dir.rglob(f"schemas/project*{suffix}")
-        ]
+    ],
 )
 def project_schema(request, api_specs_dir):
     schema_path = Path(request.param)
     return _load_data(schema_path)
 
+
 # TESTS --------------------------------------------------
+
 
 @pytest.mark.parametrize("data_path", PROJECTS_PATHS)
 def test_project_against_schema(data_path, project_schema, this_repo_root_dir):
@@ -80,13 +84,16 @@ def test_project_against_schema(data_path, project_schema, this_repo_root_dir):
             "creationDate": "8715-11-30T9:1:51.388Z",
             "lastChangeDate": "0944-02-31T5:1:7.795Z",
             "thumbnail": "labore incid",
-            "workbench": data["workbench"]
+            "accessRights": {},
+            "workbench": data["workbench"],
         }
         data = prj
 
     assert any(isinstance(data, _type) for _type in [List, Dict])
     if isinstance(data, Dict):
-        data = [data,]
+        data = [
+            data,
+        ]
 
     for project_data in data:
         jsonschema.validate(project_data, project_schema)

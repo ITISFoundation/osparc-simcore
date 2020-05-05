@@ -94,7 +94,7 @@ users = sa.Table(
 # ------------------------ TRIGGERS
 
 new_user_trigger = sa.DDL(
-    f"""
+    """
 DROP TRIGGER IF EXISTS user_modification on users;
 CREATE TRIGGER user_modification
 AFTER INSERT OR UPDATE OR DELETE ON users
@@ -106,7 +106,7 @@ AFTER INSERT OR UPDATE OR DELETE ON users
 
 # ---------------------- PROCEDURES
 set_user_groups_procedure = sa.DDL(
-    f"""
+    """
 CREATE OR REPLACE FUNCTION set_user_groups() RETURNS TRIGGER AS $$
 DECLARE
     group_id BIGINT;

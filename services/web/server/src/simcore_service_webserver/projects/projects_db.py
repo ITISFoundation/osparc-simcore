@@ -41,13 +41,17 @@ DB_EXCLUSIVE_COLUMNS = ["type", "id", "published"]
 # TODO: check here how schema to model db works!?
 def _convert_to_db_names(project_document_data: Dict) -> Dict:
     converted_args = {}
+    exclude_keys = [
+        "tags",
+        "prjOwner",
+    ]  # No column for tags, prjOwner is a foreign key in db
     for key, value in project_document_data.items():
-        if key != "tags":  # No column for tags
+        if not key in exclude_keys:
             converted_args[ChangeCase.camel_to_snake(key)] = value
     return converted_args
 
 
-def _convert_to_schema_names(project_database_data: Mapping) -> Dict:
+def _convert_to_schema_names(project_database_data: Mapping, user_email: str) -> Dict:
     converted_args = {}
     for key, value in project_database_data.items():
         if key in DB_EXCLUSIVE_COLUMNS:
@@ -56,7 +60,8 @@ def _convert_to_schema_names(project_database_data: Mapping) -> Dict:
         if isinstance(value, datetime):
             converted_value = format_datetime(value)
         elif key == "prj_owner":
-            converted_value = str(value) if value else None
+            # this entry has to be converted to the owner e-mail address
+            converted_value = user_email
         converted_args[ChangeCase.snake_to_camel(key)] = converted_value
     return converted_args
 
@@ -133,16 +138,11 @@ class ProjectDBAPI:
         """
         # pylint: disable=no-value-for-parameter
         async with self.engine.acquire() as conn:
-
             # TODO: check security of this query with args. Hard-code values?
             # TODO: check best rollback design. see transaction.begin...
             # TODO: check if template, otherwise standard (e.g. template-  prefix in uuid)
             prj.update(
-                {
-                    "creationDate": now_str(),
-                    "lastChangeDate": now_str(),
-                    "prjOwner": str(user_id) if user_id else None,
-                }
+                {"creationDate": now_str(), "lastChangeDate": now_str(),}
             )
             kargs = _convert_to_db_names(prj)
             kargs.update(
@@ -150,6 +150,7 @@ class ProjectDBAPI:
                     "type": ProjectType.TEMPLATE
                     if (force_as_template or user_id is None)
                     else ProjectType.STANDARD,
+                    "prj_owner": user_id if user_id else None,
                 }
             )
 
@@ -196,7 +197,10 @@ class ProjectDBAPI:
                     raise ProjectInvalidRightsError(user_id, prj["uuid"]) from exc
 
             # Updated values
-            prj = _convert_to_schema_names(kargs)
+            user_email = await self._get_user_email(conn, user_id)
+            prj = _convert_to_schema_names(kargs, user_email)
+            if not "tags" in prj:
+                prj["tags"] = []
             return prj
 
     async def load_user_projects(self, user_id: str) -> List[Dict]:
@@ -263,7 +267,8 @@ OR prj_owner = {user_id})
             db_prj["tags"] = await self._get_tags_by_project(
                 conn, project_id=db_prj["id"]
             )
-            api_projects.append(_convert_to_schema_names(db_prj))
+            user_email = await self._get_user_email(conn, db_prj["prj_owner"])
+            api_projects.append(_convert_to_schema_names(db_prj, user_email))
 
         return api_projects
 
@@ -302,15 +307,17 @@ OR prj_owner = {user_id})
         async with self.engine.acquire() as conn:
             # pylint: disable=no-value-for-parameter
             query = study_tags.insert().values(study_id=project["id"], tag_id=tag_id)
+            user_email = await self._get_user_email(conn, user_id)
             async with conn.execute(query) as result:
                 if result.rowcount == 1:
                     project["tags"].append(tag_id)
-                    return _convert_to_schema_names(project)
+                    return _convert_to_schema_names(project, user_email)
                 raise ProjectsException()
 
     async def remove_tag(self, user_id: str, project_uuid: str, tag_id: int) -> Dict:
         project = await self._get_project(user_id, project_uuid)
         async with self.engine.acquire() as conn:
+            user_email = await self._get_user_email(conn, user_id)
             # pylint: disable=no-value-for-parameter
             query = study_tags.delete().where(
                 and_(
@@ -321,7 +328,7 @@ OR prj_owner = {user_id})
             async with conn.execute(query):
                 if tag_id in project["tags"]:
                     project["tags"].remove(tag_id)
-                return _convert_to_schema_names(project)
+                return _convert_to_schema_names(project, user_email)
 
     async def get_user_project(self, user_id: str, project_uuid: str) -> Dict:
         """ Returns all projects *owned* by the user
@@ -340,7 +347,10 @@ OR prj_owner = {user_id})
             return Fake.projects[project_uuid].data
 
         project = await self._get_project(user_id, project_uuid)
-        return _convert_to_schema_names(project)
+        async with self.engine.acquire() as conn:
+            # pylint: disable=no-value-for-parameter
+            user_email = await self._get_user_email(conn, user_id)
+            return _convert_to_schema_names(project, user_email)
 
     async def get_template_project(
         self, project_uuid: str, *, only_published=False
@@ -369,7 +379,8 @@ OR prj_owner = {user_id})
             result = await conn.execute(query)
             row = await result.first()
             if row:
-                template_prj = _convert_to_schema_names(row)
+                user_email = await self._get_user_email(conn, row["prj_owner"])
+                template_prj = _convert_to_schema_names(row, user_email)
                 tags = await self._get_tags_by_project(conn, project_id=row.id)
                 template_prj["tags"] = tags
 

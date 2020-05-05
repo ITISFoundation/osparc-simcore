@@ -27,7 +27,8 @@ properties:
     example: Dabbling in temporal transitions ...
   prjOwner:
     type: string
-    description: user uuid
+    format: idn-email
+    description: user email
   accessRights:
     type: object
     description: >-
