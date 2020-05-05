@@ -170,9 +170,9 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * GROUPS
+       * GROUPS/DAGS
        */
-      groups: {
+      dags: {
         usesCache: true,
         endpoints: {
           post: {
@@ -517,11 +517,9 @@ qx.Class.define("osparc.data.Resources", {
           const idField = this.self().resources[resource].idField || "uuid";
           const item = Array.isArray(stored) ? stored.find(element => element[idField] === id) : stored;
           if (item) {
-            console.log(`Getting ${resource} from cache.`);
             return Promise.resolve(item);
           }
         }
-        console.log(`Fetching ${resource} from server.`);
       }
       return this.fetch(resource, "getOne", params || {});
     },
@@ -536,10 +534,8 @@ qx.Class.define("osparc.data.Resources", {
       if (useCache) {
         const stored = this.__getCached(resource);
         if (stored) {
-          console.log(`Getting all ${resource} from cache.`);
           return Promise.resolve(stored);
         }
-        console.log(`Fetching ${resource} from server.`);
       }
       return this.fetch(resource, "get", params || {});
     },

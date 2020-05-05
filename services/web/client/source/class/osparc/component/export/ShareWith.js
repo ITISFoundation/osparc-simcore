@@ -36,14 +36,11 @@ qx.Class.define("osparc.component.export.ShareWith", {
     const store = osparc.store.Store.getInstance();
     Promise.all([
       store.getGroupsMe(),
-      store.getGroupsOrganizations(),
       store.getGroupsAll()
     ])
       .then(values => {
         const groupMe = values[0];
-        const groupOrg = values[1];
-        const groupAll = values[2];
-        console.log(groupOrg);
+        const groupAll = values[1];
         this.__sharingOptions["me"]["gid"] = groupMe["gid"];
         this.__sharingOptions["all"]["gid"] = groupAll["gid"];
         this.__buildLayout(filterGroupId);

@@ -315,7 +315,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
           dagId: serviceId
         }
       };
-      osparc.data.Resources.fetch("groups", "delete", params, serviceId)
+      osparc.data.Resources.fetch("dags", "delete", params, serviceId)
         .then(() => {
           this.__updateServiceDescription(null);
           this.__populateList(true);
