@@ -72,16 +72,6 @@ def client(loop, aiohttp_client, app_cfg, postgres_service):
         )
     )
 
-@pytest.fixture
-def asyncpg_storage_system_mock(mocker):
-    from asyncio import Future
-    mocked_method = mocker.patch(
-        "simcore_service_webserver.login.storage.AsyncpgStorage.delete_user",
-        return_value=Future(),
-    )
-    mocked_method.return_value.set_result("")
-    return mocked_method
-
 @pytest.fixture()
 async def logged_user(client, user_role: UserRole):
     """ adds a user in db and logs in with client
