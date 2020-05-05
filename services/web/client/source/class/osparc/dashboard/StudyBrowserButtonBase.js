@@ -108,9 +108,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           this._mainLayout.addAt(control, 2);
           break;
         case "shared":
-          control = new qx.ui.basic.Image().set({
-            source: "@FontAwesome5Solid/users/14"
-          });
+          control = new qx.ui.basic.Image();
           this._mainLayout.addAt(control, 3);
           break;
         case "icon": {

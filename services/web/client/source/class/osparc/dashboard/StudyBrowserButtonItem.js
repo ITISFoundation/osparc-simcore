@@ -106,7 +106,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
   },
 
   statics: {
-    menuButtonZIndex: 20
+    MENU_BTN_Z: 20,
+    SHARED_ME: "@FontAwesome5Solid/user/14",
+    SHARED_ORGS: "@FontAwesome5Solid/users/14",
+    SHARED_ALL: "@FontAwesome5Solid/globe-europe/14"
   },
 
   members: {
@@ -127,7 +130,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             width: 30,
             height: 30,
             icon: "@FontAwesome5Solid/ellipsis-v/16",
-            zIndex: this.self().menuButtonZIndex,
+            zIndex: this.self().MENU_BTN_Z,
             focusable: false
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
@@ -138,7 +141,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           break;
         case "tick-unselected":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16").set({
-            zIndex: this.self().menuButtonZIndex -1
+            zIndex: this.self().MENU_BTN_Z -1
           });
           this._add(control, {
             top: 4,
@@ -147,7 +150,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           break;
         case "tick-selected":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/check-circle/16").set({
-            zIndex: this.self().menuButtonZIndex -1
+            zIndex: this.self().MENU_BTN_Z -1
           });
           this._add(control, {
             top: 4,
@@ -216,30 +219,48 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
         const store = osparc.store.Store.getInstance();
         Promise.all([
+          store.getGroupsAll(),
           store.getGroupsOrganizations(),
-          store.getGroupsAll()
+          store.getGroupsMe()
         ])
           .then(values => {
-            const groups = [...values[0]];
-            groups.push(values[1]);
-            let hintText = "";
-            Object.keys(value).forEach(key => {
-              const grp = groups.find(el => el["gid"] === parseInt(key));
-              if (grp) {
-                hintText += (grp["label"] + "<br>");
-              }
-            });
-            if (hintText === "") {
-              image.exclude();
-              return;
-            }
-
-            const hint = new osparc.ui.hint.Hint(image, hintText).set({
-              active: false
-            });
-            image.addListener("mouseover", () => hint.show(), this);
-            image.addListener("mouseout", () => hint.exclude(), this);
+            const groups = [[values[0]], values[1], [values[2]]];
+            this.__setSharedIcon(image, value, groups);
           });
+      }
+    },
+
+    __setSharedIcon: function(image, value, groups) {
+      for (let i=0; i<groups.length; i++) {
+        let hintText = "";
+        Object.keys(value).forEach(key => {
+          const grp = groups[i].find(group => group["gid"] === parseInt(key));
+          if (grp) {
+            hintText += (grp["label"] + "<br>");
+          }
+        });
+        if (hintText === "") {
+          continue;
+        }
+        switch (i) {
+          case 0:
+            image.setSource(this.self().SHARED_ALL);
+            break;
+          case 1:
+            image.setSource(this.self().SHARED_ORGS);
+            break;
+          case 2:
+            image.setSource(this.self().SHARED_ME);
+            break;
+        }
+
+        const hint = new osparc.ui.hint.Hint(image, hintText).set({
+          active: false
+        });
+        image.addListener("mouseover", () => hint.show(), this);
+        image.addListener("mouseout", () => hint.exclude(), this);
+
+        break;
       }
     },
 
