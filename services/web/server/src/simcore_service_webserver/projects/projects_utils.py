@@ -32,9 +32,16 @@ def clone_project_document(
     for node_uuid in project.get("workbench", {}).keys():
         nodes_map[node_uuid] = _create_new_node_uuid(node_uuid)
 
+    project_map = {project["uuid"]: project_copy["uuid"]}
+
     def _replace_uuids(node):
         if isinstance(node, str):
-            node = nodes_map.get(node, node)
+            # NOTE: for datasets we get something like project_uuid/node_uuid/file_id
+            if "/" in node:
+                parts = node.split("/")
+                node = "/".join(_replace_uuids(part) for part in parts)
+            else:
+                node = project_map.get(node, nodes_map.get(node, node))
         elif isinstance(node, list):
             node = [_replace_uuids(item) for item in node]
         elif isinstance(node, dict):
@@ -44,11 +51,13 @@ def clone_project_document(
                     new_key = nodes_map[key]
                     node[new_key] = node.pop(key)
                     key = new_key
+
                 node[key] = _replace_uuids(value)
         return node
 
     project_copy["workbench"] = _replace_uuids(project_copy.get("workbench", {}))
     return project_copy, nodes_map
+
 
 @safe_return(if_fails_return=False, logger=log)
 def substitute_parameterized_inputs(
@@ -74,7 +83,10 @@ def substitute_parameterized_inputs(
             return s
 
     def _get_param_input_match(name, value, access) -> Optional[Match[AnyStr]]:
-        if isinstance(value, str) and access.get(name, "ReadAndWrite") == "ReadAndWrite":
+        if (
+            isinstance(value, str)
+            and access.get(name, "ReadAndWrite") == "ReadAndWrite"
+        ):
             match = variable_pattern.match(value)
             return match
         return None
