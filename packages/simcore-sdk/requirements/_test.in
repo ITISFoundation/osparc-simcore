@@ -22,5 +22,5 @@ requests
 docker
 
 # tools for CI
-pylint
+pylint==2.5.0 # 2.5.3 fails to run in parallel
 coveralls

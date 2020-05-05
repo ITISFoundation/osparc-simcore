@@ -14,8 +14,10 @@ outputs := $(objects:.in=.txt)
 
 reqs: $(outputs) ## pip-compiles all requirements/*.in -> requirements/*.txt; make reqs upgrade=foo will only upgrade package foo
 
+# NOTE: runs above requirememts/ such that comments sync with dependabot's
 %.txt: %.in
-	pip-compile $(UPGRADE_OPTION) --build-isolation --output-file $@ $<
+	cd ..; \
+	pip-compile $(UPGRADE_OPTION) --build-isolation --output-file requirements/$@ requirements/$<
 
 _test.txt: _base.txt
 
