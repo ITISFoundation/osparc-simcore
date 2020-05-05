@@ -466,3 +466,9 @@ postgres-upgrade: ## initalize or upgrade postgres db to latest state
 .PHONY: reset
 reset: ## restart docker daemon (LINUX ONLY)
 	sudo systemctl restart docker
+
+.PHONY: auto-doc
+auto-doc: .stack-simcore-version.yml ## updates diagrams for README.md
+	# Parsing docker-compose config $< and creating graph
+	./scripts/docker-compose-viz.bash $<
+	mv $<.png docs/img/

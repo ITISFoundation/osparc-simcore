@@ -24,11 +24,8 @@
 
 ## Overview
 
-![service-web](docs/img/service-interaction.svg)
-
-
-A graph view of services, ports, volumes and service dependencies:
-![](docs/img/docker-compose-wo-networks.png)
+simcore-stack when deployed locally:
+![](docs/img/.stack-simcore-version.yml.png)
 
 ## Usage
 
