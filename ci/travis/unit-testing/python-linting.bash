@@ -16,9 +16,8 @@ install() {
     if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         bash ci/helpers/ensure_python_pip.bash
-        pip3 install pylint~=2.0
-        # Minimal packages to pass linter
-        pip install celery docker
+        bash ci/helpers/install_pylint.bash
+        pip list -v
     fi
 }
 
