@@ -7,7 +7,7 @@
 aiohttp==3.6.2            # via pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r requirements/_test.in
 alembic==1.4.2            # via -r requirements/_migration.txt
-astroid==2.4.0            # via pylint
+astroid==2.4.1            # via pylint
 async-timeout==3.0.1      # via aiohttp
 attrs==19.3.0             # via aiohttp, pytest, pytest-docker
 certifi==2019.11.28       # via -r requirements/_migration.txt, requests
@@ -32,7 +32,7 @@ packaging==20.3           # via pytest
 pluggy==0.13.1            # via pytest
 psycopg2-binary==2.8.5    # via -r requirements/_migration.txt, aiopg, sqlalchemy
 py==1.8.1                 # via pytest
-pylint==2.5.0             # via -r requirements/_test.in
+pylint==2.5.1             # via -r requirements/_test.in
 pyparsing==2.4.7          # via packaging
 pytest-aiohttp==0.3.0     # via -r requirements/_test.in
 pytest-cov==2.8.1         # via -r requirements/_test.in
