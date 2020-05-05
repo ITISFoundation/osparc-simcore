@@ -179,7 +179,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
 
           // Get service names
           if (this.__serviceNames === null) {
-            this.__serviceNames = await osparc.data.Resources.get("services");
+            this.__serviceNames = await osparc.data.Resources.get("servicesTodo");
           }
 
           const rows = [];

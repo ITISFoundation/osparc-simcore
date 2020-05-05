@@ -158,9 +158,9 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * SERVICES
+       * SERVICES (TODO: remove frontend processing. This is unusable for the moment)
        */
-      services: {
+      servicesTodo: {
         useCache: true,
         endpoints: {
           get: {
@@ -170,9 +170,9 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * DAGS/GROUPS
+       * GROUPS
        */
-      dags: {
+      groups: {
         usesCache: true,
         endpoints: {
           post: {
