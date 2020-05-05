@@ -105,8 +105,8 @@ qx.Class.define("osparc.component.export.ExportGroup", {
         flex: 1
       });
 
-      const shareWith = new osparc.component.export.ShareWith("exportGroup");
-      this._add(shareWith);
+      // const shareWith = new osparc.component.export.ShareWith("exportGroup");
+      // this._add(shareWith);
 
       const exportBtn = this.__getExportBtn();
       exportBtn.addListener("execute", () => {
@@ -114,9 +114,9 @@ qx.Class.define("osparc.component.export.ExportGroup", {
           this.__exportAsMacroService(exportBtn);
         }
       }, this);
-      shareWith.addListener("changeReady", e => {
-        exportBtn.setEnabled(e.getData());
-      });
+      // shareWith.addListener("changeReady", e => {
+      //   exportBtn.setEnabled(e.getData());
+      // });
       this._add(exportBtn);
     },
 
