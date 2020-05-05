@@ -20,8 +20,6 @@ from .security_api import check_permission
 
 log = logging.getLogger(__file__)
 
-computation_routes = web.RouteTableDef()
-
 
 def get_celery(_app: web.Application):
     config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
