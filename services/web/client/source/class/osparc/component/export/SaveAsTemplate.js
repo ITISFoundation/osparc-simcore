@@ -22,7 +22,7 @@
 qx.Class.define("osparc.component.export.SaveAsTemplate", {
   extend: qx.ui.core.Widget,
 
-  construct: function (studyId, formData) {
+  construct: function(studyId, formData) {
     this.base(arguments);
 
     this.__studyId = studyId;
@@ -34,7 +34,7 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
   },
 
   statics: {
-    createSaveAsTemplateWindow: function (saveAsTemplate) {
+    createSaveAsTemplateWindow: function(saveAsTemplate) {
       const window = new qx.ui.window.Window("Save as Template").set({
         appearance: "service-window",
         layout: new qx.ui.layout.Grow(),
@@ -60,7 +60,7 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
     __formData: null,
     __shareWith: null,
 
-    __buildLayout: function () {
+    __buildLayout: function() {
       const shareWith = this.__shareWith = new osparc.component.export.ShareWith("saveAsTemplate");
       this._add(shareWith, {
         flex: 1
@@ -77,7 +77,7 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
       this._add(saveAsTemplateBtn);
     },
 
-    __saveAsTemplate: function (btn) {
+    __saveAsTemplate: function(btn) {
       btn.setFetching(true);
 
       const selectedGroupIDs = this.__shareWith.getSelectedGroups();
