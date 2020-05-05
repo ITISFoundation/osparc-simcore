@@ -109,7 +109,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     MENU_BTN_Z: 20,
     SHARED_ME: "@FontAwesome5Solid/user/14",
     SHARED_ORGS: "@FontAwesome5Solid/users/14",
-    SHARED_ALL: "@FontAwesome5Solid/globe-europe/14"
+    SHARED_ALL: "@FontAwesome5Solid/globe/14"
   },
 
   members: {
