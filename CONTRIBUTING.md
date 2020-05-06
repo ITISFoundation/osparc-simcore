@@ -36,9 +36,17 @@ Current setup: [ESLint](https://eslint.org) for `JavaScript` and [Black](https:/
 
 ### FAQ
 
+**Q:** I am new to the project, how do I view all available commands?
+**A:** Run `make help` in the directory containing a `Makefile`. Usage will be shown. Don't be afraid to read the file, it is quite strait forward and well documented.
 
-**Q:** Your pull request's CI is failing to push/pull images from Docker Hub?
+**Q:** My pull request's CI is failing to push/pull images from Docker Hub?
 **A:** Check your settings again, [see CI-notes](#ci-notes) and retry.
+
+**Q:** It is not clear how dependencies work. Where can I read more?
+**A:** [Management of python dependencies](docs/python-dependencies.md) has a detailed explanation and useful resources.
+
+**Q:** I see and `api` folder full of text files, what is it?
+**A:** Look at [APIs development guidelines](api/README.md) it will point you in the right direction.
 
 ---
 
