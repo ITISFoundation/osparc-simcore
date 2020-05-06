@@ -9,6 +9,7 @@ We adhere to the [Contributor Covenant Code of Conduct](#contributor-covenant-co
 - [create a Draft Pull Request](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request) with `WIP:` in its name to the `master` branch (example: `WIP: documentation updates`)
 - commit all your work to your new branch; other developers can provided feedback by reviewing your pull request
 - when the feature is ready: remove the `WIP:` and set it ready to review
+- when your changes get approved, remember to always select **Squash and merge** from the drop-down button
 
 New features are merged when CI is passing and two other members approve your pull request.
 
