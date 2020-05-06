@@ -84,7 +84,7 @@ To develop, in addition:
 
 This project works and is developed under **linux (Ubuntu recommended)**.
 
-##### Setup in other OS
+##### Other OSes setup
 
 When developing on these platforms you are on your own.
 
