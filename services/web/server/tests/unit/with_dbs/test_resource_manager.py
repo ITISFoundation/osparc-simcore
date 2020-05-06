@@ -72,7 +72,6 @@ def client(loop, aiohttp_client, app_cfg, postgres_service):
         )
     )
 
-
 @pytest.fixture()
 async def logged_user(client, user_role: UserRole):
     """ adds a user in db and logs in with client
@@ -322,6 +321,7 @@ async def test_interactive_services_removed_after_logout(
     mocked_dynamic_service,
     client_session_id,
     socketio_client,
+    storage_subsystem_mock, # when guest user logs out garbage is collected
 ):
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # login - logged_user fixture
@@ -365,6 +365,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     mocked_dynamic_service,
     socketio_client,
     client_session_id,
+    storage_subsystem_mock, # when guest user logs out garbage is collected
 ):
 
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
@@ -435,6 +436,8 @@ async def test_interactive_services_removed_per_project(
     mocked_dynamic_service,
     socketio_client,
     client_session_id,
+    asyncpg_storage_system_mock,
+    storage_subsystem_mock, # when guest user logs out garbage is collected
 ):
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # create server with delay set to DELAY

@@ -334,7 +334,6 @@ async def mocked_dynamic_service(loop, client, mocked_director_api):
 
     return create
 
-
 @pytest.fixture
 async def primary_group(client, logged_user) -> Dict[str, str]:
     primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
@@ -351,3 +350,12 @@ async def standard_groups(client, logged_user) -> List[Dict[str, str]]:
 async def all_group(client, logged_user) -> Dict[str, str]:
     _, _, all_group = await list_user_groups(client.app, logged_user["id"])
     return all_group
+
+@pytest.fixture
+def asyncpg_storage_system_mock(mocker):
+    mocked_method = mocker.patch(
+        "simcore_service_webserver.login.storage.AsyncpgStorage.delete_user",
+        return_value=Future(),
+    )
+    mocked_method.return_value.set_result("")
+    return mocked_method
