@@ -6,7 +6,7 @@ LABEL maintainer=sanderegg
 ENV LANG=C.UTF-8
 # Turns off writing .pyc files; superfluous on an ephemeral container.
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    VIRTUAL_ENV=/home/scu/.venv
+  VIRTUAL_ENV=/home/scu/.venv
 # Ensures that the python and pip executables used
 # in the image will be those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
@@ -15,23 +15,23 @@ ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 FROM base as build
 
 RUN apt-get update &&\
-    apt-get install -y --no-install-recommends \
-    build-essential \
-    git
+  apt-get install -y --no-install-recommends \
+  build-essential \
+  git
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN python -m venv ${VIRTUAL_ENV}
 
 RUN pip --no-cache-dir install --upgrade \
-    pip~=20.0.2  \
-    wheel \
-    setuptools
+  pip~=20.0.2  \
+  wheel \
+  setuptools
 
 ARG GIT_BRANCH
 ARG GIT_REPOSITORY
 
 RUN git clone --single-branch --branch ${GIT_BRANCH} ${GIT_REPOSITORY} \
-    && pip install osparc-simcore/packages/postgres-database[migration]
+  && pip install osparc-simcore/packages/postgres-database[migration]
 
 FROM base as production
 
@@ -41,20 +41,14 @@ WORKDIR /home/scu
 
 # bring installed package without build tools
 COPY --from=build ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-
-# runtime dependency
-# RUN apk add --no-cache \
-#     bash \
-#     postgresql
-
 COPY entrypoint.bash /home/entrypoint.bash
 
 
 ENV POSTGRES_USER=scu \
-    POSTGRES_PASSWORD=adminadmin \
-    POSTGRES_HOST=postgres \
-    POSTGRES_PORT=5432 \
-    POSTGRES_DB=simcoredb
+  POSTGRES_PASSWORD=adminadmin \
+  POSTGRES_HOST=postgres \
+  POSTGRES_PORT=5432 \
+  POSTGRES_DB=simcoredb
 
 ENTRYPOINT [ "/bin/sh", "/home/entrypoint.bash" ]
 CMD [ "sc-pg", "upgrade" ]
