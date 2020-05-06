@@ -18,13 +18,13 @@ async def is_user_guest(app: web.Application, user_id: int) -> bool:
     return UserRole(user["role"]) == UserRole.GUEST
 
 
-async def delete_user(app: web.Application, user_id: int) -> bool:
+async def delete_user(app: web.Application, user_id: int) -> None:
     """Deletes a user from the database if the user exists"""
     db = get_storage(app)
     user = await db.get_user({"id": user_id})
     if not user:
         logger.warning(
-            "User with id '%s' could not be deleted because it does nto exist", user_id
+            "User with id '%s' could not be deleted because it does not exist", user_id
         )
         return
 

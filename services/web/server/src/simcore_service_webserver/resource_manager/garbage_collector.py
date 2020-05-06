@@ -91,7 +91,7 @@ async def remove_resources_if_guest_user(
     except ProjectNotFoundError:
         logging.warning("Project '%s' not found, skipping removal", project_uuid)
 
-    logger.debug("Will try to remove resoruces for user '%s' if GUEST", user_id)
+    logger.debug("Will try to remove resources for user '%s' if GUEST", user_id)
     if await is_user_guest(app, user_id):
         await delete_user(app, user_id)
 
