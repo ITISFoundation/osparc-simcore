@@ -178,7 +178,7 @@ async def access_study(request: web.Request) -> web.Response:
         raise RuntimeError("Unable to start user session")
 
     log.debug(
-        "Granted access to study '%d' for user %s. Copying study over ...",
+        "Granted access to study '%s' for user %s. Copying study over ...",
         template_project.get("name"),
         user.get("email"),
     )

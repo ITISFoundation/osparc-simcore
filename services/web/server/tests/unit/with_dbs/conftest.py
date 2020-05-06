@@ -326,3 +326,12 @@ async def mocked_dynamic_service(loop, client, mocked_director_api):
         return running_service_dict
 
     return create
+
+@pytest.fixture
+def asyncpg_storage_system_mock(mocker):
+    mocked_method = mocker.patch(
+        "simcore_service_webserver.login.storage.AsyncpgStorage.delete_user",
+        return_value=Future(),
+    )
+    mocked_method.return_value.set_result("")
+    return mocked_method
