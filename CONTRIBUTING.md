@@ -4,40 +4,41 @@ We adhere to the [Contributor Covenant Code of Conduct](#contributor-covenant-co
 
 ### To add a new feature
 
-- fork to your private github
+- [fork](https://help.github.com/en/github/getting-started-with-github/fork-a-repo) to your private github
 - create a new branch with a name meaningful for the feature at hand
-- commit all your work on that branch as you are progressing through the feature
-- when ready to push, create a pull request to the `master` branch
+- [create a Draft Pull Request](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request) with `WIP:` in its name to the `master` branch (example: `WIP: documentation updates`)
+- commit all your work to your new branch; other developers can provided feedback by reviewing your pull request
+- when the feature is ready: remove the `WIP:` and set it ready to review
+
+New features are merged when CI is passing and two other members approve your pull request.
 
 ### CI notes
 
-For GitHub Actions, the CI needs to pull and push docker images to a repository. We strongly suggest using 
-[docker hub](https://hub.docker.com).
-Please note that the project will `create` and `push` images in the following repositories:
-
-- webserver
-- director
-- storage 
-- catalog
-- sidecar
-- api-gateway
-
-**Note: make sure these names are not used to avoid possible collisions**
+For GitHub Actions, the CI needs to pull and push docker images to a repository. Using
+[docker hub](https://hub.docker.com) is advised.
+New registries will be created and images will be pushed and pulled during builds. Have a look
+at [docker-compose-build.yml](services/docker-compose-build.yml) for a full list of names.
+To avoid collisions make sure the names of the services are not used by your other projects.
 
 
 To enable GitHub Actions on your forked repository:
 
-- go to the `Actions` page and enable them 
+- go to the `Actions` page and enable them
 - go to the repo's `Settings` page and the click on `Secrets`
 - you have to add the following:
     - `DOCKER_USERNAME` docker hub username
     - `DOCKER_REGISTRY` docker hub username
-    - `DOCKER_PASSWORD` docker hub access token **(we advise against using your password)**
+    - `DOCKER_PASSWORD` docker hub access token **(avoid using your password)**
 
 ### Code styles
 
-We are currently using [ESLint](https://eslint.org) for `JavaScript` (have a look in the root of the project for 
-configuration details) and [Black](https://black.readthedocs.io/en/stable/) for `Python`.
+Current setup: [ESLint](https://eslint.org) for `JavaScript` and [Black](https://black.readthedocs.io/en/stable/) + [Pylint](https://www.pylint.org) for `Python`. Have a look in the project root for individual configuration files.
+
+### FAQ
+
+
+**Q:** Your pull request's CI is failing to push/pull images from Docker Hub?
+**A:** Check your settings again, [see CI-notes](#ci-notes) and retry.
 
 ---
 
