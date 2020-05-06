@@ -37,13 +37,13 @@ qx.Class.define("osparc.io.WatchDog", {
   type : "singleton",
 
   statics : {
-    HEARTBEAT_EMIT_INTERVAL_MS: 2 * 1000 // in millisencond
+    DEFAULT_HEARTBEAT_EMIT_INTERVAL_MS: 2 * 1000 // in milliseconds
   },
 
   construct: function() {
-    this.__clientHeartbeatPinger = new qx.event.Timer(
-      osparc.io.WatchDog.HEARTBEAT_EMIT_INTERVAL_MS
-    );
+    this.heartbeatInterval = osparc.io.WatchDog.DEFAULT_HEARTBEAT_EMIT_INTERVAL_MS;
+    this.__clientHeartbeatPinger = new qx.event.Timer(this.heartbeatInterval);
+
     this.__clientHeartbeatPinger.addListener("interval", function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
       try {
@@ -59,8 +59,7 @@ qx.Class.define("osparc.io.WatchDog", {
     const socketIoEventName = "set_heartbeat_emit_interval";
     socket.removeSlot(socketIoEventName);
     socket.on(socketIoEventName, function(emitIntervalSeconds) {
-      const emitIntervalMs = parseInt(emitIntervalSeconds) * 1000;
-      osparc.io.WatchDog.HEARTBEAT_EMIT_INTERVAL_MS = this.__clientHeartbeatPinger.setInterval(emitIntervalMs);
+      this.setHeartbeatInterval(parseInt(emitIntervalSeconds) * 1000);
     }, this);
   },
 
@@ -70,6 +69,11 @@ qx.Class.define("osparc.io.WatchDog", {
       init: false,
       nullable: false,
       apply: "_applyOnLine"
+    },
+    heartbeatInterval: {
+      init: 0,
+      nullable: false,
+      apply: "_applyHeartbeatInterval"
     }
   },
 
@@ -80,6 +84,9 @@ qx.Class.define("osparc.io.WatchDog", {
         logo.setOnLine(value);
       }
       value ? this.__clientHeartbeatPinger.start() : this.__clientHeartbeatPinger.stop();
+    },
+    _applyHeartbeatInterval: function(value) {
+      this.__clientHeartbeatPinger.setInterval(value);
     }
   } // members
 });
