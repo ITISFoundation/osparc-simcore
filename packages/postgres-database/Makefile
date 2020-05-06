@@ -21,6 +21,23 @@ tests: ## runs unit tests
 	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests
 
 
+.PHONY: import-db
+import-db: scripts/copy_database_volume.sh guard-SOURCE_HOST guard-SOURCE_DATA_VOLUME guard-TARGET_DATA_VOLUME ## copy volume $(SOURCE_DATA_VOLUME) from $(SOURCE_HOST) into local $(TARGET_DATA_VOLUME)
+	./scripts/copy_database_volume.sh
+
+guard-%:
+	@ if [ "${${*}}" = "" ]; then \
+		echo "Environment variable $* not set"; \
+		exit 1; \
+	fi
+
+.PHONY: setup-prod
+export POSTGRES_DATA_VOLUME = $(TARGET_DATA_VOLUME)
+setup-prod: install-dev up-prod  ## sets up a database using an external postgres volume to test migration
+	# discovering
+	sc-pg --help
+	@echo "To test migration, sc-pg discover -u USER -p PASSWORD, then sc-pg upgrade"
+
 .PHONY: setup-commit
 setup-commit: install-dev up-pg ## sets up a database to create a new commit into migration history
 	# discovering
@@ -46,11 +63,12 @@ migrate: $(DOT_ENV_FILE) ## basic migration update (use ONLY for development pur
 
 
 
-.PHONY: up-pg down-pg
-DOCKER_COMPOSE_CONFIG := tests/docker-compose.yml
+.PHONY: up-pg down-pg up-prod down-prod
+docker-compose-configs = $(wildcard tests/docker-compose*.yml)
+up-pg up-prod: $(docker-compose-configs) ## starts pg server
+	docker-compose -f tests/docker-compose.yml $(if $(findstring -prod,$@),-f tests/docker-compose.prod.yml,) up -d
 
-up-pg: $(DOCKER_COMPOSE_CONFIG) ## starts pg server
-	docker-compose -f $< up -d
+down-pg down-prod: $(docker-compose-configs) ## stops pg server
+	docker-compose -f tests/docker-compose.yml  $(if $(findstring -prod,$@),-f tests/docker-compose.prod.yml,) down
 
-down-pg: $(DOCKER_COMPOSE_CONFIG) ## stops pg server
-	docker-compose -f $< down
+

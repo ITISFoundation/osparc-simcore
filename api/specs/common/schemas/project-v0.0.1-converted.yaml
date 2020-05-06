@@ -7,6 +7,7 @@ required:
   - name
   - description
   - prjOwner
+  - accessRights
   - creationDate
   - lastChangeDate
   - thumbnail
@@ -26,7 +27,13 @@ properties:
     example: Dabbling in temporal transitions ...
   prjOwner:
     type: string
-    description: user uuid
+    format: idn-email
+    description: user email
+  accessRights:
+    type: object
+    description: >-
+      object containing the GroupID as key and read/write/execution permissions
+      as value
   creationDate:
     type: string
     description: project creation date

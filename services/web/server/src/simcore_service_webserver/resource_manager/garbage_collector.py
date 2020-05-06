@@ -16,6 +16,9 @@ from servicelib.utils import logged_gather
 
 from .config import APP_GARBAGE_COLLECTOR_KEY, get_garbage_collector_interval
 from .registry import RedisResourceRegistry, get_registry
+from simcore_service_webserver.projects.projects_api import delete_project_from_db
+from simcore_service_webserver.users_api import is_user_guest, delete_user
+from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +71,29 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
                     project_uuid=resource_value,
                     app=app,
                 )
+
+                await remove_resources_if_guest_user(
+                    app=app, project_uuid=resource_value, user_id=int(key["user_id"])
+                )
+
+
+async def remove_resources_if_guest_user(
+    app: web.Application, project_uuid: str, user_id: int
+) -> None:
+    """When a guest user finishes using the platform its Posgtres
+    and S3/MinIO entries need to be removed
+    """
+    logger.debug(
+        "Removing project '%s' from the database", project_uuid,
+    )
+    try:
+        await delete_project_from_db(app, project_uuid, user_id)
+    except ProjectNotFoundError:
+        logging.warning("Project '%s' not found, skipping removal", project_uuid)
+
+    logger.debug("Will try to remove resources for user '%s' if GUEST", user_id)
+    if await is_user_guest(app, user_id):
+        await delete_user(app, user_id)
 
 
 async def garbage_collector_task(app: web.Application):

@@ -14,6 +14,8 @@ from simcore_postgres_database.storage_models import (
     tokens,
     user_to_projects,
     users,
+    groups,
+    user_to_groups,
 )
 from simcore_service_storage.settings import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 
@@ -173,4 +175,6 @@ __all__ = [
     "projects",
     "users",
     "user_to_projects",
+    "groups",
+    "user_to_groups",
 ]

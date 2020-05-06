@@ -33,14 +33,14 @@ qx.Class.define("osparc.component.filter.UIFilterController", {
     registerContainer: function(containerId, container) {
       this.getInstance().registerFilterContainer(containerId, container);
     },
-    resetGroup: function(groupId) {
-      this.getInstance().resetGroup(groupId);
+    resetGroup: function(filterGroupId) {
+      this.getInstance().resetGroup(filterGroupId);
     },
     setContainerVisibility: function(containerId, visibility) {
       this.getInstance().setFilterContainerVisibility(containerId, visibility);
     },
-    dispatch: function(groupId) {
-      this.getInstance().dispatch(groupId);
+    dispatch: function(filterGroupId) {
+      this.getInstance().dispatch(filterGroupId);
     }
   },
 
@@ -56,11 +56,11 @@ qx.Class.define("osparc.component.filter.UIFilterController", {
      */
     registerFilter: function(filter) {
       const filterId = filter.getFilterId();
-      const groupId = filter.getGroupId();
+      const filterGroupId = filter.getFilterGroupId();
       // Store filter reference for managing
       this.__filters = this.__filters || {};
-      this.__filters[groupId] = this.__filters[groupId] || {};
-      this.__filters[groupId][filterId] = filter;
+      this.__filters[filterGroupId] = this.__filters[filterGroupId] || {};
+      this.__filters[filterGroupId][filterId] = filter;
     },
 
     /**
@@ -77,12 +77,12 @@ qx.Class.define("osparc.component.filter.UIFilterController", {
     /**
      * Function that calls the reset functions for all filters in a group.
      *
-     * @param {string} groupId Id of the filter group to be reset.
+     * @param {string} filterGroupId Id of the filter group to be reset.
      */
-    resetGroup: function(groupId) {
-      if (this.__filters[groupId]) {
-        for (let filterId in this.__filters[groupId]) {
-          this.__filters[groupId][filterId].reset();
+    resetGroup: function(filterGroupId) {
+      if (this.__filters[filterGroupId]) {
+        for (let filterId in this.__filters[filterGroupId]) {
+          this.__filters[filterGroupId][filterId].reset();
         }
       }
     },
@@ -99,45 +99,45 @@ qx.Class.define("osparc.component.filter.UIFilterController", {
       }
     },
 
-    __getInputMessageName: function(filterId, groupId, suffix = "filter") {
-      return osparc.utils.Utils.capitalize(filterId, groupId, suffix);
+    __getInputMessageName: function(filterId, filterGroupId, suffix = "filter") {
+      return osparc.utils.Utils.capitalize(filterId, filterGroupId, suffix);
     },
 
-    __getOutputMessageName: function(groupId, suffix = "filter") {
-      return osparc.utils.Utils.capitalize(groupId, suffix);
+    __getOutputMessageName: function(filterGroupId, suffix = "filter") {
+      return osparc.utils.Utils.capitalize(filterGroupId, suffix);
     },
 
     /**
      * Function called when a filter state changes and it wants to publish those changes to trigger the filtering.
      *
      * @param {Object} filterData Mandatory data coming from the filter.
-     * @param {String} filterData.groupId Group id of the filter that changed.
+     * @param {String} filterData.filterGroupId Group id of the filter that changed.
      * @param {String} filterData.filterId Filter id of the filter that changed.
      * @param {Object} filterData.data Data contained by the filter.
      */
     publish: function(filterData) {
       // Update state
       const {
-        groupId,
+        filterGroupId,
         filterId,
         data
       } = filterData;
       this.__state = this.__state || {};
-      this.__state[groupId] = this.__state[groupId] || {};
-      this.__state[groupId][filterId] = data;
+      this.__state[filterGroupId] = this.__state[filterGroupId] || {};
+      this.__state[filterGroupId][filterId] = data;
       // Dispatch relevant message
-      this.dispatch(groupId);
+      this.dispatch(filterGroupId);
     },
 
     /**
      * This function actually dispatches the data for a filter group to apply filtering. It gets called
      * whenever a filter changes or can also be programmatically called.
      *
-     * @param {String} groupId Id of the filtering group whose data needs to be dispatched.
+     * @param {String} filterGroupId Id of the filtering group whose data needs to be dispatched.
      */
-    dispatch: function(groupId) {
-      if (this.__state && this.__state[groupId]) {
-        qx.event.message.Bus.getInstance().dispatchByName(this.__getOutputMessageName(groupId), this.__state[groupId]);
+    dispatch: function(filterGroupId) {
+      if (this.__state && this.__state[filterGroupId]) {
+        qx.event.message.Bus.getInstance().dispatchByName(this.__getOutputMessageName(filterGroupId), this.__state[filterGroupId]);
       }
     }
   }

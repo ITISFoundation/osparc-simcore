@@ -187,7 +187,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       this._add(studyFilters);
 
-      const studyBrowserLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      const studyBrowserLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
       const tempStudyLayout = this.__createTemplateStudiesLayout();
       studyBrowserLayout.add(tempStudyLayout);
       const userStudyLayout = this.__createUserStudiesLayout();
@@ -209,25 +209,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createUserStudiesLayout: function() {
-      const userStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-        marginTop: 20
+      const userStudyLayout = new osparc.component.widget.CollapsibleView(this.tr("Recent studies"));
+      userStudyLayout.getChildControl("title").set({
+        font: "title-16"
       });
+      userStudyLayout._getLayout().setSpacing(8); // eslint-disable-line no-underscore-dangle
 
-      const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
-      const studiesTitleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      const myStudyLabel = new qx.ui.basic.Label(this.tr("Recent studies")).set({
-        font: navBarLabelFont
-      });
-      studiesTitleContainer.add(myStudyLabel);
       const studiesDeleteButton = this.__createDeleteButton(false);
+      const studiesTitleContainer = userStudyLayout.getTitleBar();
+      studiesTitleContainer.add(new qx.ui.core.Spacer(20, null));
       studiesTitleContainer.add(studiesDeleteButton);
-      userStudyLayout.add(studiesTitleContainer);
 
       const userStudyContainer = this.__userStudyContainer = this.__createUserStudyList();
-      userStudyContainer.addListener("changeVisibility", e => {
-        const nVisibles = e.getData().length;
-        myStudyLabel.setVisibility(nVisibles ? "visible" : "excluded");
-      }, this);
+      userStudyLayout.setContent(userStudyContainer);
       userStudyContainer.addListener("changeSelection", e => {
         const nSelected = e.getData().length;
         this.__userStudyContainer.getChildren().forEach(userStudyItem => {
@@ -235,32 +229,24 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
         this.__updateDeleteStudiesButton(studiesDeleteButton);
       }, this);
-      userStudyLayout.add(userStudyContainer);
 
       return userStudyLayout;
     },
 
     __createTemplateStudiesLayout: function() {
-      const tempStudyLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-        marginTop: 20
+      const tempStudyLayout = new osparc.component.widget.CollapsibleView(this.tr("New studies"));
+      tempStudyLayout.getChildControl("title").set({
+        font: "title-16"
       });
+      tempStudyLayout._getLayout().setSpacing(8); // eslint-disable-line no-underscore-dangle
 
-      const navBarLabelFont = qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]);
-      const templateTitleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      const tempStudyLabel = new qx.ui.basic.Label(this.tr("New studies")).set({
-        font: navBarLabelFont
-      });
-      templateTitleContainer.add(tempStudyLabel);
       const templateDeleteButton = this.__createDeleteButton(true);
+      const templateTitleContainer = tempStudyLayout.getTitleBar();
+      templateTitleContainer.add(new qx.ui.core.Spacer(20, null));
       templateTitleContainer.add(templateDeleteButton);
-      tempStudyLayout.add(templateTitleContainer);
 
       const templateStudyContainer = this.__templateStudyContainer = this.__createTemplateStudyList();
-      templateStudyContainer.addListener("changeVisibility", e => {
-        const nVisibles = e.getData().length;
-        tempStudyLabel.setVisibility(nVisibles ? "visible" : "excluded");
-      }, this);
-
+      tempStudyLayout.setContent(templateStudyContainer);
       templateStudyContainer.addListener("changeSelection", e => {
         const nSelected = e.getData().length;
         this.__newStudyBtn.setEnabled(!nSelected);
@@ -271,7 +257,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
         this.__updateDeleteTemplatesButton(templateDeleteButton);
       }, this);
-      tempStudyLayout.add(templateStudyContainer);
 
       return tempStudyLayout;
     },
@@ -374,7 +359,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __startStudy: function(studyData) {
       this.__showLoadingPage(this.tr("Starting Study"));
-      osparc.store.Store.getInstance().getServices(false)
+      osparc.store.Store.getInstance().getServicesDAGs(false)
         .then(() => {
           this.__hideLoadingPage();
           this.__loadStudy(studyData);
@@ -383,6 +368,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __loadStudy: function(studyData) {
       const study = new osparc.data.model.Study(studyData);
+      study.setAccessRights({});
       this.__studyEditor = this.__studyEditor || new osparc.desktop.StudyEditor();
       this.__studyEditor.setStudy(study);
       this.fireDataEvent("startStudy", this.__studyEditor);
@@ -426,8 +412,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
+    __removeFromStudyList: function(studyId, isTemplate) {
+      const studyContainer = isTemplate ? this.__templateStudyContainer: this.__userStudyContainer;
+      const items = studyContainer.getChildren();
+      for (let i=0; i<items.length; i++) {
+        const item = items[i];
+        if (item.getUuid && studyId === item.getUuid()) {
+          studyContainer.remove(item);
+          return;
+        }
+      }
+    },
+
     __createStudyListLayout: function() {
-      return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(12, 12));
+      return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(15, 15));
     },
 
     __createStudyItem: function(study, isTemplate) {
@@ -441,6 +439,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         studyTitle: study.name,
         studyDescription: study.description,
         creator: study.prjOwner ? study.prjOwner : null,
+        accessRights: study.accessRights ? study.accessRights : null,
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
         icon: study.thumbnail || "@FontAwesome5Solid/flask/50",
         tags
@@ -467,18 +466,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const moreInfoButton = this.__getMoreInfoMenuButton(studyData, isTemplate);
       menu.add(moreInfoButton);
 
-      const isCurrentUserOwner = studyData.prjOwner === osparc.auth.Data.getInstance().getEmail();
+      const isCurrentUserOwner = this.__isUserOwner(studyData);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       if (isCurrentUserOwner && !isTemplate && canCreateTemplate) {
         const saveAsTemplateButton = this.__getSaveAsTemplateMenuButton(studyData);
         menu.add(saveAsTemplateButton);
       }
 
-      menu.addSeparator();
-
       const deleteButton = this.__getDeleteStudyMenuButton(studyData, isTemplate);
-      osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
-      menu.add(deleteButton);
+      if (deleteButton) {
+        menu.addSeparator();
+        menu.add(deleteButton);
+      }
 
       return menu;
     },
@@ -493,7 +492,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getMoreInfoMenuButton: function(studyData, isTemplate) {
-      const moreInfoButton = new qx.ui.menu.Button(this.tr("More info"));
+      const moreInfoButton = new qx.ui.menu.Button(this.tr("Info"));
       moreInfoButton.addListener("execute", () => {
         const studyDetailsEditor = this.__createStudyDetailsEditor(studyData, isTemplate);
         const win = new qx.ui.window.Window(this.tr("Study Details Editor")).set({
@@ -526,30 +525,29 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getSaveAsTemplateMenuButton: function(studyData) {
       const saveAsTemplateButton = new qx.ui.menu.Button(this.tr("Save as template"));
-      saveAsTemplateButton.addListener("execute", e => {
-        const params = {
-          url: {
-            "study_url": studyData.uuid
-          },
-          data: studyData
-        };
-        osparc.data.Resources.fetch("templates", "postToTemplate", params)
-          .then(() => {
-            const msg = this.tr("Successfully Saved as template");
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+      saveAsTemplateButton.addListener("execute", () => {
+        const saveAsTemplateView = new osparc.component.export.SaveAsTemplate(studyData.uuid, studyData);
+        const window = osparc.component.export.SaveAsTemplate.createSaveAsTemplateWindow(saveAsTemplateView);
+        saveAsTemplateView.addListener("finished", e => {
+          const template = e.getData();
+          if (template) {
             this.reloadTemplateStudies();
-          })
-          .catch(err => {
-            const msg = this.tr("Failed Saving as template");
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-            console.error(err);
-          });
+            window.close();
+          }
+        }, this);
+        window.open();
       }, this);
       return saveAsTemplateButton;
     },
 
     __getDeleteStudyMenuButton: function(studyData, isTemplate) {
+      const isCurrentUserOwner = this.__isUserOwner(studyData);
+      if (!isCurrentUserOwner) {
+        return null;
+      }
+
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
+      osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
       deleteButton.addListener("execute", () => {
         const win = this.__createConfirmWindow(false);
         win.center();
@@ -654,7 +652,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (templateSelection[i] instanceof osparc.dashboard.StudyBrowserButtonNew) {
           allMine = false;
         } else {
-          const isCurrentUserOwner = templateSelection[i].getCreator() === osparc.auth.Data.getInstance().getEmail();
+          const isCurrentUserOwner = this.__isUserOwner(templateSelection[i]);
           allMine &= isCurrentUserOwner;
         }
       }
@@ -668,23 +666,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __deleteStudies: function(studiesData, areTemplates = false) {
-      Promise.all(studiesData.map(study => {
+      studiesData.forEach(studyData => {
         const params = {
           url: {
-            projectId: study.uuid
+            projectId: studyData.uuid
           }
         };
-        return osparc.data.Resources.fetch(areTemplates ? "templates" : "studies", "delete", params, study.uuid);
-      }))
-        .then(() => {
-          if (areTemplates) {
-            this.reloadTemplateStudies();
-          } else {
-            this.reloadUserStudies();
-          }
-          this.__itemSelected(null);
-        })
-        .catch(err => console.error(err));
+        osparc.data.Resources.fetch(areTemplates ? "templates" : "studies", "delete", params, studyData.uuid)
+          .then(() => this.__removeFromStudyList(studyData.uuid, areTemplates))
+          .catch(err => {
+            console.error(err);
+            osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");
+          })
+          .finally(this.__itemSelected(null));
+      });
     },
 
     __createConfirmWindow: function(isMulti) {
@@ -716,6 +711,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       this.__showStudiesLayout(true);
+    },
+
+    __isUserOwner: function(studyData) {
+      // return true until fine grain operation rights are implemented. For now: I get it, I can write it
+      return true;
+      /*
+      const myEmail = osparc.auth.Data.getInstance().getEmail();
+      if ("prjOwner" in studyData) {
+        return studyData.prjOwner === myEmail;
+      } else if ("getCreator" in studyData) {
+        return studyData.getCreator() === myEmail;
+      }
+      return false;
+      */
     }
   }
 });

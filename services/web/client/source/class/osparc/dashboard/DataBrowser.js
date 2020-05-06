@@ -56,41 +56,18 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
     },
 
     __createDataManagerLayout: function() {
-      const dataManagerMainLayout = this.__createVBoxWLabel(this.tr("Data Manager"));
-
-      const dataManagerLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
-      dataManagerMainLayout.add(dataManagerLayout, {
-        flex: 1
+      const dataManagerMainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        marginTop: 20
       });
 
       const treeLayout = this.__createTreeLayout();
-      dataManagerLayout.add(treeLayout, {
+      dataManagerMainLayout.add(treeLayout, {
         flex: 1
       });
-
-      const showPieChart = false;
-      if (showPieChart) {
-        const chartLayout = this.__createChartLayout();
-        dataManagerLayout.add(chartLayout);
-      }
 
       this._add(dataManagerMainLayout, {
         flex: 1
       });
-    },
-
-    __createVBoxWLabel: function(text) {
-      const vBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-        marginTop: 20
-      });
-
-      const label = new qx.ui.basic.Label(text).set({
-        font: qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]),
-        minWidth: 150
-      });
-      vBoxLayout.add(label);
-
-      return vBoxLayout;
     },
 
     __createTreeLayout: function() {
@@ -99,7 +76,8 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       // button for refetching data
       const reloadBtn = new qx.ui.form.Button().set({
         label: this.tr("Reload"),
-        icon: "@FontAwesome5Solid/sync-alt/16",
+        font: "text-14",
+        icon: "@FontAwesome5Solid/sync-alt/14",
         allowGrowX: false
       });
       reloadBtn.addListener("execute", function() {
@@ -146,34 +124,6 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       fileActions.add(selectedFileLayout);
 
       return actionsToolbar;
-    },
-
-    __createChartLayout: function() {
-      let chartLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-
-      const label = new qx.ui.basic.Label(this.tr("Data Resources")).set({
-        font: qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]),
-        minWidth: 500
-      });
-      chartLayout.add(label);
-
-      const plotlyDivId = "DataResources";
-      const plotly = new osparc.component.widget.PlotlyWidget(plotlyDivId);
-      plotly.addListener("plotlyWidgetReady", e => {
-        if (e.getData()) {
-          this.__pieChart = plotly;
-          const myPlot = document.getElementById(plotlyDivId);
-          myPlot.on("plotly_click", data => {
-            this.__reloadChartData(data["points"][0]["id"][0]);
-          }, this);
-          this.__reloadChartData();
-        }
-      }, this);
-      chartLayout.add(plotly, {
-        flex: 1
-      });
-
-      return chartLayout;
     },
 
     __selectionChanged: function() {
