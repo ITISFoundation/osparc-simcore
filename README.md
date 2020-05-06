@@ -4,44 +4,34 @@
 
 <!-- NOTE: when branched replace `master` in urls -->
 [`master`](https://github.com/itisfoundation/osparc-simcore/tree/master)
+[![Code style: black]](https://github.com/psf/black)
 [![Requires.io]](https://requires.io/github/ITISFoundation/osparc-simcore/requirements/?branch=master "State of third party python dependencies")
 [![travis-ci]](https://travis-ci.org/ITISFoundation/osparc-simcore "State of CI: build, test and pushing images")
-[![coverals.io]](https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master "Test coverage")
+![Github-CI Push/PR](https://github.com/ITISFoundation/osparc-simcore/workflows/Github-CI%20Push/PR/badge.svg)
+[![coveralls.io]](https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master)
+[![codecov.io]](https://codecov.io/gh/ITISFoundation/osparc-simcore)
 [![github.io]](https://itisfoundation.github.io/)
 [![itis.dockerhub]](https://hub.docker.com/u/itisfoundation)
 
 
-<!-- THIS SERVICE MALFUNCTIONS
-[![webserver]](https://microbadger.com/images/itisfoundation/webserver "More on itisfoundation/webserver:staging-latest image")
-[![director]](https://microbadger.com/images/itisfoundation/director "More on itisfoundation/director:staging-latest image")
-[![sidecar]](https://microbadger.com/images/itisfoundation/sidecar "More on itisfoundation/sidecar:staging-latest image")
-[![storage]](https://microbadger.com/images/itisfoundation/storage "More on itisfoundation/storage:staging-latest image")
--->
-
 
 <!-- ADD HERE ALL BADGE URLS -->
+[Code style: black]:https://img.shields.io/badge/code%20style-black-000000.svg
 [Requires.io]:https://img.shields.io/requires/github/ITISFoundation/osparc-simcore.svg
 [travis-ci]:https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master
-[coverals.io]:https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master
 [github.io]:https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
 [itis.dockerhub]:https://img.shields.io/website/https/hub.docker.com/u/itisfoundation.svg?down_color=red&label=dockerhub%20repos&up_color=green
-[webserver]:https://img.shields.io/microbadger/image-size/itisfoundation/webserver/staging-latest.svg?label=webserver&style=flat
-[director]:https://img.shields.io/microbadger/image-size/itisfoundation/director/staging-latest.svg?label=director&style=flat
-[sidecar]:https://img.shields.io/microbadger/image-size/itisfoundation/sidecar/staging-latest.svg?label=sidecar&style=flat
-[storage]:https://img.shields.io/microbadger/image-size/itisfoundation/storage/staging-latest.svg?label=storage&style=flat
+[coveralls.io]:https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master
+[codecov.io]:https://codecov.io/gh/ITISFoundation/osparc-simcore/branch/master/graph/badge.svg
+
 <!---------------------------->
 
 ## Overview
 
-![service-web](docs/img/service-interaction.svg)
+simcore-stack when deployed locally:
 
+![](docs/img/.stack-simcore-version.yml.png)
 
-A graph view of services, ports, volumes and service dependencies:
-![](docs/img/docker-compose-wo-networks.png)
-
-## Contributing
-
-Would you like to make a change or add something new? Please read the [contributing guidelines](CONTRIBUTING.md).
 ## Usage
 
 ```bash
@@ -74,13 +64,12 @@ To build and run:
 - docker
 - make >=4.2
 - awk, jq (optional tools within makefiles)
+- swagger-cli (make sure to have a recent version of nodejs)
 
 To develop, in addition:
 
 - python 3.6 (this dependency will be deprecated soon)
 - nodejs for client part (this dependency will be deprecated soon)
-- swagger-cli (make sure to have a recent version of nodejs)
-- on MacOS you might need to [replace your MacOS utilities with GNU utils](https://apple.stackexchange.com/a/69332) 
 - [vscode] (highly recommended)
 
 This project works and is developed mainly under **linux** but, with some adjustments, it can also be done under windows (see notes below).
@@ -109,4 +98,3 @@ In windows, it works under [WSL] (windows subsystem for linux). Some details on 
 [chocolatey]:https://chocolatey.org/
 [vscode]:https://code.visualstudio.com/
 [WSL]:https://docs.microsoft.com/en-us/windows/wsl/faq
-
