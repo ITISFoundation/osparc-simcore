@@ -14,10 +14,10 @@ qx.Class.define("osparc.component.filter.AutocompleteFilter", {
   /**
    * Constructor takes the usual parameters, like the rest of UI filters.
    * @param {String} filterId Id of the filter. Must be unique among the other filters in the group
-   * @param {String} groupId Group id for the group of filters
+   * @param {String} filterGroupId Group id for the group of filters
    */
-  construct: function(filterId, groupId) {
-    this.base(arguments, filterId, groupId);
+  construct: function(filterId, filterGroupId) {
+    this.base(arguments, filterId, filterGroupId);
     this._setLayout(new qx.ui.layout.Canvas());
 
     this.__autocompleteField = this.getChildControl("autocompletefield");

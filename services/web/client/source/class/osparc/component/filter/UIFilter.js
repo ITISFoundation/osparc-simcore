@@ -28,13 +28,13 @@ qx.Class.define("osparc.component.filter.UIFilter", {
    * Base constructor for UIFilter takes the mandatory ids for the filter and the filter group it belongs to.
    *
    * @param {string} filterId Group-unique id for the filter.
-   * @param {string} groupId Unique group id where the filter belongs.
+   * @param {string} filterGroupId Unique group id where the filter belongs.
    */
-  construct: function(filterId, groupId) {
+  construct: function(filterId, filterGroupId) {
     this.base(arguments);
     this.set({
       filterId,
-      groupId
+      filterGroupId
     });
 
     osparc.component.filter.UIFilterController.getInstance().registerFilter(this);
@@ -45,7 +45,7 @@ qx.Class.define("osparc.component.filter.UIFilter", {
       nullable: false,
       check: "String"
     },
-    groupId: {
+    filterGroupId: {
       nullable: false,
       check: "String"
     }
@@ -58,7 +58,7 @@ qx.Class.define("osparc.component.filter.UIFilter", {
      * @param {string} suffix Will be added at the end of the message name to decrease the probability of message name collision.
      */
     _getMessageName: function(suffix = "filter") {
-      return osparc.utils.Utils.capitalize(this.getFilterId(), this.getGroupId(), suffix);
+      return osparc.utils.Utils.capitalize(this.getFilterId(), this.getFilterGroupId(), suffix);
     },
 
     /**
@@ -68,7 +68,7 @@ qx.Class.define("osparc.component.filter.UIFilter", {
      */
     _filterChange: function(data) {
       const filterData = {
-        groupId: this.getGroupId(),
+        filterGroupId: this.getFilterGroupId(),
         filterId: this.getFilterId(),
         data
       };

@@ -26,8 +26,8 @@ qx.Class.define("osparc.component.filter.TextFilter", {
    *
    * @extends osparc.component.filter.UIFilter
    */
-  construct: function(filterId, groupId) {
-    this.base(arguments, filterId, groupId);
+  construct: function(filterId, filterGroupId) {
+    this.base(arguments, filterId, filterGroupId);
     this._setLayout(new qx.ui.layout.Canvas());
 
     this.set({

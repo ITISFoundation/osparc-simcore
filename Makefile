@@ -189,8 +189,8 @@ endif
 
 
 up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
-	# Start compile+watch front-end container [front-end]
-	$(MAKE_C) services/web/client compile-dev flags=--watch
+	# Start compile+watch front-end container [front-end]	
+	$(MAKE_C) services/web/client down compile-dev flags=--watch
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy -c $< $(SWARM_STACK_NAME)
 	$(MAKE) .deploy-ops

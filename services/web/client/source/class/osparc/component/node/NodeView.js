@@ -100,6 +100,8 @@ qx.Class.define("osparc.component.node.NodeView", {
     },
 
     _addIFrame: function() {
+      this._iFrameLayout.removeAll();
+
       const loadingPage = this.getNode().getLoadingPage();
       const iFrame = this.getNode().getIFrame();
       if (loadingPage === null && iFrame === null) {

@@ -131,8 +131,8 @@ async def published_project(client, fake_project):
 @pytest.fixture
 async def unpublished_project(client, fake_project):
     project_data = deepcopy(fake_project)
-    project_data["name"] = "Tempalte Unpublished project"
-    project_data["uuid"] = "'b134a337-a74f-40ff-a127-b36a1ccbede6"
+    project_data["name"] = "Template Unpublished project"
+    project_data["uuid"] = "b134a337-a74f-40ff-a127-b36a1ccbede6"
     project_data["published"] = False
 
     async with NewProject(

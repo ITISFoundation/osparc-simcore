@@ -90,9 +90,9 @@ qx.Class.define("osparc.component.metadata.StudyDetails", {
         alignY: "middle"
       });
 
+      const owner = new qx.ui.basic.Label();
       const creationDate = new qx.ui.basic.Label();
       const lastChangeDate = new qx.ui.basic.Label();
-      const owner = new qx.ui.basic.Label();
 
       // create a date format like "Oct. 19, 2018 11:31 AM"
       const dateFormat = new qx.util.format.DateFormat(
@@ -153,7 +153,9 @@ qx.Class.define("osparc.component.metadata.StudyDetails", {
     },
 
     __createDescription: function() {
-      const description = new osparc.ui.markdown.Markdown();
+      const description = new osparc.ui.markdown.Markdown().set({
+        noMargin: false
+      });
       this.getStudy().bind("description", description, "value");
       return description;
     }

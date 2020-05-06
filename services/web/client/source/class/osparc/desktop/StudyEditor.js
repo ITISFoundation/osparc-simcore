@@ -186,14 +186,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const nodeId = e.getData();
         const node = this.getStudy().getWorkbench().getNode(nodeId);
         if (node && node.isContainer()) {
-          const exportGroupView = new osparc.component.export.ExportGroup(node);
+          const exportGroupView = new osparc.component.export.ExportDAG(node);
           const window = new qx.ui.window.Window(this.tr("Export: ") + node.getLabel()).set({
             appearance: "service-window",
             layout: new qx.ui.layout.Grow(),
             autoDestroy: true,
             contentPadding: 0,
             width: 700,
-            height: 700,
+            maxHeight: 700,
             showMinimize: false,
             modal: true
           });

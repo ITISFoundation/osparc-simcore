@@ -15,8 +15,7 @@ from ..resource_manager.websocket_manager import managed_resource
 from ..security_api import check_permission
 from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
-from .projects_exceptions import (ProjectInvalidRightsError,
-                                  ProjectNotFoundError)
+from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 
 OVERRIDABLE_DOCUMENT_KEYS = ["name", "description", "thumbnail", "prjOwner"]
 # TODO: validate these against api/specs/webserver/v0/components/schemas/project-v0.0.1.json
@@ -83,7 +82,7 @@ async def create_projects(request: web.Request):
         projects_api.validate_project(request.app, project)
 
         # update metadata (uuid, timestamps, ownership) and save
-        await db.add_project(
+        project = await db.add_project(
             project, user_id, force_as_template=as_template is not None
         )
 
@@ -114,12 +113,10 @@ async def list_projects(request: web.Request):
     # TODO: improve dbapi to list project
     projects_list = []
     if ptype in ("template", "all"):
-        projects_list += await db.load_template_projects()
+        projects_list += await db.load_template_projects(user_id=user_id)
 
     if ptype in ("user", "all"):  # standard only (notice that templates will only)
-        projects_list += await db.load_user_projects(
-            user_id=user_id, exclude_templates=True
-        )
+        projects_list += await db.load_user_projects(user_id=user_id)
 
     start = int(request.query.get("start", 0))
     count = int(request.query.get("count", len(projects_list)))
@@ -161,7 +158,6 @@ async def get_project(request: web.Request):
         return {"data": project}
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
-
 
 
 @login_required
@@ -227,26 +223,24 @@ async def delete_project(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     try:
-        # used to check exists
         await projects_api.get_project_for_user(
-            request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True
+            request.app,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            include_templates=True,
         )
         with managed_resource(user_id, None, request.app) as rt:
             other_users = await rt.find_users_of_resource("project_id", project_uuid)
             if other_users:
                 message = "Project is opened by another user. It cannot be deleted."
                 if user_id in other_users:
-                    message = (
-                        "Project is still open. It cannot be deleted until it is closed."
-                    )
+                    message = "Project is still open. It cannot be deleted until it is closed."
                 # we cannot delete that project
                 raise web.HTTPForbidden(reason=message)
-
 
         await projects_api.delete_project(request, project_uuid, user_id)
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
-
 
     raise web.HTTPNoContent(content_type="application/json")
 
@@ -263,6 +257,7 @@ async def open_project(request: web.Request) -> web.Response:
         with managed_resource(user_id, client_session_id, request.app) as rt:
             # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
             from .projects_api import get_project_for_user
+
             project = await get_project_for_user(
                 request.app,
                 project_uuid=project_uuid,
@@ -315,7 +310,6 @@ async def close_project(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
 
 
-
 @login_required
 async def get_active_project(request: web.Request) -> web.Response:
     await check_permission(request, "project.read")
@@ -357,7 +351,10 @@ async def create_node(request: web.Request) -> web.Response:
         from .projects_api import get_project_for_user
 
         await get_project_for_user(
-            request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True
+            request.app,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            include_templates=True,
         )
         data = {
             "node_id": await projects_api.add_project_node(
@@ -374,7 +371,6 @@ async def create_node(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
 
 
-
 @login_required
 async def get_node(request: web.Request) -> web.Response:
     # TODO: replace by decorator since it checks again authentication
@@ -388,7 +384,10 @@ async def get_node(request: web.Request) -> web.Response:
         from .projects_api import get_project_for_user
 
         await get_project_for_user(
-            request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True
+            request.app,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            include_templates=True,
         )
 
         node_details = await projects_api.get_project_node(
@@ -397,7 +396,6 @@ async def get_node(request: web.Request) -> web.Response:
         return {"data": node_details}
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
-
 
 
 @login_required
@@ -413,10 +411,15 @@ async def delete_node(request: web.Request) -> web.Response:
         from .projects_api import get_project_for_user
 
         await get_project_for_user(
-            request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True
+            request.app,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            include_templates=True,
         )
 
-        await projects_api.delete_project_node(request, project_uuid, user_id, node_uuid)
+        await projects_api.delete_project_node(
+            request, project_uuid, user_id, node_uuid
+        )
 
         raise web.HTTPNoContent(content_type="application/json")
     except ProjectNotFoundError:

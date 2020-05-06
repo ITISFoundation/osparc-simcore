@@ -27,6 +27,17 @@ ProfileOutput:
         format: email
       role:
         type: string
+      groups:
+        type: object
+        properties:
+          me:
+            $ref: '#/UsersGroup'
+          organizations:
+            type: array
+            items:
+              $ref: '#/UsersGroup'
+          all:
+            $ref: '#/UsersGroup'
       gravatar_id:
         type: string
   example:
@@ -47,6 +58,26 @@ ProfileEnveloped:
       nullable: true
       default: null
 
+
+UsersGroup:
+  type: object
+  properties:
+    gid:
+      type: string
+    label:
+      type: string
+    description:
+      type: string
+  example:
+    - gid: '27'
+      label: 'A user'
+      description: 'A very special user'
+    - gid: '1'
+      label: 'ITIS Foundation'
+      description: 'The Foundation for Research on Information Technologies in Society'
+    - gid: '0'
+      label: 'All'
+      description: 'Open to all users'
 
 Token:
   description: api keys for third party services

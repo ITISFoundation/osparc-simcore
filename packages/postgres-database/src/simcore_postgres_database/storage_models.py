@@ -9,6 +9,7 @@ from .models.projects import projects
 from .models.tokens import tokens
 from .models.user_to_projects import user_to_projects
 from .models.user_to_projects import users
+from .models.groups import groups, user_to_groups
 
 __all__ = [
     "tokens",
@@ -17,4 +18,6 @@ __all__ = [
     "projects",
     "user_to_projects",
     "users",
+    "groups",
+    "user_to_groups",
 ]

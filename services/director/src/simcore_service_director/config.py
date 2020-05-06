@@ -10,7 +10,7 @@ from servicelib.client_session import APP_CLIENT_SESSION_KEY
 DEBUG_MODE: bool = os.environ.get("DEBUG", False) in ["true", "True", True]
 
 logging.basicConfig(
-    level=logging.DEBUG if DEBUG_MODE else logging.INFO,
+    level=logging.DEBUG if DEBUG_MODE else logging.WARNING,
     format="%(levelname)s:%(name)s-%(lineno)d: %(message)s",
 )
 

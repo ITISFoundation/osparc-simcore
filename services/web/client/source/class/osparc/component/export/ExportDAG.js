@@ -12,7 +12,7 @@
  * - The exported group is added to the catalog
  */
 
-qx.Class.define("osparc.component.export.ExportGroup", {
+qx.Class.define("osparc.component.export.ExportDAG", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -105,18 +105,19 @@ qx.Class.define("osparc.component.export.ExportGroup", {
         flex: 1
       });
 
-      const exportBtn = new qx.ui.toolbar.Button(this.tr("Export"));
+      // const shareWith = new osparc.component.export.ShareWith("exportGroup");
+      // this._add(shareWith);
+
+      const exportBtn = this.__getExportBtn();
       exportBtn.addListener("execute", () => {
         if (manager.validate()) {
           this.__exportAsMacroService(exportBtn);
         }
       }, this);
-      const actionsBar = new qx.ui.toolbar.ToolBar();
-      const actionsPart = new qx.ui.toolbar.Part();
-      actionsBar.addSpacer();
-      actionsPart.add(exportBtn);
-      actionsBar.add(actionsPart);
-      this._add(actionsBar);
+      // shareWith.addListener("changeReady", e => {
+      //   exportBtn.setEnabled(e.getData());
+      // });
+      this._add(exportBtn);
     },
 
     __buildMetaDataForm: function() {
@@ -147,10 +148,16 @@ qx.Class.define("osparc.component.export.ExportGroup", {
       return settingsEditorLayout;
     },
 
+    __getExportBtn: function() {
+      const exportBtn = new osparc.ui.form.FetchButton(this.tr("Export")).set({
+        allowGrowX: false,
+        alignX: "right"
+      });
+      return exportBtn;
+    },
+
     __exportAsMacroService: function(exportBtn) {
-      exportBtn.setIcon("@FontAwesome5Solid/circle-notch/12");
-      exportBtn.getChildControl("icon").getContentElement()
-        .addClass("rotate");
+      exportBtn.setFetching(true);
 
       const outputNode = this.getOutputNode();
       const outputWorkbench = this.getOutputWorkbench();
@@ -174,9 +181,9 @@ qx.Class.define("osparc.component.export.ExportGroup", {
           nodeEntry.inputs[portId] = portValue;
         }
       }
-      osparc.data.Resources.fetch("groups", "post", {data: nodesGroupService})
+      osparc.data.Resources.fetch("dags", "post", {data: nodesGroupService})
         .then(data => {
-          const text = this.tr("Group added to the Service catalog");
+          const text = this.__groupName.getValue() + this.tr(" added to the Service catalog");
           osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
           this.fireDataEvent("finished");
         })
@@ -186,9 +193,7 @@ qx.Class.define("osparc.component.export.ExportGroup", {
           osparc.component.message.FlashMessenger.getInstance().logAs(text, "ERROR");
         })
         .finally(() => {
-          exportBtn.resetIcon();
-          exportBtn.getChildControl("icon").getContentElement()
-            .removeClass("rotate");
+          exportBtn.setFetching(false);
         });
     },
 
