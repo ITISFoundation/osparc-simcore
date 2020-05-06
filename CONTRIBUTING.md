@@ -48,6 +48,9 @@ Current setup: [ESLint](https://eslint.org) for `JavaScript` and [Black](https:/
 **Q:** I see and `api` folder full of text files, what is it?
 **A:** Look at [APIs development guidelines](api/README.md) it will point you in the right direction.
 
+**Q:** Are there any special code conventions?
+**A:** Just a few [oSPARC Coding Conventions](docs/coding-conventions.md).
+
 ---
 
 # Contributor Covenant Code of Conduct
