@@ -85,7 +85,7 @@ Every python package specifies its dependencies to the installer via the ``setup
 
 ### Updates [March 2020]
 
-1. Created common makefile in (scripts/requirements.Makefile)[scripts/requirements.Makefile]
+1. Created common makefile in [scripts/requirements.Makefile](scripts/requirements.Makefile)
 
 ## Workflows
 

@@ -56,7 +56,7 @@ Read more at [Coding Conventions and Linters](docs/coding-conventions.md).
 **A:** Add `[ci skip]` in any part of your commit message. The CI will not run get started.
 
 **Q:** I don't have a good understanding of the aims of the project. Where can I read more?
-**A:** [D1.1 Technical Specs. & Technology Evaluation](https://osparc-docs.readthedocs.io/en/latest/) is extensive, but explains the decision making behind most of the code. Please consider reading it.
+**A:** [D1.1 Technical Specs. & Technology Evaluation](https://osparc-docs.readthedocs.io/en/latest/) is extensive, but explains the decision making behind most of the code. Please consider reading it. Afterwords you can better grasp the [Computational backend](docs/comp-services.md) description.
 
 ---
 
