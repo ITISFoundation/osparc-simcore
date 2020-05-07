@@ -39,7 +39,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
 
     this._setLayout(new qx.ui.layout.Canvas());
 
-    const mainLayout = this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+    const mainLayout = this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
     this._add(mainLayout, {
       top: 0,
       right: 0,
@@ -94,21 +94,25 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           break;
         case "desc1":
           control = new osparc.ui.markdown.Markdown().set({
-            maxHeight: 30,
-            noMargin: true,
+            font: "text-13",
+            maxHeight: 32,
             anonymous: true
           });
           this._mainLayout.addAt(control, 1);
           break;
         case "desc2":
           control = new qx.ui.basic.Label().set({
-            rich: true,
+            font: "text-13",
             allowGrowY: false,
             anonymous: true
           });
           this._mainLayout.addAt(control, 2);
           break;
-        case "icon":
+        case "shared":
+          control = new qx.ui.basic.Image();
+          this._mainLayout.addAt(control, 3);
+          break;
+        case "icon": {
           control = new qx.ui.basic.Image().set({
             anonymous: true,
             scale: true,
@@ -119,10 +123,21 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
             allowGrowX: true,
             allowGrowY: true
           });
-          this._mainLayout.addAt(control, 3, {
+          const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+          iconContainer.add(new qx.ui.core.Spacer(), {
+            flex: 2
+          });
+          iconContainer.add(control, {
+            flex: 1
+          });
+          iconContainer.add(new qx.ui.core.Spacer(), {
+            flex: 2
+          });
+          this._mainLayout.addAt(iconContainer, 4, {
             flex: 1
           });
           break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -130,8 +145,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
     _applyIcon: function(value, old) {
       let icon = this.getChildControl("icon");
       icon.set({
-        source: value,
-        paddingTop: value && value.match(/^@/) ? 30 : 0
+        source: value
       });
     },
 

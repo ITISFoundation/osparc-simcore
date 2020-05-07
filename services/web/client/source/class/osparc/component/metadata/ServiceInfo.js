@@ -131,7 +131,9 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
 
     __createBadges: function() {
       if ("badges" in this.__metadata) {
-        const badges = new osparc.ui.markdown.Markdown();
+        const badges = new osparc.ui.markdown.Markdown().set({
+          noMargin: false
+        });
         let markdown = "";
         for (let i in this.__metadata.badges) {
           const badge = this.__metadata.badges[i];
@@ -144,7 +146,9 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
     },
 
     __createDescription: function() {
-      const description = new osparc.ui.markdown.Markdown();
+      const description = new osparc.ui.markdown.Markdown().set({
+        noMargin: false
+      });
       description.setValue(this.__metadata.description || "");
       return description;
     },

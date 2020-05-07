@@ -10,11 +10,11 @@
  */
 qx.Class.define("osparc.component.filter.UserTagsFilter", {
   extend: osparc.component.filter.TagsFilter,
-  construct: function(filterId, groupId) {
-    this.base(arguments, this.tr("Tags"), filterId, groupId);
+  construct: function(filterId, filterGroupId) {
+    this.base(arguments, this.tr("Tags"), filterId, filterGroupId);
     this._setLayout(new qx.ui.layout.HBox());
     this.__buildMenu();
-    this.__attachEventListeners(filterId, groupId);
+    this.__attachEventListeners(filterId, filterGroupId);
   },
   members: {
     __buildMenu: function() {
@@ -25,12 +25,12 @@ qx.Class.define("osparc.component.filter.UserTagsFilter", {
           menuButton.getChildControl("icon").setTextColor(tag.color);
         });
     },
-    __attachEventListeners: function(filterId, groupId) {
+    __attachEventListeners: function(filterId, filterGroupId) {
       osparc.store.Store.getInstance().addListener("changeTags", () => {
         this._removeAllOptions();
         this.__buildMenu();
       }, this);
-      qx.event.message.Bus.subscribe(osparc.utils.Utils.capitalize(groupId, filterId, "trigger"), msg => {
+      qx.event.message.Bus.subscribe(osparc.utils.Utils.capitalize(filterGroupId, filterId, "trigger"), msg => {
         const menuButtons = this._getMenuButtons();
         const tagButton = menuButtons.find(btn => btn.getLabel() === msg.getData());
         this._addTag(tagButton.getLabel(), tagButton);

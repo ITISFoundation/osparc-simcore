@@ -200,7 +200,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     __populateList: function(reload = false) {
       this.__allServicesList = [];
       let store = osparc.store.Store.getInstance();
-      store.getServices(reload)
+      store.getServicesDAGs(reload)
         .then(services => {
           this.__addNewData(services);
         });

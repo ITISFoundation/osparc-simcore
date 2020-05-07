@@ -13,7 +13,6 @@
 -e .
 
 # basic dev tools
--r ../../../requirements.txt
 watchdog[watchmedo]
 
 ## NOTE: Copied from ../../../requirements.txt to avoid mounting

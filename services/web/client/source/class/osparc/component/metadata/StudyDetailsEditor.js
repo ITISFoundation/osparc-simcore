@@ -83,7 +83,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __createButtons: function() {
-      const isCurrentUserOwner = this.__isCurrentUserOwner();
+      const isCurrentUserOwner = this.__isUserOwner();
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       const canUpdateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.update");
 
@@ -118,11 +118,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         });
         osparc.utils.Utils.setIdToWidget(saveAsTemplateButton, "saveAsTemplateBtn");
         saveAsTemplateButton.addListener("execute", e => {
-          const btn = e.getTarget();
-          btn.setIcon("@FontAwesome5Solid/circle-notch/12");
-          btn.getChildControl("icon").getContentElement()
-            .addClass("rotate");
-          this.__saveAsTemplate(btn);
+          this.__openSaveAsTemplate();
         }, this);
         buttonsLayout.add(saveAsTemplateButton);
       }
@@ -131,7 +127,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __createEditView: function() {
-      const isCurrentUserOwner = this.__isCurrentUserOwner();
+      const isCurrentUserOwner = this.__isUserOwner();
       const canUpdateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.update");
       const fieldIsEnabled = isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate);
 
@@ -274,27 +270,21 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         });
     },
 
-    __saveAsTemplate: function(btn) {
-      const params = {
-        url: {
-          "study_url": this.__model.getUuid()
-        },
-        data: this.__serializeForm()
-      };
-      osparc.data.Resources.fetch("templates", "postToTemplate", params)
-        .then(template => {
-          btn.resetIcon();
-          btn.getChildControl("icon").getContentElement()
-            .removeClass("rotate");
+    __openSaveAsTemplate: function() {
+      const saveAsTemplateView = new osparc.component.export.SaveAsTemplate(this.__model.getUuid(), this.__serializeForm());
+      const window = osparc.component.export.SaveAsTemplate.createSaveAsTemplateWindow(saveAsTemplateView);
+      saveAsTemplateView.addListener("finished", e => {
+        const template = e.getData();
+        if (template) {
           this.fireDataEvent("updatedTemplate", template);
           this.__model.set(template);
           this.setMode("display");
-        })
-        .catch(err => {
-          btn.resetIcon();
-          console.error(err);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while saving as template."), "ERROR");
-        });
+
+          window.close();
+        }
+      }, this);
+
+      window.open();
     },
 
     __serializeForm: function() {
@@ -333,11 +323,15 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       }
     },
 
-    __isCurrentUserOwner: function() {
+    __isUserOwner: function() {
+      // return true until fine grain operation right are implemented. For now: I get it, I can write it
+      return true;
+      /*
       if (this.__model) {
         return this.__model.getPrjOwner() === osparc.auth.Data.getInstance().getEmail();
       }
       return false;
+      */
     }
   }
 });

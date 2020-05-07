@@ -189,8 +189,8 @@ endif
 
 
 up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
-	# Start compile+watch front-end container [front-end]
-	$(MAKE_C) services/web/client compile-dev flags=--watch
+	# Start compile+watch front-end container [front-end]	
+	$(MAKE_C) services/web/client down compile-dev flags=--watch
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy -c $< $(SWARM_STACK_NAME)
 	$(MAKE) .deploy-ops
@@ -466,3 +466,10 @@ postgres-upgrade: ## initalize or upgrade postgres db to latest state
 .PHONY: reset
 reset: ## restart docker daemon (LINUX ONLY)
 	sudo systemctl restart docker
+
+.PHONY: auto-doc
+auto-doc: .stack-simcore-version.yml ## updates diagrams for README.md
+	# Parsing docker-compose config $< and creating graph
+	@./scripts/docker-compose-viz.bash $<
+	# Updating docs/img
+	@mv --verbose $<.png docs/img/

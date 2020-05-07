@@ -7,7 +7,7 @@
 
 # testing
 coverage
-pytest~=5.3.5  # Bug in pytest-sugar https://github.com/Teemu/pytest-sugar/issues/187
+pytest~=5.3.5  # Bug in pytest-sugar https://github.com/Teemu/pytest-sugar/issues/194
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
 pytest-instafail
@@ -17,5 +17,5 @@ pytest-mock
 pytest-sugar
 
 # tools
-pylint
+pylint==2.5.0 # 2.5.3 fails to run in parallel
 coveralls
