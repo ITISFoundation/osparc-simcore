@@ -58,6 +58,9 @@ Read more at [Coding Conventions and Linters](docs/coding-conventions.md).
 **Q:** I don't have a good understanding of the aims of the project. Where can I read more?
 **A:** [D1.1 Technical Specs. & Technology Evaluation](https://osparc-docs.readthedocs.io/en/latest/) is extensive, but explains the decision making behind most of the code. Please consider reading it. Afterwords you can better grasp the [Computational backend](docs/comp-services.md) description.
 
+**Q:** Can I have some sort of introduction video about the project?
+**A:** Have a look at the following videos, targeted for wider audiences: [What is the SPARC program?](https://www.youtube.com/watch?v=IrZS_IHgrcE&feature=emb_title), [Ideas Lab Introduction to o²S²PARC](https://www.youtube.com/watch?time_continue=11&v=Q96jyFgSFHc&feature=emb_title) and [SPARC Webinar: Introduction to o²S²PARC](https://www.youtube.com/watch?v=vrdVealYydE&feature=emb_title)
+
 ---
 
 # Contributor Covenant Code of Conduct
