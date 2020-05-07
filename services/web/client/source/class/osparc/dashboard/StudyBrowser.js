@@ -715,9 +715,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __isUserOwner: function(studyData) {
-      // return true until fine grain operation rights are implemented. For now: I get it, I can write it
-      return true;
-      /*
       const myEmail = osparc.auth.Data.getInstance().getEmail();
       if ("prjOwner" in studyData) {
         return studyData.prjOwner === myEmail;
@@ -725,7 +722,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         return studyData.getCreator() === myEmail;
       }
       return false;
-      */
     }
   }
 });

@@ -324,14 +324,10 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __isUserOwner: function() {
-      // return true until fine grain operation right are implemented. For now: I get it, I can write it
-      return true;
-      /*
       if (this.__model) {
         return this.__model.getPrjOwner() === osparc.auth.Data.getInstance().getEmail();
       }
       return false;
-      */
     }
   }
 });
