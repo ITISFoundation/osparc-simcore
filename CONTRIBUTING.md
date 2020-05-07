@@ -31,9 +31,11 @@ To enable GitHub Actions on your forked repository:
     - `DOCKER_REGISTRY` docker hub username
     - `DOCKER_PASSWORD` docker hub access token **(avoid using your password)**
 
-### Code styles
+### Code styles and conventions
 
 Current setup: [ESLint](https://eslint.org) for `JavaScript` and [Black](https://black.readthedocs.io/en/stable/) + [Pylint](https://www.pylint.org) for `Python`. Have a look in the project root for individual configuration files.
+
+Read more at [Coding Conventions and Linters](docs/coding-conventions.md).
 
 ### FAQ
 
@@ -49,8 +51,8 @@ Current setup: [ESLint](https://eslint.org) for `JavaScript` and [Black](https:/
 **Q:** I see and `api` folder full of text files, what is it?
 **A:** Look at [APIs development guidelines](api/README.md) it will point you in the right direction.
 
-**Q:** Are there any special code conventions?
-**A:** Just a few [oSPARC Coding Conventions](docs/coding-conventions.md).
+**Q:** Do you need to commit something (maybe work in progress) and it makes no sense to have the CI run it?
+**A:** Add `[ci skip]` in any part of your commit message. The CI will not run get started.
 
 ---
 
