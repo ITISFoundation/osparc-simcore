@@ -31,8 +31,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
   construct: function() {
     this.base(arguments);
     this.set({
-      width: this.self().WIDTH,
-      height: this.self().HEIGHT,
+      width: this.self().ITEM_WIDTH,
+      height: this.self().ITEM_HEIGHT,
       padding: this.self().PADDING,
       allowGrowX: false
     });
@@ -52,9 +52,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
   },
 
   statics: {
-    WIDTH: 200,
-    HEIGHT: 230,
-    PADDING: 8
+    ITEM_WIDTH: 200,
+    ITEM_HEIGHT: 200,
+    PADDING: 8,
+    SPACING: 12
   },
 
   events: {
@@ -86,8 +87,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           control = new qx.ui.basic.Label().set({
             margin: [5, 0],
             font: "title-14",
-            rich : true,
-            anonymous: true
+            maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING - 30,
+            breakWithinWords: true
           });
           this._mainLayout.addAt(control, 0);
           break;
