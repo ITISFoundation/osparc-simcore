@@ -80,6 +80,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __filesButton: null,
 
     populateLayout: function() {
+      this.__cleanLayout();
+
       this.getNode().bind("label", this.__title, "value");
       this.__addInputPortsUIs();
       this.__addOutputPortsUIs();
@@ -90,15 +92,27 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     __buildLayout: function() {
       const inputs = this.__buildSideView(true);
+
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const toolbar = this.__buildToolbar();
       const mainView = this.__buildMainView();
+      vBox.add(toolbar);
+      vBox.add(mainView, {
+        flex: 1
+      });
+
       const outputs = this.__buildSideView(false);
 
       const pane2 = this.__pane2 = new qx.ui.splitpane.Pane();
       this.add(inputs, 0); // flex 0
       this.add(pane2, 1); // flex 1
 
-      pane2.add(mainView, 1); // flex 1
+      pane2.add(vBox, 1); // flex 1
       pane2.add(outputs, 0); // flex 0
+    },
+
+    __cleanLayout: function() {
+      this.__mainView.removeAll();
     },
 
     __buildSideView: function(isInput) {
@@ -197,8 +211,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
       this._mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       this._iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-
-      mainView.add(this.__buildToolbar());
 
       return mainView;
     },
