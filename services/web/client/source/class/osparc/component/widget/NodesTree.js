@@ -187,7 +187,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
             }, this);
             item.addListener("tap", e => {
               this.fireDataEvent("changeSelectedNode", item.getModel().getNodeId());
-              this.__exportButton.setEnabled(item.getLevel() && item.getModel().getIsContainer());
+              this.__exportButton.setEnabled((Boolean(item.getLevel()) && item.getModel().getIsContainer()));
             }, this);
           }
         });
