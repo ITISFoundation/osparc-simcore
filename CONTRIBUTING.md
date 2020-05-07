@@ -2,8 +2,9 @@
 
 We adhere to the [Contributor Covenant Code of Conduct](#contributor-covenant-code-of-conduct) found below.
 
-### To add a new feature
+### Want to add a new feature?
 
+- avoid pushing new features directly (also [consider no upstream pushing](docs/no-upstream-push.md))
 - [fork](https://help.github.com/en/github/getting-started-with-github/fork-a-repo) to your private github
 - create a new branch with a name meaningful for the feature at hand
 - [create a Draft Pull Request](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request) with `WIP:` in its name to the `master` branch (example: `WIP: documentation updates`)
@@ -53,6 +54,9 @@ Read more at [Coding Conventions and Linters](docs/coding-conventions.md).
 
 **Q:** Do you need to commit something (maybe work in progress) and it makes no sense to have the CI run it?
 **A:** Add `[ci skip]` in any part of your commit message. The CI will not run get started.
+
+**Q:** I don't have a good understanding of the aims of the project. Where can I read more?
+**A:** [D1.1 Technical Specs. & Technology Evaluation](https://osparc-docs.readthedocs.io/en/latest/) is extensive, but explains the decision making behind most of the code. Please consider reading it.
 
 ---
 
