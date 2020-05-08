@@ -581,9 +581,9 @@ async def test_websocket_disconnected_none_guests_keep_their_project_and_usernam
     calls = [call(client.server.app, service["service_uuid"])]
     mocked_director_api["stop_service"].assert_has_calls(calls)
 
-    # make sure `delete_project_from_db` is called
+    # make sure `delete_project_from_db` not called
     storage_subsystem_mock[1].assert_not_called()
-    # make sure `delete_user` is called
+    # make sure `delete_user` not called
     asyncpg_storage_system_mock.assert_not_called()
 
 
