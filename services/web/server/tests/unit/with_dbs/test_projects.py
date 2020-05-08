@@ -448,7 +448,7 @@ async def test_new_project_from_template_with_body(
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPCreated),
         (UserRole.TESTER, web.HTTPCreated),
     ],
 )
