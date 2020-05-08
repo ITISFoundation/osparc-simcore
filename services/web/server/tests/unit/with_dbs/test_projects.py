@@ -283,7 +283,7 @@ async def test_new_project(
         "creationDate": now_str(),
         "lastChangeDate": now_str(),
         "thumbnail": "",
-        "accessRights": {},
+        "accessRights": {"12": "some rights"},
         "workbench": {},
         "tags": [],
     }
@@ -297,7 +297,8 @@ async def test_new_project(
 
         # updated fields
         assert default_project["uuid"] != new_project["uuid"]
-        assert default_project["prjOwner"] != logged_user["name"]
+        assert default_project["prjOwner"] != logged_user["email"]
+        assert new_project["prjOwner"] == logged_user["email"]
         assert to_datetime(default_project["creationDate"]) < to_datetime(
             new_project["creationDate"]
         )
@@ -351,6 +352,7 @@ async def test_new_project_from_template(
         # different ownership
         assert project["prjOwner"] == logged_user["email"]
         assert project["prjOwner"] != template_project["prjOwner"]
+        assert project["accessRights"] == template_project["accessRights"]
 
         # different timestamps
         assert to_datetime(template_project["creationDate"]) < to_datetime(
@@ -403,6 +405,7 @@ async def test_new_project_from_template_with_body(
         "prjOwner": "",
         "creationDate": "2019-06-03T09:59:31.987Z",
         "lastChangeDate": "2019-06-03T09:59:31.987Z",
+        "accessRights": {"123": "some new access rights"},
         "workbench": {},
         "tags": [],
     }
@@ -423,6 +426,9 @@ async def test_new_project_from_template_with_body(
         # different ownership
         assert project["prjOwner"] == logged_user["email"]
         assert project["prjOwner"] != template_project["prjOwner"]
+        # different access rights
+        assert project["accessRights"] != template_project["accessRights"]
+        assert project["accessRights"] == predefined["accessRights"]
 
         # different timestamps
         assert to_datetime(template_project["creationDate"]) < to_datetime(
@@ -480,12 +486,83 @@ async def test_new_template_from_project(
         assert len(templates) == 1
         assert templates[0] == template_project
 
-        # identical in all fields except UUIDs?
-        # api/specs/webserver/v0/components/schemas/project-v0.0.1.json
-        # assert_replaced(user_project, template_project)
+        assert template_project["name"] == user_project["name"]
+        assert template_project["description"] == user_project["description"]
+        assert template_project["prjOwner"] == logged_user["email"]
+        assert template_project["accessRights"] == user_project["accessRights"]
 
-        # TODO: workbench nodes should not have progress??
-        # TODO: check in detail all fields in a node
+        # different timestamps
+        assert to_datetime(user_project["creationDate"]) < to_datetime(
+            template_project["creationDate"]
+        )
+        assert to_datetime(user_project["lastChangeDate"]) < to_datetime(
+            template_project["lastChangeDate"]
+        )
+
+        # different uuids for project and nodes!?
+        assert template_project["uuid"] != user_project["uuid"]
+
+        # check uuid replacement
+        for node_name in template_project["workbench"]:
+            try:
+                uuidlib.UUID(node_name)
+            except ValueError:
+                pytest.fail("Invalid uuid in workbench node {}".format(node_name))
+
+    # do the same with a body
+    predefined = {
+        "uuid": "",
+        "name": "My super duper new template",
+        "description": "Some lines from user",
+        "thumbnail": "",
+        "prjOwner": "",
+        "creationDate": "2019-06-03T09:59:31.987Z",
+        "lastChangeDate": "2019-06-03T09:59:31.987Z",
+        "workbench": {},
+        "accessRights": {"12": "rwx"},
+        "tags": [],
+    }
+
+    resp = await client.post(url, json=predefined)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        template_project = data
+        # uses predefined
+        assert template_project["name"] == predefined["name"]
+        assert template_project["description"] == predefined["description"]
+        assert template_project["prjOwner"] == logged_user["email"]
+        assert template_project["accessRights"] == predefined["accessRights"]
+
+        modified = [
+            "prjOwner",
+            "creationDate",
+            "lastChangeDate",
+            "uuid",
+            "accessRights",
+        ]
+
+        # different ownership
+        assert template_project["prjOwner"] == logged_user["email"]
+        assert template_project["prjOwner"] == user_project["prjOwner"]
+
+        # different timestamps
+        assert to_datetime(user_project["creationDate"]) < to_datetime(
+            template_project["creationDate"]
+        )
+        assert to_datetime(user_project["lastChangeDate"]) < to_datetime(
+            template_project["lastChangeDate"]
+        )
+
+        # different uuids for project and nodes!?
+        assert template_project["uuid"] != user_project["uuid"]
+
+        # check uuid replacement
+        for node_name in template_project["workbench"]:
+            try:
+                uuidlib.UUID(node_name)
+            except ValueError:
+                pytest.fail("Invalid uuid in workbench node {}".format(node_name))
 
 
 # PUT --------
