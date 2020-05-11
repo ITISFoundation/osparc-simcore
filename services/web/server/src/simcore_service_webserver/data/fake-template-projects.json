@@ -7,6 +7,7 @@
     "prjOwner": "Maiz",
     "creationDate": "2018-07-09T16:02:22Z",
     "lastChangeDate": "2018-07-09T16:02:22Z",
+    "accessRights": {},
     "workbench": {
       "template-uuid-4434-9504-d4a9bebeda37": {
         "key": "simcore/services/comp/itis/sleeper",

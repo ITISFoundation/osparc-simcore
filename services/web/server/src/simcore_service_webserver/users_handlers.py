@@ -2,16 +2,20 @@
 
 import json
 import logging
+from typing import List
 
 import sqlalchemy as sa
 import sqlalchemy.sql as sql
 from aiohttp import web
 from aiohttp_session import get_session
-from servicelib.aiopg_utils import PostgresRetryPolicyUponOperation
-from servicelib.application_keys import APP_DB_ENGINE_KEY
+from aiopg.sa import Engine
+from aiopg.sa.result import RowProxy
 from tenacity import retry
 
-from .db_models import tokens, users
+from servicelib.aiopg_utils import PostgresRetryPolicyUponOperation
+from servicelib.application_keys import APP_DB_ENGINE_KEY
+
+from .db_models import GroupType, groups, tokens, user_to_groups, users
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_api import check_permission
 from .utils import gravatar_hash
@@ -25,29 +29,87 @@ async def get_my_profile(request: web.Request):
     # NOTE: ONLY login required to see its profile. E.g. anonymous can never see its profile
 
     @retry(**PostgresRetryPolicyUponOperation(logger).kwargs)
-    async def _query_db(uid, engine):
+    async def _query_db(uid: str, engine: Engine) -> List[RowProxy]:
         async with engine.acquire() as conn:
-            query = sa.select([users.c.email, users.c.role, users.c.name]).where(
-                users.c.id == uid
+            query = (
+                sa.select(
+                    [
+                        users.c.email,
+                        users.c.role,
+                        users.c.name,
+                        users.c.primary_gid,
+                        groups.c.gid,
+                        groups.c.name,
+                        groups.c.description,
+                        groups.c.type,
+                    ],
+                    use_labels=True,
+                )
+                .select_from(
+                    users.join(
+                        user_to_groups.join(
+                            groups, user_to_groups.c.gid == groups.c.gid
+                        ),
+                        users.c.id == user_to_groups.c.uid,
+                    )
+                )
+                .where(users.c.id == uid)
+                .order_by(sa.asc(groups.c.name))
             )
             result = await conn.execute(query)
-            return await result.first()
+            return await result.fetchall()
 
-    row = await _query_db(
+    # here we get all user_group combinations but only the group changes
+    user_groups: List[RowProxy] = await _query_db(
         uid=request[RQT_USERID_KEY], engine=request.app[APP_DB_ENGINE_KEY]
     )
-    parts = row["name"].split(".") + [""]
+
+
+    if not user_groups:
+        raise web.HTTPServerError(reason="could not find profile!")
 
     # Added in case a user has an active session but hasn't logged in
     session = await get_session(request)
-    session["user_email"] = row["email"]
+    session["user_email"] = user_groups[0]["users_email"]
+    
+    # get the primary group and the all group
+    user_primary_group = all_group = {}
+    other_groups = []
+    for user_group in user_groups:
+        if user_group["users_primary_gid"] == user_group["groups_gid"]:
+            user_primary_group = user_group
+        elif user_group["groups_type"] == GroupType.EVERYONE:
+            all_group = user_group
+        else:
+            other_groups.append(user_group)
 
+    parts = user_primary_group["users_name"].split(".") + [""]
     return {
-        "login": row["email"],
+        "login": user_primary_group["users_email"],
         "first_name": parts[0],
         "last_name": parts[1],
-        "role": row["role"].name.capitalize(),
-        "gravatar_id": gravatar_hash(row["email"]),
+        "role": user_primary_group["users_role"].name.capitalize(),
+        "gravatar_id": gravatar_hash(user_primary_group["users_email"]),
+        "groups": {
+            "me": {
+                "gid": user_primary_group["groups_gid"],
+                "label": user_primary_group["groups_name"],
+                "description": user_primary_group["groups_description"],
+            },
+            "organizations": [
+                {
+                    "gid": group["groups_gid"],
+                    "label": group["groups_name"],
+                    "description": group["groups_description"],
+                }
+                for group in other_groups
+            ],
+            "all": {
+                "gid": all_group["groups_gid"],
+                "label": all_group["groups_name"],
+                "description": all_group["groups_description"],
+            },
+        },
     }
 
 
@@ -178,3 +240,11 @@ async def delete_token(request: web.Request):
         await conn.execute(query)
 
     raise web.HTTPNoContent(content_type="application/json")
+
+
+# @login_required
+# async def list_groups(request: web.Request) -> List[Dict[str, str]]:
+#     await check_permission(request, "user.groups.*")
+#     uid = request[RQT_USERID_KEY]
+#     primary_group, user_groups, all_group = users_api.list_user_groups(request.app, uid)
+#     return {"me": primary_group, "organizations": user_groups, "all": all_group}

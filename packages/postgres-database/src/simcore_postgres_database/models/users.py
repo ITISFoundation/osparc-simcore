@@ -5,10 +5,10 @@
     them different access levels to it
 """
 import itertools
-from datetime import datetime
 from enum import Enum
 
 import sqlalchemy as sa
+from sqlalchemy.sql import func
 
 from .base import metadata
 
@@ -61,15 +61,74 @@ users = sa.Table(
     sa.Column("email", sa.String, nullable=False),
     sa.Column("password_hash", sa.String, nullable=False),
     sa.Column(
+        "primary_gid",
+        sa.BigInteger,
+        sa.ForeignKey(
+            "groups.gid",
+            name="fk_users_gid_groups",
+            onupdate="CASCADE",
+            ondelete="RESTRICT",
+        ),
+    ),
+    sa.Column(
         "status",
         sa.Enum(UserStatus),
         nullable=False,
         default=UserStatus.CONFIRMATION_PENDING,
     ),
     sa.Column("role", sa.Enum(UserRole), nullable=False, default=UserRole.USER),
-    sa.Column("created_at", sa.DateTime(), nullable=False, default=datetime.utcnow),
+    sa.Column("created_at", sa.DateTime(), nullable=False, server_default=func.now()),
+    sa.Column(
+        "modified",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),  # this will auto-update on modification
+    ),
     sa.Column("created_ip", sa.String(), nullable=True),
     #
     sa.PrimaryKeyConstraint("id", name="user_pkey"),
     sa.UniqueConstraint("email", name="user_login_key"),
+)
+
+# ------------------------ TRIGGERS
+
+new_user_trigger = sa.DDL(
+    """
+DROP TRIGGER IF EXISTS user_modification on users;
+CREATE TRIGGER user_modification
+AFTER INSERT OR UPDATE OR DELETE ON users
+    FOR EACH ROW
+    EXECUTE PROCEDURE set_user_groups();    
+"""
+)
+
+
+# ---------------------- PROCEDURES
+set_user_groups_procedure = sa.DDL(
+    """
+CREATE OR REPLACE FUNCTION set_user_groups() RETURNS TRIGGER AS $$
+DECLARE
+    group_id BIGINT;
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        -- set primary group
+        INSERT INTO "groups" ("name", "description", "type") VALUES (NEW.name, 'primary group', 'PRIMARY') RETURNING gid INTO group_id;
+        INSERT INTO "user_to_groups" ("uid", "gid") VALUES (NEW.id, group_id);
+        UPDATE "users" SET "primary_gid" = group_id WHERE "id" = NEW.id;
+        -- set everyone goup
+        INSERT INTO "user_to_groups" ("uid", "gid") VALUES (NEW.id, (SELECT "gid" FROM "groups" WHERE "type" = 'EVERYONE'));
+    ELSIF TG_OP = 'UPDATE' THEN
+        UPDATE "groups" SET "name" = NEW.name WHERE "gid" = NEW.primary_gid;
+    ELSEIF TG_OP = 'DELETE' THEN
+        DELETE FROM "groups" WHERE "gid" = OLD.primary_gid;
+    END IF;
+    RETURN NULL;
+END; $$ LANGUAGE 'plpgsql';
+"""
+)
+
+sa.event.listen(users, "after_create", set_user_groups_procedure)
+sa.event.listen(
+    users, "after_create", new_user_trigger,
 )

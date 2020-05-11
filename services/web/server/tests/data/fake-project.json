@@ -1,4 +1,5 @@
 {
+  "accessRights": {},
   "uuid": "template-uuid-6257-a462-d7bf73b76c0c",
   "name": "fake-project-name",
   "description": "anim sint pariatur do dolore",
@@ -61,7 +62,10 @@
       "label": "2D plot",
       "inputs": {},
       "outputs": {},
-      "position": {"x": 1073, "y": 307},
+      "position": {
+        "x": 1073,
+        "y": 307
+      },
       "progress": 100,
       "thumbnail": ""
     }

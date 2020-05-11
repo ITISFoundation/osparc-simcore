@@ -65,7 +65,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
 
     noMargin: {
       check: "Boolean",
-      init: false
+      init: true
     }
   },
 

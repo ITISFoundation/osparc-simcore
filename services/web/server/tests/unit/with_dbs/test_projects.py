@@ -131,10 +131,13 @@ async def user_project(client, fake_project, logged_user):
 
 
 @pytest.fixture
-async def template_project(client, fake_project):
+async def template_project(
+    client, fake_project, logged_user, all_group: Dict[str, str]
+):
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
     project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"
+    project_data["accessRights"] = {str(all_group["gid"]): "rw"}
 
     async with NewProject(
         project_data, client.app, user_id=None, clear_all=True
@@ -280,7 +283,9 @@ async def test_new_project(
         "creationDate": now_str(),
         "lastChangeDate": now_str(),
         "thumbnail": "",
+        "accessRights": {},
         "workbench": {},
+        "tags": [],
     }
 
     resp = await client.post(url, json=default_project)
@@ -399,6 +404,7 @@ async def test_new_project_from_template_with_body(
         "creationDate": "2019-06-03T09:59:31.987Z",
         "lastChangeDate": "2019-06-03T09:59:31.987Z",
         "workbench": {},
+        "tags": [],
     }
 
     resp = await client.post(url, json=predefined)

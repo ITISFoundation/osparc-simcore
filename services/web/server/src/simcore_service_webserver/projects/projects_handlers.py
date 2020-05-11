@@ -82,7 +82,7 @@ async def create_projects(request: web.Request):
         projects_api.validate_project(request.app, project)
 
         # update metadata (uuid, timestamps, ownership) and save
-        await db.add_project(
+        project = await db.add_project(
             project, user_id, force_as_template=as_template is not None
         )
 
@@ -113,12 +113,10 @@ async def list_projects(request: web.Request):
     # TODO: improve dbapi to list project
     projects_list = []
     if ptype in ("template", "all"):
-        projects_list += await db.load_template_projects()
+        projects_list += await db.load_template_projects(user_id=user_id)
 
     if ptype in ("user", "all"):  # standard only (notice that templates will only)
-        projects_list += await db.load_user_projects(
-            user_id=user_id, exclude_templates=True
-        )
+        projects_list += await db.load_user_projects(user_id=user_id)
 
     start = int(request.query.get("start", 0))
     count = int(request.query.get("count", len(projects_list)))
@@ -225,9 +223,11 @@ async def delete_project(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     try:
-        # used to check exists
         await projects_api.get_project_for_user(
-            request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True
+            request.app,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            include_templates=True,
         )
         with managed_resource(user_id, None, request.app) as rt:
             other_users = await rt.find_users_of_resource("project_id", project_uuid)

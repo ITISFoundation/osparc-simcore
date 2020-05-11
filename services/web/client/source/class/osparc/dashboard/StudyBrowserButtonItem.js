@@ -87,6 +87,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       nullable: true
     },
 
+    accessRights: {
+      check: "Object",
+      apply: "_applyAccessRights",
+      nullable: true
+    },
+
     lastChangeDate: {
       check: "Date",
       apply: "_applyLastChangeDate",
@@ -100,7 +106,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
   },
 
   statics: {
-    menuButtonZIndex: 20
+    MENU_BTN_Z: 20,
+    SHARED_ME: "@FontAwesome5Solid/user/14",
+    SHARED_ORGS: "@FontAwesome5Solid/users/14",
+    SHARED_ALL: "@FontAwesome5Solid/globe/14"
   },
 
   members: {
@@ -121,7 +130,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             width: 30,
             height: 30,
             icon: "@FontAwesome5Solid/ellipsis-v/16",
-            zIndex: this.self().menuButtonZIndex,
+            zIndex: this.self().MENU_BTN_Z,
             focusable: false
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
@@ -132,7 +141,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           break;
         case "tick-unselected":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16").set({
-            zIndex: this.self().menuButtonZIndex -1
+            zIndex: this.self().MENU_BTN_Z -1
           });
           this._add(control, {
             top: 4,
@@ -141,7 +150,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           break;
         case "tick-selected":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/check-circle/16").set({
-            zIndex: this.self().menuButtonZIndex -1
+            zIndex: this.self().MENU_BTN_Z -1
           });
           this._add(control, {
             top: 4,
@@ -170,8 +179,16 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyStudyTitle: function(value, old) {
-      let label = this.getChildControl("title");
+      const label = this.getChildControl("title");
       label.setValue(value);
+      label.addListener("appear", () => {
+        qx.event.Timer.once(() => {
+          const labelDom = label.getContentElement().getDomElement();
+          if (label.getMaxWidth() === parseInt(labelDom.style.width)) {
+            label.setToolTipText(value);
+          }
+        }, this, 50);
+      });
     },
 
     _applyStudyDescription: function(value, old) {
@@ -204,11 +221,66 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       }
     },
 
+    _applyAccessRights: function(value, old) {
+      if (value && Object.keys(value).length) {
+        const image = this.getChildControl("shared");
+
+        const store = osparc.store.Store.getInstance();
+        Promise.all([
+          store.getGroupsAll(),
+          store.getGroupsOrganizations(),
+          store.getGroupsMe()
+        ])
+          .then(values => {
+            const groups = [[values[0]], values[1], [values[2]]];
+            this.__setSharedIcon(image, value, groups);
+          });
+      }
+    },
+
+    __setSharedIcon: function(image, value, groups) {
+      for (let i=0; i<groups.length; i++) {
+        let hintText = "";
+        Object.keys(value).forEach(key => {
+          const grp = groups[i].find(group => group["gid"] === parseInt(key));
+          if (grp) {
+            hintText += (grp["label"] + "<br>");
+          }
+        });
+        if (hintText === "") {
+          continue;
+        }
+        switch (i) {
+          case 0:
+            image.setSource(this.self().SHARED_ALL);
+            break;
+          case 1:
+            image.setSource(this.self().SHARED_ORGS);
+            break;
+          case 2:
+            image.setSource(this.self().SHARED_ME);
+            break;
+        }
+
+        const hint = new osparc.ui.hint.Hint(image, hintText).set({
+          active: false
+        });
+        image.addListener("mouseover", () => hint.show(), this);
+        image.addListener("mouseout", () => hint.exclude(), this);
+
+        break;
+      }
+    },
+
     _applyTags: function(tags) {
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         const tagsContainer = this.getChildControl("tags");
         tagsContainer.removeAll();
-        tags.forEach(tag => tagsContainer.add(new osparc.ui.basic.Tag(tag.name, tag.color, "studyBrowser")));
+        tags.forEach(tag => {
+          const tagUI = new osparc.ui.basic.Tag(tag.name, tag.color, "studyBrowser");
+          tagUI.setFont("text-12");
+          tagsContainer.add(tagUI);
+        });
       }
     },
 

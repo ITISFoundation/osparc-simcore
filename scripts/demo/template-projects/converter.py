@@ -33,10 +33,11 @@ def load_projects(csv_path: Path):
     db_projects = load_csv(csv_path)
     _projects = []
 
+    fake_email = "my.email@osparc.io"
     # process
     for db_prj in db_projects:
         if int(db_prj.get("published", 0) or 0) == 1:
-            prj = _convert_to_schema_names(db_prj)
+            prj = _convert_to_schema_names(db_prj, fake_email)
 
             # jsonifies
             dump = prj["workbench"]

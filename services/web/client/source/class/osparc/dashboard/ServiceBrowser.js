@@ -47,7 +47,6 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     this._setLayout(new qx.ui.layout.HBox(10));
 
-    // const iframe = osparc.utils.Utils.createLoadingIFrame(this.tr("Services"));
     const loadingPage = new osparc.ui.message.Loading(this.tr("Loading Services"));
     this._add(loadingPage, {
       flex: 1
@@ -80,7 +79,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     __initResources: function() {
       const store = osparc.store.Store.getInstance();
-      store.getServices(true)
+      store.getServicesDAGs(true)
         .then(services => {
           // Do not validate if are not taking actions
           // this.__nodeCheck(services);
@@ -95,7 +94,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this.__reloadBtn.setFetching(true);
 
       const store = osparc.store.Store.getInstance();
-      store.getServices(reload)
+      store.getServicesDAGs(reload)
         .then(services => {
           this.__allServices = services;
           this.__latestServicesModel.removeAll();
@@ -121,11 +120,14 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __createServicesListLayout: function() {
-      const servicesLayout = this.__createVBoxWLabel(this.tr("Services"));
+      const servicesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        marginTop: 20
+      });
 
       // button for refetching services
       const reloadBtn = this.__reloadBtn = new osparc.ui.form.FetchButton().set({
         label: this.tr("Reload"),
+        font: "text-14",
         icon: "@FontAwesome5Solid/sync-alt/14",
         allowGrowX: false
       });
@@ -185,15 +187,21 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
       const titleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      const label = new qx.ui.basic.Label(this.tr("Description")).set({
-        font: qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]),
+      const descLabel = new qx.ui.basic.Label(this.tr("Description")).set({
+        font: "title-16",
         minWidth: 150
       });
-      titleContainer.add(label);
+      titleContainer.add(descLabel);
 
-      titleContainer.add(new qx.ui.basic.Atom(this.tr("Version")));
+      const versionLabel = new qx.ui.basic.Label(this.tr("Version")).set({
+        font: "text-14",
+        alignY: "middle"
+      });
+      titleContainer.add(versionLabel);
 
-      const versions = this.__versionsUIBox = new qx.ui.form.SelectBox();
+      const versions = this.__versionsUIBox = new qx.ui.form.SelectBox().set({
+        font: "text-14"
+      });
       osparc.utils.Utils.setIdToWidget(versions, "serviceBrowserVersionsDrpDwn");
       titleContainer.add(versions);
       versions.addListener("changeSelection", e => {
@@ -348,7 +356,9 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
           if (versions) {
             let lastItem = null;
             versions.forEach(version => {
-              lastItem = new qx.ui.form.ListItem(version);
+              lastItem = new qx.ui.form.ListItem(version).set({
+                font: "text-14"
+              });
               versionsList.add(lastItem);
             });
             if (lastItem) {
@@ -398,10 +408,10 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       const serviceId = this.__selectedService.id;
       const params = {
         url: {
-          groupId: serviceId
+          dagId: serviceId
         }
       };
-      osparc.data.Resources.fetch("groups", "delete", params, serviceId)
+      osparc.data.Resources.fetch("dags", "delete", params, serviceId)
         .then(() => {
           this.__updateServiceDescription(null);
           this.__populateList(true);

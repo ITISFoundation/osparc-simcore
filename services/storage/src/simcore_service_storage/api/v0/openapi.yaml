@@ -1739,6 +1739,7 @@ paths:
                     - name
                     - description
                     - prjOwner
+                    - accessRights
                     - creationDate
                     - lastChangeDate
                     - thumbnail
@@ -1759,6 +1760,9 @@ paths:
                     prjOwner:
                       type: string
                       description: user uuid
+                    accessRights:
+                      type: object
+                      description: object containing the GroupID as key and read/write/execution permissions as value
                     creationDate:
                       type: string
                       description: project creation date
@@ -1946,6 +1950,7 @@ paths:
                     - name
                     - description
                     - prjOwner
+                    - accessRights
                     - creationDate
                     - lastChangeDate
                     - thumbnail
@@ -1966,6 +1971,9 @@ paths:
                     prjOwner:
                       type: string
                       description: user uuid
+                    accessRights:
+                      type: object
+                      description: object containing the GroupID as key and read/write/execution permissions as value
                     creationDate:
                       type: string
                       description: project creation date
@@ -2163,6 +2171,7 @@ paths:
                   - name
                   - description
                   - prjOwner
+                  - accessRights
                   - creationDate
                   - lastChangeDate
                   - thumbnail
@@ -2183,6 +2192,9 @@ paths:
                   prjOwner:
                     type: string
                     description: user uuid
+                  accessRights:
+                    type: object
+                    description: object containing the GroupID as key and read/write/execution permissions as value
                   creationDate:
                     type: string
                     description: project creation date
@@ -2480,6 +2492,7 @@ components:
         - name
         - description
         - prjOwner
+        - accessRights
         - creationDate
         - lastChangeDate
         - thumbnail
@@ -2500,6 +2513,9 @@ components:
         prjOwner:
           type: string
           description: user uuid
+        accessRights:
+          type: object
+          description: object containing the GroupID as key and read/write/execution permissions as value
         creationDate:
           type: string
           description: project creation date

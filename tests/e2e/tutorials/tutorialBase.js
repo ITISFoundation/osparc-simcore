@@ -47,14 +47,13 @@ class TutorialBase {
     await utils.takeScreenshot(this.__page, this.__templateName + "_landingPage_" + domain);
   }
 
-  async openStudyLink() {
+  async openStudyLink(openStudyTimeout = 20000) {
     this.__responsesQueue.addResponseListener("open");
 
     await this.goTo();
 
     let resp = null;
     try {
-      const openStudyTimeout = 20000;
       resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
     }
     catch(err) {
