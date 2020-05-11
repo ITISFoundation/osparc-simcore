@@ -83,11 +83,6 @@ async def remove_resources_if_guest_user(
     """When a guest user finishes using the platform its Posgtres
     and S3/MinIO entries need to be removed
     """
-    logger.debug("Will try to remove resources for user '%s' if GUEST", user_id)
-    if not await is_user_guest(app, user_id):
-        logger.debug("User is not GUEST, skipping removal of its project resources")
-        return
-
     logger.debug(
         "Removing project '%s' from the database", project_uuid,
     )
@@ -96,7 +91,9 @@ async def remove_resources_if_guest_user(
     except ProjectNotFoundError:
         logging.warning("Project '%s' not found, skipping removal", project_uuid)
 
-    await delete_user(app, user_id)
+    logger.debug("Will try to remove resources for user '%s' if GUEST", user_id)
+    if await is_user_guest(app, user_id):
+         await delete_user(app, user_id)
 
 
 async def garbage_collector_task(app: web.Application):
