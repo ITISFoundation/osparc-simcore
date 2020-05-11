@@ -124,17 +124,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         marginTop: 20
       });
 
-      // button for refetching services
-      const reloadBtn = this.__reloadBtn = new osparc.ui.form.FetchButton().set({
-        label: this.tr("Reload"),
-        font: "text-14",
-        icon: "@FontAwesome5Solid/sync-alt/14",
-        allowGrowX: false
-      });
-      reloadBtn.addListener("execute", function() {
-        this.__populateList(true);
-      }, this);
-      servicesLayout.add(reloadBtn);
+      servicesLayout.add(this.__createButtonContainer());
 
       const serviceFilters = this.__serviceFilters = new osparc.component.filter.group.ServiceFilterGroup("serviceBrowser");
       servicesLayout.add(serviceFilters);
@@ -238,17 +228,21 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       return descriptionView;
     },
 
-    __createVBoxWLabel: function(text) {
-      const vBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-        marginTop: 20
-      });
+    __createButtonContainer: function() {
+      const hBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
 
-      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      const label = new qx.ui.basic.Label(text).set({
-        font: qx.bom.Font.fromConfig(osparc.theme.Font.fonts["nav-bar-label"]),
-        allowStretchX: true
+      // button for refetching services
+      const reloadBtn = this.__reloadBtn = new osparc.ui.form.FetchButton().set({
+        label: this.tr("Reload"),
+        font: "text-14",
+        icon: "@FontAwesome5Solid/sync-alt/14",
+        allowGrowX: false
       });
-      header.add(label, {
+      reloadBtn.addListener("execute", function() {
+        this.__populateList(true);
+      }, this);
+      hBoxLayout.add(reloadBtn);
+      hBoxLayout.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
 
@@ -262,7 +256,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
                   this.__displayServiceSubmissionForm(data);
                 });
             });
-            header.add(testDataButton);
+            hBoxLayout.add(testDataButton);
           }
         });
 
@@ -271,10 +265,9 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         this.__displayServiceSubmissionForm();
       });
 
-      header.add(addServiceButton);
-      vBoxLayout.add(header);
+      hBoxLayout.add(addServiceButton);
 
-      return vBoxLayout;
+      return hBoxLayout;
     },
 
     __displayServiceSubmissionForm: function(formData) {
