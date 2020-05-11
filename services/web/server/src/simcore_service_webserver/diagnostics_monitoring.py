@@ -161,3 +161,7 @@ def setup_monitoring(app: web.Application):
     app.router.add_get("/metrics", metrics_handler)
 
     return True
+
+
+def get_collector_registry(app: web.Application) -> CollectorRegistry:
+    return app[kCOLLECTOR_REGISTRY]

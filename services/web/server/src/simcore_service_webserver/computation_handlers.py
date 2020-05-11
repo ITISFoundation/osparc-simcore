@@ -13,6 +13,7 @@ from simcore_sdk.config.rabbit import Config as RabbitConfig
 
 from .computation_api import update_pipeline_db
 from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
+from .computation_instrumentation import kSERVICE_STARTED
 from .login.decorators import login_required
 from .projects.projects_api import get_project_for_user
 from .projects.projects_exceptions import ProjectNotFoundError
@@ -83,7 +84,15 @@ async def start_pipeline(request: web.Request) -> web.Response:
     log.debug(
         "Task (user_id=%s, project_id=%s) submitted for execution.", user_id, project_id
     )
-
+    # update instrumentation
+    request.app[kSERVICE_STARTED].labels(
+        user_id=user_id,
+        project_id=project_id,
+        service_key="",
+        service_tag="",
+        service_uuid="",
+        http_status="",
+    ).inc()
     # answer the client while task has been spawned
     data = {
         # TODO: PC->SAN: some name with task id. e.g. to distinguish two projects with identical pipeline?

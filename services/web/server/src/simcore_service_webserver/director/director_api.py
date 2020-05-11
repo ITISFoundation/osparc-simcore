@@ -15,6 +15,12 @@ from .config import get_client_session, get_config
 log = logging.getLogger(__name__)
 
 
+from .instrumentation import (
+    kSERVICE_STARTED,
+    kSERVICE_STOPPED,
+)
+
+
 def _get_director_client(app: web.Application) -> URL:
     cfg = get_config(app)
 
@@ -73,6 +79,15 @@ async def start_service(
     url = (api_endpoint / "running_interactive_services").with_query(params)
     async with session.post(url, ssl=False) as resp:
         payload = await resp.json()
+        counter = app[kSERVICE_STARTED]
+        counter.labels(
+            user_id=user_id,
+            project_id=project_id,
+            service_key=service_key,
+            service_tag=service_version,
+            service_uuid=service_uuid,
+            http_status=resp.status,
+        ).inc()
         return payload["data"]
 
 
@@ -81,6 +96,8 @@ async def stop_service(app: web.Application, service_uuid: str) -> None:
 
     url = api_endpoint / "running_interactive_services" / service_uuid
     async with session.delete(url, ssl=False) as resp:
+        counter = app[kSERVICE_STOPPED]
+        counter.labels(service_uuid=service_uuid, http_status=resp.status,).inc()
         if resp.status == 404:
             raise director_exceptions.ServiceNotFoundError(service_uuid)
         if resp.status != 204:
