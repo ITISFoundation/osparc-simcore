@@ -93,7 +93,7 @@ async def remove_resources_if_guest_user(
 
     logger.debug("Will try to remove resources for user '%s' if GUEST", user_id)
     if await is_user_guest(app, user_id):
-         await delete_user(app, user_id)
+        await delete_user(app, user_id)
 
 
 async def garbage_collector_task(app: web.Application):
