@@ -442,7 +442,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         creator: study.prjOwner ? study.prjOwner : null,
         accessRights: study.accessRights ? study.accessRights : null,
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
-        icon: study.thumbnail || "@FontAwesome5Solid/flask/50",
+        icon: study.thumbnail || isTemplate ? "@FontAwesome5Solid/copy/50" : "@FontAwesome5Solid/file-alt/50",
         tags
       });
       const menu = this.__getStudyItemMenu(item, study, isTemplate);

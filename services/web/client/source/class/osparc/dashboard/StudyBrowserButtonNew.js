@@ -41,7 +41,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonNew", {
       const desc1 = this.getChildControl("desc1");
       desc1.setValue(this.tr("Start with a empty study").toString());
 
-      this.setIcon("@FontAwesome5Solid/plus-circle/64");
+      this.setIcon("@FontAwesome5Solid/file/50");
     },
 
     _onToggleChange: function(e) {
