@@ -14,13 +14,14 @@ log = logging.getLogger(__name__)
 
 
 def setup_app_tracing(app: web.Application, app_name: str) -> bool:
-    host= "0.0.0.0" if os.environ.get("SC_BUILD_TARGET") else "127.0.0.1" # nosec
-    port=8080
+    host = "0.0.0.0" if os.environ.get("SC_BUILD_TARGET") else "127.0.0.1"  # nosec
+    port = 8080
     cfg = {
         "enabled": config.TRACING_ENABLED,
-        "zipkin_endpoint": config.TRACING_ZIPKIN_ENDPOINT
+        "zipkin_endpoint": config.TRACING_ZIPKIN_ENDPOINT,
     }
     return setup_tracing(app, app_name, host, port, cfg)
+
 
 def setup_app() -> web.Application:
     api_spec_path = resources.get_path(resources.RESOURCE_OPEN_API)
@@ -32,16 +33,18 @@ def setup_app() -> web.Application:
     registry_cache_task.setup(app)
 
     # TODO: temporary disabled until service is updated
-    if False: #pylint: disable=using-constant-test
+    if True:  # pylint: disable=using-constant-test
         setup_monitoring(app, "simcore_service_director")
 
     setup_app_tracing(app, "simcore_service_director")
 
     return app
 
+
 def main() -> None:
     app = setup_app()
     web.run_app(app, port=8080)
+
 
 if __name__ == "__main__":
     main()
