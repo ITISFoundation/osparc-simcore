@@ -40,6 +40,9 @@ Read more at [Coding Conventions and Linters](docs/coding-conventions.md).
 
 ### FAQ
 
+**Q:** I have strange database errors, but I did not change anything. What could I try?
+**A:** After starting the application, apply Postgres migrations, run `make help` in project root for details.
+
 **Q:** I am new to the project, how do I view all available commands?
 **A:** Run `make help` in the directory containing a `Makefile`. Usage will be shown. Don't be afraid to read the file, it is quite strait forward and well documented.
 
