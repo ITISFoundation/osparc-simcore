@@ -5,13 +5,13 @@
 import logging
 
 from aiohttp import web
+from socketio import AsyncServer
+
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
-from socketio import AsyncServer
 
 from . import handlers, handlers_utils
 from .config import APP_CLIENT_SOCKET_SERVER_KEY, CONFIG_SECTION_NAME
-
 
 log = logging.getLogger(__name__)
 
