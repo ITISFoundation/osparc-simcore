@@ -105,7 +105,7 @@ qx.Class.define("osparc.component.export.ExportDAG", {
         flex: 1
       });
 
-      // const shareWith = new osparc.component.export.ShareWith("exportGroup");
+      // const shareWith = new osparc.component.export.ShareWith("exportDAG");
       // this._add(shareWith);
 
       const exportBtn = this.__getExportBtn();
