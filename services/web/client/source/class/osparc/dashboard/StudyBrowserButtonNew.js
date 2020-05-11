@@ -36,7 +36,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonNew", {
   members: {
     __buildLayout: function() {
       const title = this.getChildControl("title");
-      title.setValue(this.tr("Create New Study"));
+      title.setValue(this.tr("Empty Study"));
 
       const desc1 = this.getChildControl("desc1");
       desc1.setValue(this.tr("Start with a empty study").toString());
