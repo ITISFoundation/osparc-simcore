@@ -102,7 +102,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           enabled: false
         });
         exportButton.addListener("execute", () => {
-          this.__exportGroup();
+          this.__exportDAG();
         }, this);
         osparc.utils.Utils.setIdToWidget(exportButton, "exportServicesBtn");
         toolbar.add(exportButton);
@@ -239,7 +239,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       this.fireEvent("addNode");
     },
 
-    __exportGroup: function() {
+    __exportDAG: function() {
       const selectedItem = this.__getSelection();
       if (selectedItem) {
         if (selectedItem.getIsContainer()) {
