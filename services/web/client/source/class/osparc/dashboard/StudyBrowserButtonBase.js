@@ -53,7 +53,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
 
   statics: {
     ITEM_WIDTH: 200,
-    ITEM_HEIGHT: 200,
+    ITEM_HEIGHT: 220,
     PADDING: 8,
     SPACING: 12
   },
@@ -87,7 +87,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           control = new qx.ui.basic.Label().set({
             margin: [5, 0],
             font: "title-14",
-            maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING - 30,
+            maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING - osparc.dashboard.StudyBrowserButtonItem.MENU_BTN_WIDTH,
             breakWithinWords: true
           });
           this._mainLayout.addAt(control, 0);

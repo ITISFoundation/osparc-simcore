@@ -107,6 +107,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
   statics: {
     MENU_BTN_Z: 20,
+    MENU_BTN_WIDTH: 25,
     SHARED_ME: "@FontAwesome5Solid/user/14",
     SHARED_ORGS: "@FontAwesome5Solid/users/14",
     SHARED_ALL: "@FontAwesome5Solid/globe/14"
@@ -127,16 +128,16 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       switch (id) {
         case "menu-button":
           control = new qx.ui.form.MenuButton().set({
-            width: 30,
-            height: 30,
-            icon: "@FontAwesome5Solid/ellipsis-v/16",
+            width: this.self().MENU_BTN_WIDTH,
+            height: this.self().MENU_BTN_WIDTH,
+            icon: "@FontAwesome5Solid/ellipsis-v/14",
             zIndex: this.self().MENU_BTN_Z,
             focusable: false
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           this._add(control, {
-            top: 0,
-            right: 0
+            top: -2,
+            right: -2
           });
           break;
         case "tick-unselected":
