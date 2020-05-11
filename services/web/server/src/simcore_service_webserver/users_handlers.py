@@ -7,7 +7,6 @@ from typing import List
 import sqlalchemy as sa
 import sqlalchemy.sql as sql
 from aiohttp import web
-from aiohttp_session import get_session
 from aiopg.sa import Engine
 from aiopg.sa.result import RowProxy
 from tenacity import retry
@@ -64,14 +63,9 @@ async def get_my_profile(request: web.Request):
         uid=request[RQT_USERID_KEY], engine=request.app[APP_DB_ENGINE_KEY]
     )
 
-
     if not user_groups:
         raise web.HTTPServerError(reason="could not find profile!")
 
-    # Added in case a user has an active session but hasn't logged in
-    session = await get_session(request)
-    session["user_email"] = user_groups[0]["users_email"]
-    
     # get the primary group and the all group
     user_primary_group = all_group = {}
     other_groups = []

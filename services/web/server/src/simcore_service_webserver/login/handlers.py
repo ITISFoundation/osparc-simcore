@@ -1,7 +1,6 @@
 import logging
 
 from aiohttp import web
-from aiohttp_session import (new_session, get_session)
 from servicelib import observer
 from servicelib.rest_utils import extract_and_validate
 from yarl import URL
@@ -150,10 +149,6 @@ async def login(request: web.Request):
     identity = user["email"]
     response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
 
-    # Store useful user information in the encrypted session
-    session = await new_session(request)
-    session["user_email"] = user["email"]
-
     await remember(request, response, identity)
     return response
 
@@ -167,9 +162,6 @@ async def logout(request: web.Request) -> web.Response:
         body = await request.json()
         client_session_id = body.get("client_session_id", None)
     await observer.emit("SIGNAL_USER_LOGOUT", user_id, client_session_id, request.app)
-    # Invalidate session
-    session = await get_session(request)
-    session.invalidate()
     await forget(request, response)
     return response
 
