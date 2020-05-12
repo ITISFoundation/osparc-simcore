@@ -82,12 +82,13 @@ def setup(app: web.Application, *, swagger_doc_enabled: bool = True):
 
     # middlewares
     # NOTE: using safe get here since some tests use incomplete configs
-    is_diagnostics_enabled = app[APP_CONFIG_KEY].get("diagnostics",{}).get("enabled",{})
+    is_diagnostics_enabled = (
+        app[APP_CONFIG_KEY].get("diagnostics", {}).get("enabled", {})
+    )
     app.middlewares.extend(
         [
             error_middleware_factory(
-                api_version_prefix,
-                log_exceptions=not is_diagnostics_enabled,
+                api_version_prefix, log_exceptions=not is_diagnostics_enabled,
             ),
             envelope_middleware_factory(api_version_prefix),
         ]

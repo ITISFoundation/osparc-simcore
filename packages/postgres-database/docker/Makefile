@@ -46,6 +46,7 @@ upgrade: ## migrate the postgres database
 		sleep 1; \
 		TASK_STATE=$$(docker inspect --format="{{.Status.State}}" $${TASK_ID});\
 	done
+	@docker service logs $(APP_NAME)
 	@docker service rm $(APP_NAME)
 
 

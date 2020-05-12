@@ -19,5 +19,16 @@ qx.Theme.define("osparc.theme.Appearance", {
   extend: osparc.theme.osparc.Appearance,
 
   appearances: {
+    /*
+    ---------------------------------------------------------------------------
+      jsonforms
+    ---------------------------------------------------------------------------
+    */
+    "form-array-container": {
+      style: () => ({
+        padding: 10,
+        decorator: "border-editable"
+      })
+    }
   }
 });
