@@ -112,6 +112,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           control = new qx.ui.basic.Image();
           this._mainLayout.addAt(control, 3);
           break;
+        case "tags":
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3));
+          this._mainLayout.addAt(control, 4);
+          break;
         case "icon": {
           control = new qx.ui.basic.Image().set({
             anonymous: true,
@@ -133,7 +137,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           iconContainer.add(new qx.ui.core.Spacer(), {
             flex: 2
           });
-          this._mainLayout.addAt(iconContainer, 4, {
+          this._mainLayout.addAt(iconContainer, 5, {
             flex: 1
           });
           break;

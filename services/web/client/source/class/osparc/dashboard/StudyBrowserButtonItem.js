@@ -158,10 +158,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             right: 4
           });
           break;
-        case "tags":
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3));
-          this._mainLayout.addAt(control, 4);
-          break;
       }
 
       return control || this.base(arguments, id);
