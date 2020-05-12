@@ -30,7 +30,7 @@ RUN pip --no-cache-dir install --upgrade \
 ARG GIT_BRANCH
 ARG GIT_REPOSITORY
 
-RUN git clone --single-branch --branch ${GIT_BRANCH} ${GIT_REPOSITORY} \
+RUN git clone --single-branch --branch ${GIT_BRANCH} ${GIT_REPOSITORY} osparc-simcore\
   && pip install osparc-simcore/packages/postgres-database[migration]
 
 FROM base as production
@@ -43,6 +43,7 @@ WORKDIR /home/scu
 COPY --from=build ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY entrypoint.bash /home/entrypoint.bash
 
+RUN chmod +x /home/entrypoint.bash
 
 ENV POSTGRES_USER=scu \
   POSTGRES_PASSWORD=adminadmin \
@@ -50,5 +51,5 @@ ENV POSTGRES_USER=scu \
   POSTGRES_PORT=5432 \
   POSTGRES_DB=simcoredb
 
-ENTRYPOINT [ "/bin/sh", "/home/entrypoint.bash" ]
+ENTRYPOINT [ "/bin/bash", "/home/entrypoint.bash" ]
 CMD [ "sc-pg", "upgrade" ]
