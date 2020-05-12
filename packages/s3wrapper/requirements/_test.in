@@ -7,7 +7,7 @@
 
 # testing
 coverage
-pytest~=5.3.5  # Bug in pytest-sugar https://github.com/Teemu/pytest-sugar/issues/187
+pytest
 pytest-cov
 pytest-docker
 pytest-runner
