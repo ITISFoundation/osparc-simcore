@@ -1,10 +1,9 @@
 import logging
 
 from aiohttp import web
-from yarl import URL
-
 from servicelib import observer
 from servicelib.rest_utils import extract_and_validate
+from yarl import URL
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..security_api import check_password, encrypt_password, forget, remember
@@ -149,6 +148,7 @@ async def login(request: web.Request):
     # user logs in
     identity = user["email"]
     response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
+
     await remember(request, response, identity)
     return response
 

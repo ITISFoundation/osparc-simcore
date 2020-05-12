@@ -20,5 +20,11 @@ qx.Theme.define("osparc.theme.Decoration", {
   extend: osparc.theme.osparc.Decoration,
 
   decorations: {
+    "form-array-container": {
+      style: {
+        radius: 2,
+        width: 1
+      }
+    }
   }
 });

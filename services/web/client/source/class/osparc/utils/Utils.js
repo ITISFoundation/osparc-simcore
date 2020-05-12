@@ -17,6 +17,7 @@
 
 /**
  * @ignore(URL)
+ * @ignore(sessionStorage)
  */
 
 /**
@@ -352,6 +353,10 @@ qx.Class.define("osparc.utils.Utils", {
         bottom: window.innerHeight - location.bottom,
         left: location.left
       };
+    },
+
+    fetchJSON: function() {
+      return fetch.apply(null, arguments).then(response => response.json());
     }
   }
 });
