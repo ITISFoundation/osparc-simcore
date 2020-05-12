@@ -34,6 +34,9 @@
  *   let servicesView = this.__serviceBrowser = new osparc.dashboard.ServiceBrowser();
  *   this.getRoot().add(servicesView);
  * </pre>
+ *
+ * @asset(form/service.json)
+ * @asset(form/service-data.json)
  */
 
 qx.Class.define("osparc.dashboard.ServiceBrowser", {
@@ -121,17 +124,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         marginTop: 20
       });
 
-      // button for refetching services
-      const reloadBtn = this.__reloadBtn = new osparc.ui.form.FetchButton().set({
-        label: this.tr("Reload"),
-        font: "text-14",
-        icon: "@FontAwesome5Solid/sync-alt/14",
-        allowGrowX: false
-      });
-      reloadBtn.addListener("execute", function() {
-        this.__populateList(true);
-      }, this);
-      servicesLayout.add(reloadBtn);
+      servicesLayout.add(this.__createButtonContainer());
 
       const serviceFilters = this.__serviceFilters = new osparc.component.filter.group.ServiceFilterGroup("serviceBrowser");
       servicesLayout.add(serviceFilters);
@@ -233,6 +226,102 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         flex: 1
       });
       return descriptionView;
+    },
+
+    __createButtonContainer: function() {
+      const hBoxLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
+
+      // button for refetching services
+      const reloadBtn = this.__reloadBtn = new osparc.ui.form.FetchButton().set({
+        label: this.tr("Reload"),
+        font: "text-14",
+        icon: "@FontAwesome5Solid/sync-alt/14",
+        allowGrowX: false
+      });
+      reloadBtn.addListener("execute", function() {
+        this.__populateList(true);
+      }, this);
+      hBoxLayout.add(reloadBtn);
+      hBoxLayout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      osparc.utils.LibVersions.getPlatformName()
+        .then(platformName => {
+          if (platformName === "dev") {
+            const testDataButton = new qx.ui.form.Button(this.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");
+            testDataButton.addListener("execute", () => {
+              osparc.utils.Utils.fetchJSON("/resource/form/service-data.json")
+                .then(data => {
+                  this.__displayServiceSubmissionForm(data);
+                });
+            });
+            hBoxLayout.add(testDataButton);
+          }
+        });
+
+      const addServiceButton = new qx.ui.form.Button(this.tr("Submit new service"), "@FontAwesome5Solid/plus-circle/14");
+      addServiceButton.addListener("execute", () => {
+        this.__displayServiceSubmissionForm();
+      });
+
+      hBoxLayout.add(addServiceButton);
+
+      return hBoxLayout;
+    },
+
+    __displayServiceSubmissionForm: function(formData) {
+      const addServiceWindow = new qx.ui.window.Window(this.tr("Submit a new service")).set({
+        appearance: "service-window",
+        modal: true,
+        autoDestroy: true,
+        showMinimize: false,
+        allowMinimize: false,
+        centerOnAppear: true,
+        layout: new qx.ui.layout.Grow(),
+        width: 600,
+        height: 660
+      });
+      const scroll = new qx.ui.container.Scroll();
+      addServiceWindow.add(scroll);
+      const form = new osparc.component.form.json.JsonSchemaForm("/resource/form/service.json", formData);
+      form.addListener("ready", () => {
+        addServiceWindow.open();
+      });
+      form.addListener("submit", e => {
+        const data = e.getData();
+        const headers = new Headers();
+        headers.append("Accept", "application/json");
+        const body = new FormData();
+        body.append("metadata", new Blob([JSON.stringify(data.json)], {
+          type: "application/json"
+        }));
+        if (data.files && data.files.length) {
+          const size = data.files[0].size;
+          const maxSize = 10; // 10 MB
+          if (size > maxSize * 1024 * 1024) {
+            osparc.component.message.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
+            return;
+          }
+          body.append("attachment", data.files[0], data.files[0].name);
+        }
+        form.setFetching(true);
+        fetch("/v0/publications/service-submission", {
+          method: "POST",
+          headers,
+          body
+        })
+          .then(resp => {
+            if (resp.ok) {
+              osparc.component.message.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
+              addServiceWindow.close();
+            } else {
+              osparc.component.message.FlashMessenger.logAs("A problem occured while processing your data", "ERROR");
+            }
+          })
+          .finally(() => form.setFetching(false));
+      });
+      scroll.add(form);
     },
 
     __attachEventHandlers: function() {

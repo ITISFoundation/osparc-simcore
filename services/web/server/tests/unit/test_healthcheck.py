@@ -29,6 +29,7 @@ from yarl import URL
 
 logger = logging.getLogger(__name__)
 
+
 def health_check_path(api_version_prefix) -> URL:
     return f"/{api_version_prefix}/health"
 
@@ -109,14 +110,11 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
 
     app = create_safe_application()
 
-    main = {
-        "port": aiohttp_unused_port(),
-        "host": "localhost"
-    }
+    main = {"port": aiohttp_unused_port(), "host": "localhost"}
     app[APP_CONFIG_KEY] = {
         "main": main,
         "rest": {"enabled": True, "version": api_version_prefix},
-        "diagnostics": {"enabled": True}
+        "diagnostics": {"enabled": True},
     }
 
     # activates some sub-modules
@@ -146,6 +144,7 @@ def test_diagnostics_setup(client):
     assert "monitor" in app.middlewares[0].__middleware_name__
     assert "error" in app.middlewares[1].__middleware_name__
     assert "envelope" in app.middlewares[2].__middleware_name__
+
 
 async def test_healthy_app(client, api_version_prefix):
     resp = await client.get(f"/{api_version_prefix}/health")
@@ -190,8 +189,8 @@ async def test_diagnose_on_response_delays(client):
 
     tic = time.time()
     resps = await asyncio.gather(*coros)
-    toc = time.time() - tic # should take approx 1.1*tmax
-    assert toc < 1.2*tmax
+    toc = time.time() - tic  # should take approx 1.1*tmax
+    assert toc < 1.2 * tmax
 
     for resp in resps:
         await assert_status(resp, web.HTTPOk)

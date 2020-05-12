@@ -16,6 +16,15 @@ qx.Class.define("osparc.utils.Validators", {
         item.setInvalidMessage(qx.locale.Manager.tr("Color must be in hexadecimal form"));
       }
       return valid;
+    },
+    regExp: function(regExp) {
+      return function(value, item) {
+        const valid = regExp.test(value);
+        if (!valid) {
+          item.setInvalidMessage(qx.locale.Manager.tr("Format is invalid"));
+        }
+        return valid;
+      };
     }
   }
 });

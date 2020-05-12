@@ -60,7 +60,7 @@ def assert_healthy_app(app: web.Application) -> None:
         raises DiagnosticError if any incient detected
     """
 
-    # CRITERIA 1: 
+    # CRITERIA 1:
     incidents: Optional[IncidentsRegistry] = app.get(kINCIDENTS_REGISTRY)
     if incidents:
         max_delay_allowed: float = app[kMAX_TASK_DELAY]
@@ -77,7 +77,6 @@ def assert_healthy_app(app: web.Application) -> None:
                 max_delay, max_delay_allowed,
             )
             raise HealthError(msg)
-
 
     # CRITERIA 2: Mean latency of the last N request slower than 1 sec
     probe: Optional[DelayWindowProbe] = app.get(kLATENCY_PROBE)
