@@ -109,7 +109,9 @@ def main(args: Optional[List] = None):
     access_logger.setLevel(log_level)
 
     # keep mostly quiet noisy loggers
-    quiet_level = max(min(log_level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING)
+    quiet_level = max(
+        min(log_level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
+    )
     logging.getLogger("engineio").setLevel(quiet_level)
     logging.getLogger("openapi_spec_validator").setLevel(quiet_level)
     logging.getLogger("sqlalchemy").setLevel(quiet_level)

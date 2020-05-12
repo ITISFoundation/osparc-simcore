@@ -215,7 +215,6 @@ def test_creation_of_login_config(configfile, service_webserver_environ):
             pytest.fail(f"{ee}: \n {update_cfg}")
 
 
-
 @pytest.mark.parametrize("configfile", config_yaml_filenames)
 def test_resource_manager_config_section(configfile, service_webserver_environ):
     parser = setup_parser(argparse.ArgumentParser("test-parser"))
@@ -245,8 +244,9 @@ def test_resource_manager_config_section(configfile, service_webserver_environ):
         assert isinstance(app_config["resource_manager"]["enabled"], bool)
 
         # Checks implementations of .resource_manager.config.get_* helpers
-        assert isinstance(app_config["resource_manager"]["resource_deletion_timeout_seconds"], int)
-        assert isinstance(app_config["resource_manager"]["garbage_collection_interval_seconds"], int)
-
-
-       
+        assert isinstance(
+            app_config["resource_manager"]["resource_deletion_timeout_seconds"], int
+        )
+        assert isinstance(
+            app_config["resource_manager"]["garbage_collection_interval_seconds"], int
+        )
