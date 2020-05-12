@@ -72,6 +72,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_service):
         )
     )
 
+
 @pytest.fixture()
 async def logged_user(client, user_role: UserRole):
     """ adds a user in db and logs in with client
@@ -321,7 +322,7 @@ async def test_interactive_services_removed_after_logout(
     mocked_dynamic_service,
     client_session_id,
     socketio_client,
-    storage_subsystem_mock, # when guest user logs out garbage is collected
+    storage_subsystem_mock,  # when guest user logs out garbage is collected
 ):
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # login - logged_user fixture
@@ -365,7 +366,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     mocked_dynamic_service,
     socketio_client,
     client_session_id,
-    storage_subsystem_mock, # when guest user logs out garbage is collected
+    storage_subsystem_mock,  # when guest user logs out garbage is collected
 ):
 
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
@@ -437,7 +438,7 @@ async def test_interactive_services_removed_per_project(
     socketio_client,
     client_session_id,
     asyncpg_storage_system_mock,
-    storage_subsystem_mock, # when guest user logs out garbage is collected
+    storage_subsystem_mock,  # when guest user logs out garbage is collected
 ):
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # create server with delay set to DELAY
@@ -541,3 +542,55 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     mocked_director_api["stop_service"].assert_has_calls(
         [call(client.server.app, service["service_uuid"])]
     )
+
+
+@pytest.mark.parametrize(
+    "user_role, expect_call",
+    [(UserRole.USER, False), (UserRole.TESTER, False), (UserRole.GUEST, True)],
+)
+async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
+    loop,
+    client,
+    logged_user,
+    empty_user_project,
+    mocked_director_api,
+    mocked_dynamic_service,
+    client_session_id,
+    socketio_client,
+    asyncpg_storage_system_mock,
+    storage_subsystem_mock,  # when guest user logs out garbage is collected
+    expect_call,
+):
+    set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
+    # login - logged_user fixture
+    # create empty study - empty_user_project fixture
+    # create dynamic service - mocked_dynamic_service fixture
+    service = await mocked_dynamic_service(
+        logged_user["id"], empty_user_project["uuid"]
+    )
+    # create websocket
+    client_session_id1 = client_session_id()
+    sio = await socketio_client(client_session_id1)
+    # open project in client 1
+    await open_project(client, empty_user_project["uuid"], client_session_id1)
+    # logout
+    logout_url = client.app.router["auth_logout"].url_for()
+    r = await client.post(logout_url, json={"client_session_id": client_session_id1})
+    assert r.url_obj.path == logout_url.path
+    await assert_status(r, web.HTTPOk)
+    # ensure sufficient time is wasted here
+    await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 1)
+    # assert dynamic service is removed
+    calls = [call(client.server.app, service["service_uuid"])]
+    mocked_director_api["stop_service"].assert_has_calls(calls)
+
+    if expect_call:
+        # make sure `delete_project_from_db` is called
+        storage_subsystem_mock[1].assert_called_once()
+        # make sure `delete_user` is called
+        asyncpg_storage_system_mock.assert_called_once()
+    else:
+        # make sure `delete_project_from_db` not called
+        storage_subsystem_mock[1].assert_not_called()
+        # make sure `delete_user` not called
+        asyncpg_storage_system_mock.assert_not_called()
