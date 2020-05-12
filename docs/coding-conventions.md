@@ -1,15 +1,15 @@
-# oSPARC Coding Conventions
+# Coding Conventions and Linters
 
-This document is meant to serve as a guide to writing code in the osparc-simcore platform.
+Coding styles and linters are provided for the Javascript and Python.
 
 ## Javascript
 
-### Naming
+In general the `qooxdoo` naming convention/style is followed. The [Access](http://qooxdoo.org/docs/#/core/oo_feature_summary?id=access) paragraph is the most notable. It is recommended to read the entire document.
 
-Private members as well as private methods will include double underscore as prefix and will be written in camelcase
+Have a look at `ESLint`'s configuration files [.eslintrc.json](.eslintrc.json) and [.eslintignore](.eslintignore).
 
-```js
-__myPrivateVariable: null,
-__myPrivateMethod: function() {}
+## Python
 
-```
+`Black` will enforce the style. Just use it.
+
+Have a look at `Pylint`'s configuration file [.pylintrc](.pylintrc).
