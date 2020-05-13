@@ -53,25 +53,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       backgroundColor: "background-main-lighter"
     });
 
-    let logo = osparc.component.widget.LogoOnOff.getInstance();
-    const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
-      alignY: "middle"
-    }));
-    logoContainer.add(logo);
-    const wrapperContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-    wrapperContainer.add(logoContainer, {
-      height: "100%"
-    });
-    const platformLabel = new qx.ui.basic.Label().set({
-      font: "text-9"
-    });
-    osparc.utils.LibVersions.getPlatformName()
-      .then(platformName => platformLabel.setValue(platformName.toUpperCase()));
-    wrapperContainer.add(platformLabel, {
-      bottom: 3,
-      right: 0
-    });
-    this._add(wrapperContainer);
+    this.getChildControl("logo");
+    this.getChildControl("platform");
     this._add(new qx.ui.toolbar.Separator());
 
     const dashboardBtn = this.__dashboardBtn = this.__getDashboardButton();
@@ -142,6 +125,42 @@ qx.Class.define("osparc.desktop.NavigationBar", {
   members: {
     __dashboardBtn: null,
     __mainViewCaptionLayout: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "logo": {
+          control = osparc.component.widget.LogoOnOff.getInstance();
+          const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+            alignY: "middle"
+          }));
+          logoContainer.add(control);
+          const logoPlatformContainer = this.getChildControl("logo-platform-container");
+          logoPlatformContainer.add(logoContainer, {
+            height: "100%"
+          });
+          break;
+        }
+        case "platform": {
+          control = new qx.ui.basic.Label().set({
+            font: "text-9"
+          });
+          osparc.utils.LibVersions.getPlatformName()
+            .then(platformName => control.setValue(platformName.toUpperCase()));
+          const logoPlatformContainer = this.getChildControl("logo-platform-container");
+          logoPlatformContainer.add(control, {
+            bottom: 3,
+            right: 0
+          });
+          break;
+        }
+        case "logo-platform-container":
+          control = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+          this._add(control);
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
 
     __getDashboardButton: function() {
       const dashboardBtn = new qx.ui.form.Button(this.tr("Dashboard"));
