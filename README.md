@@ -15,7 +15,6 @@
 [![github.io]](https://itisfoundation.github.io/)
 [![itis.dockerhub]](https://hub.docker.com/u/itisfoundation)
 
-**WARNING** This application is **still under development**.
 
 
 <!-- ADD HERE ALL BADGE URLS -->
@@ -36,7 +35,6 @@ To achieve this, the platform will comprise both state-of-the art and highly det
 
 
 ## Getting Started
-
 
 
 This is the common workflow to build and deploy locally:
@@ -106,6 +104,8 @@ In **windows**, it works under [WSL] (windows subsystem for linux). Some details
 In **MacOS**, [replacing the MacOS utilities with GNU utils](https://apple.stackexchange.com/a/69332) might be required.
 
 ## Releases
+
+**WARNING** This application is **still under development**.
 
 - [Git release workflow](ops/README.md)
 - Public [releases](https://github.com/ITISFoundation/osparc-simcore/releases)
