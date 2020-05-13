@@ -64,7 +64,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     this._add(new qx.ui.core.Spacer(20));
 
-    this.__studyTitle = this.getChildControl("study-title");
+    const studyTitle = this.__studyTitle = this.__createStudyTitle();
+    this._add(studyTitle);
     this.__mainViewCaptionLayout = this.getChildControl("study-path-container");
 
     this._add(new qx.ui.core.Spacer(), {
@@ -149,10 +150,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           control = new qx.ui.basic.Label(this.tr("Dashboard")).set({
             font: "text-16"
           });
-          this._add(control);
-          break;
-        case "study-title":
-          control = this.__createStudyTitle();
           this._add(control);
           break;
         case "study-path-container":
