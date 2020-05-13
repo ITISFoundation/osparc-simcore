@@ -26,6 +26,12 @@
 
 <!---------------------------->
 
+## Contributing
+
+
+Would you like to make a change or add something new? Please read the [contributing guidelines](CONTRIBUTING.md).
+
+
 ## Overview
 
 simcore-stack when deployed locally:
@@ -59,6 +65,10 @@ simcore-stack when deployed locally:
 
 ## Requirements
 
+To verify current base OS, Docker and Python build versions have a look at:
+- Travis CI [config](.travis.yml)
+- GitHub Actions [config](.github/workflows/ci-testing-deploy.yml)
+
 To build and run:
 
 - docker
@@ -69,19 +79,23 @@ To develop, in addition:
 
 - python 3.6 (this dependency will be deprecated soon)
 - nodejs for client part (this dependency will be deprecated soon)
+- swagger-cli (make sure to have a recent version of nodejs)
 - [vscode] (highly recommended)
 
-This project works and is developed mainly under **linux** but, with some adjustments, it can also be done under windows (see notes below).
+This project works and is developed under **linux (Ubuntu recommended)**.
 
-##### Setup for **windows**
+##### Other OSes setup
 
-In windows, it works under [WSL] (windows subsystem for linux). Some details on the setup:
+When developing on these platforms you are on your own.
+
+In **windows**, it works under [WSL] (windows subsystem for linux). Some details on the setup:
 
 - [Install](https://chocolatey.org/docs/installation) [chocolatey] package manager
   - ``choco install docker-for-windows``
   - ``choco install wsl`` or using [instructions](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
 -  Follow **all details** on [how to setup flawlessly](https://nickjanetakis.com/blog/setting-up-docker-for-windows-and-wsl-to-work-flawlessly) docker for windows and [WSL]
 
+In **MacOS**, [replacing the MacOS utilities with GNU utils](https://apple.stackexchange.com/a/69332) might be required.
 
 ## Releases
 
