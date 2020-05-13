@@ -60,7 +60,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     this.__dashboardBtn = this.getChildControl("dashboard-button");
     this.__dashboardLabel = this.getChildControl("dashboard-label");
-    this.__highlightDashboard();
+    this.__dashboardContext();
 
     this._add(new qx.ui.core.Spacer(20));
 
@@ -189,7 +189,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       this.__mainViewCaptionLayout.removeAll();
       nodeIds.length === 1 ? this.__studyTitle.show() : this.__studyTitle.exclude();
       if (nodeIds.length === 0) {
-        this.__highlightDashboard(true);
+        this.__dashboardContext(true);
         return;
       }
       if (nodeIds.length === 1) {
@@ -220,15 +220,15 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this.__mainViewCaptionLayout.add(arrow);
         }
         if (i === nodeIds.length-1) {
-          this.__highlightDashboard(false);
+          this.__dashboardContext(false);
           btn.setFont("title-14");
         }
       }
     },
 
-    __highlightDashboard: function(highlight = true) {
-      this.__dashboardBtn.setVisibility(highlight ? "excluded" : "visible");
-      this.__dashboardLabel.setVisibility(highlight ? "visible" : "excluded");
+    __dashboardContext: function(dashboardContext = true) {
+      this.__dashboardLabel.setVisibility(dashboardContext ? "visible" : "excluded");
+      this.__dashboardBtn.setVisibility(dashboardContext ? "excluded" : "visible");
     },
 
     studySaved: function() {
