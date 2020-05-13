@@ -56,13 +56,13 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     this.getChildControl("logo");
     this.getChildControl("platform");
 
-    this._add(new qx.ui.core.Spacer(30));
+    this._add(new qx.ui.core.Spacer(20));
 
     this.__dashboardBtn = this.getChildControl("dashboard-button");
     this.__dashboardLabel = this.getChildControl("dashboard-label");
     this.__highlightDashboard();
 
-    this._add(new qx.ui.core.Spacer(30));
+    this._add(new qx.ui.core.Spacer(20));
 
     this.__studyTitle = this.getChildControl("study-title");
     this.__mainViewCaptionLayout = this.getChildControl("study-path-container");
@@ -137,7 +137,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this._add(control);
           break;
         case "dashboard-button":
-          control = new qx.ui.form.Button(this.tr("Dashboard"));
+          control = new qx.ui.form.Button(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/14");
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
           control.set(this.self().BUTTON_OPTIONS);
           control.addListener("execute", () => {
