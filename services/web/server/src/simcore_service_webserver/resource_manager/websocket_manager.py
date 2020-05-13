@@ -76,6 +76,13 @@ class WebsocketRegistry:
             self._resource_key(), False, get_service_deletion_timeout(self.app)
         )
 
+    async def set_heartbeat(self) -> None:
+        """Refreshes heartbeat """
+        registry = get_registry(self.app)
+        await registry.set_key_alive(
+            self._resource_key(), False, get_service_deletion_timeout(self.app)
+        )
+
     async def find_socket_ids(self) -> List[str]:
         log.debug(
             "user %s/tab %s finding %s from registry...",
