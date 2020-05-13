@@ -100,21 +100,33 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           });
           this._mainLayout.addAt(control, 1);
           break;
-        case "creator":
+        case "shared-creator":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
+            anonymous: true
+          });
+          this._mainLayout.addAt(control, 2);
+          break;
+        case "shared": {
+          control = new qx.ui.basic.Image();
+          const sharedCreatorLayout = this.getChildControl("shared-creator");
+          sharedCreatorLayout.addAt(control, 0);
+          break;
+        }
+        case "creator": {
           control = new qx.ui.basic.Label().set({
             font: "text-13",
             allowGrowY: false,
             anonymous: true
           });
-          this._mainLayout.addAt(control, 2);
+          const sharedCreatorLayout = this.getChildControl("shared-creator");
+          sharedCreatorLayout.addAt(control, 1, {
+            flex: 1
+          });
           break;
-        case "shared":
-          control = new qx.ui.basic.Image();
-          this._mainLayout.addAt(control, 3);
-          break;
+        }
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3));
-          this._mainLayout.addAt(control, 4);
+          this._mainLayout.addAt(control, 3);
           break;
         case "icon": {
           control = new qx.ui.basic.Image().set({
@@ -137,7 +149,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           iconContainer.add(new qx.ui.core.Spacer(), {
             flex: 2
           });
-          this._mainLayout.addAt(iconContainer, 5, {
+          this._mainLayout.addAt(iconContainer, 4, {
             flex: 1
           });
           break;
