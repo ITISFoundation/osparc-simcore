@@ -103,6 +103,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
   members: {
     __dashboardBtn: null,
     __dashboardLabel: null,
+    __studyTitle: null,
     __mainViewCaptionLayout: null,
 
     _createChildControlImpl: function(id) {
