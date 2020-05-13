@@ -1,6 +1,7 @@
 # osparc-simcore platform
 
-**WARNING** This application is **still under development**.
+![oSPARC_Neuroman_Img](https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png)
+
 
 <!-- NOTE: when branched replace `master` in urls -->
 [`master`](https://github.com/itisfoundation/osparc-simcore/tree/master)
@@ -13,6 +14,7 @@
 [![github.io]](https://itisfoundation.github.io/)
 [![itis.dockerhub]](https://hub.docker.com/u/itisfoundation)
 
+**WARNING** This application is **still under development**.
 
 
 <!-- ADD HERE ALL BADGE URLS -->
@@ -26,19 +28,17 @@
 
 <!---------------------------->
 
-## Contributing
+
+The SIM-CORE, named **o<sup>2</sup>S<sup>2</sup>PARC** – **O**pen **O**nline **S**imulations for **S**timulating **P**eripheral **A**ctivity to **R**elieve **C**onditions – is one of the three integrative cores of the SPARC program’s Data Resource Center (DRC).
+The aim of o<sup>2</sup>S<sup>2</sup>PARC is to establish a comprehensive, freely accessible, intuitive, and interactive online platform for simulating peripheral nerve system neuromodulation/ stimulation and its impact on organ physiology in a precise and predictive manner.
+To achieve this, the platform will comprise both state-of-the art and highly detailed animal and human anatomical models with realistic tissue property distributions that make it possible to perform simulations ranging from the molecular scale up to the complexity of the human body.
 
 
-Would you like to make a change or add something new? Please read the [contributing guidelines](CONTRIBUTING.md).
+## Getting Started
 
 
-## Overview
 
-simcore-stack when deployed locally:
-
-![](docs/img/.stack-simcore-version.yml.png)
-
-## Usage
+This is the common workflow to build and deploy locally:
 
 ```bash
   # clone repo
@@ -54,7 +54,7 @@ simcore-stack when deployed locally:
   # display swarm configuration
   make info-swarm
 
-  # open browser in:
+  # open front-end in the browser
   #  localhost:9081 - simcore front-end site
   #
   xdg-open http://localhost:9081/
@@ -63,7 +63,14 @@ simcore-stack when deployed locally:
   make down
 ```
 
-## Requirements
+Services are deployed in two stacks:``simcore-stack`` comprises all core-services in the framework
+and ``ops-stack`` is a subset of services from [ITISFoundation/osparc-ops](ITISFoundation/osparc-ops) used
+for operations during development. This is a representation of ``simcore-stack``:
+
+![](docs/img/.stack-simcore-version.yml.png)
+
+
+### Requirements
 
 To verify current base OS, Docker and Python build versions have a look at:
 - Travis CI [config](.travis.yml)
@@ -84,7 +91,7 @@ To develop, in addition:
 
 This project works and is developed under **linux (Ubuntu recommended)**.
 
-##### Other OSes setup
+##### Setting up Other Operating Systems
 
 When developing on these platforms you are on your own.
 
@@ -103,8 +110,16 @@ In **MacOS**, [replacing the MacOS utilities with GNU utils](https://apple.stack
 - Public [releases](https://github.com/ITISFoundation/osparc-simcore/releases)
 - Production in https://osparc.io
 - [Staging instructions](docs/staging-instructions.md)
+- [User Manual](https://itisfoundation.github.io/osparc-manual/)
+
+## Contributing
+
+Would you like to make a change or add something new? Please read the [contributing guidelines](CONTRIBUTING.md).
 
 
+## License
+
+This project is licensed under the terms of the [MIT license](LICENSE).
 
 
 <!-- ADD REFERENCES BELOW AND KEEP THEM IN ALPHABETICAL ORDER -->
