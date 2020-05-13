@@ -95,15 +95,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
         case "description":
           control = new osparc.ui.markdown.Markdown().set({
             font: "text-13",
-            maxHeight: 30,
-            anonymous: true
+            maxHeight: 30
           });
           this._mainLayout.addAt(control, 1);
           break;
         case "shared-creator":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
-            anonymous: true
-          });
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6));
           this._mainLayout.addAt(control, 2);
           break;
         case "shared": {
@@ -115,8 +112,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
         case "creator": {
           control = new qx.ui.basic.Label().set({
             font: "text-13",
-            allowGrowY: false,
-            anonymous: true
+            allowGrowY: false
           });
           const sharedCreatorLayout = this.getChildControl("shared-creator");
           sharedCreatorLayout.addAt(control, 1, {
@@ -130,7 +126,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           break;
         case "icon": {
           control = new qx.ui.basic.Image().set({
-            anonymous: true,
             scale: true,
             allowStretchX: true,
             allowStretchY: true,
@@ -139,14 +134,22 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
             allowGrowX: true,
             allowGrowY: true
           });
-          const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-          iconContainer.add(new qx.ui.core.Spacer(), {
+          const spacerUp = new qx.ui.core.Spacer().set({
+            anonymous: true
+          });
+          const spacerDown = new qx.ui.core.Spacer().set({
+            anonymous: true
+          });
+          const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+            anonymous: true
+          });
+          iconContainer.add(spacerUp, {
             flex: 2
           });
           iconContainer.add(control, {
             flex: 1
           });
-          iconContainer.add(new qx.ui.core.Spacer(), {
+          iconContainer.add(spacerDown, {
             flex: 2
           });
           this._mainLayout.addAt(iconContainer, 4, {
@@ -155,6 +158,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           break;
         }
       }
+      control.set({
+        anonymous: true
+      });
       return control || this.base(arguments, id);
     },
 
