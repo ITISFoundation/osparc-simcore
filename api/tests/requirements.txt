@@ -8,7 +8,7 @@ aiohttp==3.6.2            # via -r requirements.in, pytest-aiohttp
 async-timeout==3.0.1      # via aiohttp
 attrs==19.3.0             # via aiohttp, jsonschema, openapi-core, pytest
 chardet==3.0.4            # via aiohttp
-coverage==4.5.1           # via -r requirements.in, pytest-cov
+coverage==5.1             # via -r requirements.in, pytest-cov
 idna-ssl==1.1.0           # via aiohttp
 idna==2.9                 # via idna-ssl, yarl
 importlib-metadata==1.6.0  # via jsonschema, pluggy, pytest
