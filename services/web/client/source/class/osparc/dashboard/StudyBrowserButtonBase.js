@@ -134,22 +134,16 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
             allowGrowX: true,
             allowGrowY: true
           });
-          const spacerUp = new qx.ui.core.Spacer().set({
-            anonymous: true
-          });
-          const spacerDown = new qx.ui.core.Spacer().set({
-            anonymous: true
-          });
           const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
             anonymous: true
           });
-          iconContainer.add(spacerUp, {
+          iconContainer.add(new qx.ui.core.Spacer(), {
             flex: 2
           });
           iconContainer.add(control, {
             flex: 1
           });
-          iconContainer.add(spacerDown, {
+          iconContainer.add(new qx.ui.core.Spacer(), {
             flex: 2
           });
           this._mainLayout.addAt(iconContainer, 4, {
