@@ -10,7 +10,7 @@ alembic==1.4.2            # via -r requirements/_migration.txt
 astroid==2.4.1            # via pylint
 async-timeout==3.0.1      # via aiohttp
 attrs==19.3.0             # via aiohttp, pytest, pytest-docker
-certifi==2019.11.28       # via -r requirements/_migration.txt, requests
+certifi==2020.4.5.1       # via -r requirements/_migration.txt, requests
 chardet==3.0.4            # via -r requirements/_migration.txt, aiohttp, requests
 click==7.1.2              # via -r requirements/_migration.txt
 coverage==5.1             # via -r requirements/_test.in, coveralls, pytest-cov
