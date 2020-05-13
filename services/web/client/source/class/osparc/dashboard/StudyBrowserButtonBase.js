@@ -95,7 +95,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
         case "description":
           control = new osparc.ui.markdown.Markdown().set({
             font: "text-13",
-            maxHeight: 32,
+            maxHeight: 30,
             anonymous: true
           });
           this._mainLayout.addAt(control, 1);
