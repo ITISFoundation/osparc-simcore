@@ -94,8 +94,10 @@ async def listen(app: web.Application):
                 except projects_exceptions.ProjectNotFoundError:
                     log.exception("Project %s not found", project_id)
                 except projects_exceptions.NodeNotFoundError:
-                    log.exception("Node %s ib project %s not found", node_id, project_id)
-                    
+                    log.exception(
+                        "Node %s ib project %s not found", node_id, project_id
+                    )
+
                 messages = {"nodeUpdated": {"Node": node_id, "Data": node_data}}
                 await post_messages(app, user_id, messages)
 

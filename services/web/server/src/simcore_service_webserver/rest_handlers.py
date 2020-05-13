@@ -14,9 +14,10 @@ from . import __version__
 
 log = logging.getLogger(__name__)
 
+
 async def check_running(_request: web.Request):
     #
-    # - This entry point is used as a fast way 
+    # - This entry point is used as a fast way
     #   to check that the service is still running
     # - Do not do add any expensive computatio here
     # - Healthcheck has been moved to diagnostics module
@@ -28,6 +29,7 @@ async def check_running(_request: web.Request):
         "api_version": str(__version__),
     }
     return data
+
 
 async def check_action(request: web.Request):
     params, query, body = await extract_and_validate(request)

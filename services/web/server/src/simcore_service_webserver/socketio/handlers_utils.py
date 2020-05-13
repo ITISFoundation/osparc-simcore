@@ -21,7 +21,6 @@ def socket_io_handler(app: web.Application):
         async def wrapped(*args, **kwargs):
             return await func(*args, **kwargs, app=app)
 
-
         return wrapped
 
     return decorator
@@ -66,5 +65,7 @@ def register_socketio_handler(func: callable) -> callable:
     if is_handler:
         socketio_handlers_registry.append(func)
     else:
-        raise SyntaxError("the function shall be of type fct(*args, app: web.Application")
+        raise SyntaxError(
+            "the function shall be of type fct(*args, app: web.Application"
+        )
     return func

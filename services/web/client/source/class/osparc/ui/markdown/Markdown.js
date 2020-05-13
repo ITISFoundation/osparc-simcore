@@ -8,6 +8,7 @@
 
 /**
  * @asset(marked/marked.js)
+ * @ignore(marked)
  */
 
 /* global marked */
