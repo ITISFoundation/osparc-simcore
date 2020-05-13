@@ -1,7 +1,8 @@
 # osparc-simcore platform
 
-![oSPARC_Neuroman_Img](https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png)
-
+<p align="center">
+<img src="https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png" width="700">
+</p>
 
 <!-- NOTE: when branched replace `master` in urls -->
 [`master`](https://github.com/itisfoundation/osparc-simcore/tree/master)
@@ -64,7 +65,7 @@ This is the common workflow to build and deploy locally:
 ```
 
 Services are deployed in two stacks:``simcore-stack`` comprises all core-services in the framework
-and ``ops-stack`` is a subset of services from [ITISFoundation/osparc-ops](ITISFoundation/osparc-ops) used
+and ``ops-stack`` is a subset of services from [ITISFoundation/osparc-ops](https://github.com/ITISFoundation/osparc-ops) used
 for operations during development. This is a representation of ``simcore-stack``:
 
 ![](docs/img/.stack-simcore-version.yml.png)
