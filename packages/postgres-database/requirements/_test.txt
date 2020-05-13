@@ -17,7 +17,7 @@ coverage==5.1             # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==2.0.0          # via -r requirements/_test.in
 docker==4.2.0             # via -r requirements/_migration.txt
 docopt==0.6.2             # via coveralls
-faker==4.0.3              # via -r requirements/_test.in
+faker==4.1.0              # via -r requirements/_test.in
 idna-ssl==1.1.0           # via aiohttp
 idna==2.9                 # via -r requirements/_migration.txt, requests, yarl
 importlib-metadata==1.6.0  # via pluggy, pytest
