@@ -63,40 +63,16 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     this._add(new qx.ui.toolbar.Separator());
 
-    this.__studyTitle = this.__createStudyTitle();
-    this._add(this.__studyTitle);
-
-    let hBox = new qx.ui.layout.HBox(5).set({
-      alignY: "middle"
-    });
-    let mainViewCaptionLayout = this.__mainViewCaptionLayout = new qx.ui.container.Composite(hBox);
-    this._add(mainViewCaptionLayout);
+    this.__studyTitle = this.getChildControl("study-title");
+    this.__mainViewCaptionLayout = this.getChildControl("study-path-container");
 
     this._add(new qx.ui.core.Spacer(5), {
       flex: 1
     });
 
-    this._add(new osparc.ui.form.LinkButton(this.tr("User manual"), "https://docs.osparc.io").set({
-      appearance: "link-button",
-      font: "text-14"
-    }));
-
-    this._add(new osparc.ui.form.LinkButton(this.tr("Give us feedback"), this.self().FEEDBACK_FORM_URL).set({
-      appearance: "link-button",
-      font: "text-14"
-    }));
-
-    const userEmail = osparc.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
-    const userName = osparc.auth.Data.getInstance().getUserName() || "bizzy";
-
-    const userBtn = this.__createUserBtn();
-    userBtn.set({
-      ...this.self().BUTTON_OPTIONS,
-      icon: osparc.utils.Avatar.getUrl(userEmail, 32),
-      label: userName
-    });
-
-    this._add(userBtn);
+    this.getChildControl("user-manual");
+    this.getChildControl("feedback");
+    this.getChildControl("user-menu");
   },
 
   events: {
@@ -156,6 +132,38 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         }
         case "logo-platform-container":
           control = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+          this._add(control);
+          break;
+        case "study-title":
+          control = this.__createStudyTitle();
+          this._add(control);
+          break;
+        case "study-path-container":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignY: "middle"
+          }));
+          this._add(control);
+          break;
+        case "user-manual":
+          control = new osparc.ui.form.LinkButton(this.tr("User manual"), "https://docs.osparc.io").set({
+            appearance: "link-button",
+            font: "text-14"
+          });
+          this._add(control);
+          break;
+        case "feedback":
+          control = new osparc.ui.form.LinkButton(this.tr("Give us feedback"), this.self().FEEDBACK_FORM_URL).set({
+            appearance: "link-button",
+            font: "text-14"
+          });
+          this._add(control);
+          break;
+        case "user-menu":
+          control = this.__createUserMenuBtn();
+          control.set({
+            ...this.self().BUTTON_OPTIONS,
+            font: "text-14"
+          });
           this._add(control);
           break;
       }
@@ -238,7 +246,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       }
     },
 
-    __createUserBtn: function() {
+    __createUserMenuBtn: function() {
       const menu = new qx.ui.menu.Menu().set({
         font: "text-14"
       });
@@ -278,11 +286,17 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       osparc.utils.Utils.setIdToWidget(logout, "userMenuLogoutBtn");
       menu.add(logout);
 
+      const userEmail = osparc.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
+      const userName = osparc.auth.Data.getInstance().getUserName() || "bizzy";
       const userBtn = new qx.ui.form.MenuButton(null, null, menu);
       userBtn.getChildControl("icon").getContentElement()
         .setStyles({
           "border-radius": "16px"
         });
+      userBtn.set({
+        icon: osparc.utils.Avatar.getUrl(userEmail, 32),
+        label: userName
+      });
       osparc.utils.Utils.setIdToWidget(userBtn, "userMenuMainBtn");
 
       return userBtn;
