@@ -10,7 +10,7 @@
 -r _test.txt
 
 # installs this repo's packages
-../packages/pytest-simcore/
+../pytest-simcore/
 
 # current module
 .
