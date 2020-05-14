@@ -81,8 +81,6 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       const store = osparc.store.Store.getInstance();
       store.getServicesDAGs(true)
         .then(services => {
-          // Do not validate if are not taking actions
-          // this.__nodeCheck(services);
           this._removeAll();
           this.__createServicesLayout();
           this.__populateList(false);
@@ -416,25 +414,6 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         .finally(() => {
           this.__deleteServiceBtn.setFetching(false);
         });
-    },
-
-    __nodeCheck: function(services) {
-      /** a little ajv test */
-      let nodeCheck = new qx.io.request.Xhr("/resource/osparc/node-meta-v0.0.1.json");
-      nodeCheck.addListener("success", e => {
-        let data = e.getTarget().getResponse();
-        try {
-          let ajv = new osparc.wrapper.Ajv(data);
-          for (const srvId in services) {
-            const service = services[srvId];
-            let check = ajv.validate(service);
-            console.log("services validation result " + service.key + ":", check);
-          }
-        } catch (err) {
-          console.error(err);
-        }
-      }, this);
-      nodeCheck.send();
     }
   }
 });

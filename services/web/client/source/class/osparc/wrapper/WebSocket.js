@@ -227,7 +227,6 @@ qx.Class.define("osparc.wrapper.WebSocket", {
      * @returns {void}
      */
     emit: function(name, jsonObject) {
-      console.log("emit", name);
       this.getSocket().emit(name, jsonObject);
     },
 
