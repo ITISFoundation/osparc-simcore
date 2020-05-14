@@ -36,8 +36,6 @@
  * </pre>
  */
 
-const NAVIGATION_BUTTON_HEIGHT = 32;
-
 qx.Class.define("osparc.desktop.NavigationBar", {
   extend: qx.ui.core.Widget,
 
@@ -55,81 +53,28 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       backgroundColor: "background-main-lighter"
     });
 
-    const commonBtnSettings = {
-      allowGrowY: false,
-      minWidth: 32,
-      minHeight: NAVIGATION_BUTTON_HEIGHT
-    };
+    this.getChildControl("logo");
+    this.getChildControl("platform");
 
-    let logo = osparc.component.widget.LogoOnOff.getInstance();
-    const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
-      alignY: "middle"
-    }));
-    logoContainer.add(logo);
-    const wrapperContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-    wrapperContainer.add(logoContainer, {
-      height: "100%"
-    });
-    const platformLabel = new qx.ui.basic.Label().set({
-      font: "text-9"
-    });
-    osparc.utils.LibVersions.getPlatformName()
-      .then(platformName => platformLabel.setValue(platformName.toUpperCase()));
-    wrapperContainer.add(platformLabel, {
-      bottom: 3,
-      right: 0
-    });
-    this._add(wrapperContainer);
-    this._add(new qx.ui.toolbar.Separator());
+    this._add(new qx.ui.core.Spacer(20));
 
-    const dashboardBtn = this.__dashboardBtn = new qx.ui.form.Button(this.tr("Dashboard")).set({
-      font: "title-14"
-    });
-    osparc.utils.Utils.setIdToWidget(dashboardBtn, "dashboardBtn");
-    dashboardBtn.set(commonBtnSettings);
-    dashboardBtn.addListener("execute", () => {
-      this.fireEvent("dashboardPressed");
-    }, this);
-    this.__highlightDashboard();
-    this._add(dashboardBtn);
+    this.__dashboardBtn = this.getChildControl("dashboard-button");
+    this.__dashboardLabel = this.getChildControl("dashboard-label");
+    this.__dashboardContext();
 
-    this._add(new qx.ui.toolbar.Separator());
+    this._add(new qx.ui.core.Spacer(20));
 
-    this.__studyTitle = this.__createStudyTitle();
-    this._add(this.__studyTitle);
+    const studyTitle = this.__studyTitle = this.__createStudyTitle();
+    this._add(studyTitle);
+    this.__mainViewCaptionLayout = this.getChildControl("study-path-container");
 
-    let hBox = new qx.ui.layout.HBox(5).set({
-      alignY: "middle"
-    });
-    let mainViewCaptionLayout = this.__mainViewCaptionLayout = new qx.ui.container.Composite(hBox);
-    this._add(mainViewCaptionLayout);
-
-    this._add(new qx.ui.core.Spacer(5), {
+    this._add(new qx.ui.core.Spacer(), {
       flex: 1
     });
 
-    this._add(new osparc.ui.form.LinkButton(this.tr("User manual"), "https://docs.osparc.io").set({
-      appearance: "link-button",
-      font: "text-14"
-    }));
-
-    this._add(new osparc.ui.form.LinkButton(this.tr("Give us feedback"), this.self().FEEDBACK_FORM_URL).set({
-      appearance: "link-button",
-      font: "text-14"
-    }));
-
-    const userEmail = osparc.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
-    const userName = osparc.auth.Data.getInstance().getUserName() || "bizzy";
-
-    const userBtn = this.__createUserBtn();
-    userBtn.set({
-      ...commonBtnSettings,
-      icon: osparc.utils.Avatar.getUrl(userEmail, NAVIGATION_BUTTON_HEIGHT),
-      label: userName,
-      font: "text-14"
-    });
-
-    this._add(userBtn);
+    this.getChildControl("user-manual");
+    this.getChildControl("feedback");
+    this.getChildControl("user-menu");
   },
 
   events: {
@@ -146,18 +91,105 @@ qx.Class.define("osparc.desktop.NavigationBar", {
   },
 
   statics: {
-    FEEDBACK_FORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLSe232bTigsM2zV97Kjp2OhCenl6o9gNGcDFt2kO_dfkIjtQAQ/viewform?usp=sf_link"
+    FEEDBACK_FORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLSe232bTigsM2zV97Kjp2OhCenl6o9gNGcDFt2kO_dfkIjtQAQ/viewform?usp=sf_link",
+    BUTTON_OPTIONS: {
+      font: "title-14",
+      allowGrowY: false,
+      minWidth: 32,
+      minHeight: 32
+    }
   },
 
   members: {
     __dashboardBtn: null,
+    __dashboardLabel: null,
+    __studyTitle: null,
     __mainViewCaptionLayout: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "logo": {
+          control = osparc.component.widget.LogoOnOff.getInstance();
+          const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+            alignY: "middle"
+          }));
+          logoContainer.add(control);
+          const logoPlatformContainer = this.getChildControl("logo-platform-container");
+          logoPlatformContainer.add(logoContainer, {
+            height: "100%"
+          });
+          break;
+        }
+        case "platform": {
+          control = new qx.ui.basic.Label().set({
+            font: "text-9"
+          });
+          osparc.utils.LibVersions.getPlatformName()
+            .then(platformName => control.setValue(platformName.toUpperCase()));
+          const logoPlatformContainer = this.getChildControl("logo-platform-container");
+          logoPlatformContainer.add(control, {
+            bottom: 3,
+            right: 0
+          });
+          break;
+        }
+        case "logo-platform-container":
+          control = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+          this._add(control);
+          break;
+        case "dashboard-button":
+          control = new qx.ui.form.Button(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/14");
+          osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
+          control.set(this.self().BUTTON_OPTIONS);
+          control.addListener("execute", () => {
+            this.fireEvent("dashboardPressed");
+          }, this);
+          this._add(control);
+          break;
+        case "dashboard-label":
+          control = new qx.ui.basic.Label(this.tr("Dashboard")).set({
+            font: "text-16"
+          });
+          this._add(control);
+          break;
+        case "study-path-container":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignY: "middle"
+          }));
+          this._add(control);
+          break;
+        case "user-manual":
+          control = new osparc.ui.form.LinkButton(this.tr("User manual"), "https://docs.osparc.io").set({
+            appearance: "link-button",
+            font: "text-14"
+          });
+          this._add(control);
+          break;
+        case "feedback":
+          control = new osparc.ui.form.LinkButton(this.tr("Give us feedback"), this.self().FEEDBACK_FORM_URL).set({
+            appearance: "link-button",
+            font: "text-14"
+          });
+          this._add(control);
+          break;
+        case "user-menu":
+          control = this.__createUserMenuBtn();
+          control.set({
+            ...this.self().BUTTON_OPTIONS,
+            font: "text-14"
+          });
+          this._add(control);
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
 
     setPathButtons: function(nodeIds) {
       this.__mainViewCaptionLayout.removeAll();
       nodeIds.length === 1 ? this.__studyTitle.show() : this.__studyTitle.exclude();
       if (nodeIds.length === 0) {
-        this.__highlightDashboard(true);
+        this.__dashboardContext(true);
         return;
       }
       if (nodeIds.length === 1) {
@@ -166,10 +198,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       for (let i=0; i<nodeIds.length; i++) {
-        const btn = new qx.ui.form.Button().set({
-          font: "text-14",
-          maxHeight: NAVIGATION_BUTTON_HEIGHT
-        });
+        const btn = new qx.ui.form.Button().set(this.self().BUTTON_OPTIONS);
         const nodeId = nodeIds[i];
         if (nodeId === study.getUuid()) {
           study.bind("name", btn, "label");
@@ -191,14 +220,15 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this.__mainViewCaptionLayout.add(arrow);
         }
         if (i === nodeIds.length-1) {
-          this.__highlightDashboard(false);
+          this.__dashboardContext(false);
           btn.setFont("title-14");
         }
       }
     },
 
-    __highlightDashboard: function(highlight = true) {
-      this.__dashboardBtn.setFont(highlight ? "title-14" : "text-14");
+    __dashboardContext: function(dashboardContext = true) {
+      this.__dashboardLabel.setVisibility(dashboardContext ? "visible" : "excluded");
+      this.__dashboardBtn.setVisibility(dashboardContext ? "excluded" : "visible");
     },
 
     studySaved: function() {
@@ -215,7 +245,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       }
     },
 
-    __createUserBtn: function() {
+    __createUserMenuBtn: function() {
       const menu = new qx.ui.menu.Menu().set({
         font: "text-14"
       });
@@ -255,11 +285,17 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       osparc.utils.Utils.setIdToWidget(logout, "userMenuLogoutBtn");
       menu.add(logout);
 
+      const userEmail = osparc.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
+      const userName = osparc.auth.Data.getInstance().getUserName() || "bizzy";
       const userBtn = new qx.ui.form.MenuButton(null, null, menu);
       userBtn.getChildControl("icon").getContentElement()
         .setStyles({
           "border-radius": "16px"
         });
+      userBtn.set({
+        icon: osparc.utils.Avatar.getUrl(userEmail, 32),
+        label: userName
+      });
       osparc.utils.Utils.setIdToWidget(userBtn, "userMenuMainBtn");
 
       return userBtn;

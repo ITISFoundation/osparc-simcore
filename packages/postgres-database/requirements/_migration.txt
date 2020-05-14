@@ -5,7 +5,7 @@
 #    pip-compile --output-file=requirements/_migration.txt requirements/_migration.in
 #
 alembic==1.4.2            # via -r requirements/_migration.in
-certifi==2019.11.28       # via -r requirements/_migration.in, requests
+certifi==2020.4.5.1       # via requests
 chardet==3.0.4            # via requests
 click==7.1.2              # via -r requirements/_migration.in
 docker==4.2.0             # via -r requirements/_migration.in
