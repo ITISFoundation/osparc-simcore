@@ -37,7 +37,10 @@ qx.Class.define("osparc.dashboard.Dashboard", {
   construct: function() {
     this.base(arguments);
 
-    this.setBarPosition("top");
+    this.set({
+      contentPaddingLeft: 0,
+      barPosition: "top"
+    });
 
     osparc.wrapper.JsonDiffPatch.getInstance().init();
     osparc.wrapper.JsonTreeViewer.getInstance().init();

@@ -107,6 +107,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
   statics: {
     MENU_BTN_Z: 20,
+    MENU_BTN_WIDTH: 25,
     SHARED_ME: "@FontAwesome5Solid/user/14",
     SHARED_ORGS: "@FontAwesome5Solid/users/14",
     SHARED_ALL: "@FontAwesome5Solid/globe/14"
@@ -127,16 +128,16 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       switch (id) {
         case "menu-button":
           control = new qx.ui.form.MenuButton().set({
-            width: 30,
-            height: 30,
-            icon: "@FontAwesome5Solid/ellipsis-v/16",
+            width: this.self().MENU_BTN_WIDTH,
+            height: this.self().MENU_BTN_WIDTH,
+            icon: "@FontAwesome5Solid/ellipsis-v/14",
             zIndex: this.self().MENU_BTN_Z,
             focusable: false
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           this._add(control, {
-            top: 0,
-            right: 0
+            top: -2,
+            right: -2
           });
           break;
         case "tick-unselected":
@@ -156,10 +157,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             top: 4,
             right: 4
           });
-          break;
-        case "tags":
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3));
-          this._mainLayout.addAt(control, 4);
           break;
       }
 
@@ -193,14 +190,14 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyStudyDescription: function(value, old) {
       if (value !== "" && this.getIsTemplate()) {
-        const label = this.getChildControl("desc1");
+        const label = this.getChildControl("description");
         label.setValue(value);
       }
     },
 
     _applyLastChangeDate: function(value, old) {
       if (value && !this.getIsTemplate()) {
-        const label = this.getChildControl("desc1");
+        const label = this.getChildControl("description");
         let dateStr = null;
         if (value.getDate() === (new Date()).getDate()) {
           dateStr = this.tr("Today");
@@ -216,7 +213,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyCreator: function(value, old) {
       if (this.getIsTemplate()) {
-        const label = this.getChildControl("desc2");
+        const label = this.getChildControl("creator");
         label.setValue(value);
       }
     },

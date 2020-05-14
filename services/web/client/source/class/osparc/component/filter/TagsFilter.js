@@ -99,8 +99,11 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
     },
 
     _getMenuButtons: function() {
-      return this._dropdown.getMenu().getChildren()
-        .filter(child => child instanceof qx.ui.menu.Button);
+      const menu = this._dropdown.getMenu();
+      if (menu) {
+        return menu.getChildren().filter(child => child instanceof qx.ui.menu.Button);
+      }
+      return [];
     },
 
     _getActiveMenuButtons: function() {
