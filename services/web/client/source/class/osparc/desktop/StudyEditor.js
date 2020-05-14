@@ -28,15 +28,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       minWidth: 0,
       width: 400
     });
-    sidePanel.getContentElement().setStyle("border-left", "1px solid " + qx.theme.manager.Color.getInstance().resolve("material-button-background"));
-
+    sidePanel.getContentElement().setStyle("border-right", "1px solid " + qx.theme.manager.Color.getInstance().resolve("material-button-background"));
     const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
       minWidth: 0
     });
     scroll.add(sidePanel);
 
-    this.add(mainPanel, 1); // flex 1
     this.add(scroll, 0); // flex 0
+    this.add(mainPanel, 1); // flex 1
 
     this.__attachEventHandlers();
   },
