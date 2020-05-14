@@ -10,10 +10,10 @@ def assert_pylint_is_passing(pylintrc, package_dir, number_of_jobs: int = AUTODE
 
     This is used in different packages
     """
-    cmd = f"pylint --jobs={number_of_jobs} --rcfile {pylintrc} -v {package_dir}".split(
+    command = f"pylint --jobs={number_of_jobs} --rcfile {pylintrc} -v {package_dir}".split(
         " "
     )
-    pipes = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    pipes = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     std_out, _ = pipes.communicate()
     if pipes.returncode != 0:
         print(std_out.decode("utf-8"))
