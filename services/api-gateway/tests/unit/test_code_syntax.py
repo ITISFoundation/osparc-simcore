@@ -4,8 +4,9 @@
 
 import os
 import re
-import subprocess
 from pathlib import Path
+from pytest_simcore.helpers.utils_pylint import assert_pylint_is_passing
+
 
 import pytest
 
@@ -18,12 +19,7 @@ def pylintrc(osparc_simcore_root_dir):
 
 
 def test_run_pylint(pylintrc, package_dir):
-    cmd = "pylint --jobs 0 --rcfile {} -v {}".format(pylintrc, package_dir).split()
-    pipes = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    std_out, _ = pipes.communicate()
-    if pipes.returncode != 0:
-        print(std_out.decode('utf-8'))
-        assert False, "Pylint failed with error, check this test's stdout to fix it"
+    assert_pylint_is_passing(pylintrc=pylintrc, package_dir=package_dir)
 
 
 def test_no_pdbs_in_place(package_dir):

@@ -5,7 +5,7 @@
 # W0621: Redefining name ... from outer scope
 # pylint: disable=W0621
 
-import subprocess
+from pytest_simcore.helpers.utils_pylint import assert_pylint_is_passing
 
 import pytest
 
@@ -20,13 +20,7 @@ def pylintrc(osparc_simcore_root_dir):
 
 
 def test_run_pylint(pylintrc, package_dir):
-    AUTODETECT = 0
-    cmd = f"pylint --jobs={AUTODETECT} --rcfile {pylintrc} -v {package_dir}".split()
-    pipes = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    std_out, _ = pipes.communicate()
-    if pipes.returncode != 0:
-        print(std_out.decode('utf-8'))
-        assert False, "Pylint failed with error, check this test's stdout to fix it"
+    assert_pylint_is_passing(pylintrc=pylintrc, package_dir=package_dir)
 
 
 def test_main(here):  # pylint: disable=unused-variable
