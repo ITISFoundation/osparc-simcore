@@ -36,12 +36,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonNew", {
   members: {
     __buildLayout: function() {
       const title = this.getChildControl("title");
-      title.setValue(this.tr("Create New Study"));
+      title.setValue(this.tr("Empty Study"));
 
-      const desc1 = this.getChildControl("desc1");
+      const desc1 = this.getChildControl("description");
       desc1.setValue(this.tr("Start with a empty study").toString());
 
-      this.setIcon("@FontAwesome5Solid/plus-circle/64");
+      this.setIcon("@FontAwesome5Solid/file/50");
     },
 
     _onToggleChange: function(e) {
@@ -52,7 +52,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonNew", {
       if (data.text) {
         const checks = [
           this.getChildControl("title").getValue().toString(),
-          this.getChildControl("desc1").getValue().toString()
+          this.getChildControl("description").getValue().toString()
         ];
         if (checks.filter(label => label.toLowerCase().trim().includes(data.text)).length == 0) {
           return true;
