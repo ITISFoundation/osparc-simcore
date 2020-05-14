@@ -2,12 +2,17 @@
 import subprocess
 
 
-def assert_pylint_is_passing(pylintrc, package_dir, autodetect=0):
+AUTODETECT = 0
+
+
+def assert_pylint_is_passing(pylintrc, package_dir, number_of_jobs: int = AUTODETECT):
     """Runs Pylint with given inputs. In case of error some helpful Pylint messages are displayed
 
     This is used in different packages
     """
-    cmd = f"pylint --jobs={autodetect} --rcfile {pylintrc} -v {package_dir}".split(" ")
+    cmd = f"pylint --jobs={number_of_jobs} --rcfile {pylintrc} -v {package_dir}".split(
+        " "
+    )
     pipes = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     std_out, _ = pipes.communicate()
     if pipes.returncode != 0:
