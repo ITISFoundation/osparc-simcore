@@ -16,5 +16,5 @@ def assert_pylint_is_passing(pylintrc, package_dir, number_of_jobs: int = AUTODE
     pipes = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     std_out, _ = pipes.communicate()
     if pipes.returncode != 0:
-        print(std_out.decode("utf-8"))
+        print(f'>>>> Exit code "{pipes.returncode}"\n{std_out.decode("utf-8")}\n<<<<')
         assert False, "Pylint failed with error, check this test's stdout to fix it"
