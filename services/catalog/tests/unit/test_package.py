@@ -22,7 +22,7 @@ def pylintrc(project_slug_dir, osparc_simcore_root_dir):
 
 
 def test_run_pylint(pylintrc, package_dir):
-    cmd = "pylint --jobs 0 --rcfile {} -v {}".format(pylintrc, package_dir)
+    cmd = "pylint --jobs 0 --rcfile {} -v {}".format(pylintrc, package_dir).split()
     pipes = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     std_out, _ = pipes.communicate()
     if pipes.returncode != 0:
