@@ -404,3 +404,24 @@ async def get_task_output(
         comp_task = await result.fetchone()
         if comp_task:
             return comp_task.outputs
+
+async def is_service_present_in_db(app: web.Application, node_id: str) -> bool:
+    """Returns True if the service is listed in the database"""
+    db_engine = app[APP_DB_ENGINE_KEY]
+    async with db_engine.acquire() as conn:
+        query = comp_tasks.count().where(comp_tasks.c.node_id == node_id)
+        result = await conn.execute(query)
+        items = await result.scalar()
+        log.info(">>>>>>>>>> Is %s present in db, items count=%s", node_id, items)
+        return items > 0
+
+async def get_node_id_from_project_id(app: web.Application, project_id: str) -> str:
+    """Returns the project's uuid or None if not found"""
+    db_engine = app[APP_DB_ENGINE_KEY]
+    async with db_engine.acquire() as conn:
+        query = comp_tasks.select().where(comp_tasks.c.project_id == project_id)
+        result = await conn.execute(query)
+        comp_task = await result.fetchone()
+        if comp_task:
+            log.inf(">>>> comp_task  %s", comp_task)
+            return comp_task.outputs["node_id"]

@@ -19,6 +19,14 @@ from .registry import RedisResourceRegistry, get_registry
 from simcore_service_webserver.projects.projects_api import delete_project_from_db
 from simcore_service_webserver.users_api import is_user_guest, delete_user
 from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
+from simcore_service_webserver.computation_api import (
+    is_service_present_in_db,
+    get_node_id_from_project_id,
+)
+from simcore_service_webserver.director.director_api import (
+    get_running_interactive_services,
+    stop_service,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,23 +37,23 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
     logger.debug("potential dead keys: %s", dead_keys)
 
     # check if we find potential stuff to close
-    for key in dead_keys:
-        resources = await registry.get_resources(key)
-        if not resources:
+    for dead_key in dead_keys:
+        dead_resources = await registry.get_resources(dead_key)
+        if not dead_resources:
             # no resource, remove the key then
-            await registry.remove_key(key)
+            await registry.remove_key(dead_key)
             continue
-        logger.debug("found the following resources: %s", resources)
+        logger.debug("found the following resources: %s", dead_resources)
         # find if there are alive entries using these resources
-        for resource_name, resource_value in resources.items():
+        for resource_name, resource_value in dead_resources.items():
             other_keys = [
                 x
                 for x in await registry.find_keys((resource_name, resource_value))
-                if x != key
+                if x != dead_key
             ]
             # the resource ref can be closed anyway
-            logger.debug("removing resource entry: %s: %s", key, resources)
-            await registry.remove_resource(key, resource_name)
+            logger.debug("removing resource entry: %s: %s", dead_key, dead_resources)
+            await registry.remove_resource(dead_key, resource_name)
 
             # check if the resource is still in use in the alive keys
             if not any(elem in alive_keys for elem in other_keys):
@@ -55,7 +63,7 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
                 ]
                 if remove_tasks:
                     logger.debug(
-                        "removing resource entry: %s: %s", other_keys, resources
+                        "removing resource entry: %s: %s", other_keys, dead_resources
                     )
                     await logged_gather(*remove_tasks, reraise=False)
 
@@ -63,7 +71,7 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
                     "the resources %s:%s of %s may be now safely closed",
                     resource_name,
                     resource_value,
-                    key,
+                    dead_key,
                 )
                 await emit(
                     event="SIGNAL_PROJECT_CLOSE",
@@ -73,8 +81,49 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
                 )
 
                 await remove_resources_if_guest_user(
-                    app=app, project_uuid=resource_value, user_id=int(key["user_id"])
+                    app=app,
+                    project_uuid=resource_value,
+                    user_id=int(dead_key["user_id"]),
                 )
+
+    # remove possible pending contianers
+    await remove_orphaned_services(registry, app)
+
+
+async def remove_orphaned_services(
+    registry: RedisResourceRegistry, app: web.Application
+) -> None:
+    """Removes services which are no longer tracked in the database
+
+    Multiple deployments can be active at the same tim on the same cluster.
+    This will also check the current SWARM_STACK_NAME of the service which
+    must be matching its own.
+
+    If the service is a dynamic service
+    """
+    currently_opened_projects = set()
+    alive_keys, _ = await registry.get_all_resource_keys()
+    for alive_key in alive_keys:
+        resources = await registry.get_resources(alive_key)
+        if "project_id" not in resources:
+            continue
+
+        node_id = await get_node_id_from_project_id(app, resources["project_id"])
+        currently_opened_projects.update(node_id)
+
+    running_interactive_services = await get_running_interactive_services(app)
+    logger.info(
+        "Will collect the following: %s",
+        [x["service_host"] for x in running_interactive_services],
+    )
+    for interactive_service in running_interactive_services:
+        # if not present in DB or not part of currently opened projects, can be removed
+        if (
+            not await is_service_present_in_db(app, interactive_service["service_uuid"])
+            or interactive_service["service_uuid"] not in currently_opened_projects
+        ):
+            logger.info("Will remove service %s", interactive_service["service_host"])
+            await stop_service(app, interactive_service["service_uuid"])
 
 
 async def remove_resources_if_guest_user(
