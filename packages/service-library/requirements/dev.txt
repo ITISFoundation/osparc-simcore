@@ -9,6 +9,9 @@
 # installs base + tests requirements
 -r _test.txt
 
+# installs this repo's packages
+-e ../pytest-simcore/
+
 # current module
 -e .
 

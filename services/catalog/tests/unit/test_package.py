@@ -4,7 +4,7 @@
 
 import os
 import re
-import subprocess
+from pytest_simcore.helpers.utils_pylint import assert_pylint_is_passing
 from pathlib import Path
 
 import pytest
@@ -22,8 +22,7 @@ def pylintrc(project_slug_dir, osparc_simcore_root_dir):
 
 
 def test_run_pylint(pylintrc, package_dir):
-    cmd = "pylint --jobs 0 --rcfile {} -v {}".format(pylintrc, package_dir)
-    assert subprocess.check_call(cmd.split()) == 0
+    assert_pylint_is_passing(pylintrc=pylintrc, package_dir=package_dir)
 
 
 # FIXME: main entrypoint
