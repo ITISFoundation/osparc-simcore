@@ -172,33 +172,33 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __buildCollapsedSideView: function(isInput) {
-      const inText = this.tr("Inputs");
-      const outText = this.tr("Outputs");
-      const inIcon = "@FontAwesome5Solid/chevron-down/12";
-      const outIcon = "@FontAwesome5Solid/chevron-up/12";
+      const text = isInput ? this.tr("Inputs") : this.tr("Outputs");
+      const icon = isInput ? "@FontAwesome5Solid/chevron-down/12" : "@FontAwesome5Solid/chevron-up/12";
+      const minWidth = isInput ? 120 : 130;
+      const view = isInput ? this.__inputsView : this.__outputsView;
+      const container = isInput ? this.__inputNodesLayout : this.__outputNodesLayout;
+
       const collapsedView = new qx.ui.basic.Atom().set({
-        label: (isInput ? inText : outText) + " (0)",
-        icon: isInput ? inIcon : outIcon,
+        label: text + " (0)",
+        icon: icon,
         iconPosition: "right",
         gap: 6,
         padding: 8,
         alignX: "center",
         alignY: "middle",
-        minWidth: isInput ? 120 : 130,
+        minWidth: minWidth,
         font: "title-18"
       });
       collapsedView.getContentElement().addClass("verticalText");
-      const view = isInput ? this.__inputsView : this.__outputsView;
       collapsedView.addListener("tap", view.toggleCollapsed.bind(view));
 
-      const container = isInput ? this.__inputNodesLayout : this.__outputNodesLayout;
       [
         "addChildWidget",
         "removeChildWidget"
       ].forEach(event => {
         container.addListener(event, () => {
           const nChildren = container.getChildren().length;
-          collapsedView.setLabel((isInput ? inText : outText) + " (" + nChildren + ")");
+          collapsedView.setLabel(text + " (" + nChildren + ")");
         });
       });
 
