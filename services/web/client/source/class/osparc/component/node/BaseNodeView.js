@@ -159,13 +159,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       }, this);
 
       const collapsedView = this.__buildCollapsedSideView(isInput);
-      collapsedView.addListenerOnce("appear", () => {
-        const elem = collapsedView.getContentElement();
-        console.log(elem);
-        // const size = qx.bom.element.Dimension.getSize(collapsedView);
-        // collapsedView.setDomLeft(-1 * (size.width/2) - (size.height/2));
-        collapsedView.setDomLeft(-45);
-      });
       sidePanel.setCollapsedView(collapsedView);
 
       return sidePanel;
@@ -191,6 +184,13 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       });
       collapsedView.getContentElement().addClass("verticalText");
       collapsedView.addListener("tap", view.toggleCollapsed.bind(view));
+      collapsedView.addListenerOnce("appear", () => {
+        const elem = collapsedView.getContentElement();
+        console.log(elem);
+        // const size = qx.bom.element.Dimension.getSize(collapsedView);
+        // collapsedView.setDomLeft(-1 * (size.width/2) - (size.height/2));
+        collapsedView.setDomLeft(-45);
+      });
 
       [
         "addChildWidget",
