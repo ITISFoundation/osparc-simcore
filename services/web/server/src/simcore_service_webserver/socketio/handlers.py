@@ -17,7 +17,7 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
 
 from ..login.decorators import RQT_USERID_KEY, login_required
-from ..resource_manager.websocket_manager import managed_resource, get_registry
+from ..resource_manager.websocket_manager import managed_resource
 from ..resource_manager.config import get_service_deletion_timeout
 from .config import get_socket_server
 from .handlers_utils import register_socketio_handler
@@ -57,7 +57,7 @@ async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
     log.info("Sending set_heartbeat_emit_interval with %s", emit_interval)
 
     user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
-    await post_messages(app, user_id, {'set_heartbeat_emit_interval': emit_interval})
+    await post_messages(app, user_id, {"set_heartbeat_emit_interval": emit_interval})
 
     return True
 
@@ -147,6 +147,7 @@ async def disconnect(sid: str, app: web.Application) -> None:
                 str(socketio_session),
             )
 
+
 @register_socketio_handler
 async def client_heartbeat(sid: str, _: Any, app: web.Application) -> None:
     """JS client invokes this handler to signal its presence.
@@ -161,7 +162,10 @@ async def client_heartbeat(sid: str, _: Any, app: web.Application) -> None:
     """
     sio = get_socket_server(app)
     async with sio.session(sid) as socketio_session:
-        registry = get_registry(app)
-        await registry.set_key_alive(
-            socketio_session, False, get_service_deletion_timeout(app)
-        )
+        if "user_id" not in socketio_session:
+            return
+
+        user_id = socketio_session["user_id"]
+        client_session_id = socketio_session["client_session_id"]
+        with managed_resource(user_id, client_session_id, app) as rt:
+            await rt.set_heartbeat()

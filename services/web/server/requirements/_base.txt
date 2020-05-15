@@ -13,7 +13,7 @@ aiohttp-swagger[performance]==1.0.14  # via -r requirements/_base.in
 aiohttp==3.6.2            # via -r requirements/../../../../packages/service-library/requirements/_base.in, aiohttp-jinja2, aiohttp-security, aiohttp-session, aiohttp-swagger, aiozipkin
 aiopg[sa]==1.0.0          # via -r requirements/../../../../packages/service-library/requirements/_base.in, -r requirements/_base.in
 aioredis==1.3.1           # via -r requirements/_base.in
-aiormq==3.2.1             # via aio-pika
+aiormq==3.2.2             # via aio-pika
 aiosmtplib==1.1.3         # via -r requirements/_base.in
 aiozipkin==0.6.0          # via -r requirements/../../../../packages/service-library/requirements/_base.in
 amqp==2.5.2               # via kombu

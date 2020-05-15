@@ -5,7 +5,7 @@
 # pylint:disable=redefined-outer-name
 
 import pytest
-import subprocess
+from pytest_simcore.helpers.utils_pylint import assert_pylint_is_passing
 import os
 import re
 
@@ -22,12 +22,7 @@ def pylintrc(osparc_simcore_root_dir):
 
 
 def test_run_pylint(pylintrc, package_dir):
-    try:
-        AUTODETECT = 0
-        cmd = f"pylint --jobs={AUTODETECT} --rcfile {pylintrc} -v {package_dir}".split()
-        assert subprocess.check_call(cmd) == 0
-    except subprocess.CalledProcessError as err:
-        pytest.fail("Linting error. Linter existed with code %d" % err.returncode)
+    assert_pylint_is_passing(pylintrc=pylintrc, package_dir=package_dir)
 
 
 def test_main(here):  # pylint: disable=unused-variable
