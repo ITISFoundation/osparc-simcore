@@ -293,12 +293,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __createInputPortsUI: function(inputNode, isInputModel = true) {
-      let nodePorts = null;
-      if (isInputModel) {
-        nodePorts = inputNode.getOutputWidget();
-      } else {
-        nodePorts = inputNode.getInputsDefaultWidget();
-      }
+      const nodePorts = isInputModel ? inputNode.getOutputWidget() : inputNode.getInputsDefaultWidget();
       if (nodePorts) {
         this.__inputNodesLayout.add(nodePorts, {
           flex: 1
