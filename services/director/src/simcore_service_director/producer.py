@@ -12,6 +12,8 @@ import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
 
+from servicelib.monitor_services import service_started, service_stopped
+
 from . import config, docker_utils, exceptions, registry_proxy
 from .config import APP_CLIENT_SESSION_KEY
 from .system_utils import get_system_extra_hosts_raw
@@ -745,6 +747,16 @@ async def start_service(
             node_base_path,
         )
         node_details = containers_meta_data[0]
+        if config.MONITORING_ENABLED:
+            service_started(
+                app,
+                user_id,
+                project_id,
+                node_uuid,
+                service_key,
+                service_tag,
+                "DYNAMIC",
+            )
         # we return only the info of the main service
         return node_details
 
@@ -904,3 +916,15 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
         # remove network(s)
         await _remove_overlay_network_of_swarm(client, node_uuid)
         log.debug("removed network")
+
+        if config.MONITORING_ENABLED:
+            service_stopped(
+                app,
+                "undefined_user",
+                "undefined project",
+                node_uuid,
+                service_details["service_key"],
+                service_details["service_version"],
+                "DYNAMIC",
+                "SUCCESS",
+            )
