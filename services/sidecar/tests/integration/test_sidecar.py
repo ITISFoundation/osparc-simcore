@@ -1,11 +1,10 @@
 # pylint: disable=unused-argument
-# pylint: disable=unused-import
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 
 import asyncio
+import inspect
 import json
-import os
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 from uuid import uuid4
@@ -18,10 +17,18 @@ from yarl import URL
 from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
 from simcore_service_sidecar import config
 
+SIMCORE_S3_ID = 0
+
+# --------------------------------------------------------------------------------------
 # Selection of core and tool services started in this swarm fixture (integration)
+#
+# SEE packages/pytest-simcore/src/pytest_simcore/docker_compose.py
+#
 core_services = ["storage", "postgres", "rabbit"]
 
 ops_services = ["minio", "adminer"]
+
+# --------------------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -101,6 +108,7 @@ async def pipeline(
     osparc_service: Dict[str, str],
     pipeline_cfg: Dict,
     mock_dir: Path,
+    user_id: int,
 ) -> ComputationalPipeline:
     """creates a full pipeline.
         NOTE: 'pipeline', defined as parametrization
@@ -111,16 +119,18 @@ async def pipeline(
     dag = {key: pipeline_cfg[key]["next"] for key in pipeline_cfg}
     inputs = {key: pipeline_cfg[key]["inputs"] for key in pipeline_cfg}
 
-    async def create(
+    async def _create(
         tasks: Dict[str, Any],
         dag: Dict[str, List[str]],
         inputs: Dict[str, Dict[str, Any]],
     ) -> ComputationalPipeline:
-        # set the pipeline
+
+        # add a pipeline
         pipeline = ComputationalPipeline(project_id=project_id, dag_adjacency_list=dag)
         postgres_session.add(pipeline)
         postgres_session.commit()
-        # now create the tasks
+
+        # create the tasks for each pipeline's node
         for node_uuid, service in tasks.items():
             node_inputs = inputs[node_uuid]
 
@@ -141,80 +151,231 @@ async def pipeline(
                     isinstance(node_inputs[input_key], dict)
                     and "path" in node_inputs[input_key]
                 ):
-                    # update the file to S3
+                    # update the files in mock_dir to S3
+                    # FIXME: node_ports config shall not global! here making a hack so it works
+                    node_ports.node_config.USER_ID = user_id
                     node_ports.node_config.PROJECT_ID = project_id
                     node_ports.node_config.NODE_UUID = node_uuid
+
+                    print("--" * 10)
+                    print_module_variables(module=node_ports.node_config)
+                    print("--" * 10)
+
                     PORTS = await node_ports.ports()
                     await (await PORTS.inputs)[input_key].set(
                         mock_dir / node_inputs[input_key]["path"]
                     )
         return pipeline
 
-    yield await create(tasks, dag, inputs)
+    yield await _create(tasks, dag, inputs)
+
+
+SLEEPERS_STUDY = (
+    "itisfoundation/sleeper",
+    "1.0.0",
+    {
+        "node_1": {"next": ["node_2", "node_3"], "inputs": {},},
+        "node_2": {
+            "next": ["node_4"],
+            "inputs": {
+                "in_1": {"nodeUuid": "node_1", "output": "out_1"},
+                "in_2": {"nodeUuid": "node_1", "output": "out_2"},
+            },
+        },
+        "node_3": {
+            "next": ["node_4"],
+            "inputs": {
+                "in_1": {"nodeUuid": "node_1", "output": "out_1"},
+                "in_2": {"nodeUuid": "node_1", "output": "out_2"},
+            },
+        },
+        "node_4": {
+            "next": [],
+            "inputs": {
+                "in_1": {"nodeUuid": "node_2", "output": "out_1"},
+                "in_2": {"nodeUuid": "node_3", "output": "out_2"},
+            },
+        },
+    },
+)
+
+PYTHON_RUNNER_STUDY = (
+    "itisfoundation/osparc-python-runner",
+    "1.0.0",
+    {
+        "node_1": {
+            "next": ["node_2", "node_3"],
+            "inputs": {
+                "input_1": {"store": SIMCORE_S3_ID, "path": "osparc_python_sample.py"}
+            },
+        },
+        "node_2": {
+            "next": ["node_4"],
+            "inputs": {
+                "input_1": {"store": SIMCORE_S3_ID, "path": "osparc_python_sample.py"}
+            },
+        },
+        "node_3": {
+            "next": ["node_4"],
+            "inputs": {
+                "input_1": {"store": SIMCORE_S3_ID, "path": "osparc_python_sample.py"}
+            },
+        },
+        "node_4": {
+            "next": [],
+            "inputs": {
+                "input_1": {"store": SIMCORE_S3_ID, "path": "osparc_python_sample.py"}
+            },
+        },
+    },
+)
+
+
+# FIXME: problem with service
+PYTHON_RUNNER_FACTORY_STUDY = (
+    "itisfoundation/osparc-python-runner",
+    "1.0.0",
+    {
+        "node_1": {
+            "next": ["node_2",],
+            "inputs": {
+                "input_1": {"store": SIMCORE_S3_ID, "path": "osparc_python_factory.py"}
+            },
+        },
+        "node_2": {
+            "next": [],
+            "inputs": {
+                "input_1": {"nodeUuid": "node_1", "output": "output_1"},
+            },
+        },
+    },
+)
+
+# TODO: remove
+CCLANCY_HUMAN_STUDY = (
+    "itisfoundation/osparc-python-runner",
+    "1.0.0",
+    {
+        "node_data": {
+            "key": "simcore/services/frontend/file-picker",
+            "version": "1.0.0",
+            "label": "File Picker",
+            "inputs": {},
+            "inputNodes": [],
+            "thumbnail": "",
+            "outputs": {
+                "outFile": {
+                    "store": SIMCORE_S3_ID,
+                    "dataset": "33eb80e2-524c-11ea-a311-02420a00070b",
+                    "path": "33eb80e2-524c-11ea-a311-02420a00070b/node_data/initial_WTStates_Human.txt",
+                    "label": "initial_WTStates_Human.txt",
+                }
+            },
+            "progress": 100,
+            "position": {"x": 23, "y": 44},
+        },
+        "node_comp_0d": {
+            "key": "simcore/services/comp/human-gb-0d-cardiac-model",
+            "version": "1.0.0",
+            "label": "0D Human GB cardiac model",
+            "inputs": {
+                "Na": 0,
+                "GKr": 1,
+                "TotalSimulationTime": 300,
+                "TargetHeartRatePhase1": 60,
+                "TargetHeartRatePhase2": 150,
+                "TargetHeartRatePhase3": 60,
+                "cAMKII": "WT",
+                "tissue_size_tw": 165,
+                "tissue_size_tl": 165,
+                "Homogeneity": "homogeneous",
+                "initialWTStates": {"nodeUuid": "node_data", "output": "outFile",},
+                "num_threads": 2,
+            },
+            "inputNodes": ["node_data"],
+            "thumbnail": "",
+            "position": {"x": 259, "y": 13},
+        },
+        "node_comp_1d": {
+            "key": "simcore/services/comp/human-gb-1d-cardiac-model",
+            "version": "1.0.0",
+            "label": "1D Human GB cardiac model",
+            "inputs": {
+                "Na": 0,
+                "GKr": 1,
+                "TotalSimulationTime": 300,
+                "TargetHeartRatePhase1": 60,
+                "TargetHeartRatePhase2": 150,
+                "TargetHeartRatePhase3": 60,
+                "cAMKII": "WT",
+                "tissue_size_tw": 165,
+                "tissue_size_tl": 165,
+                "Homogeneity": "homogeneous",
+                "initialWTStates": {"nodeUuid": "node_data", "output": "outFile",},
+                "num_threads": 2,
+            },
+            "inputNodes": ["node_data"],
+            "thumbnail": "",
+            "position": {"x": 261, "y": 171},
+        },
+        "node_comp_2d": {
+            "key": "simcore/services/comp/human-gb-2d-cardiac-model",
+            "version": "1.0.0",
+            "label": "2D Human GB cardiac model",
+            "inputs": {
+                "Na": 0,
+                "GKr": 1,
+                "TotalSimulationTime": 10,
+                "TargetHeartRatePhase1": 60,
+                "TargetHeartRatePhase2": 150,
+                "TargetHeartRatePhase3": 60,
+                "cAMKII": "WT",
+                "tissue_size_tw": 165,
+                "tissue_size_tl": 165,
+                "Homogeneity": "homogeneous",
+                "input_from_1d": {"nodeUuid": "node_comp_1d", "output": "output_3",},
+                "num_threads": 2,
+            },
+            "inputNodes": ["node_comp_1d"],
+            "thumbnail": "",
+            "position": {"x": 462, "y": 287},
+        },
+        "node_dyn_0d_viewer": {
+            "key": "simcore/services/dynamic/cc-0d-viewer",
+            "version": "3.0.4",
+            "label": "0D cardiac model viewer",
+            "inputs": {"vm1Hz": {"nodeUuid": "node_comp_0d", "output": "vm1Hz",}},
+            "inputNodes": ["node_comp_0d"],
+            "thumbnail": "",
+            "position": {"x": 678, "y": 13},
+        },
+        "node_dyn_1d_viewer": {
+            "key": "simcore/services/dynamic/cc-1d-viewer",
+            "version": "3.0.4",
+            "label": "1D cardiac model viewer",
+            "inputs": {
+                "ECGs": {"nodeUuid": "node_comp_1d", "output": "output_1",},
+                "APs": {"nodeUuid": "node_comp_1d", "output": "output_2",},
+            },
+            "inputNodes": ["node_comp_1d"],
+            "thumbnail": "",
+            "position": {"x": 680, "y": 170},
+        },
+        "node_dyn_2d_viewer": {
+            "key": "simcore/services/dynamic/cc-2d-viewer",
+            "version": "3.0.4",
+            "label": "2D cardiac model viewer",
+            "inputs": {"ap": {"nodeUuid": "node_comp_2d", "output": "output_1",}},
+            "inputNodes": ["node_comp_2d"],
+            "thumbnail": "",
+            "position": {"x": 689, "y": 287},
+        },
+    },
+)
 
 
 @pytest.mark.parametrize(
-    "service_repo, service_tag, pipeline_cfg",
-    [
-        (
-            "itisfoundation/sleeper",
-            "1.0.0",
-            {
-                "node_1": {"next": ["node_2", "node_3"], "inputs": {},},
-                "node_2": {
-                    "next": ["node_4"],
-                    "inputs": {
-                        "in_1": {"nodeUuid": "node_1", "output": "out_1"},
-                        "in_2": {"nodeUuid": "node_1", "output": "out_2"},
-                    },
-                },
-                "node_3": {
-                    "next": ["node_4"],
-                    "inputs": {
-                        "in_1": {"nodeUuid": "node_1", "output": "out_1"},
-                        "in_2": {"nodeUuid": "node_1", "output": "out_2"},
-                    },
-                },
-                "node_4": {
-                    "next": [],
-                    "inputs": {
-                        "in_1": {"nodeUuid": "node_2", "output": "out_1"},
-                        "in_2": {"nodeUuid": "node_3", "output": "out_2"},
-                    },
-                },
-            },
-        ),
-        (
-            "itisfoundation/osparc-python-runner",
-            "1.0.0",
-            {
-                "node_1": {
-                    "next": ["node_2", "node_3"],
-                    "inputs": {
-                        "input_1": {"store": 0, "path": "osparc_python_sample.py"}
-                    },
-                },
-                "node_2": {
-                    "next": ["node_4"],
-                    "inputs": {
-                        "input_1": {"store": 0, "path": "osparc_python_sample.py"}
-                    },
-                },
-                "node_3": {
-                    "next": ["node_4"],
-                    "inputs": {
-                        "input_1": {"store": 0, "path": "osparc_python_sample.py"}
-                    },
-                },
-                "node_4": {
-                    "next": [],
-                    "inputs": {
-                        "input_1": {"store": 0, "path": "osparc_python_sample.py"}
-                    },
-                },
-            },
-        ),
-    ],
+    "service_repo, service_tag, pipeline_cfg", [SLEEPERS_STUDY, PYTHON_RUNNER_STUDY,],
 )
 async def test_run_services(
     loop,
@@ -228,6 +389,12 @@ async def test_run_services(
     user_id: int,
     mocker,
 ):
+    """
+
+    :param osparc_service: Fixture defined in pytest-simcore.docker_registry. Uses parameters service_repo, service_tag
+    :type osparc_service: Dict[str, str]
+    """
+
     incoming_data = []
 
     async def rabbit_message_handler(message: aio_pika.IncomingMessage):
@@ -240,6 +407,7 @@ async def test_run_services(
 
     from simcore_service_sidecar import cli
 
+    # runs None first
     next_task_nodes = await cli.run_sidecar(job_id, user_id, pipeline.project_id, None)
     await asyncio.sleep(5)
     assert not incoming_data
@@ -262,3 +430,12 @@ async def test_run_services(
     _assert_incoming_data_logs(
         list(pipeline_cfg.keys()), incoming_data, user_id, pipeline.project_id
     )
+
+
+def print_module_variables(module):
+    print(module.__name__, ":")
+    for attrname in dir(module):
+        if not attrname.startswith("__"):
+            attr = getattr(module, attrname)
+            if not inspect.ismodule(attr):
+                print(" ", attrname, "=", attr)
