@@ -117,14 +117,23 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
-      this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Service tree"), nodesTree), 0);
+      this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Service tree"), nodesTree), 0, {
+        flex: 1
+      });
 
       const extraView = this.__extraView = new osparc.component.metadata.StudyInfo(study);
-      extraView.setMaxHeight(300);
-      this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Study information"), extraView), 1);
+      this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Study information"), extraView), 1, {
+        flex: 1
+      });
 
       const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView(study.getWorkbench());
-      this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Logger"), loggerView), 2);
+      const loggerPanel = new osparc.desktop.PanelView(this.tr("Logger"), loggerView);
+      this.__sidePanel.addOrReplaceAt(loggerPanel, 2, {
+        flex: 1
+      });
+      if (!osparc.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
+        loggerPanel.setCollapsed(true);
+      }
 
       const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI(study.getWorkbench());
       workbenchUI.addListener("removeEdge", e => {
