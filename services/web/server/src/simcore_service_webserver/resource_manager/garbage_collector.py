@@ -152,21 +152,20 @@ async def remove_resources_if_guest_user(
 
 
 async def garbage_collector_task(app: web.Application):
-    while True:
-        logger.info("Starting garbage collector...")
-        try:
-            registry = get_registry(app)
-            interval = get_garbage_collector_interval(app)
-            while True:
-                await collect_garbage(registry, app)
-                await asyncio.sleep(interval)
+    logger.info("Starting garbage collector...")
+    try:
+        registry = get_registry(app)
+        interval = get_garbage_collector_interval(app)
+        while True:
+            await collect_garbage(registry, app)
+            await asyncio.sleep(interval)
 
-        except asyncio.CancelledError:
-            pass
-        except Exception:  # pylint: disable=broad-except
-            logger.exception("Got an error while running garbage collector")
-        finally:
-            logger.info("Restarting garbage collection")
+    except asyncio.CancelledError:
+        pass
+    except Exception:  # pylint: disable=broad-except
+        logger.exception("Got an error while running garbage collector")
+    finally:
+        logger.info("Garbage collection exited, it will not be restarted")
 
 
 async def setup_garbage_collector_task(app: web.Application):
