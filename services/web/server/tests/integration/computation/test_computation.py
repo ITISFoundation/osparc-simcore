@@ -150,7 +150,7 @@ def assert_sleeper_services_completed(project_id, postgres_session):
 
 
 # TESTS ------------------------------------------
-async def test_check_health(docker_stack, client):
+async def test_check_health(mock_orphaned_services, docker_stack, client):
     # TODO: check health of all core_services in list above!
     resp = await client.get(API_VERSION + "/")
     data, _ = await assert_status(resp, web.HTTPOk)
