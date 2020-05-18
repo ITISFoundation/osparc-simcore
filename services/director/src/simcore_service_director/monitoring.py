@@ -12,10 +12,10 @@ from . import config
 kCOLLECTOR_REGISTRY = f"{__name__}.collector_registry"
 
 
-async def metrics_handler(_request: web.Request):
-    # TODO: prometheus_client.generate_latest blocking! no asyhc solutin?
-    # TODO: prometheus_client access to a singleton registry! can be instead created and pass to every metric wrapper
-    resp = web.Response(body=prometheus_client.generate_latest())
+async def metrics_handler(request: web.Request):
+    # TODO: prometheus_client.generate_latest blocking! -> Consider https://github.com/claws/aioprometheus
+    reg = request.app[kCOLLECTOR_REGISTRY]
+    resp = web.Response(body=prometheus_client.generate_latest(registry=reg))
     resp.content_type = CONTENT_TYPE_LATEST
     return resp
 
@@ -28,5 +28,4 @@ def setup_app_monitoring(app: web.Application, app_name: str) -> None:
 
     add_services_instrumentation(app, reg, app_name)
 
-    # FIXME: this in the front-end has to be protected!
     app.router.add_get("/metrics", metrics_handler)
