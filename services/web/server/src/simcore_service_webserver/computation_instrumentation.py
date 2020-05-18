@@ -2,7 +2,6 @@ from aiohttp import web
 from prometheus_client import Counter
 from prometheus_client.registry import CollectorRegistry
 
-
 kSERVICE_STARTED = f"{__name__}.computation_services_started"
 kSERVICE_STOPPED = f"{__name__}.computation_services_stopped"
 
@@ -33,3 +32,14 @@ def add_instrumentation(app: web.Application, reg: CollectorRegistry) -> None:
         namespace="webserver",
         registry=reg,
     )
+
+
+def service_started(app: web.Application, user_id: str, project_id) -> None:
+    app[kSERVICE_STARTED].labels(
+        user_id=user_id,
+        project_id=project_id,
+        service_key="",
+        service_tag="",
+        service_uuid="",
+        http_status="",
+    ).inc()
