@@ -96,9 +96,9 @@ qx.Class.define("osparc.desktop.ControlsBar", {
 
       const simCtrls = new qx.ui.toolbar.Part();
       const startButton = this.__startButton = this.__createStartButton();
-      const stopButton = this.__stopButton = this.__createStopButton();
       simCtrls.add(startButton);
-      simCtrls.add(stopButton);
+      // const stopButton = this.__stopButton = this.__createStopButton();
+      // simCtrls.add(stopButton);
       this.add(simCtrls);
     },
 
