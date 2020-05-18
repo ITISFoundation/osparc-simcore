@@ -28,13 +28,14 @@ SERVICE_STOPPED_LABELS: List[str] = [
 ]
 
 
-def add_instrumentation(app: web.Application, reg: CollectorRegistry) -> None:
+def add_instrumentation(app: web.Application, reg: CollectorRegistry, app_name: str) -> None:
 
     app[kSERVICE_STARTED] = Counter(
         name="services_started_total",
         documentation="Counts the services started",
         labelnames=SERVICE_STARTED_LABELS,
         namespace="simcore",
+        subsystem=app_name,
         registry=reg,
     )
 
@@ -43,6 +44,7 @@ def add_instrumentation(app: web.Application, reg: CollectorRegistry) -> None:
         documentation="Counts the services stopped",
         labelnames=SERVICE_STOPPED_LABELS,
         namespace="simcore",
+        subsystem=app_name,
         registry=reg,
     )
 

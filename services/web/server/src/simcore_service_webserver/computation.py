@@ -54,7 +54,7 @@ def setup(app: web.Application):
     )
     app.router.add_routes(routes)
     setup_comp_tasks_listener(app)
-    add_instrumentation(app, get_collector_registry(app))
+    add_instrumentation(app, get_collector_registry(app), "simcore_service_webserver")
 
 # alias
 setup_computation = setup
