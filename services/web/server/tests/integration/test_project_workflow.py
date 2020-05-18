@@ -221,6 +221,7 @@ async def _request_delete(client, pid):
 
 
 async def test_workflow(
+    mock_orphaned_services,
     client,
     fake_project_data,
     logged_user,

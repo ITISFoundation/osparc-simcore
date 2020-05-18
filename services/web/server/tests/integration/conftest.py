@@ -18,6 +18,7 @@ from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
 from typing import Dict
+from asyncio import Future
 
 import pytest
 import trafaret_config
@@ -158,3 +159,12 @@ def app_config(_webserver_dev_config: Dict, aiohttp_unused_port) -> Dict:
     cfg = deepcopy(_webserver_dev_config)
     cfg["main"]["port"] = aiohttp_unused_port()
     return cfg
+
+@pytest.fixture
+def mock_orphaned_services(mocker):
+    remove_orphaned_services = mocker.patch(
+        "simcore_service_webserver.resource_manager.garbage_collector.remove_orphaned_services",
+        return_value=Future(),
+    )
+    remove_orphaned_services.return_value.set_result("")
+    return remove_orphaned_services

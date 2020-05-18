@@ -22,6 +22,7 @@ services:
   director:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore_local}
     ports:
       - "8080"
       - "3004:3000"
