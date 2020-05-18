@@ -22,6 +22,9 @@ def setup_app_tracing(app: web.Application, app_name: str) -> bool:
     }
     return setup_tracing(app, app_name, host, port, cfg)
 
+def setup_app_monitoring(app: web.Application) -> None:
+    if config.MONITORING_ENABLED:
+        setup_monitoring(app, "simcore_service_director")
 
 def setup_app() -> web.Application:
     api_spec_path = resources.get_path(resources.RESOURCE_OPEN_API)
@@ -32,9 +35,7 @@ def setup_app() -> web.Application:
 
     registry_cache_task.setup(app)
 
-    # TODO: temporary disabled until service is updated
-    if True:  # pylint: disable=using-constant-test
-        setup_monitoring(app, "simcore_service_director")
+    setup_app_monitoring(app)
 
     setup_app_tracing(app, "simcore_service_director")
 
