@@ -58,16 +58,46 @@ ProfileEnveloped:
       nullable: true
       default: null
 
+UsersGroupsEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      type: array
+      items:
+        $ref: '#/UsersGroup'
+    error:
+      nullable: true
+      default: null
+
+UsersGroupEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: '#/UsersGroup'
+    error:
+      nullable: true
+      default: null
 
 UsersGroup:
   type: object
   properties:
     gid:
+      description: the group ID
       type: string
     label:
+      description: the group name
       type: string
     description:
+      description: the group description
       type: string
+  required:
+    - gid
+    - label
+    - description
   example:
     - gid: '27'
       label: 'A user'
