@@ -36,7 +36,6 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
     this.__getValuesFromServer();
 
     this.add(this.__createProfileUser());
-    this.add(this.__createOrganizations());
   },
 
   members: {
@@ -180,40 +179,6 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
           });
         }
       }, this);
-
-      return box;
-    },
-
-    __createOrganizations: function() {
-      // layout
-      const box = this._createSectionBox(this.tr("Organizations"));
-
-      const orgsUIList = new qx.ui.form.List().set({
-        spacing: 3,
-        height: 150,
-        width: 150
-      });
-
-      const orgsModel = new qx.data.Array();
-      const orgsCtrl = new qx.data.controller.List(orgsModel, orgsUIList, "label");
-      orgsCtrl.setDelegate({
-        createItem: () => new osparc.component.widget.OrganizationListItem(),
-        bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("gid", "model", null, item, id);
-          ctrl.bindProperty("gid", "gid", null, item, id);
-          ctrl.bindProperty("label", "label", null, item, id);
-          ctrl.bindProperty("description", "description", null, item, id);
-        }
-      });
-
-      box.add(orgsUIList);
-
-      const store = osparc.store.Store.getInstance();
-      store.getGroupsOrganizations()
-        .then(orgs => {
-          orgsModel.removeAll();
-          orgs.forEach(org => orgsModel.append(qx.data.marshal.Json.createModel(org)));
-        });
 
       return box;
     },

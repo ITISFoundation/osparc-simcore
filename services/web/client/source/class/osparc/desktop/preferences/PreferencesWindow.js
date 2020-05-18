@@ -64,6 +64,17 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
       tabView.add(tagsPage);
     }
 
+    const store = osparc.store.Store.getInstance();
+    store.getGroupsOrganizations()
+      .then(orgs => {
+        if (orgs.length) {
+          const orgsPage = new osparc.desktop.preferences.pages.OrganizationsPage();
+          const orgsBtn = orgsPage.getChildControl("button");
+          osparc.utils.Utils.setIdToWidget(orgsBtn, "preferencesOrganizationsTabBtn");
+          tabView.add(orgsPage);
+        }
+      });
+
     this.add(tabView);
   }
 });
