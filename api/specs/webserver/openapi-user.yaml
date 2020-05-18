@@ -105,7 +105,16 @@ paths:
                 $ref: "./components/schemas/me.yaml#/UsersGroupEnveloped"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
-
+    delete:
+      tags:
+        - user
+      summary: Delete given group
+      operationId: delete_group
+      responses:
+        "204":
+          description: group has been successfully deleted
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
   /me/tokens:
     get:
       summary: List tokens
