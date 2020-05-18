@@ -17,7 +17,6 @@ from servicelib.rest_routing import (
 )
 
 from ..rest_config import APP_OPENAPI_SPECS_KEY
-from ..diagnostics_monitoring import get_collector_registry
 from . import handlers
 from .config import APP_DIRECTOR_API_KEY, CONFIG_SECTION_NAME, build_api_url
 
