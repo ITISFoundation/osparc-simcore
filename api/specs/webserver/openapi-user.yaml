@@ -40,7 +40,6 @@ paths:
           content:
             application/json:
               schema:
-                $ref: 
                   $ref: "./components/schemas/me.yaml#/UsersGroupsEnveloped"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
@@ -50,7 +49,14 @@ paths:
       tags:
         - user
       responses:
-        
+        "200":
+          description: the modified group
+          content:
+            application/json:
+              schema:
+                $ref: "./components/schemas/me.yaml#/UsersGroupEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
     post:
       summary: Create a new groups
       operationId: create_group
