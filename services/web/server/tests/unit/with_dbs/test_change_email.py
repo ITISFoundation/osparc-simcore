@@ -16,14 +16,14 @@ from simcore_service_webserver.statics import INDEX_RESOURCE_NAME
 NEW_EMAIL = "new@mail.com"
 
 
-async def test_unauthorized(client):
+async def test_unauthorized(loop, mock_orphaned_services, client):
     url = client.app.router["auth_change_email"].url_for()
     rsp = await client.post(url, json={"email": NEW_EMAIL,})
     assert rsp.status == 401
     await assert_status(rsp, web.HTTPUnauthorized)
 
 
-async def test_change_to_existing_email(client):
+async def test_change_to_existing_email(loop, mock_orphaned_services, client):
     url = client.app.router["auth_change_email"].url_for()
 
     async with LoggedUser(client) as user:
@@ -34,7 +34,7 @@ async def test_change_to_existing_email(client):
             )
 
 
-async def test_change_and_confirm(client, capsys):
+async def test_change_and_confirm(loop, mock_orphaned_services, client, capsys):
     cfg = client.app[APP_LOGIN_CONFIG]
 
     url = client.app.router["auth_change_email"].url_for()

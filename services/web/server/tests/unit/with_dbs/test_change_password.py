@@ -15,7 +15,7 @@ from simcore_service_webserver.login import APP_LOGIN_CONFIG
 NEW_PASSWORD = "NewPassword1*&^"
 
 
-async def test_unauthorized(client):
+async def test_unauthorized(loop, mock_orphaned_services, client):
     url = client.app.router["auth_change_password"].url_for()
     rsp = await client.post(
         url, json={"current": " fake", "new": NEW_PASSWORD, "confirm": NEW_PASSWORD,}
@@ -24,7 +24,7 @@ async def test_unauthorized(client):
     await assert_status(rsp, web.HTTPUnauthorized)
 
 
-async def test_wrong_current_password(client):
+async def test_wrong_current_password(loop, mock_orphaned_services, client):
     cfg = client.app[APP_LOGIN_CONFIG]
     url = client.app.router["auth_change_password"].url_for()
 
@@ -43,7 +43,7 @@ async def test_wrong_current_password(client):
         await assert_status(rsp, web.HTTPUnprocessableEntity, cfg.MSG_WRONG_PASSWORD)
 
 
-async def test_wrong_confirm_pass(client):
+async def test_wrong_confirm_pass(loop, mock_orphaned_services, client):
     cfg = client.app[APP_LOGIN_CONFIG]
     url = client.app.router["auth_change_password"].url_for()
 
@@ -61,7 +61,7 @@ async def test_wrong_confirm_pass(client):
         await assert_status(rsp, web.HTTPConflict, cfg.MSG_PASSWORD_MISMATCH)
 
 
-async def test_success(client):
+async def test_success(loop, mock_orphaned_services, client):
     cfg = client.app[APP_LOGIN_CONFIG]
 
     url = client.app.router["auth_change_password"].url_for()

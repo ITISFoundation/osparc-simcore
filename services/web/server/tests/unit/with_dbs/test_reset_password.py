@@ -23,7 +23,7 @@ def cfg(client):
     return client.app[APP_LOGIN_CONFIG]
 
 
-async def test_unknown_email(client, capsys, cfg):
+async def test_unknown_email(loop, mock_orphaned_services, client, capsys, cfg):
     reset_url = client.app.router["auth_reset_password"].url_for()
 
     rp = await client.post(reset_url, json={"email": EMAIL,})
@@ -36,7 +36,7 @@ async def test_unknown_email(client, capsys, cfg):
     assert parse_test_marks(out)["reason"] == cfg.MSG_UNKNOWN_EMAIL
 
 
-async def test_banned_user(client, capsys, cfg):
+async def test_banned_user(loop, mock_orphaned_services, client, capsys, cfg):
     reset_url = client.app.router["auth_reset_password"].url_for()
 
     async with NewUser({"status": UserStatus.BANNED.name}) as user:
@@ -49,7 +49,7 @@ async def test_banned_user(client, capsys, cfg):
     assert parse_test_marks(out)["reason"] == cfg.MSG_USER_BANNED
 
 
-async def test_inactive_user(client, capsys, cfg):
+async def test_inactive_user(loop, mock_orphaned_services, client, capsys, cfg):
     reset_url = client.app.router["auth_reset_password"].url_for()
 
     async with NewUser({"status": UserStatus.CONFIRMATION_PENDING.name}) as user:
@@ -62,7 +62,7 @@ async def test_inactive_user(client, capsys, cfg):
     assert parse_test_marks(out)["reason"] == cfg.MSG_ACTIVATION_REQUIRED
 
 
-async def test_too_often(client, capsys, cfg):
+async def test_too_often(loop, mock_orphaned_services, client, capsys, cfg):
     reset_url = client.app.router["auth_reset_password"].url_for()
 
     cfg = client.app[APP_LOGIN_CONFIG]
@@ -82,7 +82,7 @@ async def test_too_often(client, capsys, cfg):
     assert parse_test_marks(out)["reason"] == cfg.MSG_OFTEN_RESET_PASSWORD
 
 
-async def test_reset_and_confirm(client, capsys, cfg):
+async def test_reset_and_confirm(loop, mock_orphaned_services, client, capsys, cfg):
     async with NewUser() as user:
         reset_url = client.app.router["auth_reset_password"].url_for()
         rp = await client.post(reset_url, json={"email": user["email"],})

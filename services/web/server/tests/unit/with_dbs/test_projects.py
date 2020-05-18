@@ -192,7 +192,13 @@ def assert_replaced(current_project, update_data):
     ],
 )
 async def test_list_projects(
-    client, logged_user, user_project, template_project, expected
+    loop,
+    mock_orphaned_services,
+    client,
+    logged_user,
+    user_project,
+    template_project,
+    expected,
 ):
     # TODO: GET /v0/projects?start=0&count=3
 
@@ -234,7 +240,13 @@ async def test_list_projects(
     ],
 )
 async def test_get_project(
-    client, logged_user, user_project, template_project, expected
+    loop,
+    mock_orphaned_services,
+    client,
+    logged_user,
+    user_project,
+    template_project,
+    expected,
 ):
     # GET /v0/projects/{project_id}
 
@@ -268,7 +280,13 @@ async def test_get_project(
     ],
 )
 async def test_new_project(
-    client, logged_user, expected, computational_system_mock, storage_subsystem_mock
+    loop,
+    mock_orphaned_services,
+    client,
+    logged_user,
+    expected,
+    computational_system_mock,
+    storage_subsystem_mock,
 ):
     # POST /v0/projects
     url = client.app.router["create_projects"].url_for()
@@ -327,6 +345,8 @@ async def test_new_project(
     ],
 )
 async def test_new_project_from_template(
+    loop,
+    mock_orphaned_services,
     client,
     logged_user,
     template_project,
@@ -383,6 +403,8 @@ async def test_new_project_from_template(
     ],
 )
 async def test_new_project_from_template_with_body(
+    loop,
+    mock_orphaned_services,
     client,
     logged_user,
     template_project,
@@ -459,6 +481,8 @@ async def test_new_project_from_template_with_body(
     ],
 )
 async def test_new_template_from_project(
+    loop,
+    mock_orphaned_services,
     client,
     logged_user,
     user_project,
@@ -576,7 +600,13 @@ async def test_new_template_from_project(
     ],
 )
 async def test_replace_project(
-    client, logged_user, user_project, expected, computational_system_mock
+    loop,
+    mock_orphaned_services,
+    client,
+    logged_user,
+    user_project,
+    expected,
+    computational_system_mock,
 ):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
@@ -601,7 +631,13 @@ async def test_replace_project(
     ],
 )
 async def test_replace_project_updated_inputs(
-    client, logged_user, user_project, expected, computational_system_mock
+    loop,
+    mock_orphaned_services,
+    client,
+    logged_user,
+    user_project,
+    expected,
+    computational_system_mock,
 ):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
@@ -637,7 +673,13 @@ async def test_replace_project_updated_inputs(
     ],
 )
 async def test_replace_project_updated_readonly_inputs(
-    client, logged_user, user_project, expected, computational_system_mock
+    loop,
+    mock_orphaned_services,
+    client,
+    logged_user,
+    user_project,
+    expected,
+    computational_system_mock,
 ):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
@@ -670,6 +712,8 @@ async def test_replace_project_updated_readonly_inputs(
     ],
 )
 async def test_delete_project(
+    loop,
+    mock_orphaned_services,
     client,
     logged_user,
     user_project,
@@ -714,6 +758,8 @@ async def test_delete_project(
     ],
 )
 async def test_open_project(
+    loop,
+    mock_orphaned_services,
     client,
     logged_user,
     user_project,
@@ -758,6 +804,8 @@ async def test_open_project(
     ],
 )
 async def test_close_project(
+    loop,
+    mock_orphaned_services,
     client,
     logged_user,
     user_project,
@@ -809,6 +857,8 @@ async def test_close_project(
     ],
 )
 async def test_get_active_project(
+    loop,
+    mock_orphaned_services,
     client,
     logged_user,
     user_project,
@@ -873,6 +923,7 @@ async def test_get_active_project(
 )
 async def test_delete_shared_project_forbidden(
     loop,
+    mock_orphaned_services,
     client,
     logged_user,
     user_project,
@@ -915,6 +966,7 @@ async def test_delete_shared_project_forbidden(
 )
 async def test_project_node_lifetime(
     loop,
+    mock_orphaned_services,
     client,
     logged_user,
     user_project,
@@ -1022,7 +1074,13 @@ async def test_project_node_lifetime(
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
 async def test_tags_to_studies(
-    client, logged_user, user_project, expected, test_tags_data
+    loop,
+    mock_orphaned_services,
+    client,
+    logged_user,
+    user_project,
+    expected,
+    test_tags_data,
 ):
     # Add test tags
     tags = test_tags_data

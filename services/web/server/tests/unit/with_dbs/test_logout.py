@@ -5,7 +5,7 @@ from pytest_simcore.helpers.utils_login import LoggedUser
 from simcore_service_webserver.login.cfg import get_storage
 
 
-async def test_logout(client):
+async def test_logout(loop, mock_orphaned_services, client):
     db = get_storage(client.app)
 
     logout_url = client.app.router["auth_logout"].url_for()

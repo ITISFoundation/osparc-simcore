@@ -17,6 +17,7 @@ from simcore_service_webserver.activity import handlers, setup_activity
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
+from conftest import mock_orphaned_services
 
 
 def future_with_result(result):
@@ -100,12 +101,14 @@ def client(loop, aiohttp_client, app_config):
     return cli
 
 
-async def test_has_login_required(client):
+async def test_has_login_required(loop, mock_orphaned_services, client):
     resp = await client.get("/v0/activity/status")
     await assert_status(resp, web.HTTPUnauthorized)
 
 
-async def test_monitoring_up(mocked_login_required, mocked_monitoring, client):
+async def test_monitoring_up(
+    loop, mock_orphaned_services, mocked_login_required, mocked_monitoring, client
+):
     QUEUED_NODE_ID = "35f95ad4-67b8-4ed8-bd55-84a5d600e687"
     RUNNING_NODE_ID = "894dd8d5-de3b-4767-950c-7c3ed8f51d8c"
 
@@ -132,6 +135,8 @@ async def test_monitoring_up(mocked_login_required, mocked_monitoring, client):
     assert stats.get("memUsage") == 177.664, "Incorrect value: Memory usage"
 
 
-async def test_monitoring_down(mocked_login_required, mocked_monitoring_down, client):
+async def test_monitoring_down(
+    loop, mock_orphaned_services, mocked_login_required, mocked_monitoring_down, client
+):
     resp = await client.get("/v0/activity/status")
     await assert_status(resp, web.HTTPNoContent)

@@ -101,6 +101,7 @@ async def remove_orphaned_services(
 
     If the service is a dynamic service
     """
+    logger.info("Starting orphaned services removal...")
     currently_opened_projects = set()
     alive_keys, _ = await registry.get_all_resource_keys()
     for alive_key in alive_keys:
@@ -124,6 +125,8 @@ async def remove_orphaned_services(
         ):
             logger.info("Will remove service %s", interactive_service["service_host"])
             await stop_service(app, interactive_service["service_uuid"])
+
+    logger.info("Finished orphaned services removal")
 
 
 async def remove_resources_if_guest_user(
@@ -159,8 +162,12 @@ async def garbage_collector_task(app: web.Application):
 
     except asyncio.CancelledError:
         pass
+    except Exception:  # pylint: disable=broad-except
+        logger.exception("Got an error while running garbage collector")
     finally:
-        pass
+        logger.info(
+            "An error ocurred during garbage collecting, process is now stopped!"
+        )
 
 
 async def setup_garbage_collector_task(app: web.Application):

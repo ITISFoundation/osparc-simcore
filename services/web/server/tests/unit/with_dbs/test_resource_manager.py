@@ -144,7 +144,12 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
 
 # ------------------------ TESTS -------------------------------
 async def test_anonymous_websocket_connection(
-    client_session_id, socketio_url: str, security_cookie, mocker
+    loop,
+    mock_orphaned_services,
+    client_session_id,
+    socketio_url: str,
+    security_cookie,
+    mocker,
 ):
     from yarl import URL
 
@@ -176,7 +181,12 @@ async def test_anonymous_websocket_connection(
     ],
 )
 async def test_websocket_resource_management(
-    client, logged_user, socketio_client, client_session_id
+    loop,
+    mock_orphaned_services,
+    client,
+    logged_user,
+    socketio_client,
+    client_session_id,
 ):
     app = client.server.app
     socket_registry = get_registry(app)
@@ -208,7 +218,12 @@ async def test_websocket_resource_management(
     ],
 )
 async def test_websocket_multiple_connections(
-    client, logged_user, socketio_client, client_session_id
+    loop,
+    mock_orphaned_services,
+    client,
+    logged_user,
+    socketio_client,
+    client_session_id,
 ):
     app = client.server.app
     socket_registry = get_registry(app)
@@ -261,7 +276,14 @@ async def test_websocket_multiple_connections(
     ],
 )
 async def test_websocket_disconnected_after_logout(
-    client, logged_user, socketio_client, client_session_id, expected, mocker
+    loop,
+    mock_orphaned_services,
+    client,
+    logged_user,
+    socketio_client,
+    client_session_id,
+    expected,
+    mocker,
 ):
     app = client.server.app
     socket_registry = get_registry(app)
@@ -315,6 +337,7 @@ async def test_websocket_disconnected_after_logout(
 )
 async def test_interactive_services_removed_after_logout(
     loop,
+    mock_orphaned_services,
     client,
     logged_user,
     empty_user_project,
@@ -358,6 +381,7 @@ async def test_interactive_services_removed_after_logout(
 )
 async def test_interactive_services_remain_after_websocket_reconnection_from_2_tabs(
     loop,
+    mock_orphaned_services,
     client,
     logged_user,
     expected,
@@ -429,6 +453,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
 )
 async def test_interactive_services_removed_per_project(
     loop,
+    mock_orphaned_services,
     client,
     logged_user,
     empty_user_project,
@@ -504,6 +529,7 @@ async def test_interactive_services_removed_per_project(
 )
 async def test_services_remain_after_closing_one_out_of_two_tabs(
     loop,
+    mock_orphaned_services,
     client,
     logged_user,
     empty_user_project,
@@ -550,6 +576,7 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
 )
 async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     loop,
+    mock_orphaned_services,
     client,
     logged_user,
     empty_user_project,
