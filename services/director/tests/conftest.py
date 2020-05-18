@@ -24,6 +24,11 @@ pytest_plugins = [
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.absolute()
 
 
+
+@pytest.fixture
+def add_swarm_stack_name():
+    config.SWARM_STACK_NAME = "test_stack"
+
 @pytest.fixture(scope='session')
 def common_schemas_specs_dir(osparc_simcore_root_dir):
     specs_dir = osparc_simcore_root_dir/ "api" / "specs" / "common" / "schemas"
