@@ -229,6 +229,7 @@ class Executor:
             "Running image %s with config %s", docker_image, docker_container_config
         )
         # volume paths for car container (w/o prefix)
+        result = "FAILURE"
         try:
             docker_client: aiodocker.Docker = aiodocker.Docker()
             await self._post_messages(
@@ -253,6 +254,19 @@ class Executor:
                 )
             # start the container
             await container.start()
+            # indicate container is started
+            await self.rabbit_mq.post_instrumentation_message(
+                {
+                    "metrics": "service_started",
+                    "user_id": self.user_id,
+                    "project_id": self.task.project_id,
+                    "service_uuid": self.task.node_id,
+                    "service_type": "COMPUTATIONAL",
+                    "service_key": self.task.image["name"],
+                    "service_tag": self.task.image["tag"],
+                }
+            )
+
             # wait until the container finished, either success or fail or timeout
             container_data = await container.show()
             while container_data["State"]["Running"]:
@@ -278,6 +292,7 @@ class Executor:
                 )
             # ensure progress 1.0 is sent
             await self._post_messages(LogType.PROGRESS, "1.0")
+            result = "SUCCESS"
             log.info("%s completed with successfully!", docker_image)
         except aiodocker.exceptions.DockerContainerError:
             log.exception(
@@ -299,6 +314,19 @@ class Executor:
                 await container.delete(force=True)
             # stop monitoring logs now
             log_processor_task.cancel()
+            # instrumentation
+            await self.rabbit_mq.post_instrumentation_message(
+                {
+                    "metrics": "service_stopped",
+                    "user_id": self.user_id,
+                    "project_id": self.task.project_id,
+                    "service_uuid": self.task.node_id,
+                    "service_type": "COMPUTATIONAL",
+                    "service_key": self.task.image["name"],
+                    "service_tag": self.task.image["tag"],
+                    "result": result,
+                }
+            )
             await log_processor_task
 
     async def _process_task_output(self):

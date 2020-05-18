@@ -37,6 +37,7 @@ class RabbitMQ(BaseModel):
     channel: aio_pika.Channel = None
     logs_exchange: aio_pika.Exchange = None
     progress_exchange: aio_pika.Exchange = None
+    instrumentation_exchange: aio_pika.Exchange = None
 
     class Config:
         # see https://pydantic-docs.helpmanual.io/usage/types/#arbitrary-types-allowed
@@ -66,6 +67,11 @@ class RabbitMQ(BaseModel):
         log.debug("Declaring %s exchange", self.config.channels["progress"])
         self.progress_exchange = await self.channel.declare_exchange(
             self.config.channels["progress"], aio_pika.ExchangeType.FANOUT,
+        )
+
+        log.debug("Declaring %s exchange", self.config.channels["instrumentation"])
+        self.instrumentation_exchange = await self.channel.declare_exchange(
+            self.config.channels["instrumentation"], aio_pika.ExchangeType.FANOUT,
         )
 
     async def close(self):
@@ -109,6 +115,13 @@ class RabbitMQ(BaseModel):
                 "project_id": project_id,
                 "Progress": progress_msg,
             },
+        )
+
+    async def post_instrumentation_message(
+        self, instrumentation_data: Dict[str, str],
+    ):
+        await self._post_message(
+            self.instrumentation_exchange, data=instrumentation_data,
         )
 
     async def __aenter__(self):

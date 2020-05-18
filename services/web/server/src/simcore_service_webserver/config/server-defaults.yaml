@@ -49,6 +49,7 @@ rabbit:
   channels:
     log: comp.backend.channels.log
     progress: comp.backend.channels.progress
+    instrumentation: "comp.backend.channels.instrumentation"
 login:
   enabled: True
   registration_invitation_required: False

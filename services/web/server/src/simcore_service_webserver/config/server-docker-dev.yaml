@@ -51,6 +51,7 @@ rabbit:
   channels:
     progress: "comp.backend.channels.progress"
     log: "comp.backend.channels.log"
+    instrumentation: "comp.backend.channels.instrumentation"
 activity:
   enabled: True
   prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}
