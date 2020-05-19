@@ -1,3 +1,5 @@
+# pylint:disable=too-many-arguments
+
 import logging
 from typing import Optional
 
@@ -12,9 +14,7 @@ from . import node_validator
 log = logging.getLogger(__name__)
 
 
-async def root_get(
-    request: web.Request,
-) -> web.Response:  # pylint:disable=unused-argument
+async def root_get(request: web.Request,) -> web.Response:
     log.debug("Client does root_get request %s", request)
     distb = pkg_resources.get_distribution("simcore-service-director")
     with resources.stream(resources.RESOURCE_OPEN_API) as file_ptr:
@@ -31,7 +31,7 @@ async def root_get(
 
 async def services_get(
     request: web.Request, service_type: Optional[str] = None
-) -> web.Response:  # pylint:disable=unused-argument
+) -> web.Response:
     log.debug(
         "Client does services_get request %s with service_type %s",
         request,
@@ -61,7 +61,7 @@ async def services_get(
 
 async def services_by_key_version_get(
     request: web.Request, service_key: str, service_version: str
-) -> web.Response:  # pylint:disable=unused-argument
+) -> web.Response:
     log.debug(
         "Client does services_get request %s with service_key %s, service_version %s",
         request,
@@ -107,7 +107,7 @@ async def running_interactive_services_post(
     service_uuid: str,
     service_tag: str,
     service_basepath: str,
-) -> web.Response:  # pylint:disable=unused-argument, too-many-arguments
+) -> web.Response:
     log.debug(
         "Client does running_interactive_services_post request %s with user_id %s, project_id %s, service %s:%s, service_uuid %s, service_basepath %s",
         request,
@@ -143,7 +143,7 @@ async def running_interactive_services_post(
 
 async def running_interactive_services_get(
     request: web.Request, service_uuid: str
-) -> web.Response:  # pylint:disable=unused-argument
+) -> web.Response:
     log.debug(
         "Client does running_interactive_services_get request %s with service_uuid %s",
         request,
@@ -160,7 +160,7 @@ async def running_interactive_services_get(
 
 async def running_interactive_services_delete(
     request: web.Request, service_uuid: str
-) -> web.Response:  # pylint:disable=unused-argument
+) -> web.Response:
     log.debug(
         "Client does running_interactive_services_delete request %s with service_uuid %s",
         request,

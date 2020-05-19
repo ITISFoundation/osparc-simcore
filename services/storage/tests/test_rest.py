@@ -8,7 +8,6 @@ import json
 import os
 import sys
 from asyncio import Future
-from copy import deepcopy
 from pathlib import Path
 from urllib.parse import quote
 
