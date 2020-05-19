@@ -240,20 +240,24 @@ qx.Class.define("osparc.store.Store", {
           resolve([{
             "uid": 0,
             "name": "Odei Maiz",
+            "role": "Administrator",
             "email": "maiz@itis.swiss"
           }, {
             "uid": 1,
             "name": "Sylvain Anderegg",
+            "role": "Collaborator",
             "email": "anderegg@itis.swiss"
           }]);
         }
         resolve([{
           "uid": 0,
           "name": "Odei Maiz",
+          "role": "Administrator",
           "email": "maiz@itis.swiss"
         }, {
           "uid": 2,
           "name": "Max Novelli",
+          "role": "Collaborator",
           "email": "novelli@pitt.edu"
         }]);
       });

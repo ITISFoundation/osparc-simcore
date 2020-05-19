@@ -112,7 +112,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           ctrl.bindProperty("uid", "key", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
-          ctrl.bindProperty("email", "subtitle", null, item, id);
+          ctrl.bindProperty("role", "subtitle", null, item, id);
+          ctrl.bindProperty("email", "contact", null, item, id);
         },
         configureItem: item => {
           item.getChildControl("thumbnail").getContentElement()
