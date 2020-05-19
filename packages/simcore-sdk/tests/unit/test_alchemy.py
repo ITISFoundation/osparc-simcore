@@ -1,5 +1,3 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -37,7 +35,7 @@ def tables(postgres_db):
 
 @pytest.mark.enable_travis
 def test_alchemy(tables, postgres_session):
-    
+
     users = ['alpha', 'beta', 'gamma']
 
     for u in users:
