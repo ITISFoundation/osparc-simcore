@@ -49,6 +49,8 @@ paths:
       tags:
         - user
       requestBody:
+        required: true
+        description: the group to create
         content:
           application/json:
             schema:
@@ -90,8 +92,9 @@ paths:
       operationId: update_group
       tags:
         - user
-      # FIXME: this must be a non-required body part...
       requestBody:
+        required: true
+        description: the group to update
         content:
           application/json:
             schema:
