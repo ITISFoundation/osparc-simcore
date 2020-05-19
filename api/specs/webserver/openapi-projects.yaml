@@ -197,6 +197,25 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
+  /projects/{project_id}/share:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - project
+      summary: Share a project with a users group
+      operationId: share_project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schema/UsersGroups"
+
   /projects/{project_id}/nodes:
     parameters:
       - name: project_id
@@ -364,6 +383,11 @@ components:
 
     RunningServiceEnveloped:
       $ref: '../common/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
+
+    UsersGroups:
+      type: array
+      items:
+        $ref: "./components/schemas/me.yaml#/UsersGroup"
 
   responses:
     DefaultErrorResponse:

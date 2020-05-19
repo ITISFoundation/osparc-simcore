@@ -102,6 +102,12 @@ paths:
   /me/tokens/{service}:
     $ref: "./openapi-user.yaml#/paths/~1me~1tokens~1{service}"
 
+  /me/groups:
+    $ref: "./openapi-user.yaml#/paths/~1me~1groups"
+
+  /me/groups/{gid}:
+    $ref: "./openapi-user.yaml#/paths/~1me~1groups~1{gid}"
+
   # DATA STORAGE SERVICES ----------------------------------------------------------
 
   /storage/locations:
@@ -148,6 +154,9 @@ paths:
 
   /projects/{project_id}:close:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1close"
+
+  /projects/{project_id}:share:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1share"
 
   /projects/{project_id}/nodes:
     $ref: './openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes'
