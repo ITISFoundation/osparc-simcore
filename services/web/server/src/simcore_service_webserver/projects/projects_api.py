@@ -316,7 +316,7 @@ async def get_workbench_node_ids_from_project_uuid(
     return await db.get_all_node_ids_from_workbenches(project_uuid)
 
 
-async def is_node_id_presen_in_any_project_workbench(
+async def is_node_id_present_in_any_project_workbench(
     app: web.Application, node_id: str,
 ) -> bool:
     """If the node_id is presnet in one of the projects' workbenche returns True"""
