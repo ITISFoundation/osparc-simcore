@@ -467,11 +467,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const moreInfoButton = this.__getMoreInfoMenuButton(studyData, isTemplate);
       menu.add(moreInfoButton);
 
-      const isCurrentUserOwner = this.__isUserOwner(studyData);
-      const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
-      if (isCurrentUserOwner && !isTemplate && canCreateTemplate) {
-        const saveAsTemplateButton = this.__getSaveAsTemplateMenuButton(studyData);
-        menu.add(saveAsTemplateButton);
+      if (!isTemplate) {
+        const shareStudyButton = this.__getShareStudyMenuButton(studyData);
+        menu.add(shareStudyButton);
+
+        const isCurrentUserOwner = this.__isUserOwner(studyData);
+        const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
+        if (isCurrentUserOwner && canCreateTemplate) {
+          const saveAsTemplateButton = this.__getSaveAsTemplateMenuButton(studyData);
+          menu.add(saveAsTemplateButton);
+        }
       }
 
       const deleteButton = this.__getDeleteStudyMenuButton(studyData, isTemplate);
@@ -522,6 +527,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         win.center();
       }, this);
       return moreInfoButton;
+    },
+
+    __getShareStudyMenuButton: function(studyData) {
+      const saveAsTemplateButton = new qx.ui.menu.Button(this.tr("Share Study"));
+      saveAsTemplateButton.addListener("execute", () => {
+        const shareStudyView = new osparc.component.export.ShareStudy(studyData.uuid);
+        shareStudyView.popUpWindow();
+      }, this);
+      return saveAsTemplateButton;
     },
 
     __getSaveAsTemplateMenuButton: function(studyData) {

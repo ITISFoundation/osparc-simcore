@@ -112,6 +112,15 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         flex: 1
       });
 
+      const shareStudyButton = new qx.ui.form.Button(this.tr("Share Study")).set({
+        appearance: "lg-button"
+      });
+      osparc.utils.Utils.setIdToWidget(shareStudyButton, "saveAsTemplateBtn");
+      shareStudyButton.addListener("execute", e => {
+        this.__openShareStudy();
+      }, this);
+      buttonsLayout.add(shareStudyButton);
+
       if (isCurrentUserOwner && (!this.__isTemplate && canCreateTemplate)) {
         const saveAsTemplateButton = new qx.ui.form.Button(this.tr("Save as Template")).set({
           appearance: "lg-button"
@@ -268,6 +277,11 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
           console.error(err);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
         });
+    },
+
+    __openShareStudy: function() {
+      const shareStudyView = new osparc.component.export.ShareStudy(this.__model.getUuid());
+      shareStudyView.popUpWindow();
     },
 
     __openSaveAsTemplate: function() {
