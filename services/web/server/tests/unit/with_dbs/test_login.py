@@ -14,7 +14,7 @@ from simcore_service_webserver.login.cfg import cfg
 EMAIL, PASSWORD = "tester@test.com", "password"
 
 
-async def test_login_with_unknown_email(loop, mock_orphaned_services, client):
+async def test_login_with_unknown_email(client):
     url = client.app.router["auth_login"].url_for()
     r = await client.post(
         url, json={"email": "unknown@email.com", "password": "wrong."}
@@ -26,7 +26,7 @@ async def test_login_with_unknown_email(loop, mock_orphaned_services, client):
     assert cfg.MSG_UNKNOWN_EMAIL in await r.text()
 
 
-async def test_login_with_wrong_password(loop, mock_orphaned_services, client):
+async def test_login_with_wrong_password(client):
     url = client.app.router["auth_login"].url_for()
     r = await client.get(url)
     payload = await r.json()
@@ -41,7 +41,7 @@ async def test_login_with_wrong_password(loop, mock_orphaned_services, client):
     assert cfg.MSG_WRONG_PASSWORD in await r.text()
 
 
-async def test_login_banned_user(loop, mock_orphaned_services, client):
+async def test_login_banned_user(client):
     url = client.app.router["auth_login"].url_for()
     r = await client.get(url)
     assert cfg.MSG_USER_BANNED not in await r.text()
@@ -57,7 +57,7 @@ async def test_login_banned_user(loop, mock_orphaned_services, client):
     assert cfg.MSG_USER_BANNED in payload["error"]["errors"][0]["message"]
 
 
-async def test_login_inactive_user(loop, mock_orphaned_services, client):
+async def test_login_inactive_user(client):
     url = client.app.router["auth_login"].url_for()
     r = await client.get(url)
     assert cfg.MSG_ACTIVATION_REQUIRED not in await r.text()
@@ -71,7 +71,7 @@ async def test_login_inactive_user(loop, mock_orphaned_services, client):
     assert cfg.MSG_ACTIVATION_REQUIRED in await r.text()
 
 
-async def test_login_successfully(loop, mock_orphaned_services, client):
+async def test_login_successfully(client):
     url = client.app.router["auth_login"].url_for()
 
     async with NewUser() as user:

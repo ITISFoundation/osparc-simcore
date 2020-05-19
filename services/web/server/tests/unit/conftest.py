@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 from typing import Dict
 from uuid import uuid4
+from asyncio import Future
 
 import pytest
 
@@ -89,3 +90,13 @@ def activity_data(fake_data_dir: Path) -> Dict:
 def test_tags_data(fake_data_dir: Path) -> Dict:
     with (fake_data_dir / "test_tags_data.json").open() as fp:
         yield json.load(fp).get("added_tags")
+
+
+@pytest.fixture
+def mock_orphaned_services(mocker):
+    remove_orphaned_services = mocker.patch(
+        "simcore_service_webserver.resource_manager.garbage_collector.remove_orphaned_services",
+        return_value=Future(),
+    )
+    remove_orphaned_services.return_value.set_result("")
+    return remove_orphaned_services

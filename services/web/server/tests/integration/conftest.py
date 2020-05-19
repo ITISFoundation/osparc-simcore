@@ -160,6 +160,7 @@ def app_config(_webserver_dev_config: Dict, aiohttp_unused_port) -> Dict:
     cfg["main"]["port"] = aiohttp_unused_port()
     return cfg
 
+
 @pytest.fixture
 def mock_orphaned_services(mocker):
     remove_orphaned_services = mocker.patch(

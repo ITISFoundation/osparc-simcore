@@ -11,7 +11,9 @@ from simcore_service_webserver.application import create_application
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, monkeypatch, postgres_db):
+def client(
+    loop, aiohttp_client, app_cfg, monkeypatch, postgres_db, mock_orphaned_services
+):
 
     extra_test_routes = web.RouteTableDef()
 
@@ -34,7 +36,7 @@ def client(loop, aiohttp_client, app_cfg, monkeypatch, postgres_db):
     )
 
 
-async def test_identity_is_email(loop, mock_orphaned_services, client):
+async def test_identity_is_email(client):
     # Tests that login sets the user_email and logout removes it
     login_url = client.app.router["auth_login"].url_for()
     logout_url = client.app.router["auth_logout"].url_for()

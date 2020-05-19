@@ -64,9 +64,7 @@ USER_ACCESS_PARAMETERS = [
 @pytest.mark.parametrize(
     "user_role,expected", USER_ACCESS_PARAMETERS,
 )
-async def test_list_api_keys(
-    loop, mock_orphaned_services, client, logged_user, user_role, expected
-):
+async def test_list_api_keys(client, logged_user, user_role, expected):
     resp = await client.get("/v0/auth/api-keys")
     data, errors = await assert_status(resp, expected)
 
@@ -75,9 +73,7 @@ async def test_list_api_keys(
 
 
 @pytest.mark.parametrize("user_role,expected", USER_ACCESS_PARAMETERS)
-async def test_create_api_keys(
-    loop, mock_orphaned_services, client, logged_user, user_role, expected
-):
+async def test_create_api_keys(client, logged_user, user_role, expected):
     resp = await client.post("/v0/auth/api-keys", json={"display_name": "foo"})
 
     data, errors = await assert_status(resp, expected)
@@ -104,13 +100,7 @@ async def test_create_api_keys(
     ],
 )
 async def test_delete_api_keys(
-    loop,
-    mock_orphaned_services,
-    client,
-    fake_user_api_keys,
-    logged_user,
-    user_role,
-    expected,
+    client, fake_user_api_keys, logged_user, user_role, expected,
 ):
     resp = await client.delete("/v0/auth/api-keys", json={"display_name": "foo"})
     await assert_status(resp, expected)

@@ -16,7 +16,7 @@ from simcore_service_webserver.login.registration import get_confirmation_info
 EMAIL, PASSWORD = "tester@test.com", "password"
 
 
-async def test_regitration_availibility(loop, mock_orphaned_services, client):
+async def test_regitration_availibility(client):
     url = client.app.router["auth_register"].url_for()
     r = await client.post(
         url, json={"email": EMAIL, "password": PASSWORD, "confirm": PASSWORD,}
@@ -25,13 +25,13 @@ async def test_regitration_availibility(loop, mock_orphaned_services, client):
     await assert_status(r, web.HTTPOk)
 
 
-async def test_regitration_is_not_get(loop, mock_orphaned_services, client):
+async def test_regitration_is_not_get(client):
     url = client.app.router["auth_register"].url_for()
     r = await client.get(url)
     await assert_error(r, web.HTTPMethodNotAllowed)
 
 
-async def test_registration_with_existing_email(loop, mock_orphaned_services, client):
+async def test_registration_with_existing_email(client):
     db = get_storage(client.app)
     url = client.app.router["auth_register"].url_for()
     async with NewUser() as user:
@@ -47,9 +47,7 @@ async def test_registration_with_existing_email(loop, mock_orphaned_services, cl
 
 
 @pytest.mark.skip("TODO: Feature still not implemented")
-async def test_registration_with_expired_confirmation(
-    loop, mock_orphaned_services, client, monkeypatch
-):
+async def test_registration_with_expired_confirmation(client, monkeypatch):
     monkeypatch.setitem(cfg, "REGISTRATION_CONFIRMATION_REQUIRED", True)
     monkeypatch.setitem(cfg, "REGISTRATION_CONFIRMATION_LIFETIME", -1)
 
@@ -73,9 +71,7 @@ async def test_registration_with_expired_confirmation(
     await assert_error(r, web.HTTPConflict, cfg.MSG_EMAIL_EXISTS)
 
 
-async def test_registration_without_confirmation(
-    loop, mock_orphaned_services, client, monkeypatch
-):
+async def test_registration_without_confirmation(client, monkeypatch):
     monkeypatch.setitem(cfg, "REGISTRATION_CONFIRMATION_REQUIRED", False)
     db = get_storage(client.app)
     url = client.app.router["auth_register"].url_for()
@@ -92,9 +88,7 @@ async def test_registration_without_confirmation(
     await db.delete_user(user)
 
 
-async def test_registration_with_confirmation(
-    loop, mock_orphaned_services, client, capsys, monkeypatch
-):
+async def test_registration_with_confirmation(client, capsys, monkeypatch):
     monkeypatch.setitem(cfg, "REGISTRATION_CONFIRMATION_REQUIRED", True)
     db = get_storage(client.app)
     url = client.app.router["auth_register"].url_for()
@@ -134,12 +128,7 @@ async def test_registration_with_confirmation(
     ],
 )
 async def test_registration_with_invitation(
-    loop,
-    mock_orphaned_services,
-    client,
-    is_invitation_required,
-    has_valid_invitation,
-    expected_response,
+    client, is_invitation_required, has_valid_invitation, expected_response,
 ):
     from servicelib.application_keys import APP_CONFIG_KEY
     from simcore_service_webserver.login.config import CONFIG_SECTION_NAME

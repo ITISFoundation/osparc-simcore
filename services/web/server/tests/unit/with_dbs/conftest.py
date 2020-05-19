@@ -149,7 +149,7 @@ def web_server(loop, aiohttp_server, app_cfg, monkeypatch, postgres_db):
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, web_server):
+def client(loop, aiohttp_client, web_server, mock_orphaned_services):
     client = loop.run_until_complete(aiohttp_client(web_server))
     return client
 
@@ -370,13 +370,3 @@ def asyncpg_storage_system_mock(mocker):
     )
     mocked_method.return_value.set_result("")
     return mocked_method
-
-
-@pytest.fixture
-def mock_orphaned_services(mocker):
-    remove_orphaned_services = mocker.patch(
-        "simcore_service_webserver.resource_manager.garbage_collector.remove_orphaned_services",
-        return_value=Future(),
-    )
-    remove_orphaned_services.return_value.set_result("")
-    return remove_orphaned_services
