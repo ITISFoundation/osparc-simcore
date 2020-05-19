@@ -50,7 +50,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
     this.base(arguments);
 
     const layout = new qx.ui.layout.Grid(0, 5);
-    layout.setColumnFlex(0, 1);
+    layout.setColumnFlex(1, 1);
     this._setLayout(layout);
     this.setPadding(5);
 
@@ -139,23 +139,39 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "thumbnail":
+          control = new qx.ui.basic.Image().set({
+            scale: true,
+            allowGrowX: true,
+            allowGrowY: true,
+            allowShrinkX: true,
+            allowShrinkY: true,
+            width: 32,
+            height: 32
+          });
+          this._add(control, {
+            row: 0,
+            column: 0,
+            rowSpan: 2
+          });
+          break;
         case "title":
           control = new qx.ui.basic.Label().set({
             font: "title-14"
           });
           this._add(control, {
             row: 0,
-            column: 0
+            column: 1
           });
           break;
-        case "description":
+        case "subtitle":
           control = new osparc.ui.markdown.Markdown().set({
             font: "text-13",
             maxHeight: 16
           });
           this._add(control, {
             row: 1,
-            column: 0
+            column: 1
           });
           break;
         case "contact":
@@ -164,7 +180,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
           });
           this._add(control, {
             row: 1,
-            column: 1
+            column: 2
           });
           break;
       }
@@ -179,6 +195,14 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
       const parts = value.split("/");
       const id = parts.pop();
       osparc.utils.Utils.setIdToWidget(this, "serviceBrowserListItem_"+id);
+    },
+
+    _applyThumbnail: function(value) {
+      if (value === null) {
+        return;
+      }
+      const label = this.getChildControl("thumbnail");
+      label.setSource(value);
     },
 
     _applyTitle: function(value) {
