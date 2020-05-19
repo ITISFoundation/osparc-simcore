@@ -152,8 +152,8 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
             allowGrowY: true,
             allowShrinkX: true,
             allowShrinkY: true,
-            width: 32,
-            height: 32
+            maxWidth: 32,
+            maxHeight: 32
           });
           this._add(control, {
             row: 0,

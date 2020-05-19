@@ -235,26 +235,28 @@ qx.Class.define("osparc.store.Store", {
     },
 
     getOrganizationMembers: function(gid) {
-      if (gid === 3) {
-        return [{
+      return new Promise((resolve, reject) => {
+        if (gid === 3) {
+          resolve([{
+            "uid": 0,
+            "name": "Odei Maiz",
+            "email": "maiz@itis.swiss"
+          }, {
+            "uid": 1,
+            "name": "Sylvain Anderegg",
+            "email": "anderegg@itis.swiss"
+          }]);
+        }
+        resolve([{
           "uid": 0,
           "name": "Odei Maiz",
           "email": "maiz@itis.swiss"
         }, {
-          "uid": 1,
-          "name": "Sylvain Anderegg",
-          "email": "anderegg@itis.swiss"
-        }];
-      }
-      return [{
-        "uid": 0,
-        "name": "Odei Maiz",
-        "email": "maiz@itis.swiss"
-      }, {
-        "uid": 2,
-        "name": "Max Novelli",
-        "email": "novelli@pitt.edu"
-      }];
+          "uid": 2,
+          "name": "Max Novelli",
+          "email": "novelli@pitt.edu"
+        }]);
+      });
     },
 
     /**
