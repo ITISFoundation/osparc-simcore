@@ -10,7 +10,7 @@
 
 import logging
 from pprint import pformat
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 from uuid import uuid4
 
 from aiohttp import web
@@ -22,11 +22,10 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 
 from ..computation_api import delete_pipeline_db
 from ..director import director_api
-from ..storage_api import copy_data_folders_from_project  # mocked in unit-tests
-from ..storage_api import (
-    delete_data_folders_of_project,
-    delete_data_folders_of_project_node,
-)
+from ..storage_api import \
+    copy_data_folders_from_project  # mocked in unit-tests
+from ..storage_api import (delete_data_folders_of_project,
+                           delete_data_folders_of_project_node)
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import NodeNotFoundError
@@ -272,7 +271,10 @@ async def update_project_node_outputs(
     project_id: str,
     node_id: str,
     data: Optional[Dict],
-) -> Optional[Dict]:
+) -> Dict:
+    """
+        Updates outputs of a given node in a project with 'data'
+    """
     log.debug(
         "updating node %s outputs in project %s for user %s with %s",
         node_id,
@@ -280,23 +282,28 @@ async def update_project_node_outputs(
         user_id,
         pformat(data),
     )
+    data: Dict[str, Any] = data or {}
     project = await get_project_for_user(app, project_id, user_id)
+
     if not node_id in project["workbench"]:
         raise NodeNotFoundError(project_id, node_id)
-    node_description = project["workbench"][node_id]
-    node_description["outputs"] = data
-    # NOTE: update outputs if necessary as the UI expects a dataset/label field that is missing
-    if node_description["outputs"]:
-        for output_key in node_description["outputs"].keys():
-            if not isinstance(node_description["outputs"][output_key], dict):
-                continue
-            if "path" in node_description["outputs"][output_key]:
-                # file_id is of type study_id/node_id/file.ext
-                file_id = node_description["outputs"][output_key]["path"]
-                study_id, _, file_ext = file_id.split("/")
-                node_description["outputs"][output_key]["dataset"] = study_id
-                node_description["outputs"][output_key]["label"] = file_ext
 
-    db = app[APP_PROJECT_DBAPI]
-    await db.update_user_project(project, user_id, project_id)
-    return node_description
+    if data:
+        # NOTE: update outputs if necessary as the UI expects a
+        # dataset/label field that is missing
+        outputs: Dict[str,Any] = project["workbench"][node_id]["outputs"]
+        outputs.update(data)
+
+        for output_key in outputs.keys():
+            if not isinstance(outputs[output_key], dict):
+                continue
+            if "path" in outputs[output_key]:
+                # file_id is of type study_id/node_id/file.ext
+                file_id = outputs[output_key]["path"]
+                study_id, _, file_ext = file_id.split("/")
+                outputs[output_key]["dataset"] = study_id
+                outputs[output_key]["label"] = file_ext
+
+        db = app[APP_PROJECT_DBAPI]
+        await db.update_user_project(project, user_id, project_id)
+    return project["workbench"][node_id]
