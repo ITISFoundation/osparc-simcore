@@ -26,7 +26,6 @@ def client(
     yield loop.run_until_complete(aiohttp_client(app, server_kwargs=server_kwargs))
 
 
-
 async def test_registry_caching_task(loop, client, push_services):
     app = client.app
     assert app
@@ -47,7 +46,9 @@ async def test_registry_caching_task(loop, client, push_services):
         number_of_computational_services=1, number_of_interactive_services=1
     )
     # the services shall be updated
-    await sleep(config.DIRECTOR_REGISTRY_CACHING_TTL * 1.1) # NOTE: this can take some time. Sleep increased by 10%.
+    await sleep(
+        config.DIRECTOR_REGISTRY_CACHING_TTL * 1.1
+    )  # NOTE: this can take some time. Sleep increased by 10%.
     list_of_services = await registry_proxy.list_services(
         app, registry_proxy.ServiceType.ALL
     )
@@ -58,7 +59,9 @@ async def test_registry_caching_task(loop, client, push_services):
         number_of_interactive_services=2,
         version="2.0.",
     )
-    await sleep(config.DIRECTOR_REGISTRY_CACHING_TTL * 1.1) # NOTE: this sometimes takes a bit more. Sleep increased a 10%.
+    await sleep(
+        config.DIRECTOR_REGISTRY_CACHING_TTL * 1.1
+    )  # NOTE: this sometimes takes a bit more. Sleep increased a 10%.
     list_of_services = await registry_proxy.list_services(
         app, registry_proxy.ServiceType.ALL
     )

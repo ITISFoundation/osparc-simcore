@@ -24,7 +24,6 @@ def setup_app_tracing(app: web.Application, app_name: str) -> bool:
 
 
 
-
 def setup_app() -> web.Application:
     api_spec_path = resources.get_path(resources.RESOURCE_OPEN_API)
     app = routing.create_web_app(api_spec_path.parent, api_spec_path.name)
