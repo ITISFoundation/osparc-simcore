@@ -21,7 +21,7 @@ from simcore_service_webserver.users_api import is_user_guest, delete_user
 from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
 from simcore_service_webserver.projects.projects_api import (
     get_workbench_node_ids_from_project_uuid,
-    is_node_id_presen_in_any_project_workbench,
+    is_node_id_present_in_any_project_workbench,
 )
 from simcore_service_webserver.director.director_api import (
     get_running_interactive_services,
@@ -123,7 +123,7 @@ async def remove_orphaned_services(
         # if not present in DB or not part of currently opened projects, can be removed
         node_id = interactive_service["service_uuid"]
         if (
-            not await is_node_id_presen_in_any_project_workbench(app, node_id)
+            not await is_node_id_present_in_any_project_workbench(app, node_id)
             or node_id not in currently_opened_projects_node_ids
         ):
             logger.info("Will remove service %s", interactive_service["service_host"])
