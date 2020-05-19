@@ -47,6 +47,7 @@ services:
     deploy:
       # NOTE: Allows 3002 to be exposed for ptvsd
       endpoint_mode: vip
+      replicas: 1
 
   storage:
     volumes:

@@ -35,7 +35,7 @@ def pipeline(self, user_id: str, project_id: str, node_id: str = None):
                 )
     except Exception:  # pylint: disable=broad-except
         self.update_state(state=states.FAILURE)
-        log.exception("Uncaught exception")    
+        log.exception("Uncaught exception")
 
 
 __all__ = ["rabbit_config", "app"]
