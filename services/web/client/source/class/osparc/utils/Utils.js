@@ -49,6 +49,10 @@ qx.Class.define("osparc.utils.Utils", {
       return loadingUri;
     },
 
+    addBorder: function(sidePanel, where = "right") {
+      sidePanel.getContentElement().setStyle("border-"+where, "1px solid " + qx.theme.manager.Color.getInstance().resolve("material-button-background"));
+    },
+
     __setStyleToIFrame: function(domEl) {
       if (domEl && domEl.contentDocument && domEl.contentDocument.documentElement) {
         const iframeDocument = domEl.contentDocument.documentElement;
