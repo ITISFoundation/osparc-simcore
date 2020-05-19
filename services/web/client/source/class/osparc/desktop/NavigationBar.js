@@ -192,6 +192,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         this.__dashboardContext(true);
         return;
       }
+      this.__dashboardContext(false);
       if (nodeIds.length === 1) {
         return;
       }

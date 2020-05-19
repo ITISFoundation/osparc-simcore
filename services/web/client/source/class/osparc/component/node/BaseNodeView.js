@@ -159,6 +159,31 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       }, this);
 
       const collapsedView = this.__buildCollapsedSideView(isInput);
+      sidePanel.setCollapsedView(collapsedView);
+
+      return sidePanel;
+    },
+
+    __buildCollapsedSideView: function(isInput) {
+      const text = isInput ? this.tr("Inputs") : this.tr("Outputs");
+      const icon = isInput ? "@FontAwesome5Solid/chevron-down/12" : "@FontAwesome5Solid/chevron-up/12";
+      const minWidth = isInput ? 120 : 130;
+      const view = isInput ? this.__inputsView : this.__outputsView;
+      const container = isInput ? this.__inputNodesLayout : this.__outputNodesLayout;
+
+      const collapsedView = new qx.ui.basic.Atom().set({
+        label: text + " (0)",
+        icon: icon,
+        iconPosition: "right",
+        gap: 6,
+        padding: 8,
+        alignX: "center",
+        alignY: "middle",
+        minWidth: minWidth,
+        font: "title-18"
+      });
+      collapsedView.getContentElement().addClass("verticalText");
+      collapsedView.addListener("tap", view.toggleCollapsed.bind(view));
       collapsedView.addListenerOnce("appear", () => {
         const elem = collapsedView.getContentElement();
         console.log(elem);
@@ -166,39 +191,14 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         // collapsedView.setDomLeft(-1 * (size.width/2) - (size.height/2));
         collapsedView.setDomLeft(-45);
       });
-      sidePanel.setCollapsedView(collapsedView);
 
-      return sidePanel;
-    },
-
-    __buildCollapsedSideView: function(isInput) {
-      const inText = this.tr("Inputs");
-      const outText = this.tr("Outputs");
-      const inIcon = "@FontAwesome5Solid/chevron-down/12";
-      const outIcon = "@FontAwesome5Solid/chevron-up/12";
-      const collapsedView = new qx.ui.basic.Atom().set({
-        label: (isInput ? inText : outText) + " (0)",
-        icon: isInput ? inIcon : outIcon,
-        iconPosition: "right",
-        gap: 6,
-        padding: 8,
-        alignX: "center",
-        alignY: "middle",
-        minWidth: isInput ? 120 : 130,
-        font: "title-18"
-      });
-      collapsedView.getContentElement().addClass("verticalText");
-      const view = isInput ? this.__inputsView : this.__outputsView;
-      collapsedView.addListener("tap", view.toggleCollapsed.bind(view));
-
-      const container = isInput ? this.__inputNodesLayout : this.__outputNodesLayout;
       [
         "addChildWidget",
         "removeChildWidget"
       ].forEach(event => {
         container.addListener(event, () => {
           const nChildren = container.getChildren().length;
-          collapsedView.setLabel((isInput ? inText : outText) + " (" + nChildren + ")");
+          collapsedView.setLabel(text + " (" + nChildren + ")");
         });
       });
 
@@ -293,12 +293,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __createInputPortsUI: function(inputNode, isInputModel = true) {
-      let nodePorts = null;
-      if (isInputModel) {
-        nodePorts = inputNode.getOutputWidget();
-      } else {
-        nodePorts = inputNode.getInputsDefaultWidget();
-      }
+      const nodePorts = isInputModel ? inputNode.getOutputWidget() : inputNode.getInputsDefaultWidget();
       if (nodePorts) {
         this.__inputNodesLayout.add(nodePorts, {
           flex: 1

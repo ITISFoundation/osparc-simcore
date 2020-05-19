@@ -26,7 +26,7 @@ qx.Class.define("osparc.desktop.PanelView", {
     this.base(arguments, title, content);
 
     // Title bar
-    this.__titleBar.set({
+    this.getTitleBar().set({
       appearance: "panelview-titlebar"
     });
   },
