@@ -96,8 +96,8 @@ qx.Class.define("osparc.desktop.ControlsBar", {
 
       const simCtrls = new qx.ui.toolbar.Part();
       const startButton = this.__startButton = this.__createStartButton();
-      const stopButton = this.__stopButton = this.__createStopButton();
       simCtrls.add(startButton);
+      const stopButton = this.__stopButton = this.__createStopButton();
       simCtrls.add(stopButton);
       this.add(simCtrls);
     },
@@ -139,6 +139,8 @@ qx.Class.define("osparc.desktop.ControlsBar", {
 
     __createStopButton: function() {
       const stopButton = this.__createButton(this.tr("Stop"), "stop-circle", "stopStudyBtn", "stopPipeline");
+      // do not show until it Stops the pipeline
+      stopButton.setVisibility("excluded");
       return stopButton;
     },
 

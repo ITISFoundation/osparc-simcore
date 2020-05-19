@@ -196,11 +196,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __createServiceCatalog: function(pos) {
-      let srvCat = new osparc.component.workbench.ServiceCatalog();
+      const srvCat = new osparc.component.workbench.ServiceCatalog();
       if (pos) {
-        srvCat.moveTo(pos.x, pos.y);
+        srvCat.moveTo(pos.x + this.__getSidePanelWidth(), pos.y);
       } else {
-        // srvCat.center();
         const bounds = this.getLayoutParent().getBounds();
         const workbenchUICenter = {
           x: bounds.left + parseInt((bounds.left + bounds.width) / 2),
@@ -602,11 +601,17 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       });
     },
 
+    __getSidePanelWidth: function() {
+      const sidePanelWidth = window.screen.width - this.getInnerSize().width;
+      return sidePanelWidth;
+    },
+
     __getPointEventPosition: function(pointerEvent) {
       const navBarHeight = 50;
+      const sidePanelWidth = this.__getSidePanelWidth();
       const inputNodesLayoutWidth = this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
-      const x = pointerEvent.getViewportLeft() - this.getBounds().left - inputNodesLayoutWidth;
-      const y = pointerEvent.getViewportTop() - navBarHeight;
+      const x = pointerEvent.getDocumentLeft() - sidePanelWidth - inputNodesLayoutWidth;
+      const y = pointerEvent.getDocumentTop() - navBarHeight;
       return [x, y];
     },
 

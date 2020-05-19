@@ -94,13 +94,16 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           break;
         case "description":
           control = new osparc.ui.markdown.Markdown().set({
+            anonymous: true,
             font: "text-13",
             maxHeight: 30
           });
           this._mainLayout.addAt(control, 1);
           break;
         case "shared-creator":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6));
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
+            anonymous: true
+          });
           this._mainLayout.addAt(control, 2);
           break;
         case "shared": {
@@ -111,6 +114,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
         }
         case "creator": {
           control = new qx.ui.basic.Label().set({
+            anonymous: true,
             font: "text-13",
             allowGrowY: false
           });
@@ -121,11 +125,14 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           break;
         }
         case "tags":
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3));
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
+            anonymous: true
+          });
           this._mainLayout.addAt(control, 3);
           break;
         case "icon": {
           control = new qx.ui.basic.Image().set({
+            anonymous: true,
             scale: true,
             allowStretchX: true,
             allowStretchY: true,
@@ -152,9 +159,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           break;
         }
       }
-      control.set({
-        anonymous: true
-      });
       return control || this.base(arguments, id);
     },
 

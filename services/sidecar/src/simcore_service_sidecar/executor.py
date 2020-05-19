@@ -324,7 +324,7 @@ class Executor:
             file_upload_tasks = []
             for file_path in self.shared_folders.output_folder.rglob("*"):
                 if file_path.name == f"{stem}.json":
-                    log.debug("POSTRO FOUND %s.json", stem)
+                    log.debug("POSTPRO found %s.json", stem)
                     # parse and compare/update with the tasks output ports from db
                     with file_path.open() as fp:
                         output_ports = json.load(fp)
@@ -333,11 +333,14 @@ class Executor:
                             if port.key in output_ports.keys():
                                 await port.set(output_ports[port.key])
                 else:
-                    log.debug("POSTPRO Found %s", file_path)
+                    log.debug("POSTPRO found %s", file_path)
                     file_upload_tasks.append(PORTS.set_file_by_keymap(file_path))
             if file_upload_tasks:
-                log.debug("POSTPRO uploading files...")
-                await logged_gather(*file_upload_tasks)
+                log.debug("POSTPRO uploading %d files...", len(file_upload_tasks))
+                # WARNING: nodeports is NOT concurrent-safe, dont' use gather here
+                for coro in file_upload_tasks:
+                    await coro
+
         except json.JSONDecodeError:
             logging.exception("Error occured while decoding output.json")
         except node_ports.exceptions.NodeportsException:

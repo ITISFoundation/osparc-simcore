@@ -52,8 +52,8 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
   },
 
   statics: {
-    MORE_CARET: "@MaterialIcons/expand_more/",
-    LESS_CARET: "@MaterialIcons/expand_less/"
+    COLLAPSED_CARET: "@MaterialIcons/chevron_right/",
+    EXPANDED_CARET: "@MaterialIcons/expand_more/"
   },
 
   properties: {
@@ -96,14 +96,14 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "title":
-          control = new qx.ui.basic.Atom(this.getTitle());
-          this.__titleBar.addAt(control, 0);
-          break;
         case "caret":
           control = new qx.ui.basic.Image(this.__getCaretId(this.getCollapsed())).set({
             visibility: "excluded"
           });
+          this.__titleBar.addAt(control, 0);
+          break;
+        case "title":
+          control = new qx.ui.basic.Atom(this.getTitle());
           this.__titleBar.addAt(control, 1);
           break;
       }
@@ -193,8 +193,8 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
 
     __getCaretId: function(collapsed) {
       const caretSize = this.getCaretSize();
-      const moreCaret = this.self().MORE_CARET;
-      const lessCaret = this.self().LESS_CARET;
+      const moreCaret = this.self().COLLAPSED_CARET;
+      const lessCaret = this.self().EXPANDED_CARET;
       return collapsed ? moreCaret + caretSize : lessCaret + caretSize;
     },
 
