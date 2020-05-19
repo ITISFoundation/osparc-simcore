@@ -46,7 +46,7 @@ services:
 
   postgres:
     ports:
-      - "5432"
+      - "5432:5432"
     # https://www.postgresql.org/docs/10/runtime-config-logging.html#GUC-LOG-STATEMENT
     command:
       [
