@@ -87,7 +87,7 @@ SIMCORE_SERVICES_PREFIX: str = os.environ.get(
 MONITORING_ENABLED: bool = os.environ.get("MONITORING_ENABLED", True) in [
     "true",
     "True",
-    True,
+    False,
 ]
 
 # tracing
