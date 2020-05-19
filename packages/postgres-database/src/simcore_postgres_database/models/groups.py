@@ -77,7 +77,7 @@ user_to_groups = sa.Table(
     sa.UniqueConstraint("uid", "gid"),
 )
 
-# ------------------------ TRIGGERS
+# TRIGGERS ------------------------
 
 group_delete_trigger = sa.DDL(
     """
@@ -89,7 +89,7 @@ BEFORE DELETE ON groups
 """
 )
 
-# ---------------- PROCEDURES
+# PROCEDURES ------------------------
 set_check_uniqueness_procedure = sa.DDL(
     """
 CREATE OR REPLACE FUNCTION check_group_uniqueness(name text, type text) RETURNS INT AS $$
