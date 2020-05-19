@@ -11,16 +11,12 @@ import logging
 from aiohttp import web
 
 from servicelib.application_setup import ModuleCategory, app_module_setup
-from servicelib.monitor_services import add_instrumentation
-from servicelib.rest_routing import (iter_path_operations,
-                                     map_handlers_with_operations)
+from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
 
 from . import computation_handlers
-from .computation_comp_tasks_listening_task import \
-    setup as setup_comp_tasks_listener
+from .computation_comp_tasks_listening_task import setup as setup_comp_tasks_listener
 from .computation_config import CONFIG_SECTION_NAME
 from .computation_subscribe import subscribe
-from .diagnostics_monitoring import get_collector_registry
 from .rest_config import APP_OPENAPI_SPECS_KEY
 
 log = logging.getLogger(__file__)
@@ -54,7 +50,7 @@ def setup(app: web.Application):
     )
     app.router.add_routes(routes)
     setup_comp_tasks_listener(app)
-    add_instrumentation(app, get_collector_registry(app), "simcore_service_webserver")
+
 
 # alias
 setup_computation = setup

@@ -11,6 +11,7 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram
 from prometheus_client.registry import CollectorRegistry
 
 from .diagnostics_core import DelayWindowProbe, kLATENCY_PROBE
+from servicelib.monitor_services import add_instrumentation
 
 log = logging.getLogger(__name__)
 
@@ -137,6 +138,8 @@ def setup_monitoring(app: web.Application):
         labelnames=["app_name", "endpoint", "method"],
         registry=reg,
     )
+
+    add_instrumentation(app, get_collector_registry(app), "simcore_service_webserver")
 
     # on-the fly stats
     app[kLATENCY_PROBE] = DelayWindowProbe()
