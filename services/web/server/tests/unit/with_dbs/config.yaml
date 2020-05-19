@@ -11,7 +11,7 @@ director:
   host: director
   port: 8001
 socketio:
-  enabled: True  
+  enabled: True
 application_proxy:
   enabled: False
 db:
@@ -36,6 +36,7 @@ rabbit:
   channels:
     log: comp.backend.channels.log
     progress: comp.backend.channels.progress
+    instrumentation: comp.backend.channels.instrumentation
   password: simcore
   user: simcore
 # s3:
