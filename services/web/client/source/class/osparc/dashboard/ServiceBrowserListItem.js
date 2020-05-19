@@ -32,7 +32,7 @@
  *     bindItem: (c, item, id) => {
  *       c.bindProperty("key", "model", null, item, id);
  *       c.bindProperty("name", "title", null, item, id);
- *       c.bindProperty("description", "description", null, item, id);
+ *       c.bindProperty("description", "subtitle", null, item, id);
  *       c.bindProperty("type", "type", null, item, id);
  *       c.bindProperty("category", "category", null, item, id);
  *       c.bindProperty("contact", "contact", null, item, id);
@@ -89,9 +89,9 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
       nullable : true
     },
 
-    description: {
+    subtitle: {
       check : "String",
-      apply : "_applyDescription",
+      apply : "_applySubtitle",
       nullable : true
     },
 
@@ -213,11 +213,11 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
       label.setValue(value);
     },
 
-    _applyDescription: function(value) {
+    _applySubtitle: function(value) {
       if (value === null) {
         return;
       }
-      const label = this.getChildControl("description");
+      const label = this.getChildControl("subtitle");
       label.setValue(value);
     },
 
