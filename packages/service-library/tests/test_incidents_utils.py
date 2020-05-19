@@ -41,7 +41,7 @@ def test_incidents_stack():
 
     incidents = IncidentsRegistry(max_size=2, order_by=operator.attrgetter("gravity"))
 
-    assert not incidents # __len__ == 0
+    assert not incidents  # __len__ == 0
 
     foo = TestIncident("foo", 0)
     bar = TestIncident("bar", 3)
@@ -51,7 +51,7 @@ def test_incidents_stack():
     incidents.append(bar)
     incidents.append(zoo)
 
-    assert incidents # __len__ != 0
+    assert incidents  # __len__ != 0
     assert len(incidents) == 2
     assert len(incidents) == incidents.max_size
     assert incidents.hits == 3
