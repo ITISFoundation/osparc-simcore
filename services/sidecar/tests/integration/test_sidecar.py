@@ -231,7 +231,7 @@ PYTHON_RUNNER_STUDY = (
 )
 
 
-# FIXME: problem with service
+# FIXME: input schema in osparc-python-executor service is wrong
 PYTHON_RUNNER_FACTORY_STUDY = (
     "itisfoundation/osparc-python-runner",
     "1.0.0",
@@ -247,128 +247,6 @@ PYTHON_RUNNER_FACTORY_STUDY = (
             "inputs": {
                 "input_1": {"nodeUuid": "node_1", "output": "output_1"},
             },
-        },
-    },
-)
-
-# TODO: remove
-CCLANCY_HUMAN_STUDY = (
-    "itisfoundation/osparc-python-runner",
-    "1.0.0",
-    {
-        "node_data": {
-            "key": "simcore/services/frontend/file-picker",
-            "version": "1.0.0",
-            "label": "File Picker",
-            "inputs": {},
-            "inputNodes": [],
-            "thumbnail": "",
-            "outputs": {
-                "outFile": {
-                    "store": SIMCORE_S3_ID,
-                    "dataset": "33eb80e2-524c-11ea-a311-02420a00070b",
-                    "path": "33eb80e2-524c-11ea-a311-02420a00070b/node_data/initial_WTStates_Human.txt",
-                    "label": "initial_WTStates_Human.txt",
-                }
-            },
-            "progress": 100,
-            "position": {"x": 23, "y": 44},
-        },
-        "node_comp_0d": {
-            "key": "simcore/services/comp/human-gb-0d-cardiac-model",
-            "version": "1.0.0",
-            "label": "0D Human GB cardiac model",
-            "inputs": {
-                "Na": 0,
-                "GKr": 1,
-                "TotalSimulationTime": 300,
-                "TargetHeartRatePhase1": 60,
-                "TargetHeartRatePhase2": 150,
-                "TargetHeartRatePhase3": 60,
-                "cAMKII": "WT",
-                "tissue_size_tw": 165,
-                "tissue_size_tl": 165,
-                "Homogeneity": "homogeneous",
-                "initialWTStates": {"nodeUuid": "node_data", "output": "outFile",},
-                "num_threads": 2,
-            },
-            "inputNodes": ["node_data"],
-            "thumbnail": "",
-            "position": {"x": 259, "y": 13},
-        },
-        "node_comp_1d": {
-            "key": "simcore/services/comp/human-gb-1d-cardiac-model",
-            "version": "1.0.0",
-            "label": "1D Human GB cardiac model",
-            "inputs": {
-                "Na": 0,
-                "GKr": 1,
-                "TotalSimulationTime": 300,
-                "TargetHeartRatePhase1": 60,
-                "TargetHeartRatePhase2": 150,
-                "TargetHeartRatePhase3": 60,
-                "cAMKII": "WT",
-                "tissue_size_tw": 165,
-                "tissue_size_tl": 165,
-                "Homogeneity": "homogeneous",
-                "initialWTStates": {"nodeUuid": "node_data", "output": "outFile",},
-                "num_threads": 2,
-            },
-            "inputNodes": ["node_data"],
-            "thumbnail": "",
-            "position": {"x": 261, "y": 171},
-        },
-        "node_comp_2d": {
-            "key": "simcore/services/comp/human-gb-2d-cardiac-model",
-            "version": "1.0.0",
-            "label": "2D Human GB cardiac model",
-            "inputs": {
-                "Na": 0,
-                "GKr": 1,
-                "TotalSimulationTime": 10,
-                "TargetHeartRatePhase1": 60,
-                "TargetHeartRatePhase2": 150,
-                "TargetHeartRatePhase3": 60,
-                "cAMKII": "WT",
-                "tissue_size_tw": 165,
-                "tissue_size_tl": 165,
-                "Homogeneity": "homogeneous",
-                "input_from_1d": {"nodeUuid": "node_comp_1d", "output": "output_3",},
-                "num_threads": 2,
-            },
-            "inputNodes": ["node_comp_1d"],
-            "thumbnail": "",
-            "position": {"x": 462, "y": 287},
-        },
-        "node_dyn_0d_viewer": {
-            "key": "simcore/services/dynamic/cc-0d-viewer",
-            "version": "3.0.4",
-            "label": "0D cardiac model viewer",
-            "inputs": {"vm1Hz": {"nodeUuid": "node_comp_0d", "output": "vm1Hz",}},
-            "inputNodes": ["node_comp_0d"],
-            "thumbnail": "",
-            "position": {"x": 678, "y": 13},
-        },
-        "node_dyn_1d_viewer": {
-            "key": "simcore/services/dynamic/cc-1d-viewer",
-            "version": "3.0.4",
-            "label": "1D cardiac model viewer",
-            "inputs": {
-                "ECGs": {"nodeUuid": "node_comp_1d", "output": "output_1",},
-                "APs": {"nodeUuid": "node_comp_1d", "output": "output_2",},
-            },
-            "inputNodes": ["node_comp_1d"],
-            "thumbnail": "",
-            "position": {"x": 680, "y": 170},
-        },
-        "node_dyn_2d_viewer": {
-            "key": "simcore/services/dynamic/cc-2d-viewer",
-            "version": "3.0.4",
-            "label": "2D cardiac model viewer",
-            "inputs": {"ap": {"nodeUuid": "node_comp_2d", "output": "output_1",}},
-            "inputNodes": ["node_comp_2d"],
-            "thumbnail": "",
-            "position": {"x": 689, "y": 287},
         },
     },
 )
