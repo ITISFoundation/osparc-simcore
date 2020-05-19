@@ -26,9 +26,9 @@ lazy-object-proxy==1.4.3  # via astroid
 mako==1.1.2               # via -r requirements/_migration.txt, alembic
 markupsafe==1.1.1         # via -r requirements/_migration.txt, mako
 mccabe==0.6.1             # via pylint
-more-itertools==8.2.0     # via pytest
-multidict==4.7.5          # via -r requirements/_migration.txt, aiohttp, yarl
-packaging==20.3           # via pytest
+more-itertools==8.3.0     # via pytest
+multidict==4.7.6          # via -r requirements/_migration.txt, aiohttp, yarl
+packaging==20.4           # via pytest
 pluggy==0.13.1            # via pytest
 psycopg2-binary==2.8.5    # via -r requirements/_migration.txt, aiopg, sqlalchemy
 py==1.8.1                 # via pytest
@@ -45,10 +45,10 @@ python-editor==1.0.4      # via -r requirements/_migration.txt, alembic
 pyyaml==5.3.1             # via -r requirements/_test.in
 requests==2.23.0          # via -r requirements/_migration.txt, coveralls, docker
 six==1.14.0               # via -r requirements/_migration.txt, astroid, docker, packaging, python-dateutil, tenacity, websocket-client
-sqlalchemy[postgresql_psycopg2binary]==1.3.16  # via -r requirements/_migration.txt, aiopg, alembic
+sqlalchemy[postgresql_psycopg2binary]==1.3.17  # via -r requirements/_migration.txt, aiopg, alembic
 tenacity==6.2.0           # via -r requirements/_migration.txt
 text-unidecode==1.3       # via faker
-toml==0.10.0              # via pylint
+toml==0.10.1              # via pylint
 typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.2  # via aiohttp
 urllib3==1.25.9           # via -r requirements/_migration.txt, requests
