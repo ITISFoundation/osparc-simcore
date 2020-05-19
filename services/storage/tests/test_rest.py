@@ -1,5 +1,3 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -18,7 +16,7 @@ import pytest
 from aiohttp import web
 
 from simcore_service_storage.db import setup_db
-from simcore_service_storage.dsm import APP_DSM_KEY, DataStorageManager, setup_dsm
+from simcore_service_storage.dsm import APP_DSM_KEY, setup_dsm
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.s3 import setup_s3
 from simcore_service_storage.settings import APP_CONFIG_KEY, SIMCORE_S3_ID
