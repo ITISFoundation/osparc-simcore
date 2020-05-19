@@ -3,6 +3,7 @@
  * Copyright: 2019 IT'IS Foundation - https://itis.swiss
  * License: MIT - https://opensource.org/licenses/MIT
  * Authors: Ignacio Pascual (ignapas)
+ *          Odei Maiz (odeimaiz)
  */
 
 /**
@@ -258,6 +259,34 @@ qx.Class.define("osparc.data.Resources", {
           put: {
             method: "PUT",
             url: statics.API + "/me/tokens/{service}"
+          }
+        }
+      },
+      /*
+       * ORGANIZATIONS
+       */
+      organizations: {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/me/groups"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/me/groups"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/me/groups/{gid}"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/me/groups/{gid}"
+          },
+          put: {
+            method: "PUT",
+            url: statics.API + "/me/groups/{gid}"
           }
         }
       },
