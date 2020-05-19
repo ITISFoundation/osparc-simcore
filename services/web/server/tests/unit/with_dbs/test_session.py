@@ -34,7 +34,7 @@ def client(loop, aiohttp_client, app_cfg, monkeypatch, postgres_db):
     )
 
 
-async def test_identity_is_email(client):
+async def test_identity_is_email(loop, mock_orphaned_services, client):
     # Tests that login sets the user_email and logout removes it
     login_url = client.app.router["auth_login"].url_for()
     logout_url = client.app.router["auth_logout"].url_for()

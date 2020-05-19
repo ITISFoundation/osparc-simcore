@@ -19,9 +19,9 @@ from .registry import RedisResourceRegistry, get_registry
 from simcore_service_webserver.projects.projects_api import delete_project_from_db
 from simcore_service_webserver.users_api import is_user_guest, delete_user
 from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
-from simcore_service_webserver.computation_api import (
-    is_service_present_in_db,
-    get_node_id_from_project_id,
+from simcore_service_webserver.projects.projects_api import (
+    get_workbench_node_ids_from_project_uuid,
+    is_node_id_presen_in_any_project_workbench,
 )
 from simcore_service_webserver.director.director_api import (
     get_running_interactive_services,
@@ -95,22 +95,24 @@ async def remove_orphaned_services(
 ) -> None:
     """Removes services which are no longer tracked in the database
 
-    Multiple deployments can be active at the same tim on the same cluster.
-    This will also check the current SWARM_STACK_NAME of the service which
-    must be matching its own.
+    Multiple deployments can be active at the same time on the same cluster.
+    This will also check the current SWARM_STACK_NAME label of the service which
+    must be matching its own. The director service spawns dynamic services
+    which have this new label and it also filters by this label.
 
     If the service is a dynamic service
     """
     logger.info("Starting orphaned services removal...")
-    currently_opened_projects = set()
+    currently_opened_projects_node_ids = set()
     alive_keys, _ = await registry.get_all_resource_keys()
     for alive_key in alive_keys:
         resources = await registry.get_resources(alive_key)
         if "project_id" not in resources:
             continue
 
-        node_id = await get_node_id_from_project_id(app, resources["project_id"])
-        currently_opened_projects.update(node_id)
+        project_uuid = resources["project_id"]
+        node_ids = await get_workbench_node_ids_from_project_uuid(app, project_uuid)
+        currently_opened_projects_node_ids.update(node_ids)
 
     running_interactive_services = await get_running_interactive_services(app)
     logger.info(
@@ -119,12 +121,13 @@ async def remove_orphaned_services(
     )
     for interactive_service in running_interactive_services:
         # if not present in DB or not part of currently opened projects, can be removed
+        node_id = interactive_service["service_uuid"]
         if (
-            not await is_service_present_in_db(app, interactive_service["service_uuid"])
-            or interactive_service["service_uuid"] not in currently_opened_projects
+            not await is_node_id_presen_in_any_project_workbench(app, node_id)
+            or node_id not in currently_opened_projects_node_ids
         ):
             logger.info("Will remove service %s", interactive_service["service_host"])
-            await stop_service(app, interactive_service["service_uuid"])
+            await stop_service(app, node_id)
 
     logger.info("Finished orphaned services removal")
 
@@ -165,9 +168,12 @@ async def garbage_collector_task(app: web.Application):
 
         except asyncio.CancelledError:
             keep_alive = False
-            logger.info("Garbage collection task was canceld, it will not restart!")
+            logger.info("Garbage collection task was cancelled, it will not restart!")
         except Exception:  # pylint: disable=broad-except
             logger.exception("Error during garbage collector, restarting...")
+            await asyncio.sleep(
+                5
+            )  # will wait 5 seconds before restarting to avoid restart loops
 
 
 async def setup_garbage_collector_task(app: web.Application):

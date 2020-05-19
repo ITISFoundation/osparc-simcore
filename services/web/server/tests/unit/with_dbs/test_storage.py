@@ -133,7 +133,7 @@ PREFIX = "/" + API_VERSION + "/storage"
     ],
 )
 async def test_get_storage_locations(
-    client, storage_server, logged_user, role, expected
+    loop, mock_orphaned_services, client, storage_server, logged_user, role, expected
 ):
     url = "/v0/storage/locations"
     assert url.startswith(PREFIX)
@@ -156,7 +156,7 @@ async def test_get_storage_locations(
     ],
 )
 async def test_get_datasets_metadata(
-    client, storage_server, logged_user, role, expected
+    loop, mock_orphaned_services, client, storage_server, logged_user, role, expected
 ):
     url = "/v0/storage/locations/0/datasets"
     assert url.startswith(PREFIX)
@@ -183,7 +183,7 @@ async def test_get_datasets_metadata(
     ],
 )
 async def test_get_files_metadata_dataset(
-    client, storage_server, logged_user, role, expected
+    loop, mock_orphaned_services, client, storage_server, logged_user, role, expected
 ):
     url = "/v0/storage/locations/0/datasets/N:asdfsdf/metadata"
     assert url.startswith(PREFIX)
@@ -211,7 +211,9 @@ async def test_get_files_metadata_dataset(
         (UserRole.TESTER, web.HTTPOk),
     ],
 )
-async def test_storage_file_meta(client, storage_server, logged_user, role, expected):
+async def test_storage_file_meta(
+    loop, mock_orphaned_services, client, storage_server, logged_user, role, expected
+):
     # tests redirect of path with quotes in path
     file_id = "a/b/c/d/e/dat"
     url = "/v0/storage/locations/0/files/{}/metadata".format(quote(file_id, safe=""))
@@ -235,7 +237,9 @@ async def test_storage_file_meta(client, storage_server, logged_user, role, expe
         (UserRole.TESTER, web.HTTPOk),
     ],
 )
-async def test_storage_list_filter(client, storage_server, logged_user, role, expected):
+async def test_storage_list_filter(
+    loop, mock_orphaned_services, client, storage_server, logged_user, role, expected
+):
     # tests composition of 2 queries
     file_id = "a/b/c/d/e/dat"
     url = "/v0/storage/locations/0/files/metadata?uuid_filter={}".format(
