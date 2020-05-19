@@ -112,14 +112,14 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         flex: 1
       });
 
-      const shareStudyButton = new qx.ui.form.Button(this.tr("Share Study")).set({
+      const permissionsButton = new qx.ui.form.Button(this.tr("Permissions")).set({
         appearance: "lg-button"
       });
-      osparc.utils.Utils.setIdToWidget(shareStudyButton, "saveAsTemplateBtn");
-      shareStudyButton.addListener("execute", e => {
-        this.__openShareStudy();
+      osparc.utils.Utils.setIdToWidget(permissionsButton, "permissionsBtn");
+      permissionsButton.addListener("execute", e => {
+        this.__openPermissions();
       }, this);
-      buttonsLayout.add(shareStudyButton);
+      buttonsLayout.add(permissionsButton);
 
       if (isCurrentUserOwner && (!this.__isTemplate && canCreateTemplate)) {
         const saveAsTemplateButton = new qx.ui.form.Button(this.tr("Save as Template")).set({
@@ -279,8 +279,8 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         });
     },
 
-    __openShareStudy: function() {
-      const shareStudyView = new osparc.component.export.ShareStudy(this.__model.getUuid());
+    __openPermissions: function() {
+      const shareStudyView = new osparc.component.export.Permissions(this.__model.getUuid());
       shareStudyView.popUpWindow();
     },
 

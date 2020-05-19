@@ -19,7 +19,7 @@
  *
  */
 
-qx.Class.define("osparc.component.export.ShareStudy", {
+qx.Class.define("osparc.component.export.Permissions", {
   extend: qx.ui.core.Widget,
 
   construct: function(studyId) {
@@ -33,8 +33,8 @@ qx.Class.define("osparc.component.export.ShareStudy", {
   },
 
   statics: {
-    createShareStudyWindow: function(shareStudyWidget) {
-      const window = new qx.ui.window.Window("Share Study").set({
+    createPermissionsWindow: function(shareStudyWidget) {
+      const window = new qx.ui.window.Window("Permissions").set({
         appearance: "service-window",
         layout: new qx.ui.layout.Grow(),
         autoDestroy: true,
@@ -59,7 +59,7 @@ qx.Class.define("osparc.component.export.ShareStudy", {
     __shareWith: null,
 
     popUpWindow: function() {
-      const window = this.self().createShareStudyWindow(this);
+      const window = this.self().createPermissionsWindow(this);
       this.addListener("finished", e => {
         const template = e.getData();
         if (template) {
@@ -70,12 +70,12 @@ qx.Class.define("osparc.component.export.ShareStudy", {
     },
 
     __buildLayout: function() {
-      const shareWith = this.__shareWith = new osparc.component.export.ShareWith("saveAsTemplate");
+      const shareWith = this.__shareWith = new osparc.component.export.ShareWith("shareStudy");
       this._add(shareWith, {
         flex: 1
       });
 
-      const shareStudyBtn = new osparc.ui.form.FetchButton(this.tr("Save as Template")).set({
+      const shareStudyBtn = new osparc.ui.form.FetchButton(this.tr("Permissions")).set({
         allowGrowX: false,
         alignX: "right"
       });

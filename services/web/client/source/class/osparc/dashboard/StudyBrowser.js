@@ -468,7 +468,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       menu.add(moreInfoButton);
 
       if (!isTemplate) {
-        const shareStudyButton = this.__getShareStudyMenuButton(studyData);
+        const shareStudyButton = this.__getPermissionsMenuButton(studyData);
         menu.add(shareStudyButton);
 
         const isCurrentUserOwner = this.__isUserOwner(studyData);
@@ -529,13 +529,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return moreInfoButton;
     },
 
-    __getShareStudyMenuButton: function(studyData) {
-      const saveAsTemplateButton = new qx.ui.menu.Button(this.tr("Share Study"));
-      saveAsTemplateButton.addListener("execute", () => {
-        const shareStudyView = new osparc.component.export.ShareStudy(studyData.uuid);
-        shareStudyView.popUpWindow();
+    __getPermissionsMenuButton: function(studyData) {
+      const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
+      permissionsButton.addListener("execute", () => {
+        const permissions = new osparc.component.export.Permissions(studyData.uuid);
+        permissions.popUpWindow();
       }, this);
-      return saveAsTemplateButton;
+      return permissionsButton;
     },
 
     __getSaveAsTemplateMenuButton: function(studyData) {
