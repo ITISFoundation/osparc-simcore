@@ -100,8 +100,8 @@ def _assert_incoming_data_logs(
 
     for task in tasks:
         # the instrumentation should have 2 messages, start and stop
-        assert instrumentation_messages[task]
-        assert len(instrumentation_messages[task]) == 2
+        assert instrumentation_messages[task], f"{instrumentation_messages}"
+        assert len(instrumentation_messages[task]) == 2, f"{instrumentation_messages}"
         assert instrumentation_messages[task][0] == {
             "metrics": "service_started",
             "user_id": user_id,
@@ -110,8 +110,8 @@ def _assert_incoming_data_logs(
             "service_type": "COMPUTATIONAL",
             "service_key": service_repo,
             "service_tag": service_tag,
-        }
-        assert instrumentation_messages[task][1]["metrics"] == ["service_stopped"]
+        }, f"{instrumentation_messages}"
+        assert instrumentation_messages[task][1]["metrics"] == ["service_stopped"], f"{instrumentation_messages}"
         # the sidecar should have a fixed amount of logs
         assert sidecar_logs[task]
         # the tasks should have a variable amount of logs
