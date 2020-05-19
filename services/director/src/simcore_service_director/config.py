@@ -69,7 +69,7 @@ SERVICES_DEFAULT_ENVS: Dict[str, str] = {
 # TODO: please review if needed
 PUBLISHED_HOST_NAME: str = os.environ.get("PUBLISHED_HOST_NAME", "")
 
-SWARM_STACK_NAME: str = os.environ.get("SWARM_STACK_NAME")
+SWARM_STACK_NAME: str = os.environ.get("SWARM_STACK_NAME", "undefined-please-check")
 
 # used when in devel mode vs release mode
 NODE_SCHEMA_LOCATION: str = os.environ.get(
