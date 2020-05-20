@@ -8,7 +8,7 @@
 import logging
 import uuid as uuidlib
 from datetime import datetime
-from typing import Dict, List, Mapping, Optional
+from typing import Dict, List, Mapping, Optional, Set
 
 import psycopg2.errors
 import sqlalchemy as sa
@@ -236,7 +236,7 @@ class ProjectDBAPI:
             query = f"""
 SELECT *
 FROM projects
-WHERE projects.type = 'TEMPLATE' 
+WHERE projects.type = 'TEMPLATE'
 {'AND projects.published ' if only_published else ''}
 AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group}'" for group in user_groups)}])
 OR prj_owner = {user_id})
@@ -508,6 +508,27 @@ OR prj_owner = {user_id})
         )
         rows = await (await conn.execute(query)).fetchall()
         return [row.tag_id for row in rows]
+
+    async def get_all_node_ids_from_workbenches(
+        self, project_uuid: str = None
+    ) -> Set[str]:
+        """Returns a set containing all the workbench node_ids from all projects
+
+        If a project_uuid is passed, only that project's workbench nodes will be included
+        """
+
+        if project_uuid is None:
+            query = "SELECT json_object_keys(projects.workbench) FROM projects"
+        else:
+            query = f"SELECT json_object_keys(projects.workbench) FROM projects WHERE projects.uuid = '{project_uuid}'"
+
+        async with self.engine.acquire() as conn:
+            result = set()
+            query_result = await conn.execute(query)
+            async for row in query_result:
+                result.update(set(row.values()))
+
+            return result
 
 
 def setup_projects_db(app: web.Application):

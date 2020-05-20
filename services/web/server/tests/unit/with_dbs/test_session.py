@@ -11,7 +11,9 @@ from simcore_service_webserver.application import create_application
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, monkeypatch, postgres_db):
+def client(
+    loop, aiohttp_client, app_cfg, monkeypatch, postgres_db, mock_orphaned_services
+):
 
     extra_test_routes = web.RouteTableDef()
 

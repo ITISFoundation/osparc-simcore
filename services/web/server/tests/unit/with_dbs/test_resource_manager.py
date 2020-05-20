@@ -38,7 +38,7 @@ SIO_VERSION = tuple(int(digit) for digit in socketio.__version__.split("."))
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, postgres_service):
+def client(loop, aiohttp_client, app_cfg, postgres_service, mock_orphaned_services):
     cfg = deepcopy(app_cfg)
 
     assert cfg["rest"]["version"] == API_VERSION
@@ -144,7 +144,7 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
 
 # ------------------------ TESTS -------------------------------
 async def test_anonymous_websocket_connection(
-    client_session_id, socketio_url: str, security_cookie, mocker
+    client_session_id, socketio_url: str, security_cookie, mocker,
 ):
     from yarl import URL
 
@@ -176,7 +176,7 @@ async def test_anonymous_websocket_connection(
     ],
 )
 async def test_websocket_resource_management(
-    client, logged_user, socketio_client, client_session_id
+    client, logged_user, socketio_client, client_session_id,
 ):
     app = client.server.app
     socket_registry = get_registry(app)
@@ -208,7 +208,7 @@ async def test_websocket_resource_management(
     ],
 )
 async def test_websocket_multiple_connections(
-    client, logged_user, socketio_client, client_session_id
+    client, logged_user, socketio_client, client_session_id,
 ):
     app = client.server.app
     socket_registry = get_registry(app)
@@ -261,7 +261,7 @@ async def test_websocket_multiple_connections(
     ],
 )
 async def test_websocket_disconnected_after_logout(
-    client, logged_user, socketio_client, client_session_id, expected, mocker
+    client, logged_user, socketio_client, client_session_id, expected, mocker,
 ):
     app = client.server.app
     socket_registry = get_registry(app)
@@ -314,7 +314,6 @@ async def test_websocket_disconnected_after_logout(
     "user_role", [(UserRole.GUEST), (UserRole.USER), (UserRole.TESTER),]
 )
 async def test_interactive_services_removed_after_logout(
-    loop,
     client,
     logged_user,
     empty_user_project,
@@ -357,7 +356,6 @@ async def test_interactive_services_removed_after_logout(
     ],
 )
 async def test_interactive_services_remain_after_websocket_reconnection_from_2_tabs(
-    loop,
     client,
     logged_user,
     expected,
@@ -428,7 +426,6 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     ],
 )
 async def test_interactive_services_removed_per_project(
-    loop,
     client,
     logged_user,
     empty_user_project,
@@ -503,7 +500,6 @@ async def test_interactive_services_removed_per_project(
     ],
 )
 async def test_services_remain_after_closing_one_out_of_two_tabs(
-    loop,
     client,
     logged_user,
     empty_user_project,
@@ -549,7 +545,6 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     [(UserRole.USER, False), (UserRole.TESTER, False), (UserRole.GUEST, True)],
 )
 async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
-    loop,
     client,
     logged_user,
     empty_user_project,

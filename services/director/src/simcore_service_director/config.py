@@ -7,7 +7,7 @@ from typing import Dict, Optional
 
 from servicelib.client_session import APP_CLIENT_SESSION_KEY
 
-DEBUG_MODE: bool = os.environ.get("DEBUG", False) in ["true", "True", True]
+DEBUG_MODE: bool = os.environ.get("LOGLEVEL", False) in ["true", "True", True]
 
 logging.basicConfig(
     level=logging.DEBUG if DEBUG_MODE else logging.WARNING,
@@ -69,6 +69,7 @@ SERVICES_DEFAULT_ENVS: Dict[str, str] = {
 # TODO: please review if needed
 PUBLISHED_HOST_NAME: str = os.environ.get("PUBLISHED_HOST_NAME", "")
 
+SWARM_STACK_NAME: str = os.environ.get("SWARM_STACK_NAME", "undefined-please-check")
 
 # used when in devel mode vs release mode
 NODE_SCHEMA_LOCATION: str = os.environ.get(

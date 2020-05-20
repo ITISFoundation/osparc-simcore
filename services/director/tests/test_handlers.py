@@ -209,7 +209,7 @@ async def _start_get_stop_services(client, push_services, user_id, project_id, a
         assert data is None
 
 @pytest.mark.skip(reason="docker_swarm fixture is a session fixture making it bad running together with other tests that require a swarm")
-async def test_running_services_post_and_delete_no_swarm(client, push_services, user_id, project_id, api_version_prefix): #pylint: disable=W0613, W0621
+async def test_running_services_post_and_delete_no_swarm(configure_swarm_stack_name, client, push_services, user_id, project_id, api_version_prefix): #pylint: disable=W0613, W0621
     params = {
         "user_id": "None",
         "project_id": "None",
@@ -220,7 +220,7 @@ async def test_running_services_post_and_delete_no_swarm(client, push_services, 
     data = await web_response.json()
     assert web_response.status == 500, data
 
-async def test_running_services_post_and_delete(client, push_services, docker_swarm, user_id, project_id, api_version_prefix): #pylint: disable=W0613, W0621
+async def test_running_services_post_and_delete(configure_swarm_stack_name, client, push_services, docker_swarm, user_id, project_id, api_version_prefix): #pylint: disable=W0613, W0621
     await _start_get_stop_services(client, push_services, user_id, project_id, api_version_prefix)
 
 
