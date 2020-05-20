@@ -77,7 +77,17 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
      */
     _applyMarkdown: function(value) {
       this.__loadMarked.then(() => {
-        const html = marked(value);
+        const renderer = new marked.Renderer();
+        const linkRenderer = renderer.link;
+        renderer.link = (href, title, text) => {
+          const html = linkRenderer.call(renderer, href, title, text);
+          // eslint-disable-next-line quotes
+          const linkInNewTab = html.replace(/^<a /, '<a style="color:'+ osparc.theme.Color.colors["link"] + '"');
+          return linkInNewTab;
+        };
+        // eslint-disable-next-line object-curly-spacing
+        const html = marked(value, { renderer });
+
         const safeHtml = osparc.wrapper.DOMPurify.getInstance().sanitize(html);
         this.setHtml(safeHtml);
         // for some reason the content is not immediately there
