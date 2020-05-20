@@ -18,8 +18,8 @@ isort==4.3.21             # via pylint
 lazy-object-proxy==1.4.3  # via astroid
 mccabe==0.6.1             # via pylint
 minio==5.0.10             # via -r requirements/_base.txt
-more-itertools==8.2.0     # via pytest
-packaging==20.3           # via pytest
+more-itertools==8.3.0     # via pytest
+packaging==20.4           # via pytest
 pluggy==0.13.1            # via pytest
 py==1.8.1                 # via pytest
 pylint==2.5.0             # via -r requirements/_test.in
@@ -32,7 +32,7 @@ python-dateutil==2.8.1    # via -r requirements/_base.txt, minio
 pytz==2020.1              # via -r requirements/_base.txt, minio
 requests==2.23.0          # via -r requirements/_test.in, coveralls
 six==1.14.0               # via -r requirements/_base.txt, astroid, packaging, python-dateutil
-toml==0.10.0              # via pylint
+toml==0.10.1              # via pylint
 typed-ast==1.4.1          # via astroid
 urllib3==1.25.9           # via -r requirements/_base.txt, minio, requests
 wcwidth==0.1.9            # via pytest

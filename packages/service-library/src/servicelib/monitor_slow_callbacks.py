@@ -1,4 +1,3 @@
-
 import asyncio.events
 import time
 from asyncio.base_events import _format_handle
@@ -25,7 +24,7 @@ def enable(slow_duration_secs: float, incidents: List[SlowCallback]) -> None:
         dt = time.monotonic() - t0
         if dt >= slow_duration_secs:
             task_info = _format_handle(self)
-            incidents.append( SlowCallback(msg=task_info, delay_secs=dt) )
+            incidents.append(SlowCallback(msg=task_info, delay_secs=dt))
             logger.warning("Executing %s took %.3f seconds", task_info, dt)
         return retval
 

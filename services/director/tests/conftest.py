@@ -19,32 +19,40 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.docker_registry",
-    "fixtures.fake_services"
+    "fixtures.fake_services",
 ]
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.absolute()
-
+current_dir = Path(
+    sys.argv[0] if __name__ == "__main__" else __file__
+).parent.absolute()
 
 
 @pytest.fixture
 def configure_swarm_stack_name():
     config.SWARM_STACK_NAME = "test_stack"
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="session")
 def common_schemas_specs_dir(osparc_simcore_root_dir):
-    specs_dir = osparc_simcore_root_dir/ "api" / "specs" / "common" / "schemas"
+    specs_dir = osparc_simcore_root_dir / "api" / "specs" / "common" / "schemas"
     assert specs_dir.exists()
     return specs_dir
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="session")
 def package_dir():
     dirpath = Path(simcore_service_director.__file__).resolve().parent
     assert dirpath.exists()
     return dirpath
 
+
 @pytest.fixture
 def configure_schemas_location(package_dir, common_schemas_specs_dir):
-    config.NODE_SCHEMA_LOCATION = str(common_schemas_specs_dir / "node-meta-v0.0.1.json")
-    resources.RESOURCE_NODE_SCHEMA = os.path.relpath(config.NODE_SCHEMA_LOCATION, package_dir)
+    config.NODE_SCHEMA_LOCATION = str(
+        common_schemas_specs_dir / "node-meta-v0.0.1.json"
+    )
+    resources.RESOURCE_NODE_SCHEMA = os.path.relpath(
+        config.NODE_SCHEMA_LOCATION, package_dir
+    )
 
 
 @pytest.fixture
@@ -53,18 +61,22 @@ def configure_registry_access(docker_registry):
     config.REGISTRY_SSL = False
     config.DIRECTOR_REGISTRY_CACHING = False
 
+
 @pytest.fixture
 def user_id():
     yield "some_user_id"
+
 
 @pytest.fixture
 def project_id():
     yield "some_project_id"
 
+
 def pytest_addoption(parser):
     parser.addoption("--registry_url", action="store", default="default url")
     parser.addoption("--registry_user", action="store", default="default user")
     parser.addoption("--registry_pw", action="store", default="default pw")
+
 
 @pytest.fixture(scope="session")
 def configure_custom_registry(pytestconfig):
@@ -84,12 +96,13 @@ async def aiohttp_mock_app(loop, mocker):
 
     mock_app_storage = {
         config.APP_CLIENT_SESSION_KEY: session,
-        config.APP_REGISTRY_CACHE_DATA_KEY: dict()
+        config.APP_REGISTRY_CACHE_DATA_KEY: dict(),
     }
+
     def _get_item(self, key):
         return mock_app_storage[key]
 
-    aiohttp_app = mocker.patch('aiohttp.web.Application')
+    aiohttp_app = mocker.patch("aiohttp.web.Application")
     aiohttp_app.__getitem__ = _get_item
 
     yield aiohttp_app

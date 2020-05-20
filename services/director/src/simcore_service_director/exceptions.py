@@ -24,21 +24,26 @@ from typing import Optional
 
 class DirectorException(Exception):
     """Basic exception"""
-    def __init__(self, msg: Optional[str] =None):
+
+    def __init__(self, msg: Optional[str] = None):
         if msg is None:
             msg = "Unexpected error was triggered"
         super(DirectorException, self).__init__(msg)
 
+
 class GenericDockerError(DirectorException):
     """Generic docker library error"""
+
     def __init__(self, msg: str, original_exception: Exception):
         msg = msg + (": %s" % original_exception)
         super(GenericDockerError, self).__init__(msg)
         self.original_exception = original_exception
 
+
 class ServiceNotAvailableError(DirectorException):
     """Service not found"""
-    def __init__(self, service_name: str, service_tag: Optional[str] =None):
+
+    def __init__(self, service_name: str, service_tag: Optional[str] = None):
         if not service_tag:
             service_tag = "not defined"
         msg = "The service %s:%s does not exist" % (service_name, service_tag)
@@ -46,31 +51,39 @@ class ServiceNotAvailableError(DirectorException):
         self.service_name = service_name
         self.service_tag = service_tag
 
+
 class ServiceUUIDNotFoundError(DirectorException):
     """Service not found"""
+
     def __init__(self, service_uuid: str):
         msg = "The service with uuid %s was not found" % (service_uuid)
         super(ServiceUUIDNotFoundError, self).__init__(msg)
         self.service_uuid = service_uuid
 
+
 class ServiceUUIDInUseError(DirectorException):
     """Service UUID is already in use"""
+
     def __init__(self, service_uuid: str):
         msg = "The service uuid %s is already in use" % (service_uuid)
         super(ServiceUUIDInUseError, self).__init__(msg)
         self.service_uuid = service_uuid
 
+
 class RegistryConnectionError(DirectorException):
     """Error while connecting to the docker regitry"""
+
     def __init__(self, msg: str):
         if msg is None:
             msg = "Unexpected connection error while accessing registry"
         super(RegistryConnectionError, self).__init__(msg)
 
+
 class ServiceStartTimeoutError(DirectorException):
     """The service was created but never run (time-out)"""
+
     def __init__(self, service_name: str, service_uuid: str):
-        msg = "Service %s:%s failed to start " %(service_name, service_uuid)
+        msg = "Service %s:%s failed to start " % (service_name, service_uuid)
         super(ServiceStartTimeoutError, self).__init__(msg)
         self.service_name = service_name
         self.service_uuid = service_uuid
