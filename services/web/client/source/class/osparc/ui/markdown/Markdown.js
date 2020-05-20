@@ -82,8 +82,8 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
         renderer.link = (href, title, text) => {
           const html = linkRenderer.call(renderer, href, title, text);
           // eslint-disable-next-line quotes
-          const linkInNewTab = html.replace(/^<a /, '<a style="color:'+ osparc.theme.Color.colors["link"] + '"');
-          return linkInNewTab;
+          const linkWithRightColor = html.replace(/^<a /, '<a style="color:'+ osparc.theme.Color.colors["link"] + '"');
+          return linkWithRightColor;
         };
         // eslint-disable-next-line object-curly-spacing
         const html = marked(value, { renderer });
