@@ -17,6 +17,7 @@
 
 /**
  * @asset(DOMPurify/purify.min.js)
+ * @ignore(DOMPurify)
  */
 
 /* global DOMPurify */

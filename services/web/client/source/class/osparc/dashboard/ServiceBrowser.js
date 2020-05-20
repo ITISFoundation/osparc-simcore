@@ -16,6 +16,11 @@
 ************************************************************************ */
 
 /**
+ * @ignore(Headers)
+ * @ignore(fetch)
+ */
+
+/**
  * Widget that shows all the information available regarding services.
  *
  * It has three main focuses:

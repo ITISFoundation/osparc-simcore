@@ -16,6 +16,10 @@
 ************************************************************************ */
 
 /**
+ * @ignore(SVGElement)
+ */
+
+/**
  *   Widget containing the layout where NodeUIs and EdgeUIs, and when the model loaded
  * is a container-node, also NodeInput and NodeOutput are rendered.
  *
