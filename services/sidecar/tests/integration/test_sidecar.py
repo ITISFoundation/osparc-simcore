@@ -102,16 +102,31 @@ def _assert_incoming_data_logs(
         # the instrumentation should have 2 messages, start and stop
         assert instrumentation_messages[task], f"{instrumentation_messages}"
         assert len(instrumentation_messages[task]) == 2, f"{instrumentation_messages}"
-        assert instrumentation_messages[task][0] == {
-            "metrics": "service_started",
-            "user_id": user_id,
-            "project_id": project_id,
-            "service_uuid": task,
-            "service_type": "COMPUTATIONAL",
-            "service_key": service_repo,
-            "service_tag": service_tag,
-        }, f"{instrumentation_messages}"
-        assert instrumentation_messages[task][1]["metrics"] == ["service_stopped"], f"{instrumentation_messages}"
+        assert instrumentation_messages[task][0]["metrics"] == "service_started"
+        assert instrumentation_messages[task][0]["user_id"] == user_id
+        assert instrumentation_messages[task][0]["project_id"] == project_id
+        assert instrumentation_messages[task][0]["service_uuid"] == task
+        assert instrumentation_messages[task][0]["service_type"] == "COMPUTATIONAL"
+        # the key is of type simcore/services/comp|dynamic/service_name
+        assert (
+            instrumentation_messages[task][0]["service_key"].split("/")[-1]
+            == service_repo.split("/")[-1]
+        )
+        assert instrumentation_messages[task][0]["service_tag"] == service_tag
+
+        assert instrumentation_messages[task][1]["metrics"] == "service_stopped"
+        assert instrumentation_messages[task][1]["user_id"] == user_id
+        assert instrumentation_messages[task][1]["project_id"] == project_id
+        assert instrumentation_messages[task][1]["service_uuid"] == task
+        assert instrumentation_messages[task][1]["service_type"] == "COMPUTATIONAL"
+        # the key is of type simcore/services/comp|dynamic/service_name
+        assert (
+            instrumentation_messages[task][1]["service_key"].split("/")[-1]
+            == service_repo.split("/")[-1]
+        )
+        assert instrumentation_messages[task][1]["service_tag"] == service_tag
+        assert instrumentation_messages[task][1]["result"] == "SUCCESS"
+
         # the sidecar should have a fixed amount of logs
         assert sidecar_logs[task]
         # the tasks should have a variable amount of logs
@@ -267,9 +282,7 @@ PYTHON_RUNNER_FACTORY_STUDY = (
         },
         "node_2": {
             "next": [],
-            "inputs": {
-                "input_1": {"nodeUuid": "node_1", "output": "output_1"},
-            },
+            "inputs": {"input_1": {"nodeUuid": "node_1", "output": "output_1"},},
         },
     },
 )

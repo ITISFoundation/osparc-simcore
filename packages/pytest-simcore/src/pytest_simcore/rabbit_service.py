@@ -105,7 +105,7 @@ async def rabbit_exchange(
     )
     assert progress_exchange
     # declare instrumentation exchange
-    INSTRUMENTATION_EXCHANGE_NAME: str = rabbit_config.channels["progress"]
+    INSTRUMENTATION_EXCHANGE_NAME: str = rabbit_config.channels["instrumentation"]
     instrumentation_exchange = await rabbit_channel.declare_exchange(
         INSTRUMENTATION_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
     )
