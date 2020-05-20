@@ -2,7 +2,6 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-# pylint:disable=wildcard-import
 
 import json
 import random
@@ -13,8 +12,6 @@ from uuid import uuid4
 import faker
 import pytest
 import sqlalchemy as sa
-
-# from aiopg.sa.result import ResultProxy, RowProxy
 from psycopg2.errors import UniqueViolation  # pylint: disable=no-name-in-module
 
 from simcore_postgres_database.models.base import metadata

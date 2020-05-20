@@ -16,9 +16,9 @@ docker==4.2.0             # via -r requirements/requirements.in
 idna-ssl==1.1.0           # via aiohttp
 idna==2.9                 # via requests, yarl
 importlib-metadata==1.6.0  # via pluggy, pytest
-more-itertools==8.2.0     # via pytest
-multidict==4.7.5          # via aiohttp, yarl
-packaging==20.3           # via pytest, pytest-sugar
+more-itertools==8.3.0     # via pytest
+multidict==4.7.6          # via aiohttp, yarl
+packaging==20.4           # via pytest, pytest-sugar
 pamqp==2.3.0              # via aiormq
 pluggy==0.13.1            # via pytest
 py==1.8.1                 # via pytest
