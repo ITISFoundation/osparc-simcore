@@ -54,12 +54,6 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
         email.activate();
       });
 
-      // const uname = new qx.ui.form.TextField().set({
-      //   required: true,
-      //   placeholder: this.tr("Introduce a user name")
-      // });
-      // this.add(uname);
-
       const pass1 = new qx.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Introduce a password")
@@ -87,7 +81,6 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       validator.setValidator(function(_itemForms) {
         return osparc.auth.core.Utils.checkSamePasswords(pass1, pass2);
       });
-
 
       // submit & cancel buttons
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
@@ -123,21 +116,15 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
     },
 
     __submit: function(userData) {
-      console.debug("Registering new user");
-
-      let manager = osparc.auth.Manager.getInstance();
-
-      let successFun = function(log) {
-        this.fireDataEvent("done", log.message);
-        osparc.component.message.FlashMessenger.getInstance().log(log);
-      };
-
-      let failFun = function(msg) {
-        msg = msg || this.tr("Cannot register user");
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-      };
-
-      manager.register(userData, successFun, failFun, this);
+      osparc.auth.Manager.getInstance().register(userData)
+        .then(log => {
+          this.fireDataEvent("done", log.message);
+          osparc.component.message.FlashMessenger.getInstance().log(log);
+        })
+        .catch(err => {
+          msg = err.message || this.tr("Cannot register user");
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        });
     },
 
     _onAppear: function() {

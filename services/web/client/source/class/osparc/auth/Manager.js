@@ -108,20 +108,14 @@ qx.Class.define("osparc.auth.Manager", {
         .finally(this.__logoutUser());
     },
 
-    register: function(userData, successCbk, failCbk, context) {
-      console.debug("Registering user ...");
+    register: function(userData) {
       const params = {
         data: userData
       };
-      osparc.data.Resources.fetch("auth", "postRegister", params)
-        .then(data => {
-          successCbk.call(context, data);
-        })
-        .catch(err => failCbk.call(context, err.message));
+      return osparc.data.Resources.fetch("auth", "postRegister", params);
     },
 
     resetPasswordRequest: function(email, successCbk, failCbk, context) {
-      console.debug("Requesting reset password ...");
       const params = {
         data: {
           email
@@ -135,7 +129,6 @@ qx.Class.define("osparc.auth.Manager", {
     },
 
     resetPassword: function(newPassword, confirmation, code, successCbk, failCbk, context) {
-      console.debug("Reseting password ...");
       const params = {
         url: {
           code
