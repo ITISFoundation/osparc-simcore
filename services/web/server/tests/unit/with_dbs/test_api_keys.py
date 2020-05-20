@@ -100,7 +100,7 @@ async def test_create_api_keys(client, logged_user, user_role, expected):
     ],
 )
 async def test_delete_api_keys(
-    client, fake_user_api_keys, logged_user, user_role, expected
+    client, fake_user_api_keys, logged_user, user_role, expected,
 ):
     resp = await client.delete("/v0/auth/api-keys", json={"display_name": "foo"})
     await assert_status(resp, expected)

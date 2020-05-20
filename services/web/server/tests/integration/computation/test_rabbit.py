@@ -185,6 +185,7 @@ async def _wait_until(pred: Callable, timeout: int):
 )
 async def test_rabbit_websocket_computation(
     loop,
+    mock_orphaned_services,
     logged_user,
     user_project,
     socketio_client,

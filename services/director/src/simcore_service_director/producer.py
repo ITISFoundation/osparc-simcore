@@ -108,7 +108,12 @@ async def _create_docker_service_params(
         },
         "Hosts": get_system_extra_hosts_raw(config.EXTRA_HOSTS_SUFFIX),
         "Init": True,
-        "Labels": {"user_id": user_id, "study_id": project_id, "node_id": node_uuid},
+        "Labels": {
+            "user_id": user_id,
+            "study_id": project_id,
+            "node_id": node_uuid,
+            "swarm_stack_name": config.SWARM_STACK_NAME,
+        },
     }
 
     if (
@@ -163,6 +168,7 @@ async def _create_docker_service_params(
             "study_id": project_id,
             "user_id": user_id,
             "type": "main" if main_service else "dependency",
+            "swarm_stack_name": config.SWARM_STACK_NAME,
             "io.simcore.zone": f"{config.TRAEFIK_SIMCORE_ZONE}",
             "traefik.enable": "true" if main_service else "false",
             f"traefik.http.services.{service_name}.loadbalancer.server.port": "8080",
@@ -834,7 +840,13 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
     async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
         try:
             list_running_services_with_uuid = await client.services.list(
-                filters={"label": ["uuid=" + node_uuid, "type=main"]}
+                filters={
+                    "label": [
+                        f"uuid={node_uuid}",
+                        "type=main",
+                        f"swarm_stack_name={config.SWARM_STACK_NAME}"
+                    ]
+                }
             )
             # error if no service with such an id exists
             if not list_running_services_with_uuid:
