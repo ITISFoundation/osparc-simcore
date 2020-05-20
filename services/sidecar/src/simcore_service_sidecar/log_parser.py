@@ -16,6 +16,7 @@ log = logging.getLogger(__name__)
 class LogType(Enum):
     LOG = 1
     PROGRESS = 2
+    INSTRUMENTATION = 3
 
 
 progress_regexp = re.compile(

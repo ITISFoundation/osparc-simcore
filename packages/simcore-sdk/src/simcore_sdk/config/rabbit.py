@@ -20,6 +20,7 @@ CONFIG_SCHEMA = T.Dict(
             {
                 "progress": T.String(),
                 "log": T.String(),
+                "instrumentation": T.String(),
                 T.Key(
                     "celery", default=dict(result_backend="rpc://"), optional=True
                 ): T.Dict(
@@ -46,6 +47,7 @@ class Config(BaseSettings):
     channels: Dict[str, Union[str, Dict]] = {
         "progress": "comp.backend.channels.progress",
         "log": "comp.backend.channels.log",
+        "instrumentation": "comp.backend.channels.instrumentation",
         "celery": {"result_backend": "rpc://"},
     }
 
