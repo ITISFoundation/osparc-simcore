@@ -83,7 +83,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
     log.debug(
         "Task (user_id=%s, project_id=%s) submitted for execution.", user_id, project_id
     )
-
+    
     # answer the client while task has been spawned
     data = {
         # TODO: PC->SAN: some name with task id. e.g. to distinguish two projects with identical pipeline?

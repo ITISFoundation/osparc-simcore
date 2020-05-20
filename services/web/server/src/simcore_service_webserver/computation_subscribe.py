@@ -10,6 +10,7 @@ from aiohttp import web
 from tenacity import retry
 
 from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.monitor_services import service_started, service_stopped
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 
@@ -69,9 +70,21 @@ async def rabbit_message_handler(
     message: aio_pika.IncomingMessage, app: web.Application
 ) -> None:
     data = json.loads(message.body)
+    # TODO: create a task here instead of blocking
     await parse_rabbit_message_data(app, data)
     # NOTE: this allows the webserver to breath if a lot of messages are entering
     await asyncio.sleep(1)
+
+
+async def instrumentation_message_handler(
+    message: aio_pika.IncomingMessage, app: web.Application
+) -> None:
+    data = json.loads(message.body)
+    if data["metrics"] == "service_started":
+        service_started(app, **{key:value for key, value in data.items() if key != "metrics"})
+    elif data["metrics"] == "service_stopped":
+        service_stopped(app, **{key:value for key, value in data.items() if key != "metrics"})
+    await message.ack()
 
 
 async def subscribe(app: web.Application) -> None:
@@ -114,6 +127,23 @@ async def subscribe(app: web.Application) -> None:
     partial_rabbit_message_handler = rabbit_adapter(app)(rabbit_message_handler)
     app[APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY] = [partial_rabbit_message_handler]
     await queue.consume(partial_rabbit_message_handler, exclusive=True, no_ack=True)
+
+    # instrumentation
+    pika_instrumentation_channel = rb_config["channels"]["instrumentation"]
+    instrumentation_exchange = await channel.declare_exchange(
+        pika_instrumentation_channel, aio_pika.ExchangeType.FANOUT
+    )
+    instrumentation_queue = await channel.declare_queue(exclusive=True)
+    await instrumentation_queue.bind(instrumentation_exchange)
+    partial_rabbit__instrumentation_handler = rabbit_adapter(app)(
+        instrumentation_message_handler
+    )
+    app[APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY].extend(
+        [partial_rabbit__instrumentation_handler]
+    )
+    await instrumentation_queue.consume(
+        partial_rabbit__instrumentation_handler, exclusive=True, no_ack=False
+    )
 
 
 @retry(**RabbitMQRetryPolicyUponInitialization().kwargs)

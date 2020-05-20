@@ -84,6 +84,13 @@ SIMCORE_SERVICES_PREFIX: str = os.environ.get(
     "SIMCORE_SERVICES_PREFIX", "simcore/services"
 )
 
+# monitoring
+MONITORING_ENABLED: bool = os.environ.get("MONITORING_ENABLED", True) in [
+    "true",
+    "True",
+    False,
+]
+
 # tracing
 TRACING_ENABLED: bool = os.environ.get("TRACING_ENABLED", True) in [
     "true",
