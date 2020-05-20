@@ -1,5 +1,3 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -129,7 +127,7 @@ async def test_pull_folder(loop, mocker, tmpdir, create_files):
     assert test_download_folder.exists()
     fake_zipped_folder = test_download_folder / Path(archive_file).name
     copy(archive_file, fake_zipped_folder)
-    
+
     mock_filemanager = mocker.patch('simcore_sdk.node_data.data_manager.filemanager', spec=True)
     mock_filemanager.download_file.return_value = Future()
     mock_filemanager.download_file.return_value.set_result(fake_zipped_folder)

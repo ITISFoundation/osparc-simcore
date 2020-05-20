@@ -8,7 +8,6 @@ from openapi_spec_validator.exceptions import OpenAPIValidationError
 from simcore_service_director import resources
 
 
-
 def test_openapi_specs():
     openapi_path = resources.get_path(resources.RESOURCE_OPEN_API)
     with resources.stream(resources.RESOURCE_OPEN_API) as fh:
@@ -25,5 +24,7 @@ def test_server_specs():
 
         # client-sdk current limitation
         #  - hooks to first server listed in oas
-        default_server = specs['servers'][0]
-        assert default_server['url']=='http://{host}:{port}/{version}', "Invalid convention"
+        default_server = specs["servers"][0]
+        assert (
+            default_server["url"] == "http://{host}:{port}/{version}"
+        ), "Invalid convention"

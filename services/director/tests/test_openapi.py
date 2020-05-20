@@ -1,4 +1,3 @@
-
 from pathlib import Path
 
 import pkg_resources
@@ -11,8 +10,12 @@ from simcore_service_director.resources import RESOURCE_OPEN_API
 
 
 def test_specifications():
-    #pylint: disable=no-value-for-parameter
-    spec_path = Path( pkg_resources.resource_filename(simcore_service_director.__name__, RESOURCE_OPEN_API) )
+    # pylint: disable=no-value-for-parameter
+    spec_path = Path(
+        pkg_resources.resource_filename(
+            simcore_service_director.__name__, RESOURCE_OPEN_API
+        )
+    )
 
     with spec_path.open() as fh:
         specs = yaml.safe_load(fh)
