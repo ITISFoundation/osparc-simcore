@@ -105,7 +105,7 @@ async def _publish_messages(
     node_uuid: str,
     user_id: str,
     project_id: str,
-    rabbit_exchange: Tuple[aio_pika.Exchange],
+    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange, aio_pika.Exchange],
 ) -> Tuple[Dict, Dict]:
     log_messages = [
         _create_rabbit_message("log", node_uuid, user_id, project_id, f"log number {n}")
@@ -119,7 +119,32 @@ async def _publish_messages(
     ]
 
     # send the messages over rabbit
-    logs_exchange, progress_exchange = rabbit_exchange
+    logs_exchange, progress_exchange, instrumentation_exchange = rabbit_exchange
+
+    # indicate container is started
+    instrumentation_start_message = instrumentation_stop_message = {
+        "metrics": "service_started",
+        "user_id": user_id,
+        "project_id": project_id,
+        "service_uuid": node_uuid,
+        "service_type": "COMPUTATIONAL",
+        "service_key": "some/service/awesome/key",
+        "service_tag": "some-awesome-tag",
+    }
+    instrumentation_stop_message["metrics"] = "service_stopped"
+    instrumentation_stop_message["result"] = "SUCCESS"
+    instrumentation_messages = [
+        instrumentation_start_message,
+        instrumentation_stop_message,
+    ]
+    await instrumentation_exchange.publish(
+        aio_pika.Message(
+            body=json.dumps(instrumentation_start_message).encode(),
+            content_type="text/json",
+        ),
+        routing_key="",
+    )
+
     for n in range(num_messages):
         await logs_exchange.publish(
             aio_pika.Message(
@@ -134,7 +159,16 @@ async def _publish_messages(
             routing_key="",
         )
 
-    return (log_messages, progress_messages)
+    # indicate container is stopped
+    await instrumentation_exchange.publish(
+        aio_pika.Message(
+            body=json.dumps(instrumentation_stop_message).encode(),
+            content_type="text/json",
+        ),
+        routing_key="",
+    )
+
+    return (log_messages, progress_messages, instrumentation_messages)
 
 
 async def _wait_until(pred: Callable, timeout: int):
@@ -156,7 +190,7 @@ async def test_rabbit_websocket_computation(
     socketio_client,
     client_session_id: str,
     mocker,
-    rabbit_exchange: Tuple[aio_pika.Exchange],
+    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange, aio_pika.Exchange],
     node_uuid: str,
     user_id: str,
     project_id: str,
@@ -184,7 +218,7 @@ async def test_rabbit_websocket_computation(
     mock_node_update_handler_fct.assert_not_called()
 
     # publish messages with correct user id, but no project
-    log_messages, _ = await _publish_messages(
+    log_messages, _, _ = await _publish_messages(
         NUMBER_OF_MESSAGES, node_uuid, logged_user["id"], project_id, rabbit_exchange
     )
 
@@ -197,7 +231,7 @@ async def test_rabbit_websocket_computation(
     mock_node_update_handler_fct.assert_not_called()
     # publish message with correct user id, project but not node
     mock_log_handler_fct.reset_mock()
-    log_messages, _ = await _publish_messages(
+    log_messages, _, _ = await _publish_messages(
         NUMBER_OF_MESSAGES,
         node_uuid,
         logged_user["id"],
@@ -213,7 +247,7 @@ async def test_rabbit_websocket_computation(
     # publish message with correct user id, project node
     mock_log_handler_fct.reset_mock()
     node_uuid = list(user_project["workbench"])[0]
-    log_messages, progress_messages = await _publish_messages(
+    log_messages, progress_messages, instrumenation_messages = await _publish_messages(
         NUMBER_OF_MESSAGES,
         node_uuid,
         logged_user["id"],
