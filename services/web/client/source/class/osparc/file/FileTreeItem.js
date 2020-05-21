@@ -133,8 +133,8 @@ qx.Class.define("osparc.file.FileTreeItem", {
 
       // Add lastModified
       const lastModifiedWidget = new qx.ui.basic.Label().set({
-        width: 120,
-        maxWidth: 120,
+        width: 140,
+        maxWidth: 140,
         textAlign: "right"
       });
       let that = this;
