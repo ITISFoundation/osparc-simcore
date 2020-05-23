@@ -606,7 +606,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __getSidePanelWidth: function() {
-      const sidePanelWidth = window.screen.width - this.getInnerSize().width;
+      const sidePanelWidth = window.innerWidth - this.getInnerSize().width;
       return sidePanelWidth;
     },
 
