@@ -197,6 +197,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     isRealService: function(metaData) {
       return (metaData && metaData.type && (metaData.key.includes("simcore/services/dynamic") || metaData.key.includes("simcore/services/comp")));
+    },
+
+    hasJupyterInKey: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("/jupyter"));
     }
   },
 
@@ -247,6 +251,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     isRealService: function() {
       return osparc.data.model.Node.isRealService(this.getMetaData());
+    },
+
+    isJupyterService: function() {
+      return this.isRealService() && this.isDynamic() && osparc.data.model.Node.hasJupyterInKey(this.getMetaData());
     },
 
     getMetaData: function() {
@@ -827,6 +835,70 @@ qx.Class.define("osparc.data.model.Node", {
         };
         this.fireDataEvent("retrieveInputs", data);
       }
+    },
+
+    pushOutputs: function(portKey = null) {
+      /** Tries to request pushing node outputs
+       *
+       * return False if it conditions do now allow executing request
+       */
+      // NOTE: this is for the moment only valid with jupyter notebooks
+      // and tmp until sidecar is available for dynamic services
+      if (!this.isJupyterService()) {
+        return false;
+      }
+      if (!osparc.data.Permissions.getInstance().canDo("study.update")) {
+        return false;
+      }
+      const srvUrl = this.getServiceUrl();
+      if (!srvUrl) {
+        return false;
+      }
+      let urlUpdate = srvUrl + "/push";
+      urlUpdate = urlUpdate.replace("//push", "/push");
+
+      const request = new qx.io.request.Xhr();
+      const reqData = {
+        "port_keys": portKey ? [portKey] : []
+      };
+      request.set({
+        url: urlUpdate,
+        method: "POST",
+        requestData: qx.util.Serializer.toJson(reqData)
+      });
+      request.addListener("success", e => {
+        let resp = e.getTarget().getResponse();
+        if (typeof resp === "string") {
+          resp = JSON.parse(resp);
+        }
+        const {
+          data
+        } = resp;
+        if (portKey) {
+          const sizeBytes = (data && ("size_bytes" in data)) ? data["size_bytes"] : 0;
+          console.log(sizeBytes);
+        }
+        console.log(data);
+      }, this);
+      request.addListener("fail", e => {
+        const {
+          error
+        } = e.getTarget().getResponse();
+        console.error("fail", error);
+      }, this);
+      request.addListener("error", e => {
+        const {
+          error
+        } = e.getTarget().getResponse();
+        console.error("error", error);
+      }, this);
+      request.send();
+
+      if (portKey) {
+        // FIXME: udpate outputs instead
+        this.getPropsWidget().retrievingPortData(portKey);
+      }
+      return true;
     },
 
     retrieveInputs: function(portKey = null) {
