@@ -28,13 +28,13 @@ class ClientSessionContextManager:
     #
     def __init__(self, session=None):
         self.active_session = session or ClientSession()
-        self.is_owned = self.active_session is not session
+        self.is_owned = session is None
 
     async def __aenter__(self):
         return self.active_session
 
     async def __aexit__(self, exc_type, exc, tb):
-        if self.is_owned:
+        if self.is_owned and self.active_session is not None:
             warnings.warn("Optional session will be deprecated, pass instead controled session (e.g. from app[APP_CLIENT_SESSION_KEY])",
                 category=DeprecationWarning)
             await self.active_session.close()
