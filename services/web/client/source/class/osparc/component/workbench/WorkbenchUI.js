@@ -611,11 +611,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __getPointEventPosition: function(pointerEvent) {
-      const navBarHeight = 50;
+      const topOffset = 50;
       const leftOffset = this.__getSidePanelWidth();
       const inputNodesLayoutWidth = this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
       const x = pointerEvent.getDocumentLeft() - leftOffset - inputNodesLayoutWidth;
-      const y = pointerEvent.getDocumentTop() - navBarHeight;
+      const y = pointerEvent.getDocumentTop() - topOffset;
       return [x, y];
     },
 
