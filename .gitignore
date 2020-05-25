@@ -150,5 +150,6 @@ prof/
 # outputs from make
 .stack-*.yml
 
-# coverage for e2e testing
-coverage/
+# coverage and screenshots for e2e testing
+tests/e2e/**/coverage/
+tests/e2e/**/screenshots/
