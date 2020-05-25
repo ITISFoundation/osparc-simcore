@@ -466,7 +466,7 @@ qx.Class.define("osparc.file.FilesTree", {
     },
 
     __getFilesInTree: function(item, leaves) {
-      if (item.getChildren == null) { // eslint-disable-line no-eq-null
+      if (item.getChildren == null) {
         leaves.push(item);
       } else {
         for (let i=0; i<item.getChildren().length; i++) {

@@ -33,7 +33,8 @@
       {
         "ignoreChainWithDepth": 3
       }
-    ]
+    ],
+    "no-eq-null": 0
   },
   "env": {
     "browser": true

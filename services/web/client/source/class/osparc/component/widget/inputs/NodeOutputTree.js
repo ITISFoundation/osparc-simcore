@@ -151,7 +151,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
           portData.open = true;
         } else {
           portData.icon = osparc.data.Converters.fromTypeToIcon(ports[portKey].type);
-          portData.value = ports[portKey].value == null ? this.tr("no value") : ports[portKey].value; // eslint-disable-line no-eq-null
+          portData.value = ports[portKey].value == null ? this.tr("no value") : ports[portKey].value;
         }
         data.children.push(portData);
       }

@@ -90,7 +90,7 @@ qx.Class.define("osparc.component.service.NodeStatus", {
           return "@FontAwesome5Solid/check/12";
         },
         onUpdate: (source, target) => {
-          if (source.getInteractiveStatus() == null) { // eslint-disable-line no-eq-null
+          if (source.getInteractiveStatus() == null) {
             this.__removeClass(this.__icon.getContentElement(), "rotate");
           } else if (source.getInteractiveStatus() === "ready") {
             this.__removeClass(this.__icon.getContentElement(), "rotate");
