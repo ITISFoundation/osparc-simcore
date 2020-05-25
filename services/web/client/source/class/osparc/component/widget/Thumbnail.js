@@ -27,38 +27,37 @@ qx.Class.define("osparc.component.widget.Thumbnail", {
 
   /**
    * @param {String} source Source of the Image
-   * @param {Number} maxWidth Maximum constraint Width
-   * @param {Number} maxHeight Maximum constraint Height
+   * @param {Number} maxWidth Maximum Width
+   * @param {Number} maxHeight Maximum Height
    */
   construct: function(source, maxWidth, maxHeight) {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.Grid(0, 0);
+    const layout = new qx.ui.layout.Grid();
     layout.setRowFlex(0, 1);
     layout.setRowFlex(2, 1);
     layout.setColumnFlex(0, 1);
     layout.setColumnFlex(2, 1);
-
     this._setLayout(layout);
 
-    this._add(new qx.ui.core.Spacer(), {
-      row: 0,
-      column: 1
-    });
-
-    this._add(new qx.ui.core.Spacer(), {
-      row: 1,
-      column: 0
-    });
-
-    this._add(new qx.ui.core.Spacer(), {
-      row: 1,
-      column: 2
-    });
-
-    this._add(new qx.ui.core.Spacer(), {
-      row: 2,
-      column: 1
+    [
+      [0, 0],
+      [0, 1],
+      [0, 2],
+      [1, 0],
+      [1, 2],
+      [2, 0],
+      [2, 1],
+      [2, 2]
+    ].forEach(quad => {
+      const empty = new qx.ui.core.Widget().set({
+        minWidth: 0,
+        minHeight: 0
+      });
+      this._add(empty, {
+        row: quad[0],
+        column: quad[1]
+      });
     });
 
     const image = this.getChildControl("image").set({
@@ -112,10 +111,34 @@ qx.Class.define("osparc.component.widget.Thumbnail", {
         const height = qx.io.ImageLoader.getHeight(source);
         if (width && height) {
           const aspectRatio = width/height;
-          const maxHeight = image.getMaxWidth()/aspectRatio;
-          console.log(width, height);
-          console.log(image.getMaxWidth(), maxHeight);
-          image.setMaxHeight(parseInt(maxHeight));
+          const maxWidth = image.getMaxWidth();
+          const maxHeight = image.getMaxHeight();
+
+          if (maxWidth && maxHeight) {
+            const newMaxHeight = maxWidth/aspectRatio;
+            if (newMaxHeight < maxHeight) {
+              image.setMaxHeight(parseInt(newMaxHeight));
+              return;
+            }
+            const newMaxWidth = maxHeight*aspectRatio;
+            if (newMaxWidth < maxWidth) {
+              image.setMaxWidth(parseInt(newMaxWidth));
+              return;
+            }
+            return;
+          }
+
+          if (maxWidth) {
+            const newMaxHeight = maxWidth/aspectRatio;
+            image.setMaxHeight(parseInt(newMaxHeight));
+            return;
+          }
+
+          if (maxHeight) {
+            const newMaxWidth = maxHeight*aspectRatio;
+            image.setMaxWidth(parseInt(newMaxWidth));
+            return;
+          }
         }
       }
     }

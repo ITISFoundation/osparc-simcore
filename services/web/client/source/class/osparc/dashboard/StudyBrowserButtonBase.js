@@ -132,7 +132,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           break;
         case "icon": {
           const maxWidth = this.self().ITEM_WIDTH - 2*this.self().PADDING;
-          const image = new osparc.component.widget.Thumbnail(null, maxWidth);
+          const image = new osparc.component.widget.Thumbnail(null, maxWidth, 130);
           control = image.getChildControl("image").set({
             anonymous: true
           });
