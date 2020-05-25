@@ -25,7 +25,12 @@
 qx.Class.define("osparc.component.widget.Thumbnail", {
   extend: qx.ui.core.Widget,
 
-  construct: function(source, maxWidth) {
+  /**
+   * @param {String} source Source of the Image
+   * @param {Number} maxWidth Maximum constraint Width
+   * @param {Number} maxHeight Maximum constraint Height
+   */
+  construct: function(source, maxWidth, maxHeight) {
     this.base(arguments);
 
     const layout = new qx.ui.layout.Grid(0, 0);
@@ -59,17 +64,29 @@ qx.Class.define("osparc.component.widget.Thumbnail", {
     const image = this.getChildControl("image").set({
       scale: true,
       allowStretchX: true,
-      allowStretchY: true,
-      maxWidth: maxWidth || 200
+      allowStretchY: true
     });
 
     if (source) {
       image.setSource(source);
     }
 
-    image.addListener("changeSource", e => {
-      this.__calculateMaxHeight();
-    }, this);
+    if (maxWidth) {
+      image.setMaxWidth(maxWidth);
+    }
+
+    if (maxHeight) {
+      image.setMaxHeight(maxHeight);
+    }
+
+    [
+      "changeSource",
+      "loaded"
+    ].forEach(eventName => {
+      image.addListener(eventName, e => {
+        this.__calculateMaxHeight();
+      }, this);
+    });
   },
 
   members: {
@@ -93,11 +110,13 @@ qx.Class.define("osparc.component.widget.Thumbnail", {
       if (source) {
         const width = qx.io.ImageLoader.getWidth(source);
         const height = qx.io.ImageLoader.getHeight(source);
-        const aspectRatio = width/height;
-        const maxHeight = image.getMaxWidth()/aspectRatio;
-        console.log(width, height);
-        console.log(image.getMaxWidth(), maxHeight);
-        image.setMaxHeight(parseInt(maxHeight));
+        if (width && height) {
+          const aspectRatio = width/height;
+          const maxHeight = image.getMaxWidth()/aspectRatio;
+          console.log(width, height);
+          console.log(image.getMaxWidth(), maxHeight);
+          image.setMaxHeight(parseInt(maxHeight));
+        }
       }
     }
   }
