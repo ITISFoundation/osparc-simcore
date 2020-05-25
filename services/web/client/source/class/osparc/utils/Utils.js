@@ -18,6 +18,7 @@
 /**
  * @ignore(URL)
  * @ignore(sessionStorage)
+ * @ignore(fetch)
  */
 
 /**

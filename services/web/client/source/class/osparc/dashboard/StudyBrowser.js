@@ -493,7 +493,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getMoreInfoMenuButton: function(studyData, isTemplate) {
-      const moreInfoButton = new qx.ui.menu.Button(this.tr("Info"));
+      const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
         const studyDetailsEditor = this.__createStudyDetailsEditor(studyData, isTemplate);
         const win = new qx.ui.window.Window(this.tr("Study Details Editor")).set({

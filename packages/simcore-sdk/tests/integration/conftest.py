@@ -1,5 +1,3 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -21,7 +19,6 @@ from simcore_sdk.models.pipeline_models import (
     ComputationalTask,
 )
 from simcore_sdk.node_ports import node_config
-from utils_docker import get_service_published_port
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 

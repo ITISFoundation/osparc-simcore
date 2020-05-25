@@ -1,8 +1,6 @@
 """ Covers user stories for ISAN : #501, #712, #730
 
 """
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name

@@ -2,7 +2,6 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-# pylint:disable=wildcard-import
 
 from typing import List
 from uuid import uuid4
@@ -67,7 +66,9 @@ def engine(make_engine, loop):
             await conn.execute(projects.insert().values(**random_project(prj_owner=2)))
             await conn.execute(projects.insert().values(**random_project(prj_owner=3)))
             with pytest.raises(ForeignKeyViolation):
-                await conn.execute(projects.insert().values(**random_project(prj_owner=4)))
+                await conn.execute(
+                    projects.insert().values(**random_project(prj_owner=4))
+                )
 
             await conn.execute(
                 user_to_projects.insert().values(user_id=1, project_id=1)

@@ -2,6 +2,7 @@
 
 """
 # pylint: disable=broad-except
+# pylint: disable=wildcard-import,unused-wildcard-import
 
 import json
 import logging
@@ -17,7 +18,7 @@ import docker
 from alembic import __version__ as __alembic_version__
 from alembic.config import Config as AlembicConfig
 
-from simcore_postgres_database.models import *  # pylint: disable=wildcard-import,unused-wildcard-import
+from simcore_postgres_database.models import *
 from simcore_postgres_database.utils import build_url, raise_if_not_responsive
 
 alembic_version = tuple([int(v) for v in __alembic_version__.split(".")[0:3]])
@@ -107,8 +108,6 @@ DEFAULT_DB = "simcoredb"
 @click.group()
 def main():
     """ Simplified CLI for database migration with alembic """
-
-
 
 
 @main.command()
@@ -206,6 +205,7 @@ def clean():
 
 
 # Bypasses alembic CLI into a reduced version  ------------
+
 
 @main.command()
 @click.option("-m", "message")
