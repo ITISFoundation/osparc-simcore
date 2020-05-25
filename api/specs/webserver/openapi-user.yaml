@@ -44,7 +44,7 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"    
     post:
-      summary: Create a new groups
+      summary: Create a new group
       operationId: create_group
       tags:
         - user
@@ -76,7 +76,7 @@ paths:
     get:
       tags:
         - user
-      summary: Gets group
+      summary: Gets one group details
       operationId: get_group
       responses:
         "200":
@@ -88,7 +88,7 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
     patch:
-      summary: Update group
+      summary: Update one group
       operationId: update_group
       tags:
         - user
@@ -111,7 +111,7 @@ paths:
     delete:
       tags:
         - user
-      summary: Delete given group
+      summary: Deletes one group
       operationId: delete_group
       responses:
         "204":

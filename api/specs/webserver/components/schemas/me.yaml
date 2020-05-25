@@ -64,9 +64,16 @@ UsersGroupsEnveloped:
     - data
   properties:
     data:
-      type: array
-      items:
-        $ref: '#/UsersGroup'
+      type: object
+      properties:
+        me:
+          $ref: '#/UsersGroup'
+        organizations:
+          type: array
+          items:
+            $ref: '#/UsersGroup'
+        all:
+          $ref: '#/UsersGroup'
     error:
       nullable: true
       default: null
