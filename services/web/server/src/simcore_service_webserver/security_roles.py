@@ -47,7 +47,6 @@ ROLES_PERMISSIONS = {
             "project.create",  # "studies.user.create",
             "project.close",
             "project.delete",  # "study.node.create",
-            "project.template.create",
             # "study.node.delete",
             # "study.node.rename",
             # "study.edge.create",
@@ -69,8 +68,11 @@ ROLES_PERMISSIONS = {
         "inherits": [UserRole.GUEST, UserRole.ANONYMOUS],
     },
     UserRole.TESTER: {
-        "can": [],
-        "inherits": [UserRole.USER]},
+        "can": [
+            "project.template.create"
+        ],
+        "inherits": [UserRole.USER]
+    },
 }
 
 #

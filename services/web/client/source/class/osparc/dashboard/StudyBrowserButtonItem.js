@@ -189,10 +189,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyStudyDescription: function(value, old) {
+      /*
       if (value !== "" && this.getIsTemplate()) {
         const label = this.getChildControl("description");
         label.setValue(value);
       }
+      */
     },
 
     _applyLastChangeDate: function(value, old) {
