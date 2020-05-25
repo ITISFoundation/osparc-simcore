@@ -57,27 +57,11 @@ qx.Class.define("osparc.component.metadata.StudyDetails", {
     },
 
     __createThumbnail: function(widgetWidth) {
-      const image = new qx.ui.basic.Image().set({
-        scale: true,
-        allowStretchX: true,
-        allowStretchY: true,
-        maxWidth: widgetWidth ? (widgetWidth - 220) : 200
-      });
-
-      this.getStudy().bind("thumbnail", image, "source", {
-        onUpdate: (source, target) => {
-          console.log(source, target);
-          const width = qx.io.ImageLoader.getWidth(source.getThumbnail());
-          const height = qx.io.ImageLoader.getHeight(source.getThumbnail());
-          const aspectRatio = width/height;
-          const maxHeight = image.getMaxWidth()/aspectRatio;
-          console.log(width, height);
-          console.log(image.getMaxWidth(), maxHeight);
-          target.setMaxHeight(parseInt(maxHeight));
-        }
-      });
-
-      this.getStudy().bind("thumbnail", image, "visibility", {
+      const maxWidth = widgetWidth ? (widgetWidth - 220) : 200;
+      const image = new osparc.component.widget.Thumbnail(null, maxWidth);
+      const image2 = image.getChildControl("image");
+      this.getStudy().bind("thumbnail", image2, "source");
+      this.getStudy().bind("thumbnail", image2, "visibility", {
         converter: thumbnail => {
           if (thumbnail) {
             return "visible";
