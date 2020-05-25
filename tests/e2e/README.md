@@ -1,5 +1,6 @@
 ## To run the tests locally
 ```bash
+cd tests/e2e
 npm install
 npm test
 ```
@@ -24,3 +25,8 @@ Add the following configuration to your local ``launch.json``:
 }
 ```
 Now you can run the tests by clicking on the Play button, using that configuration. It should allow you to insert breakpoints and inspect variables.
+## To run the tutorials
+```bash
+cd tests/e2e
+node tutorials/<tutorial>.js [<user> <password>]
+```
