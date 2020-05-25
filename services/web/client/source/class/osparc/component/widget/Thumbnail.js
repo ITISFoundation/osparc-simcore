@@ -50,10 +50,7 @@ qx.Class.define("osparc.component.widget.Thumbnail", {
       [2, 1],
       [2, 2]
     ].forEach(quad => {
-      const empty = new qx.ui.core.Widget().set({
-        minWidth: 0,
-        minHeight: 0
-      });
+      const empty = new qx.ui.core.Spacer();
       this._add(empty, {
         row: quad[0],
         column: quad[1]

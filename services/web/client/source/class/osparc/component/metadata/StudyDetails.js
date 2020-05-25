@@ -51,14 +51,17 @@ qx.Class.define("osparc.component.metadata.StudyDetails", {
       vBox.add(this.__createTitle());
       vBox.add(this.__createExtraInfo());
       hBox.add(vBox);
-      hBox.add(this.__createThumbnail(widgetWidth));
+      hBox.add(this.__createThumbnail(widgetWidth), {
+        flex: 1
+      });
       this._add(hBox);
       this._add(this.__createDescription());
     },
 
     __createThumbnail: function(widgetWidth) {
       const maxWidth = widgetWidth ? (widgetWidth - 220) : 200;
-      const image = new osparc.component.widget.Thumbnail(null, maxWidth);
+      const maxHeight = 200;
+      const image = new osparc.component.widget.Thumbnail(null, maxWidth, maxHeight);
       const img = image.getChildControl("image");
       this.getStudy().bind("thumbnail", img, "source");
       this.getStudy().bind("thumbnail", img, "visibility", {
