@@ -311,7 +311,7 @@ async def test_delete_token(
     "role,expected",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.GUEST, web.HTTPUnauthorized),
         (UserRole.USER, web.HTTPOk),
         (UserRole.TESTER, web.HTTPOk),
     ],
@@ -320,6 +320,33 @@ async def test_list_groups(client, logged_user, role, expected, primary_group: D
     standard_groups: List[Dict[str, str]],
     all_group: Dict[str, str],):
     url = client.app.router["list_groups"].url_for()
+    assert str(url) == "/v0/me/groups"
+
+    new_group = {"gid": "some fake gid (will be replaced)", "name": "my new wonderful group", "description": "The best team ever"}
+
+    resp = await client.post(url, json=new_group)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert isinstance(data, dict)
+        assert "me" in data
+        assert data["me"] == primary_group
+        assert "organizations" in data
+        assert data["organizations"] == standard_groups
+        assert "all" in data
+        assert data["all"] == all_group
+
+@pytest.mark.parametrize(
+    "role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPUnauthorized),
+        (UserRole.USER, web.HTTPUnauthorized),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_create_group(client, logged_user, role, expected):
+    url = client.app.router["create_group"].url_for()
     assert str(url) == "/v0/me/groups"
 
     resp = await client.get(url)
@@ -333,8 +360,6 @@ async def test_list_groups(client, logged_user, role, expected, primary_group: D
         assert data["organizations"] == standard_groups
         assert "all" in data
         assert data["all"] == all_group
-
-
 
 
 ## BUG FIXES #######################################################
