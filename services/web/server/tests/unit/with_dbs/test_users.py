@@ -130,10 +130,10 @@ PREFIX = "/" + API_VERSION + "/me"
     ],
 )
 async def test_get_profile(
-    logged_user,
+    logged_user: Dict,
     client,
-    role,
-    expected,
+    role: UserRole,
+    expected: web.HTTPException,
     primary_group: Dict[str, str],
     standard_groups: List[Dict[str, str]],
     all_group: Dict[str, str],
@@ -304,6 +304,37 @@ async def test_delete_token(
 
     if not error:
         assert not (await get_token_from_db(tokens_db, token_service=sid))
+
+
+
+@pytest.mark.parametrize(
+    "role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_list_groups(client, logged_user, role, expected, primary_group: Dict[str, str],
+    standard_groups: List[Dict[str, str]],
+    all_group: Dict[str, str],):
+    url = client.app.router["list_groups"].url_for()
+    assert str(url) == "/v0/me/groups"
+
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert isinstance(data, dict)
+        assert "me" in data
+        assert data["me"] == primary_group
+        assert "organizations" in data
+        assert data["organizations"] == standard_groups
+        assert "all" in data
+        assert data["all"] == all_group
+
+
 
 
 ## BUG FIXES #######################################################
