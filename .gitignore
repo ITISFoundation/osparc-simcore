@@ -124,7 +124,9 @@ services/docker-compose.stack.*.yml
 
 # key-words in filename to ignore them
 *secret*
+*ignore*
 !.dockerignore
+!.gitignore
 
 # Any generated output folder (e.g. codegen, build, ...)
 out/
