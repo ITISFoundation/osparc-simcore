@@ -24,9 +24,9 @@ qx.Class.define("osparc.component.metadata.StudyDetails", {
 
   /**
     * @param studyData {Object|osparc.data.model.Study} studyData (metadata)
-    * @param maxHeight {Integer} Max Height of the thumbnail
+    * @param widgetWidth {Integer} widget width, needed for scaling the thumbnail
     */
-  construct: function(studyData, maxHeight) {
+  construct: function(studyData, widgetWidth) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.VBox(10));
 
@@ -34,7 +34,7 @@ qx.Class.define("osparc.component.metadata.StudyDetails", {
       study: (studyData instanceof osparc.data.model.Study) ? studyData : new osparc.data.model.Study(studyData, false)
     });
 
-    this.__populateLayout(maxHeight);
+    this.__populateLayout(widgetWidth);
   },
 
   properties: {
@@ -45,28 +45,38 @@ qx.Class.define("osparc.component.metadata.StudyDetails", {
   },
 
   members: {
-    __populateLayout: function(maxHeight) {
+    __populateLayout: function(widgetWidth) {
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
       vBox.add(this.__createTitle());
       vBox.add(this.__createExtraInfo());
       hBox.add(vBox);
-      hBox.add(this.__createThumbnail(maxHeight), {
-        flex: 1
-      });
+      hBox.add(this.__createThumbnail(widgetWidth));
       this._add(hBox);
       this._add(this.__createDescription());
     },
 
-    __createThumbnail: function(maxHeight) {
+    __createThumbnail: function(widgetWidth) {
       const image = new qx.ui.basic.Image().set({
         scale: true,
         allowStretchX: true,
         allowStretchY: true,
-        maxHeight: maxHeight ? parseInt(maxHeight) : 200
+        maxWidth: widgetWidth ? (widgetWidth - 220) : 200
       });
 
-      this.getStudy().bind("thumbnail", image, "source");
+      this.getStudy().bind("thumbnail", image, "source", {
+        onUpdate: (source, target) => {
+          console.log(source, target);
+          const width = qx.io.ImageLoader.getWidth(source.getThumbnail());
+          const height = qx.io.ImageLoader.getHeight(source.getThumbnail());
+          const aspectRatio = width/height;
+          const maxHeight = image.getMaxWidth()/aspectRatio;
+          console.log(width, height);
+          console.log(image.getMaxWidth(), maxHeight);
+          target.setMaxHeight(parseInt(maxHeight));
+        }
+      });
+
       this.getStudy().bind("thumbnail", image, "visibility", {
         converter: thumbnail => {
           if (thumbnail) {

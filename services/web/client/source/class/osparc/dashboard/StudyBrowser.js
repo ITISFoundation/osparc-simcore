@@ -495,7 +495,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getMoreInfoMenuButton: function(studyData, isTemplate) {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
-        const studyDetailsEditor = this.__createStudyDetailsEditor(studyData, isTemplate);
+        const winWidth = 400;
+        const studyDetailsEditor = this.__createStudyDetailsEditor(studyData, isTemplate, winWidth);
         const win = new qx.ui.window.Window(this.tr("Study Details Editor")).set({
           autoDestroy: true,
           layout: new qx.ui.layout.VBox(),
@@ -504,7 +505,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           showMaximize: false,
           resizable: true,
           contentPadding: 10,
-          width: 400,
+          width: winWidth,
           height: 400,
           modal: true
         });
@@ -612,8 +613,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __createStudyDetailsEditor: function(studyData, isTemplate) {
-      const studyDetails = new osparc.component.metadata.StudyDetailsEditor(studyData, isTemplate);
+    __createStudyDetailsEditor: function(studyData, isTemplate, winWidth) {
+      const studyDetails = new osparc.component.metadata.StudyDetailsEditor(studyData, isTemplate, winWidth);
       studyDetails.addListener("closed", () => this.__itemSelected(null), this);
       studyDetails.addListener("updatedStudy", () => this.reloadUserStudies(), this);
       studyDetails.addListener("updatedTemplate", () => this.reloadTemplateStudies(), this);
