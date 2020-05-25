@@ -17,7 +17,7 @@
 
 /**
  * Widget that shows an image well centered and scaled.
- * ______________________
+ *  _______________________
  * |   x   |Spacer |   x   |
  * |Spacer | Image |Spacer |
  * |___x___|Spacer_|___x___|
