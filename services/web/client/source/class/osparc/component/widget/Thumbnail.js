@@ -17,10 +17,10 @@
 
 /**
  * Widget that shows an image well centered and scaled.
- *  _______________________
- * |   x   |Spacer |   x   |
- * |Spacer | Image |Spacer |
- * |___x___|Spacer_|___x___|
+ *  ___________________________________
+ * |     x     |flex Spacer|     x     |
+ * |flex Spacer|   Image   |flex Spacer|
+ * |_____x_____|flex Spacer|_____x_____|
  */
 qx.Class.define("osparc.component.widget.Thumbnail", {
   extend: qx.ui.core.Widget,
