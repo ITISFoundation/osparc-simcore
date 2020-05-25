@@ -59,9 +59,9 @@ qx.Class.define("osparc.component.metadata.StudyDetails", {
     __createThumbnail: function(widgetWidth) {
       const maxWidth = widgetWidth ? (widgetWidth - 220) : 200;
       const image = new osparc.component.widget.Thumbnail(null, maxWidth);
-      const image2 = image.getChildControl("image");
-      this.getStudy().bind("thumbnail", image2, "source");
-      this.getStudy().bind("thumbnail", image2, "visibility", {
+      const img = image.getChildControl("image");
+      this.getStudy().bind("thumbnail", img, "source");
+      this.getStudy().bind("thumbnail", img, "visibility", {
         converter: thumbnail => {
           if (thumbnail) {
             return "visible";
