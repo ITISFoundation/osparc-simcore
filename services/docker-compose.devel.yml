@@ -4,7 +4,7 @@
 # NOTES:
 # - port 3000 used for ptsv
 #
-version: '3.7'
+version: "3.7"
 services:
   catalog:
     environment:
@@ -18,9 +18,10 @@ services:
   director:
     environment:
       - SC_BOOT_MODE=debug-ptvsd
+      - LOGLEVEL=debug
     volumes:
       - ./director:/devel/services/director
-      - ../packages/service-library:/devel/packages/service-library
+      - ../packages:/devel/packages
       - ../api:/devel/services/api
 
   webserver:
@@ -31,6 +32,7 @@ services:
     environment:
       - SC_BOOT_MODE=debug-ptvsd
       - WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS=15
+      - WEBSERVER_LOGLEVEL=${LOG_LEVEL:-DEBUG}
 
   sidecar:
     volumes:
@@ -45,6 +47,7 @@ services:
     deploy:
       # NOTE: Allows 3002 to be exposed for ptvsd
       endpoint_mode: vip
+      replicas: 1
 
   storage:
     volumes:

@@ -13,7 +13,11 @@
 -e ../postgres-database/
 -e ../s3wrapper/
 -e ../service-library/
+-e ../pytest-simcore/
 ../../services/storage/client-sdk/python/ # Needed ONLY for testing
 
 # installs current package
 -e .
+
+# basic dev tools
+-r ../../../requirements.txt

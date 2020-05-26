@@ -1,4 +1,5 @@
-FROM python:3.6-alpine as base
+ARG PYTHON_VERSION="3.6.10"
+FROM python:${PYTHON_VERSION}-slim as base
 #
 #  USAGE:
 #     cd sercices/director
@@ -9,28 +10,45 @@ FROM python:3.6-alpine as base
 
 LABEL maintainer=sanderegg
 
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y gosu; \
+	rm -rf /var/lib/apt/lists/*; \
+# verify that the binary works
+	gosu nobody true
+
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
-RUN adduser -D -u 8004 -s /bin/sh -h /home/scu scu
+ENV SC_USER_ID=8004 \
+      SC_USER_NAME=scu \
+      SC_BUILD_TARGET=base \
+      SC_BOOT_MODE=default
 
-RUN apk add --no-cache \
-      su-exec
+RUN adduser \
+      --uid ${SC_USER_ID} \
+      --disabled-password \
+      --gecos "" \
+      --shell /bin/sh \
+      --home /home/${SC_USER_NAME} \
+      ${SC_USER_NAME}
 
-ENV PATH "/home/scu/.local/bin:$PATH"
+# Sets utf-8 encoding for Python et al
+ENV LANG=C.UTF-8
+# Turns off writing .pyc files; superfluous on an ephemeral container.
+ENV PYTHONDONTWRITEBYTECODE=1 \
+      VIRTUAL_ENV=/home/scu/.venv
+# Ensures that the python and pip executables used
+# in the image will be those from our virtualenv.
+ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
-# All SC_ variables are customized
-ENV SC_PIP pip3 --no-cache-dir
-ENV SC_BUILD_TARGET base
-ENV SC_BOOT_MODE default
-
-
-ENV REGISTRY_AUTH = '' \
-    REGISTRY_USER = '' \
-    REGISTRY_PW = '' \
-    REGISTRY_URL = '' \
-    REGISTRY_VERSION = 'v2' \
-    PUBLISHED_HOST_NAME='' \
-    SIMCORE_SERVICES_NETWORK_NAME = '' \
-    EXTRA_HOSTS_SUFFIX = 'undefined'
+# environment variables
+ENV REGISTRY_AUTH='' \
+      REGISTRY_USER='' \
+      REGISTRY_PW='' \
+      REGISTRY_URL='' \
+      REGISTRY_VERSION='v2' \
+      PUBLISHED_HOST_NAME='' \
+      SIMCORE_SERVICES_NETWORK_NAME='' \
+      EXTRA_HOSTS_SUFFIX='undefined'
 
 
 EXPOSE 8080
@@ -43,40 +61,33 @@ EXPOSE 8080
 
 FROM base as build
 
-ENV SC_BUILD_TARGET build
+ENV SC_BUILD_TARGET=build
 
-# Installing client libraries and any other package you need
-#
-# - client library for PostgreSQL https://www.postgresql.org/docs/9.5/libpq.html
-#
-RUN apk update && \
-    apk add --no-cache \
-      libpq
+RUN apt-get update &&\
+      apt-get install -y --no-install-recommends \
+      build-essential \
+      git
 
-# Installing build dependencies (will be deleted in production)
-RUN apk add --virtual .build-deps \
-      git \
-      gcc \
-      libc-dev \
-      python-dev \
-      musl-dev \
-      libffi-dev \
-      postgresql-dev
+# NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
+RUN python -m venv ${VIRTUAL_ENV}
 
-
-RUN $SC_PIP install --upgrade \
-      pip~=19.1.1  \
+RUN pip --no-cache-dir install --upgrade \
+      pip~=20.0.2  \
       wheel \
       setuptools
 
-WORKDIR /build
+# copy director and dependencies
+COPY  --chown=scu:scu packages /build/packages
+COPY  --chown=scu:scu services/director /build/services/director
 
-# install base 3rd party dependencies
-COPY  --chown=scu:scu services/director/requirements/*.txt \
-      tmp/director/requirements/
+# install base 3rd party dependencies (NOTE: this speeds up devel mode)
+RUN pip --no-cache-dir install -r /build/services/director/requirements/_base.txt
 
-RUN $SC_PIP install \
-      -r tmp/director/requirements/_base.txt
+# FIXME:
+# necessary to prevent duplicated files.
+# Will be removed when director is refactored using cookiecutter as this will not be necessary anymore
+COPY --chown=scu:scu api/specs/common/schemas/node-meta-v0.0.1.json \
+      /build/services/director/src/simcore_service_director/api/v0/oas-parts/schemas/node-meta-v0.0.1.json
 
 #--------------------------Cache stage -------------------
 # CI in master buils & pushes this target to speed-up image build
@@ -86,24 +97,9 @@ RUN $SC_PIP install \
 #
 FROM build as cache
 
-ENV SC_BUILD_TARGET cache
-
-
-COPY --chown=scu:scu packages/service-library /build/packages/service-library
-COPY --chown=scu:scu services/director /build/services/director
-
-# FIXME:
-# necessary to prevent duplicated files.
-# Will be removed when director is refactored using cookiecutter as this will not be necessary anymore
-COPY --chown=scu:scu api/specs/common/schemas/node-meta-v0.0.1.json \
-  /build/services/director/src/simcore_service_director/api/v0/oas-parts/schemas/node-meta-v0.0.1.json
-
 WORKDIR /build/services/director
-
-
-RUN $SC_PIP install -r requirements/prod.txt &&\
-    $SC_PIP list -v
-
+ENV SC_BUILD_TARGET=cache
+RUN pip --no-cache-dir install -r requirements/prod.txt
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup
@@ -112,29 +108,29 @@ RUN $SC_PIP install -r requirements/prod.txt &&\
 #  + /home/scu     $HOME = WORKDIR
 #    + services/director [scu:scu]
 #
-FROM cache as production
+FROM base as production
 
-
-ENV SC_BUILD_TARGET production
+ENV SC_BUILD_TARGET=production \
+      SC_BOOT_MODE=production
 ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
-RUN mkdir -p services/director &&\
-    chown scu:scu services/director &&\
-    mv /build/services/director/docker services/director/docker &&\
-    rm -rf /build
+# bring installed package without build tools
+COPY --from=cache --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
-RUN apk del --no-cache .build-deps
+# copy docker entrypoint and boot scripts
+COPY --chown=scu:scu services/director/docker services/director/docker
+RUN chmod +x services/director/docker/*.sh
 
 HEALTHCHECK --interval=30s \
-            --timeout=120s \
-            --start-period=30s \
-            --retries=3 \
-            CMD ["python3", "/home/scu/services/director/docker/healthcheck.py", "http://localhost:8080/v0/"]
+      --timeout=120s \
+      --start-period=30s \
+      --retries=3 \
+      CMD ["python3", "/home/scu/services/director/docker/healthcheck.py", "http://localhost:8080/v0/"]
 
-ENTRYPOINT [ "/bin/sh", "services/director/docker/entrypoint.sh" ]
-CMD ["/bin/sh", "services/director/docker/boot.sh"]
+ENTRYPOINT [ "services/director/docker/entrypoint.sh" ]
+CMD ["services/director/docker/boot.sh"]
 
 
 # --------------------------Development stage -------------------
@@ -147,17 +143,9 @@ CMD ["/bin/sh", "services/director/docker/boot.sh"]
 #
 FROM build as development
 
-ENV SC_BUILD_TARGET development
-
-
-# WORKDIR /build
-# NOTE: can copy from /build if necessary
-
+ENV SC_BUILD_TARGET=development
+ENV NODE_SCHEMA_LOCATION=../../../api/specs/common/schemas/node-meta-v0.0.1.json
 WORKDIR /devel
-VOLUME  /devel/packages
-VOLUME  /devel/services/director/
-VOLUME /devel/services/api
-ENV NODE_SCHEMA_LOCATION ../../../api/specs/common/schemas/node-meta-v0.0.1.json
-
+RUN chown -R scu:scu ${VIRTUAL_ENV}
 ENTRYPOINT [ "/bin/sh", "services/director/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/director/docker/boot.sh"]

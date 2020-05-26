@@ -8,6 +8,7 @@
 
 /**
  * @asset(marked/marked.js)
+ * @ignore(marked)
  */
 
 /* global marked */
@@ -43,19 +44,28 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
       }
     });
     if (markdown) {
-      this.setMarkdown(markdown);
+      this.setValue(markdown);
     }
-
-    this.addListener("resize", e => this.__resizeMe(), this);
+    [
+      "resize",
+      "appear"
+    ].forEach(event => {
+      this.addListener(event, e => this.__resizeMe(), this);
+    });
   },
 
   properties: {
     /**
      * Holds the raw markdown text and updates the label's {@link #value} whenever new markdown arrives.
      */
-    markdown: {
+    value: {
       check: "String",
       apply: "_applyMarkdown"
+    },
+
+    noMargin: {
+      check: "Boolean",
+      init: true
     }
   },
 
@@ -67,7 +77,17 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
      */
     _applyMarkdown: function(value) {
       this.__loadMarked.then(() => {
-        const html = marked(value);
+        const renderer = new marked.Renderer();
+        const linkRenderer = renderer.link;
+        renderer.link = (href, title, text) => {
+          const html = linkRenderer.call(renderer, href, title, text);
+          // eslint-disable-next-line quotes
+          const linkWithRightColor = html.replace(/^<a /, '<a style="color:'+ osparc.theme.Color.colors["link"] + '"');
+          return linkWithRightColor;
+        };
+        // eslint-disable-next-line object-curly-spacing
+        const html = marked(value, { renderer });
+
         const safeHtml = osparc.wrapper.DOMPurify.getInstance().sanitize(html);
         this.setHtml(safeHtml);
         // for some reason the content is not immediately there
@@ -115,6 +135,12 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
     },
 
     __getElementHeight: function(element) {
+      if (this.getNoMargin()) {
+        element.style.marginTop = 0;
+        element.style.marginBottom = 0;
+        const size = qx.bom.element.Dimension.getSize(element);
+        return size.height;
+      }
       const size = qx.bom.element.Dimension.getSize(element);
       // add padding
       return size.height + 15;

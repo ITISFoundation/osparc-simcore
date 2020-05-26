@@ -1,0 +1,28 @@
+{
+    "contributor": {
+        "firstName": "Ignacio",
+        "lastName": "Pascual",
+        "email": "pascual@itis.swiss",
+        "affiliation": "ITIS Foundation"
+    },
+    "serviceInfo": {
+        "description": "Guyton antidiuretic hormone module",
+        "commandLine": "Not applicable",
+        "url": "",
+        "codeVariant": "opencor"
+    },
+    "serviceInterface": {
+        "inputs": [],
+        "outputs": []
+    },
+    "authors": [
+        {
+            "name": "Ignacio Pascual",
+            "email": "pascual@itis.swiss"
+        }, {
+            "name": "Katie Zhuang",
+            "email": "zhuang@itis.swiss",
+            "affiliation": "University of North America"
+        }
+    ]
+}

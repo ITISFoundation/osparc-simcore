@@ -17,7 +17,8 @@ qx.Class.define("osparc.ui.hint.Hint", {
     this.base(arguments);
     this.set({
       backgroundColor: "transparent",
-      visibility: "excluded"
+      visibility: "excluded",
+      zIndex: 110000
     });
 
     const hintCssUri = qx.util.ResourceManager.getInstance().toUri("hint/hint.css");
@@ -29,7 +30,7 @@ qx.Class.define("osparc.ui.hint.Hint", {
     this.__root.add(this);
 
     if (element) {
-      if (element.getContentElement().getDomElement() == null) { // eslint-disable-line no-eq-null
+      if (element.getContentElement().getDomElement() == null) {
         element.addListenerOnce("appear", () => this.setElement(element), this);
       } else {
         this.setElement(element);

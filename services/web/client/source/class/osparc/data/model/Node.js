@@ -65,7 +65,7 @@ qx.Class.define("osparc.data.model.Node", {
       nodeId: uuid || osparc.utils.Utils.uuidv4()
     });
 
-    let metaData = this.__metaData = osparc.utils.Services.getNodeMetaData(key, version);
+    const metaData = this.__metaData = osparc.utils.Services.getNodeMetaData(key, version);
     if (metaData) {
       if (metaData.name) {
         this.setLabel(metaData.name);
@@ -145,8 +145,20 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: true
     },
 
+    propsWidgetEditor: {
+      check: "osparc.component.form.renderer.PropFormEditor",
+      init: null,
+      nullable: true
+    },
+
     inputsMapper: {
       check: "osparc.component.widget.InputsMapper",
+      init: null,
+      nullable: true
+    },
+
+    loadingPage: {
+      check: "osparc.ui.message.Loading",
       init: null,
       nullable: true
     },
@@ -155,11 +167,6 @@ qx.Class.define("osparc.data.model.Node", {
       check: "osparc.component.widget.PersistentIframe",
       init: null,
       nullable: true
-    },
-
-    restartIFrameButton: {
-      check: "qx.ui.form.Button",
-      init: null
     },
 
     retrieveIFrameButton: {
@@ -253,6 +260,13 @@ qx.Class.define("osparc.data.model.Node", {
       return {};
     },
 
+    getInputEditorValues: function() {
+      if (this.isPropertyInitialized("propsWidgetEditor") && this.getPropsWidgetEditor()) {
+        return this.getPropsWidgetEditor().getValues();
+      }
+      return {};
+    },
+
     getInputsDefault: function() {
       return this.__inputsDefault;
     },
@@ -315,8 +329,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     getExposedInnerNodes: function() {
-      const workbench = osparc.store.Store.getInstance().getCurrentStudy()
-        .getWorkbench();
+      const workbench = this.getWorkbench();
 
       let outputNodes = [];
       for (let i=0; i<this.__outputNodes.length; i++) {
@@ -338,16 +351,7 @@ qx.Class.define("osparc.data.model.Node", {
           this.setLabel(nodeData.label);
         }
 
-        this.setInputData(nodeData);
-        this.setOutputData(nodeData);
-
-        if (nodeData.inputNodes) {
-          this.addInputNodes(nodeData.inputNodes);
-        }
-
-        if (nodeData.outputNodes) {
-          this.addOutputNodes(nodeData.outputNodes);
-        }
+        this.populateInputOutputData(nodeData);
 
         if (nodeData.position) {
           this.setPosition(nodeData.position.x, nodeData.position.y);
@@ -368,6 +372,19 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.__outputWidget) {
         this.__outputWidget.populatePortsData();
       }
+
+      if (this.isDynamic()) {
+        this.__initLoadingIPage();
+        this.__initIFrame();
+      }
+    },
+
+    populateInputOutputData: function(nodeData) {
+      this.setInputData(nodeData.inputs);
+      this.setInputDataAccess(nodeData.inputAccess);
+      this.setOutputData(nodeData.outputs);
+      this.addInputNodes(nodeData.inputNodes);
+      this.addOutputNodes(nodeData.outputNodes);
     },
 
     giveUniqueName: function() {
@@ -386,6 +403,52 @@ qx.Class.define("osparc.data.model.Node", {
           this.__giveUniqueName(label, suffix+1);
         }
       }
+    },
+
+    startInBackend: function() {
+      this.addDynamicButtons();
+
+      // create the node in the backend here
+      const key = this.getKey();
+      const version = this.getVersion();
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const params = {
+        url: {
+          projectId: study.getUuid()
+        },
+        data: {
+          "service_id": this.getNodeId(),
+          "service_key": key,
+          "service_version": version
+        }
+      };
+      osparc.data.Resources.fetch("studies", "addNode", params)
+        .then(data => {
+          this.startDynamicService();
+        })
+        .catch(err => {
+          const errorMsg = "Error when starting " + key + ":" + version + ": " + err.getTarget().getResponse()["error"];
+          const errorMsgData = {
+            nodeId: this.getNodeId(),
+            msg: errorMsg
+          };
+          this.fireDataEvent("showInLogger", errorMsgData);
+          this.setInteractiveStatus("failed");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+        });
+    },
+
+    stopInBackend: function() {
+      // remove node in the backend
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const params = {
+        url: {
+          projectId: study.getUuid(),
+          nodeId: this.getNodeId()
+        }
+      };
+      osparc.data.Resources.fetch("studies", "deleteNode", params)
+        .catch(err => console.error(err));
     },
 
     repopulateOutputPortData: function() {
@@ -439,26 +502,42 @@ qx.Class.define("osparc.data.model.Node", {
      *
      */
     __addSettings: function(inputs) {
-      const form = this.__settingsForm = new osparc.component.form.Auto(inputs, this);
-      form.addListener("linkAdded", e => {
-        const changedField = e.getData();
-        this.getPropsWidget().linkAdded(changedField);
-      }, this);
-      form.addListener("linkRemoved", e => {
-        const changedField = e.getData();
-        this.getPropsWidget().linkRemoved(changedField);
-      }, this);
-
+      const form = this.__settingsForm = new osparc.component.form.Auto(inputs);
       const propsWidget = new osparc.component.form.renderer.PropForm(form, this);
       this.setPropsWidget(propsWidget);
-      propsWidget.addListener("removeLink", e => {
-        const changedField = e.getData();
-        this.__settingsForm.removeLink(changedField);
-      }, this);
-      propsWidget.addListener("dataFieldModified", e => {
-        const portId = e.getData();
+      propsWidget.addListener("linkModified", e => {
+        const linkModified = e.getData();
+        const portId = linkModified.portId;
         this.__retrieveInputs(portId);
       }, this);
+    },
+
+    __addSettingsEditor: function(inputs) {
+      const propsWidget = this.getPropsWidget();
+      const form = new osparc.component.form.Auto(inputs);
+      form.setData(this.__settingsForm.getData());
+      const propsWidgetEditor = new osparc.component.form.renderer.PropFormEditor(form, this);
+      this.__settingsForm.addListener("changeData", e => {
+        // apply data
+        const data = this.__settingsForm.getData();
+        form.setData(data);
+      }, this);
+      propsWidget.addListener("linkModified", e => {
+        const linkModified = e.getData();
+        const portId = linkModified.portId;
+        const added = linkModified.added;
+        if (added) {
+          const srcControlLink = propsWidget.getControlLink(portId);
+          const controlLink = new qx.ui.form.TextField().set({
+            enabled: false
+          });
+          srcControlLink.bind("value", controlLink, "value");
+          propsWidgetEditor.linkAdded(portId, controlLink);
+        } else {
+          propsWidgetEditor.linkRemoved(portId);
+        }
+      }, this);
+      this.setPropsWidgetEditor(propsWidgetEditor);
     },
 
     removeNodePortConnections: function(inputNodeId) {
@@ -466,7 +545,7 @@ qx.Class.define("osparc.data.model.Node", {
       for (const portId in inputs) {
         if (inputs[portId] && Object.prototype.hasOwnProperty.call(inputs[portId], "nodeUuid")) {
           if (inputs[portId]["nodeUuid"] === inputNodeId) {
-            this.__settingsForm.removeLink(portId);
+            this.getPropsWidget().removeLink(portId);
           }
         }
       }
@@ -496,7 +575,10 @@ qx.Class.define("osparc.data.model.Node", {
 
       let filteredInputs = this.__removeNonSettingInputs(inputs);
       filteredInputs = this.__addMapper(filteredInputs);
-      this.__addSettings(filteredInputs);
+      if (Object.keys(filteredInputs).length) {
+        this.__addSettings(filteredInputs);
+        this.__addSettingsEditor(filteredInputs);
+      }
     },
 
     __addOutputs: function(outputs) {
@@ -505,23 +587,45 @@ qx.Class.define("osparc.data.model.Node", {
       this.__addOutputWidget();
     },
 
-    setInputData: function(nodeData) {
-      if (this.__settingsForm && nodeData) {
-        this.__settingsForm.setData(nodeData.inputs);
-        if ("inputAccess" in nodeData) {
-          this.__settingsForm.setAccessLevel(nodeData.inputAccess);
-          this.setInputAccess(nodeData.inputAccess);
+    __isInputDataALink: function(data) {
+      if (data !== null && typeof data === "object" && data.nodeUuid) {
+        return true;
+      }
+      return false;
+    },
+
+    setInputData: function(inputs) {
+      if (this.__settingsForm && inputs) {
+        const inputData = {};
+        const inputLinks = {};
+        const inputsCopy = osparc.utils.Utils.deepCloneObject(inputs);
+        for (let key in inputsCopy) {
+          if (this.__isInputDataALink(inputsCopy[key])) {
+            inputLinks[key] = inputsCopy[key];
+          } else {
+            inputData[key] = inputsCopy[key];
+          }
         }
+        this.getPropsWidget().addLinks(inputLinks);
+        this.__settingsForm.setData(inputData);
       }
     },
 
-    setOutputData: function(nodeData) {
-      if (nodeData.outputs) {
-        for (const outputKey in nodeData.outputs) {
+    setInputDataAccess: function(inputAccess) {
+      if (inputAccess) {
+        this.setInputAccess(inputAccess);
+        this.getPropsWidget().setAccessLevel(inputAccess);
+        this.getPropsWidgetEditor().setAccessLevel(inputAccess);
+      }
+    },
+
+    setOutputData: function(outputs) {
+      if (outputs) {
+        for (const outputKey in outputs) {
           if (!Object.prototype.hasOwnProperty.call(this.__outputs, outputKey)) {
             this.__outputs[outputKey] = {};
           }
-          this.__outputs[outputKey]["value"] = nodeData.outputs[outputKey];
+          this.__outputs[outputKey]["value"] = outputs[outputKey];
           this.fireDataEvent("outputChanged", outputKey);
         }
       }
@@ -573,7 +677,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     addPortLink: function(toPortId, fromNodeId, fromPortId) {
-      return this.__settingsForm.addLink(toPortId, fromNodeId, fromPortId);
+      return this.getPropsWidget().addLink(toPortId, fromNodeId, fromPortId);
     },
 
     // ----- Input Nodes -----
@@ -583,9 +687,9 @@ qx.Class.define("osparc.data.model.Node", {
 
     addInputNodes: function(inputNodes) {
       if (inputNodes) {
-        for (let i=0; i<inputNodes.length; i++) {
-          this.addInputNode(inputNodes[i]);
-        }
+        inputNodes.forEach(inputNode => {
+          this.addInputNode(inputNode);
+        });
       }
     },
 
@@ -620,9 +724,9 @@ qx.Class.define("osparc.data.model.Node", {
 
     addOutputNodes: function(outputNodes) {
       if (outputNodes) {
-        for (let i=0; i<outputNodes.length; i++) {
-          this.addOutputNode(outputNodes[i]);
-        }
+        outputNodes.forEach(outputNode => {
+          this.addOutputNode(outputNode);
+        });
       }
     },
 
@@ -659,14 +763,41 @@ qx.Class.define("osparc.data.model.Node", {
       return true;
     },
 
-    restartIFrame: function(loadThis) {
-      if (this.getIFrame() === null) {
-        this.setIFrame(new osparc.component.widget.PersistentIframe());
+    __getLoadingPageHeader: function() {
+      const status = this.getInteractiveStatus();
+      const label = this.getLabel();
+      if (status) {
+        const sta = status.charAt(0).toUpperCase() + status.slice(1);
+        const header = sta + " " + label;
+        return header;
       }
-      if (loadThis) {
-        this.getIFrame().resetSource();
-        this.getIFrame().setSource(loadThis);
-      } else if (this.getServiceUrl() !== null) {
+      return this.tr("Starting ") + label;
+    },
+
+    __initLoadingIPage: function() {
+      const loadingPage = new osparc.ui.message.Loading(this.__getLoadingPageHeader(), [], true);
+      [
+        "changeLabel",
+        "changeInteractiveStatus"
+      ].forEach(event => {
+        this.addListener(event, e => {
+          loadingPage.setHeader(this.__getLoadingPageHeader());
+        }, this);
+      });
+      this.setLoadingPage(loadingPage);
+    },
+
+    __initIFrame: function() {
+      const iframe = new osparc.component.widget.PersistentIframe();
+      osparc.utils.Utils.setIdToWidget(iframe, "PersistentIframe");
+      iframe.addListener("restart", () => {
+        this.__restartIFrame();
+      }, this);
+      this.setIFrame(iframe);
+    },
+
+    __restartIFrame: function() {
+      if (this.getServiceUrl() !== null) {
         this.getIFrame().resetSource();
         if (this.getKey().includes("3d-viewer")) {
           // HACK: add this argument to only load the defined colorMaps
@@ -698,17 +829,23 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    __showLoadingIFrame: function() {
-      const loadingUri = osparc.utils.Utils.getLoaderUri();
-      this.restartIFrame(loadingUri);
-    },
-
     __retrieveInputs: function(portKey) {
-      const data = {
-        node: this,
-        portKey
-      };
-      this.fireDataEvent("retrieveInputs", data);
+      if (this.isContainer()) {
+        const innerNodes = Object.values(this.getInnerNodes());
+        for (let i=0; i<innerNodes.length; i++) {
+          const data = {
+            node: innerNodes[i],
+            portKey: null
+          };
+          innerNodes[i].fireDataEvent("retrieveInputs", data);
+        }
+      } else {
+        const data = {
+          node: this,
+          portKey
+        };
+        this.fireDataEvent("retrieveInputs", data);
+      }
     },
 
     retrieveInputs: function(portKey = null) {
@@ -730,54 +867,67 @@ qx.Class.define("osparc.data.model.Node", {
             requestData: qx.util.Serializer.toJson(reqData)
           });
           updReq.addListener("success", e => {
+            let resp = e.getTarget().getResponse();
+            if (typeof resp === "string") {
+              resp = JSON.parse(resp);
+            }
             const {
               data
-            } = e.getTarget().getResponse();
-            const sizeBytes = (data && ("size_bytes" in data)) ? data["size_bytes"] : 0;
-            this.getPropsWidget().retrievedPortData(portKey, true, sizeBytes);
+            } = resp;
+            if (portKey) {
+              const sizeBytes = (data && ("size_bytes" in data)) ? data["size_bytes"] : 0;
+              this.getPropsWidget().retrievedPortData(portKey, true, sizeBytes);
+            }
             console.log(data);
           }, this);
           updReq.addListener("fail", e => {
             const {
               error
             } = e.getTarget().getResponse();
-            this.getPropsWidget().retrievedPortData(portKey, false);
+            if (portKey) {
+              this.getPropsWidget().retrievedPortData(portKey, false);
+            }
             console.error("fail", error);
           }, this);
           updReq.addListener("error", e => {
             const {
               error
             } = e.getTarget().getResponse();
-            this.getPropsWidget().retrievedPortData(portKey, false);
+            if (portKey) {
+              this.getPropsWidget().retrievedPortData(portKey, false);
+            }
             console.error("error", error);
           }, this);
           updReq.send();
 
-          this.getPropsWidget().retrievingPortData(portKey);
+          if (portKey) {
+            this.getPropsWidget().retrievingPortData(portKey);
+          }
         }
       }
     },
 
     addDynamicButtons: function() {
       if (this.isDynamic() && this.isRealService()) {
-        const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
-        osparc.utils.Utils.setIdToWidget(retrieveBtn, "nodeViewRetrieveBtn");
-        retrieveBtn.addListener("execute", e => {
-          this.__retrieveInputs();
-        }, this);
-        retrieveBtn.setEnabled(false);
-        this.setRetrieveIFrameButton(retrieveBtn);
-
-        const restartBtn = new qx.ui.toolbar.Button(this.tr("Restart"), "@FontAwesome5Solid/redo-alt/14");
-        osparc.utils.Utils.setIdToWidget(restartBtn, "nodeViewRestartBtn");
-        restartBtn.addListener("execute", e => {
-          this.restartIFrame();
-        }, this);
-        restartBtn.setEnabled(false);
-        this.setRestartIFrameButton(restartBtn);
-
-        this.__showLoadingIFrame();
+        this.__addRetrieveButton();
       }
+      if (this.isContainer()) {
+        const innerNodes = Object.values(this.getInnerNodes());
+        if (innerNodes.some(innerNode => innerNode.isDynamic())) {
+          this.__addRetrieveButton();
+          this.getRetrieveIFrameButton().setEnabled(true);
+        }
+      }
+    },
+
+    __addRetrieveButton: function() {
+      const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
+      osparc.utils.Utils.setIdToWidget(retrieveBtn, "nodeViewRetrieveBtn");
+      retrieveBtn.addListener("execute", e => {
+        this.__retrieveInputs();
+      }, this);
+      retrieveBtn.setEnabled(false);
+      this.setRetrieveIFrameButton(retrieveBtn);
     },
 
     startDynamicService: function() {
@@ -800,9 +950,14 @@ qx.Class.define("osparc.data.model.Node", {
     __onNodeState: function(data) {
       const serviceState = data["service_state"];
       switch (serviceState) {
-        case "starting":
-        case "pulling": {
+        case "starting": {
           this.setInteractiveStatus("starting");
+          const interval = 5000;
+          qx.event.Timer.once(() => this.__nodeState(), this, interval);
+          break;
+        }
+        case "pulling": {
+          this.setInteractiveStatus("pulling");
           const interval = 5000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
           break;
@@ -823,7 +978,7 @@ qx.Class.define("osparc.data.model.Node", {
           if (servicePath) {
             const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
             const srvUrl = servicePath + entryPoint;
-            this.__serviceReadyIn(srvUrl);
+            this.__waitForServiceReady(srvUrl);
           }
           break;
         }
@@ -847,6 +1002,10 @@ qx.Class.define("osparc.data.model.Node", {
     },
     __nodeState: function() {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
+      if (study === null) {
+        return;
+      }
+
       const params = {
         url: {
           projectId: study.getUuid(),
@@ -884,7 +1043,22 @@ qx.Class.define("osparc.data.model.Node", {
 
       this.__nodeState();
     },
-
+    __waitForServiceReady: function(srvUrl) {
+      // ping for some time until it is really ready
+      const pingRequest = new qx.io.request.Xhr(srvUrl);
+      pingRequest.addListenerOnce("success", function(e) {
+        console.log("service ready now");
+        this.__serviceReadyIn(srvUrl);
+      }, this);
+      pingRequest.addListenerOnce("fail", e => {
+        const error = e.getTarget().getResponse();
+        this.setInteractiveStatus("connecting");
+        console.log("service not ready yet, waiting... " + error);
+        const interval = 1000;
+        qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
+      });
+      pingRequest.send();
+    },
     __serviceReadyIn: function(srvUrl) {
       this.setServiceUrl(srvUrl);
       this.setInteractiveStatus("ready");
@@ -896,30 +1070,40 @@ qx.Class.define("osparc.data.model.Node", {
       this.fireDataEvent("showInLogger", msgData);
 
       this.getRetrieveIFrameButton().setEnabled(true);
-      this.getRestartIFrameButton().setEnabled(true);
       this.setProgress(100);
 
       // FIXME: Apparently no all services are inmediately ready when they publish the port
-      const waitFor = 4000;
+      // ping the service until it is accessible through the platform
+
+      const waitFor = 500;
       qx.event.Timer.once(ev => {
-        this.restartIFrame();
+        this.__restartIFrame();
       }, this, waitFor);
 
       this.__retrieveInputs();
     },
 
-    removeNode: function() {
-      this.removeIFrame();
+    __removeInnerNodes: function() {
       const innerNodes = Object.values(this.getInnerNodes());
-      for (const innerNode of innerNodes) {
-        innerNode.removeNode();
+      for (let i=0; i<innerNodes.length; i++) {
+        innerNodes[i].removeNode();
       }
+    },
+
+    __detachFromParent: function() {
       const parentNodeId = this.getParentNodeId();
       if (parentNodeId) {
-        let parentNode = this.getWorkbench().getNode(parentNodeId);
+        const parentNode = this.getWorkbench().getNode(parentNodeId);
         parentNode.removeInnerNode(this.getNodeId());
         parentNode.removeOutputNode(this.getNodeId());
       }
+    },
+
+    removeNode: function() {
+      this.stopInBackend();
+      this.removeIFrame();
+      this.__removeInnerNodes();
+      this.__detachFromParent();
     },
 
     removeIFrame: function() {
@@ -970,8 +1154,8 @@ qx.Class.define("osparc.data.model.Node", {
 
       if (savePosition) {
         nodeEntry.position = {
-          x: this.getPosition().x,
-          y: this.getPosition().y
+          x: this.getPosition().x ? this.getPosition().x : 0,
+          y: this.getPosition().y ? this.getPosition().y : 0
         };
       }
       // remove null entries from the payload

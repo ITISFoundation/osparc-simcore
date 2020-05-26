@@ -73,11 +73,19 @@ qx.Class.define("osparc.store.Store", {
       check: "Object",
       init: {}
     },
+    apiKeys: {
+      check: "Array",
+      init: []
+    },
     tokens: {
       check: "Array",
       init: []
     },
-    servicesTodo: {
+    services: {
+      check: "Array",
+      init: []
+    },
+    dags: {
       check: "Array",
       init: []
     },
@@ -151,37 +159,75 @@ qx.Class.define("osparc.store.Store", {
     },
 
     /**
-     * This functions does the needed processing in order to have a working list of services. Could use a refactor.
+     * This functions does the needed processing in order to have a working list of services and DAGs.
      * @param {Boolean} reload ?
      */
-    getServices: function(reload) {
-      if (!osparc.utils.Services.reloadingServices && (reload || Object.keys(osparc.utils.Services.servicesCached).length === 0)) {
-        osparc.utils.Services.reloadingServices = true;
-        osparc.data.Resources.get("servicesTodo", null, !reload)
-          .then(data => {
-            const allServices = data.concat(osparc.utils.Services.getBuiltInServices());
-            const filteredServices = osparc.utils.Services.filterOutUnavailableGroups(allServices);
-            const services = osparc.utils.Services.convertArrayToObject(filteredServices);
-            osparc.utils.Services.servicesToCache(services, true);
-            this.fireDataEvent("servicesRegistered", {
-              services,
-              fromServer: true
-            });
+    getServicesDAGs: function(reload) {
+      return new Promise((resolve, reject) => {
+        const allServices = osparc.utils.Services.getBuiltInServices();
+        const servicesPromise = osparc.data.Resources.get("services", null, !reload);
+        const dagsPromise = osparc.data.Resources.get("dags", null, !reload);
+        Promise.all([servicesPromise, dagsPromise])
+          .then(values => {
+            allServices.push(...values[0], ...values[1]);
           })
           .catch(err => {
-            console.error("getServices failed", err);
-            const allServices = osparc.dev.fake.Data.getFakeServices().concat(osparc.utils.Services.getBuiltInServices());
-            const filteredServices = osparc.utils.Services.filterOutUnavailableGroups(allServices);
-            const services = osparc.utils.Services.convertArrayToObject(filteredServices);
-            osparc.utils.Services.servicesToCache(services, false);
-            this.fireDataEvent("servicesRegistered", {
-              services,
-              fromServer: false
-            });
+            console.error("getServicesDAGs failed", err);
+          })
+          .finally(() => {
+            const servicesObj = osparc.utils.Services.convertArrayToObject(allServices);
+            osparc.utils.Services.servicesToCache(servicesObj, true);
+            this.fireDataEvent("servicesRegistered", servicesObj);
+            resolve(osparc.utils.Services.servicesCached);
           });
-        return null;
-      }
-      return osparc.utils.Services.servicesCached;
+      });
+    },
+
+    __getGroups: function(group) {
+      return new Promise((resolve, reject) => {
+        osparc.data.Resources.getOne("profile")
+          .then(profile => {
+            resolve(profile["groups"][group]);
+          })
+          .catch(err => {
+            console.error(err);
+          });
+      });
+    },
+
+    getGroupsMe: function() {
+      return this.__getGroups("me");
+    },
+
+    getGroupsOrganizations: function() {
+      return this.__getGroups("organizations");
+    },
+
+    getGroupsAll: function() {
+      return this.__getGroups("all");
+    },
+
+    getGroups: function(withMySelf = true) {
+      return new Promise((resolve, reject) => {
+        const promises = [];
+        promises.push(this.getGroupsOrganizations());
+        promises.push(this.getGroupsAll());
+        if (withMySelf) {
+          promises.push(this.getGroupsMe());
+        }
+        Promise.all(promises)
+          .then(values => {
+            const groups = [];
+            values[0].forEach(value => {
+              groups.push(value);
+            });
+            groups.push(values[1]);
+            if (withMySelf) {
+              groups.push(values[2]);
+            }
+            resolve(groups);
+          });
+      });
     },
 
     /**
@@ -197,7 +243,7 @@ qx.Class.define("osparc.store.Store", {
         this.reset(resources);
       } else {
         let propertyArray;
-        if (resources == null) { // eslint-disable-line no-eq-null
+        if (resources == null) {
           propertyArray = Object.keys(qx.util.PropertyUtil.getProperties(osparc.store.Store));
         } else if (Array.isArray(resources)) {
           propertyArray = resources;

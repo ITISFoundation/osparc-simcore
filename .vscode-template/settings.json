@@ -8,7 +8,8 @@
     ".env*": "ini",
     "Dockerfile*": "dockerfile",
     "**/requirements/*.txt": "pip-requirements",
-    "**/requirements/*.in": "pip-requirements"
+    "**/requirements/*.in": "pip-requirements",
+    "*Makefile": "makefile"
   },
   "files.eol": "\n",
   "files.insertFinalNewline": true,
@@ -28,7 +29,9 @@
   },
   "python.testing.pyTestEnabled": true,
   "autoDocstring.docstringFormat": "sphinx",
-  "shellcheck.executablePath": "${workspaceFolder}/scripts/shellcheck",
+  "hadolint.hadolintPath": "${workspaceFolder}/scripts/hadolint.bash",
+  "shellcheck.executablePath": "${workspaceFolder}/scripts/shellcheck.bash",
   "shellcheck.run": "onSave",
-  "shellcheck.enableQuickFix": true
+  "shellcheck.enableQuickFix": true,
+  "python.formatting.provider": "black"
 }

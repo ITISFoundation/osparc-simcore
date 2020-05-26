@@ -13,8 +13,8 @@ qx.Class.define("osparc.component.filter.StudyFilter", {
    *
    * @extends osparc.component.filter.TagsFilter
    */
-  construct: function(filterId, groupId) {
-    this.base(arguments, this.tr("Studies"), filterId, groupId);
+  construct: function(filterId, filterGroupId) {
+    this.base(arguments, this.tr("Studies"), filterId, filterGroupId);
   },
 
   members: {

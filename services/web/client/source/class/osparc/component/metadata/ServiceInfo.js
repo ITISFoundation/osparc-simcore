@@ -131,21 +131,25 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
 
     __createBadges: function() {
       if ("badges" in this.__metadata) {
-        const badges = new osparc.ui.markdown.Markdown();
+        const badges = new osparc.ui.markdown.Markdown().set({
+          noMargin: false
+        });
         let markdown = "";
         for (let i in this.__metadata.badges) {
           const badge = this.__metadata.badges[i];
           markdown += `[![${badge.name}](${badge.image})](${badge.url}) `;
         }
-        badges.setMarkdown(markdown);
+        badges.setValue(markdown);
         return badges;
       }
       return null;
     },
 
     __createDescription: function() {
-      const description = new osparc.ui.markdown.Markdown();
-      description.setMarkdown(this.__metadata.description);
+      const description = new osparc.ui.markdown.Markdown().set({
+        noMargin: false
+      });
+      description.setValue(this.__metadata.description || "");
       return description;
     },
 

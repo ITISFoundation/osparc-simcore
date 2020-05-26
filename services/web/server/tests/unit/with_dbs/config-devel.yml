@@ -35,7 +35,6 @@ main:
   client_outdir: /home/crespo/devp/osparc-simcore/services/web/client/source-output
   host: 127.0.0.1
   log_level: DEBUG
-  monitoring_enabled: false
   port: 8080
   studies_access_enabled: false
   testing: true
@@ -47,6 +46,7 @@ rabbit:
       result_backend: rpc://
     log: comp.backend.channels.log
     progress: comp.backend.channels.progress
+    instrumentation: comp.backend.channels.instrumentation
   enabled: false
   host: rabbit
   name: tasks

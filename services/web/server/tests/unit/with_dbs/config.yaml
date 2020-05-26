@@ -6,13 +6,12 @@ main:
   port: 8080
   testing: True
   studies_access_enabled: True
-  monitoring_enabled: False # For testing, application is restarted and raise ValueError: Duplicated timeseries in CollectorRegistry
 director:
   enabled: False
   host: director
   port: 8001
 socketio:
-  enabled: True  
+  enabled: True
 application_proxy:
   enabled: False
 db:
@@ -37,6 +36,7 @@ rabbit:
   channels:
     log: comp.backend.channels.log
     progress: comp.backend.channels.progress
+    instrumentation: comp.backend.channels.instrumentation
   password: simcore
   user: simcore
 # s3:

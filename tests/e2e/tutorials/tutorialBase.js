@@ -47,35 +47,110 @@ class TutorialBase {
     await utils.takeScreenshot(this.__page, this.__templateName + "_landingPage_" + domain);
   }
 
+  async openStudyLink(openStudyTimeout = 20000) {
+    this.__responsesQueue.addResponseListener("open");
+
+    await this.goTo();
+
+    let resp = null;
+    try {
+      resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
+    }
+    catch(err) {
+      console.error(this.__templateName, "could not be started", err);
+    }
+    return resp;
+  }
+
   async registerIfNeeded() {
     if (this.__newUser) {
       await auto.register(this.__page, this.__user, this.__pass);
+      return true;
     }
+    return false;
   }
 
   async login() {
     this.__responsesQueue.addResponseListener("projects?type=template");
+    this.__responsesQueue.addResponseListener("catalog/dags");
+    this.__responsesQueue.addResponseListener("services");
     await auto.logIn(this.__page, this.__user, this.__pass);
     try {
-      await this.__responsesQueue.waitUntilResponse("projects?type=template");
+      const resp = await this.__responsesQueue.waitUntilResponse("projects?type=template");
+      const templates = resp["data"];
+      console.log("Templates received", templates.length);
+      templates.forEach(template => {
+        console.log(" - ", template.name);
+      });
     }
     catch(err) {
       console.error("Templates could not be fetched", err);
     }
+    try {
+      const resp = await this.__responsesQueue.waitUntilResponse("catalog/dags");
+      const dags = resp["data"];
+      console.log("DAGs received:", dags.length);
+      dags.forEach(dag => {
+        console.log(" - ", dag.name);
+      });
+    }
+    catch(err) {
+      console.error("DAGs could not be fetched", err);
+    }
+    try {
+      const resp = await this.__responsesQueue.waitUntilResponse("services");
+      const services = resp["data"];
+      console.log("Services received:", services.length);
+    }
+    catch(err) {
+      console.error("Services could not be fetched", err);
+    }
+  }
+
+  async waitForOpen() {
+    this.__responsesQueue.addResponseListener("open");
+    let resp = null;
+    try {
+      resp = await this.__responsesQueue.waitUntilResponse("open");
+    }
+    catch(err) {
+      console.error(this.__templateName, "could not be started", err);
+    }
+    return resp;
   }
 
   async openTemplate(waitFor = 1000) {
     await utils.takeScreenshot(this.__page, this.__templateName + "_dashboardOpenFirstTemplate_before");
     this.__responsesQueue.addResponseListener("projects?from_template=");
+    this.__responsesQueue.addResponseListener("open");
+    let resp = null;
     try {
       await auto.dashboardOpenFirstTemplate(this.__page, this.__templateName);
       await this.__responsesQueue.waitUntilResponse("projects?from_template=");
+      resp = await this.__responsesQueue.waitUntilResponse("open");
     }
     catch(err) {
       console.error(this.__templateName, "could not be started", err);
     }
     await this.__page.waitFor(waitFor);
     await utils.takeScreenshot(this.__page, this.__templateName + "_dashboardOpenFirstTemplate_after");
+    return resp;
+  }
+
+  async waitForService(studyId, nodeId) {
+    this.__responsesQueue.addResponseServiceListener(studyId, nodeId);
+    let resp = null;
+    try {
+      resp = await this.__responsesQueue.waitUntilServiceReady(studyId, nodeId);
+    }
+    catch(err) {
+      console.error(this.__templateName, "could not be started", err);
+    }
+    return resp;
+  }
+
+  async restoreIFrame() {
+    await auto.restoreIFrame(this.__page);
   }
 
   async runPipeline(waitFor = 25000) {
@@ -105,10 +180,10 @@ class TutorialBase {
     await utils.takeScreenshot("openNodeRetrieveAndRestart_after");
   }
 
-  async checkResults() {
+  async checkResults(expecedNFiles = 1) {
     await utils.takeScreenshot(this.__page, this.__templateName + "_checkResults_before");
     try {
-      await auto.checkDataProducedByNode(this.__page);
+      await auto.checkDataProducedByNode(this.__page, expecedNFiles);
     }
     catch(err) {
       console.error("Failed checking Data Produced By Node", err);

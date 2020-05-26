@@ -16,6 +16,10 @@
 ************************************************************************ */
 
 /**
+ * @ignore(SVGElement)
+ */
+
+/**
  *   Widget containing the layout where NodeUIs and EdgeUIs, and when the model loaded
  * is a container-node, also NodeInput and NodeOutput are rendered.
  *
@@ -78,16 +82,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     this.__desktopCanvas.add(this.__startHint);
 
     this.__svgWidgetLinks = new osparc.component.workbench.SvgWidget("SvgWidget_Links");
-    // this gets fired once the widget has appeared and the library has been loaded
-    // due to the qx rendering, this will always happen after setup, so we are
-    // sure to catch this event
-    this.__svgWidgetLinks.addListenerOnce("SvgWidgetReady", () => {
-      // Will be called only the first time Svg lib is loaded
-      this.loadModel(workbench);
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      this.__nodeSelected(study.getUuid());
-    });
-
     this.__desktop.add(this.__svgWidgetLinks, {
       left: 0,
       top: 0,
@@ -206,11 +200,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __createServiceCatalog: function(pos) {
-      let srvCat = new osparc.component.workbench.ServiceCatalog();
+      const srvCat = new osparc.component.workbench.ServiceCatalog();
       if (pos) {
-        srvCat.moveTo(pos.x, pos.y);
+        srvCat.moveTo(pos.x + this.__getSidePanelWidth(), pos.y);
       } else {
-        // srvCat.center();
         const bounds = this.getLayoutParent().getBounds();
         const workbenchUICenter = {
           x: bounds.left + parseInt((bounds.left + bounds.width) / 2),
@@ -612,11 +605,17 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       });
     },
 
+    __getSidePanelWidth: function() {
+      const sidePanelWidth = window.innerWidth - this.getInnerSize().width;
+      return sidePanelWidth;
+    },
+
     __getPointEventPosition: function(pointerEvent) {
-      const navBarHeight = 50;
+      const topOffset = 50;
+      const leftOffset = this.__getSidePanelWidth();
       const inputNodesLayoutWidth = this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
-      const x = pointerEvent.getViewportLeft() - this.getBounds().left - inputNodesLayoutWidth;
-      const y = pointerEvent.getViewportTop() - navBarHeight;
+      const x = pointerEvent.getDocumentLeft() - leftOffset - inputNodesLayoutWidth;
+      const y = pointerEvent.getDocumentTop() - topOffset;
       return [x, y];
     },
 
@@ -761,6 +760,16 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     loadModel: function(model) {
+      if (this.__svgWidgetLinks.getReady()) {
+        this.__loadModel(model);
+      } else {
+        this.__svgWidgetLinks.addListenerOnce("SvgWidgetReady", () => {
+          this.__loadModel(model);
+        }, this);
+      }
+    },
+
+    __loadModel: function(model) {
       this.clearAll();
       this.resetSelectedNodes();
       this.__currentModel = model;

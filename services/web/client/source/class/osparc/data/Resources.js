@@ -158,6 +158,38 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * SERVICES
+       */
+      services: {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/services"
+          }
+        }
+      },
+      /*
+       * GROUPS/DAGS
+       */
+      dags: {
+        usesCache: true,
+        endpoints: {
+          post: {
+            method: "POST",
+            url: statics.API + "/catalog/dags"
+          },
+          get: {
+            method: "GET",
+            url: statics.API + "/catalog/dags"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/catalog/dags/{dagId}"
+          }
+        }
+      },
+      /*
        * CONFIG
        */
       config: {
@@ -178,6 +210,25 @@ qx.Class.define("osparc.data.Resources", {
           getOne: {
             method: "GET",
             url: statics.API + "/me"
+          }
+        }
+      },
+      /*
+       * API-KEYS
+       */
+      apiKeys: {
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/auth/api-keys"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/auth/api-keys"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/auth/api-keys"
           }
         }
       },
@@ -231,18 +282,6 @@ qx.Class.define("osparc.data.Resources", {
           get: {
             method: "GET",
             url: statics.API + "/"
-          }
-        }
-      },
-      /*
-       * SERVICES (TODO: remove frontend processing. This is unusable for the moment)
-       */
-      servicesTodo: {
-        useCache: true,
-        endpoints: {
-          get: {
-            method: "GET",
-            url: statics.API + "/services"
           }
         }
       },
@@ -421,14 +460,14 @@ qx.Class.define("osparc.data.Resources", {
      */
     fetch: function(resource, endpoint, params = {}, deleteId) {
       return new Promise((resolve, reject) => {
-        if (this.self().resources[resource] == null) { // eslint-disable-line no-eq-null
+        if (this.self().resources[resource] == null) {
           reject(Error(`Error while fetching ${resource}: the resource is not defined`));
         }
 
         const resourceDefinition = this.self().resources[resource];
         const res = new osparc.io.rest.Resource(resourceDefinition.endpoints);
 
-        if (!res.includesRoute(endpoint)) { // eslint-disable-line no-eq-null
+        if (!res.includesRoute(endpoint)) {
           reject(Error(`Error while fetching ${resource}: the endpoint is not defined`));
         }
 
@@ -478,11 +517,9 @@ qx.Class.define("osparc.data.Resources", {
           const idField = this.self().resources[resource].idField || "uuid";
           const item = Array.isArray(stored) ? stored.find(element => element[idField] === id) : stored;
           if (item) {
-            console.log(`Getting ${resource} from cache.`);
             return Promise.resolve(item);
           }
         }
-        console.log(`Fetching ${resource} from server.`);
       }
       return this.fetch(resource, "getOne", params || {});
     },
@@ -497,10 +534,8 @@ qx.Class.define("osparc.data.Resources", {
       if (useCache) {
         const stored = this.__getCached(resource);
         if (stored) {
-          console.log(`Getting all ${resource} from cache.`);
           return Promise.resolve(stored);
         }
-        console.log(`Fetching ${resource} from server.`);
       }
       return this.fetch(resource, "get", params || {});
     },

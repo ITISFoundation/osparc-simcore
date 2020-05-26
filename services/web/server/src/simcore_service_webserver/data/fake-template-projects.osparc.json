@@ -7,6 +7,7 @@
     "prjOwner": "SIM-CORE",
     "creationDate": "2018-12-05T21:13:13.360Z",
     "lastChangeDate": "2018-12-05T21:13:13.360Z",
+    "accessRights": {},
     "workbench": {
       "template-uuid-4261-b92f-7343aecaab44": {
         "key": "simcore/services/frontend/file-picker",

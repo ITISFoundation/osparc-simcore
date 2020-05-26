@@ -63,6 +63,10 @@ qx.Class.define("osparc.component.service.NodeStatus", {
             return this.tr("Starting...");
           } else if (status === "pending") {
             return this.tr("Pending...");
+          } else if (status === "pulling") {
+            return this.tr("Pulling...");
+          } else if (status === "connecting") {
+            return this.tr("Connecting...");
           }
           return this.tr("Idle");
         }
@@ -78,11 +82,17 @@ qx.Class.define("osparc.component.service.NodeStatus", {
             return "@FontAwesome5Solid/circle-notch/12";
           } else if (status === "pending") {
             return "@FontAwesome5Solid/circle-notch/12";
+          } else if (status === "pulling") {
+            return "@FontAwesome5Solid/circle-notch/12";
+          } else if (status === "connecting") {
+            return "@FontAwesome5Solid/circle-notch/12";
           }
           return "@FontAwesome5Solid/check/12";
         },
         onUpdate: (source, target) => {
-          if (source.getInteractiveStatus() === "ready") {
+          if (source.getInteractiveStatus() == null) {
+            this.__removeClass(this.__icon.getContentElement(), "rotate");
+          } else if (source.getInteractiveStatus() === "ready") {
             this.__removeClass(this.__icon.getContentElement(), "rotate");
             target.setTextColor("ready-green");
           } else if (source.getInteractiveStatus() === "failed") {

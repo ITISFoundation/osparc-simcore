@@ -12,7 +12,10 @@
 # installs this repo's packages
 ../../services/storage/client-sdk/python/
 ../../packages/s3wrapper/
+../../packages/postgres-database/
 ../../packages/simcore-sdk/
+../../packages/service-library/
+../../packages/pytest-simcore/
 
 # installs current package
 .

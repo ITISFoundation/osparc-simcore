@@ -46,6 +46,7 @@ upgrade: ## migrate the postgres database
 		sleep 1; \
 		TASK_STATE=$$(docker inspect --format="{{.Status.State}}" $${TASK_ID});\
 	done
+	@docker service logs $(APP_NAME)
 	@docker service rm $(APP_NAME)
 
 
@@ -53,9 +54,12 @@ upgrade: ## migrate the postgres database
 down: ## stop migration service
 	@docker service rm $(APP_NAME)
 
+
+DOCKER_IMAGES = $(shell docker images */$(APP_NAME):* -q)
+
 .PHONY: clean
 clean: ## clean all created images
-	-@docker image rm -f $(shell docker images */$(APP_NAME):* -q)
+	$(if $(DOCKER_IMAGES),@docker image rm -f $(DOCKER_IMAGES),$(info No image to delete))
 
 .PHONY: help
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html

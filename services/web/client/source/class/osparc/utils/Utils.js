@@ -15,13 +15,10 @@
 
 ************************************************************************ */
 
-/* global window */
-/* global document */
-/* global XMLHttpRequest */
-/* global Blob */
-
 /**
  * @ignore(URL)
+ * @ignore(sessionStorage)
+ * @ignore(fetch)
  */
 
 /**
@@ -37,6 +34,13 @@ qx.Class.define("osparc.utils.Utils", {
         (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
     },
 
+    getLogoPath: function() {
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const textColor = colorManager.resolve("text");
+      const luminance = this.getColorLuminance(textColor);
+      return luminance > 0.3 ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
+    },
+
     getLoaderUri: function(arg) {
       let loadingUri = qx.util.ResourceManager.getInstance().toUri("osparc/loading/loader.html");
       if (arg) {
@@ -46,9 +50,40 @@ qx.Class.define("osparc.utils.Utils", {
       return loadingUri;
     },
 
+    addBorder: function(sidePanel, where = "right") {
+      sidePanel.getContentElement().setStyle("border-"+where, "1px solid " + qx.theme.manager.Color.getInstance().resolve("material-button-background"));
+    },
+
+    __setStyleToIFrame: function(domEl) {
+      if (domEl && domEl.contentDocument && domEl.contentDocument.documentElement) {
+        const iframeDocument = domEl.contentDocument.documentElement;
+        const colorManager = qx.theme.manager.Color.getInstance();
+        const bgColor = colorManager.resolve("loading-page-background-color");
+        const textColor = colorManager.resolve("loading-page-text");
+        const spinnerColor = colorManager.resolve("loading-page-spinner");
+        iframeDocument.style.setProperty("--background-color", bgColor);
+        iframeDocument.style.setProperty("--text-color", textColor);
+        iframeDocument.style.setProperty("--spinner-color", spinnerColor);
+      }
+    },
+
     createLoadingIFrame: function(text) {
       const loadingUri = osparc.utils.Utils.getLoaderUri(text);
-      let iframe = new qx.ui.embed.Iframe(loadingUri);
+      const iframe = new qx.ui.embed.Iframe(loadingUri);
+
+      const contEle = iframe.getContentElement();
+      contEle.addListener("appear", () => {
+        qx.event.Timer.once(() => {
+          const domEl = contEle.getDomElement();
+          if (domEl) {
+            this.__setStyleToIFrame(domEl);
+            const colorManager = qx.theme.manager.Color.getInstance();
+            colorManager.addListener("changeTheme", () => {
+              this.__setStyleToIFrame(domEl);
+            });
+          }
+        }, this, 50);
+      });
       iframe.setBackgroundColor("transparent");
       return iframe;
     },
@@ -73,17 +108,8 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     // deep clone of nested objects
-    // https://medium.com/@tkssharma/objects-in-javascript-object-assign-deep-copy-64106c9aefab#eeed
     deepCloneObject: function(src) {
-      let target = {};
-      for (let key in src) {
-        if (src[key] !== null && typeof (src[key]) === "object") {
-          target[key] = osparc.utils.Utils.deepCloneObject(src[key]);
-        } else {
-          target[key] = src[key];
-        }
-      }
-      return target;
+      return JSON.parse(JSON.stringify(src));
     },
 
     getRandomColor: function() {
@@ -332,6 +358,10 @@ qx.Class.define("osparc.utils.Utils", {
         bottom: window.innerHeight - location.bottom,
         left: location.left
       };
+    },
+
+    fetchJSON: function() {
+      return fetch.apply(null, arguments).then(response => response.json());
     }
   }
 });

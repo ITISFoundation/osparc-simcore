@@ -126,10 +126,11 @@ services/docker-compose.stack.*.yml
 *secret*
 *ignore*
 !.dockerignore
+!.gitignore
 
 # Any generated output folder (e.g. codegen, build, ...)
 out/
-tmp/
+**/tmp/
 
 # See .vscode-template
 pytest.ini
@@ -149,4 +150,3 @@ prof/
 
 # outputs from make
 .stack-*.yml
-services/catalog/log.txt

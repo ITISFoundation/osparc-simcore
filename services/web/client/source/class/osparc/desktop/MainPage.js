@@ -56,6 +56,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     __navBar: null,
     __prjStack: null,
     __dashboard: null,
+    __dashboardLayout: null,
     __studyEditor: null,
 
     __createNavigationBar: function() {
@@ -68,8 +69,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           return;
         }
         if (this.__studyEditor) {
-          this.__studyEditor.updateStudyDocument();
-          this.__studyEditor.closeStudy();
+          this.__studyEditor.updateStudyDocument(false, this.__studyEditor.closeStudy);
         }
         this.__showDashboard();
       }, this);
@@ -84,20 +84,34 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __createMainView: function() {
-      let prjStack = new qx.ui.container.Stack();
+      const prjStack = new qx.ui.container.Stack();
 
-      let dashboard = this.__dashboard = new osparc.desktop.Dashboard();
+      const nStudyItemsPerRow = 5;
+      const studyButtons = osparc.dashboard.StudyBrowserButtonBase;
+      const dashboard = this.__dashboard = new osparc.dashboard.Dashboard().set({
+        width: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) + 25 // padding + scrollbar
+      });
       dashboard.getStudyBrowser().addListener("startStudy", e => {
         const studyEditor = e.getData();
-        this.__showStudyEditor(studyEditor);
+        this.__startStudyEditor(studyEditor);
       }, this);
-      prjStack.add(dashboard);
+
+      const dashboardLayout = this.__dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      dashboardLayout.add(new qx.ui.core.Widget(), {
+        flex: 1
+      });
+      dashboardLayout.add(dashboard);
+      dashboardLayout.add(new qx.ui.core.Widget(), {
+        flex: 1
+      });
+
+      prjStack.add(dashboardLayout);
 
       return prjStack;
     },
 
     __showDashboard: function() {
-      this.__prjStack.setSelection([this.__dashboard]);
+      this.__prjStack.setSelection([this.__dashboardLayout]);
       this.__dashboard.getStudyBrowser().reloadUserStudies();
       this.__navBar.setPathButtons([]);
       if (this.__studyEditor) {
@@ -105,7 +119,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       }
     },
 
-    __showStudyEditor: function(studyEditor) {
+    __startStudyEditor: function(studyEditor) {
       if (this.__studyEditor) {
         this.__prjStack.remove(this.__studyEditor);
       }
@@ -115,7 +129,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__prjStack.add(this.__studyEditor);
       this.__prjStack.setSelection([this.__studyEditor]);
       this.__navBar.setStudy(study);
-      this.__navBar.setPathButtons(study.getWorkbench().getPathIds(study.getUuid()));
+      this.__navBar.setPathButtons(this.__studyEditor.getCurrentPathIds());
 
       this.__studyEditor.addListener("changeMainViewCaption", ev => {
         const elements = ev.getData();

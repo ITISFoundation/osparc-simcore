@@ -8,7 +8,6 @@ main:
   log_level: ${WEBSERVER_LOGLEVEL}
   testing: True
   studies_access_enabled: True
-  monitoring_enabled: True
 socketio:
   enabled: True
 tracing:
@@ -22,6 +21,10 @@ catalog:
   host: catalog
   port: 8000
   version: v0
+application_proxy:
+  enabled: False
+reverse_proxy:
+  enabled: False
 db:
   init_tables: True
   postgres:
@@ -46,8 +49,9 @@ rabbit:
   user: ${RABBIT_USER}
   password: ${RABBIT_PASSWORD}
   channels:
-    progress: ${RABBIT_PROGRESS_CHANNEL}
-    log: ${RABBIT_LOG_CHANNEL}
+    progress: "comp.backend.channels.progress"
+    log: "comp.backend.channels.log"
+    instrumentation: "comp.backend.channels.instrumentation"
 activity:
   enabled: True
   prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}

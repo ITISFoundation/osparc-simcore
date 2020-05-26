@@ -1,21 +1,15 @@
 # simcore stack
 
 
-Different views of the stack configuration
 
+```cmd
+$ make .stack-simcore-version.yml
+$ ./scripts/docker-compose-viz.bash .stack-simcore-version.yml
+$ mv .stack-simcore-version.yml.png docs/img/
+```
 
-![](img/docker-compose-wo-networks.png)
+![](img/.stack-simcore-version.yml.png)
 
----
-
-![](img/docker-compose-w-ports.png)
-
----
-
-![](img/docker-compose.png)
-
-
----
 
 
 Diagrams of the [osparc-ops stacks](https://github.com/pcrespov/osparc-ops/blob/enh/documentation/docs/stacks-graph.md)

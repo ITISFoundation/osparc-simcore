@@ -12,10 +12,16 @@ This is a schematic of how services are interconnected:
 ### localhost deploy (dev)
 
 - [web](http://127.0.0.1:9081/)
+  - [webapi doc](http://127.0.0.1:9081/webapi/doc)
+  - [webapi version 0](http://127.0.0.1:9081/v0/)
 - [portainer](http://127.0.0.1:9000/#/auth): swarm (you set your own pass)
 - [adminer](http://127.0.0.1:18080/?pgsql=postgres&username=simcore&db=simcoredb&ns=): database content
 - [minio](http://127.0.0.1:9001): storage management
   - ``user=12345678, password=12345678``
+- [traefik](http://172.0.0.1:8080/dashboard/): reverse proxy dashboard
+  - [whoami](http://127.0.0.1:8080/whoami): test service to check traefik
+
+See details in [docker-compose.local.yml](docker-compose.local.yml).
 
 ----
 

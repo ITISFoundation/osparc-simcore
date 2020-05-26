@@ -2,6 +2,7 @@
 
 """
 # pylint: disable=broad-except
+# pylint: disable=wildcard-import,unused-wildcard-import
 
 import json
 import logging
@@ -17,7 +18,7 @@ import docker
 from alembic import __version__ as __alembic_version__
 from alembic.config import Config as AlembicConfig
 
-from simcore_postgres_database.models import *  # pylint: disable=wildcard-import,unused-wildcard-import
+from simcore_postgres_database.models import *
 from simcore_postgres_database.utils import build_url, raise_if_not_responsive
 
 alembic_version = tuple([int(v) for v in __alembic_version__.split(".")[0:3]])
@@ -116,21 +117,21 @@ def main():
 @click.option("--port", type=int)
 @click.option("--database", "-d")
 def discover(**cli_inputs):
-    """ Discovers databases and stores configs in ~/.simcore_postgres_database.json """
+    """ Discovers databases and caches configs in ~/.simcore_postgres_database.json (except if --no-cache)"""
     # NOTE: Do not add defaults to user, password so we get a chance to ping urls
     # TODO: if multiple candidates online, then query user to select
 
-    click.echo(f"Discovering database ...")
+    click.echo("Discovering database ...")
     cli_cfg = {key: value for key, value in cli_inputs.items() if value is not None}
 
-    def test_cached():
+    def _test_cached():
         """Tests cached configuration """
         cfg = _load_cache() or {}
         if cfg:
             cfg.update(cli_cfg)  # overrides
         return cfg
 
-    def test_env():
+    def _test_env():
         """Tests environ variables """
         cfg = {
             "user": os.getenv("POSTGRES_USER"),
@@ -142,15 +143,15 @@ def discover(**cli_inputs):
         cfg.update(cli_cfg)
         return cfg
 
-    def test_swarm():
+    def _test_swarm():
         """Tests published port in swarm from host """
-        cfg = deepcopy(cli_cfg)
+        cfg = _test_env()
         cfg["host"] = "127.0.0.1"
         cfg["port"] = _get_service_published_port(cli_cfg.get("host", DEFAULT_HOST))
         cfg.setdefault("database", DEFAULT_DB)
         return cfg
 
-    for test in [test_cached, test_env, test_swarm]:
+    for test in [_test_cached, _test_env, _test_swarm]:
         try:
             click.echo("-> {0.__name__}: {0.__doc__}".format(test))
 
@@ -161,14 +162,13 @@ def discover(**cli_inputs):
             click.echo(" ping {0.__name__}: {1} ...".format(test, url))
 
             raise_if_not_responsive(url)
-
             with open(discovered_cache, "w") as fh:
                 json.dump(cfg, fh, sort_keys=True, indent=4)
 
             click.echo(f"Saved config at{discovered_cache}: {cfg}")
             click.secho(
                 f"{test.__name__} succeeded: {url} is online",
-                blink=True,
+                blink=False,
                 bold=True,
                 fg="green",
             )
@@ -180,7 +180,7 @@ def discover(**cli_inputs):
             click.echo("<- {0.__name__} failed : {1}".format(test, inline_msg))
 
     _reset_cache()
-    click.secho("Sorry, database not found !!", blink=True, bold=True, fg="red")
+    click.secho("Sorry, database not found !!", blink=False, bold=True, fg="red")
 
 
 @main.command()
@@ -205,7 +205,6 @@ def clean():
 
 
 # Bypasses alembic CLI into a reduced version  ------------
-# TODO: systematic bypass??
 
 
 @main.command()

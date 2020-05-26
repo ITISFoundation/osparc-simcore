@@ -23,7 +23,7 @@ qx.Class.define("osparc.ui.table.cellrenderer.Unit", {
   members: {
     // overridden
     _getContentHtml: function(cellInfo) {
-      if (cellInfo.value == null || cellInfo.value < 0) { // eslint-disable-line no-eq-null
+      if (cellInfo.value == null || cellInfo.value < 0) {
         return "";
       }
       return `${cellInfo.value} ${this.getUnit()}`;

@@ -26,12 +26,16 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
    *
    * @extends osparc.component.filter.UIFilter
    */
-  construct: function(label, filterId, groupId) {
-    this.base(arguments, filterId, groupId);
+  construct: function(label, filterId, filterGroupId) {
+    this.base(arguments, filterId, filterGroupId);
     this._setLayout(new qx.ui.layout.HBox());
 
     this._dropdown = new qx.ui.toolbar.MenuButton(label);
     this._add(this._dropdown);
+  },
+
+  statics: {
+    ActiveTagIcon: "@FontAwesome5Solid/check/12"
   },
 
   members: {
@@ -69,7 +73,7 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
         // Save previous icon
         menuButton.prevIcon = menuButton.getIcon();
         // Add tick
-        menuButton.setIcon("@FontAwesome5Solid/check/12");
+        menuButton.setIcon(this.self().ActiveTagIcon);
         // Add tag
         const tagButton = new qx.ui.toolbar.Button(tagName, "@MaterialIcons/close/12");
         this._add(tagButton);
@@ -95,8 +99,16 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
     },
 
     _getMenuButtons: function() {
-      return this._dropdown.getMenu().getChildren()
-        .filter(child => child instanceof qx.ui.menu.Button);
+      const menu = this._dropdown.getMenu();
+      if (menu) {
+        return menu.getChildren().filter(child => child instanceof qx.ui.menu.Button);
+      }
+      return [];
+    },
+
+    _getActiveMenuButtons: function() {
+      const menuButtons = this._getMenuButtons();
+      return menuButtons.filter(menuButton => menuButton.getIcon() === this.self().ActiveTagIcon);
     },
 
     _addOption: function(tagName) {

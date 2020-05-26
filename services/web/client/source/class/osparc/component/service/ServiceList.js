@@ -25,13 +25,13 @@ qx.Class.define("osparc.component.service.ServiceList", {
   /**
    * If the optional parameter is given, the elements will be subscribed to the filter group of the given id.
    *
-   * @param {String} [groupId] Id of the filter group the service Jumbo buttons will be subscribed to.
+   * @param {String} [filterGroupId] Id of the filter group the service Jumbo buttons will be subscribed to.
    */
-  construct: function(groupId) {
+  construct: function(filterGroupId) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.Flow(5, 5));
-    if (groupId) {
-      this.__filterGroup = groupId;
+    if (filterGroupId) {
+      this.__filterGroup = filterGroupId;
     }
   },
 
@@ -100,7 +100,7 @@ qx.Class.define("osparc.component.service.ServiceList", {
      * @return True if no item is selected, false if there one or more item selected.
      */
     isSelectionEmpty: function() {
-      if (this.__buttonGroup == null) { // eslint-disable-line no-eq-null
+      if (this.__buttonGroup == null) {
         return true;
       }
       return this.__buttonGroup.getSelection().length === 0;

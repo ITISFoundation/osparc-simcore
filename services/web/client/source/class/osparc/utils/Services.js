@@ -75,7 +75,6 @@ qx.Class.define("osparc.utils.Services", {
       }
     },
 
-    reloadingServices: false,
     servicesCached: {},
 
     getTypes: function() {
@@ -166,47 +165,14 @@ qx.Class.define("osparc.utils.Services", {
       return false;
     },
 
-    filterOutUnavailableGroups: function(listOfServices) {
-      const filteredServices = [];
-      for (let i=0; i<listOfServices.length; i++) {
-        const service = listOfServices[i];
-        if ("innerNodes" in service) {
-          let allIn = true;
-          const innerServices = service["innerNodes"];
-          for (const innerService in innerServices) {
-            allIn &= this.isServiceInList(listOfServices, innerServices[innerService].key);
-          }
-          if (allIn) {
-            filteredServices.push(service);
-          }
-        } else {
-          filteredServices.push(service);
-        }
-      }
-      return filteredServices;
-    },
-
     getNodeMetaData: function(key, version) {
       let metaData = null;
       if (key && version) {
-        metaData = this.getFromObject(osparc.store.Store.getInstance().getServices(), key, version);
+        const services = osparc.utils.Services.servicesCached;
+        metaData = this.getFromObject(services, key, version);
         if (metaData) {
           metaData = osparc.utils.Utils.deepCloneObject(metaData);
-          if (metaData.key === "simcore/services/dynamic/modeler/webserver") {
-            metaData.outputs["modeler"] = {
-              "label": "Modeler",
-              "displayOrder":0,
-              "description": "Modeler",
-              "type": "node-output-tree-api-v0.0.1"
-            };
-            delete metaData.outputs["output_1"];
-          }
           return metaData;
-        }
-        const allServices = osparc.dev.fake.Data.getFakeServices().concat(this.getBuiltInServices());
-        metaData = this.getFromArray(allServices, key, version);
-        if (metaData) {
-          return osparc.utils.Utils.deepCloneObject(metaData);
         }
       }
       return null;
@@ -221,9 +187,9 @@ qx.Class.define("osparc.utils.Services", {
         description: "File Picker",
         authors: [{
           name: "Odei Maiz",
-          email: "maiz@itis.ethz.ch"
+          email: "maiz@itis.swiss"
         }],
-        contact: "maiz@itis.ethz.ch",
+        contact: "maiz@itis.swiss",
         inputs: {},
         outputs: {
           outFile: {
@@ -236,13 +202,18 @@ qx.Class.define("osparc.utils.Services", {
       };
     },
 
-    getNodesGroupService: function() {
+    getNodesGroup: function() {
       return {
         key: "simcore/services/frontend/nodes-group",
         version: "1.0.0",
         type: "group",
         name: "Group",
         description: "Group of nodes",
+        authors: [{
+          name: "Odei Maiz",
+          email: "maiz@itis.swiss"
+        }],
+        contact: "maiz@itis.swiss",
         inputs: {},
         outputs: {}
       };
@@ -251,16 +222,19 @@ qx.Class.define("osparc.utils.Services", {
     getBuiltInServices: function() {
       const builtInServices = [
         this.getFilePicker(),
-        this.getNodesGroupService()
+        this.getNodesGroup()
       ];
       return builtInServices;
     },
 
-    servicesToCache: function(services, fromServer) {
+    addServiceToCache: function(service) {
+      this.servicesCached = Object.assign(this.servicesCached, service);
+    },
+
+    servicesToCache: function(services) {
       this.servicesCached = {};
       this.__addCategoryToServices(services);
       this.servicesCached = Object.assign(this.servicesCached, services);
-      this.reloadingServices = false;
     },
 
     __addCategoryToServices: function(services) {

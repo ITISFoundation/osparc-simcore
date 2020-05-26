@@ -2,14 +2,18 @@
 
 ROOT_DIR  = $(abspath $(CURDIR)/../../)
 VENV_DIR ?= $(abspath $(ROOT_DIR)/.venv)
+UPGRADE_OPTION := $(if $(upgrade),--upgrade-package $(upgrade),--upgrade)
+
 
 .PHONY: all
 all: install tests
 
-%.txt: %.in
+.PHONY: reqs
+requirements.txt: requirements.in
 	# pip compiling $<
-	@$(VENV_DIR)/bin/pip-compile --output-file $@ $<
+	@$(VENV_DIR)/bin/pip-compile $(UPGRADE_OPTION) --build-isolation --output-file $@ $<
 
+reqs: requirements.txt ## alias to compile requirements.txt
 
 .PHONY: install
 install: $(VENV_DIR) requirements.txt ## installs dependencies

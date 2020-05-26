@@ -50,19 +50,16 @@ qx.Class.define("osparc.auth.ui.LoginView", {
   members: {
     // overrides base
     __form: null,
+    __loginBtn: null,
+
     _buildPage: function() {
       this.__form = new qx.ui.form.Form();
 
-      const atm = new qx.ui.basic.Atom().set({
-        icon: "osparc/osparc-white.svg",
-        iconPosition: "top"
-      });
-      atm.getChildControl("icon").set({
+      const image = new osparc.ui.basic.OSparcLogo().set({
         width: 250,
-        height: 150,
-        scale: true
+        height: 150
       });
-      this.add(atm);
+      this.add(image);
 
       const email = new qx.ui.form.TextField().set({
         placeholder: this.tr("Your email address"),
@@ -85,16 +82,9 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       this.add(pass);
       this.__form.add(pass, "", null, "password", null);
 
-      const loginBtn = new osparc.ui.form.FetchButton(this.tr("Sign in"));
+      const loginBtn = this.__loginBtn = new osparc.ui.form.FetchButton(this.tr("Sign in"));
       loginBtn.addListener("execute", () => {
-        loginBtn.setFetching(true);
-        this.__login(loginBtn);
-      }, this);
-      // Listen to "Enter" key
-      this.addListener("keypress", keyEvent => {
-        if (keyEvent.getKeyIdentifier() === "Enter") {
-          this.__login();
-        }
+        this.__login();
       }, this);
       osparc.utils.Utils.setIdToWidget(loginBtn, "loginSubmitBtn");
       this.add(loginBtn);
@@ -109,7 +99,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
             if (config["invitation_required"]) {
               let text = this.tr("Registration is currently only available with an invitation.");
               text += "<br>";
-              text += this.tr("Please contact info@itis.swiss");
+              text += this.tr("Please contact support@osparc.io");
               osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
             } else {
               this.fireEvent("toRegister");
@@ -161,16 +151,18 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       return grp;
     },
 
-    __login: function(loginBtn) {
+    __login: function() {
       if (!this.__form.validate()) {
         return;
       }
+
+      this.__loginBtn.setFetching(true);
 
       const email = this.__form.getItems().email;
       const pass = this.__form.getItems().password;
 
       const successFun = function(log) {
-        loginBtn.setFetching(false);
+        this.__loginBtn.setFetching(false);
         this.fireDataEvent("done", log.message);
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
@@ -179,7 +171,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       };
 
       const failFun = function(msg) {
-        loginBtn.setFetching(false);
+        this.__loginBtn.setFetching(false);
         // TODO: can get field info from response here
         msg = String(msg) || this.tr("Introduced an invalid email or password");
         [email, pass].forEach(item => {
@@ -201,6 +193,16 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       for (const key in fieldItems) {
         fieldItems[key].resetValue();
       }
+    },
+
+    _onAppear: function() {
+      // Listen to "Enter" key
+      const command = new qx.ui.command.Command("Enter");
+      this.__loginBtn.setCommand(command);
+    },
+
+    _onDisappear: function() {
+      this.__loginBtn.setCommand(null);
     }
   }
 });

@@ -12,7 +12,6 @@ main:
   log_level: ${WEBSERVER_LOGLEVEL}
   testing: False
   studies_access_enabled: ${WEBSERVER_STUDIES_ACCESS_ENABLED}
-  monitoring_enabled: ${WEBSERVER_MONITORING_ENABLED}
 tracing:
   enabled: ${TRACING_ENABLED}
   zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
@@ -47,14 +46,15 @@ rabbit:
   user: ${RABBIT_USER}
   password: ${RABBIT_PASSWORD}
   channels:
-    progress: ${RABBIT_PROGRESS_CHANNEL}
-    log: ${RABBIT_LOG_CHANNEL}
+    progress: "comp.backend.channels.progress"
+    log: "comp.backend.channels.log"
+    instrumentation: "comp.backend.channels.instrumentation"
 login:
   enabled: True
   registration_invitation_required: ${WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED}
   registration_confirmation_required: ${WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED}
 smtp:
-  sender: 'OSPARC support <support@osparc.io>'
+  sender: "OSPARC support <support@osparc.io>"
   host: ${SMTP_HOST}
   port: ${SMTP_PORT}
   tls: ${SMTP_TLS_ENABLED}
@@ -65,9 +65,13 @@ storage:
   port: ${STORAGE_PORT}
   version: v0
 catalog:
-  host: catalog
+  host: ${CATALOG_HOST}
   port: 8000
   version: v0
+application_proxy:
+  enabled: False
+reverse_proxy:
+  enabled: False
 rest:
   version: v0
 projects:
@@ -80,4 +84,3 @@ activity:
   prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}
   prometheus_port: ${WEBSERVER_PROMETHEUS_PORT}
   prometheus_api_version: ${WEBSERVER_PROMETHEUS_API_VERSION}
-...

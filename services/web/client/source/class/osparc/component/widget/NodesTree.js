@@ -64,6 +64,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   members: {
     __toolBar: null,
     __tree: null,
+    __exportButton: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -97,9 +98,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       toolbar.addSpacer();
 
       if (osparc.data.Permissions.getInstance().canDo("study.node.export")) {
-        const exportButton = new qx.ui.toolbar.Button(this.tr("Export"), "@FontAwesome5Solid/share/"+iconSize);
+        const exportButton = this.__exportButton = new qx.ui.toolbar.Button(this.tr("Export"), "@FontAwesome5Solid/share/"+iconSize).set({
+          enabled: false
+        });
         exportButton.addListener("execute", () => {
-          this.__exportGroup();
+          this.__exportDAG();
         }, this);
         osparc.utils.Utils.setIdToWidget(exportButton, "exportServicesBtn");
         toolbar.add(exportButton);
@@ -171,8 +174,12 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           createItem: () => new osparc.component.widget.NodeTreeItem(),
           bindItem: (c, item, id) => {
             c.bindDefaultProperties(item, id);
-            c.bindProperty("label", "label", null, item, id);
             c.bindProperty("nodeId", "nodeId", null, item, id);
+            const node = study.getWorkbench().getNode(item.getModel().getNodeId());
+            if (node) {
+              node.bind("label", item.getModel(), "label");
+            }
+            c.bindProperty("label", "label", null, item, id);
           },
           configureItem: item => {
             item.addListener("dbltap", () => {
@@ -180,6 +187,9 @@ qx.Class.define("osparc.component.widget.NodesTree", {
             }, this);
             item.addListener("tap", e => {
               this.fireDataEvent("changeSelectedNode", item.getModel().getNodeId());
+              if (this.__exportButton) {
+                this.__exportButton.setEnabled((Boolean(item.getLevel()) && item.getModel().getIsContainer()));
+              }
             }, this);
           }
         });
@@ -231,12 +241,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       this.fireEvent("addNode");
     },
 
-    __exportGroup: function() {
+    __exportDAG: function() {
       const selectedItem = this.__getSelection();
       if (selectedItem) {
         if (selectedItem.getIsContainer()) {
           const nodeId = selectedItem.getNodeId();
-          this.__openItem(nodeId);
           this.fireDataEvent("exportNode", nodeId);
         } else {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only Groups can be exported."), "ERROR");

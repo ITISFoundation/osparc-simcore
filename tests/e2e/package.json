@@ -14,7 +14,7 @@
   "author": "odeimaiz",
   "license": "MIT",
   "dependencies": {
-    "jest": "^24.9.0",
+    "jest": "^25.2.7",
     "jest-puppeteer": "^4.4.0",
     "puppeteer": "^1.20.0"
   },

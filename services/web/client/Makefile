@@ -1,5 +1,8 @@
+.DEFAULT_GOAL := help
+
 # qooxdoo-kit's versions to use. See https://hub.docker.com/r/itisfoundation/qooxdoo-kit/tags
 export QOOXDOO_KIT_TAG=latest
+
 
 # version controled
 export VCS_URL:=$(shell git config --get remote.origin.url)
@@ -11,6 +14,7 @@ docker_compose := docker-compose -f tools/docker-compose.yml
 docker_file    := tools/qooxdoo-kit/builder/Dockerfile
 docker_image   := client/$(subst /Dockerfile,,$(docker_file)):latest
 
+container_name := qooxdoo-compiler
 
 # qx compile --------------------------
 
@@ -18,20 +22,29 @@ qx_packages:
 	$(docker_compose) run --rm qooxdoo-kit \
 		/bin/sh -c "qx package update && qx package install"
 
+source-output:
+	# making fast a folder to allow volume binding in dev-mode
+	mkdir $@
+
 .PHONY: compile-dev
-compile-dev: qx_packages ## qx compiles host' 'source' -> host's 'source-output'. Use 'make compile-dev flags=--watch' for continuous compilation.
+compile-dev: qx_packages source-output ## qx compiles host' 'source' -> host's 'source-output'. Use 'make compile-dev flags=--watch' for continuous compilation.
 	# qx compile 'source' $(flags) --> 'source-output' [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
-	$(docker_compose) run --rm qooxdoo-kit \
+	$(docker_compose) run --detach --rm --name=$(container_name) qooxdoo-kit \
 		qx compile $(flags) \
 			--set-env osparc.vcsRef="${VCS_REF}" \
 			--set-env osparc.vcsRefClient="${VCS_REF_CLIENT}" \
 			--set-env osparc.vcsStatusClient="${VCS_STATUS_CLIENT}" \
 			--set-env osparc.vcsOriginUrl="${VCS_URL}"
 
+.PHONY: follow-dev-logs
+follow-dev-logs: ## follow the logs of the qx compiler
+	@docker logs --follow $(container_name)
+
+
 .PHONY: compile touch upgrade
-compile: ## qx compiles host' 'source' -> image's 'build-output'
+compile compile-x: ## qx compiles host' 'source' -> image's 'build-output'
 	# qx compile 'source' within $(docker_image) image  [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
-	@docker build --file $(docker_file) --tag $(docker_image) \
+	@docker $(if $(findstring -x,$@),buildx,) build --file $(docker_file) --tag $(docker_image) \
 		--build-arg tag=${QOOXDOO_KIT_TAG} \
 		--build-arg VCS_REF=${VCS_REF} \
 		--build-arg VCS_REF_CLIENT=${VCS_REF_CLIENT} \
@@ -39,9 +52,9 @@ compile: ## qx compiles host' 'source' -> image's 'build-output'
 		--build-arg VCS_URL=${VCS_URL} \
 		--target=build-client .
 
-touch: ## minimal image build with /project/output-build inside
+touch touch-x: ## minimal image build with /project/output-build inside
 	# touch /project/output-build such that multi-stage 'services/web/Dockerfile' can build development target (fixes #1097)
-	@docker build --file $(docker_file) --tag $(docker_image) --build-arg tag=${QOOXDOO_KIT_TAG} --target=touch .
+	@docker $(if $(findstring -x,$@),buildx,) build --file $(docker_file) --tag $(docker_image) --build-arg tag=${QOOXDOO_KIT_TAG} --target=touch .
 
 upgrade: ## upgrade to official version of the tool
 	# upgrading to ${QOOXDOO_KIT_TAG}
@@ -80,7 +93,6 @@ shell: ## runs /bin/sh in 'itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}'
 	@$(docker_compose) run --rm qooxdoo-kit /bin/sh
 
 
-
 .PHONY: info
 info: ## this colorful help
 	# toolkit image 'itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}'
@@ -101,15 +113,17 @@ help: ## this colorful help
 	@echo ""
 
 
-.DEFAULT_GOAL := help
-
-.PHONY: clean
-clean: ## Forces clean of all outputs (files and images)
-	# tear down docker-compose
-	@${docker_compose} down
-	# remove build
-	@docker image rm -f $(docker_image)
+.PHONY: clean clean-files clean-images
+clean-files:
 	# remove generated outputs
 	@-rm -rf qx_packages .qooxdoo source-output
 	# remove unversioned
 	@git clean -dXf
+
+clean-images:
+	# tear down docker-compose
+	@${docker_compose} down
+	# remove build
+	@docker image rm -f $(docker_image)
+
+clean: clean-images clean-files ## Forces clean of all outputs (files and images)

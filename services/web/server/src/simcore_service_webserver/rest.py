@@ -17,24 +17,27 @@ from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 
 from servicelib import openapi
 from servicelib.application_setup import ModuleCategory, app_module_setup
-from servicelib.rest_middlewares import append_rest_middlewares
+from servicelib.rest_middlewares import (
+    envelope_middleware_factory,
+    error_middleware_factory,
+)
 from simcore_service_webserver.resources import resources
 
 from . import rest_routes
 from .__version__ import api_version_prefix
-from .rest_config import APP_OPENAPI_SPECS_KEY, get_rest_config
+from .rest_config import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY, get_rest_config
 
 log = logging.getLogger(__name__)
 
 
-def get_openapi_specs_path(api_version_dir: Optional[str]=None) -> Path:
+def get_openapi_specs_path(api_version_dir: Optional[str] = None) -> Path:
     if api_version_dir is None:
         api_version_dir = api_version_prefix
 
-    return resources.get_path(f'api/{api_version_dir}/openapi.yaml')
+    return resources.get_path(f"api/{api_version_dir}/openapi.yaml")
 
 
-def load_openapi_specs(spec_path: Optional[Path]=None) -> OpenApiSpecs:
+def load_openapi_specs(spec_path: Optional[Path] = None) -> OpenApiSpecs:
     if spec_path is None:
         spec_path = get_openapi_specs_path()
 
@@ -45,10 +48,13 @@ def load_openapi_specs(spec_path: Optional[Path]=None) -> OpenApiSpecs:
     return specs
 
 
-@app_module_setup(__name__, ModuleCategory.ADDON,
-    depends=['simcore_service_webserver.security'],
-    logger=log)
-def setup(app: web.Application):
+@app_module_setup(
+    __name__,
+    ModuleCategory.ADDON,
+    depends=["simcore_service_webserver.security"],
+    logger=log,
+)
+def setup(app: web.Application, *, swagger_doc_enabled: bool = True):
     cfg = get_rest_config(app)
     api_version_dir = cfg["version"]
     spec_path = get_openapi_specs_path(api_version_dir)
@@ -61,26 +67,49 @@ def setup(app: web.Application):
     major, *_ = specs.info.version
 
     if f"/v{major}" != base_path:
-        raise ValueError(f"Basepath naming {base_path} does not fit API version {specs.info.version}")
+        raise ValueError(
+            f"REST API basepath {base_path} does not fit openapi.yml version {specs.info.version}"
+        )
+
+    if api_version_prefix != f"v{major}":
+        raise ValueError(
+            f"__version__.api_version_prefix {api_version_prefix} does not fit openapi.yml version {specs.info.version}"
+        )
 
     # diagnostics routes
     routes = rest_routes.create(specs)
     app.router.add_routes(routes)
 
     # middlewares
-    append_rest_middlewares(app, base_path)
+    # NOTE: using safe get here since some tests use incomplete configs
+    is_diagnostics_enabled = (
+        app[APP_CONFIG_KEY].get("diagnostics", {}).get("enabled", {})
+    )
+    app.middlewares.extend(
+        [
+            error_middleware_factory(
+                api_version_prefix, log_exceptions=not is_diagnostics_enabled,
+            ),
+            envelope_middleware_factory(api_version_prefix),
+        ]
+    )
 
-    # rest API doc at /api/doc
+    #
+    # rest API doc at /webapi/doc (optional, e.g. for testing since it can be heavy)
+    #
+    # NOTE: avoid /api/* since traeffik uses for it's own API
+    #
     log.debug("OAS loaded from %s ", spec_path)
-    setup_swagger(app,
-        swagger_from_file=str(spec_path),
-        ui_version=3)
-
+    if swagger_doc_enabled:
+        setup_swagger(
+            app,
+            swagger_url="/webapi/doc",
+            swagger_from_file=str(spec_path),
+            ui_version=3,
+        )
 
 
 # alias
 setup_rest = setup
 
-__all__ = (
-    'setup_rest'
-)
+__all__ = "setup_rest"

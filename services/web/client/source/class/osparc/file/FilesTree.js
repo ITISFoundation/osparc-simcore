@@ -44,7 +44,8 @@ qx.Class.define("osparc.file.FilesTree", {
 
     this.set({
       openMode: "none",
-      decorator: "no-border"
+      decorator: "no-border",
+      font: "text-14"
     });
 
     this.resetChecks();
@@ -389,7 +390,7 @@ qx.Class.define("osparc.file.FilesTree", {
         const datasetData = osparc.data.Converters.createDirEntry(
           dataset.display_name,
           locationId,
-          dataset.dataset_id,
+          dataset.dataset_id
         );
         datasetData.isDataset = true;
         datasetData.loaded = false;
@@ -465,7 +466,7 @@ qx.Class.define("osparc.file.FilesTree", {
     },
 
     __getFilesInTree: function(item, leaves) {
-      if (item.getChildren == null) { // eslint-disable-line no-eq-null
+      if (item.getChildren == null) {
         leaves.push(item);
       } else {
         for (let i=0; i<item.getChildren().length; i++) {

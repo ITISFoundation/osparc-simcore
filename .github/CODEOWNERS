@@ -8,10 +8,12 @@ Makefile                                  @pcrespov, @sanderegg
 /api/                                     @sanderegg, @pcrespov
 /ci/                                      @sanderegg, @pcrespov
 /docs/                                    @pcrespov
+/packages/pytest-simcore                  @pcrespov, @sanderegg
 /packages/service-library                 @pcrespov
 /scripts/demo                             @odeimaiz, @pcrespov
 /scripts/json-schema-to-openapi-schema    @sanderegg
 /scripts/template-projects                @odeimaiz, @pcrespov
+/services/api-gateway                     @pcrespov
 /services/catalog                         @pcrespov
 /services/sidecar                         @pcrespov, @mguidon
 /services/web/client                      @odeimaiz, @oetiker, @ignapas

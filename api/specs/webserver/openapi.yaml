@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "osparc-simcore RESTful API"
-  version: 0.4.0
+  version: 0.5.1
   description: "RESTful API designed for web clients"
   contact:
     name: IT'IS Foundation
@@ -43,12 +43,19 @@ tags:
       defines the protocol for the frontend to interact with the node.
   - name: configuration
   - name: maintenance
+  - name: publications
+    description: |
+      oSPARC users can make publications. Starting from submission of new service candidates, but this could
+      end up accepting other types of publications.
 
 
 paths:
   # DIAGNOSTICS ---------------------------------------------------------
   /:
     $ref: "./openapi-diagnostics.yaml#/paths/~1"
+
+  /health:
+    $ref: "./openapi-diagnostics.yaml#/paths/~1health"
 
   /check/{action}:
     $ref: "./openapi-diagnostics.yaml#/paths/~1check~1{action}"
@@ -82,6 +89,8 @@ paths:
   /auth/confirmation/{code}:
     $ref: "./openapi-auth.yaml#/paths/~1auth~1confirmation~1{code}"
 
+  /auth/api-keys:
+    $ref: "./openapi-auth.yaml#/paths/~1auth~1api-keys"
   # USER SETTINGS ------------------------------------------------------------------
 
   /me:
@@ -165,8 +174,13 @@ paths:
   # TAGS -------------------------------------------------------------------------
   /tags:
     $ref: './openapi-tags.yaml#/paths/~1tags'
+    
   /tags/{tag_id}:
     $ref: './openapi-tags.yaml#/paths/~1tags~1{tag_id}'
+
+  # PUBLICATIONS -------------------------------------------------------------------------
+  /publications/service-submission:
+    $ref: './openapi-publications.yaml#/paths/~1publications~1service-submission'
 
   # CATALOG -------------------------------------------------------------------------
   /catalog/dags:

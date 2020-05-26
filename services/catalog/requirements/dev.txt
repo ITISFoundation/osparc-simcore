@@ -11,6 +11,17 @@
 
 # installs this repo's packages
 -e ../../packages/postgres-database/
+-e ../../packages/pytest-simcore/
 
 # installs current package
 -e .
+
+# basic dev tools
+
+## NOTE: Copied from ../../../requirements.txt to avoid mounting
+#        basedir in docker during devel-mode.
+#  TODO: Better solution needed!
+black
+pip-tools
+bump2version
+rope

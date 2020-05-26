@@ -41,8 +41,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsWindow", {
       height: windowHeight
     });
 
-    const thumbnailWidth = (windowWidth - 250)/1.67;
-    const studyDetails = new osparc.component.metadata.StudyDetails(study, thumbnailWidth);
+    const studyDetails = new osparc.component.metadata.StudyDetails(study, windowWidth);
     const scroll = new qx.ui.container.Scroll().set({
       height: windowHeight
     });

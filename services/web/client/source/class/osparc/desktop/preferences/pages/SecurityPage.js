@@ -24,7 +24,7 @@
  */
 
 qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
-  extend:osparc.desktop.preferences.pages.BasePage,
+  extend: osparc.desktop.preferences.pages.BasePage,
 
   construct: function() {
     const iconSrc = "@FontAwesome5Solid/shield-alt/24";
@@ -32,187 +32,47 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
     this.base(arguments, title, iconSrc);
 
     this.add(this.__createPasswordSection());
+
+    this.add(this.__createAPIKeysSection());
     this.add(this.__createTokensSection());
+
+    this.__rebuildAPIKeysList();
+    this.__rebuildTokensList();
   },
 
   members: {
+    __apiKeysList: null,
     __tokensList: null,
-
-    __createTokensSection: function() {
-      // layout
-      const box = this._createSectionBox(this.tr("Access Tokens"));
-
-      const label = this._createHelpLabel(this.tr(
-        "List of API tokens to access external services. Currently, \
-         only DAT-Core API keys are supported."
-      ));
-      box.add(label);
-
-      let linkBtn = new osparc.ui.form.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
-      box.add(linkBtn);
-
-      const tokensList = this.__tokensList = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
-      box.add(tokensList);
-      this.__rebuildTokensList();
-
-      return box;
-    },
-
-    __rebuildTokensList: function() {
-      this.__tokensList.removeAll();
-      osparc.data.Resources.get("tokens")
-        .then(tokensList => {
-          if (tokensList.length) {
-            for (let i=0; i<tokensList.length; i++) {
-              const tokenForm = this.__createValidTokenForm(tokensList[i]);
-              this.__tokensList.add(tokenForm);
-            }
-          } else {
-            const emptyForm = this.__createEmptyTokenForm();
-            this.__tokensList.add(new qx.ui.form.renderer.Single(emptyForm));
-          }
-        })
-        .catch(err => console.error(err));
-    },
-
-    __createEmptyTokenForm: function() {
-      let form = new qx.ui.form.Form();
-
-      // FIXME: for the moment this is fixed since it has to be a unique id
-      let newTokenService = new qx.ui.form.TextField();
-      newTokenService.set({
-        value: "blackfynn-datcore",
-        readOnly: true
-      });
-      form.add(newTokenService, this.tr("Service"));
-
-      // TODO:
-      let newTokenKey = new qx.ui.form.TextField();
-      newTokenKey.set({
-        placeholder: this.tr("Introduce token key here")
-      });
-      form.add(newTokenKey, this.tr("Key"));
-
-      let newTokenSecret = new qx.ui.form.TextField();
-      newTokenSecret.set({
-        placeholder: this.tr("Introduce token secret here")
-      });
-      form.add(newTokenSecret, this.tr("Secret"));
-
-      let addTokenBtn = new qx.ui.form.Button(this.tr("Add"));
-      addTokenBtn.setWidth(100);
-      addTokenBtn.addListener("execute", e => {
-        if (!osparc.data.Permissions.getInstance().canDo("preferences.token.create", true)) {
-          return;
-        }
-        const params = {
-          data: {
-            "service": newTokenService.getValue(),
-            "token_key": newTokenKey.getValue(),
-            "token_secret": newTokenSecret.getValue()
-          }
-        };
-        osparc.data.Resources.fetch("tokens", "post", params)
-          .then(() => this.__rebuildTokensList())
-          .catch(err => console.error(err));
-      }, this);
-      form.addButton(addTokenBtn);
-
-      return form;
-    },
-
-    __createValidTokenForm: function(token) {
-      const service = token["service"];
-
-      const height = 20;
-      const iconHeight = height-6;
-      const gr = new qx.ui.layout.Grid(10, 3);
-      gr.setColumnFlex(1, 1);
-      gr.setRowHeight(0, height);
-      gr.setRowHeight(1, height);
-      gr.setRowHeight(2, height);
-      const grid = new qx.ui.container.Composite(gr);
-
-      const nameLabel = new qx.ui.basic.Label(this.tr("Token name"));
-      grid.add(nameLabel, {
-        row: 0,
-        column: 0
-      });
-
-      const nameVal = new qx.ui.basic.Label(service);
-      grid.add(nameVal, {
-        row: 0,
-        column: 1
-      });
-
-      /*
-      const showTokenIcon = "@FontAwesome5Solid/edit/"+iconHeight;
-      const showTokenBtn = new qx.ui.form.Button(null, showTokenIcon);
-      showTokenBtn.addListener("execute", e => {
-        const treeItemRenamer = new osparc.component.widget.Renamer(nameVal.getValue());
-        treeItemRenamer.addListener("labelChanged", ev => {
-          const newLabel = ev.getData()["newLabel"];
-          nameVal.setValue(newLabel);
-        }, this);
-        treeItemRenamer.center();
-        treeItemRenamer.open();
-      }, this);
-      grid.add(showTokenBtn, {
-        row: 0,
-        column: 2
-      });
-      */
-
-      const delTokenBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/trash-alt/"+iconHeight);
-      delTokenBtn.addListener("execute", e => {
-        if (!osparc.data.Permissions.getInstance().canDo("preferences.token.delete", true)) {
-          return;
-        }
-        const params = {
-          url: {
-            service
-          }
-        };
-        osparc.data.Resources.fetch("tokens", "delete", params, service)
-          .then(() => this.__rebuildTokensList())
-          .catch(err => console.error(err));
-      }, this);
-      grid.add(delTokenBtn, {
-        row: 0,
-        column: 3
-      });
-
-      return grid;
-    },
+    __requestAPIKeyBtn: null,
 
     __createPasswordSection: function() {
       // layout
-      let box = this._createSectionBox(this.tr("Password"));
+      const box = this._createSectionBox(this.tr("Password"));
 
-      let currentPassword = new qx.ui.form.PasswordField().set({
+      const currentPassword = new qx.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Your current password")
       });
       box.add(currentPassword);
 
-      let newPassword = new qx.ui.form.PasswordField().set({
+      const newPassword = new qx.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Your new password")
       });
       box.add(newPassword);
 
-      let confirm = new qx.ui.form.PasswordField().set({
+      const confirm = new qx.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Retype your new password")
       });
       box.add(confirm);
 
-      let manager = new qx.ui.form.validation.Manager();
+      const manager = new qx.ui.form.validation.Manager();
       manager.setValidator(function(_itemForms) {
         return osparc.auth.core.Utils.checkSamePasswords(newPassword, confirm);
       });
 
-      let resetBtn = new qx.ui.form.Button("Reset Password").set({
+      const resetBtn = new qx.ui.form.Button("Reset Password").set({
         allowGrowX: false
       });
       box.add(resetBtn);
@@ -244,6 +104,245 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
       });
 
       return box;
+    },
+
+    __createAPIKeysSection: function() {
+      // layout
+      const box = this._createSectionBox(this.tr("API Keys"));
+
+      const label = this._createHelpLabel(this.tr(
+        "List API keys associated to your account."
+      ));
+      box.add(label);
+
+      const apiKeysList = this.__apiKeysList = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
+      box.add(apiKeysList);
+
+      const requestAPIKeyBtn = this.__requestAPIKeyBtn = new osparc.ui.form.FetchButton(this.tr("Create API Key")).set({
+        allowGrowX: false
+      });
+      requestAPIKeyBtn.addListener("execute", () => {
+        this.__requestAPIKey();
+      }, this);
+      box.add(requestAPIKeyBtn);
+
+      return box;
+    },
+
+    __requestAPIKey: function() {
+      if (!osparc.data.Permissions.getInstance().canDo("preferences.apikey.create", true)) {
+        return;
+      }
+
+      const createAPIKeyWindow = new osparc.desktop.preferences.window.CreateAPIKey();
+      createAPIKeyWindow.addListener("finished", keyLabel => {
+        const params = {
+          data: {
+            "display_name": keyLabel.getData()
+          }
+        };
+        createAPIKeyWindow.close();
+        this.__requestAPIKeyBtn.setFetching(true);
+        osparc.data.Resources.fetch("apiKeys", "post", params)
+          .then(data => {
+            this.__rebuildAPIKeysList();
+
+            const key = data["api_key"];
+            const secret = data["api_secret"];
+            const showAPIKeyWindow = new osparc.desktop.preferences.window.ShowAPIKey(key, secret);
+            showAPIKeyWindow.center();
+            showAPIKeyWindow.open();
+          })
+          .catch(err => {
+            osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          })
+          .finally(() => this.__requestAPIKeyBtn.setFetching(false));
+      }, this);
+      createAPIKeyWindow.open();
+    },
+
+    __rebuildAPIKeysList: function() {
+      this.__apiKeysList.removeAll();
+      osparc.data.Resources.get("apiKeys")
+        .then(apiKeysList => {
+          if (apiKeysList.length) {
+            for (let i = 0; i < apiKeysList.length; i++) {
+              const apiKeyForm = this.__createValidAPIKeyForm(apiKeysList[i]);
+              this.__apiKeysList.add(apiKeyForm);
+            }
+          }
+        })
+        .catch(err => console.error(err));
+    },
+
+    __createValidAPIKeyForm: function(apiKeyLabel) {
+      const grid = this.__createValidEntryForm();
+
+      const nameLabel = new qx.ui.basic.Label(apiKeyLabel);
+      grid.add(nameLabel, {
+        row: 0,
+        column: 0
+      });
+
+      const delAPIKeyBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/trash-alt/14");
+      delAPIKeyBtn.addListener("execute", e => {
+        this.__deleteAPIKey(apiKeyLabel);
+      }, this);
+      grid.add(delAPIKeyBtn, {
+        row: 0,
+        column: 2
+      });
+
+      return grid;
+    },
+
+    __deleteAPIKey: function(apiKeyLabel) {
+      if (!osparc.data.Permissions.getInstance().canDo("preferences.apikey.delete", true)) {
+        return;
+      }
+      const params = {
+        data: {
+          "display_name": apiKeyLabel
+        }
+      };
+      osparc.data.Resources.fetch("apiKeys", "delete", params)
+        .then(() => this.__rebuildAPIKeysList())
+        .catch(err => console.error(err));
+    },
+
+    __createTokensSection: function() {
+      // layout
+      const box = this._createSectionBox(this.tr("External Service Tokens"));
+
+      const label = this._createHelpLabel(this.tr(
+        "List of API tokens to access external services. Currently, \
+         only DAT-Core API keys are supported."
+      ));
+      box.add(label);
+
+      const linkBtn = new osparc.ui.form.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
+      box.add(linkBtn);
+
+      const tokensList = this.__tokensList = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
+      box.add(tokensList);
+
+      return box;
+    },
+
+    __rebuildTokensList: function() {
+      this.__tokensList.removeAll();
+      osparc.data.Resources.get("tokens")
+        .then(tokensList => {
+          if (tokensList.length) {
+            for (let i = 0; i < tokensList.length; i++) {
+              const tokenForm = this.__createValidTokenForm(tokensList[i]);
+              this.__tokensList.add(tokenForm);
+            }
+          } else {
+            const emptyForm = this.__createEmptyTokenForm();
+            this.__tokensList.add(new qx.ui.form.renderer.Single(emptyForm));
+          }
+        })
+        .catch(err => console.error(err));
+    },
+
+    __createEmptyTokenForm: function() {
+      const form = new qx.ui.form.Form();
+
+      // FIXME: for the moment this is fixed since it has to be a unique id
+      const newTokenService = new qx.ui.form.TextField();
+      newTokenService.set({
+        value: "blackfynn-datcore",
+        readOnly: true
+      });
+      form.add(newTokenService, this.tr("Service"));
+
+      const newTokenKey = new qx.ui.form.TextField();
+      newTokenKey.set({
+        placeholder: this.tr("Introduce token key here")
+      });
+      form.add(newTokenKey, this.tr("Key"));
+
+      const newTokenSecret = new qx.ui.form.TextField();
+      newTokenSecret.set({
+        placeholder: this.tr("Introduce token secret here")
+      });
+      form.add(newTokenSecret, this.tr("Secret"));
+
+      const addTokenBtn = new qx.ui.form.Button(this.tr("Add"));
+      addTokenBtn.setWidth(100);
+      addTokenBtn.addListener("execute", e => {
+        if (!osparc.data.Permissions.getInstance().canDo("preferences.token.create", true)) {
+          return;
+        }
+        const params = {
+          data: {
+            "service": newTokenService.getValue(),
+            "token_key": newTokenKey.getValue(),
+            "token_secret": newTokenSecret.getValue()
+          }
+        };
+        osparc.data.Resources.fetch("tokens", "post", params)
+          .then(() => this.__rebuildTokensList())
+          .catch(err => console.error(err));
+      }, this);
+      form.addButton(addTokenBtn);
+
+      return form;
+    },
+
+    __createValidTokenForm: function(token) {
+      const grid = this.__createValidEntryForm();
+
+      const service = token["service"];
+      const nameLabel = new qx.ui.basic.Label(service);
+      grid.add(nameLabel, {
+        row: 0,
+        column: 0
+      });
+
+      const label = token["keyLabel"] || token["service"];
+      const nameVal = new qx.ui.basic.Label(label);
+      grid.add(nameVal, {
+        row: 0,
+        column: 1
+      });
+
+      const delTokenBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/trash-alt/14");
+      delTokenBtn.addListener("execute", e => {
+        this.__deleteToken(service);
+      }, this);
+      grid.add(delTokenBtn, {
+        row: 0,
+        column: 3
+      });
+
+      return grid;
+    },
+
+    __deleteToken: function(service) {
+      if (!osparc.data.Permissions.getInstance().canDo("preferences.token.delete", true)) {
+        return;
+      }
+      const params = {
+        url: {
+          service
+        }
+      };
+      osparc.data.Resources.fetch("tokens", "delete", params, service)
+        .then(() => this.__rebuildTokensList())
+        .catch(err => console.error(err));
+    },
+
+    __createValidEntryForm: function() {
+      const height = 20;
+      const gr = new qx.ui.layout.Grid(10, 3);
+      gr.setColumnFlex(1, 1);
+      gr.setRowHeight(0, height);
+      gr.setRowHeight(1, height);
+      gr.setRowHeight(2, height);
+      const grid = new qx.ui.container.Composite(gr);
+      return grid;
     }
   }
 });

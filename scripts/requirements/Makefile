@@ -1,38 +1,51 @@
-# Recipes to upgrade requirements
+# Recipes to upgrade requirements in batch
 #
-# USE CAREFULLY. UNDER DEVELOPMENT
+# Examples of usage
+#
+# - Full upgrade of all packages
+#  	make touch packages
+#
+# - Upgrade one library in all packages
+#   make packages upgrade=name-of-package
 #
 #
-#  Examples
+# WARNING: USE CAREFULLY. STILL UNDER DEVELOPMENT
 #
-#  - To upgrade only a package:
-#    make all upgrade=psycopg2-binary
-#
+.DEFAULT_GOAL := help
 
-ROOTDIR = $(abspath $(CURDIR)/../..)
-UPGRADE_OPTION:= $(if $(upgrade),--upgrade-package $(upgrade),)
+# locations
+REPODIR := $(abspath $(CURDIR)/../..)
+PACKAGES_DIR := $(abspath $(REPODIR)/packages)
 
-inputs := $(shell grep --include=*.in --recursive --files-with-match $(upgrade) $(ROOTDIR))
-outputs := $(inputs:.in=.txt)
+UPGRADE_OPTION := $(if $(upgrade),upgrade=$(upgrade),)
 
-
-.DEFAULT_TARGET=info
+# tools
+MAKE_C := $(MAKE) --no-print-directory --directory
 
 
-%.txt: %.in
-	export CUSTOM_COMPILE_COMMAND='make $(notdir $@)'; pip-compile --annotate $(UPGRADE_OPTION) --output-file $@ $<
+.PHONY: touch reqs
+# packages/
+_input-requirements = $(shell find ${PACKAGES_DIR} -type f -name _base.in)
+# api tests
+_input-requirements += $(shell find $(REPODIR)/api/tests/ -type f -name *.in)
+# system tests
+_input-requirements += $(shell find $(REPODIR)/tests/ -type f -name *.in)
 
 
-.PHONY: touch
-touch:
-	$(foreach p,$(inputs),touch $(p);)
-
-.PHONY: all
-all: touch $(outputs)
+$(info Found $(_input-requirements))
 
 
-.PHONY: info
-info:
-	# $(inputs)
-	# ---------
-	# $(outputs)
+touch: ## touches all package requirement inputs
+	$(foreach p,${_input-requirements},touch $(p);)
+
+reqs: ## updates requirements of all package libraries
+	$(foreach p,${_input-requirements},touch $(p); $(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
+
+
+.PHONY: help
+# thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
+help: ## this colorful help
+	@echo "Recipes for '$(notdir $(CURDIR))':"
+	@echo ""
+	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo ""

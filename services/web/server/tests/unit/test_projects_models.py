@@ -1,5 +1,3 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -10,53 +8,69 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from simcore_service_webserver.projects.projects_db import (ProjectDBAPI,
-                                                                _convert_to_db_names,
-                                                                _convert_to_schema_names)
+from simcore_service_webserver.projects.projects_db import (
+    ProjectDBAPI,
+    _convert_to_db_names,
+    _convert_to_schema_names,
+)
 
 
 @pytest.fixture
 def fake_schema_dict():
     return {
         "anEntryThatUsesCamelCase": "I'm the entry",
-        "anotherEntryThatUsesCamelCase": "I'm also an entry"
+        "anotherEntryThatUsesCamelCase": "I'm also an entry",
     }
+
 
 @pytest.fixture
 def fake_db_dict():
     return {
         "an_entry_that_uses_snake_case": "I'm the entry",
-        "another_entry_that_uses_snake_case": "I'm also an entry"
+        "another_entry_that_uses_snake_case": "I'm also an entry",
     }
+
 
 def test_convert_to_db_names(fake_schema_dict):
     db_entries = _convert_to_db_names(fake_schema_dict)
     assert "an_entry_that_uses_camel_case" in db_entries
     assert "another_entry_that_uses_camel_case" in db_entries
 
+
 def test_convert_to_schema_names(fake_db_dict):
-    db_entries = _convert_to_schema_names(fake_db_dict)
+    fake_email = "fakey.justafake@fake.faketory"
+    db_entries = _convert_to_schema_names(fake_db_dict, fake_email)
     assert "anEntryThatUsesSnakeCase" in db_entries
     assert "anotherEntryThatUsesSnakeCase" in db_entries
     # test date time conversion
     date = datetime.datetime.utcnow()
     fake_db_dict["time_entry"] = date
-    db_entries = _convert_to_schema_names(fake_db_dict)
+    db_entries = _convert_to_schema_names(fake_db_dict, fake_email)
     assert "timeEntry" in db_entries
-    assert db_entries["timeEntry"] == "{}Z".format(date.isoformat(timespec='milliseconds'))
+    assert db_entries["timeEntry"] == "{}Z".format(
+        date.isoformat(timespec="milliseconds")
+    )
+    # test conversion of prj owner int to string
+    fake_db_dict["prj_owner"] = 1
+    db_entries = _convert_to_schema_names(fake_db_dict, fake_email)
+    assert "prjOwner" in db_entries
+    assert db_entries["prjOwner"] == fake_email
 
 
 @pytest.fixture
 def user_id():
     return -1
 
+
 class MockAsyncContextManager(MagicMock):
     mock_object = None
 
     async def __aenter__(self):
         return self.mock_object
+
     async def __aexit__(self, *args):
         pass
+
 
 @pytest.fixture
 def mock_db_engine(mocker):
@@ -71,7 +85,9 @@ def mock_db_engine(mocker):
         mock_db_engine = mocker.patch("aiopg.sa.engine.Engine", spec=True)
         mock_db_engine.acquire.return_value = mock_context_manager
         return mock_db_engine, mock_connection
+
     yield create_engine
+
 
 async def test_add_projects(fake_project, user_id, mocker, mock_db_engine):
 
@@ -83,13 +99,13 @@ async def test_add_projects(fake_project, user_id, mocker, mock_db_engine):
 
     db_engine, mock_connection = mock_db_engine(mock_result)
 
-
     db = ProjectDBAPI.init_from_engine(db_engine)
     await db.add_projects([fake_project], user_id=user_id)
 
     db_engine.acquire.assert_called()
     mock_connection.execute.assert_called()
     assert mock_connection.execute.call_count == 3
+
 
 # not sure this is useful...
 # async def test_load_projects(user_id, mocker, mock_db_engine):

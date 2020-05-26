@@ -5,8 +5,6 @@
 
     IMPORTANT: remember that these are still unit-tests!
 """
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -23,22 +21,21 @@ from sqlalchemy.orm import sessionmaker
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 # FIXTURES
-pytest_plugins = [
-    "shared_fixtures.minio_fix",
-]
+pytest_plugins = []
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="session")
 def docker_compose_file():
     """ Overrides pytest-docker fixture
 
     """
     old = os.environ.copy()
     # docker-compose reads these environs
-    os.environ['TEST_POSTGRES_DB']="test"
-    os.environ['TEST_POSTGRES_USER']="test"
-    os.environ['TEST_POSTGRES_PASSWORD']="test"
+    os.environ["TEST_POSTGRES_DB"] = "test"
+    os.environ["TEST_POSTGRES_USER"] = "test"
+    os.environ["TEST_POSTGRES_PASSWORD"] = "test"
 
-    dc_path = current_dir / 'docker-compose.yml'
+    dc_path = current_dir / "docker-compose.yml"
 
     assert dc_path.exists()
     yield str(dc_path)
@@ -46,11 +43,11 @@ def docker_compose_file():
     os.environ = old
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def postgres_service(docker_services, docker_ip):
     cfg = {
         "host": docker_ip,
-        "port": docker_services.port_for('postgres', 5432),
+        "port": docker_services.port_for("postgres", 5432),
         "user": "test",
         "password": "test",
         "database": "test",
@@ -60,12 +57,11 @@ def postgres_service(docker_services, docker_ip):
 
     # Wait until service is responsive.
     docker_services.wait_until_responsive(
-        check=lambda: is_postgres_responsive(url),
-        timeout=30.0,
-        pause=0.1,
+        check=lambda: is_postgres_responsive(url), timeout=30.0, pause=0.1,
     )
 
     return url
+
 
 @pytest.fixture
 def postgres_db(postgres_service):
@@ -81,12 +77,14 @@ def postgres_db(postgres_service):
     # metadata.drop_all(engine)
     engine.dispose()
 
+
 @pytest.fixture
 def postgres_session(postgres_db):
     Session = sessionmaker(postgres_db)
     session = Session()
     yield session
     session.close()
+
 
 # helpers ---------------
 def is_postgres_responsive(url):

@@ -6,10 +6,6 @@
 #   pip install -r requirements/dev.txt
 #
 
-# tools
-bump2version
-watchdog[watchmedo]
-
 # installs base + tests requirements
 -r _test.txt
 
@@ -18,6 +14,18 @@ watchdog[watchmedo]
 -e ../../../packages/postgres-database/
 -e ../../../packages/simcore-sdk/
 -e ../../../packages/service-library/
+-e ../../../packages/pytest-simcore/
 
 # installs current package
 -e .
+
+# basic dev tools
+watchdog[watchmedo]
+
+## NOTE: Copied from ../../../requirements.txt to avoid mounting
+#        basedir in docker during devel-mode.
+#  TODO: Better solution needed!
+black
+pip-tools
+bump2version
+rope

@@ -1,42 +1,43 @@
 # osparc-simcore platform
 
-**WARNING** This application is **still under development**.
+<p align="center">
+<img src="https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png" width="700">
+</p>
 
 <!-- NOTE: when branched replace `master` in urls -->
 [`master`](https://github.com/itisfoundation/osparc-simcore/tree/master)
+[![Code style: black]](https://github.com/psf/black)
 [![Requires.io]](https://requires.io/github/ITISFoundation/osparc-simcore/requirements/?branch=master "State of third party python dependencies")
 [![travis-ci]](https://travis-ci.org/ITISFoundation/osparc-simcore "State of CI: build, test and pushing images")
-[![coverals.io]](https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master "Test coverage")
+![Github-CI Push/PR](https://github.com/ITISFoundation/osparc-simcore/workflows/Github-CI%20Push/PR/badge.svg)
+[![coveralls.io]](https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master)
+[![codecov.io]](https://codecov.io/gh/ITISFoundation/osparc-simcore)
 [![github.io]](https://itisfoundation.github.io/)
-
-
 [![itis.dockerhub]](https://hub.docker.com/u/itisfoundation)
-[![webserver]](https://microbadger.com/images/itisfoundation/webserver "More on itisfoundation/webserver:staging-latest image")
-[![director]](https://microbadger.com/images/itisfoundation/director "More on itisfoundation/director:staging-latest image")
-[![sidecar]](https://microbadger.com/images/itisfoundation/sidecar "More on itisfoundation/sidecar:staging-latest image")
-[![storage]](https://microbadger.com/images/itisfoundation/storage "More on itisfoundation/storage:staging-latest image")
+
+
 
 <!-- ADD HERE ALL BADGE URLS -->
+[Code style: black]:https://img.shields.io/badge/code%20style-black-000000.svg
 [Requires.io]:https://img.shields.io/requires/github/ITISFoundation/osparc-simcore.svg
 [travis-ci]:https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master
-[coverals.io]:https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master
 [github.io]:https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
 [itis.dockerhub]:https://img.shields.io/website/https/hub.docker.com/u/itisfoundation.svg?down_color=red&label=dockerhub%20repos&up_color=green
-[webserver]:https://img.shields.io/microbadger/image-size/itisfoundation/webserver/staging-latest.svg?label=webserver&style=flat
-[director]:https://img.shields.io/microbadger/image-size/itisfoundation/director/staging-latest.svg?label=director&style=flat
-[sidecar]:https://img.shields.io/microbadger/image-size/itisfoundation/sidecar/staging-latest.svg?label=sidecar&style=flat
-[storage]:https://img.shields.io/microbadger/image-size/itisfoundation/storage/staging-latest.svg?label=storage&style=flat
+[coveralls.io]:https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master
+[codecov.io]:https://codecov.io/gh/ITISFoundation/osparc-simcore/branch/master/graph/badge.svg
+
 <!---------------------------->
 
-## Overview
 
-![service-web](docs/img/service-interaction.svg)
+The SIM-CORE, named **o<sup>2</sup>S<sup>2</sup>PARC** – **O**pen **O**nline **S**imulations for **S**timulating **P**eripheral **A**ctivity to **R**elieve **C**onditions – is one of the three integrative cores of the SPARC program’s Data Resource Center (DRC).
+The aim of o<sup>2</sup>S<sup>2</sup>PARC is to establish a comprehensive, freely accessible, intuitive, and interactive online platform for simulating peripheral nerve system neuromodulation/ stimulation and its impact on organ physiology in a precise and predictive manner.
+To achieve this, the platform will comprise both state-of-the art and highly detailed animal and human anatomical models with realistic tissue property distributions that make it possible to perform simulations ranging from the molecular scale up to the complexity of the human body.
 
 
-A graph view of services, ports, volumes and service dependencies:
-![](docs/img/docker-compose-wo-networks.png)
+## Getting Started
 
-## Usage
+
+This is the common workflow to build and deploy locally:
 
 ```bash
   # clone repo
@@ -52,7 +53,7 @@ A graph view of services, ports, volumes and service dependencies:
   # display swarm configuration
   make info-swarm
 
-  # open browser in:
+  # open front-end in the browser
   #  localhost:9081 - simcore front-end site
   #
   xdg-open http://localhost:9081/
@@ -61,7 +62,18 @@ A graph view of services, ports, volumes and service dependencies:
   make down
 ```
 
-## Requirements
+Services are deployed in two stacks:``simcore-stack`` comprises all core-services in the framework
+and ``ops-stack`` is a subset of services from [ITISFoundation/osparc-ops](https://github.com/ITISFoundation/osparc-ops) used
+for operations during development. This is a representation of ``simcore-stack``:
+
+![](docs/img/.stack-simcore-version.yml.png)
+
+
+### Requirements
+
+To verify current base OS, Docker and Python build versions have a look at:
+- Travis CI [config](.travis.yml)
+- GitHub Actions [config](.github/workflows/ci-testing-deploy.yml)
 
 To build and run:
 
@@ -72,28 +84,43 @@ To build and run:
 To develop, in addition:
 
 - python 3.6 (this dependency will be deprecated soon)
+- nodejs for client part (this dependency will be deprecated soon)
+- swagger-cli (make sure to have a recent version of nodejs)
 - [vscode] (highly recommended)
 
+This project works and is developed under **linux (Ubuntu recommended)**.
 
-### Developing in **Windows**
+##### Setting up Other Operating Systems
 
-In windows, it works under [WSL] (windows subsystem for linux).
-It is also highly recommended using [chocolatey] as packages manager.
+When developing on these platforms you are on your own.
 
-- [Install](https://chocolatey.org/docs/installation) chocolatey
+In **windows**, it works under [WSL] (windows subsystem for linux). Some details on the setup:
+
+- [Install](https://chocolatey.org/docs/installation) [chocolatey] package manager
   - ``choco install docker-for-windows``
   - ``choco install wsl`` or using [instructions](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
 -  Follow **all details** on [how to setup flawlessly](https://nickjanetakis.com/blog/setting-up-docker-for-windows-and-wsl-to-work-flawlessly) docker for windows and [WSL]
 
+In **MacOS**, [replacing the MacOS utilities with GNU utils](https://apple.stackexchange.com/a/69332) might be required.
 
 ## Releases
+
+**WARNING** This application is **still under development**.
 
 - [Git release workflow](ops/README.md)
 - Public [releases](https://github.com/ITISFoundation/osparc-simcore/releases)
 - Production in https://osparc.io
 - [Staging instructions](docs/staging-instructions.md)
+- [User Manual](https://itisfoundation.github.io/osparc-manual/)
+
+## Contributing
+
+Would you like to make a change or add something new? Please read the [contributing guidelines](CONTRIBUTING.md).
 
 
+## License
+
+This project is licensed under the terms of the [MIT license](LICENSE).
 
 
 <!-- ADD REFERENCES BELOW AND KEEP THEM IN ALPHABETICAL ORDER -->

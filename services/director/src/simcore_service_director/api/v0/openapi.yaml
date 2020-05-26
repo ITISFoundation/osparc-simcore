@@ -161,6 +161,11 @@ paths:
                           description: distinctive name for the node based on the docker registry path
                           pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
                           example: simcore/services/comp/itis/sleeper
+                        integration-version:
+                          type: string
+                          description: integration version number
+                          pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+                          example: 1.0.0
                         version:
                           type: string
                           description: semantic version number
@@ -540,6 +545,11 @@ paths:
                           description: distinctive name for the node based on the docker registry path
                           pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
                           example: simcore/services/comp/itis/sleeper
+                        integration-version:
+                          type: string
+                          description: integration version number
+                          pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+                          example: 1.0.0
                         version:
                           type: string
                           description: semantic version number
@@ -1967,6 +1977,11 @@ components:
                 description: distinctive name for the node based on the docker registry path
                 pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
                 example: simcore/services/comp/itis/sleeper
+              integration-version:
+                type: string
+                description: integration version number
+                pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+                example: 1.0.0
               version:
                 type: string
                 description: semantic version number

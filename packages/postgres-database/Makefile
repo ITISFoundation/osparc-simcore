@@ -1,26 +1,16 @@
 #
-# TODO: under development
+# Targets for DEVELOPMENT of postgres-database
 #
-.DEFAULT_GOAL := help
-
-REPO_BASE_DIR  = $(abspath $(CURDIR)/../../)
-
-.PHONY: devenv
-devenv: ## build development environment (using main services/docker-compose-build.yml)
-	@$(MAKE) --directory ${REPO_BASE_DIR} $@
+include ../../scripts/common.Makefile
 
 
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)
-	@$(MAKE) --directory requirements all
+	@$(MAKE_C) requirements reqs
 
-
-.check-venv-active:
-	# checking whether virtual environment was activated
-	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
 
 .PHONY: install-dev install-prod install-ci
-install-dev install-prod install-ci: requirements .check-venv-active ## install app in development/production or CI mode
+install-dev install-prod install-ci: requirements _check_venv_active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
 	pip-sync requirements/$(subst install-,,$@).txt
 
@@ -31,19 +21,22 @@ tests: ## runs unit tests
 	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests
 
 
-.PHONY: version-patch version-minor
-version-patch version-minor version-major: ## commits version as patch (bug fixes not affecting the API), minor/minor (backwards-compatible/INcompatible API addition or changes)
-	# upgrades as $(subst version-,,$@) version, commits and tags
-	@bump2version --verbose --list $(subst version-,,$@)
+.PHONY: import-db
+import-db: scripts/copy_database_volume.sh guard-SOURCE_HOST guard-SOURCE_DATA_VOLUME guard-TARGET_DATA_VOLUME ## copy volume $(SOURCE_DATA_VOLUME) from $(SOURCE_HOST) into local $(TARGET_DATA_VOLUME)
+	./scripts/copy_database_volume.sh
 
+guard-%:
+	@ if [ "${${*}}" = "" ]; then \
+		echo "Environment variable $* not set"; \
+		exit 1; \
+	fi
 
-.PHONY: info
-info: ## displays
-	# installed
-	@pip list
-	# version
-	@cat setup.py | grep version=
-
+.PHONY: setup-prod
+export POSTGRES_DATA_VOLUME = $(TARGET_DATA_VOLUME)
+setup-prod: install-dev up-prod  ## sets up a database using an external postgres volume to test migration
+	# discovering
+	sc-pg --help
+	@echo "To test migration, sc-pg discover -u USER -p PASSWORD, then sc-pg upgrade"
 
 .PHONY: setup-commit
 setup-commit: install-dev up-pg ## sets up a database to create a new commit into migration history
@@ -57,38 +50,25 @@ setup-commit: install-dev up-pg ## sets up a database to create a new commit int
 	@echo "To add new commit, sc-pg review -m \"Some message\" "
 
 
-_docker_compose_config := tests/docker-compose.yml
+.PHONY: migrate
+DOT_ENV_FILE = $(abspath $(REPO_BASE_DIR)/.env)
 
-.PHONY: up-pg down-pg
-
-up-pg: ## starts pg server
-	docker-compose -f $(_docker_compose_config) up -d
-
-down-pg: ## stops pg server
-	docker-compose -f $(_docker_compose_config) down
-
-
-.PHONY: autoformat
-autoformat: ## runs black python formatter on this service's code [https://black.readthedocs.io/en/stable/]
-	# auto formatting with black
-	@python3 -m black --verbose \
-		--exclude "/(\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist|migration)/" \
-		$(CURDIR)
+migrate: $(DOT_ENV_FILE) ## basic migration update (use ONLY for development purposes)
+	# Discovering postpgres server
+	@export $(shell grep -v '^#' $< | xargs -0); sc-pg discover
+	# Upgraded to head
+	@sc-pg upgrade
+	@sc-pg clean
 
 
-.PHONY: clean
-clean: down ## cleans all unversioned files in project and temp files create by this makefile
-	# Cleaning unversioned
-	@git clean -ndxf
-	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
-	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
-	@git clean -dxf
 
 
-.PHONY: help
-# thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
-help: ## this colorful help
-	@echo "Recipes for '$(notdir $(CURDIR))':"
-	@echo ""
-	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo ""
+.PHONY: up-pg down-pg up-prod down-prod
+docker-compose-configs = $(wildcard tests/docker-compose*.yml)
+up-pg up-prod: $(docker-compose-configs) ## starts pg server
+	docker-compose -f tests/docker-compose.yml $(if $(findstring -prod,$@),-f tests/docker-compose.prod.yml,) up -d
+
+down-pg down-prod: $(docker-compose-configs) ## stops pg server
+	docker-compose -f tests/docker-compose.yml  $(if $(findstring -prod,$@),-f tests/docker-compose.prod.yml,) down
+
+

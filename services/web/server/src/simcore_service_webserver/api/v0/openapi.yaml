@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore RESTful API
-  version: 0.4.0
+  version: 0.5.1
   description: RESTful API designed for web clients
   contact:
     name: IT'IS Foundation
@@ -43,12 +43,134 @@ tags:
       defines the protocol for the frontend to interact with the node.
   - name: configuration
   - name: maintenance
+  - name: publications
+    description: |
+      oSPARC users can make publications. Starting from submission of new service candidates, but this could
+      end up accepting other types of publications.
 paths:
   /:
     get:
       tags:
         - maintenance
-      summary: Service health check
+      summary: run check
+      operationId: check_running
+      responses:
+        '200':
+          description: Service information
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      status:
+                        type: string
+                      api_version:
+                        type: string
+                      version:
+                        type: string
+                    example:
+                      name: simcore-director-service
+                      status: SERVICE_RUNNING
+                      api_version: 0.1.0-dev+NJuzzD9S
+                      version: 0.1.0-dev+N127Mfv9H
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+  /health:
+    get:
+      tags:
+        - maintenance
+      summary: health check
       operationId: check_health
       responses:
         '200':
@@ -1888,6 +2010,80 @@ paths:
       responses:
         3XX:
           description: redirection to specific ui application page
+  /auth/api-keys:
+    get:
+      summary: lists display names of API keys by this user
+      tags:
+        - authentication
+      operationId: list_api_keys
+      responses:
+        '200':
+          description: returns the display names of API keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '401':
+          description: requires login to  list keys
+        '403':
+          description: not enough permissions to list keys
+    post:
+      summary: creates API keys to access public API
+      tags:
+        - authentication
+      operationId: create_api_key
+      requestBody:
+        description: user registration
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                display_name:
+                  type: string
+      responses:
+        '200':
+          description: Authorization granted returning API key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  display_name:
+                    type: string
+                  api_key:
+                    type: string
+                  api_secret:
+                    type: string
+        '400':
+          description: key name requested is invalid
+        '401':
+          description: requires login to  create a key
+        '403':
+          description: not enough permissions to create a key
+    delete:
+      summary: deletes API key by name
+      tags:
+        - authentication
+      operationId: delete_api_key
+      requestBody:
+        description: deletes given api key by name
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                display_name:
+                  type: string
+      responses:
+        '204':
+          description: api key successfully deleted
+        '401':
+          description: requires login to  delete a key
+        '403':
+          description: not enough permissions to delete a key
   /me:
     get:
       operationId: get_my_profile
@@ -1922,6 +2118,68 @@ paths:
                             format: email
                           role:
                             type: string
+                          groups:
+                            type: object
+                            properties:
+                              me:
+                                type: object
+                                properties:
+                                  gid:
+                                    type: string
+                                  label:
+                                    type: string
+                                  description:
+                                    type: string
+                                example:
+                                  - gid: '27'
+                                    label: A user
+                                    description: A very special user
+                                  - gid: '1'
+                                    label: ITIS Foundation
+                                    description: The Foundation for Research on Information Technologies in Society
+                                  - gid: '0'
+                                    label: All
+                                    description: Open to all users
+                              organizations:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    gid:
+                                      type: string
+                                    label:
+                                      type: string
+                                    description:
+                                      type: string
+                                  example:
+                                    - gid: '27'
+                                      label: A user
+                                      description: A very special user
+                                    - gid: '1'
+                                      label: ITIS Foundation
+                                      description: The Foundation for Research on Information Technologies in Society
+                                    - gid: '0'
+                                      label: All
+                                      description: Open to all users
+                              all:
+                                type: object
+                                properties:
+                                  gid:
+                                    type: string
+                                  label:
+                                    type: string
+                                  description:
+                                    type: string
+                                example:
+                                  - gid: '27'
+                                    label: A user
+                                    description: A very special user
+                                  - gid: '1'
+                                    label: ITIS Foundation
+                                    description: The Foundation for Research on Information Technologies in Society
+                                  - gid: '0'
+                                    label: All
+                                    description: Open to all users
                           gravatar_id:
                             type: string
                     example:
@@ -3378,6 +3636,11 @@ paths:
                           description: distinctive name for the node based on the docker registry path
                           pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
                           example: simcore/services/comp/itis/sleeper
+                        integration-version:
+                          type: string
+                          description: integration version number
+                          pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+                          example: 1.0.0
                         version:
                           type: string
                           description: semantic version number
@@ -4073,6 +4336,7 @@ paths:
                         - name
                         - description
                         - prjOwner
+                        - accessRights
                         - creationDate
                         - lastChangeDate
                         - thumbnail
@@ -4092,7 +4356,11 @@ paths:
                           example: Dabbling in temporal transitions ...
                         prjOwner:
                           type: string
-                          description: user uuid
+                          format: idn-email
+                          description: user email
+                        accessRights:
+                          type: object
+                          description: object containing the GroupID as key and read/write/execution permissions as value
                         creationDate:
                           type: string
                           description: project creation date
@@ -4385,6 +4653,7 @@ paths:
                 - name
                 - description
                 - prjOwner
+                - accessRights
                 - creationDate
                 - lastChangeDate
                 - thumbnail
@@ -4404,7 +4673,11 @@ paths:
                   example: Dabbling in temporal transitions ...
                 prjOwner:
                   type: string
-                  description: user uuid
+                  format: idn-email
+                  description: user email
+                accessRights:
+                  type: object
+                  description: object containing the GroupID as key and read/write/execution permissions as value
                 creationDate:
                   type: string
                   description: project creation date
@@ -4602,6 +4875,7 @@ paths:
                       - name
                       - description
                       - prjOwner
+                      - accessRights
                       - creationDate
                       - lastChangeDate
                       - thumbnail
@@ -4621,7 +4895,11 @@ paths:
                         example: Dabbling in temporal transitions ...
                       prjOwner:
                         type: string
-                        description: user uuid
+                        format: idn-email
+                        description: user email
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
                       creationDate:
                         type: string
                         description: project creation date
@@ -4911,6 +5189,7 @@ paths:
                       - name
                       - description
                       - prjOwner
+                      - accessRights
                       - creationDate
                       - lastChangeDate
                       - thumbnail
@@ -4930,7 +5209,11 @@ paths:
                         example: Dabbling in temporal transitions ...
                       prjOwner:
                         type: string
-                        description: user uuid
+                        format: idn-email
+                        description: user email
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
                       creationDate:
                         type: string
                         description: project creation date
@@ -5226,6 +5509,7 @@ paths:
                       - name
                       - description
                       - prjOwner
+                      - accessRights
                       - creationDate
                       - lastChangeDate
                       - thumbnail
@@ -5245,7 +5529,11 @@ paths:
                         example: Dabbling in temporal transitions ...
                       prjOwner:
                         type: string
-                        description: user uuid
+                        format: idn-email
+                        description: user email
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
                       creationDate:
                         type: string
                         description: project creation date
@@ -5533,6 +5821,7 @@ paths:
                 - name
                 - description
                 - prjOwner
+                - accessRights
                 - creationDate
                 - lastChangeDate
                 - thumbnail
@@ -5552,7 +5841,11 @@ paths:
                   example: Dabbling in temporal transitions ...
                 prjOwner:
                   type: string
-                  description: user uuid
+                  format: idn-email
+                  description: user email
+                accessRights:
+                  type: object
+                  description: object containing the GroupID as key and read/write/execution permissions as value
                 creationDate:
                   type: string
                   description: project creation date
@@ -5750,6 +6043,7 @@ paths:
                       - name
                       - description
                       - prjOwner
+                      - accessRights
                       - creationDate
                       - lastChangeDate
                       - thumbnail
@@ -5769,7 +6063,11 @@ paths:
                         example: Dabbling in temporal transitions ...
                       prjOwner:
                         type: string
-                        description: user uuid
+                        format: idn-email
+                        description: user email
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
                       creationDate:
                         type: string
                         description: project creation date
@@ -6081,6 +6379,7 @@ paths:
                       - name
                       - description
                       - prjOwner
+                      - accessRights
                       - creationDate
                       - lastChangeDate
                       - thumbnail
@@ -6100,7 +6399,11 @@ paths:
                         example: Dabbling in temporal transitions ...
                       prjOwner:
                         type: string
-                        description: user uuid
+                        format: idn-email
+                        description: user email
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
                       creationDate:
                         type: string
                         description: project creation date
@@ -7092,6 +7395,7 @@ paths:
                       - name
                       - description
                       - prjOwner
+                      - accessRights
                       - creationDate
                       - lastChangeDate
                       - thumbnail
@@ -7111,7 +7415,11 @@ paths:
                         example: Dabbling in temporal transitions ...
                       prjOwner:
                         type: string
-                        description: user uuid
+                        format: idn-email
+                        description: user email
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
                       creationDate:
                         type: string
                         description: project creation date
@@ -7400,6 +7708,7 @@ paths:
                       - name
                       - description
                       - prjOwner
+                      - accessRights
                       - creationDate
                       - lastChangeDate
                       - thumbnail
@@ -7419,7 +7728,11 @@ paths:
                         example: Dabbling in temporal transitions ...
                       prjOwner:
                         type: string
-                        description: user uuid
+                        format: idn-email
+                        description: user email
+                      accessRights:
+                        type: object
+                        description: object containing the GroupID as key and read/write/execution permissions as value
                       creationDate:
                         type: string
                         description: project creation date
@@ -8176,6 +8489,112 @@ paths:
       responses:
         '204':
           description: The tag has been successfully deleted
+  /publications/service-submission:
+    post:
+      tags:
+        - publication
+      summary: Submits a new service candidate
+      operationId: service_submission
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - metadata
+              properties:
+                metadata:
+                  type: string
+                  format: binary
+                attachment:
+                  type: string
+                  format: binary
+      responses:
+        '204':
+          description: Submission has been registered
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
   /catalog/dags:
     get:
       tags:

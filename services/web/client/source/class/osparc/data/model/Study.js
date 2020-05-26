@@ -27,8 +27,9 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let study = new osparc.data.model.Study(studyData);
- *   let prjEditor = new osparc.desktop.StudyEditor(study);
+ *   const study = new osparc.data.model.Study(studyData);
+ *   const studyEditor = new osparc.desktop.StudyEditor();
+ *   studyEditor.setStudy(study);
  * </pre>
  */
 
@@ -47,6 +48,7 @@ qx.Class.define("osparc.data.model.Study", {
       description: studyData.description === undefined ? this.getDescription() : studyData.description,
       thumbnail: studyData.thumbnail === undefined ? this.getThumbnail() : studyData.thumbnail,
       prjOwner: studyData.prjOwner === undefined ? osparc.auth.Data.getInstance().getUserName() : studyData.prjOwner,
+      accessRights: studyData.accessRights === undefined ? this.getAccessRights() : studyData.accessRights,
       creationDate: studyData.creationDate === undefined ? this.getCreationDate() : new Date(studyData.creationDate),
       lastChangeDate: studyData.lastChangeDate === undefined ? this.getLastChangeDate() : new Date(studyData.lastChangeDate),
       tags: studyData.tags || []
@@ -91,6 +93,13 @@ qx.Class.define("osparc.data.model.Study", {
       init: ""
     },
 
+    accessRights: {
+      check: "Object",
+      nullable: false,
+      event: "changeAccessRights",
+      init: {}
+    },
+
     creationDate: {
       check: "Date",
       nullable: false,
@@ -125,6 +134,7 @@ qx.Class.define("osparc.data.model.Study", {
         description: "",
         thumbnail: "",
         prjOwner: "",
+        accessRights: {},
         creationDate: new Date(),
         lastChangeDate: new Date(),
         workbench: {},

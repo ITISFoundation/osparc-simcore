@@ -6,8 +6,7 @@
 -r _base.txt
 
 # testing
-coverage==4.5.1 # TODO: Downgraded because of a bug https://github.com/nedbat/coveragepy/issues/716
-
+coverage
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
@@ -18,5 +17,5 @@ pytest-mock
 pytest-sugar
 
 # tools
-pylint
+pylint==2.5.0 # 2.5.3 fails to run in parallel
 coveralls

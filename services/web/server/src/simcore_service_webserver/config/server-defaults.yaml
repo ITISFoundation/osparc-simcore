@@ -1,4 +1,4 @@
-version: '1.0'
+version: "1.0"
 main:
   client_outdir: /usr/src/app/client
   host: 127.0.0.1
@@ -6,14 +6,19 @@ main:
   port: 8080
   testing: true
   studies_access_enabled: True
-  monitoring_enabled: True
 tracing:
   enabled: True
   zipkin_endpoint: http://jaeger:9411
+diagnostics:
+  enabled: True
 director:
   host: director
   port: 8001
   version: v0
+application_proxy:
+  enabled: False
+reverse_proxy:
+  enabled: False
 socketio:
   enabled: True
 db:
@@ -44,12 +49,13 @@ rabbit:
   channels:
     log: comp.backend.channels.log
     progress: comp.backend.channels.progress
+    instrumentation: "comp.backend.channels.instrumentation"
 login:
   enabled: True
   registration_invitation_required: False
   registration_confirmation_required: True
 smtp:
-  sender: 'OSPARC support <support@osparc.io>'
+  sender: "OSPARC support <support@osparc.io>"
   host: mail.foo.com
   port: 25
   tls: False
@@ -71,4 +77,6 @@ activity:
   prometheus_port: 9090
   prometheus_api_version: v1
 tags:
+  enabled: True
+publications:
   enabled: True

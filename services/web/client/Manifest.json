@@ -40,8 +40,8 @@
   "requires": {
     "@qooxdoo/compiler": "^1.0.0-beta",
     "@qooxdoo/framework": "^6.0.0-beta",
-    "ITISFoundation/qx-iconfont-fontawesome5": "^0.1.1",
-    "ITISFoundation/qx-osparc-theme": "^0.4.13",
+    "ITISFoundation/qx-iconfont-fontawesome5": "^0.2.0",
+    "ITISFoundation/qx-osparc-theme": "^0.5.4",
     "qooxdoo/qxl.testtapper": "^0.4.3",
     "qooxdoo/qxl.apiviewer": "^1.0.0-beta",
     "ITISFoundation/qx-iconfont-material": "^0.1.5"

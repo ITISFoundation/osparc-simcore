@@ -32,6 +32,8 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
 
   members: {
     __email: null,
+    __submitBtn: null,
+    __cancelBtn: null,
 
     // overrides base
     _buildPage: function() {
@@ -47,12 +49,10 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       this.add(email);
       osparc.utils.Utils.setIdToWidget(email, "registrationEmailFld");
       this.__email = email;
-
-      // const uname = new qx.ui.form.TextField().set({
-      //   required: true,
-      //   placeholder: this.tr("Introduce a user name")
-      // });
-      // this.add(uname);
+      this.addListener("appear", () => {
+        email.focus();
+        email.activate();
+      });
 
       const pass1 = new qx.ui.form.PasswordField().set({
         required: true,
@@ -82,17 +82,16 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
         return osparc.auth.core.Utils.checkSamePasswords(pass1, pass2);
       });
 
-
       // submit & cancel buttons
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      const submitBtn = new qx.ui.form.Button(this.tr("Submit"));
+      const submitBtn = this.__submitBtn = new qx.ui.form.Button(this.tr("Submit"));
       osparc.utils.Utils.setIdToWidget(submitBtn, "registrationSubmitBtn");
       grp.add(submitBtn, {
         flex:1
       });
 
-      const cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
+      const cancelBtn = this.__cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
       osparc.utils.Utils.setIdToWidget(cancelBtn, "registrationCancelBtn");
       grp.add(cancelBtn, {
         flex:1
@@ -117,22 +116,30 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
     },
 
     __submit: function(userData) {
-      console.debug("Registering new user");
+      osparc.auth.Manager.getInstance().register(userData)
+        .then(log => {
+          this.fireDataEvent("done", log.message);
+          osparc.component.message.FlashMessenger.getInstance().log(log);
+        })
+        .catch(err => {
+          const msg = err.message || this.tr("Cannot register user");
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        });
+    },
 
-      let manager = osparc.auth.Manager.getInstance();
+    _onAppear: function() {
+      // Listen to "Enter" key
+      const commandEnter = new qx.ui.command.Command("Enter");
+      this.__submitBtn.setCommand(commandEnter);
 
-      let successFun = function(log) {
-        this.fireDataEvent("done", log.message);
-        osparc.component.message.FlashMessenger.getInstance().log(log);
-      };
+      // Listen to "Esc" key
+      const commandEsc = new qx.ui.command.Command("Esc");
+      this.__cancelBtn.setCommand(commandEsc);
+    },
 
-      let failFun = function(msg) {
-        msg = msg || this.tr("Cannot register user");
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-      };
-
-      manager.register(userData, successFun, failFun, this);
+    _onDisappear: function() {
+      this.__submitBtn.setCommand(null);
+      this.__cancelBtn.setCommand(null);
     }
-
   }
 });

@@ -21,7 +21,11 @@ def is_service_valid(service: Dict):
             return False
         except SchemaError:
             log.exception("Schema error:")
-            raise exceptions.DirectorException("Incorrect json schema used from %s" % (resources.get_path(resources.RESOURCE_NODE_SCHEMA)))
+            raise exceptions.DirectorException(
+                "Incorrect json schema used from %s"
+                % (resources.get_path(resources.RESOURCE_NODE_SCHEMA))
+            )
+
 
 def validate_nodes(services: List[Dict]):
     validated_services = []

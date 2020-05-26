@@ -200,15 +200,10 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     __populateList: function(reload = false) {
       this.__allServicesList = [];
       let store = osparc.store.Store.getInstance();
-      let services = store.getServices(reload);
-      if (services === null) {
-        store.addListener("servicesRegistered", e => {
-          const data = e.getData();
-          this.__addNewData(data["services"]);
-        }, this);
-      } else {
-        this.__addNewData(services);
-      }
+      store.getServicesDAGs(reload)
+        .then(services => {
+          this.__addNewData(services);
+        });
     },
 
     __addNewData: function(newData) {
@@ -266,7 +261,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     },
 
     __onAddService: function(model) {
-      if (model == null && this.__serviceBrowser.isSelectionEmpty()) { // eslint-disable-line no-eq-null
+      if (model == null && this.__serviceBrowser.isSelectionEmpty()) {
         return;
       }
 

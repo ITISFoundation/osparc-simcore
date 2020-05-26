@@ -23,10 +23,10 @@ qx.Mixin.define("osparc.component.filter.MFilterable", {
     /**
      * Used to subscribe the element to a filter group.
      *
-     * @param {String} groupId Id of the filter group to subscribe to.
+     * @param {String} filterGroupId Id of the filter group to subscribe to.
      */
-    subscribeToFilterGroup: function(groupId) {
-      const msgName = osparc.utils.Utils.capitalize(groupId, "filter");
+    subscribeToFilterGroup: function(filterGroupId) {
+      const msgName = osparc.utils.Utils.capitalize(filterGroupId, "filter");
       qx.event.message.Bus.getInstance().subscribe(msgName, this.__subscriber, this);
     },
     /**

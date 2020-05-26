@@ -7,8 +7,12 @@
 #
 # by sanderegg, pcrespov
 .DEFAULT_GOAL := help
+SHELL := /bin/bash
+
 
 # TOOLS --------------------------------------
+
+MAKE_C := $(MAKE) --no-print-directory --directory
 
 # Operating system
 ifeq ($(filter Windows_NT,$(OS)),)
@@ -20,12 +24,12 @@ endif
 IS_WIN  := $(strip $(if $(or $(IS_LINUX),$(IS_OSX),$(IS_WSL)),,$(OS)))
 $(if $(IS_WIN),$(error Windows is not supported in all recipes. Use WSL instead. Follow instructions in README.md),)
 
-SHELL := /bin/bash
 
 # VARIABLES ----------------------------------------------
 # TODO: read from docker-compose file instead $(shell find  $(CURDIR)/services -type f -name 'Dockerfile')
 # or $(notdir $(subst /Dockerfile,,$(wildcard services/*/Dockerfile))) ...
 SERVICES_LIST := \
+	api-gateway \
 	catalog \
 	director \
 	sidecar \
@@ -71,52 +75,67 @@ endif
 #
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
 
-.PHONY: build build-nc rebuild build-devel build-devel-nc build-cache build-cache-nc
+.PHONY: build build-nc rebuild build-devel build-devel-nc build-devel-kit build-devel-x build-cache build-cache-kit build-cache-x build-cache-nc build-kit build-x
 
 define _docker_compose_build
-export BUILD_TARGET=$(if $(findstring -devel,$@),development,$(if $(findstring -cache,$@),cache,production)); \
-docker-compose -f services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,)
+export BUILD_TARGET=$(if $(findstring -devel,$@),development,$(if $(findstring -cache,$@),cache,production));\
+$(if $(findstring -x,$@),\
+	pushd services; docker buildx bake --file docker-compose-build.yml; popd;,\
+	docker-compose -f services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,) $(if $(target),,--parallel)\
+)
 endef
 
 rebuild: build-nc # alias
-build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
+build build-nc build-kit build-x: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
 ifeq ($(target),)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client compile
+
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
+	$(MAKE_C) services/web/client compile$(if $(findstring -x,$@),-x,)
+
 	# Building services
-	$(_docker_compose_build) --parallel
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
+	$(_docker_compose_build)
 else
 ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client clean compile
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
+	$(MAKE_C) services/web/client clean compile$(if $(findstring -x,$@),-x,)
 endif
 	# Building service $(target)
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
 	$(_docker_compose_build) $(target)
 endif
 
 
-build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
+build-devel build-devel-nc build-devel-kit build-devel-x: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
 ifeq ($(target),)
 	# Building services
-	$(_docker_compose_build) --parallel
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
+	$(_docker_compose_build)
 else
 ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client touch compile-dev
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
+	$(MAKE_C) services/web/client touch$(if $(findstring -x,$@),-x,) compile-dev
 endif
 	# Building service $(target)
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
 	$(_docker_compose_build) $(target)
 endif
 
 
 # TODO: should download cache if any??
-build-cache build-cache-nc: .env ## Build cache images and tags them as 'local/{service-name}:cache'
+build-cache build-cache-nc build-cache-kit build-cache-x: .env ## Build cache images and tags them as 'local/{service-name}:cache'
 ifeq ($(target),)
 	# Compiling front-end
-	@$(MAKE) -C services/web/client compile
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,)
+	$(MAKE_C) services/web/client compile$(if $(findstring -x,$@),-x,)
 	# Building cache images
-	$(_docker_compose_build) --parallel
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,)
+	$(_docker_compose_build)
 else
+	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,)
 	$(_docker_compose_build) $(target)
 endif
 
@@ -124,6 +143,11 @@ endif
 $(CLIENT_WEB_OUTPUT):
 	# Ensures source-output folder always exists to avoid issues when mounting webclient->webserver dockers. Supports PowerShell
 	-mkdir $(if $(IS_WIN),,-p) $(CLIENT_WEB_OUTPUT)
+
+
+.PHONY: shell
+shell:
+	docker run -it local/$(target):production /bin/sh
 
 
 ## docker SWARM -------------------------------
@@ -165,12 +189,13 @@ endif
 
 
 up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
+	# Start compile+watch front-end container [front-end]	
+	$(MAKE_C) services/web/client down compile-dev flags=--watch
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy -c $< $(SWARM_STACK_NAME)
 	$(MAKE) .deploy-ops
-	# Start compile+watch front-end container [front-end]
-	$(if $(IS_WSL),$(warning WINDOWS: Do not forget to run scripts/win-watcher.bat in cmd),)
-	$(MAKE) -C services/web/client compile-dev flags=--watch
+	$(MAKE_C) services/web/client follow-dev-logs
+
 
 up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Deploy stack $(SWARM_STACK_NAME)
@@ -194,7 +219,7 @@ down: ## Stops and removes stack
 		$(shell docker stack ls --format={{.Name}} | tac),\
 		docker stack rm $(stack);)
 	# Removing client containers (if any)
-	-$(MAKE) -C services/web/client down
+	-$(MAKE_C) services/web/client down
 	# Removing generated docker compose configurations, i.e. .stack-*
 	-$(shell rm $(wildcard .stack-*))
 
@@ -272,8 +297,6 @@ push-version: tag-version
 ## PYTHON -------------------------------
 .PHONY: pylint
 
-PY_PIP = $(if $(IS_WIN),cd .venv/Scripts && pip.exe,.venv/bin/pip3)
-
 pylint: ## Runs python linter framework's wide
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 	# TODO: NOT windows friendly
@@ -290,27 +313,27 @@ pylint: ## Runs python linter framework's wide
 
 .venv:
 	python3 -m venv $@
-	$@/bin/pip3 install --upgrade \
+	$@/bin/pip3 --quiet install --upgrade \
 		pip \
 		wheel \
 		setuptools
 
 devenv: .venv ## create a python virtual environment with dev tools (e.g. linters, etc)
-	$</bin/pip3 install -r requirements.txt
+	$</bin/pip3 --quiet install -r requirements.txt
 	@echo "To activate the venv, execute 'source .venv/bin/activate'"
 
 devenv-all: devenv ## sets up extra development tools (everything else besides python)
 	# Upgrading client compiler
-	@$(MAKE) --directory services/web/client upgrade
+	@$(MAKE_C) services/web/client upgrade
 	# Building tools
-	@$(MAKE) --directory scripts/json-schema-to-openapi-schema
+	@$(MAKE_C) scripts/json-schema-to-openapi-schema
 
 
 ## MISC -------------------------------
 
 .PHONY: new-service
 new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice and drops it under services/ [UNDER DEV]
-	$</bin/pip3 install cookiecutter
+	$</bin/pip3 --quiet install cookiecutter
 	.venv/bin/cookiecutter gh:itisfoundation/cookiecutter-simcore-pyservice --output-dir $(CURDIR)/services
 
 # TODO: NOT windows friendly
@@ -327,17 +350,17 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 
 .PHONY: openapi-specs
 openapi-specs: ## bundles and validates openapi specifications and schemas of ALL service's API
-	@$(MAKE) --directory services/web/server $@
-	@$(MAKE) --directory services/storage $@
-	@$(MAKE) --directory services/director $@
+	@$(MAKE_C) services/web/server $@
+	@$(MAKE_C) services/storage $@
+	@$(MAKE_C) services/director $@
 
 
 .PHONY: code-analysis
 code-analysis: .codeclimate.yml ## runs code-climate analysis
 	# Validates $<
-	./scripts/code-climate.sh validate-config
+	./scripts/code-climate.bash validate-config
 	# Running analysis
-	./scripts/code-climate.sh analyze
+	./scripts/code-climate.bash analyze
 
 
 .PHONY: info info-images info-swarm  info-tools
@@ -376,7 +399,7 @@ ifeq ($(target),)
 			$(call show-meta,$(service))\
 		)
 	## Client images:
-	@$(MAKE) -C services/web/client info
+	@$(MAKE_C) services/web/client info
 else
 	## $(target) images:
 	@$(call show-meta,$(target))
@@ -397,47 +420,56 @@ ifneq ($(SWARM_HOSTS), )
 endif
 
 
-.PHONY: clean clean-images clean-venv clean-all
+.PHONY: clean clean-images clean-venv clean-all clean-ps
 
-git_clean_args := -dxf -e .vscode -e TODO.md -e .venv
-
+_git_clean_args := -dxf -e .vscode -e TODO.md -e .venv
+_running_containers = $(shell docker ps -aq)
 
 .check-clean:
-	@git clean -n $(git_clean_args)
+	@git clean -n $(_git_clean_args)
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 
-clean-venv: ## Purges .venv into original configuration
+clean-venv: devenv ## Purges .venv into original configuration
 	# Cleaning your venv
-	pip-sync $(CURDIR)/requirements.txt
+	.venv/bin/pip-sync --quiet $(CURDIR)/requirements.txt
 	@pip list
 
-clean: .check-clean clean-venv ## cleans all unversioned files in project and temp files create by this makefile
+clean: .check-clean ## cleans all unversioned files in project and temp files create by this makefile
 	# Cleaning unversioned
-	@git clean $(git_clean_args)
+	@git clean $(_git_clean_args)
 	# Cleaning web/client
-	@$(MAKE) -C services/web/client clean
-	# Cleaning postgres maintenance
-	@$(MAKE) -C packages/postgres-database/docker clean
+	@$(MAKE_C) services/web/client clean-files
+
+clean-ps: ## stops and deletes running containers
+	$(if $(_running_containers), docker rm -f $(_running_containers),)
 
 clean-images: ## removes all created images
 	# Cleaning all service images
 	-$(foreach service,$(SERVICES_LIST)\
 		,docker image rm -f $(shell docker images */$(service):* -q);)
 	# Cleaning webclient
-	@$(MAKE) -C services/web/client clean
+	@$(MAKE_C) services/web/client clean-images
 	# Cleaning postgres maintenance
-	@$(MAKE) -C packages/postgres-database/docker clean
+	@$(MAKE_C) packages/postgres-database/docker clean
 
-clean-all: clean clean-images # Deep clean including .venv and produced images
+clean-all: clean clean-ps clean-images # Deep clean including .venv and produced images
 	-rm -rf .venv
 
 
 .PHONY: postgres-upgrade
 postgres-upgrade: ## initalize or upgrade postgres db to latest state
-	@$(MAKE) -C packages/postgres-database/docker build
-	@$(MAKE) -C packages/postgres-database/docker upgrade
+	@$(MAKE_C) packages/postgres-database/docker build
+	@$(MAKE_C) packages/postgres-database/docker upgrade
+
 
 .PHONY: reset
 reset: ## restart docker daemon (LINUX ONLY)
 	sudo systemctl restart docker
+
+.PHONY: auto-doc
+auto-doc: .stack-simcore-version.yml ## updates diagrams for README.md
+	# Parsing docker-compose config $< and creating graph
+	@./scripts/docker-compose-viz.bash $<
+	# Updating docs/img
+	@mv --verbose $<.png docs/img/

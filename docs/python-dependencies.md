@@ -17,6 +17,36 @@ TODO: finish!
 - The dependencies have to be kept up-to-date regularly (e.g. due to security patches;  new feature in our package might add new direct dependencies to our requirements)
 - Inter-dependent libraries typically have different release cycles creating in time version conflicts (e.g. package A and B strictly depend on different versions of C)
 
+
+- packages uses input requirements as install-requirements (i.e. entry in setup and in requirements/ci.txt) NOT compiled ones
+- services use compiled requirements
+
+
+
+- tests packages with the latest (i.e. compile requirements to lastest version)
+  - if tests fails, then add constraints in input requirements
+    - try adding tests that check inter-library compatibility
+  - if tests succeed, you can use them in services
+  - if at least one service has a problem, we need to decide whether to add a constraint:
+    a) at the package level => will ensure is tested but is constraining all services
+    b) at the service level => only affects service but cannot do isolate tests against latests upgrades
+
+
+### How to purge unused requirements?
+
+
+### Propagation of constraints
+
+- Situation:  upgrading one package the developer finds an issue, e.g.
+```
+coverage==5.0.3 # TODO: Downgraded because of a bug https://github.com/nedbat/coveragepy/issues/716
+
+pytest~=5.3.5  # Bug in pytest-sugar https://github.com/Teemu/pytest-sugar/issues/187
+pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+```
+- Question: how to make sure this is also taken into account in other places?
+
+
 !-->
 
 ## Rationale
@@ -52,6 +82,10 @@ Every python package specifies its dependencies to the installer via the ``setup
    - paths entries in ``requirements/[dev|ci|prod].txt``
    - package names+version in requirements list for ``setup.py``
 1. Cannot use [pip-tools] (e.g. ``pip-sync``) with ``requirements/ci.txt`` or ``requirements/prod.txt`` because of in-place dependencies: ``pip-compile does not support URLs as packages, unless they are editable. Perhaps add -e option? (constraint was: file:///home/crespo/devp/osparc-simcore/packages/s3wrapper (from -r requirements/ci.txt (line 13)))``
+
+### Updates [March 2020]
+
+1. Created common makefile in [scripts/requirements.Makefile](scripts/requirements.Makefile)
 
 ## Workflows
 
@@ -109,6 +143,7 @@ $ make
 1. [Pin your packages](https://nvie.com/posts/pin-your-packages/) by V. Driessen
 1. [Using pip-tools to manage my python dependencies](https://alexwlchan.net/2017/10/pip-tools/) by alexwlchan
 1. [A successful pip-tools workflow for managing Python package requirements](https://jamescooke.info/a-successful-pip-tools-workflow-for-managing-python-package-requirements.html) by J. Cooke
+1. [Python Application Dependency Management in 2018](https://hynek.me/articles/python-app-deps-2018/#pip-tools-everything-old-is-new-again) by Hynek Schlawack
 
 
 [pip-tools]:https://github.com/jazzband/pip-tools

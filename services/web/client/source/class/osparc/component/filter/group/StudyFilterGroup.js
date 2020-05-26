@@ -13,19 +13,21 @@ qx.Class.define("osparc.component.filter.group.StudyFilterGroup", {
   extend: qx.ui.core.Widget,
 
   /**
-   * Constructor takes the desired groupId for the filters group.
-   * @param {String} groupId Group id of the filter
+   * Constructor takes the desired filterGroupId for the filters group.
+   * @param {String} filterGroupId Group id of the filter
    */
-  construct: function(groupId) {
+  construct: function(filterGroupId) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox());
 
-    this.__textFilter = new osparc.component.filter.TextFilter("text", groupId);
+    this.__textFilter = new osparc.component.filter.TextFilter("text", filterGroupId);
+    this.__textFilter.getChildControl("textfield").setFont("text-14");
     osparc.utils.Utils.setIdToWidget(this.__textFilter, "studyFiltersTextFld");
-    this.__tagsFilter = new osparc.component.filter.UserTagsFilter("tags", groupId).set({
+    this._add(this.__textFilter);
+
+    this.__tagsFilter = new osparc.component.filter.UserTagsFilter("tags", filterGroupId).set({
       visibility: osparc.data.Permissions.getInstance().canDo("study.tag") ? "visible" : "excluded"
     });
-    this._add(this.__textFilter);
     this._add(this.__tagsFilter);
   },
 

@@ -33,8 +33,8 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
     columnModel.getBehavior().setMinWidth(1, 80);
     columnModel.getBehavior().setMinWidth(2, 80);
 
-    columnModel.setDataCellRenderer(4, new osparc.ui.table.cellrenderer.Percentage("#2c7cce"));
-    columnModel.setDataCellRenderer(5, new osparc.ui.table.cellrenderer.Percentage("#358475").set({
+    columnModel.setDataCellRenderer(4, new osparc.ui.table.cellrenderer.Percentage("activitytree-background-cpu"));
+    columnModel.setDataCellRenderer(5, new osparc.ui.table.cellrenderer.Percentage("activitytree-background-memory").set({
       unit: "MB"
     }));
 
@@ -179,7 +179,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
 
           // Get service names
           if (this.__serviceNames === null) {
-            this.__serviceNames = await osparc.data.Resources.get("servicesTodo");
+            this.__serviceNames = await osparc.data.Resources.get("services");
           }
 
           const rows = [];
@@ -215,8 +215,8 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
                 const queued = activity[key].queued;
                 const limits = activity[key].limits;
                 if (stats) {
-                  row[4] = stats.cpuUsage == null ? null : (Math.round(stats.cpuUsage * 10) / 10) + (limits && limits.cpus ? `/${limits.cpus * 100}` : ""); // eslint-disable-line no-eq-null
-                  row[5] = stats.memUsage == null ? null : (Math.round(stats.memUsage * 10) / 10) + (limits && limits.mem ? `/${limits.mem}` : ""); // eslint-disable-line no-eq-null
+                  row[4] = stats.cpuUsage == null ? null : (Math.round(stats.cpuUsage * 10) / 10) + (limits && limits.cpus ? `/${limits.cpus * 100}` : "");
+                  row[5] = stats.memUsage == null ? null : (Math.round(stats.memUsage * 10) / 10) + (limits && limits.mem ? `/${limits.mem}` : "");
                   row[3] = this.tr("Running");
                 }
                 if (queued) {

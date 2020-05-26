@@ -1,4 +1,4 @@
-version: '3.7'
+version: "3.7"
 services:
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
@@ -10,7 +10,7 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
       - TESTING=false
-      - LOGLEVEL=WARNING
+      - LOGLEVEL=${LOG_LEVEL:-WARNING}
     depends_on:
       - postgres
     networks:
@@ -27,6 +27,9 @@ services:
       - REGISTRY_SSL=${REGISTRY_SSL}
       - DIRECTOR_REGISTRY_CACHING=${DIRECTOR_REGISTRY_CACHING}
       - DIRECTOR_REGISTRY_CACHING_TTL=${DIRECTOR_REGISTRY_CACHING_TTL}
+      - DIRECTOR_SELF_SIGNED_SSL_SECRET_ID=${DIRECTOR_SELF_SIGNED_SSL_SECRET_ID}
+      - DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME=${DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME}
+      - DIRECTOR_SELF_SIGNED_SSL_FILENAME=${DIRECTOR_SELF_SIGNED_SSL_FILENAME}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -40,13 +43,17 @@ services:
       - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
       - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX:-undefined}
       - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
+      - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
       - TRACING_ENABLED=${TRACING_ENABLED:-True}
       - TRACING_ZIPKIN_ENDPOINT=${TRACING_ZIPKIN_ENDPOINT:-http://jaeger:9411}
+      - TRAEFIK_SIMCORE_ZONE=${TRAEFIK_SIMCORE_ZONE:-internal_simcore_stack}
+      - LOGLEVEL=${LOG_LEVEL:-WARNING}
+      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
     volumes:
-      - '/var/run/docker.sock:/var/run/docker.sock'
+      - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
       placement:
-       constraints:
+        constraints:
           - node.platform.os == linux
           - node.role == manager
     networks:
@@ -58,13 +65,15 @@ services:
     init: true
     environment:
       - BUILD_DATE=${BUILD_DATE:-1970-01-01T01:00:00Z}
-      - DIRECTOR_HOST=director
-      - DIRECTOR_PORT=8080
-      - STORAGE_HOST=storage
-      - STORAGE_PORT=8080
+      - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
+      - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
+      - STORAGE_HOST=${STORAGE_HOST:-storage}
+      - STORAGE_PORT=${STORAGE_PORT:-8080}
+      - CATALOG_HOST=${CATALOG_HOST:-catalog}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
-      - WEBSERVER_MONITORING_ENABLED=1
-      - WEBSERVER_LOGLEVEL=WARNING
+      - WEBSERVER_LOGLEVEL=${LOG_LEVEL:-WARNING}
+      - DIAGNOSTICS_MAX_DELAY_SECS=30
+      - DIAGNOSTICS_MAX_AVG_LATENCY=10
     env_file:
       - ../.env
     depends_on:
@@ -76,6 +85,18 @@ services:
         constraints:
           - node.platform.os == linux
           - node.role == manager
+      labels:
+        - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
+        # gzip compression
+        - traefik.http.middlewares.gzip.compress=true
+        # ssl header necessary so that socket.io upgrades correctly from polling to websocket mode. the middleware must be attached to the right connection.
+        - traefik.http.middlewares.simcore_sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
+        - traefik.enable=true
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.server.port=8080
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=hostregexp(`{host:.+}`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.entrypoints=http
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.priority=1
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=gzip@docker, simcore_sslheader@docker
     networks:
       - default
       - interactive_services_subnet
@@ -85,12 +106,12 @@ services:
     init: true
     deploy:
       mode: replicated
-      replicas: 4
+      replicas: 8
       endpoint_mode: dnsrr
       resources:
         reservations:
-          cpus: '0.1'
-          memory: '100M'
+          cpus: "0.1"
+          memory: "100M"
     volumes:
       - input:/home/scu/input
       - output:/home/scu/output
@@ -101,8 +122,7 @@ services:
       - RABBIT_PORT=${RABBIT_PORT}
       - RABBIT_USER=${RABBIT_USER}
       - RABBIT_PASSWORD=${RABBIT_PASSWORD}
-      - RABBIT_LOG_CHANNEL=${RABBIT_LOG_CHANNEL}
-      - RABBIT_PROGRESS_CHANNEL=${RABBIT_PROGRESS_CHANNEL}
+      - RABBIT_CHANNELS=${RABBIT_CHANNELS}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -118,7 +138,7 @@ services:
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
-      - SIDECAR_LOGLEVEL=WARNING
+      - SIDECAR_LOGLEVEL=${LOG_LEVEL:-WARNING}
     depends_on:
       - rabbit
       - postgres
@@ -135,7 +155,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
-      - STORAGE_LOGLEVEL=WARNING
+      - STORAGE_LOGLEVEL=${LOG_LEVEL:-WARNING}
       - STORAGE_MONITORING_ENABLED=1
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
@@ -193,15 +213,55 @@ services:
     command:
       [
         "postgres",
-        "-c", "tcp_keepalives_idle=600",
-        "-c", "tcp_keepalives_interval=600",
-        "-c", "tcp_keepalives_count=5"
+        "-c",
+        "tcp_keepalives_idle=600",
+        "-c",
+        "tcp_keepalives_interval=600",
+        "-c",
+        "tcp_keepalives_count=5",
       ]
   redis:
     image: redis:5.0-alpine
     init: true
     networks:
       - default
+
+  traefik:
+    image: traefik:v2.2.0
+    init: true
+    command:
+      - "--api=true"
+      - "--api.dashboard=true"
+      - "--log.level=WARNING"
+      - "--accesslog=false"
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.addEntryPointsLabels=true"
+      - "--metrics.prometheus.addServicesLabels=true"
+      - "--entryPoints.metrics.address=:8082"
+      - "--metrics.prometheus.entryPoint=metrics"
+      - "--entryPoints.http.address=:80"
+      - "--entryPoints.traefik_monitor.address=:8080"
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      - "--providers.docker.network=${SWARM_STACK_NAME}_default"
+      - "--providers.docker.swarmMode=true"
+      - "--providers.docker.exposedByDefault=false"
+      - "--providers.docker.constraints=Label(`io.simcore.zone`, `${TRAEFIK_SIMCORE_ZONE}`)"
+      - "--tracing=true"
+      - "--tracing.jaeger=true"
+      - "--tracing.jaeger.samplingServerURL=http://jaeger:5778/sampling"
+      - "--tracing.jaeger.localAgentHostPort=jaeger:6831"
+
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+    networks:
+      - default
+      - interactive_services_subnet
 
 volumes:
   input: {}

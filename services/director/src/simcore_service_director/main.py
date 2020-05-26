@@ -5,22 +5,24 @@ import os
 from aiohttp import web
 
 from servicelib.client_session import persistent_client_session
-from servicelib.monitoring import setup_monitoring
 from servicelib.tracing import setup_tracing
 from simcore_service_director import config, registry_cache_task, resources
 from simcore_service_director.rest import routing
+from simcore_service_director.monitoring import setup_app_monitoring
 
 log = logging.getLogger(__name__)
 
 
 def setup_app_tracing(app: web.Application, app_name: str) -> bool:
-    host= "0.0.0.0" if os.environ.get("SC_BUILD_TARGET") else "127.0.0.1" # nosec
-    port=8080
+    host = "0.0.0.0" if os.environ.get("SC_BUILD_TARGET") else "127.0.0.1"  # nosec
+    port = 8080
     cfg = {
         "enabled": config.TRACING_ENABLED,
-        "zipkin_endpoint": config.TRACING_ZIPKIN_ENDPOINT
+        "zipkin_endpoint": config.TRACING_ZIPKIN_ENDPOINT,
     }
     return setup_tracing(app, app_name, host, port, cfg)
+
+
 
 def setup_app() -> web.Application:
     api_spec_path = resources.get_path(resources.RESOURCE_OPEN_API)
@@ -31,17 +33,17 @@ def setup_app() -> web.Application:
 
     registry_cache_task.setup(app)
 
-    # TODO: temporary disabled until service is updated
-    if False: #pylint: disable=using-constant-test
-        setup_monitoring(app, "simcore_service_director")
+    setup_app_monitoring(app, "simcore_service_director")
 
     setup_app_tracing(app, "simcore_service_director")
 
     return app
 
+
 def main() -> None:
     app = setup_app()
     web.run_app(app, port=8080)
+
 
 if __name__ == "__main__":
     main()

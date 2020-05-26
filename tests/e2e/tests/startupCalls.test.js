@@ -8,9 +8,8 @@ const {
 
 beforeAll(async () => {
   await page.goto(url);
-
   await auto.register(page, user, pass);
-  await auto.logIn(page, user, pass);
+  await page.waitFor(1000);
 }, ourTimeout);
 
 afterAll(async () => {
@@ -18,8 +17,6 @@ afterAll(async () => {
 }, ourTimeout);
 
 describe('Calls after logging in', () => {
-  page.waitFor(1000);
-
   test('Profile', async () => {
     const responseEnv = await utils.fetch('me');
     expect(responseEnv.data["login"]).toBe(user);

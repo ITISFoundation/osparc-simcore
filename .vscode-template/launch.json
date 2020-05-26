@@ -5,6 +5,19 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Python: Remote Attach director",
+      "type": "python",
+      "request": "attach",
+      "port": 3004,
+      "host": "127.0.0.1",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/devel"
+        }
+      ]
+    },
+    {
       "name": "Python: Remote Attach webserver",
       "type": "python",
       "request": "attach",
@@ -17,19 +30,19 @@
         }
       ]
     },
-      {
-        "name": "Python: Remote Attach sidecar",
-        "type": "python",
-        "request": "attach",
-        "port": 3002,
-        "host": "127.0.0.1",
-        "pathMappings": [
-          {
-            "localRoot": "${workspaceFolder}",
-            "remoteRoot": "/devel"
-          }
-        ]
-      },
+    {
+      "name": "Python: Remote Attach sidecar",
+      "type": "python",
+      "request": "attach",
+      "port": 3002,
+      "host": "127.0.0.1",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/devel"
+        }
+      ]
+    },
     {
       "name": "Python: Remote Attach storage",
       "type": "python",
@@ -55,6 +68,22 @@
           "remoteRoot": "/devel"
         }
       ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug e2e tests",
+      "runtimeArgs": [
+        "--inspect-brk",
+        "${workspaceRoot}/tests/e2e/node_modules/.bin/jest",
+        "--runInBand",
+        "--colors"
+      ],
+      "cwd": "${workspaceFolder}/tests/e2e",
+      "restart": true,
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "port": 9229
     }
   ]
 }

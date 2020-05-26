@@ -1,5 +1,3 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -9,6 +7,7 @@
 import copy
 import difflib
 import json
+
 # https://blog.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1
 #
 from typing import Callable, Dict, List
@@ -20,18 +19,18 @@ from aiohttp import web
 
 from simcore_service_webserver.resources import resources
 from simcore_service_webserver.security_access_model import (
-    RoleBasedAccessModel, check_access)
+    RoleBasedAccessModel,
+    check_access,
+)
 from simcore_service_webserver.security_permissions import and_, or_
-from simcore_service_webserver.security_roles import (ROLES_PERMISSIONS,
-                                                      UserRole)
+from simcore_service_webserver.security_roles import ROLES_PERMISSIONS, UserRole
 
 
 @pytest.fixture
 def access_model():
-
     def can_update_inputs(context):
-        current_data = context['current']
-        candidate_data = context['candidate']
+        current_data = context["current"]
+        candidate_data = context["candidate"]
 
         diffs = jsondiff.diff(current_data, candidate_data)
 
@@ -39,8 +38,8 @@ def access_model():
             try:
                 for node in diffs["workbench"]:
                     # can ONLY modify `inputs` fields set as ReadAndWrite
-                    access = current_data['workbench'][node]["inputAccess"]
-                    inputs = diffs["workbench"][node]['inputs']
+                    access = current_data["workbench"][node]["inputAccess"]
+                    inputs = diffs["workbench"][node]["inputs"]
                     for key in inputs:
                         if access.get(key) != "ReadAndWrite":
                             return False
@@ -49,23 +48,23 @@ def access_model():
                 pass
             return False
 
-        return len(diffs)==0 # no changes
+        return len(diffs) == 0  # no changes
 
-    #-----------
+    # -----------
     fake_roles_permissions = {
         UserRole.ANONYMOUS: {
-            'can': [
+            "can": [
                 "studies.templates.read",
                 "study.start",
                 "study.stop",
                 {
                     "name": "study.pipeline.node.inputs.update",
-                    "check": can_update_inputs
-                }
+                    "check": can_update_inputs,
+                },
             ]
         },
         UserRole.USER: {
-            'can': [
+            "can": [
                 "study.node.create",
                 "study.node.delete",
                 "study.node.rename",
@@ -73,17 +72,14 @@ def access_model():
                 "study.node.data.push",
                 "study.node.data.delete",
                 "study.edge.create",
-                "study.edge.delete"
+                "study.edge.delete",
             ],
-            'inherits': [UserRole.ANONYMOUS]
+            "inherits": [UserRole.ANONYMOUS],
         },
         UserRole.TESTER: {
-            'can': [
-                "study.nodestree.uuid.read",
-                "study.logger.debug.read"
-            ],
-             # This double inheritance is done intentionally redundant
-            'inherits': [UserRole.USER, UserRole.ANONYMOUS]
+            "can": ["study.nodestree.uuid.read", "study.logger.debug.read"],
+            # This double inheritance is done intentionally redundant
+            "inherits": [UserRole.USER, UserRole.ANONYMOUS],
         },
     }
 
@@ -91,13 +87,15 @@ def access_model():
     rbac = RoleBasedAccessModel.from_rawdata(fake_roles_permissions)
     return rbac
 
+
 # TESTS -------------------------------------------------------------------------
+
 
 def test_roles():
     super_users = UserRole.super_users()
     assert super_users
     assert UserRole.USER not in super_users
-    assert all( r in UserRole for r in super_users )
+    assert all(r in UserRole for r in super_users)
 
 
 def test_unique_permissions():
@@ -110,7 +108,10 @@ def test_unique_permissions():
     for role in ROLES_PERMISSIONS:
         can = ROLES_PERMISSIONS[role].get("can", [])
         for permission in can:
-            assert permission not in used, "'%s' in %s is repeated in security_roles.ROLES_PERMISSIONS" % (permission, role)
+            assert permission not in used, (
+                "'%s' in %s is repeated in security_roles.ROLES_PERMISSIONS"
+                % (permission, role)
+            )
             used.append(permission)
 
 
@@ -125,7 +126,7 @@ def test_access_model_loads():
 
 async def test_named_permissions(access_model):
 
-    R = UserRole # alias
+    R = UserRole  # alias
 
     # direct permission
     assert await access_model.can(R.USER, "study.edge.delete")
@@ -134,7 +135,6 @@ async def test_named_permissions(access_model):
     # inherited
     assert await access_model.can(R.TESTER, "study.edge.delete")
     assert await access_model.can(R.ANONYMOUS, "studies.templates.read")
-
 
     who_can_delete = await access_model.who_can("study.edge.delete")
     assert R.USER in who_can_delete
@@ -169,13 +169,13 @@ async def test_permissions_inheritance(access_model):
 
 @pytest.mark.skip(reason="REVIEW")
 async def test_checked_permissions(access_model):
-    R = UserRole # alias
-    MOCKPATH = 'data/fake-template-projects.json'
+    R = UserRole  # alias
+    MOCKPATH = "data/fake-template-projects.json"
 
     with resources.stream(MOCKPATH) as fh:
         data = json.load(fh)
 
-    current ={}
+    current = {}
     for prj in data:
         if prj["uuid"] == "template-uuid-1234-a1a7-f7d4f3a8f26b":
             current = prj
@@ -185,54 +185,56 @@ async def test_checked_permissions(access_model):
 
     # updates both allowed and not allowed fields
     candidate = copy.deepcopy(current)
-    candidate['workbench']['template-uuid-409d-998c-c1f04de67f8b']["inputs"]["Kr"] = 66 # ReadOnly!
-    candidate['workbench']['template-uuid-409d-998c-c1f04de67f8b']["inputs"]["Na"] = 66 # ReadWrite
+    candidate["workbench"]["template-uuid-409d-998c-c1f04de67f8b"]["inputs"][
+        "Kr"
+    ] = 66  # ReadOnly!
+    candidate["workbench"]["template-uuid-409d-998c-c1f04de67f8b"]["inputs"][
+        "Na"
+    ] = 66  # ReadWrite
 
     assert not await access_model.can(
         R.ANONYMOUS,
         "study.pipeline.node.inputs.update",
-        context={'current': current, 'candidate': candidate}
+        context={"current": current, "candidate": candidate},
     )
 
     # updates allowed fields
     candidate = copy.deepcopy(current)
-    candidate['workbench']['template-uuid-409d-998c-c1f04de67f8b']["inputs"]["Na"] = 66 # ReadWrite
+    candidate["workbench"]["template-uuid-409d-998c-c1f04de67f8b"]["inputs"][
+        "Na"
+    ] = 66  # ReadWrite
 
     assert await access_model.can(
         R.ANONYMOUS,
         "study.pipeline.node.inputs.update",
-        context={'current': current, 'candidate': candidate}
+        context={"current": current, "candidate": candidate},
     )
 
     # udpates not permitted fields
     candidate = copy.deepcopy(current)
-    candidate['description'] = 'not allowed to write here'
+    candidate["description"] = "not allowed to write here"
     assert not await access_model.can(
         R.ANONYMOUS,
         "study.pipeline.node.inputs.update",
-        context={'current': current, 'candidate': candidate}
+        context={"current": current, "candidate": candidate},
     )
 
 
 async def test_async_checked_permissions(access_model):
-    R = UserRole # alias
+    R = UserRole  # alias
 
     # add checked permissions
     async def async_callback(context) -> bool:
-        return context['response']
+        return context["response"]
 
-    access_model.roles[R.TESTER].check['study.edge.edit'] = async_callback
+    access_model.roles[R.TESTER].check["study.edge.edit"] = async_callback
 
     assert not await access_model.can(
-        R.TESTER,
-        "study.edge.edit",
-        context={'response':False}
+        R.TESTER, "study.edge.edit", context={"response": False}
     )
 
     assert await access_model.can(
-        R.TESTER,
-        "study.edge.edit",
-        context={'response':True}
+        R.TESTER, "study.edge.edit", context={"response": True}
     )
 
 
@@ -241,18 +243,19 @@ async def test_check_access_expressions(access_model):
 
     assert await check_access(access_model, R.ANONYMOUS, "study.stop")
 
-    assert await check_access(access_model, R.ANONYMOUS,
-        "study.stop |study.node.create")
+    assert await check_access(
+        access_model, R.ANONYMOUS, "study.stop |study.node.create"
+    )
 
-    assert not await check_access(access_model, R.ANONYMOUS,
-        "study.stop & study.node.create")
+    assert not await check_access(
+        access_model, R.ANONYMOUS, "study.stop & study.node.create"
+    )
 
-    assert await check_access(access_model, R.USER,
-        "study.stop & study.node.create")
+    assert await check_access(access_model, R.USER, "study.stop & study.node.create")
 
     # TODO: extend expression parser
-    #assert await check_access(access_model, R.USER,
+    # assert await check_access(access_model, R.USER,
     #    "study.stop & (study.node.create|study.nodestree.uuid.read)")
 
-    #assert await check_access(access_model, R.TESTER,
+    # assert await check_access(access_model, R.TESTER,
     #    "study.stop & study.node.create & study.nodestree.uuid.read")
