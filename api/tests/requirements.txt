@@ -32,7 +32,7 @@ pytest-instafail==0.4.1.post0  # via -r requirements.in
 pytest-sugar==0.9.3       # via -r requirements.in
 pytest==5.4.2             # via -r requirements.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-sugar
 pyyaml==5.3.1             # via openapi-spec-validator
-six==1.14.0               # via isodate, jsonschema, openapi-core, openapi-schema-validator, openapi-spec-validator, packaging
+six==1.15.0               # via isodate, jsonschema, openapi-core, openapi-schema-validator, openapi-spec-validator, packaging
 strict-rfc3339==0.7       # via openapi-schema-validator
 termcolor==1.1.0          # via pytest-sugar
 typing-extensions==3.7.4.2  # via aiohttp

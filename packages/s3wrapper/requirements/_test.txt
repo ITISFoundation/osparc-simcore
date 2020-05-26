@@ -31,7 +31,7 @@ pytest==5.4.2             # via -r requirements/_test.in, pytest-cov
 python-dateutil==2.8.1    # via -r requirements/_base.txt, minio
 pytz==2020.1              # via -r requirements/_base.txt, minio
 requests==2.23.0          # via -r requirements/_test.in, coveralls
-six==1.14.0               # via -r requirements/_base.txt, astroid, packaging, python-dateutil
+six==1.15.0               # via -r requirements/_base.txt, astroid, packaging, python-dateutil
 toml==0.10.1              # via pylint
 typed-ast==1.4.1          # via astroid
 urllib3==1.25.9           # via -r requirements/_base.txt, minio, requests
