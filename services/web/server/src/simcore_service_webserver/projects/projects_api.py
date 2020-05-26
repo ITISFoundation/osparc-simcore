@@ -10,7 +10,7 @@
 
 import logging
 from pprint import pformat
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Set
 from uuid import uuid4
 
 from aiohttp import web
@@ -307,3 +307,18 @@ async def update_project_node_outputs(
         db = app[APP_PROJECT_DBAPI]
         await db.update_user_project(project, user_id, project_id)
     return project["workbench"][node_id]
+
+async def get_workbench_node_ids_from_project_uuid(
+    app: web.Application, project_uuid: str,
+) -> Set[str]:
+    """Returns a set with all the node_ids from a project's workbench"""
+    db = app[APP_PROJECT_DBAPI]
+    return await db.get_all_node_ids_from_workbenches(project_uuid)
+
+
+async def is_node_id_present_in_any_project_workbench(
+    app: web.Application, node_id: str,
+) -> bool:
+    """If the node_id is presnet in one of the projects' workbenche returns True"""
+    db = app[APP_PROJECT_DBAPI]
+    return node_id in await db.get_all_node_ids_from_workbenches()

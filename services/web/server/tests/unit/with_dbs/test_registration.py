@@ -1,5 +1,3 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -128,7 +126,7 @@ async def test_registration_with_confirmation(client, capsys, monkeypatch):
     ],
 )
 async def test_registration_with_invitation(
-    client, is_invitation_required, has_valid_invitation, expected_response
+    client, is_invitation_required, has_valid_invitation, expected_response,
 ):
     from servicelib.application_keys import APP_CONFIG_KEY
     from simcore_service_webserver.login.config import CONFIG_SECTION_NAME

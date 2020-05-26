@@ -1,5 +1,3 @@
-# pylint:disable=wildcard-import
-# pylint:disable=unused-import
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -67,7 +65,14 @@ def mocked_director_subsystem(mocker):
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, postgres_service, mocked_director_subsystem):
+def client(
+    loop,
+    aiohttp_client,
+    app_cfg,
+    postgres_service,
+    mocked_director_subsystem,
+    mock_orphaned_services,
+):
     # def client(loop, aiohttp_client, app_cfg): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
 
     # config app
@@ -192,7 +197,7 @@ def assert_replaced(current_project, update_data):
     ],
 )
 async def test_list_projects(
-    client, logged_user, user_project, template_project, expected
+    client, logged_user, user_project, template_project, expected,
 ):
     # TODO: GET /v0/projects?start=0&count=3
 
@@ -234,7 +239,7 @@ async def test_list_projects(
     ],
 )
 async def test_get_project(
-    client, logged_user, user_project, template_project, expected
+    client, logged_user, user_project, template_project, expected,
 ):
     # GET /v0/projects/{project_id}
 
@@ -268,7 +273,7 @@ async def test_get_project(
     ],
 )
 async def test_new_project(
-    client, logged_user, expected, computational_system_mock, storage_subsystem_mock
+    client, logged_user, expected, computational_system_mock, storage_subsystem_mock,
 ):
     # POST /v0/projects
     url = client.app.router["create_projects"].url_for()
@@ -454,7 +459,7 @@ async def test_new_project_from_template_with_body(
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPCreated),
+        (UserRole.USER, web.HTTPForbidden),
         (UserRole.TESTER, web.HTTPCreated),
     ],
 )
@@ -576,7 +581,7 @@ async def test_new_template_from_project(
     ],
 )
 async def test_replace_project(
-    client, logged_user, user_project, expected, computational_system_mock
+    client, logged_user, user_project, expected, computational_system_mock,
 ):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
@@ -601,7 +606,7 @@ async def test_replace_project(
     ],
 )
 async def test_replace_project_updated_inputs(
-    client, logged_user, user_project, expected, computational_system_mock
+    client, logged_user, user_project, expected, computational_system_mock,
 ):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
@@ -637,7 +642,7 @@ async def test_replace_project_updated_inputs(
     ],
 )
 async def test_replace_project_updated_readonly_inputs(
-    client, logged_user, user_project, expected, computational_system_mock
+    client, logged_user, user_project, expected, computational_system_mock,
 ):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
@@ -872,7 +877,6 @@ async def test_get_active_project(
     ],
 )
 async def test_delete_shared_project_forbidden(
-    loop,
     client,
     logged_user,
     user_project,
@@ -914,7 +918,6 @@ async def test_delete_shared_project_forbidden(
     ],
 )
 async def test_project_node_lifetime(
-    loop,
     client,
     logged_user,
     user_project,
@@ -1022,7 +1025,7 @@ async def test_project_node_lifetime(
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
 async def test_tags_to_studies(
-    client, logged_user, user_project, expected, test_tags_data
+    client, logged_user, user_project, expected, test_tags_data,
 ):
     # Add test tags
     tags = test_tags_data

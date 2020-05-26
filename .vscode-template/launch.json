@@ -68,6 +68,22 @@
           "remoteRoot": "/devel"
         }
       ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug e2e tests",
+      "runtimeArgs": [
+        "--inspect-brk",
+        "${workspaceRoot}/tests/e2e/node_modules/.bin/jest",
+        "--runInBand",
+        "--colors"
+      ],
+      "cwd": "${workspaceFolder}/tests/e2e",
+      "restart": true,
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "port": 9229
     }
   ]
 }

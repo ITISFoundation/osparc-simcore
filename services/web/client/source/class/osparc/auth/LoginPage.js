@@ -92,7 +92,12 @@ qx.Class.define("osparc.auth.LoginPage", {
       login.resetValues();
     }, this);
 
-    [register, resetRequest, reset].forEach(srcPage => {
+    register.addListener("done", msg => {
+      osparc.utils.Utils.cookie.deleteCookie("user");
+      this.fireDataEvent("done", msg);
+    });
+
+    [resetRequest, reset].forEach(srcPage => {
       srcPage.addListener("done", msg => {
         pages.setSelection([login]);
         srcPage.resetValues();

@@ -261,7 +261,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     },
 
     __onAddService: function(model) {
-      if (model == null && this.__serviceBrowser.isSelectionEmpty()) { // eslint-disable-line no-eq-null
+      if (model == null && this.__serviceBrowser.isSelectionEmpty()) {
         return;
       }
 

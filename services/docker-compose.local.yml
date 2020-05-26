@@ -22,6 +22,7 @@ services:
   director:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore_local}
     ports:
       - "8080"
       - "3004:3000"
@@ -45,7 +46,7 @@ services:
 
   postgres:
     ports:
-      - "5432"
+      - "5432:5432"
     # https://www.postgresql.org/docs/10/runtime-config-logging.html#GUC-LOG-STATEMENT
     command:
       [

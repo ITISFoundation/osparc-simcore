@@ -88,7 +88,7 @@ def app_config(fake_data_dir: Path, osparc_simcore_root_dir: Path):
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_config):
+def client(loop, aiohttp_client, app_config, mock_orphaned_services):
     app = create_safe_application(app_config)
 
     setup_session(app)
@@ -100,12 +100,12 @@ def client(loop, aiohttp_client, app_config):
     return cli
 
 
-async def test_has_login_required(client):
+async def test_has_login_required(loop, client):
     resp = await client.get("/v0/activity/status")
     await assert_status(resp, web.HTTPUnauthorized)
 
 
-async def test_monitoring_up(mocked_login_required, mocked_monitoring, client):
+async def test_monitoring_up(loop, mocked_login_required, mocked_monitoring, client):
     QUEUED_NODE_ID = "35f95ad4-67b8-4ed8-bd55-84a5d600e687"
     RUNNING_NODE_ID = "894dd8d5-de3b-4767-950c-7c3ed8f51d8c"
 
@@ -132,6 +132,8 @@ async def test_monitoring_up(mocked_login_required, mocked_monitoring, client):
     assert stats.get("memUsage") == 177.664, "Incorrect value: Memory usage"
 
 
-async def test_monitoring_down(mocked_login_required, mocked_monitoring_down, client):
+async def test_monitoring_down(
+    loop, mocked_login_required, mocked_monitoring_down, client
+):
     resp = await client.get("/v0/activity/status")
     await assert_status(resp, web.HTTPNoContent)

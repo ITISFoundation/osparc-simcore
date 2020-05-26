@@ -494,14 +494,14 @@ qx.Class.define("osparc.data.Resources", {
      */
     fetch: function(resource, endpoint, params = {}, deleteId) {
       return new Promise((resolve, reject) => {
-        if (this.self().resources[resource] == null) { // eslint-disable-line no-eq-null
+        if (this.self().resources[resource] == null) {
           reject(Error(`Error while fetching ${resource}: the resource is not defined`));
         }
 
         const resourceDefinition = this.self().resources[resource];
         const res = new osparc.io.rest.Resource(resourceDefinition.endpoints);
 
-        if (!res.includesRoute(endpoint)) { // eslint-disable-line no-eq-null
+        if (!res.includesRoute(endpoint)) {
           reject(Error(`Error while fetching ${resource}: the endpoint is not defined`));
         }
 

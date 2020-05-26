@@ -47,7 +47,10 @@ ops_services = [
 
 @pytest.fixture
 def client(
-    loop, aiohttp_client, app_config,  ## waits until swarm with *_services are up
+    loop,
+    mock_orphaned_services,
+    aiohttp_client,
+    app_config,  ## waits until swarm with *_services are up
 ):
     assert app_config["rest"]["version"] == API_VERSION
 
