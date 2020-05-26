@@ -763,8 +763,27 @@ qx.Class.define("osparc.data.model.Node", {
       return true;
     },
 
+    __getLoadingPageHeader: function() {
+      const status = this.getInteractiveStatus();
+      const label = this.getLabel();
+      if (status) {
+        const sta = status.charAt(0).toUpperCase() + status.slice(1);
+        const header = sta + " " + label;
+        return header;
+      }
+      return this.tr("Starting ") + label;
+    },
+
     __initLoadingIPage: function() {
-      const loadingPage = new osparc.ui.message.Loading(this.tr("Starting Service"), [], true);
+      const loadingPage = new osparc.ui.message.Loading(this.__getLoadingPageHeader(), [], true);
+      [
+        "changeLabel",
+        "changeInteractiveStatus"
+      ].forEach(event => {
+        this.addListener(event, e => {
+          loadingPage.setHeader(this.__getLoadingPageHeader());
+        }, this);
+      });
       this.setLoadingPage(loadingPage);
     },
 
