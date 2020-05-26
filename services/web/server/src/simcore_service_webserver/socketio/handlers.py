@@ -114,6 +114,8 @@ async def user_logged_out(
             socket_id = await rt.get_socket_id()
             if socket_id:
                 await sio.disconnect(sid=socket_id)
+            # trigger faster gc on disconnect
+            await rt.user_pressed_disconnect()
 
         # now let's give a chance to all the clients to properly logout
         sockets = await rt.find_socket_ids()
