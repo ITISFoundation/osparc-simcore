@@ -39,11 +39,8 @@ qx.Class.define("osparc.component.metadata.StudyInfo", {
     this.__study = study;
 
     this._add(this.__createExpandButton());
-    const windowWidth = 500;
-    const thumbnailWidth = (windowWidth - 250)/1.67;
-    this._add(new osparc.component.metadata.StudyDetails(study, thumbnailWidth), {
-      flex: 1
-    });
+    const windowWidth = 400;
+    this._add(new osparc.component.metadata.StudyDetails(study, windowWidth));
   },
 
   members: {

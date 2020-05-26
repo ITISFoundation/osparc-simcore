@@ -28,8 +28,9 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
   /**
     * @param study {Object|osparc.data.model.Study} Study (metadata)
     * @param isTemplate {Boolean} Weather the study is template or not
+    * @param winWidth {Number} Width for the window, needed for stretching the thumbnail
     */
-  construct: function(study, isTemplate) {
+  construct: function(study, isTemplate, winWidth) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.Grow());
 
@@ -38,7 +39,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     this.__model = qx.data.marshal.Json.createModel(study);
 
     this.__stack = new qx.ui.container.Stack();
-    this.__displayView = this.__createDisplayView(study);
+    this.__displayView = this.__createDisplayView(study, winWidth);
     this.__editView = this.__createEditView();
     this.__stack.add(this.__displayView);
     this.__stack.add(this.__editView);
@@ -73,12 +74,10 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     __fields: null,
     __selectedTags: null,
 
-    __createDisplayView: function(study) {
+    __createDisplayView: function(study, winWidth) {
       const displayView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       displayView.add(this.__createButtons());
-      displayView.add(new osparc.component.metadata.StudyDetails(study), {
-        flex: 1
-      });
+      displayView.add(new osparc.component.metadata.StudyDetails(study, winWidth));
       return displayView;
     },
 
