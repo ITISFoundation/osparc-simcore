@@ -16,9 +16,7 @@ chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, requests
 coverage==5.1             # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==2.0.0          # via -r requirements/_test.in
 docopt==0.6.2             # via coveralls
-idna-ssl==1.1.0           # via -r requirements/_base.txt, aiohttp
-idna==2.9                 # via -r requirements/_base.txt, idna-ssl, requests, yarl
-importlib-metadata==1.6.0  # via -r requirements/_base.txt, jsonschema, pluggy, pytest
+idna==2.9                 # via -r requirements/_base.txt, requests, yarl
 isodate==0.6.0            # via -r requirements/_base.txt, openapi-core
 isort==4.3.21             # via pylint
 jsonschema==3.2.0         # via -r requirements/_base.txt, openapi-spec-validator
@@ -30,7 +28,7 @@ openapi-core==0.12.0      # via -r requirements/_base.txt
 openapi-spec-validator==0.2.8  # via -r requirements/_base.txt, openapi-core
 packaging==20.4           # via pytest, pytest-sugar
 pluggy==0.13.1            # via pytest
-prometheus-client==0.7.1  # via -r requirements/_base.txt
+prometheus_client==0.8.0  # via -r requirements/_base.txt
 psycopg2-binary==2.8.5    # via -r requirements/_base.txt, aiopg, sqlalchemy
 py==1.8.1                 # via pytest
 pylint==2.5.0             # via -r requirements/_test.in
@@ -53,15 +51,12 @@ tenacity==6.2.0           # via -r requirements/_base.txt
 termcolor==1.1.0          # via pytest-sugar
 toml==0.10.1              # via pylint
 trafaret==2.0.2           # via -r requirements/_base.txt
-typed-ast==1.4.1          # via astroid
-typing-extensions==3.7.4.2  # via -r requirements/_base.txt, aiohttp
 ujson==2.0.3              # via -r requirements/_base.txt
 urllib3==1.25.9           # via requests
 wcwidth==0.1.9            # via pytest
 werkzeug==1.0.1           # via -r requirements/_base.txt
 wrapt==1.12.1             # via astroid
 yarl==1.4.2               # via -r requirements/_base.txt, aiohttp
-zipp==3.1.0               # via -r requirements/_base.txt, importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
