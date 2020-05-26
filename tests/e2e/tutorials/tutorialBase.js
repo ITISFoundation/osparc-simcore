@@ -65,7 +65,9 @@ class TutorialBase {
   async registerIfNeeded() {
     if (this.__newUser) {
       await auto.register(this.__page, this.__user, this.__pass);
+      return true;
     }
+    return false;
   }
 
   async login() {

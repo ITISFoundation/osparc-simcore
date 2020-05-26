@@ -243,7 +243,7 @@ qx.Class.define("osparc.store.Store", {
         this.reset(resources);
       } else {
         let propertyArray;
-        if (resources == null) { // eslint-disable-line no-eq-null
+        if (resources == null) {
           propertyArray = Object.keys(qx.util.PropertyUtil.getProperties(osparc.store.Store));
         } else if (Array.isArray(resources)) {
           propertyArray = resources;

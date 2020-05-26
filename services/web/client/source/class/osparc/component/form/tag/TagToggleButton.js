@@ -50,7 +50,7 @@ qx.Class.define("osparc.component.form.tag.TagToggleButton", {
           this._add(control, {
             flex: 1
           });
-          if (this.getLabel() == null || this.getShow() === "icon") { // eslint-disable-line no-eq-null
+          if (this.getLabel() == null || this.getShow() === "icon") {
             control.exclude();
           }
           break;

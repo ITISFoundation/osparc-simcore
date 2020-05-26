@@ -141,7 +141,7 @@ qx.Class.define("osparc.desktop.SidePanel", {
 
     __getSplitpaneContainer: function() {
       const splitpane = this.__getParentSplitpane();
-      if (splitpane == null) { // eslint-disable-line no-eq-null
+      if (splitpane == null) {
         return this;
       }
       let container = this;

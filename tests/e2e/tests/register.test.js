@@ -10,7 +10,7 @@ beforeAll(async () => {
   await page.goto(url);
 }, ourTimeout);
 
-test('Register, Log In and Log Out', async () => {
+test('Register and Log Out', async () => {
   page.on('response', async response => {
     if (response.url().endsWith("/config")) {
       try {
@@ -55,6 +55,6 @@ test('Register, Log In and Log Out', async () => {
       }
     }
   });
-  await auto.logIn(page, user, pass);
+
   await auto.logOut(page);
 }, 30000);
