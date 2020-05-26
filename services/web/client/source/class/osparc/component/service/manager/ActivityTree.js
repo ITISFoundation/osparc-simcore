@@ -215,8 +215,8 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
                 const queued = activity[key].queued;
                 const limits = activity[key].limits;
                 if (stats) {
-                  row[4] = stats.cpuUsage == null ? null : (Math.round(stats.cpuUsage * 10) / 10) + (limits && limits.cpus ? `/${limits.cpus * 100}` : ""); // eslint-disable-line no-eq-null
-                  row[5] = stats.memUsage == null ? null : (Math.round(stats.memUsage * 10) / 10) + (limits && limits.mem ? `/${limits.mem}` : ""); // eslint-disable-line no-eq-null
+                  row[4] = stats.cpuUsage == null ? null : (Math.round(stats.cpuUsage * 10) / 10) + (limits && limits.cpus ? `/${limits.cpus * 100}` : "");
+                  row[5] = stats.memUsage == null ? null : (Math.round(stats.memUsage * 10) / 10) + (limits && limits.mem ? `/${limits.mem}` : "");
                   row[3] = this.tr("Running");
                 }
                 if (queued) {

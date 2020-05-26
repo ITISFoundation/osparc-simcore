@@ -37,10 +37,10 @@ qx.Class.define("osparc.ui.form.Jumbo", {
       height: 90
     });
 
-    if (text != null) { // eslint-disable-line no-eq-null
+    if (text != null) {
       this.setText(text);
     }
-    if (footer != null) { // eslint-disable-line no-eq-null
+    if (footer != null) {
       this.setFooter(footer);
     }
   },
