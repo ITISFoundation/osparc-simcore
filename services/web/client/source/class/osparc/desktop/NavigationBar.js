@@ -327,7 +327,10 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         this.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")
       );
       const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
-      contBtn.addListener("execute", () => window.open(osparc.component.widget.NewGHIssue.getNewIssueUrl()), this);
+      contBtn.addListener("execute", () => {
+        window.open(osparc.component.widget.NewGHIssue.getNewIssueUrl());
+        issueConfirmationWindow.close();
+      }, this);
       const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in GitHub"), "@FontAwesome5Solid/external-link-alt/12");
       loginBtn.addListener("execute", () => window.open("https://github.com/login"), this);
       issueConfirmationWindow.addButton(contBtn);

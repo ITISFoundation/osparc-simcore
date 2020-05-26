@@ -32,7 +32,7 @@ qx.Class.define("osparc.component.service.ServiceJumbo", {
     const text = serviceModel.getDescription ? serviceModel.getDescription() : "";
     const footer = serviceModel.getContact ? serviceModel.getContact() : "";
     this.base(arguments, label, text, icon, footer);
-    if (serviceModel != null) { // eslint-disable-line no-eq-null
+    if (serviceModel != null) {
       this.setServiceModel(serviceModel);
     }
   },
