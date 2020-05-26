@@ -30,12 +30,13 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
 
 
     this.add(this.__createOrganizations());
-    this.add(this.__createMembers(), {
+    this.add(this.__createMembersSection(), {
       flex: 1
     });
   },
 
   members: {
+    __memberInvitation: null,
     __membersModel: null,
 
     __createOrganizations: function() {
@@ -91,16 +92,51 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       return box;
     },
 
-    __createMembers: function() {
+    __createMembersSection: function() {
       const box = this._createSectionBox(this.tr("Members"));
+      box.add(this.__createMemberInvitation());
+      box.add(this.__createMembersList(), {
+        flex: 1
+      });
+      return box;
+    },
 
+    __createMemberInvitation: function() {
+      const hBox = this.__memberInvitation = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+        alignY: "middle"
+      }));
+      hBox.exclude();
+
+      const emailLabel = new qx.ui.basic.Label(this.tr("Email")).set({
+        allowGrowX: true
+      });
+      hBox.add(emailLabel);
+
+      const userEmail = new qx.ui.form.TextField();
+      userEmail.setRequired(true);
+      hBox.add(userEmail, {
+        flex: 1
+      });
+
+      const validator = new qx.ui.form.validation.Manager();
+      validator.add(userEmail, qx.util.Validate.email());
+
+      const inviteBtn = new qx.ui.form.Button(this.tr("Invite"));
+      inviteBtn.addListener("execute", function() {
+        if (validator.validate()) {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Invitation sent to ") + userEmail.getValue());
+        }
+      }, this);
+      hBox.add(inviteBtn);
+
+      return hBox;
+    },
+
+    __createMembersList: function() {
       const memebersUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
         width: 150
-      });
-      box.add(memebersUIList, {
-        flex: 1
       });
 
       const membersModel = this.__membersModel = new qx.data.Array();
@@ -123,16 +159,20 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         }
       });
 
-      return box;
+      return memebersUIList;
     },
 
     __organizationSelected: function(orgId) {
+      this.__memberInvitation.exclude();
       const membersModel = this.__membersModel;
       membersModel.removeAll();
       const store = osparc.store.Store.getInstance();
       store.getOrganizationMembers(orgId)
         .then(members => {
           members.forEach(member => {
+            if (member["role"] === "Manager" && member["email"] === osparc.auth.Data.getInstance().getEmail()) {
+              this.__memberInvitation.show();
+            }
             member["thumbnail"] = osparc.utils.Avatar.getUrl(member["email"], 32);
             membersModel.append(qx.data.marshal.Json.createModel(member));
           });

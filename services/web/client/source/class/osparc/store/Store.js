@@ -236,11 +236,11 @@ qx.Class.define("osparc.store.Store", {
 
     getOrganizationMembers: function(gid) {
       return new Promise((resolve, reject) => {
-        if (gid === 3) {
+        if (gid === 100) {
           resolve([{
             "uid": 0,
             "name": "Odei Maiz",
-            "role": "Administrator",
+            "role": "Manager",
             "email": "maiz@itis.swiss"
           }, {
             "uid": 1,
@@ -248,18 +248,20 @@ qx.Class.define("osparc.store.Store", {
             "role": "Collaborator",
             "email": "anderegg@itis.swiss"
           }]);
+        } else if (gid === 101) {
+          resolve([{
+            "uid": 0,
+            "name": "Odei Maiz",
+            "role": "Collaborator",
+            "email": "maiz@itis.swiss"
+          }, {
+            "uid": 2,
+            "name": "Max Novelli",
+            "role": "Collaborator",
+            "email": "novelli@pitt.edu"
+          }]);
         }
-        resolve([{
-          "uid": 0,
-          "name": "Odei Maiz",
-          "role": "Administrator",
-          "email": "maiz@itis.swiss"
-        }, {
-          "uid": 2,
-          "name": "Max Novelli",
-          "role": "Collaborator",
-          "email": "novelli@pitt.edu"
-        }]);
+        reject();
       });
     },
 
