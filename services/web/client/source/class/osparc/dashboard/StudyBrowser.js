@@ -533,8 +533,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getPermissionsMenuButton: function(studyData) {
       const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
       permissionsButton.addListener("execute", () => {
-        const permissions = new osparc.component.export.Permissions(studyData.uuid);
-        permissions.popUpWindow();
+        const permissionsView = new osparc.component.export.Permissions(studyData.uuid);
+        permissionsView.popUpWindow(this.tr("Permissions"));
       }, this);
       return permissionsButton;
     },
