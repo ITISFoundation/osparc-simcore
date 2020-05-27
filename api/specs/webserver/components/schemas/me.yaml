@@ -6,7 +6,6 @@ ProfileCommon:
     last_name:
       type: string
   example:
-    login: pcrespov@foo.com
     first_name: Pedro
     last_name: Crespo
 
