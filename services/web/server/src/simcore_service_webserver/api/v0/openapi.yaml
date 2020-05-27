@@ -2125,11 +2125,18 @@ paths:
                                 type: object
                                 properties:
                                   gid:
+                                    description: the group ID
                                     type: string
                                   label:
+                                    description: the group name
                                     type: string
                                   description:
+                                    description: the group description
                                     type: string
+                                required:
+                                  - gid
+                                  - label
+                                  - description
                                 example:
                                   - gid: '27'
                                     label: A user
@@ -2146,11 +2153,18 @@ paths:
                                   type: object
                                   properties:
                                     gid:
+                                      description: the group ID
                                       type: string
                                     label:
+                                      description: the group name
                                       type: string
                                     description:
+                                      description: the group description
                                       type: string
+                                  required:
+                                    - gid
+                                    - label
+                                    - description
                                   example:
                                     - gid: '27'
                                       label: A user
@@ -2165,11 +2179,18 @@ paths:
                                 type: object
                                 properties:
                                   gid:
+                                    description: the group ID
                                     type: string
                                   label:
+                                    description: the group name
                                     type: string
                                   description:
+                                    description: the group description
                                     type: string
+                                required:
+                                  - gid
+                                  - label
+                                  - description
                                 example:
                                   - gid: '27'
                                     label: A user
@@ -2719,6 +2740,853 @@ paths:
       responses:
         '204':
           description: token has been successfully deleted
+  /me/groups:
+    get:
+      summary: List my groups
+      operationId: list_groups
+      tags:
+        - user
+      responses:
+        '200':
+          description: list of the groups I belonged to
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      me:
+                        type: object
+                        properties:
+                          gid:
+                            description: the group ID
+                            type: string
+                          label:
+                            description: the group name
+                            type: string
+                          description:
+                            description: the group description
+                            type: string
+                        required:
+                          - gid
+                          - label
+                          - description
+                        example:
+                          - gid: '27'
+                            label: A user
+                            description: A very special user
+                          - gid: '1'
+                            label: ITIS Foundation
+                            description: The Foundation for Research on Information Technologies in Society
+                          - gid: '0'
+                            label: All
+                            description: Open to all users
+                      organizations:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            gid:
+                              description: the group ID
+                              type: string
+                            label:
+                              description: the group name
+                              type: string
+                            description:
+                              description: the group description
+                              type: string
+                          required:
+                            - gid
+                            - label
+                            - description
+                          example:
+                            - gid: '27'
+                              label: A user
+                              description: A very special user
+                            - gid: '1'
+                              label: ITIS Foundation
+                              description: The Foundation for Research on Information Technologies in Society
+                            - gid: '0'
+                              label: All
+                              description: Open to all users
+                      all:
+                        type: object
+                        properties:
+                          gid:
+                            description: the group ID
+                            type: string
+                          label:
+                            description: the group name
+                            type: string
+                          description:
+                            description: the group description
+                            type: string
+                        required:
+                          - gid
+                          - label
+                          - description
+                        example:
+                          - gid: '27'
+                            label: A user
+                            description: A very special user
+                          - gid: '1'
+                            label: ITIS Foundation
+                            description: The Foundation for Research on Information Technologies in Society
+                          - gid: '0'
+                            label: All
+                            description: Open to all users
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    post:
+      summary: Create a new group
+      operationId: create_group
+      tags:
+        - user
+      requestBody:
+        required: true
+        description: the group to create
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gid:
+                  description: the group ID
+                  type: string
+                label:
+                  description: the group name
+                  type: string
+                description:
+                  description: the group description
+                  type: string
+              required:
+                - gid
+                - label
+                - description
+              example:
+                - gid: '27'
+                  label: A user
+                  description: A very special user
+                - gid: '1'
+                  label: ITIS Foundation
+                  description: The Foundation for Research on Information Technologies in Society
+                - gid: '0'
+                  label: All
+                  description: Open to all users
+      responses:
+        '201':
+          description: group created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      gid:
+                        description: the group ID
+                        type: string
+                      label:
+                        description: the group name
+                        type: string
+                      description:
+                        description: the group description
+                        type: string
+                    required:
+                      - gid
+                      - label
+                      - description
+                    example:
+                      - gid: '27'
+                        label: A user
+                        description: A very special user
+                      - gid: '1'
+                        label: ITIS Foundation
+                        description: The Foundation for Research on Information Technologies in Society
+                      - gid: '0'
+                        label: All
+                        description: Open to all users
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+  '/me/groups/{gid}':
+    parameters:
+      - name: gid
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - user
+      summary: Gets one group details
+      operationId: get_group
+      responses:
+        '200':
+          description: got group
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      gid:
+                        description: the group ID
+                        type: string
+                      label:
+                        description: the group name
+                        type: string
+                      description:
+                        description: the group description
+                        type: string
+                    required:
+                      - gid
+                      - label
+                      - description
+                    example:
+                      - gid: '27'
+                        label: A user
+                        description: A very special user
+                      - gid: '1'
+                        label: ITIS Foundation
+                        description: The Foundation for Research on Information Technologies in Society
+                      - gid: '0'
+                        label: All
+                        description: Open to all users
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    patch:
+      summary: Update one group
+      operationId: update_group
+      tags:
+        - user
+      requestBody:
+        required: true
+        description: the group to update
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gid:
+                  description: the group ID
+                  type: string
+                label:
+                  description: the group name
+                  type: string
+                description:
+                  description: the group description
+                  type: string
+              required:
+                - gid
+                - label
+                - description
+              example:
+                - gid: '27'
+                  label: A user
+                  description: A very special user
+                - gid: '1'
+                  label: ITIS Foundation
+                  description: The Foundation for Research on Information Technologies in Society
+                - gid: '0'
+                  label: All
+                  description: Open to all users
+      responses:
+        '200':
+          description: the modified group
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      gid:
+                        description: the group ID
+                        type: string
+                      label:
+                        description: the group name
+                        type: string
+                      description:
+                        description: the group description
+                        type: string
+                    required:
+                      - gid
+                      - label
+                      - description
+                    example:
+                      - gid: '27'
+                        label: A user
+                        description: A very special user
+                      - gid: '1'
+                        label: ITIS Foundation
+                        description: The Foundation for Research on Information Technologies in Society
+                      - gid: '0'
+                        label: All
+                        description: Open to all users
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    delete:
+      tags:
+        - user
+      summary: Deletes one group
+      operationId: delete_group
+      responses:
+        '204':
+          description: group has been successfully deleted
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+  '/me/groups/{gid}/users':
+    parameters:
+      - name: gid
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - user
+      summary: Gets list of users in group
+      operationId: get_group_users
+      responses:
+        '200':
+          description: got list of users
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        first_name:
+                          type: string
+                        last_name:
+                          type: string
+                      example:
+                        login: pcrespov@foo.com
+                        first_name: Pedro
+                        last_name: Crespo
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
   /storage/locations:
     get:
       summary: Get available storage locations
@@ -6690,6 +7558,137 @@ paths:
       responses:
         '204':
           description: project succesfuly closed
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+  '/projects/{project_id}:share':
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - project
+      summary: Share a project with a users group
+      operationId: share_project
+      requestBody:
+        description: list of users groups with which to share the project
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  gid:
+                    description: the group ID
+                    type: string
+                  label:
+                    description: the group name
+                    type: string
+                  description:
+                    description: the group description
+                    type: string
+                required:
+                  - gid
+                  - label
+                  - description
+                example:
+                  - gid: '27'
+                    label: A user
+                    description: A very special user
+                  - gid: '1'
+                    label: ITIS Foundation
+                    description: The Foundation for Research on Information Technologies in Society
+                  - gid: '0'
+                    label: All
+                    description: Open to all users
+      responses:
+        '204':
+          description: project succesfuly shared
         default:
           description: Default http error response body
           content:
