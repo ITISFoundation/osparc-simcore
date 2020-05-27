@@ -17,6 +17,7 @@ from servicelib.application_keys import APP_DB_ENGINE_KEY
 from .db_models import GroupType, groups, tokens, user_to_groups, users
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_api import check_permission
+from .security_decorators import permission_required
 from .utils import gravatar_hash
 
 logger = logging.getLogger(__name__)
@@ -129,6 +130,42 @@ async def update_my_profile(request: web.Request):
         assert resp.rowcount == 1  # nosec
 
     raise web.HTTPNoContent(content_type="application/json")
+
+
+@login_required
+@permission_required(permissions="user.groups.read")
+async def list_groups(request: web.Request):
+    pass
+
+
+@login_required
+@permission_required(permissions="user.groups.read")
+async def get_group(request: web.Request):
+    pass
+
+
+@login_required
+@permission_required(permissions="user.groups.list")
+async def get_group_users(request: web.Request):
+    pass
+
+
+@login_required
+@permission_required(permissions="user.groups.create")
+async def create_group(request: web.Request):
+    pass
+
+
+@login_required
+@permission_required(permissions="user.groups.update")
+async def update_group(request: web.Request):
+    pass
+
+
+@login_required
+@permission_required(permissions="user.groups.delete")
+async def delete_group(request: web.Request):
+    pass
 
 
 # me/tokens/ ------------------------------------------------------
