@@ -373,7 +373,7 @@ async def test_list_groups(
         ),
     ],
 )
-async def test_create_group(
+async def test_group_creation_workflow(
     client, logged_user, role, expected, expected_read, expected_delete, expected_empty
 ):
     url = client.app.router["create_group"].url_for()
@@ -435,6 +435,11 @@ async def test_create_group(
     data, error = await assert_status(resp, expected_delete)
     if not error:
         assert not data
+
+    # check deleting the same group again fails
+    url = client.app.router["delete_group"].url_for(gid=str(assigned_group["gid"]))
+    resp = await client.delete(url)
+    data, error = await assert_status(resp, expected_empty)
 
     # check getting the group fails
     url = client.app.router["get_group"].url_for(gid=str(assigned_group["gid"]))
