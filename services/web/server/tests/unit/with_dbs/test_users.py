@@ -306,25 +306,28 @@ async def test_delete_token(
         assert not (await get_token_from_db(tokens_db, token_service=sid))
 
 
-
 @pytest.mark.parametrize(
     "role,expected",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
         (UserRole.USER, web.HTTPOk),
         (UserRole.TESTER, web.HTTPOk),
     ],
 )
-async def test_list_groups(client, logged_user, role, expected, primary_group: Dict[str, str],
+async def test_list_groups(
+    client,
+    logged_user,
+    role,
+    expected,
+    primary_group: Dict[str, str],
     standard_groups: List[Dict[str, str]],
-    all_group: Dict[str, str],):
+    all_group: Dict[str, str],
+):
     url = client.app.router["list_groups"].url_for()
     assert str(url) == "/v0/me/groups"
 
-    new_group = {"gid": "some fake gid (will be replaced)", "name": "my new wonderful group", "description": "The best team ever"}
-
-    resp = await client.post(url, json=new_group)
+    resp = await client.get(url)
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -335,6 +338,7 @@ async def test_list_groups(client, logged_user, role, expected, primary_group: D
         assert data["organizations"] == standard_groups
         assert "all" in data
         assert data["all"] == all_group
+
 
 @pytest.mark.parametrize(
     "role,expected",
