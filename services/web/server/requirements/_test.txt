@@ -59,7 +59,7 @@ packaging==20.4           # via pytest, pytest-sugar
 pamqp==2.3.0              # via -r requirements/_base.txt, aiormq
 passlib==1.7.2            # via -r requirements/_base.txt
 pluggy==0.13.1            # via pytest
-prometheus-client==0.7.1  # via -r requirements/_base.txt
+prometheus-client==0.8.0  # via -r requirements/_base.txt
 psycopg2-binary==2.8.5    # via -r requirements/_base.txt, aiopg, sqlalchemy
 ptvsd==4.3.2              # via -r requirements/_test.in
 py==1.8.1                 # via pytest

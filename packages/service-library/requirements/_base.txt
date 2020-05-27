@@ -20,7 +20,7 @@ lazy-object-proxy==1.4.3  # via openapi-core
 multidict==4.7.6          # via aiohttp, yarl
 openapi-core==0.12.0      # via -r requirements/_base.in
 openapi-spec-validator==0.2.8  # via openapi-core
-prometheus-client==0.7.1  # via -r requirements/_base.in
+prometheus-client==0.8.0  # via -r requirements/_base.in
 psycopg2-binary==2.8.5    # via -r requirements/_base.in, aiopg, sqlalchemy
 pyrsistent==0.16.0        # via jsonschema
 pyyaml==5.3.1             # via -r requirements/_base.in, openapi-spec-validator
