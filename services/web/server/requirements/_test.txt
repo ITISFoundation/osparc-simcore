@@ -76,8 +76,8 @@ pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.3       # via -r requirements/_test.in
 pytest==5.4.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-mock, pytest-sugar
 python-dateutil==2.8.1    # via faker
-python-engineio==3.12.1   # via -r requirements/_base.txt, python-socketio
-python-socketio==4.5.1    # via -r requirements/_base.txt
+python-engineio==3.13.0   # via -r requirements/_base.txt, python-socketio
+python-socketio==4.6.0    # via -r requirements/_base.txt
 pytz==2020.1              # via -r requirements/_base.txt, celery
 pyyaml==5.3.1             # via -r requirements/_base.txt, aiohttp-swagger, openapi-spec-validator
 redis==3.5.2              # via -r requirements/_test.in
