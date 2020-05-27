@@ -1,17 +1,18 @@
 
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
-from sqlalchemy import literal_column
+from sqlalchemy import and_, literal_column
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login.cfg import get_storage
 
 from .db_models import GroupType, groups, user_to_groups
+from .users_exceptions import GroupNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,13 @@ def _convert_to_schema(db_row: RowProxy) -> Dict:
         "gid": db_row["gid"],
         "label": db_row["name"],
         "description": db_row["description"],
+    }
+
+def _convert_to_db(schema: Dict) -> Dict:
+    return {
+        "gid": schema["gid"] if "gid" in schema else None,
+        "name": schema["label"] if "label" in schema else None,
+        "description": schema["description"] if "description" in schema else None,
     }
 
 
@@ -54,6 +62,20 @@ async def list_user_groups(
 
     return (primary_group, user_groups, all_group)
 
+
+async def get_user_group(app: web.Application, user_id: str, gid: str) -> Dict[str,str]:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        result = await conn.execute(
+            sa.select([groups.c.gid, groups.c.name, groups.c.description]).select_from(user_to_groups.join(groups)).where(and_(user_to_groups.c.uid == user_id, user_to_groups.c.gid == gid))
+        )
+        group = await result.fetchone()
+        if not group:
+            raise GroupNotFoundError(gid)
+        return _convert_to_schema(group)
+
+
+
 async def create_user_group(
     app: web.Application, user_id: str, name: str, description: str
 ) -> Dict[str,str]:
@@ -69,6 +91,51 @@ async def create_user_group(
             user_to_groups.insert().values(uid=user_id, gid=group.gid)
         )
     return _convert_to_schema(group)
+
+
+async def update_user_group(
+        app: web.Application,
+        user_id: str,
+        gid: str,
+        new_group_values: Dict[str, str]) -> Dict[str,str]:
+    new_values = {k:v for k,v in _convert_to_db(new_group_values).items() if v}
+
+
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        result = await conn.execute(
+            sa.select([groups.c.gid, groups.c.name, groups.c.description]).select_from(user_to_groups.join(groups)).where(and_(user_to_groups.c.uid == user_id, user_to_groups.c.gid == gid))
+        )
+        group: RowProxy = await result.fetchone()
+
+        if not group:
+            raise GroupNotFoundError(gid)
+
+        result = await conn.execute(
+            # pylint: disable=no-value-for-parameter
+            groups.update().values(**new_values).where(
+                groups.c.gid == group.gid
+            ).returning(literal_column("*"))
+        )
+        group = await result.fetchone()
+        return _convert_to_schema(group)
+
+async def delete_user_group(
+        app: web.Application,
+        user_id: str,
+        gid: str) -> None:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        result = await conn.execute(
+            sa.select([groups.c.gid, groups.c.name, groups.c.description]).select_from(user_to_groups.join(groups)).where(and_(user_to_groups.c.uid == user_id, user_to_groups.c.gid == gid))
+        )
+        group: RowProxy = await result.fetchone()
+        if not group:
+            raise GroupNotFoundError(gid)
+        await conn.execute(
+            # pylint: disable=no-value-for-parameter
+            groups.delete().where(groups.c.gid == group.gid)
+        )
 
 
 async def is_user_guest(app: web.Application, user_id: int) -> bool:

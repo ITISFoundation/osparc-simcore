@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import List
+from typing import Dict, List
 
 import sqlalchemy as sa
 import sqlalchemy.sql as sql
@@ -19,6 +19,7 @@ from .db_models import GroupType, groups, tokens, user_to_groups, users
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_api import check_permission
 from .security_decorators import permission_required
+from .users_exceptions import GroupNotFoundError
 from .utils import gravatar_hash
 
 logger = logging.getLogger(__name__)
@@ -144,19 +145,24 @@ async def list_groups(request: web.Request):
 
 
 @login_required
-@permission_required(permissions="user.groups.read")
+@permission_required("user.groups.read")
 async def get_group(request: web.Request):
-    pass
+    user_id = request[RQT_USERID_KEY]
+    gid = request.match_info["gid"]
+    try:
+        return await users_api.get_user_group(request.app, user_id, gid)
+    except GroupNotFoundError:
+        raise web.HTTPNotFound()
 
 
 @login_required
-@permission_required(permissions="user.groups.list")
+@permission_required("user.groups.list")
 async def get_group_users(request: web.Request):
     pass
 
 
 @login_required
-@permission_required(permissions="user.groups.create")
+@permission_required("user.groups.create")
 async def create_group(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     new_group = await request.json()
@@ -170,15 +176,30 @@ async def create_group(request: web.Request):
 
 
 @login_required
-@permission_required(permissions="user.groups.update")
+@permission_required("user.groups.update")
 async def update_group(request: web.Request):
-    pass
+    user_id = request[RQT_USERID_KEY]
+    gid = request.match_info["gid"]
+    new_group_values = await request.json()
+
+    try:
+        return await users_api.update_user_group(
+            request.app, user_id, gid, new_group_values
+        )
+    except GroupNotFoundError:
+        raise web.HTTPNotFound()
 
 
 @login_required
-@permission_required(permissions="user.groups.delete")
+@permission_required("user.groups.delete")
 async def delete_group(request: web.Request):
-    pass
+    user_id = request[RQT_USERID_KEY]
+    gid = request.match_info["gid"]
+    try:
+        await users_api.delete_user_group(request.app, user_id, gid)
+        raise web.HTTPNoContent()
+    except GroupNotFoundError:
+        raise web.HTTPNotFound()
 
 
 # me/tokens/ ------------------------------------------------------

@@ -62,6 +62,8 @@ ROLES_PERMISSIONS = {
             # "preferences.token.delete"
             "user.groups.read",
             "user.groups.create",
+            "user.groups.update",
+            "user.groups.delete",
             "tag.crud.*"  # "preferences.tag"
             # NOTE: All services* are not necessary since it only requires login
             # and there is no distinction among logged in users.
