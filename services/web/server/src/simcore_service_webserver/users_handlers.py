@@ -136,9 +136,9 @@ async def update_my_profile(request: web.Request):
 @login_required
 @permission_required("user.groups.read")
 async def list_groups(request: web.Request):
-    uid = request[RQT_USERID_KEY]
+    user_id = request[RQT_USERID_KEY]
     primary_group, user_groups, all_group = await users_api.list_user_groups(
-        request.app, uid
+        request.app, user_id
     )
     return {"me": primary_group, "organizations": user_groups, "all": all_group}
 
@@ -158,7 +158,15 @@ async def get_group_users(request: web.Request):
 @login_required
 @permission_required(permissions="user.groups.create")
 async def create_group(request: web.Request):
-    pass
+    user_id = request[RQT_USERID_KEY]
+    new_group = await request.json()
+
+    new_group = await users_api.create_user_group(
+        request.app, user_id, new_group["label"], new_group["description"]
+    )
+    raise web.HTTPCreated(
+        text=json.dumps({"data": new_group}), content_type="application/json"
+    )
 
 
 @login_required

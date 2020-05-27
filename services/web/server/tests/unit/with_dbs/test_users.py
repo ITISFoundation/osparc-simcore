@@ -344,26 +344,30 @@ async def test_list_groups(
     "role,expected",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPUnauthorized),
-        (UserRole.USER, web.HTTPUnauthorized),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPCreated),
+        (UserRole.TESTER, web.HTTPCreated),
     ],
 )
 async def test_create_group(client, logged_user, role, expected):
     url = client.app.router["create_group"].url_for()
     assert str(url) == "/v0/me/groups"
 
-    resp = await client.get(url)
+    new_group = {
+        "gid": "some uuid that will be replaced",
+        "label": "Black Sabbath",
+        "description": "The founders of Rock'N'Roll",
+    }
+
+    resp = await client.post(url, json=new_group)
     data, error = await assert_status(resp, expected)
 
     if not error:
         assert isinstance(data, dict)
-        assert "me" in data
-        assert data["me"] == primary_group
-        assert "organizations" in data
-        assert data["organizations"] == standard_groups
-        assert "all" in data
-        assert data["all"] == all_group
+        assert "gid" in data
+        assert data["gid"] != new_group["gid"]  # we get a new gid
+        assert data["label"] == new_group["label"]
+        assert data["description"] == new_group["description"]
 
 
 ## BUG FIXES #######################################################

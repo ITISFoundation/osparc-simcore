@@ -5,12 +5,13 @@ from typing import Dict, List, Tuple
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
+from sqlalchemy import literal_column
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login.cfg import get_storage
 
-from .db_models import groups, user_to_groups, GroupType
+from .db_models import GroupType, groups, user_to_groups
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,23 @@ async def list_user_groups(
                 user_groups.append(_convert_to_schema(row))
 
     return (primary_group, user_groups, all_group)
+
+async def create_user_group(
+    app: web.Application, user_id: str, name: str, description: str
+) -> Dict[str,str]:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        result = await conn.execute(
+            # pylint: disable=no-value-for-parameter
+            groups.insert().values(name=name, description=description).returning(literal_column("*"))
+        )
+        group: RowProxy = await result.fetchone()
+        await conn.execute(
+            # pylint: disable=no-value-for-parameter
+            user_to_groups.insert().values(uid=user_id, gid=group.gid)
+        )
+    return _convert_to_schema(group)
+
 
 async def is_user_guest(app: web.Application, user_id: int) -> bool:
     """Returns True if the user exists and is a GUEST"""
