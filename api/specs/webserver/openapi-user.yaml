@@ -40,9 +40,9 @@ paths:
           content:
             application/json:
               schema:
-                  $ref: "./components/schemas/me.yaml#/UsersGroupsEnveloped"
+                $ref: "./components/schemas/me.yaml#/UsersGroupsEnveloped"
         default:
-          $ref: "#/components/responses/DefaultErrorResponse"    
+          $ref: "#/components/responses/DefaultErrorResponse"
     post:
       summary: Create a new group
       operationId: create_group
@@ -65,7 +65,7 @@ paths:
 
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
-  
+
   /me/groups/{gid}:
     parameters:
       - name: gid
@@ -118,6 +118,29 @@ paths:
           description: group has been successfully deleted
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
+
+  /me/groups/{gid}/users:
+    parameters:
+      - name: gid
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - user
+      summary: Gets list of users in group
+      operationId: get_group_users
+      responses:
+        "200":
+          description: got list of users
+          content:
+            application/json:
+              schema:
+                $ref: "./components/schemas/me.yaml#/UsersArrayEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
   /me/tokens:
     get:
       summary: List tokens
