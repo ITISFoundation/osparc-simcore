@@ -156,9 +156,14 @@ async def get_group(request: web.Request):
 
 
 @login_required
-@permission_required("user.groups.list")
+@permission_required("user.groups.read")
 async def get_group_users(request: web.Request):
-    pass
+    user_id = request[RQT_USERID_KEY]
+    gid = request.match_info["gid"]
+    try:
+        return await users_api.get_users_in_group(request.app, user_id, gid)
+    except GroupNotFoundError:
+        raise web.HTTPNotFound()
 
 
 @login_required

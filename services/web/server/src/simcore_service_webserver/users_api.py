@@ -11,7 +11,7 @@ from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login.cfg import get_storage
 
-from .db_models import GroupType, groups, user_to_groups
+from .db_models import GroupType, groups, user_to_groups, users
 from .users_exceptions import GroupNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -73,6 +73,26 @@ async def get_user_group(app: web.Application, user_id: str, gid: str) -> Dict[s
         if not group:
             raise GroupNotFoundError(gid)
         return _convert_to_schema(group)
+
+async def get_users_in_group(app: web.Application, user_id: str, gid: str) -> List[Dict[str,str]]:
+    engine = app[APP_DB_ENGINE_KEY]
+
+    users_list: List[Dict[str,str]] = []
+    async with engine.acquire() as conn:
+        # first check if the group exists
+        result = await conn.execute(
+            sa.select([groups.c.gid, groups.c.name, groups.c.description]).select_from(user_to_groups.join(groups)).where(and_(user_to_groups.c.uid == user_id, user_to_groups.c.gid == gid))
+        )
+        group: RowProxy = await result.fetchone()
+        if not group:
+            raise GroupNotFoundError(gid)
+
+        # now get the list
+        query = sa.select([users]).select_from(users.join(user_to_groups)).where(user_to_groups.c.gid == gid)
+        async for row in conn.execute(query):
+            parts = row["name"].split(".") + [""]
+            users_list.append({"first_name": parts[0], "last_name": parts[1]})
+        return users_list
 
 
 

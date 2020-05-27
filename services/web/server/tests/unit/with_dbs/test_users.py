@@ -16,7 +16,7 @@ from aiopg.sa.connection import SAConnection
 from psycopg2 import OperationalError
 
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser
+from pytest_simcore.helpers.utils_login import LoggedUser, create_user
 from pytest_simcore.helpers.utils_tokens import (
     create_token_in_db,
     delete_all_tokens_from_db,
@@ -445,6 +445,71 @@ async def test_group_creation_workflow(
     url = client.app.router["get_group"].url_for(gid=str(assigned_group["gid"]))
     resp = await client.get(url)
     data, error = await assert_status(resp, expected_empty)
+
+
+@pytest.mark.parametrize(
+    "role, expected_creation,expected,expected_empty",
+    [
+        (
+            UserRole.ANONYMOUS,
+            web.HTTPUnauthorized,
+            web.HTTPUnauthorized,
+            web.HTTPUnauthorized,
+        ),
+        (UserRole.GUEST, web.HTTPForbidden, web.HTTPForbidden, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPCreated, web.HTTPOk, web.HTTPNotFound),
+        (UserRole.TESTER, web.HTTPCreated, web.HTTPOk, web.HTTPNotFound),
+    ],
+)
+async def test_list_users_from_group(
+    client, logged_user, role, expected_creation, expected, expected_empty
+):
+
+    new_group = {
+        "gid": "5",
+        "label": "team awesom",
+        "description": "awesomeness is just the summary",
+    }
+
+    # check that our group does not exist
+    url = client.app.router["get_group_users"].url_for(gid=new_group["gid"])
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected_empty)
+
+    url = client.app.router["create_group"].url_for()
+    assert str(url) == "/v0/me/groups"
+
+    resp = await client.post(url, json=new_group)
+    data, error = await assert_status(resp, expected_creation)
+
+    assigned_group = new_group
+    if not error:
+        assert isinstance(data, dict)
+        assigned_group = data
+        assert assigned_group["gid"] != new_group["gid"]  # we get a new gid
+        assert assigned_group["label"] == new_group["label"]
+        assert assigned_group["description"] == new_group["description"]
+
+    # check that our user is in the group of users
+    url = client.app.router["get_group_users"].url_for(gid=str(assigned_group["gid"]))
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        list_of_users = data
+        assert len(list_of_users) == 1
+        the_owner = list_of_users[0]
+        assert "first_name" in the_owner
+        parts = logged_user["name"].split(".") + [""]
+        assert the_owner["first_name"] == parts[0]
+        assert "last_name" in the_owner
+        assert the_owner["last_name"] == parts[1]
+
+    # create a random number of users
+    num_users = random.randint(1, 10)
+    users = []
+    for i in range(num_users):
+        users.append(await create_user())
 
 
 ## BUG FIXES #######################################################
