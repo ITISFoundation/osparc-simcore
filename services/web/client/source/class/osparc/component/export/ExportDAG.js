@@ -105,7 +105,7 @@ qx.Class.define("osparc.component.export.ExportDAG", {
         flex: 1
       });
 
-      // const shareWith = new osparc.component.export.ShareWith("exportDAG");
+      // const shareWith = new osparc.component.export.ShareWith(this.tr("Make it available to"), "exportDAG");
       // this._add(shareWith);
 
       const exportBtn = this.__getExportBtn();
@@ -149,7 +149,7 @@ qx.Class.define("osparc.component.export.ExportDAG", {
     },
 
     __getExportBtn: function() {
-      const exportBtn = new osparc.ui.form.FetchButton(this.tr("Export")).set({
+      const exportBtn = new osparc.ui.form.FetchButton(this.tr("Publish Group")).set({
         allowGrowX: false,
         alignX: "right"
       });

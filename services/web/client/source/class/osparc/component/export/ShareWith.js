@@ -25,8 +25,8 @@
 qx.Class.define("osparc.component.export.ShareWith", {
   extend: qx.ui.groupbox.GroupBox,
 
-  construct: function(filterGroupId) {
-    this.base(arguments, this.tr("Share with"));
+  construct: function(header, filterGroupId) {
+    this.base(arguments, header);
 
     this.set({
       appearance: "settings-groupbox",

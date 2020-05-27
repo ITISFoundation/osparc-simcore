@@ -70,12 +70,12 @@ qx.Class.define("osparc.component.export.Permissions", {
     },
 
     __buildLayout: function() {
-      const shareWith = this.__shareWith = new osparc.component.export.ShareWith("shareStudy");
+      const shareWith = this.__shareWith = new osparc.component.export.ShareWith(this.tr("Share with"), "shareStudy");
       this._add(shareWith, {
         flex: 1
       });
 
-      const shareStudyBtn = new osparc.ui.form.FetchButton(this.tr("Permissions")).set({
+      const shareStudyBtn = new osparc.ui.form.FetchButton(this.tr("Share")).set({
         allowGrowX: false,
         alignX: "right"
       });
