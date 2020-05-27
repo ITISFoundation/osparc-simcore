@@ -41,6 +41,7 @@ qx.Class.define("osparc.component.export.Permissions", {
         contentPadding: 0,
         width: 400,
         height: 300,
+        showMaximize: false,
         showMinimize: false,
         modal: true
       });
