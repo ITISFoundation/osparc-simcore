@@ -42,29 +42,17 @@ qx.Class.define("osparc.component.filter.OrganizationMembers", {
   },
 
   members: {
-    /**
-     * Function that uses the information in {osparc.store.Store.getGroupsOrganizations} to build the menu for the filter.
-     */
     _applyOrganizationId: function(orgId) {
+      this._removeAllOptions();
       const store = osparc.store.Store.getInstance();
       store.getOrganizationMembers(orgId)
         .then(members => {
-          members.sort(this.__sortByLabel);
+          members.sort((a, b) => (a["name"] > b["name"]) ? 1 : -1);
           members.forEach(member => {
-            const bnt = this._addOption(osparc.utils.Utils.capitalize(member["label"]));
+            const bnt = this._addOption(osparc.utils.Utils.capitalize(member["name"]));
             bnt.uid = member["uid"];
           });
         });
-    },
-
-    __sortByLabel: function(org1, org2) {
-      if (org1.label > org2.label) {
-        return 1;
-      }
-      if (org1.label < org2.label) {
-        return -1;
-      }
-      return 0;
     },
 
     getSelectedOrganizationMemberIDs: function() {
