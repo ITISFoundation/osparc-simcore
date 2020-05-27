@@ -70,7 +70,7 @@ qx.Class.define("osparc.component.export.Permissions", {
     },
 
     __buildLayout: function() {
-      const shareWith = this.__shareWith = new osparc.component.export.ShareWith(this.tr("Share with"), "shareStudy");
+      const shareWith = this.__shareWith = new osparc.component.export.ShareWith(this.tr("Share with"));
       this._add(shareWith, {
         flex: 1
       });

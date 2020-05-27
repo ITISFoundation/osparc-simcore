@@ -17,15 +17,16 @@
 
 /**
  * View that shows who you want to share the resource with:
- * - Everyone
- * - My organizations
  * - Private
+ * - Organization members
+ * - My organizations
+ * - Everyone
  */
 
 qx.Class.define("osparc.component.export.ShareWith", {
   extend: qx.ui.groupbox.GroupBox,
 
-  construct: function(header, filterGroupId) {
+  construct: function(header) {
     this.base(arguments, header);
 
     this.set({
@@ -43,7 +44,7 @@ qx.Class.define("osparc.component.export.ShareWith", {
         const groupAll = values[1];
         this.__sharingOptions["me"]["gid"] = groupMe["gid"];
         this.__sharingOptions["all"]["gid"] = groupAll["gid"];
-        this.__buildLayout(filterGroupId);
+        this.__buildLayout();
       });
   },
 
@@ -77,7 +78,7 @@ qx.Class.define("osparc.component.export.ShareWith", {
     __rbManager: null,
     __myOrganizationsHB: null,
 
-    __buildLayout: function(filterGroupId) {
+    __buildLayout: function() {
       this.__rbManager = new qx.ui.form.RadioGroup().set({
         allowEmptySelection: true
       });
