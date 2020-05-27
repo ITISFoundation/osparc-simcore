@@ -45,10 +45,10 @@ qx.Class.define("osparc.component.export.ShareWith", {
         const groupMe = values[0];
         const groupAll = values[1];
         this.__rbManager.getChildren().forEach(rb => {
-          if (rb.shareContextId === this.__sharingOptions["me"].shareContextId) {
+          if (rb.contextId === this.__sharingOpts["me"].contextId) {
             rb.gid = groupMe["gid"];
           }
-          if (rb.shareContextId === this.__sharingOptions["all"].shareContextId) {
+          if (rb.contextId === this.__sharingOpts["all"].contextId) {
             rb.gid = groupAll["gid"];
           }
         });
@@ -65,21 +65,21 @@ qx.Class.define("osparc.component.export.ShareWith", {
   },
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members
-    __sharingOptions: {
+    __sharingOpts: {
       "me": {
-        shareContextId: 0,
+        contextId: 0,
         label: "Private"
       },
       "orgMembers": {
-        shareContextId: 1,
+        contextId: 1,
         label: "Organization Members"
       },
       "orgs": {
-        shareContextId: 2,
+        contextId: 2,
         label: "Organizations"
       },
       "all": {
-        shareContextId: 3,
+        contextId: 3,
         label: "Everyone"
       }
     },
@@ -94,9 +94,9 @@ qx.Class.define("osparc.component.export.ShareWith", {
         allowEmptySelection: true
       });
 
-      for (let [sharingOptionKey, sharingOption] of Object.entries(this.__sharingOptions)) {
+      for (let [sharingOptionKey, sharingOption] of Object.entries(this.__sharingOpts)) {
         const rb = new qx.ui.form.RadioButton(sharingOption.label);
-        rb.shareContextId = sharingOption.shareContextId;
+        rb.contextId = sharingOption.contextId;
         switch (sharingOptionKey) {
           case "me":
             this.__privateLayout = rb;
@@ -160,7 +160,7 @@ qx.Class.define("osparc.component.export.ShareWith", {
 
     __isGroupSelected: function(groupKey) {
       const selection = this.__rbManager.getSelection();
-      if (selection.length === 1 && selection[0].shareContextId === this.__sharingOptions[groupKey].shareContextId) {
+      if (selection.length === 1 && selection[0].contextId === this.__sharingOpts[groupKey].contextId) {
         return true;
       }
       return false;
@@ -188,15 +188,15 @@ qx.Class.define("osparc.component.export.ShareWith", {
       let groupIDs = [];
       const selection = this.__rbManager.getSelection();
       if (selection.length) {
-        switch (selection[0].shareContextId) {
-          case this.__sharingOptions["me"].shareContextId:
-          case this.__sharingOptions["all"].shareContextId:
+        switch (selection[0].contextId) {
+          case this.__sharingOpts["me"].contextId:
+          case this.__sharingOpts["all"].contextId:
             groupIDs = [selection[0].gid];
             break;
-          case this.__sharingOptions["orgMembers"].shareContextId:
+          case this.__sharingOpts["orgMembers"].contextId:
             groupIDs = this.__getSelectedOrganizationMemberIDs();
             break;
-          case this.__sharingOptions["orgs"].shareContextId:
+          case this.__sharingOpts["orgs"].contextId:
             groupIDs = this.__getSelectedOrganizationIDs();
             break;
         }
