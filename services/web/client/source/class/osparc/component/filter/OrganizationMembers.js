@@ -26,10 +26,8 @@ qx.Class.define("osparc.component.filter.OrganizationMembers", {
    *
    * @extends osparc.component.filter.TagsFilter
    */
-  construct: function() {
-    this.base(arguments, this.tr("Organization members"), "organizations", "organizationMembers");
-
-    this.__buildMenu();
+  construct: function(filterGroupId) {
+    this.base(arguments, this.tr("Members"), "organizationMembers", filterGroupId);
   },
 
   properties: {
