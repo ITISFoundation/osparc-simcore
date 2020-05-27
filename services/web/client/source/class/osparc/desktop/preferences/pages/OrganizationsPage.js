@@ -84,7 +84,11 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             // fake
             const rNumber = Math.floor((Math.random() * 100));
             org["nMembers"] = rNumber + " members";
-            org["thumbnail"] = "https://raw.githubusercontent.com/Radhikadua123/superhero/master/CAX_Superhero_Test/superhero_test_" + rNumber + ".jpg";
+            if (org["gid"] === 100) {
+              org["thumbnail"] = "https://user-images.githubusercontent.com/33152403/82996091-baa65e00-a004-11ea-9695-206d005fdf54.png";
+            } else {
+              org["thumbnail"] = "https://raw.githubusercontent.com/Radhikadua123/superhero/master/CAX_Superhero_Test/superhero_test_" + rNumber + ".jpg";
+            }
             orgsModel.append(qx.data.marshal.Json.createModel(org));
           });
         });
