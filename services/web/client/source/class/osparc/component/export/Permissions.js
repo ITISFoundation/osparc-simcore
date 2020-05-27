@@ -20,88 +20,32 @@
  */
 
 qx.Class.define("osparc.component.export.Permissions", {
-  extend: qx.ui.core.Widget,
+  extend: osparc.component.export.ShareResourceBase,
 
   construct: function(studyId) {
-    this.base(arguments);
+    this.base(arguments, studyId);
 
-    this.__studyId = studyId;
-
-    this._setLayout(new qx.ui.layout.VBox(5));
-
-    this.__buildLayout();
-  },
-
-  statics: {
-    createPermissionsWindow: function(winText, shareStudyWidget) {
-      const window = new qx.ui.window.Window(winText).set({
-        appearance: "service-window",
-        layout: new qx.ui.layout.Grow(),
-        autoDestroy: true,
-        contentPadding: 0,
-        width: 400,
-        height: 300,
-        showMaximize: false,
-        showMinimize: false,
-        modal: true
-      });
-      window.add(shareStudyWidget);
-      window.center();
-      return window;
-    }
-  },
-
-  events: {
-    "finished": "qx.event.type.Data"
+    this._shareWith.showPrivate(false);
   },
 
   members: {
-    __studyId: null,
-    __shareWith: null,
-
-    popUpWindow: function(winText) {
-      const window = this.self().createPermissionsWindow(winText, this);
-      this.addListener("finished", e => {
-        const template = e.getData();
-        if (template) {
-          window.close();
-        }
-      }, this);
-      window.open();
-    },
-
-    __buildLayout: function() {
-      const shareWith = this.__shareWith = new osparc.component.export.ShareWith(this.tr("Share with"));
-      this._add(shareWith, {
-        flex: 1
-      });
-
-      const shareStudyBtn = new osparc.ui.form.FetchButton(this.tr("Share")).set({
-        allowGrowX: false,
-        alignX: "right"
-      });
-      shareStudyBtn.addListener("execute", () => {
-        this.__shareStudy(shareStudyBtn);
-      }, this);
-      shareWith.bind("ready", shareStudyBtn, "enabled");
-      this._add(shareStudyBtn);
-    },
-
-    __shareStudy: function(btn) {
+    // overridden
+    _shareResource: function(btn) {
       btn.setFetching(true);
 
-      const selectedGroupIDs = this.__shareWith.getSelectedGroups();
+      const shareWith = {};
+      const selectedGroupIDs = this._shareWith.getSelectedGroups();
       selectedGroupIDs.forEach(selectedGroupID => {
-        this.__formData["accessRights"][selectedGroupID] = "rwx";
+        shareWith[selectedGroupID] = "rwx";
       });
 
       const params = {
         url: {
-          "study_id": this.__studyId
+          "study_id": this._studyId
         },
-        data: this.__formData
+        data: shareWith
       };
-      osparc.data.Resources.fetch("templates", "postToTemplate", params)
+      osparc.data.Resources.fetch("studies", "share", params)
         .then(template => {
           this.fireDataEvent("finished", template);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Study successfully shared."), "INFO");

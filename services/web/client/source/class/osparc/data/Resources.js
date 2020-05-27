@@ -100,7 +100,7 @@ qx.Class.define("osparc.data.Resources", {
           share: {
             useCache: false,
             method: "POST",
-            url: statics.API + "/projects/{projectId}:share"
+            url: statics.API + "/projects/{study_id}:share"
           },
           postFromTemplate: {
             method: "POST",
