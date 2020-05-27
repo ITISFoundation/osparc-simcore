@@ -33,8 +33,8 @@ qx.Class.define("osparc.component.export.Permissions", {
   },
 
   statics: {
-    createPermissionsWindow: function(shareStudyWidget) {
-      const window = new qx.ui.window.Window("Permissions").set({
+    createPermissionsWindow: function(winText, shareStudyWidget) {
+      const window = new qx.ui.window.Window(winText).set({
         appearance: "service-window",
         layout: new qx.ui.layout.Grow(),
         autoDestroy: true,
@@ -59,8 +59,8 @@ qx.Class.define("osparc.component.export.Permissions", {
     __studyId: null,
     __shareWith: null,
 
-    popUpWindow: function() {
-      const window = this.self().createPermissionsWindow(this);
+    popUpWindow: function(winText) {
+      const window = this.self().createPermissionsWindow(winText, this);
       this.addListener("finished", e => {
         const template = e.getData();
         if (template) {

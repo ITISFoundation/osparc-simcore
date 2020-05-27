@@ -279,8 +279,8 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __openPermissions: function() {
-      const shareStudyView = new osparc.component.export.Permissions(this.__model.getUuid());
-      shareStudyView.popUpWindow();
+      const permissionsView = new osparc.component.export.Permissions(this.__model.getUuid());
+      permissionsView.popUpWindow(this.tr("Permissions"));
     },
 
     __openSaveAsTemplate: function() {
