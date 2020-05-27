@@ -45,10 +45,10 @@ qx.Class.define("osparc.component.export.ShareWith", {
         const groupMe = values[0];
         const groupAll = values[1];
         this.__rbManager.getChildren().forEach(rb => {
-          if (rb.shareContextId === 0) {
+          if (rb.shareContextId === this.__sharingOptions["me"].shareContextId) {
             rb.gid = groupMe["gid"];
           }
-          if (rb.shareContextId === 3) {
+          if (rb.shareContextId === this.__sharingOptions["all"].shareContextId) {
             rb.gid = groupAll["gid"];
           }
         });
@@ -104,7 +104,9 @@ qx.Class.define("osparc.component.export.ShareWith", {
             break;
           case "orgMembers": {
             const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-            const myOrgMembersHB = this.__myOrganizationMembersHB = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+            const myOrgMembersHB = this.__myOrganizationMembersHB = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+              alignY: "middle"
+            }));
             const myOrgsSB = new qx.ui.form.SelectBox();
             const store = osparc.store.Store.getInstance();
             store.getGroupsOrganizations()
@@ -187,14 +189,14 @@ qx.Class.define("osparc.component.export.ShareWith", {
       const selection = this.__rbManager.getSelection();
       if (selection.length) {
         switch (selection[0].shareContextId) {
-          case 0:
-          case 3:
+          case this.__sharingOptions["me"].shareContextId:
+          case this.__sharingOptions["all"].shareContextId:
             groupIDs = [selection[0].gid];
             break;
-          case 1:
-            groupIDs = [selection[0].gid];
+          case this.__sharingOptions["orgMembers"].shareContextId:
+            groupIDs = this.__getSelectedOrganizationMemberIDs();
             break;
-          case 2:
+          case this.__sharingOptions["orgs"].shareContextId:
             groupIDs = this.__getSelectedOrganizationIDs();
             break;
         }
