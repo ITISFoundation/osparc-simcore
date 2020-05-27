@@ -78,7 +78,7 @@ paths:
       summary: Gets active project
       operationId: get_active_project
       responses:
-        '200':
+        "200":
           description: returns active project
           content:
             application/json:
@@ -210,11 +210,18 @@ paths:
       summary: Share a project with a users group
       operationId: share_project
       requestBody:
+        description: list of users groups with which to share the project
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schema/UsersGroups"
+              $ref: "#/components/schemas/UsersGroups"
+      responses:
+        "204":
+          description: project succesfuly shared
+
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
 
   /projects/{project_id}/nodes:
     parameters:
@@ -255,14 +262,14 @@ paths:
               service_version: "1.4.0"
 
       responses:
-        '201':
+        "201":
           description: created
           content:
             application/json:
               schema:
-                $ref: './openapi-projects.yaml#/components/schemas/NodeEnveloped'
+                $ref: "./openapi-projects.yaml#/components/schemas/NodeEnveloped"
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 
   /projects/{project_id}/nodes/{node_id}:
     parameters:
@@ -302,7 +309,7 @@ paths:
         "204":
           description: node has been successfully deleted from project
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 
   /projects/{study_uuid}/tags/{tag_id}:
     parameters:
@@ -322,7 +329,7 @@ paths:
       summary: Links an existing label with an existing study
       operationId: add_tag
       responses:
-        '200':
+        "200":
           description: The tag has been successfully linked to the study
           content:
             application/json:
@@ -336,7 +343,7 @@ paths:
       summary: Removes an existing link between a label and a study
       operationId: remove_tag
       responses:
-        '200':
+        "200":
           description: The tag has been successfully removed from the study
           content:
             application/json:
@@ -367,7 +374,7 @@ components:
         - data
       properties:
         data:
-          $ref: './openapi-projects.yaml#/components/schemas/Node'
+          $ref: "./openapi-projects.yaml#/components/schemas/Node"
         error:
           nullable: true
           default: null
@@ -382,7 +389,7 @@ components:
       $ref: "../common/schemas/project.yaml#/components/schemas/ProjectArrayEnveloped"
 
     RunningServiceEnveloped:
-      $ref: '../common/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
+      $ref: "../common/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped"
 
     UsersGroups:
       type: array
