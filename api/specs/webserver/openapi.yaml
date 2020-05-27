@@ -48,7 +48,6 @@ tags:
       oSPARC users can make publications. Starting from submission of new service candidates, but this could
       end up accepting other types of publications.
 
-
 paths:
   # DIAGNOSTICS ---------------------------------------------------------
   /:
@@ -108,6 +107,9 @@ paths:
   /me/groups/{gid}:
     $ref: "./openapi-user.yaml#/paths/~1me~1groups~1{gid}"
 
+  /me/groups/{gid}/users:
+    $ref: "./openapi-user.yaml#/paths/~1me~1groups~1{gid}~1users"
+
   # DATA STORAGE SERVICES ----------------------------------------------------------
 
   /storage/locations:
@@ -159,10 +161,10 @@ paths:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1share"
 
   /projects/{project_id}/nodes:
-    $ref: './openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes'
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes"
 
   /projects/{project_id}/nodes/{node_id}:
-    $ref: './openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}'
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}"
 
   /nodes/{nodeInstanceUUID}/outputUi/{outputKey}:
     $ref: "./openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1outputUi~1{outputKey}"
@@ -174,7 +176,7 @@ paths:
     $ref: "./openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1iframe"
 
   /projects/{study_uuid}/tags/{tag_id}:
-    $ref: './openapi-projects.yaml#/paths/~1projects~1{study_uuid}~1tags~1{tag_id}'
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{study_uuid}~1tags~1{tag_id}"
 
   # ACTIVITY -------------------------------------------------------------------------
   /activity/status:
@@ -182,21 +184,20 @@ paths:
 
   # TAGS -------------------------------------------------------------------------
   /tags:
-    $ref: './openapi-tags.yaml#/paths/~1tags'
-    
+    $ref: "./openapi-tags.yaml#/paths/~1tags"
+
   /tags/{tag_id}:
-    $ref: './openapi-tags.yaml#/paths/~1tags~1{tag_id}'
+    $ref: "./openapi-tags.yaml#/paths/~1tags~1{tag_id}"
 
   # PUBLICATIONS -------------------------------------------------------------------------
   /publications/service-submission:
-    $ref: './openapi-publications.yaml#/paths/~1publications~1service-submission'
+    $ref: "./openapi-publications.yaml#/paths/~1publications~1service-submission"
 
   # CATALOG -------------------------------------------------------------------------
   /catalog/dags:
-    $ref: './openapi-catalog.yaml#/paths/~1catalog~1dags'
+    $ref: "./openapi-catalog.yaml#/paths/~1catalog~1dags"
   /catalog/dags/{dag_id}:
-    $ref: './openapi-catalog.yaml#/paths/~1catalog~1dags~1{dag_id}'
-
+    $ref: "./openapi-catalog.yaml#/paths/~1catalog~1dags~1{dag_id}"
 
 components:
   responses:
