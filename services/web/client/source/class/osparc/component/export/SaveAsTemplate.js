@@ -26,6 +26,9 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
     this.base(arguments, studyId);
 
     this.__formData = osparc.utils.Utils.deepCloneObject(formData);
+
+    this.setHeaderText(this.tr("Make Template accessible to"));
+    this.setButtonText(this.tr("Publish"));
   },
 
   statics: {

@@ -56,6 +56,20 @@ qx.Class.define("osparc.component.export.ShareResourceBase", {
     "finished": "qx.event.type.Data"
   },
 
+  properties: {
+    headerText: {
+      check: "String",
+      init: "",
+      event: "changeHeaderText"
+    },
+
+    buttonText: {
+      check: "String",
+      init: "",
+      event: "changeButtonText"
+    }
+  },
+
   members: {
     _studyId: null,
     _shareWith: null,
@@ -71,15 +85,17 @@ qx.Class.define("osparc.component.export.ShareResourceBase", {
     },
 
     __buildLayout: function() {
-      const shareWith = this._shareWith = new osparc.component.export.ShareWith(this.tr("Share with"));
+      const shareWith = this._shareWith = new osparc.component.export.ShareWith();
+      this.bind("headerText", shareWith, "legend");
       this._add(shareWith, {
         flex: 1
       });
 
-      const shareResourceBtn = new osparc.ui.form.FetchButton(this.tr("Share")).set({
+      const shareResourceBtn = new osparc.ui.form.FetchButton().set({
         allowGrowX: false,
         alignX: "right"
       });
+      this.bind("buttonText", shareResourceBtn, "label");
       shareResourceBtn.addListener("execute", () => {
         this._shareResource(shareResourceBtn);
       }, this);

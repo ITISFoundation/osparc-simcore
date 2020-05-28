@@ -26,6 +26,9 @@ qx.Class.define("osparc.component.export.Permissions", {
     this.base(arguments, studyId);
 
     this._shareWith.showPrivate(false);
+
+    this.setHeaderText(this.tr("Share with"));
+    this.setButtonText(this.tr("Share"));
   },
 
   members: {
