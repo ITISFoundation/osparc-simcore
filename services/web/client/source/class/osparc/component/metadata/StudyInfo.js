@@ -38,7 +38,7 @@ qx.Class.define("osparc.component.metadata.StudyInfo", {
 
     this.__study = study;
 
-    this._add(this.__createExpandButton());
+    this._add(this.__getMoreInfoMenuButton());
     const windowWidth = 400;
     this._add(new osparc.component.metadata.StudyDetails(study, windowWidth));
   },
@@ -46,18 +46,17 @@ qx.Class.define("osparc.component.metadata.StudyInfo", {
   members: {
     __study: null,
 
-    __createExpandButton: function() {
-      const expandButton = new qx.ui.form.Button().set({
-        label: this.tr("Show all"),
+    __getMoreInfoMenuButton: function() {
+      const moreInfoButton = new qx.ui.form.Button(this.tr("More Info")).set({
         icon: "@FontAwesome5Solid/external-link-alt/16",
         allowGrowX: false
       });
-      expandButton.addListener("execute", function() {
         const win = new osparc.component.metadata.StudyDetailsWindow(this.__study);
         win.center();
+      moreInfoButton.addListener("execute", function() {
         win.open();
       }, this);
-      return expandButton;
+      return moreInfoButton;
     }
   }
 });
