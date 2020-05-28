@@ -518,11 +518,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           "updatedStudy",
           "updatedTemplate",
           "openedStudy"
-        ].forEach(event => {
-          studyDetailsEditor.addListener(event, () => {
-            win.close();
-          });
-        });
+        ].forEach(event => studyDetailsEditor.addListener(event, () => win.close()));
         win.add(studyDetailsEditor);
         win.open();
         win.center();

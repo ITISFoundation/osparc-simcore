@@ -50,8 +50,8 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
   },
 
   events: {
-    updatedStudy: "qx.event.type.Data",
-    updatedTemplate: "qx.event.type.Data",
+    updatedStudy: "qx.event.type.Event",
+    updatedTemplate: "qx.event.type.Event",
     updateTags: "qx.event.type.Data",
     closed: "qx.event.type.Event",
     openedStudy: "qx.event.type.Event"
@@ -267,7 +267,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
             .removeClass("rotate");
           this.__model.set(data);
           this.setMode("display");
-          this.fireDataEvent(this.__isTemplate ? "updatedTemplate" : "updatedStudy", data);
+          this.fireEvent(this.__isTemplate ? "updatedTemplate" : "updatedStudy");
         })
         .catch(err => {
           btn.resetIcon();
@@ -289,14 +289,12 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       saveAsTemplateView.addListener("finished", e => {
         const template = e.getData();
         if (template) {
-          this.fireDataEvent("updatedTemplate", template);
           this.__model.set(template);
           this.setMode("display");
-
+          this.fireEvent("updatedTemplate");
           window.close();
         }
       }, this);
-
       window.open();
     },
 
