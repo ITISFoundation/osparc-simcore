@@ -30,8 +30,11 @@ qx.Class.define("osparc.component.export.Permissions", {
     this.setHeaderText(this.tr("Share with"));
     this.setButtonText(this.tr("Share"));
   },
-
   members: {
+    createWindow: function() {
+      return osparc.component.export.ShareResourceBase.createWindow(this.tr("Permissions"), this);
+    },
+
     // overridden
     _shareResource: function(btn) {
       btn.setFetching(true);

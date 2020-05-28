@@ -74,16 +74,6 @@ qx.Class.define("osparc.component.export.ShareResourceBase", {
     _studyId: null,
     _shareWith: null,
 
-    popUpWindow: function(winText) {
-      const window = this.self().createWindow(winText, this);
-      this.addListener("finished", e => {
-        if (e.getData()) {
-          window.close();
-        }
-      }, this);
-      window.open();
-    },
-
     __buildLayout: function() {
       const shareWith = this._shareWith = new osparc.component.export.ShareWith();
       this.bind("headerText", shareWith, "legend");

@@ -280,12 +280,18 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
 
     __openPermissions: function() {
       const permissionsView = new osparc.component.export.Permissions(this.__model.getUuid());
-      permissionsView.popUpWindow(this.tr("Permissions"));
+      const window = permissionsView.createWindow();
+      permissionsView.addListener("finished", e => {
+        if (e.getData()) {
+          window.close();
+        }
+      }, this);
+      window.open();
     },
 
     __openSaveAsTemplate: function() {
       const saveAsTemplateView = new osparc.component.export.SaveAsTemplate(this.__model.getUuid(), this.__serializeForm());
-      const window = osparc.component.export.SaveAsTemplate.createSaveAsTemplateWindow(saveAsTemplateView);
+      const window = saveAsTemplateView.createWindow();
       saveAsTemplateView.addListener("finished", e => {
         const template = e.getData();
         if (template) {

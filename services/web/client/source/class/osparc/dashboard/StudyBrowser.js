@@ -530,7 +530,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
       permissionsButton.addListener("execute", () => {
         const permissionsView = new osparc.component.export.Permissions(studyData.uuid);
-        permissionsView.popUpWindow(this.tr("Permissions"));
+        const window = permissionsView.createWindow();
+        permissionsView.addListener("finished", e => {
+          if (e.getData()) {
+            window.close();
+          }
+        }, this);
+        window.open();
       }, this);
       return permissionsButton;
     },
@@ -539,7 +545,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const saveAsTemplateButton = new qx.ui.menu.Button(this.tr("Save as Template"));
       saveAsTemplateButton.addListener("execute", () => {
         const saveAsTemplateView = new osparc.component.export.SaveAsTemplate(studyData.uuid, studyData);
-        const window = osparc.component.export.SaveAsTemplate.createSaveAsTemplateWindow(saveAsTemplateView);
+        const window = saveAsTemplateView.createWindow();
         saveAsTemplateView.addListener("finished", e => {
           const template = e.getData();
           if (template) {

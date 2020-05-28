@@ -31,27 +31,12 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
     this.setButtonText(this.tr("Publish"));
   },
 
-  statics: {
-    createSaveAsTemplateWindow: function(saveAsTemplate) {
-      const window = new qx.ui.window.Window("Save as Template").set({
-        appearance: "service-window",
-        layout: new qx.ui.layout.Grow(),
-        autoDestroy: true,
-        contentPadding: 0,
-        width: 400,
-        height: 300,
-        showMaximize: false,
-        showMinimize: false,
-        modal: true
-      });
-      window.add(saveAsTemplate);
-      window.center();
-      return window;
-    }
-  },
-
   members: {
     __formData: null,
+
+    createWindow: function() {
+      return osparc.component.export.ShareResourceBase.createWindow(this.tr("Save as Template"), this);
+    },
 
     // overridden
     _shareResource: function(btn) {
