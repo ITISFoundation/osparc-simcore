@@ -134,7 +134,7 @@ async def remove_orphaned_services(
             try:
                 await stop_service(app, node_id)
             except (ServiceNotFoundError, DirectorException) as e:
-                logger.error("Error while stopping service: %s", e)
+                logger.warning("Error while stopping service: %s", e)
 
     logger.info("Finished orphaned services removal")
 
@@ -177,10 +177,9 @@ async def garbage_collector_task(app: web.Application):
             keep_alive = False
             logger.info("Garbage collection task was cancelled, it will not restart!")
         except Exception:  # pylint: disable=broad-except
-            logger.exception("Error during garbage collector, restarting...")
-            await asyncio.sleep(
-                5
-            )  # will wait 5 seconds before restarting to avoid restart loops
+            logger.warning("There was an error during garbage collection, restarting...")
+            # will wait 5 seconds before restarting to avoid restart loops
+            await asyncio.sleep(5)
 
 
 async def setup_garbage_collector_task(app: web.Application):
