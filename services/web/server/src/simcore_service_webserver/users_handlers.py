@@ -19,7 +19,11 @@ from .db_models import GroupType, groups, tokens, user_to_groups, users
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_api import check_permission
 from .security_decorators import permission_required
-from .users_exceptions import GroupNotFoundError, UserInGroupNotFoundError
+from .users_exceptions import (
+    GroupNotFoundError,
+    UserInGroupNotFoundError,
+    UserNotFoundError,
+)
 from .utils import gravatar_hash
 
 logger = logging.getLogger(__name__)
@@ -162,12 +166,15 @@ async def create_group(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     new_group = await request.json()
 
-    new_group = await users_api.create_user_group(
-        request.app, user_id, new_group["label"], new_group["description"]
-    )
-    raise web.HTTPCreated(
-        text=json.dumps({"data": new_group}), content_type="application/json"
-    )
+    try:
+        new_group = await users_api.create_user_group(
+            request.app, user_id, new_group["label"], new_group["description"]
+        )
+        raise web.HTTPCreated(
+            text=json.dumps({"data": new_group}), content_type="application/json"
+        )
+    except UserNotFoundError:
+        raise web.HTTPNotFound(reason=f"User not found")
 
 
 @login_required

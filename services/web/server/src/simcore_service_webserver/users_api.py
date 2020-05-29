@@ -12,7 +12,11 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login.cfg import get_storage
 
 from .db_models import GroupType, groups, user_to_groups, users
-from .users_exceptions import GroupNotFoundError, UserInGroupNotFoundError
+from .users_exceptions import (
+    GroupNotFoundError,
+    UserInGroupNotFoundError,
+    UserNotFoundError,
+)
 from .utils import gravatar_hash
 
 logger = logging.getLogger(__name__)
@@ -93,9 +97,19 @@ async def create_user_group(
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         result = await conn.execute(
+            sa.select([users.c.primary_group]).where(users.c.id == user_id)
+        )
+        user: RowProxy = await result.fetchone()
+        if not user:
+            raise UserNotFoundError(user_id)
+        result = await conn.execute(
             # pylint: disable=no-value-for-parameter
             groups.insert()
-            .values(name=name, description=description)
+            .values(
+                name=name,
+                description=description,
+                accessRights={f"{user.primary_group}": "rw"},
+            )
             .returning(literal_column("*"))
         )
         group: RowProxy = await result.fetchone()

@@ -10,6 +10,15 @@ class UsersException(Exception):
         super(UsersException, self).__init__(msg)
 
 
+class UserNotFoundError(UsersException):
+    """User in group was not found in DB"""
+
+    def __init__(self, uid):
+        msg = "User id {} not found".format(uid)
+        super(UserNotFoundError, self).__init__(msg)
+        self.uid = uid
+
+
 class GroupNotFoundError(UsersException):
     """Group was not found in DB"""
 
