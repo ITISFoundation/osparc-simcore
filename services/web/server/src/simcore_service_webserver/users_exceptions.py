@@ -17,3 +17,13 @@ class GroupNotFoundError(UsersException):
         msg = "Group with id {} not found".format(gid)
         super(GroupNotFoundError, self).__init__(msg)
         self.gid = gid
+
+
+class UserInGroupNotFoundError(UsersException):
+    """User in group was not found in DB"""
+
+    def __init__(self, gid, uid):
+        msg = "User id {} in Group {} not found".format(uid, gid)
+        super(UserInGroupNotFoundError, self).__init__(msg)
+        self.gid = gid
+        self.uid = uid

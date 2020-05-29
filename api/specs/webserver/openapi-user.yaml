@@ -145,6 +145,18 @@ paths:
         - user
       summary: Adds a user in the group
       operationId: add_group_user
+      requestBody:
+        required: true
+        description: the user to add
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - uid
+              properties:
+                uid:
+                  type: string
       responses:
         "204":
           description: user successfully added

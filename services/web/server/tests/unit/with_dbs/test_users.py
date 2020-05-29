@@ -344,7 +344,7 @@ async def test_list_groups(
 
 
 @pytest.mark.parametrize(
-    "role,expected,expected_read,expected_delete,expected_empty",
+    "role,expected,expected_read,expected_delete,expected_not_found",
     [
         (
             UserRole.ANONYMOUS,
@@ -377,7 +377,13 @@ async def test_list_groups(
     ],
 )
 async def test_group_creation_workflow(
-    client, logged_user, role, expected, expected_read, expected_delete, expected_empty
+    client,
+    logged_user,
+    role,
+    expected,
+    expected_read,
+    expected_delete,
+    expected_not_found,
 ):
     url = client.app.router["create_group"].url_for()
     assert str(url) == "/v0/me/groups"
@@ -442,30 +448,55 @@ async def test_group_creation_workflow(
     # check deleting the same group again fails
     url = client.app.router["delete_group"].url_for(gid=str(assigned_group["gid"]))
     resp = await client.delete(url)
-    data, error = await assert_status(resp, expected_empty)
+    data, error = await assert_status(resp, expected_not_found)
 
     # check getting the group fails
     url = client.app.router["get_group"].url_for(gid=str(assigned_group["gid"]))
     resp = await client.get(url)
-    data, error = await assert_status(resp, expected_empty)
+    data, error = await assert_status(resp, expected_not_found)
 
 
 @pytest.mark.parametrize(
-    "role, expected_creation,expected,expected_empty",
+    "role, expected_created,expected,expected_not_found,expected_no_content",
     [
         (
             UserRole.ANONYMOUS,
             web.HTTPUnauthorized,
             web.HTTPUnauthorized,
             web.HTTPUnauthorized,
+            web.HTTPUnauthorized,
         ),
-        (UserRole.GUEST, web.HTTPForbidden, web.HTTPForbidden, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPCreated, web.HTTPOk, web.HTTPNotFound),
-        (UserRole.TESTER, web.HTTPCreated, web.HTTPOk, web.HTTPNotFound),
+        (
+            UserRole.GUEST,
+            web.HTTPForbidden,
+            web.HTTPForbidden,
+            web.HTTPForbidden,
+            web.HTTPForbidden,
+        ),
+        (
+            UserRole.USER,
+            web.HTTPCreated,
+            web.HTTPOk,
+            web.HTTPNotFound,
+            web.HTTPNoContent,
+        ),
+        (
+            UserRole.TESTER,
+            web.HTTPCreated,
+            web.HTTPOk,
+            web.HTTPNotFound,
+            web.HTTPNoContent,
+        ),
     ],
 )
 async def test_list_users_from_group(
-    client, logged_user, role, expected_creation, expected, expected_empty
+    client,
+    logged_user,
+    role,
+    expected_created,
+    expected,
+    expected_not_found,
+    expected_no_content,
 ):
 
     new_group = {
@@ -477,13 +508,13 @@ async def test_list_users_from_group(
     # check that our group does not exist
     url = client.app.router["get_group_users"].url_for(gid=new_group["gid"])
     resp = await client.get(url)
-    data, error = await assert_status(resp, expected_empty)
+    data, error = await assert_status(resp, expected_not_found)
 
     url = client.app.router["create_group"].url_for()
     assert str(url) == "/v0/me/groups"
 
     resp = await client.post(url, json=new_group)
-    data, error = await assert_status(resp, expected_creation)
+    data, error = await assert_status(resp, expected_created)
 
     assigned_group = new_group
     if not error:
@@ -494,29 +525,53 @@ async def test_list_users_from_group(
         assert assigned_group["description"] == new_group["description"]
 
     # check that our user is in the group of users
-    url = client.app.router["get_group_users"].url_for(gid=str(assigned_group["gid"]))
-    resp = await client.get(url)
+    get_group_users_url = client.app.router["get_group_users"].url_for(
+        gid=str(assigned_group["gid"])
+    )
+    resp = await client.get(get_group_users_url)
     data, error = await assert_status(resp, expected)
+
+    def _assert_user(expected_user: Dict, actual_user: Dict):
+        assert "first_name" in actual_user
+        parts = expected_user["name"].split(".") + [""]
+        assert actual_user["first_name"] == parts[0]
+        assert "last_name" in actual_user
+        assert actual_user["last_name"] == parts[1]
+        assert "login" in actual_user
+        assert actual_user["login"] == expected_user["email"]
+        assert "gravatar_id" in actual_user
+        assert actual_user["gravatar_id"] == gravatar_hash(expected_user["email"])
 
     if not error:
         list_of_users = data
         assert len(list_of_users) == 1
         the_owner = list_of_users[0]
-        assert "first_name" in the_owner
-        parts = logged_user["name"].split(".") + [""]
-        assert the_owner["first_name"] == parts[0]
-        assert "last_name" in the_owner
-        assert the_owner["last_name"] == parts[1]
-        assert "login" in the_owner
-        assert the_owner["login"] == logged_user["email"]
-        assert "gravatar_id" in the_owner
-        assert the_owner["gravatar_id"] == gravatar_hash(logged_user["email"])
+        _assert_user(logged_user, the_owner)
 
     # create a random number of users and put them in the group
+    add_group_user_url = client.app.router["add_group_user"].url_for(
+        gid=str(assigned_group["gid"])
+    )
     num_users = random.randint(1, 10)
-    users = []
+    users_list = []
     for i in range(num_users):
-        users.append(await create_user())
+        users_list.append(await create_user())
+
+        resp = await client.post(add_group_user_url, json={"uid": users_list[i]["id"]})
+        data, error = await assert_status(resp, expected_no_content)
+
+        get_group_user_url = client.app.router["get_group_user"].url_for(
+            gid=str(assigned_group["gid"]), uid=str(users_list[i]["id"])
+        )
+        resp = await client.get(get_group_user_url)
+        data, error = await assert_status(resp, expected)
+        if not error:
+            _assert_user(users_list[i], data)
+
+
+# TODO: fill in to check not found cases
+async def test_not_found_cases():
+    pass
 
 
 @pytest.fixture
