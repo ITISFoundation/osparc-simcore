@@ -345,7 +345,7 @@ class DatcoreClient(object):
 
         url = self.download_link(source, filename)
         if url:
-            _file = urllib.URLopener()
+            _file = urllib.URLopener() # nosec
             _file.retrieve(url, destination_path)
             return True
         return False
