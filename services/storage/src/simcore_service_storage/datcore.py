@@ -22,14 +22,6 @@ logger = logging.getLogger(__name__)
 DatasetMetaDataVec = List[DatasetMetaData]
 
 
-# FIXME: W0611:Unused IOAPI imported from blackfynn.api.transfers
-# from blackfynn.api.transfers import IOAPI
-
-
-# FIXME: W0212:Access to a protected member _api of a client class
-# pylint: disable=W0212
-
-
 def _get_collection_id(
     folder: BaseCollection, _collections: List[str], collection_id: str
 ) -> str:
@@ -53,7 +45,7 @@ def _get_collection_id(
 
 class DatcoreClient(object):
     def __init__(self, api_token=None, api_secret=None, host=None, streaming_host=None):
-        # WARNING: contruction raise exception if service is not available
+        # WARNING: contruction raise exception if service is not available. Use datacore_wrapper for safe calls
         self.client = Blackfynn(
             profile=None,
             api_token=api_token,
@@ -311,8 +303,9 @@ class DatcoreClient(object):
         if collection is None:
             return False
 
-        files = [filepath]
-        # pylint: disable = E1101
+        files = [
+            filepath,
+        ]
         self.client._api.io.upload_files(collection, files, display_progress=True)
         collection.update()
 
@@ -350,7 +343,6 @@ class DatcoreClient(object):
             destination__apth (str): Path on host for storing file
         """
 
-        # pylint: disable = E1101
         url = self.download_link(source, filename)
         if url:
             _file = urllib.URLopener()
@@ -363,7 +355,7 @@ class DatcoreClient(object):
             returns presigned url for download, destination is a dataset or collection
         """
         collection, collection_id = self._collection_from_destination(destination)
-        # pylint: disable = E1101
+
         for item in collection:
             if isinstance(item, DataPackage):
                 if Path(item.files[0].as_dict()["content"]["s3key"]).name == filename:
