@@ -552,21 +552,72 @@ async def test_list_users_from_group(
     add_group_user_url = client.app.router["add_group_user"].url_for(
         gid=str(assigned_group["gid"])
     )
-    num_users = random.randint(1, 10)
-    users_list = []
-    for i in range(num_users):
-        users_list.append(await create_user())
+    num_new_users = random.randint(1, 10)
+    created_users_list = []
+    for i in range(num_new_users):
+        created_users_list.append(await create_user())
 
-        resp = await client.post(add_group_user_url, json={"uid": users_list[i]["id"]})
+        resp = await client.post(
+            add_group_user_url, json={"uid": created_users_list[i]["id"]}
+        )
         data, error = await assert_status(resp, expected_no_content)
 
         get_group_user_url = client.app.router["get_group_user"].url_for(
-            gid=str(assigned_group["gid"]), uid=str(users_list[i]["id"])
+            gid=str(assigned_group["gid"]), uid=str(created_users_list[i]["id"])
         )
         resp = await client.get(get_group_user_url)
         data, error = await assert_status(resp, expected)
         if not error:
-            _assert_user(users_list[i], data)
+            _assert_user(created_users_list[i], data)
+    # check list is correct
+    resp = await client.get(get_group_users_url)
+    data, error = await assert_status(resp, expected)
+    if not error:
+        list_of_users = data
+        # now we should have all the users in the group + the owner
+        all_created_users = created_users_list + [logged_user]
+        assert len(list_of_users) == len(all_created_users)
+        for actual_user in list_of_users:
+            expected_users_list = list(
+                filter(
+                    lambda x, ac=actual_user: x["email"] == ac["login"],
+                    all_created_users,
+                )
+            )
+            assert len(expected_users_list) == 1
+            _assert_user(expected_users_list[0], actual_user)
+            all_created_users.remove(expected_users_list[0])
+
+    # modify the user and remove them from the group
+    for i in range(num_new_users):
+        update_group_user_url = client.app.router["update_group_user"].url_for(
+            gid=str(assigned_group["gid"]), uid=str(created_users_list[i]["id"])
+        )
+        resp = await client.patch(update_group_user_url, json={})
+        data, error = await assert_status(resp, expected)
+        if not error:
+            _assert_user(created_users_list[i], data)
+        # check it is there
+        get_group_user_url = client.app.router["get_group_user"].url_for(
+            gid=str(assigned_group["gid"]), uid=str(created_users_list[i]["id"])
+        )
+        resp = await client.get(get_group_user_url)
+        data, error = await assert_status(resp, expected)
+        if not error:
+            _assert_user(created_users_list[i], data)
+        # remove the user from the group
+        delete_group_user_url = client.app.router["delete_group_user"].url_for(
+            gid=str(assigned_group["gid"]), uid=str(created_users_list[i]["id"])
+        )
+        resp = await client.delete(delete_group_user_url)
+        data, error = await assert_status(resp, expected_no_content)
+
+        # check it is not there anymore
+        get_group_user_url = client.app.router["get_group_user"].url_for(
+            gid=str(assigned_group["gid"]), uid=str(created_users_list[i]["id"])
+        )
+        resp = await client.get(get_group_user_url)
+        data, error = await assert_status(resp, expected_not_found)
 
 
 # TODO: fill in to check not found cases
