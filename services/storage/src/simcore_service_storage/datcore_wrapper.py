@@ -28,7 +28,7 @@ def safe_call(error_msg: str = "", *, skip_logs: bool = False):
     except AttributeError:
         if not skip_logs:
             logger.warning("Calling disabled client. %s", error_msg)
-    except Exception: # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         if error_msg and not skip_logs:
             logger.warning(error_msg, exc_info=True)
 
@@ -53,7 +53,10 @@ class DatcoreWrapper:
 
         This can go away now. Next cleanup round...
 
+        NOTE: Auto-disables client
+
     """
+
     def __init__(
         self, api_token: str, api_secret: str, loop: object, pool: ThreadPoolExecutor
     ):
@@ -72,8 +75,19 @@ class DatcoreWrapper:
         except Exception:
             self.d_client = None  # Disabled: any call will raise AttributeError
             logger.warning(
-                "Failed to connect to datcore. Disabling client.", exc_info=True
+                "Failed to setup datcore. Disabling client.", exc_info=True
             )
+
+    @property
+    def is_communication_enabled(self) -> bool:
+        """ Wrapper class auto-disables if client cannot be created
+
+            e.g. if endpoint service is down
+
+        :return: True if communication with datcore is enabled
+        :rtype: bool
+        """
+        return self.d_client is not None
 
     @make_async
     def list_files_recursively(self) -> FileMetaDataVec:  # pylint: disable=W0613

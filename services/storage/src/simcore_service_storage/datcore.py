@@ -53,7 +53,7 @@ def _get_collection_id(
 
 class DatcoreClient(object):
     def __init__(self, api_token=None, api_secret=None, host=None, streaming_host=None):
-        # NOTE: if service is down, this raise exception!
+        # WARNING: contruction raise exception if service is not available
         self.client = Blackfynn(
             profile=None,
             api_token=api_token,
