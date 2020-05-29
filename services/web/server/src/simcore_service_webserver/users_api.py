@@ -13,6 +13,7 @@ from simcore_service_webserver.login.cfg import get_storage
 
 from .db_models import GroupType, groups, user_to_groups, users
 from .users_exceptions import GroupNotFoundError
+from .utils import gravatar_hash
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +92,7 @@ async def get_users_in_group(app: web.Application, user_id: str, gid: str) -> Li
         query = sa.select([users]).select_from(users.join(user_to_groups)).where(user_to_groups.c.gid == gid)
         async for row in conn.execute(query):
             parts = row["name"].split(".") + [""]
-            users_list.append({"first_name": parts[0], "last_name": parts[1]})
+            users_list.append({"first_name": parts[0], "last_name": parts[1], "login": row["email"], "gravatar_id": gravatar_hash(row["email"])})
         return users_list
 
 

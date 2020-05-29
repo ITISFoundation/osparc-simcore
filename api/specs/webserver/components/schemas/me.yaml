@@ -123,7 +123,15 @@ UsersArrayEnveloped:
     data:
       type: array
       items:
-        $ref: "#/ProfileCommon"
+        allOf:
+          - $ref: "#/ProfileCommon"
+          - type: object
+            properties:
+              login:
+                type: string
+                format: email
+              gravatar_id:
+                type: string
     error:
       nullable: true
       default: null

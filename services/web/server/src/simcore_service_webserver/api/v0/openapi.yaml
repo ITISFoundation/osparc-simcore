@@ -2108,7 +2108,6 @@ paths:
                           last_name:
                             type: string
                         example:
-                          login: pcrespov@foo.com
                           first_name: Pedro
                           last_name: Crespo
                       - type: object
@@ -2311,7 +2310,6 @@ paths:
                     last_name:
                       type: string
                   example:
-                    login: pcrespov@foo.com
                     first_name: Pedro
                     last_name: Crespo
               example:
@@ -3491,16 +3489,23 @@ paths:
                   data:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        first_name:
-                          type: string
-                        last_name:
-                          type: string
-                      example:
-                        login: pcrespov@foo.com
-                        first_name: Pedro
-                        last_name: Crespo
+                      allOf:
+                        - type: object
+                          properties:
+                            first_name:
+                              type: string
+                            last_name:
+                              type: string
+                          example:
+                            first_name: Pedro
+                            last_name: Crespo
+                        - type: object
+                          properties:
+                            login:
+                              type: string
+                              format: email
+                            gravatar_id:
+                              type: string
                   error:
                     nullable: true
                     default: null

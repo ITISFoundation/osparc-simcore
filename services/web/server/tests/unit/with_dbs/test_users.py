@@ -31,6 +31,9 @@ from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.users import setup_users
 
+## BUG FIXES #######################################################
+from simcore_service_webserver.utils import gravatar_hash
+
 API_VERSION = "v0"
 
 
@@ -504,15 +507,16 @@ async def test_list_users_from_group(
         assert the_owner["first_name"] == parts[0]
         assert "last_name" in the_owner
         assert the_owner["last_name"] == parts[1]
+        assert "login" in the_owner
+        assert the_owner["login"] == logged_user["email"]
+        assert "gravatar_id" in the_owner
+        assert the_owner["gravatar_id"] == gravatar_hash(logged_user["email"])
 
-    # create a random number of users
+    # create a random number of users and put them in the group
     num_users = random.randint(1, 10)
     users = []
     for i in range(num_users):
         users.append(await create_user())
-
-
-## BUG FIXES #######################################################
 
 
 @pytest.fixture
