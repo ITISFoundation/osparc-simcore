@@ -97,7 +97,7 @@ async def create_user_group(
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         result = await conn.execute(
-            sa.select([users.c.primary_group]).where(users.c.id == user_id)
+            sa.select([users.c.primary_gid]).where(users.c.id == user_id)
         )
         user: RowProxy = await result.fetchone()
         if not user:
@@ -108,7 +108,7 @@ async def create_user_group(
             .values(
                 name=name,
                 description=description,
-                accessRights={f"{user.primary_group}": "rw"},
+                access_rights={f"{user.primary_gid}": "rw"},
             )
             .returning(literal_column("*"))
         )
