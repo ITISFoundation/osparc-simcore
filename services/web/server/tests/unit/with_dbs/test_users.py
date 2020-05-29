@@ -611,6 +611,9 @@ async def test_list_users_from_group(
         )
         resp = await client.delete(delete_group_user_url)
         data, error = await assert_status(resp, expected_no_content)
+        # do it again to check it is not found anymore
+        resp = await client.delete(delete_group_user_url)
+        data, error = await assert_status(resp, expected_not_found)
 
         # check it is not there anymore
         get_group_user_url = client.app.router["get_group_user"].url_for(
@@ -618,11 +621,6 @@ async def test_list_users_from_group(
         )
         resp = await client.get(get_group_user_url)
         data, error = await assert_status(resp, expected_not_found)
-
-
-# TODO: fill in to check not found cases
-async def test_not_found_cases():
-    pass
 
 
 @pytest.fixture
