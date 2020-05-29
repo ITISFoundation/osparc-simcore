@@ -136,6 +136,25 @@ UsersArrayEnveloped:
       nullable: true
       default: null
 
+UserEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      allOf:
+        - $ref: "#/ProfileCommon"
+        - type: object
+          properties:
+            login:
+              type: string
+              format: email
+            gravatar_id:
+              type: string
+    error:
+      nullable: true
+      default: null
+
 Token:
   description: api keys for third party services
   type: object
