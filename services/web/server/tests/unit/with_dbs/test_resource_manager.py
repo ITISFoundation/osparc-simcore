@@ -159,8 +159,9 @@ async def test_anonymous_websocket_connection(
 
     socket_connect_error = mocker.Mock()
     sio.on("connect_error", handler=socket_connect_error)
-    await sio.connect(url, headers=headers)
-    assert sio.sid
+    with pytest.raises(socketio.exceptions.ConnectionError):
+        await sio.connect(url, headers=headers)
+    assert sio.sid is None
     socket_connect_error.assert_called_once()
     await sio.disconnect()
     assert not sio.sid

@@ -17,7 +17,7 @@ The process of moving code from [Master](https://github.com/ITISFoundation/ospar
     git push --set-upstream origin FREEZE_${SPRINT_NAME}
     # create the log entries to be copied into the pull request
     #body=scripts/url-encoder.sh "$(git log --oneline staging..HEAD --no-decorate)"
-    body=$(scripts/url-encoder.sh "$(git log staging..HEAD --pretty="format:- %s")")
+    body=$(scripts/url-encoder.bash "$(git log origin/staging..HEAD --pretty="format:- %s")")
     # open the PR on github website
     echo "https://github.com/ITISFoundation/osparc-simcore/compare/staging...FREEZE_${SPRINT_NAME}?expand=1&title=FREEZE_${SPRINT_NAME}&body=$body"
 
