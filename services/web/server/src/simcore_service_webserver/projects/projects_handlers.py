@@ -17,7 +17,13 @@ from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 
-OVERRIDABLE_DOCUMENT_KEYS = ["name", "description", "thumbnail", "prjOwner", "accessRights"]
+OVERRIDABLE_DOCUMENT_KEYS = [
+    "name",
+    "description",
+    "thumbnail",
+    "prjOwner",
+    "accessRights",
+]
 # TODO: validate these against api/specs/webserver/v0/components/schemas/project-v0.0.1.json
 
 log = logging.getLogger(__name__)

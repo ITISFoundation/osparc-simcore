@@ -188,7 +188,9 @@ class ProjectDBAPI:
                     )
                     await conn.execute(query)
                 except IntegrityError as exc:
-                    log.exception("Cannot associate project %d to user %d", project_id, user_id)
+                    log.exception(
+                        "Cannot associate project %d to user %d", project_id, user_id
+                    )
 
                     # rollback projects database
                     query = projects.delete().where(projects.c.id == project_id)
