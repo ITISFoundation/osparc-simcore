@@ -60,10 +60,7 @@ ROLES_PERMISSIONS = {
             # "preferences.apikey.delete"
             "user.tokens.*",  # "preferences.token.create",
             # "preferences.token.delete"
-            "user.groups.read",
-            "user.groups.create",
-            "user.groups.update",
-            "user.groups.delete",
+            "user.groups.*",
             "tag.crud.*"  # "preferences.tag"
             # NOTE: All services* are not necessary since it only requires login
             # and there is no distinction among logged in users.
