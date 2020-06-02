@@ -41,7 +41,8 @@
     },
     "prjOwner": {
       "type": "string",
-      "description": "user uuid"
+      "format": "idn-email",
+      "description": "user email"
     },
     "accessRights": {
       "type": "object",
@@ -106,7 +107,7 @@
               "type": "string"
             },
             "progress": {
-              "type":"number",
+              "type": "number",
               "maximum": 100,
               "minimum": 0,
               "description": "the node progress value"
@@ -158,7 +159,10 @@
                       ],
                       "properties": {
                         "store": {
-                          "type": ["string", "integer"]
+                          "type": [
+                            "string",
+                            "integer"
+                          ]
                         },
                         "dataset": {
                           "type": "string"
@@ -181,7 +185,11 @@
               "patternProperties": {
                 "^[-_a-zA-Z0-9]+$": {
                   "type": "string",
-                  "enum": ["Invisible", "ReadOnly", "ReadAndWrite"],
+                  "enum": [
+                    "Invisible",
+                    "ReadOnly",
+                    "ReadAndWrite"
+                  ],
                   "default": "ReadAndWrite",
                   "examples": [
                     "ReadOnly"
@@ -224,7 +232,10 @@
                       ],
                       "properties": {
                         "store": {
-                          "type": ["string", "integer"]
+                          "type": [
+                            "string",
+                            "integer"
+                          ]
                         },
                         "dataset": {
                           "type": "string"
@@ -258,7 +269,10 @@
               ]
             },
             "parent": {
-              "type": ["string", "null"],
+              "type": [
+                "string",
+                "null"
+              ],
               "pattern": "^\\S+$",
               "description": "Parent's (group-nodes') node ID s.",
               "examples": [
