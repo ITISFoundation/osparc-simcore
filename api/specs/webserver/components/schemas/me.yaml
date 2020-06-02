@@ -88,6 +88,25 @@ UsersGroupEnveloped:
       nullable: true
       default: null
 
+GroupAccessRights:
+  description: defines acesss rights for the user
+  type: object
+  properties:
+    read:
+      type: boolean
+    write:
+      type: boolean
+    contents:
+      type: boolean
+  required:
+    - read
+    - write
+    - contents
+  example:
+    - read: true
+      write: false
+      contents: false
+
 UsersGroup:
   type: object
   properties:
@@ -104,10 +123,14 @@ UsersGroup:
       description: url to the group thumbnail
       type: string
       format: uri
+    accessRights:
+      $ref: "#/GroupAccessRights"
+
   required:
     - gid
     - label
     - description
+    - accessRights
   example:
     - gid: "27"
       label: "A user"

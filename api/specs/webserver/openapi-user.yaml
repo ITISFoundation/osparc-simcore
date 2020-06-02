@@ -151,12 +151,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - uid
-              properties:
-                uid:
-                  type: string
+              allOf:
+                - $ref: "./components/schemas/me.yaml#/GroupAccessRights"
+                - type: object
+                  required:
+                    - uid
+                  properties:
+                    uid:
+                      type: string
       responses:
         "204":
           description: user successfully added
@@ -186,7 +188,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./components/schemas/me.yaml#/UserEnveloped"
+                allOf:
+                  - $ref: "./components/schemas/me.yaml#/UserEnveloped"
+                  - $ref: "./components/schemas/me.yaml#/GroupAccessRights"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
     patch:
