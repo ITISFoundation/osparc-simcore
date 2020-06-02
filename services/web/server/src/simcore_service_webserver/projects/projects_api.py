@@ -22,10 +22,11 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 
 from ..computation_api import delete_pipeline_db
 from ..director import director_api
-from ..storage_api import \
-    copy_data_folders_from_project  # mocked in unit-tests
-from ..storage_api import (delete_data_folders_of_project,
-                           delete_data_folders_of_project_node)
+from ..storage_api import copy_data_folders_from_project  # mocked in unit-tests
+from ..storage_api import (
+    delete_data_folders_of_project,
+    delete_data_folders_of_project_node,
+)
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import NodeNotFoundError
@@ -291,7 +292,7 @@ async def update_project_node_outputs(
     if data:
         # NOTE: update outputs if necessary as the UI expects a
         # dataset/label field that is missing
-        outputs: Dict[str,Any] = project["workbench"][node_id]["outputs"]
+        outputs: Dict[str, Any] = project["workbench"][node_id]["outputs"]
         outputs.update(data)
 
         for output_key in outputs.keys():
@@ -307,6 +308,7 @@ async def update_project_node_outputs(
         db = app[APP_PROJECT_DBAPI]
         await db.update_user_project(project, user_id, project_id)
     return project["workbench"][node_id]
+
 
 async def get_workbench_node_ids_from_project_uuid(
     app: web.Application, project_uuid: str,

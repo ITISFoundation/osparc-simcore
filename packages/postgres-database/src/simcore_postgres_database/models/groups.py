@@ -7,6 +7,7 @@
 import enum
 
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
 from .base import metadata
@@ -32,6 +33,10 @@ groups = sa.Table(
     sa.Column("name", sa.String, nullable=False),
     sa.Column("description", sa.String, nullable=False),
     sa.Column("type", sa.Enum(GroupType), nullable=False, server_default="STANDARD"),
+    sa.Column(
+        "access_rights", JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")
+    ),
+    sa.Column("thumbnail", sa.String, nullable=True),
     sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
     sa.Column(
         "modified",

@@ -6,40 +6,39 @@ ProfileCommon:
     last_name:
       type: string
   example:
-    login: pcrespov@foo.com
     first_name: Pedro
     last_name: Crespo
 
 ProfileInput:
   allOf:
-  - $ref: '#/ProfileCommon'
+    - $ref: "#/ProfileCommon"
   example:
     first_name: Pedro
     last_name: Crespo
 
 ProfileOutput:
   allOf:
-  - $ref: '#/ProfileCommon'
-  - type: object
-    properties:
-      login:
-        type: string
-        format: email
-      role:
-        type: string
-      groups:
-        type: object
-        properties:
-          me:
-            $ref: '#/UsersGroup'
-          organizations:
-            type: array
-            items:
-              $ref: '#/UsersGroup'
-          all:
-            $ref: '#/UsersGroup'
-      gravatar_id:
-        type: string
+    - $ref: "#/ProfileCommon"
+    - type: object
+      properties:
+        login:
+          type: string
+          format: email
+        role:
+          type: string
+        groups:
+          type: object
+          properties:
+            me:
+              $ref: "#/UsersGroup"
+            organizations:
+              type: array
+              items:
+                $ref: "#/UsersGroup"
+            all:
+              $ref: "#/UsersGroup"
+        gravatar_id:
+          type: string
   example:
     login: pcrespov@foo.com
     first_name: Pedro
@@ -53,31 +52,138 @@ ProfileEnveloped:
     - data
   properties:
     data:
-      $ref: '#/ProfileOutput'
+      $ref: "#/ProfileOutput"
     error:
       nullable: true
       default: null
 
+UsersGroupsEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      type: object
+      properties:
+        me:
+          $ref: "#/UsersGroup"
+        organizations:
+          type: array
+          items:
+            $ref: "#/UsersGroup"
+        all:
+          $ref: "#/UsersGroup"
+    error:
+      nullable: true
+      default: null
+
+UsersGroupEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: "#/UsersGroup"
+    error:
+      nullable: true
+      default: null
+
+GroupAccessRights:
+  description: defines acesss rights for the user
+  type: object
+  properties:
+    read:
+      type: boolean
+    write:
+      type: boolean
+    contents:
+      type: boolean
+  required:
+    - read
+    - write
+    - contents
+  example:
+    - read: true
+      write: false
+      contents: false
 
 UsersGroup:
   type: object
   properties:
     gid:
+      description: the group ID
       type: string
     label:
+      description: the group name
       type: string
     description:
+      description: the group description
       type: string
+    thumbnail:
+      description: url to the group thumbnail
+      type: string
+      format: uri
+    accessRights:
+      $ref: "#/GroupAccessRights"
+
+  required:
+    - gid
+    - label
+    - description
+    - accessRights
   example:
-    - gid: '27'
-      label: 'A user'
-      description: 'A very special user'
-    - gid: '1'
-      label: 'ITIS Foundation'
-      description: 'The Foundation for Research on Information Technologies in Society'
-    - gid: '0'
-      label: 'All'
-      description: 'Open to all users'
+    - gid: "27"
+      label: "A user"
+      description: "A very special user"
+      thumbnail: https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png
+    - gid: "1"
+      label: "ITIS Foundation"
+      description: "The Foundation for Research on Information Technologies in Society"
+      thumbnail: https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png
+    - gid: "0"
+      label: "All"
+      description: "Open to all users"
+      thumbnail: https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png
+
+UsersArrayEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      type: array
+      items:
+        allOf:
+          - $ref: "#/ProfileCommon"
+          - type: object
+            properties:
+              login:
+                type: string
+                format: email
+              gravatar_id:
+                type: string
+    error:
+      nullable: true
+      default: null
+
+UserEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      allOf:
+        - $ref: "#/ProfileCommon"
+        - type: object
+          properties:
+            login:
+              type: string
+              format: email
+            gravatar_id:
+              type: string
+    error:
+      nullable: true
+      default: null
 
 Token:
   description: api keys for third party services
@@ -97,15 +203,13 @@ Token:
     - service
     - token_key
   example:
-    service: 'github-api-v1'
+    service: "github-api-v1"
     token_key: N1BP5ZSpB
-
 
 TokenId:
   description: toke identifier
   type: string
   # format: uuid
-
 
 TokenEnveloped:
   type: object
@@ -113,11 +217,10 @@ TokenEnveloped:
     - data
   properties:
     data:
-      $ref: '#/Token'
+      $ref: "#/Token"
     error:
       nullable: true
       default: null
-
 
 TokensArrayEnveloped:
   type: object
@@ -127,7 +230,7 @@ TokensArrayEnveloped:
     data:
       type: array
       items:
-        $ref: '#/Token'
+        $ref: "#/Token"
     error:
       nullable: true
       default: null
@@ -138,7 +241,7 @@ TokenIdEnveloped:
     - data
   properties:
     data:
-      $ref: '#/TokenId'
+      $ref: "#/TokenId"
     error:
       nullable: true
       default: null

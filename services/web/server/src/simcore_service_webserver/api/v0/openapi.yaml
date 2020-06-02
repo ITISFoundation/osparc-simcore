@@ -2108,7 +2108,6 @@ paths:
                           last_name:
                             type: string
                         example:
-                          login: pcrespov@foo.com
                           first_name: Pedro
                           last_name: Crespo
                       - type: object
@@ -2125,61 +2124,160 @@ paths:
                                 type: object
                                 properties:
                                   gid:
+                                    description: the group ID
                                     type: string
                                   label:
+                                    description: the group name
                                     type: string
                                   description:
+                                    description: the group description
                                     type: string
+                                  thumbnail:
+                                    description: url to the group thumbnail
+                                    type: string
+                                    format: uri
+                                  accessRights:
+                                    description: defines acesss rights for the user
+                                    type: object
+                                    properties:
+                                      read:
+                                        type: boolean
+                                      write:
+                                        type: boolean
+                                      contents:
+                                        type: boolean
+                                    required:
+                                      - read
+                                      - write
+                                      - contents
+                                    example:
+                                      - read: true
+                                        write: false
+                                        contents: false
+                                required:
+                                  - gid
+                                  - label
+                                  - description
+                                  - accessRights
                                 example:
                                   - gid: '27'
                                     label: A user
                                     description: A very special user
+                                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                                   - gid: '1'
                                     label: ITIS Foundation
                                     description: The Foundation for Research on Information Technologies in Society
+                                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                                   - gid: '0'
                                     label: All
                                     description: Open to all users
+                                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                               organizations:
                                 type: array
                                 items:
                                   type: object
                                   properties:
                                     gid:
+                                      description: the group ID
                                       type: string
                                     label:
+                                      description: the group name
                                       type: string
                                     description:
+                                      description: the group description
                                       type: string
+                                    thumbnail:
+                                      description: url to the group thumbnail
+                                      type: string
+                                      format: uri
+                                    accessRights:
+                                      description: defines acesss rights for the user
+                                      type: object
+                                      properties:
+                                        read:
+                                          type: boolean
+                                        write:
+                                          type: boolean
+                                        contents:
+                                          type: boolean
+                                      required:
+                                        - read
+                                        - write
+                                        - contents
+                                      example:
+                                        - read: true
+                                          write: false
+                                          contents: false
+                                  required:
+                                    - gid
+                                    - label
+                                    - description
+                                    - accessRights
                                   example:
                                     - gid: '27'
                                       label: A user
                                       description: A very special user
+                                      thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                                     - gid: '1'
                                       label: ITIS Foundation
                                       description: The Foundation for Research on Information Technologies in Society
+                                      thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                                     - gid: '0'
                                       label: All
                                       description: Open to all users
+                                      thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                               all:
                                 type: object
                                 properties:
                                   gid:
+                                    description: the group ID
                                     type: string
                                   label:
+                                    description: the group name
                                     type: string
                                   description:
+                                    description: the group description
                                     type: string
+                                  thumbnail:
+                                    description: url to the group thumbnail
+                                    type: string
+                                    format: uri
+                                  accessRights:
+                                    description: defines acesss rights for the user
+                                    type: object
+                                    properties:
+                                      read:
+                                        type: boolean
+                                      write:
+                                        type: boolean
+                                      contents:
+                                        type: boolean
+                                    required:
+                                      - read
+                                      - write
+                                      - contents
+                                    example:
+                                      - read: true
+                                        write: false
+                                        contents: false
+                                required:
+                                  - gid
+                                  - label
+                                  - description
+                                  - accessRights
                                 example:
                                   - gid: '27'
                                     label: A user
                                     description: A very special user
+                                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                                   - gid: '1'
                                     label: ITIS Foundation
                                     description: The Foundation for Research on Information Technologies in Society
+                                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                                   - gid: '0'
                                     label: All
                                     description: Open to all users
+                                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                           gravatar_id:
                             type: string
                     example:
@@ -2290,7 +2388,6 @@ paths:
                     last_name:
                       type: string
                   example:
-                    login: pcrespov@foo.com
                     first_name: Pedro
                     last_name: Crespo
               example:
@@ -2719,6 +2816,1548 @@ paths:
       responses:
         '204':
           description: token has been successfully deleted
+  /me/groups:
+    get:
+      summary: List my groups
+      operationId: list_groups
+      tags:
+        - user
+      responses:
+        '200':
+          description: list of the groups I belonged to
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      me:
+                        type: object
+                        properties:
+                          gid:
+                            description: the group ID
+                            type: string
+                          label:
+                            description: the group name
+                            type: string
+                          description:
+                            description: the group description
+                            type: string
+                          thumbnail:
+                            description: url to the group thumbnail
+                            type: string
+                            format: uri
+                          accessRights:
+                            description: defines acesss rights for the user
+                            type: object
+                            properties:
+                              read:
+                                type: boolean
+                              write:
+                                type: boolean
+                              contents:
+                                type: boolean
+                            required:
+                              - read
+                              - write
+                              - contents
+                            example:
+                              - read: true
+                                write: false
+                                contents: false
+                        required:
+                          - gid
+                          - label
+                          - description
+                          - accessRights
+                        example:
+                          - gid: '27'
+                            label: A user
+                            description: A very special user
+                            thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                          - gid: '1'
+                            label: ITIS Foundation
+                            description: The Foundation for Research on Information Technologies in Society
+                            thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                          - gid: '0'
+                            label: All
+                            description: Open to all users
+                            thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                      organizations:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            gid:
+                              description: the group ID
+                              type: string
+                            label:
+                              description: the group name
+                              type: string
+                            description:
+                              description: the group description
+                              type: string
+                            thumbnail:
+                              description: url to the group thumbnail
+                              type: string
+                              format: uri
+                            accessRights:
+                              description: defines acesss rights for the user
+                              type: object
+                              properties:
+                                read:
+                                  type: boolean
+                                write:
+                                  type: boolean
+                                contents:
+                                  type: boolean
+                              required:
+                                - read
+                                - write
+                                - contents
+                              example:
+                                - read: true
+                                  write: false
+                                  contents: false
+                          required:
+                            - gid
+                            - label
+                            - description
+                            - accessRights
+                          example:
+                            - gid: '27'
+                              label: A user
+                              description: A very special user
+                              thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                            - gid: '1'
+                              label: ITIS Foundation
+                              description: The Foundation for Research on Information Technologies in Society
+                              thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                            - gid: '0'
+                              label: All
+                              description: Open to all users
+                              thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                      all:
+                        type: object
+                        properties:
+                          gid:
+                            description: the group ID
+                            type: string
+                          label:
+                            description: the group name
+                            type: string
+                          description:
+                            description: the group description
+                            type: string
+                          thumbnail:
+                            description: url to the group thumbnail
+                            type: string
+                            format: uri
+                          accessRights:
+                            description: defines acesss rights for the user
+                            type: object
+                            properties:
+                              read:
+                                type: boolean
+                              write:
+                                type: boolean
+                              contents:
+                                type: boolean
+                            required:
+                              - read
+                              - write
+                              - contents
+                            example:
+                              - read: true
+                                write: false
+                                contents: false
+                        required:
+                          - gid
+                          - label
+                          - description
+                          - accessRights
+                        example:
+                          - gid: '27'
+                            label: A user
+                            description: A very special user
+                            thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                          - gid: '1'
+                            label: ITIS Foundation
+                            description: The Foundation for Research on Information Technologies in Society
+                            thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                          - gid: '0'
+                            label: All
+                            description: Open to all users
+                            thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    post:
+      summary: Create a new group
+      operationId: create_group
+      tags:
+        - user
+      requestBody:
+        required: true
+        description: the group to create
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gid:
+                  description: the group ID
+                  type: string
+                label:
+                  description: the group name
+                  type: string
+                description:
+                  description: the group description
+                  type: string
+                thumbnail:
+                  description: url to the group thumbnail
+                  type: string
+                  format: uri
+                accessRights:
+                  description: defines acesss rights for the user
+                  type: object
+                  properties:
+                    read:
+                      type: boolean
+                    write:
+                      type: boolean
+                    contents:
+                      type: boolean
+                  required:
+                    - read
+                    - write
+                    - contents
+                  example:
+                    - read: true
+                      write: false
+                      contents: false
+              required:
+                - gid
+                - label
+                - description
+                - accessRights
+              example:
+                - gid: '27'
+                  label: A user
+                  description: A very special user
+                  thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                - gid: '1'
+                  label: ITIS Foundation
+                  description: The Foundation for Research on Information Technologies in Society
+                  thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                - gid: '0'
+                  label: All
+                  description: Open to all users
+                  thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+      responses:
+        '201':
+          description: group created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      gid:
+                        description: the group ID
+                        type: string
+                      label:
+                        description: the group name
+                        type: string
+                      description:
+                        description: the group description
+                        type: string
+                      thumbnail:
+                        description: url to the group thumbnail
+                        type: string
+                        format: uri
+                      accessRights:
+                        description: defines acesss rights for the user
+                        type: object
+                        properties:
+                          read:
+                            type: boolean
+                          write:
+                            type: boolean
+                          contents:
+                            type: boolean
+                        required:
+                          - read
+                          - write
+                          - contents
+                        example:
+                          - read: true
+                            write: false
+                            contents: false
+                    required:
+                      - gid
+                      - label
+                      - description
+                      - accessRights
+                    example:
+                      - gid: '27'
+                        label: A user
+                        description: A very special user
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                      - gid: '1'
+                        label: ITIS Foundation
+                        description: The Foundation for Research on Information Technologies in Society
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                      - gid: '0'
+                        label: All
+                        description: Open to all users
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+  '/me/groups/{gid}':
+    parameters:
+      - name: gid
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - user
+      summary: Gets one group details
+      operationId: get_group
+      responses:
+        '200':
+          description: got group
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      gid:
+                        description: the group ID
+                        type: string
+                      label:
+                        description: the group name
+                        type: string
+                      description:
+                        description: the group description
+                        type: string
+                      thumbnail:
+                        description: url to the group thumbnail
+                        type: string
+                        format: uri
+                      accessRights:
+                        description: defines acesss rights for the user
+                        type: object
+                        properties:
+                          read:
+                            type: boolean
+                          write:
+                            type: boolean
+                          contents:
+                            type: boolean
+                        required:
+                          - read
+                          - write
+                          - contents
+                        example:
+                          - read: true
+                            write: false
+                            contents: false
+                    required:
+                      - gid
+                      - label
+                      - description
+                      - accessRights
+                    example:
+                      - gid: '27'
+                        label: A user
+                        description: A very special user
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                      - gid: '1'
+                        label: ITIS Foundation
+                        description: The Foundation for Research on Information Technologies in Society
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                      - gid: '0'
+                        label: All
+                        description: Open to all users
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    patch:
+      summary: Update one group
+      operationId: update_group
+      tags:
+        - user
+      requestBody:
+        required: true
+        description: the group to update
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gid:
+                  description: the group ID
+                  type: string
+                label:
+                  description: the group name
+                  type: string
+                description:
+                  description: the group description
+                  type: string
+                thumbnail:
+                  description: url to the group thumbnail
+                  type: string
+                  format: uri
+                accessRights:
+                  description: defines acesss rights for the user
+                  type: object
+                  properties:
+                    read:
+                      type: boolean
+                    write:
+                      type: boolean
+                    contents:
+                      type: boolean
+                  required:
+                    - read
+                    - write
+                    - contents
+                  example:
+                    - read: true
+                      write: false
+                      contents: false
+              required:
+                - gid
+                - label
+                - description
+                - accessRights
+              example:
+                - gid: '27'
+                  label: A user
+                  description: A very special user
+                  thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                - gid: '1'
+                  label: ITIS Foundation
+                  description: The Foundation for Research on Information Technologies in Society
+                  thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                - gid: '0'
+                  label: All
+                  description: Open to all users
+                  thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+      responses:
+        '200':
+          description: the modified group
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      gid:
+                        description: the group ID
+                        type: string
+                      label:
+                        description: the group name
+                        type: string
+                      description:
+                        description: the group description
+                        type: string
+                      thumbnail:
+                        description: url to the group thumbnail
+                        type: string
+                        format: uri
+                      accessRights:
+                        description: defines acesss rights for the user
+                        type: object
+                        properties:
+                          read:
+                            type: boolean
+                          write:
+                            type: boolean
+                          contents:
+                            type: boolean
+                        required:
+                          - read
+                          - write
+                          - contents
+                        example:
+                          - read: true
+                            write: false
+                            contents: false
+                    required:
+                      - gid
+                      - label
+                      - description
+                      - accessRights
+                    example:
+                      - gid: '27'
+                        label: A user
+                        description: A very special user
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                      - gid: '1'
+                        label: ITIS Foundation
+                        description: The Foundation for Research on Information Technologies in Society
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                      - gid: '0'
+                        label: All
+                        description: Open to all users
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    delete:
+      tags:
+        - user
+      summary: Deletes one group
+      operationId: delete_group
+      responses:
+        '204':
+          description: group has been successfully deleted
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+  '/me/groups/{gid}/users':
+    parameters:
+      - name: gid
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - user
+      summary: Gets list of users in group
+      operationId: get_group_users
+      responses:
+        '200':
+          description: got list of users
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                        - type: object
+                          properties:
+                            first_name:
+                              type: string
+                            last_name:
+                              type: string
+                          example:
+                            first_name: Pedro
+                            last_name: Crespo
+                        - type: object
+                          properties:
+                            login:
+                              type: string
+                              format: email
+                            gravatar_id:
+                              type: string
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    post:
+      tags:
+        - user
+      summary: Adds a user in the group
+      operationId: add_group_user
+      requestBody:
+        required: true
+        description: the user to add
+        content:
+          application/json:
+            schema:
+              allOf:
+                - description: defines acesss rights for the user
+                  type: object
+                  properties:
+                    read:
+                      type: boolean
+                    write:
+                      type: boolean
+                    contents:
+                      type: boolean
+                  required:
+                    - read
+                    - write
+                    - contents
+                  example:
+                    - read: true
+                      write: false
+                      contents: false
+                - type: object
+                  required:
+                    - uid
+                  properties:
+                    uid:
+                      type: string
+      responses:
+        '204':
+          description: user successfully added
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+  '/me/groups/{gid}/users/{uid}':
+    parameters:
+      - name: gid
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: uid
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - user
+      summary: Gets specific user in group
+      operationId: get_group_user
+      responses:
+        '200':
+          description: got user
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    required:
+                      - data
+                    properties:
+                      data:
+                        allOf:
+                          - type: object
+                            properties:
+                              first_name:
+                                type: string
+                              last_name:
+                                type: string
+                            example:
+                              first_name: Pedro
+                              last_name: Crespo
+                          - type: object
+                            properties:
+                              login:
+                                type: string
+                                format: email
+                              gravatar_id:
+                                type: string
+                      error:
+                        nullable: true
+                        default: null
+                  - description: defines acesss rights for the user
+                    type: object
+                    properties:
+                      read:
+                        type: boolean
+                      write:
+                        type: boolean
+                      contents:
+                        type: boolean
+                    required:
+                      - read
+                      - write
+                      - contents
+                    example:
+                      - read: true
+                        write: false
+                        contents: false
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    patch:
+      tags:
+        - user
+      summary: Modify specific user in group
+      operationId: update_group_user
+      responses:
+        '200':
+          description: modified user
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    allOf:
+                      - type: object
+                        properties:
+                          first_name:
+                            type: string
+                          last_name:
+                            type: string
+                        example:
+                          first_name: Pedro
+                          last_name: Crespo
+                      - type: object
+                        properties:
+                          login:
+                            type: string
+                            format: email
+                          gravatar_id:
+                            type: string
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    delete:
+      tags:
+        - user
+      summary: Delete specific user in group
+      operationId: delete_group_user
+      responses:
+        '204':
+          description: successfully removed user
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
   /storage/locations:
     get:
       summary: Get available storage locations
@@ -6690,6 +8329,163 @@ paths:
       responses:
         '204':
           description: project succesfuly closed
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+  '/projects/{project_id}:share':
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - project
+      summary: Share a project with a users group
+      operationId: share_project
+      requestBody:
+        description: list of users groups with which to share the project
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  gid:
+                    description: the group ID
+                    type: string
+                  label:
+                    description: the group name
+                    type: string
+                  description:
+                    description: the group description
+                    type: string
+                  thumbnail:
+                    description: url to the group thumbnail
+                    type: string
+                    format: uri
+                  accessRights:
+                    description: defines acesss rights for the user
+                    type: object
+                    properties:
+                      read:
+                        type: boolean
+                      write:
+                        type: boolean
+                      contents:
+                        type: boolean
+                    required:
+                      - read
+                      - write
+                      - contents
+                    example:
+                      - read: true
+                        write: false
+                        contents: false
+                required:
+                  - gid
+                  - label
+                  - description
+                  - accessRights
+                example:
+                  - gid: '27'
+                    label: A user
+                    description: A very special user
+                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                  - gid: '1'
+                    label: ITIS Foundation
+                    description: The Foundation for Research on Information Technologies in Society
+                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+                  - gid: '0'
+                    label: All
+                    description: Open to all users
+                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
+      responses:
+        '204':
+          description: project succesfuly shared
         default:
           description: Default http error response body
           content:
