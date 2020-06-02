@@ -328,7 +328,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createStudy: function(minStudyData, templateId) {
-      this.__showLoadingPage(this.tr("Creating Study"));
+      this.__showLoadingPage(this.tr("Creating ") + (minStudyData.name || this.tr("Study")));
       if (templateId) {
         const params = {
           url: {
@@ -358,7 +358,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __startStudy: function(studyData) {
-      this.__showLoadingPage(this.tr("Starting Study"));
+      this.__showLoadingPage(this.tr("Starting ") + (studyData.name || this.tr("Study")));
       osparc.store.Store.getInstance().getServicesDAGs(false)
         .then(() => {
           this.__hideLoadingPage();
