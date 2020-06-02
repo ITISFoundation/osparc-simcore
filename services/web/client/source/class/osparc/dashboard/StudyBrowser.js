@@ -500,28 +500,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getMoreInfoMenuButton: function(studyData, isTemplate) {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
-        const winWidth = 400;
-        const studyDetailsEditor = this.__createStudyDetailsEditor(studyData, isTemplate, winWidth);
-        const win = new qx.ui.window.Window(this.tr("Study Details Editor")).set({
-          autoDestroy: true,
-          layout: new qx.ui.layout.VBox(),
-          appearance: "service-window",
-          showMinimize: false,
-          showMaximize: false,
-          resizable: true,
-          contentPadding: 10,
-          width: winWidth,
-          height: 400,
-          modal: true
-        });
-        [
-          "updatedStudy",
-          "updatedTemplate",
-          "openedStudy"
-        ].forEach(event => studyDetailsEditor.addListener(event, () => win.close()));
-        win.add(studyDetailsEditor);
-        win.open();
-        win.center();
+        this.__createStudyDetailsEditor(studyData, isTemplate);
       }, this);
       return moreInfoButton;
     },
@@ -649,7 +628,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       });
 
-      return studyDetails;
+      const height = 400;
+      const title = this.tr("Study Details Editor");
+      const win = osparc.component.metadata.StudyDetailsEditor.popUpInWindow(title, studyDetails, winWidth, height);
+      [
+        "updatedStudy",
+        "updatedTemplate",
+        "openedStudy"
+      ].forEach(event => studyDetails.addListener(event, () => win.close()));
     },
 
     __updateDeleteStudiesButton: function(studiesDeleteButton) {

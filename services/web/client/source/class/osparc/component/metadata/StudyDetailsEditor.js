@@ -66,6 +66,27 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     }
   },
 
+  statics: {
+    popUpInWindow: function(title, studyDetailsEditor, width = 400, height = 400) {
+      const win = new qx.ui.window.Window(title).set({
+        autoDestroy: true,
+        layout: new qx.ui.layout.VBox(),
+        appearance: "service-window",
+        showMinimize: false,
+        showMaximize: false,
+        resizable: true,
+        contentPadding: 10,
+        width: width,
+        height: height,
+        modal: true
+      });
+      win.add(studyDetailsEditor);
+      win.center();
+      win.open();
+      return win;
+    }
+  },
+
   members: {
     __stack: null,
     __workbench: null,
