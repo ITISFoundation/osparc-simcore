@@ -2136,7 +2136,7 @@ paths:
                                     description: url to the group thumbnail
                                     type: string
                                     format: uri
-                                  accessRights:
+                                  access_rights:
                                     description: defines acesss rights for the user
                                     type: object
                                     properties:
@@ -2190,7 +2190,7 @@ paths:
                                       description: url to the group thumbnail
                                       type: string
                                       format: uri
-                                    accessRights:
+                                    access_rights:
                                       description: defines acesss rights for the user
                                       type: object
                                       properties:
@@ -2242,7 +2242,7 @@ paths:
                                     description: url to the group thumbnail
                                     type: string
                                     format: uri
-                                  accessRights:
+                                  access_rights:
                                     description: defines acesss rights for the user
                                     type: object
                                     properties:
@@ -2851,7 +2851,7 @@ paths:
                             description: url to the group thumbnail
                             type: string
                             format: uri
-                          accessRights:
+                          access_rights:
                             description: defines acesss rights for the user
                             type: object
                             properties:
@@ -2905,7 +2905,7 @@ paths:
                               description: url to the group thumbnail
                               type: string
                               format: uri
-                            accessRights:
+                            access_rights:
                               description: defines acesss rights for the user
                               type: object
                               properties:
@@ -2957,7 +2957,7 @@ paths:
                             description: url to the group thumbnail
                             type: string
                             format: uri
-                          accessRights:
+                          access_rights:
                             description: defines acesss rights for the user
                             type: object
                             properties:
@@ -3105,7 +3105,7 @@ paths:
                   description: url to the group thumbnail
                   type: string
                   format: uri
-                accessRights:
+                access_rights:
                   description: defines acesss rights for the user
                   type: object
                   properties:
@@ -3167,7 +3167,7 @@ paths:
                         description: url to the group thumbnail
                         type: string
                         format: uri
-                      accessRights:
+                      access_rights:
                         description: defines acesss rights for the user
                         type: object
                         properties:
@@ -3327,7 +3327,7 @@ paths:
                         description: url to the group thumbnail
                         type: string
                         format: uri
-                      accessRights:
+                      access_rights:
                         description: defines acesss rights for the user
                         type: object
                         properties:
@@ -3475,7 +3475,7 @@ paths:
                   description: url to the group thumbnail
                   type: string
                   format: uri
-                accessRights:
+                access_rights:
                   description: defines acesss rights for the user
                   type: object
                   properties:
@@ -3537,7 +3537,7 @@ paths:
                         description: url to the group thumbnail
                         type: string
                         format: uri
-                      accessRights:
+                      access_rights:
                         description: defines acesss rights for the user
                         type: object
                         properties:
@@ -8447,7 +8447,7 @@ paths:
                     description: url to the group thumbnail
                     type: string
                     format: uri
-                  accessRights:
+                  access_rights:
                     description: defines acesss rights for the user
                     type: object
                     properties:

@@ -48,6 +48,8 @@ async def get_my_profile(request: web.Request):
                         groups.c.name,
                         groups.c.description,
                         groups.c.type,
+                        groups.c.thumbnail,
+                        groups.c.accessRights,
                     ],
                     use_labels=True,
                 )
@@ -96,12 +98,16 @@ async def get_my_profile(request: web.Request):
                 "gid": user_primary_group["groups_gid"],
                 "label": user_primary_group["groups_name"],
                 "description": user_primary_group["groups_description"],
+                "thumbnail": user_primary_group["groups_thumbnail"],
+                "accessRights": user_primary_group["groups_access_rights"],
             },
             "organizations": [
                 {
                     "gid": group["groups_gid"],
                     "label": group["groups_name"],
                     "description": group["groups_description"],
+                    "thumbnail": group["groups_thumbnail"],
+                    "accessRights": group["groups_access_rights"],
                 }
                 for group in other_groups
             ],
@@ -109,6 +115,8 @@ async def get_my_profile(request: web.Request):
                 "gid": all_group["groups_gid"],
                 "label": all_group["groups_name"],
                 "description": all_group["groups_description"],
+                "thumbnail": all_group["groups_thumbnail"],
+                "accessRights": all_group["groups_access_rights"],
             },
         },
     }
@@ -167,9 +175,7 @@ async def create_group(request: web.Request):
     new_group = await request.json()
 
     try:
-        new_group = await users_api.create_user_group(
-            request.app, user_id, new_group["label"], new_group["description"]
-        )
+        new_group = await users_api.create_user_group(request.app, user_id, new_group)
         raise web.HTTPCreated(
             text=json.dumps({"data": new_group}), content_type="application/json"
         )

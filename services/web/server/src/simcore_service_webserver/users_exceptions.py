@@ -36,3 +36,8 @@ class UserInGroupNotFoundError(UsersException):
         super(UserInGroupNotFoundError, self).__init__(msg)
         self.gid = gid
         self.uid = uid
+
+class UserInsufficientRightsError(UsersException):
+    """User has not sufficient rights"""
+    def __init__(self, msg):
+        super(UserInsufficientRightsError, self).__init__(msg)
