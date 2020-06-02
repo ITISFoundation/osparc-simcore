@@ -34,19 +34,23 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.Grow());
 
-    this.__isTemplate = isTemplate;
-    this.__selectedTags = study.tags;
-    this.__model = qx.data.marshal.Json.createModel(study);
+    if (study instanceof osparc.data.model.Study) {
+      this.__study = study;
+      this.__selectedTags = study.getTags();
+      this.__workbench = study.getWorkbench();
+    } else {
+      this.__model = qx.data.marshal.Json.createModel(study);
+      this.__selectedTags = study.tags;
+      // Workaround: qx serializer is not doing well with uuid as object keys.
+      this.__workbench = study.workbench;
+    }
 
     this.__stack = new qx.ui.container.Stack();
-    this.__displayView = this.__createDisplayView(study, winWidth);
-    this.__editView = this.__createEditView();
+    this.__displayView = this.__createDisplayView(study, isTemplate, winWidth);
+    this.__editView = this.__createEditView(isTemplate);
     this.__stack.add(this.__displayView);
     this.__stack.add(this.__editView);
     this._add(this.__stack);
-
-    // Workaround: qx serializer is not doing well with uuid as object keys.
-    this.__workbench = study.workbench;
   },
 
   events: {
@@ -89,25 +93,25 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
 
   members: {
     __stack: null,
-    __workbench: null,
-    __model: null,
-    __isTemplate: null,
     __fields: null,
-    __selectedTags: null,
     __openButton: null,
+    __study: null,
+    __model: null,
+    __workbench: null,
+    __selectedTags: null,
 
     showOpenButton: function(show) {
       this.__openButton.setVisibility(show ? "visible" : "excluded");
     },
 
-    __createDisplayView: function(study, winWidth) {
+    __createDisplayView: function(study, isTemplate, winWidth) {
       const displayView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      displayView.add(this.__createButtons());
+      displayView.add(this.__createButtons(isTemplate));
       displayView.add(new osparc.component.metadata.StudyDetails(study, winWidth));
       return displayView;
     },
 
-    __createButtons: function() {
+    __createButtons: function(isTemplate) {
       const isCurrentUserOwner = this.__isUserOwner();
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       const canUpdateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.update");
@@ -127,7 +131,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
 
       const modeButton = new qx.ui.form.Button("Edit", "@FontAwesome5Solid/edit/16").set({
         appearance: "md-button",
-        visibility: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate) ? "visible" : "excluded"
+        visibility: isCurrentUserOwner && (!isTemplate || canUpdateTemplate) ? "visible" : "excluded"
       });
       osparc.utils.Utils.setIdToWidget(modeButton, "editStudyBtn");
       modeButton.addListener("execute", () => this.setMode("edit"), this);
@@ -146,7 +150,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       }, this);
       buttonsLayout.add(permissionsButton);
 
-      if (isCurrentUserOwner && (!this.__isTemplate && canCreateTemplate)) {
+      if (isCurrentUserOwner && (!isTemplate && canCreateTemplate)) {
         const saveAsTemplateButton = new qx.ui.form.Button(this.tr("Save as Template")).set({
           appearance: "md-button"
         });
@@ -160,10 +164,10 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       return buttonsLayout;
     },
 
-    __createEditView: function() {
+    __createEditView: function(isTemplate) {
       const isCurrentUserOwner = this.__isUserOwner();
       const canUpdateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.update");
-      const fieldIsEnabled = isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate);
+      const fieldIsEnabled = isCurrentUserOwner && (!isTemplate || canUpdateTemplate);
 
       const editView = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
       const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
@@ -196,11 +200,11 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         btn.setIcon("@FontAwesome5Solid/circle-notch/16");
         btn.getChildControl("icon").getContentElement()
           .addClass("rotate");
-        this.__saveStudy(btn);
+        this.__saveStudy(isTemplate, btn);
       }, this);
       const cancelButton = new qx.ui.form.Button(this.tr("Cancel")).set({
         appearance: "lg-button",
-        enabled: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate)
+        enabled: isCurrentUserOwner && (!isTemplate || canUpdateTemplate)
       });
       osparc.utils.Utils.setIdToWidget(cancelButton, "studyDetailsEditorCancelBtn");
       cancelButton.addListener("execute", () => this.setMode("display"), this);
@@ -279,21 +283,21 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       return this.__tagsContainer;
     },
 
-    __saveStudy: function(btn) {
+    __saveStudy: function(isTemplate, btn) {
       const params = {
         url: {
           projectId: this.__model.getUuid()
         },
         data: this.__serializeForm()
       };
-      osparc.data.Resources.fetch(this.__isTemplate ? "templates" : "studies", "put", params)
+      osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "put", params)
         .then(data => {
           btn.resetIcon();
           btn.getChildControl("icon").getContentElement()
             .removeClass("rotate");
           this.__model.set(data);
           this.setMode("display");
-          this.fireEvent(this.__isTemplate ? "updatedTemplate" : "updatedStudy");
+          this.fireEvent(isTemplate ? "updatedTemplate" : "updatedStudy");
         })
         .catch(err => {
           btn.resetIcon();
@@ -331,10 +335,16 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __serializeForm: function() {
-      const data = {
-        ...qx.util.Serializer.toNativeObject(this.__model),
-        workbench: this.__workbench
-      };
+      let data = {};
+      if (this.__model === null) {
+        data = this.__study.serializeStudy();
+      } else {
+        data = {
+          ...qx.util.Serializer.toNativeObject(this.__model),
+          workbench: this.__workbench
+        };
+      }
+
       for (let key in this.__fields) {
         data[key] = this.__fields[key].getValue();
       }

@@ -51,12 +51,26 @@ qx.Class.define("osparc.component.metadata.StudyInfo", {
         icon: "@FontAwesome5Solid/external-link-alt/16",
         allowGrowX: false
       });
-        const win = new osparc.component.metadata.StudyDetailsWindow(this.__study);
-        win.center();
+
       moreInfoButton.addListener("execute", function() {
-        win.open();
+        this.__createStudyDetailsEditor();
       }, this);
       return moreInfoButton;
+    },
+
+    __createStudyDetailsEditor: function() {
+      const width = 500;
+      const height = 500;
+      const title = this.tr("Study Details Editor");
+      const studyDetails = new osparc.component.metadata.StudyDetailsEditor(this.__study.serializeStudy(), false, width);
+      studyDetails.showOpenButton(false);
+      const win = osparc.component.metadata.StudyDetailsEditor.popUpInWindow(title, studyDetails, width, height);
+      [
+        "updatedStudy"
+      ].forEach(event => studyDetails.addListener(event, () => {
+        qx.event.message.Bus.getInstance().dispatchByName("updateStudy", this.__study.serializeStudy());
+        win.close();
+      }));
     }
   }
 });
