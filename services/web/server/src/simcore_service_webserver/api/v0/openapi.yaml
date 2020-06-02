@@ -2132,20 +2132,46 @@ paths:
                                   description:
                                     description: the group description
                                     type: string
+                                  thumbnail:
+                                    description: url to the group thumbnail
+                                    type: string
+                                    format: uri
+                                  accessRights:
+                                    description: defines acesss rights for the user
+                                    type: object
+                                    properties:
+                                      read:
+                                        type: boolean
+                                      write:
+                                        type: boolean
+                                      contents:
+                                        type: boolean
+                                    required:
+                                      - read
+                                      - write
+                                      - contents
+                                    example:
+                                      - read: true
+                                        write: false
+                                        contents: false
                                 required:
                                   - gid
                                   - label
                                   - description
+                                  - accessRights
                                 example:
                                   - gid: '27'
                                     label: A user
                                     description: A very special user
+                                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                                   - gid: '1'
                                     label: ITIS Foundation
                                     description: The Foundation for Research on Information Technologies in Society
+                                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                                   - gid: '0'
                                     label: All
                                     description: Open to all users
+                                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                               organizations:
                                 type: array
                                 items:
@@ -2160,20 +2186,46 @@ paths:
                                     description:
                                       description: the group description
                                       type: string
+                                    thumbnail:
+                                      description: url to the group thumbnail
+                                      type: string
+                                      format: uri
+                                    accessRights:
+                                      description: defines acesss rights for the user
+                                      type: object
+                                      properties:
+                                        read:
+                                          type: boolean
+                                        write:
+                                          type: boolean
+                                        contents:
+                                          type: boolean
+                                      required:
+                                        - read
+                                        - write
+                                        - contents
+                                      example:
+                                        - read: true
+                                          write: false
+                                          contents: false
                                   required:
                                     - gid
                                     - label
                                     - description
+                                    - accessRights
                                   example:
                                     - gid: '27'
                                       label: A user
                                       description: A very special user
+                                      thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                                     - gid: '1'
                                       label: ITIS Foundation
                                       description: The Foundation for Research on Information Technologies in Society
+                                      thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                                     - gid: '0'
                                       label: All
                                       description: Open to all users
+                                      thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                               all:
                                 type: object
                                 properties:
@@ -2186,20 +2238,46 @@ paths:
                                   description:
                                     description: the group description
                                     type: string
+                                  thumbnail:
+                                    description: url to the group thumbnail
+                                    type: string
+                                    format: uri
+                                  accessRights:
+                                    description: defines acesss rights for the user
+                                    type: object
+                                    properties:
+                                      read:
+                                        type: boolean
+                                      write:
+                                        type: boolean
+                                      contents:
+                                        type: boolean
+                                    required:
+                                      - read
+                                      - write
+                                      - contents
+                                    example:
+                                      - read: true
+                                        write: false
+                                        contents: false
                                 required:
                                   - gid
                                   - label
                                   - description
+                                  - accessRights
                                 example:
                                   - gid: '27'
                                     label: A user
                                     description: A very special user
+                                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                                   - gid: '1'
                                     label: ITIS Foundation
                                     description: The Foundation for Research on Information Technologies in Society
+                                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                                   - gid: '0'
                                     label: All
                                     description: Open to all users
+                                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                           gravatar_id:
                             type: string
                     example:
@@ -2769,20 +2847,46 @@ paths:
                           description:
                             description: the group description
                             type: string
+                          thumbnail:
+                            description: url to the group thumbnail
+                            type: string
+                            format: uri
+                          accessRights:
+                            description: defines acesss rights for the user
+                            type: object
+                            properties:
+                              read:
+                                type: boolean
+                              write:
+                                type: boolean
+                              contents:
+                                type: boolean
+                            required:
+                              - read
+                              - write
+                              - contents
+                            example:
+                              - read: true
+                                write: false
+                                contents: false
                         required:
                           - gid
                           - label
                           - description
+                          - accessRights
                         example:
                           - gid: '27'
                             label: A user
                             description: A very special user
+                            thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                           - gid: '1'
                             label: ITIS Foundation
                             description: The Foundation for Research on Information Technologies in Society
+                            thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                           - gid: '0'
                             label: All
                             description: Open to all users
+                            thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                       organizations:
                         type: array
                         items:
@@ -2797,20 +2901,46 @@ paths:
                             description:
                               description: the group description
                               type: string
+                            thumbnail:
+                              description: url to the group thumbnail
+                              type: string
+                              format: uri
+                            accessRights:
+                              description: defines acesss rights for the user
+                              type: object
+                              properties:
+                                read:
+                                  type: boolean
+                                write:
+                                  type: boolean
+                                contents:
+                                  type: boolean
+                              required:
+                                - read
+                                - write
+                                - contents
+                              example:
+                                - read: true
+                                  write: false
+                                  contents: false
                           required:
                             - gid
                             - label
                             - description
+                            - accessRights
                           example:
                             - gid: '27'
                               label: A user
                               description: A very special user
+                              thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                             - gid: '1'
                               label: ITIS Foundation
                               description: The Foundation for Research on Information Technologies in Society
+                              thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                             - gid: '0'
                               label: All
                               description: Open to all users
+                              thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                       all:
                         type: object
                         properties:
@@ -2823,20 +2953,46 @@ paths:
                           description:
                             description: the group description
                             type: string
+                          thumbnail:
+                            description: url to the group thumbnail
+                            type: string
+                            format: uri
+                          accessRights:
+                            description: defines acesss rights for the user
+                            type: object
+                            properties:
+                              read:
+                                type: boolean
+                              write:
+                                type: boolean
+                              contents:
+                                type: boolean
+                            required:
+                              - read
+                              - write
+                              - contents
+                            example:
+                              - read: true
+                                write: false
+                                contents: false
                         required:
                           - gid
                           - label
                           - description
+                          - accessRights
                         example:
                           - gid: '27'
                             label: A user
                             description: A very special user
+                            thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                           - gid: '1'
                             label: ITIS Foundation
                             description: The Foundation for Research on Information Technologies in Society
+                            thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                           - gid: '0'
                             label: All
                             description: Open to all users
+                            thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                   error:
                     nullable: true
                     default: null
@@ -2945,20 +3101,46 @@ paths:
                 description:
                   description: the group description
                   type: string
+                thumbnail:
+                  description: url to the group thumbnail
+                  type: string
+                  format: uri
+                accessRights:
+                  description: defines acesss rights for the user
+                  type: object
+                  properties:
+                    read:
+                      type: boolean
+                    write:
+                      type: boolean
+                    contents:
+                      type: boolean
+                  required:
+                    - read
+                    - write
+                    - contents
+                  example:
+                    - read: true
+                      write: false
+                      contents: false
               required:
                 - gid
                 - label
                 - description
+                - accessRights
               example:
                 - gid: '27'
                   label: A user
                   description: A very special user
+                  thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                 - gid: '1'
                   label: ITIS Foundation
                   description: The Foundation for Research on Information Technologies in Society
+                  thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                 - gid: '0'
                   label: All
                   description: Open to all users
+                  thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
       responses:
         '201':
           description: group created
@@ -2981,20 +3163,46 @@ paths:
                       description:
                         description: the group description
                         type: string
+                      thumbnail:
+                        description: url to the group thumbnail
+                        type: string
+                        format: uri
+                      accessRights:
+                        description: defines acesss rights for the user
+                        type: object
+                        properties:
+                          read:
+                            type: boolean
+                          write:
+                            type: boolean
+                          contents:
+                            type: boolean
+                        required:
+                          - read
+                          - write
+                          - contents
+                        example:
+                          - read: true
+                            write: false
+                            contents: false
                     required:
                       - gid
                       - label
                       - description
+                      - accessRights
                     example:
                       - gid: '27'
                         label: A user
                         description: A very special user
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                       - gid: '1'
                         label: ITIS Foundation
                         description: The Foundation for Research on Information Technologies in Society
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                       - gid: '0'
                         label: All
                         description: Open to all users
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                   error:
                     nullable: true
                     default: null
@@ -3115,20 +3323,46 @@ paths:
                       description:
                         description: the group description
                         type: string
+                      thumbnail:
+                        description: url to the group thumbnail
+                        type: string
+                        format: uri
+                      accessRights:
+                        description: defines acesss rights for the user
+                        type: object
+                        properties:
+                          read:
+                            type: boolean
+                          write:
+                            type: boolean
+                          contents:
+                            type: boolean
+                        required:
+                          - read
+                          - write
+                          - contents
+                        example:
+                          - read: true
+                            write: false
+                            contents: false
                     required:
                       - gid
                       - label
                       - description
+                      - accessRights
                     example:
                       - gid: '27'
                         label: A user
                         description: A very special user
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                       - gid: '1'
                         label: ITIS Foundation
                         description: The Foundation for Research on Information Technologies in Society
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                       - gid: '0'
                         label: All
                         description: Open to all users
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                   error:
                     nullable: true
                     default: null
@@ -3237,20 +3471,46 @@ paths:
                 description:
                   description: the group description
                   type: string
+                thumbnail:
+                  description: url to the group thumbnail
+                  type: string
+                  format: uri
+                accessRights:
+                  description: defines acesss rights for the user
+                  type: object
+                  properties:
+                    read:
+                      type: boolean
+                    write:
+                      type: boolean
+                    contents:
+                      type: boolean
+                  required:
+                    - read
+                    - write
+                    - contents
+                  example:
+                    - read: true
+                      write: false
+                      contents: false
               required:
                 - gid
                 - label
                 - description
+                - accessRights
               example:
                 - gid: '27'
                   label: A user
                   description: A very special user
+                  thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                 - gid: '1'
                   label: ITIS Foundation
                   description: The Foundation for Research on Information Technologies in Society
+                  thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                 - gid: '0'
                   label: All
                   description: Open to all users
+                  thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
       responses:
         '200':
           description: the modified group
@@ -3273,20 +3533,46 @@ paths:
                       description:
                         description: the group description
                         type: string
+                      thumbnail:
+                        description: url to the group thumbnail
+                        type: string
+                        format: uri
+                      accessRights:
+                        description: defines acesss rights for the user
+                        type: object
+                        properties:
+                          read:
+                            type: boolean
+                          write:
+                            type: boolean
+                          contents:
+                            type: boolean
+                        required:
+                          - read
+                          - write
+                          - contents
+                        example:
+                          - read: true
+                            write: false
+                            contents: false
                     required:
                       - gid
                       - label
                       - description
+                      - accessRights
                     example:
                       - gid: '27'
                         label: A user
                         description: A very special user
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                       - gid: '1'
                         label: ITIS Foundation
                         description: The Foundation for Research on Information Technologies in Society
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                       - gid: '0'
                         label: All
                         description: Open to all users
+                        thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                   error:
                     nullable: true
                     default: null
@@ -3603,12 +3889,30 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - uid
-              properties:
-                uid:
-                  type: string
+              allOf:
+                - description: defines acesss rights for the user
+                  type: object
+                  properties:
+                    read:
+                      type: boolean
+                    write:
+                      type: boolean
+                    contents:
+                      type: boolean
+                  required:
+                    - read
+                    - write
+                    - contents
+                  example:
+                    - read: true
+                      write: false
+                      contents: false
+                - type: object
+                  required:
+                    - uid
+                  properties:
+                    uid:
+                      type: string
       responses:
         '204':
           description: user successfully added
@@ -3718,31 +4022,49 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    allOf:
-                      - type: object
-                        properties:
-                          first_name:
-                            type: string
-                          last_name:
-                            type: string
-                        example:
-                          first_name: Pedro
-                          last_name: Crespo
-                      - type: object
-                        properties:
-                          login:
-                            type: string
-                            format: email
-                          gravatar_id:
-                            type: string
-                  error:
-                    nullable: true
-                    default: null
+                allOf:
+                  - type: object
+                    required:
+                      - data
+                    properties:
+                      data:
+                        allOf:
+                          - type: object
+                            properties:
+                              first_name:
+                                type: string
+                              last_name:
+                                type: string
+                            example:
+                              first_name: Pedro
+                              last_name: Crespo
+                          - type: object
+                            properties:
+                              login:
+                                type: string
+                                format: email
+                              gravatar_id:
+                                type: string
+                      error:
+                        nullable: true
+                        default: null
+                  - description: defines acesss rights for the user
+                    type: object
+                    properties:
+                      read:
+                        type: boolean
+                      write:
+                        type: boolean
+                      contents:
+                        type: boolean
+                    required:
+                      - read
+                      - write
+                      - contents
+                    example:
+                      - read: true
+                        write: false
+                        contents: false
         default:
           description: Default http error response body
           content:
@@ -8121,20 +8443,46 @@ paths:
                   description:
                     description: the group description
                     type: string
+                  thumbnail:
+                    description: url to the group thumbnail
+                    type: string
+                    format: uri
+                  accessRights:
+                    description: defines acesss rights for the user
+                    type: object
+                    properties:
+                      read:
+                        type: boolean
+                      write:
+                        type: boolean
+                      contents:
+                        type: boolean
+                    required:
+                      - read
+                      - write
+                      - contents
+                    example:
+                      - read: true
+                        write: false
+                        contents: false
                 required:
                   - gid
                   - label
                   - description
+                  - accessRights
                 example:
                   - gid: '27'
                     label: A user
                     description: A very special user
+                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                   - gid: '1'
                     label: ITIS Foundation
                     description: The Foundation for Research on Information Technologies in Society
+                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                   - gid: '0'
                     label: All
                     description: Open to all users
+                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
       responses:
         '204':
           description: project succesfuly shared
