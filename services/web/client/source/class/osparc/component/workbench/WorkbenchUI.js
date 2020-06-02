@@ -905,12 +905,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return (pointerEvent.target instanceof SVGElement);
     },
 
-    __allowDrop: function(pointerEvent) {
+    __allowDropFile: function(pointerEvent) {
       const files = pointerEvent.dataTransfer.files;
-      if (files.length === 1) {
-        return files[0].type !== "";
-      }
-      return false;
+      return files.length === 1;
     },
 
     __dragEnter: function(e) {
@@ -928,7 +925,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __drop: function(e) {
       this.__dragging(e, false);
 
-      if (this.__allowDrop(e)) {
+      if (this.__allowDropFile(e)) {
         const pos = {
           x: e.offsetX,
           y: e.offsetY
