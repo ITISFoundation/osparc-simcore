@@ -24,7 +24,7 @@ pluggy==0.13.1            # via pytest
 py==1.8.1                 # via pytest
 pyparsing==2.4.7          # via packaging
 pytest-aiohttp==0.3.0     # via -r requirements/requirements.in
-pytest-cov==2.8.1         # via -r requirements/requirements.in
+pytest-cov==2.9.0         # via -r requirements/requirements.in
 pytest-instafail==0.4.1.post0  # via -r requirements/requirements.in
 pytest-mock==3.1.0        # via -r requirements/requirements.in
 pytest-runner==5.2        # via -r requirements/requirements.in
@@ -32,7 +32,7 @@ pytest-sugar==0.9.3       # via -r requirements/requirements.in
 pytest==5.4.2             # via -r requirements/requirements.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-mock, pytest-sugar
 pyyaml==5.3.1             # via -r requirements/requirements.in
 requests==2.23.0          # via docker
-six==1.14.0               # via docker, packaging, tenacity, websocket-client
+six==1.15.0               # via docker, packaging, tenacity, websocket-client
 tenacity==6.2.0           # via -r requirements/requirements.in
 termcolor==1.1.0          # via pytest-sugar
 typing-extensions==3.7.4.2  # via aiohttp

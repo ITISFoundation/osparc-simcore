@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_base.txt requirements/_base.in
 #
-aio-pika==6.6.0           # via -r requirements/_base.in
+aio-pika==6.6.1           # via -r requirements/_base.in
 aiodebug==1.1.2           # via -r requirements/../../../../packages/service-library/requirements/_base.in, -r requirements/_base.in
 aiohttp-jinja2==1.2.0     # via -r requirements/_base.in
 aiohttp-security==0.4.0   # via -r requirements/_base.in
@@ -45,16 +45,16 @@ openapi-core==0.12.0      # via -r requirements/../../../../packages/service-lib
 openapi-spec-validator==0.2.8  # via openapi-core
 pamqp==2.3.0              # via aiormq
 passlib==1.7.2            # via -r requirements/_base.in
-prometheus-client==0.7.1  # via -r requirements/../../../../packages/service-library/requirements/_base.in
+prometheus-client==0.8.0  # via -r requirements/../../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.8.5    # via -r requirements/../../../../packages/service-library/requirements/_base.in, aiopg, sqlalchemy
 pycparser==2.20           # via cffi
 pyrsistent==0.16.0        # via jsonschema
-python-engineio==3.12.1   # via python-socketio
-python-socketio==4.5.1    # via -r requirements/_base.in
+python-engineio==3.13.0   # via python-socketio
+python-socketio==4.6.0    # via -r requirements/_base.in
 pytz==2020.1              # via celery
 pyyaml==5.3.1             # via -r requirements/../../../../packages/service-library/requirements/_base.in, aiohttp-swagger, openapi-spec-validator
 semantic-version==2.8.5   # via -r requirements/_base.in
-six==1.14.0               # via cryptography, isodate, jsonschema, openapi-core, openapi-spec-validator, pyrsistent, python-engineio, python-socketio, tenacity
+six==1.15.0               # via cryptography, isodate, jsonschema, openapi-core, openapi-spec-validator, pyrsistent, python-engineio, python-socketio, tenacity
 sqlalchemy[postgresql_psycopg2binary]==1.3.17  # via -r requirements/../../../../packages/postgres-database/requirements/_base.in, -r requirements/../../../../packages/service-library/requirements/_base.in, aiopg
 strict-rfc3339==0.7       # via openapi-core
 tenacity==6.2.0           # via -r requirements/../../../../packages/service-library/requirements/_base.in
