@@ -66,7 +66,7 @@ qx.Class.define("osparc.component.metadata.StudyInfo", {
       studyDetails.showOpenButton(false);
       const win = osparc.component.metadata.StudyDetailsEditor.popUpInWindow(title, studyDetails, width, height);
       [
-        "updatedStudy"
+        "updateStudy"
       ].forEach(event => studyDetails.addListener(event, () => {
         qx.event.message.Bus.getInstance().dispatchByName("updateStudy", this.__study.serializeStudy());
         win.close();

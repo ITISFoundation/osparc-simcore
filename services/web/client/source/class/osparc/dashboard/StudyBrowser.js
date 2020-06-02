@@ -610,10 +610,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createStudyDetailsEditor: function(studyData, isTemplate, winWidth) {
       const studyDetails = new osparc.component.metadata.StudyDetailsEditor(studyData, isTemplate, winWidth);
-      studyDetails.addListener("closed", () => this.__itemSelected(null), this);
-      studyDetails.addListener("updatedStudy", () => this.reloadUserStudies(), this);
-      studyDetails.addListener("updatedTemplate", () => this.reloadTemplateStudies(), this);
-      studyDetails.addListener("openedStudy", () => {
+      studyDetails.addListener("updateStudy", () => this.reloadUserStudies(), this);
+      studyDetails.addListener("updateTemplate", () => this.reloadTemplateStudies(), this);
+      studyDetails.addListener("openStudy", () => {
         if (isTemplate) {
           this.__createStudyBtnClkd(studyData);
         } else {
@@ -632,9 +631,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const title = this.tr("Study Details Editor");
       const win = osparc.component.metadata.StudyDetailsEditor.popUpInWindow(title, studyDetails, winWidth, height);
       [
-        "updatedStudy",
-        "updatedTemplate",
-        "openedStudy"
+        "updateStudy",
+        "updateTemplate",
+        "openStudy"
       ].forEach(event => studyDetails.addListener(event, () => win.close()));
     },
 

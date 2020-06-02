@@ -54,11 +54,11 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
   },
 
   events: {
-    updatedStudy: "qx.event.type.Event",
-    updatedTemplate: "qx.event.type.Event",
+    updateStudy: "qx.event.type.Event",
+    updateTemplate: "qx.event.type.Event",
     updateTags: "qx.event.type.Data",
     closed: "qx.event.type.Event",
-    openedStudy: "qx.event.type.Event"
+    openStudy: "qx.event.type.Event"
   },
 
   properties: {
@@ -126,7 +126,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         appearance: "md-button"
       });
       osparc.utils.Utils.setIdToWidget(openButton, "openStudyBtn");
-      openButton.addListener("execute", () => this.fireEvent("openedStudy"), this);
+      openButton.addListener("execute", () => this.fireEvent("openStudy"), this);
       buttonsLayout.add(openButton);
 
       const modeButton = new qx.ui.form.Button("Edit", "@FontAwesome5Solid/edit/16").set({
@@ -297,7 +297,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
             .removeClass("rotate");
           this.__model.set(data);
           this.setMode("display");
-          this.fireEvent(isTemplate ? "updatedTemplate" : "updatedStudy");
+          this.fireEvent(isTemplate ? "updateTemplate" : "updateStudy");
         })
         .catch(err => {
           btn.resetIcon();
@@ -327,7 +327,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         if (template) {
           this.__model.set(template);
           this.setMode("display");
-          this.fireEvent("updatedTemplate");
+          this.fireEvent("updateTemplate");
           window.close();
         }
       }, this);
