@@ -36,6 +36,7 @@ groups = sa.Table(
     sa.Column(
         "access_rights", JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")
     ),
+    sa.Column("thumbnail", sa.String, nullable=True),
     sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
     sa.Column(
         "modified",

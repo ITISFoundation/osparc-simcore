@@ -100,6 +100,10 @@ UsersGroup:
     description:
       description: the group description
       type: string
+    thumbnail:
+      description: url to the group thumbnail
+      type: string
+      format: uri
   required:
     - gid
     - label
@@ -108,12 +112,15 @@ UsersGroup:
     - gid: "27"
       label: "A user"
       description: "A very special user"
+      thumbnail: https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png
     - gid: "1"
       label: "ITIS Foundation"
       description: "The Foundation for Research on Information Technologies in Society"
+      thumbnail: https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png
     - gid: "0"
       label: "All"
       description: "Open to all users"
+      thumbnail: https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png
 
 UsersArrayEnveloped:
   type: object
