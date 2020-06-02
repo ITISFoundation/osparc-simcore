@@ -73,6 +73,11 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     __isTemplate: null,
     __fields: null,
     __selectedTags: null,
+    __openButton: null,
+
+    showOpenButton: function(show) {
+      this.__openButton.setVisibility(show ? "visible" : "excluded");
+    },
 
     __createDisplayView: function(study, winWidth) {
       const displayView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
@@ -92,7 +97,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         marginTop: 10
       });
 
-      const openButton = new qx.ui.form.Button("Open").set({
+      const openButton = this.__openButton = new qx.ui.form.Button("Open").set({
         appearance: "md-button"
       });
       osparc.utils.Utils.setIdToWidget(openButton, "openStudyBtn");
