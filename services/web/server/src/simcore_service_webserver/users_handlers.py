@@ -217,7 +217,7 @@ async def get_group_users(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     gid = request.match_info["gid"]
     try:
-        return await users_api.get_users_in_group(request.app, user_id, gid)
+        return await users_api.list_users_in_group(request.app, user_id, gid)
     except GroupNotFoundError:
         raise web.HTTPNotFound(reason=f"Group {gid} not found")
 

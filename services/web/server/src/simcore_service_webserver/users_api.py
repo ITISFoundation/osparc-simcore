@@ -57,6 +57,9 @@ def _convert_user_in_group_to_schema(row: RowProxy) -> Dict[str, str]:
         "gravatar_id": gravatar_hash(row["email"]),
     }
 
+def _check_group_permissions(group: RowProxy, user_id: str, gid: str, permission: str) -> None:
+    if not group.access_rights[permission]:
+        raise UserInsufficientRightsError(f"User {user_id} has insufficient rights for {permission} access to group {gid}")
 
 async def list_user_groups(
     app: web.Application, user_id: str
@@ -83,6 +86,7 @@ async def list_user_groups(
             elif row["type"] == GroupType.PRIMARY:
                 primary_group = _convert_groups_db_to_schema(row)
             else:
+                # only add if user has read access
                 if row.access_rights["read"]:
                     user_groups.append(_convert_groups_db_to_schema(row))
 
@@ -106,7 +110,8 @@ async def get_user_group(
 ) -> Dict[str, str]:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
-        group = await _get_user_group(conn, user_id, gid)
+        group: RowProxy = await _get_user_group(conn, user_id, gid)
+        _check_group_permissions(group, user_id, gid, "read")
         return _convert_groups_db_to_schema(group)
 
 
@@ -148,11 +153,7 @@ async def update_user_group(
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         group = await _get_user_group(conn, user_id, gid)
-        access_rights = group.access_rights
-        if not access_rights["write"]:
-            raise UserInsufficientRightsError(
-                f"User {user_id} has inssuficient rights to modify group {gid}"
-            )
+        _check_group_permissions(group, user_id, gid, "write")
 
         result = await conn.execute(
             # pylint: disable=no-value-for-parameter
@@ -161,26 +162,23 @@ async def update_user_group(
             .where(groups.c.gid == group.gid)
             .returning(literal_column("*"))
         )
-        group = await result.fetchone()
-        return _convert_groups_db_to_schema(group, access_rights=access_rights)
+        updated_group = await result.fetchone()
+        return _convert_groups_db_to_schema(updated_group, access_rights=group.access_rights)
 
 
 async def delete_user_group(app: web.Application, user_id: str, gid: str) -> None:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         group = await _get_user_group(conn, user_id, gid)
-        access_rights = group.access_rights
-        if not access_rights["delete"]:
-            raise UserInsufficientRightsError(
-                f"User {user_id} has inssuficient rights to delete group {gid}"
-            )
+        _check_group_permissions(group, user_id, gid, "delete")
+        
         await conn.execute(
             # pylint: disable=no-value-for-parameter
             groups.delete().where(groups.c.gid == group.gid)
         )
 
 
-async def get_users_in_group(
+async def list_users_in_group(
     app: web.Application, user_id: str, gid: str
 ) -> List[Dict[str, str]]:
     engine = app[APP_DB_ENGINE_KEY]
@@ -188,15 +186,10 @@ async def get_users_in_group(
     async with engine.acquire() as conn:
         # first check if the group exists
         group: RowProxy = await _get_user_group(conn, user_id, gid)
-
-        if not group.access_rights["read"]:
-            raise UserInsufficientRightsError(
-                f"User {user_id} has insufficient rights to list users in group {gid}"
-            )
-
+        _check_group_permissions(group, user_id, gid, "read")
         # now get the list
         query = (
-            sa.select([users])
+            sa.select([users, user_to_groups.c.access_rights])
             .select_from(users.join(user_to_groups))
             .where(user_to_groups.c.gid == gid)
         )
@@ -207,28 +200,28 @@ async def get_users_in_group(
 
 
 async def add_user_in_group(
-    app: web.Application, user_id: str, gid: str, new_user_id: str
+    app: web.Application, user_id: str, gid: str, new_user_id: str, access_rights: Optional[Dict[str,bool]]
 ) -> None:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         # first check if the group exists
         group: RowProxy = await _get_user_group(conn, user_id, gid)
-        if not group.access_rights["write"]:
-            raise UserInsufficientRightsError(
-                f"User {user_id} has insufficient rights to add users in group {gid}"
-            )
-
-        # now check the user exists
+        _check_group_permissions(group, user_id, gid, "write")
+        # now check the new user exists
         users_count = await conn.scalar(
             # pylint: disable=no-value-for-parameter
             users.count().where(users.c.id == new_user_id)
         )
         if not users_count:
             raise UserInGroupNotFoundError(new_user_id, gid)
-        # add the user to the group now
+        # add the new user to the group now
+        DEFAULT_ACCESS_RIGHTS = {"read":True, "write": False, "delete": False}
+        user_access_rights = DEFAULT_ACCESS_RIGHTS
+        if access_rights:
+            user_access_rights.update(access_rights)
         await conn.execute(
             # pylint: disable=no-value-for-parameter
-            user_to_groups.insert().values(uid=new_user_id, gid=group.gid)
+            user_to_groups.insert().values(uid=new_user_id, gid=group.gid, access_rights=user_access_rights)
         )
 
 
@@ -237,13 +230,10 @@ async def _get_user_in_group(
 ) -> RowProxy:
     # first check if the group exists
     group: RowProxy = await _get_user_group(conn, user_id, gid)
-    if not group.access_rights["read"]:
-        raise UserInsufficientRightsError(
-            f"User {user_id} has insufficient rights to get user in group {gid}"
-        )
+    _check_group_permissions(group, user_id, gid, "read")
     # now get the user
     result = await conn.execute(
-        sa.select([users])
+        sa.select([users, user_to_groups.c.access_rights])
         .select_from(users.join(user_to_groups, users.c.id == user_to_groups.c.uid))
         .where(and_(user_to_groups.c.gid == gid, users.c.id == the_user_id_in_group))
     )
