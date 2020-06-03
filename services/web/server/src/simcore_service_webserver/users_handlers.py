@@ -13,6 +13,7 @@ from .users_exceptions import (
     TokenNotFoundError,
     UserInGroupNotFoundError,
     UserNotFoundError,
+    UserInsufficientRightsError,
 )
 
 logger = logging.getLogger(__name__)
@@ -91,6 +92,8 @@ async def update_group(request: web.Request):
         )
     except GroupNotFoundError:
         raise web.HTTPNotFound(reason=f"Group {gid} not found")
+    except UserInsufficientRightsError:
+        raise web.HTTPForbidden()
 
 
 @login_required
@@ -103,6 +106,8 @@ async def delete_group(request: web.Request):
         raise web.HTTPNoContent()
     except GroupNotFoundError:
         raise web.HTTPNotFound(reason=f"Group {gid} not found")
+    except UserInsufficientRightsError:
+        raise web.HTTPForbidden()
 
 
 # me/groups/{gid}/users --------------------------------------------
@@ -115,6 +120,8 @@ async def get_group_users(request: web.Request):
         return await users_api.list_users_in_group(request.app, user_id, gid)
     except GroupNotFoundError:
         raise web.HTTPNotFound(reason=f"Group {gid} not found")
+    except UserInsufficientRightsError:
+        raise web.HTTPForbidden()
 
 
 @login_required
@@ -138,6 +145,8 @@ async def add_group_user(request: web.Request):
         raise web.HTTPNotFound(reason=f"Group {gid} not found")
     except UserInGroupNotFoundError:
         raise web.HTTPNotFound(reason=f"User not found in group {gid}")
+    except UserInsufficientRightsError:
+        raise web.HTTPForbidden()
 
 
 @login_required
@@ -154,6 +163,8 @@ async def get_group_user(request: web.Request):
         raise web.HTTPNotFound(reason=f"Group {gid} not found")
     except UserInGroupNotFoundError:
         raise web.HTTPNotFound(reason=f"User {the_user_id_in_group} not found")
+    except UserInsufficientRightsError:
+        raise web.HTTPForbidden()
 
 
 @login_required
@@ -175,6 +186,8 @@ async def update_group_user(request: web.Request):
         raise web.HTTPNotFound(reason=f"Group {gid} not found")
     except UserInGroupNotFoundError:
         raise web.HTTPNotFound(reason=f"User {the_user_id_in_group} not found")
+    except UserInsufficientRightsError:
+        raise web.HTTPForbidden()
 
 
 @login_required
@@ -192,6 +205,8 @@ async def delete_group_user(request: web.Request):
         raise web.HTTPNotFound(reason=f"Group {gid} not found")
     except UserInGroupNotFoundError:
         raise web.HTTPNotFound(reason=f"User {the_user_id_in_group} not found")
+    except UserInsufficientRightsError:
+        raise web.HTTPForbidden()
 
 
 # me/tokens/ ------------------------------------------------------
