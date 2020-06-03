@@ -50,8 +50,8 @@ qx.Class.define("osparc.utils.Utils", {
       return loadingUri;
     },
 
-    addBorder: function(sidePanel, where = "right") {
-      sidePanel.getContentElement().setStyle("border-"+where, "1px solid " + qx.theme.manager.Color.getInstance().resolve("material-button-background"));
+    addBorder: function(sidePanel, width = 1, where = "right") {
+      sidePanel.getContentElement().setStyle("border-"+where, width+"px solid " + qx.theme.manager.Color.getInstance().resolve("material-button-background"));
     },
 
     __setStyleToIFrame: function(domEl) {

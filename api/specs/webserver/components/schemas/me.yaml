@@ -96,16 +96,16 @@ GroupAccessRights:
       type: boolean
     write:
       type: boolean
-    contents:
+    delete:
       type: boolean
   required:
     - read
     - write
-    - contents
+    - delete
   example:
     - read: true
       write: false
-      contents: false
+      delete: false
 
 UsersGroup:
   type: object
@@ -123,7 +123,7 @@ UsersGroup:
       description: url to the group thumbnail
       type: string
       format: uri
-    accessRights:
+    access_rights:
       $ref: "#/GroupAccessRights"
 
   required:
