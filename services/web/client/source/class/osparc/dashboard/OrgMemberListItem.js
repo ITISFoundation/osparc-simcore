@@ -40,8 +40,8 @@ qx.Class.define("osparc.dashboard.OrgMemberListItem", {
       let control;
       switch (id) {
         case "remove": {
-          const iconSize = 24;
-          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/trash/"+(iconSize-10)).set({
+          const iconSize = 28;
+          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/trash/"+(iconSize-14)).set({
             alignX: "center",
             alignY: "middle",
             maxWidth: iconSize,
