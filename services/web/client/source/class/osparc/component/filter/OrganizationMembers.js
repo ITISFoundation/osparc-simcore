@@ -42,8 +42,12 @@ qx.Class.define("osparc.component.filter.OrganizationMembers", {
   members: {
     _applyOrganizationId: function(orgId) {
       this._removeAllOptions();
-      const store = osparc.store.Store.getInstance();
-      store.getOrganizationMembers(orgId)
+      const params = {
+        url: {
+          gid: orgId
+        }
+      };
+      osparc.data.Resources.get("organizationMembers", params)
         .then(members => {
           members.sort((a, b) => (a["name"] > b["name"]) ? 1 : -1);
           members.forEach(member => {

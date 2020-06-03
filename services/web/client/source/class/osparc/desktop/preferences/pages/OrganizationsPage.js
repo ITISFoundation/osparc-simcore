@@ -170,8 +170,13 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       this.__memberInvitation.exclude();
       const membersModel = this.__membersModel;
       membersModel.removeAll();
-      const store = osparc.store.Store.getInstance();
-      store.getOrganizationMembers(orgId)
+
+      const params = {
+        url: {
+          gid: orgId
+        }
+      };
+      osparc.data.Resources.get("organizationMembers", params)
         .then(members => {
           members.forEach(member => {
             if (member["role"] === "Manager" && member["email"] === osparc.auth.Data.getInstance().getEmail()) {

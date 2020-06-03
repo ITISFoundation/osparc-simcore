@@ -296,6 +296,34 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * ORGANIZATION MEMBERS
+       */
+      organizationMembers: {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/me/groups/{gid}/users"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/me/groups/{gid}/users"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/me/groups/{gid}/users/{uid}"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/me/groups/{gid}/users/{uid}"
+          },
+          put: {
+            method: "PUT",
+            url: statics.API + "/me/groups/{gid}/users/{uid}"
+          }
+        }
+      },
+      /*
        * PASSWORD
        */
       password: {
