@@ -570,6 +570,25 @@ async def test_new_template_from_project(
                 pytest.fail("Invalid uuid in workbench node {}".format(node_name))
 
 
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPNoContent),
+        (UserRole.TESTER, web.HTTPNoContent),
+    ],
+)
+async def test_share_project(
+    client, logged_user, user_project, expected,
+):
+    # POST /v0/projects/{project_id}:share
+    url = client.app.router["share_project"].url_for(project_id=user_project["uuid"])
+
+    resp = await client.post(url)
+    data, error = await assert_status(resp, expected)
+
+
 # PUT --------
 @pytest.mark.parametrize(
     "user_role,expected",

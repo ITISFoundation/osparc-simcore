@@ -12,11 +12,11 @@ from servicelib.utils import fire_and_forget_task
 from ..computation_api import update_pipeline_db
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
+from ..security_api import check_permission
 from ..security_decorators import permission_required
 from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from .security_api import check_permission
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",
@@ -312,6 +312,7 @@ async def close_project(request: web.Request) -> web.Response:
 
 
 @login_required
+@permission_required("project.share")
 async def share_project(request: web.Request):
     # TODO: complete the handler
     raise web.HTTPNoContent(content_type="application/json")

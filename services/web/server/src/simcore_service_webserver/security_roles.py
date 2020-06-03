@@ -47,6 +47,7 @@ ROLES_PERMISSIONS = {
             "project.create",  # "studies.user.create",
             "project.close",
             "project.delete",  # "study.node.create",
+            "project.share",
             # "study.node.delete",
             # "study.node.rename",
             # "study.edge.create",
