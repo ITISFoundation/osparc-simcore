@@ -40,7 +40,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./components/schemas/me.yaml#/UsersGroupsEnveloped"
+                $ref: "./components/schemas/me.yaml#/AllUsersGroupsEnveloped"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
     post:
@@ -133,11 +133,11 @@ paths:
       operationId: get_group_users
       responses:
         "200":
-          description: got list of users
+          description: got list of users and their respective rights
           content:
             application/json:
               schema:
-                $ref: "./components/schemas/me.yaml#/UsersArrayEnveloped"
+                $ref: "./components/schemas/me.yaml#/GroupUsersArrayEnveloped"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
     post:
@@ -151,14 +151,13 @@ paths:
         content:
           application/json:
             schema:
-              allOf:
-                - $ref: "./components/schemas/me.yaml#/GroupAccessRights"
-                - type: object
-                  required:
-                    - uid
-                  properties:
-                    uid:
-                      type: string
+              type: object
+              required:
+                - uid
+              properties:
+                uid:
+                  type: string
+                  description: the user id
       responses:
         "204":
           description: user successfully added
@@ -188,9 +187,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: "./components/schemas/me.yaml#/UserEnveloped"
-                  - $ref: "./components/schemas/me.yaml#/GroupAccessRights"
+                $ref: "./components/schemas/me.yaml#/UserEnveloped"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
     patch:
@@ -198,6 +195,13 @@ paths:
         - user
       summary: Modify specific user in group
       operationId: update_group_user
+      requestBody:
+        required: true
+        description: the user rights to modify
+        content:
+          application/json:
+            schema:
+              $ref: "./components/schemas/me.yaml#/AccessRights"
       responses:
         "200":
           description: modified user
