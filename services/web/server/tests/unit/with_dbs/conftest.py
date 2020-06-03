@@ -350,10 +350,48 @@ async def primary_group(client, logged_user) -> Dict[str, str]:
     return primary_group
 
 
+from simcore_service_webserver.users_api import (
+    create_user_group,
+    add_user_in_group,
+    delete_user_group,
+)
+from pytest_simcore.helpers.utils_login import NewUser
+
+
 @pytest.fixture
-async def standard_groups(client, logged_user) -> List[Dict[str, str]]:
-    _, standard_groups, _ = await list_user_groups(client.app, logged_user["id"])
-    return standard_groups
+async def standard_groups(client, logged_user: Dict) -> List[Dict[str, str]]:
+    # create a separate admin account to create some standard groups for the logged user
+    sparc_group = {
+        "gid": "5",  # this will be replaced
+        "label": "SPARC",
+        "description": "Stimulating Peripheral Activity to Relieve Conditions",
+        "thumbnail": "https://commonfund.nih.gov/sites/default/files/sparc-image-homepage500px.png",
+    }
+    team_black_group = {
+        "gid": "5",  # this will be replaced
+        "label": "team Black",
+        "description": "THE incredible black team",
+        "thumbnail": None,
+    }
+    async with NewUser(
+        {"name": f"{logged_user['name']}_admin", "role": "USER"}, client.app
+    ) as admin_user:
+        sparc_group = await create_user_group(client.app, admin_user["id"], sparc_group)
+        team_black_group = await create_user_group(
+            client.app, admin_user["id"], team_black_group
+        )
+        await add_user_in_group(
+            client.app, admin_user["id"], sparc_group["gid"], logged_user["id"]
+        )
+        await add_user_in_group(
+            client.app, admin_user["id"], team_black_group["gid"], logged_user["id"]
+        )
+
+        _, standard_groups, _ = await list_user_groups(client.app, logged_user["id"])
+        yield standard_groups
+        # clean groups
+        await delete_user_group(client.app, admin_user["id"], sparc_group["gid"])
+        await delete_user_group(client.app, admin_user["id"], team_black_group["gid"])
 
 
 @pytest.fixture
