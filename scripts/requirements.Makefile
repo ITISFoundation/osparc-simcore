@@ -3,7 +3,7 @@
 # SEE docs/python-dependencies.md
 #
 
-.PHONY: reqs check clean help
+.PHONY: touch reqs check clean help
 .DEFAULT_GOAL := help
 
 UPGRADE_OPTION := $(if $(upgrade),--upgrade-package $(upgrade),--upgrade)
@@ -13,6 +13,9 @@ objects = $(wildcard *.in)
 outputs := $(objects:.in=.txt)
 
 reqs: $(outputs) ## pip-compiles all requirements/*.in -> requirements/*.txt; make reqs upgrade=foo will only upgrade package foo
+
+touch:
+	@$(foreach p,${objects},touch ${p};)
 
 # NOTE: runs above requirememts/ such that comments sync with dependabot's
 %.txt: %.in
