@@ -142,7 +142,9 @@ async def template_project(
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
     project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"
-    project_data["accessRights"] = {str(all_group["gid"]): "rw"}
+    project_data["accessRights"] = {
+        str(all_group["gid"]): {"read": True, "write": False, "execute": False}
+    }
 
     async with NewProject(
         project_data, client.app, user_id=None, clear_all=True
@@ -288,7 +290,7 @@ async def test_new_project(
         "creationDate": now_str(),
         "lastChangeDate": now_str(),
         "thumbnail": "",
-        "accessRights": {"12": "some rights"},
+        "accessRights": {},
         "workbench": {},
         "tags": [],
     }
@@ -307,7 +309,7 @@ async def test_new_project(
         assert to_datetime(default_project["creationDate"]) < to_datetime(
             new_project["creationDate"]
         )
-        assert new_project["accessRights"] == {}
+        assert new_project["accessRights"] == default_project["accessRights"]
 
         # invariant fields
         for key in new_project.keys():
@@ -391,6 +393,7 @@ async def test_new_project_from_template(
 async def test_new_project_from_template_with_body(
     client,
     logged_user,
+    primary_group: Dict[str, str],
     template_project,
     expected,
     computational_system_mock,
@@ -411,7 +414,9 @@ async def test_new_project_from_template_with_body(
         "prjOwner": "",
         "creationDate": "2019-06-03T09:59:31.987Z",
         "lastChangeDate": "2019-06-03T09:59:31.987Z",
-        "accessRights": {"123": "some new access rights"},
+        "accessRights": {
+            str(primary_group["gid"]): {"read": True, "write": True, "execute": True}
+        },
         "workbench": {},
         "tags": [],
     }
@@ -467,6 +472,7 @@ async def test_new_project_from_template_with_body(
 async def test_new_template_from_project(
     client,
     logged_user,
+    all_group: Dict[str, str],
     user_project,
     expected,
     computational_system_mock,
@@ -525,7 +531,9 @@ async def test_new_template_from_project(
         "creationDate": "2019-06-03T09:59:31.987Z",
         "lastChangeDate": "2019-06-03T09:59:31.987Z",
         "workbench": {},
-        "accessRights": {"12": "rwx"},
+        "accessRights": {
+            str(all_group["gid"]): {"read": True, "write": False, "execute": False}
+        },
         "tags": [],
     }
 
@@ -539,14 +547,6 @@ async def test_new_template_from_project(
         assert template_project["description"] == predefined["description"]
         assert template_project["prjOwner"] == logged_user["email"]
         assert template_project["accessRights"] == predefined["accessRights"]
-
-        modified = [
-            "prjOwner",
-            "creationDate",
-            "lastChangeDate",
-            "uuid",
-            "accessRights",
-        ]
 
         # different ownership
         assert template_project["prjOwner"] == logged_user["email"]
