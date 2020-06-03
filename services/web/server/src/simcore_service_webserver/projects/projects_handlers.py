@@ -317,6 +317,12 @@ async def close_project(request: web.Request) -> web.Response:
 
 
 @login_required
+async def share_project(request: web.Request):
+    # TODO: complete the handler
+    raise web.HTTPNoContent(content_type="application/json")
+
+
+@login_required
 async def get_active_project(request: web.Request) -> web.Response:
     await check_permission(request, "project.read")
     user_id = request[RQT_USERID_KEY]
