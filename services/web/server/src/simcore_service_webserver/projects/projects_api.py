@@ -289,9 +289,9 @@ async def update_project_node_outputs(
         raise NodeNotFoundError(project_id, node_id)
 
     if data:
-        # NOTE: update outputs if necessary as the UI expects a
+        # NOTE: update outputs (not required) if necessary as the UI expects a
         # dataset/label field that is missing
-        outputs: Dict[str,Any] = project["workbench"][node_id]["outputs"]
+        outputs: Dict[str,Any] = project["workbench"][node_id].setdefault("outputs", {})
         outputs.update(data)
 
         for output_key in outputs.keys():
