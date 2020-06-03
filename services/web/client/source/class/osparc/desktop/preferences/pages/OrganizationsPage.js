@@ -145,8 +145,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       membersCtrl.setDelegate({
         createItem: () => new osparc.dashboard.OrgMemberListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("login", "model", null, item, id);
-          ctrl.bindProperty("login", "key", null, item, id);
+          ctrl.bindProperty("id", "model", null, item, id);
+          ctrl.bindProperty("id", "key", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("role", "subtitle", null, item, id);
@@ -194,7 +194,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
 
       const params = {
         url: {
-          gid: orgModel.getKey()
+          "gid": orgModel.getKey()
         }
       };
       osparc.data.Resources.get("organizationMembers", params)
@@ -216,15 +216,16 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Invitation sent to ") + orgMemberKey);
       const params = {
         url: {
-          gid: this.__currentOrg.getKey()
+          "gid": this.__currentOrg.getKey()
         },
         data: {
-          "uid": orgMemberKey
+          "email": orgMemberKey
         }
       };
       osparc.data.Resources.fetch("organizationMembers", "post", params)
         .then(resp => {
           console.log(resp);
+          osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
         });
     },
@@ -236,13 +237,14 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
 
       const params = {
         url: {
-          gid: this.__currentOrgId.getKey(),
-          uid: orgMemberKey
+          "gid": this.__currentOrg.getKey(),
+          "uid": orgMemberKey
         }
       };
-      osparc.data.Resources.delete("organizationMembers", params)
+      osparc.data.Resources.fetch("organizationMembers", "delete", params)
         .then(resp => {
           console.log(resp);
+          osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
         });
     }
