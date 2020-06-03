@@ -151,13 +151,22 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - uid
-              properties:
-                uid:
-                  type: string
-                  description: the user id
+              anyOf:
+                - type: object
+                  required:
+                    - uid
+                  properties:
+                    uid:
+                      type: string
+                      description: the user id
+                - type: object
+                  required:
+                    - email
+                  properties:
+                    email:
+                      type: string
+                      format: email
+                      description: the user email
       responses:
         "204":
           description: user successfully added
