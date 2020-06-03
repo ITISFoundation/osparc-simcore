@@ -60,6 +60,7 @@ def _convert_user_db_to_schema(
 ) -> Dict[str, str]:
     parts = row[f"{prefix}name"].split(".") + [""]
     return {
+        "id": row[f"{prefix}id"],
         "login": row[f"{prefix}email"],
         "first_name": parts[0],
         "last_name": parts[1],
@@ -82,6 +83,16 @@ def _check_group_permissions(
         raise UserInsufficientRightsError(
             f"User {user_id} has insufficient rights for {permission} access to group {gid}"
         )
+
+
+async def get_user_from_email(app: web.Application, email: str) -> Dict:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        result = await conn.execute(sa.select([users]).where(users.c.email == email))
+        user: RowProxy = await result.fetchone()
+        if not user:
+            raise UserNotFoundError(email)
+        return _convert_user_db_to_schema(user)
 
 
 async def get_user_profile(app: web.Application, user_id: int) -> Dict:

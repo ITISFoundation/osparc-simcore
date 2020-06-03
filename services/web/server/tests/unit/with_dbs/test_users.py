@@ -335,6 +335,8 @@ def _assert__group_user(
     assert actual_user["gravatar_id"] == gravatar_hash(expected_user["email"])
     assert "access_rights" in actual_user
     assert actual_user["access_rights"] == expected_access_rights
+    assert "id" in actual_user
+    assert actual_user["id"] == expected_user["id"]
 
 
 @pytest.mark.parametrize(
@@ -678,9 +680,13 @@ async def test_add_remove_users_from_group(
     for i in range(num_new_users):
         created_users_list.append(await create_user())
 
-        resp = await client.post(
-            add_group_user_url, json={"uid": created_users_list[i]["id"]}
+        # add the user once per email once per id to test both
+        params = (
+            {"uid": created_users_list[i]["id"]}
+            if i % 2 == 0
+            else {"email": created_users_list[i]["email"]}
         )
+        resp = await client.post(add_group_user_url, json=params)
         data, error = await assert_status(resp, expected_no_content)
 
         get_group_user_url = client.app.router["get_group_user"].url_for(

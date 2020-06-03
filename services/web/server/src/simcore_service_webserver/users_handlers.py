@@ -123,14 +123,21 @@ async def add_group_user(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     gid = request.match_info["gid"]
     new_user_in_group = await request.json()
-    assert "uid" in new_user_in_group
+    # TODO: validate!!
+    assert "uid" in new_user_in_group or "email" in new_user_in_group  # nosec
     try:
-        await users_api.add_user_in_group(
-            request.app, user_id, gid, new_user_in_group["uid"]
-        )
+        new_user_id = new_user_in_group["uid"] if "uid" in new_user_in_group else None
+        if "email" in new_user_in_group:
+            new_user = await users_api.get_user_from_email(
+                request.app, new_user_in_group["email"]
+            )
+            new_user_id = new_user["id"]
+        await users_api.add_user_in_group(request.app, user_id, gid, new_user_id)
         raise web.HTTPNoContent()
     except GroupNotFoundError:
         raise web.HTTPNotFound(reason=f"Group {gid} not found")
+    except UserInGroupNotFoundError:
+        raise web.HTTPNotFound(reason=f"User not found in group {gid}")
 
 
 @login_required
