@@ -36,6 +36,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
   },
 
   members: {
+    __currentOrg: null,
     __memberInvitation: null,
     __membersModel: null,
 
@@ -49,16 +50,14 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         width: 150
       });
       orgsUIList.addListener("changeSelection", e => {
-        if (e.getData() && e.getData().length>0) {
-          this.__organizationSelected(e.getData()[0]);
-        }
+        this.__organizationSelected(e.getData());
       }, this);
       box.add(orgsUIList);
 
       const orgsModel = new qx.data.Array();
       const orgsCtrl = new qx.data.controller.List(orgsModel, orgsUIList, "label");
       orgsCtrl.setDelegate({
-        createItem: () => new osparc.dashboard.ServiceBrowserListItem(),
+        createItem: () => new osparc.dashboard.OrganizationListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("gid", "model", null, item, id);
           ctrl.bindProperty("gid", "key", null, item, id);
@@ -66,8 +65,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           ctrl.bindProperty("label", "title", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
           ctrl.bindProperty("nMembers", "contact", null, item, id);
-          const asfd = ctrl.getModel().toArray()[0];
-          item["access_rights"] = asfd.get("access_rights");
+          ctrl.bindProperty("access_rights", "accessRights", null, item, id);
         },
         configureItem: item => {
           item.getChildControl("thumbnail").getContentElement()
@@ -83,7 +81,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           orgsModel.removeAll();
           orgs.forEach(org => {
             // fake
-            const rNumber = Math.floor((Math.random() * 100));
+            const rNumber = Math.floor((Math.random() * 99) + 1);
             org["nMembers"] = rNumber + " members";
             if (org["thumbnail"] === null) {
               org["thumbnail"] = "https://raw.githubusercontent.com/Radhikadua123/superhero/master/CAX_Superhero_Test/superhero_test_" + rNumber + ".jpg";
@@ -145,47 +143,109 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const membersModel = this.__membersModel = new qx.data.Array();
       const membersCtrl = new qx.data.controller.List(membersModel, memebersUIList, "name");
       membersCtrl.setDelegate({
-        createItem: () => new osparc.dashboard.ServiceBrowserListItem(),
+        createItem: () => new osparc.dashboard.OrgMemberListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("uid", "model", null, item, id);
-          ctrl.bindProperty("uid", "key", null, item, id);
+          ctrl.bindProperty("login", "model", null, item, id);
+          ctrl.bindProperty("login", "key", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("role", "subtitle", null, item, id);
-          ctrl.bindProperty("email", "contact", null, item, id);
+          ctrl.bindProperty("login", "contact", null, item, id);
+          ctrl.bindProperty("showRemove", "showRemove", null, item, id);
         },
         configureItem: item => {
           item.getChildControl("thumbnail").getContentElement()
             .setStyles({
               "border-radius": "16px"
             });
+          item.addListener("removeOrgMember", e => {
+            const orgMemberKey = e.getData();
+            this.__deleteUser(orgMemberKey);
+          });
         }
       });
 
       return memebersUIList;
     },
 
-    __organizationSelected: function(orgModel) {
-      const orgId = orgModel.getModel();
+    __organizationSelected: function(e) {
       this.__memberInvitation.exclude();
+      if (e.getData() && e.getData().length>0) {
+        const orgModel = e.getData()[0];
+        this.__currentOrg = orgModel.getModel();
+
+        this.__reloadOrgMembers();
+      } else {
+        this.__currentOrg = null;
+      }
+    },
+
+    __reloadOrgMembers: function() {
       const membersModel = this.__membersModel;
       membersModel.removeAll();
 
-      if (orgModel["access_rights"].getWrite()) {
+      const orgModel = this.__currentOrg;
+      if (orgModel === null) {
+        return;
+      }
+
+      const canWrite = orgModel.getAccessRights().getWrite();
+      if (canWrite) {
         this.__memberInvitation.show();
       }
 
       const params = {
         url: {
-          gid: orgId
+          gid: orgModel.getKey()
         }
       };
       osparc.data.Resources.get("organizationMembers", params)
         .then(members => {
           members.forEach(member => {
             member["thumbnail"] = osparc.utils.Avatar.getUrl(member["login"], 32);
+            member["name"] = osparc.utils.Utils.capitalize(member["first_name"]) + " " + osparc.utils.Utils.capitalize(member["last_name"]);
+            member["showRemove"] = canWrite;
             membersModel.append(qx.data.marshal.Json.createModel(member));
           });
+        });
+    },
+
+    __addUser: function(orgMemberKey) {
+      if (this.__currentOrg === null) {
+        return;
+      }
+
+      const params = {
+        url: {
+          gid: this.__currentOrg.getKey()
+        },
+        data: {
+          "uid": orgMemberKey
+        }
+      };
+      this.__requestAPIKeyBtn.setFetching(true);
+      osparc.data.Resources.fetch("organizationMembers", "post", params)
+        .then(resp => {
+          console.log(resp);
+          this.__reloadOrgMembers();
+        });
+    },
+
+    __deleteUser: function(orgMemberKey) {
+      if (this.__currentOrg === null) {
+        return;
+      }
+
+      const params = {
+        url: {
+          gid: this.__currentOrgId.getKey(),
+          uid: orgMemberKey
+        }
+      };
+      osparc.data.Resources.delete("organizationMembers", params)
+        .then(resp => {
+          console.log(resp);
+          this.__reloadOrgMembers();
         });
     }
   }
