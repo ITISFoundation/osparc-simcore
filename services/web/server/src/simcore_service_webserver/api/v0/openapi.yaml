@@ -6060,6 +6060,26 @@ paths:
                         accessRights:
                           type: object
                           description: object containing the GroupID as key and read/write/execution permissions as value
+                          x-patternProperties:
+                            ^\d+$:
+                              type: object
+                              description: the group id
+                              additionalProperties: false
+                              required:
+                                - read
+                                - write
+                                - execute
+                              properties:
+                                read:
+                                  type: boolean
+                                  description: gives read access
+                                write:
+                                  type: boolean
+                                  description: gives write access
+                                execute:
+                                  type: boolean
+                                  description: gives execution rights
+                          additionalProperties: true
                         creationDate:
                           type: string
                           description: project creation date
@@ -6377,6 +6397,26 @@ paths:
                 accessRights:
                   type: object
                   description: object containing the GroupID as key and read/write/execution permissions as value
+                  x-patternProperties:
+                    ^\d+$:
+                      type: object
+                      description: the group id
+                      additionalProperties: false
+                      required:
+                        - read
+                        - write
+                        - execute
+                      properties:
+                        read:
+                          type: boolean
+                          description: gives read access
+                        write:
+                          type: boolean
+                          description: gives write access
+                        execute:
+                          type: boolean
+                          description: gives execution rights
+                  additionalProperties: true
                 creationDate:
                   type: string
                   description: project creation date
@@ -6599,6 +6639,26 @@ paths:
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
+                        x-patternProperties:
+                          ^\d+$:
+                            type: object
+                            description: the group id
+                            additionalProperties: false
+                            required:
+                              - read
+                              - write
+                              - execute
+                            properties:
+                              read:
+                                type: boolean
+                                description: gives read access
+                              write:
+                                type: boolean
+                                description: gives write access
+                              execute:
+                                type: boolean
+                                description: gives execution rights
+                        additionalProperties: true
                       creationDate:
                         type: string
                         description: project creation date
@@ -6913,6 +6973,26 @@ paths:
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
+                        x-patternProperties:
+                          ^\d+$:
+                            type: object
+                            description: the group id
+                            additionalProperties: false
+                            required:
+                              - read
+                              - write
+                              - execute
+                            properties:
+                              read:
+                                type: boolean
+                                description: gives read access
+                              write:
+                                type: boolean
+                                description: gives write access
+                              execute:
+                                type: boolean
+                                description: gives execution rights
+                        additionalProperties: true
                       creationDate:
                         type: string
                         description: project creation date
@@ -7233,6 +7313,26 @@ paths:
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
+                        x-patternProperties:
+                          ^\d+$:
+                            type: object
+                            description: the group id
+                            additionalProperties: false
+                            required:
+                              - read
+                              - write
+                              - execute
+                            properties:
+                              read:
+                                type: boolean
+                                description: gives read access
+                              write:
+                                type: boolean
+                                description: gives write access
+                              execute:
+                                type: boolean
+                                description: gives execution rights
+                        additionalProperties: true
                       creationDate:
                         type: string
                         description: project creation date
@@ -7545,6 +7645,26 @@ paths:
                 accessRights:
                   type: object
                   description: object containing the GroupID as key and read/write/execution permissions as value
+                  x-patternProperties:
+                    ^\d+$:
+                      type: object
+                      description: the group id
+                      additionalProperties: false
+                      required:
+                        - read
+                        - write
+                        - execute
+                      properties:
+                        read:
+                          type: boolean
+                          description: gives read access
+                        write:
+                          type: boolean
+                          description: gives write access
+                        execute:
+                          type: boolean
+                          description: gives execution rights
+                  additionalProperties: true
                 creationDate:
                   type: string
                   description: project creation date
@@ -7767,6 +7887,26 @@ paths:
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
+                        x-patternProperties:
+                          ^\d+$:
+                            type: object
+                            description: the group id
+                            additionalProperties: false
+                            required:
+                              - read
+                              - write
+                              - execute
+                            properties:
+                              read:
+                                type: boolean
+                                description: gives read access
+                              write:
+                                type: boolean
+                                description: gives write access
+                              execute:
+                                type: boolean
+                                description: gives execution rights
+                        additionalProperties: true
                       creationDate:
                         type: string
                         description: project creation date
@@ -8103,6 +8243,26 @@ paths:
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
+                        x-patternProperties:
+                          ^\d+$:
+                            type: object
+                            description: the group id
+                            additionalProperties: false
+                            required:
+                              - read
+                              - write
+                              - execute
+                            properties:
+                              read:
+                                type: boolean
+                                description: gives read access
+                              write:
+                                type: boolean
+                                description: gives write access
+                              execute:
+                                type: boolean
+                                description: gives execution rights
+                        additionalProperties: true
                       creationDate:
                         type: string
                         description: project creation date
@@ -8389,163 +8549,6 @@ paths:
       responses:
         '204':
           description: project succesfuly closed
-        default:
-          description: Default http error response body
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    nullable: true
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
-  '/projects/{project_id}:share':
-    parameters:
-      - name: project_id
-        in: path
-        required: true
-        schema:
-          type: string
-    post:
-      tags:
-        - project
-      summary: Share a project with a users group
-      operationId: share_project
-      requestBody:
-        description: list of users groups with which to share the project
-        required: true
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: object
-                properties:
-                  gid:
-                    description: the group ID
-                    type: string
-                  label:
-                    description: the group name
-                    type: string
-                  description:
-                    description: the group description
-                    type: string
-                  thumbnail:
-                    description: url to the group thumbnail
-                    type: string
-                    format: uri
-                  access_rights:
-                    description: defines acesss rights for the user
-                    type: object
-                    properties:
-                      read:
-                        type: boolean
-                      write:
-                        type: boolean
-                      delete:
-                        type: boolean
-                    required:
-                      - read
-                      - write
-                      - delete
-                    example:
-                      - read: true
-                        write: false
-                        delete: false
-                required:
-                  - gid
-                  - label
-                  - description
-                  - access_rights
-                example:
-                  - gid: '27'
-                    label: A user
-                    description: A very special user
-                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
-                  - gid: '1'
-                    label: ITIS Foundation
-                    description: The Foundation for Research on Information Technologies in Society
-                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
-                  - gid: '0'
-                    label: All
-                    description: Open to all users
-                    thumbnail: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
-      responses:
-        '204':
-          description: project succesfuly shared
         default:
           description: Default http error response body
           content:
@@ -9276,6 +9279,26 @@ paths:
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
+                        x-patternProperties:
+                          ^\d+$:
+                            type: object
+                            description: the group id
+                            additionalProperties: false
+                            required:
+                              - read
+                              - write
+                              - execute
+                            properties:
+                              read:
+                                type: boolean
+                                description: gives read access
+                              write:
+                                type: boolean
+                                description: gives write access
+                              execute:
+                                type: boolean
+                                description: gives execution rights
+                        additionalProperties: true
                       creationDate:
                         type: string
                         description: project creation date
@@ -9589,6 +9612,26 @@ paths:
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
+                        x-patternProperties:
+                          ^\d+$:
+                            type: object
+                            description: the group id
+                            additionalProperties: false
+                            required:
+                              - read
+                              - write
+                              - execute
+                            properties:
+                              read:
+                                type: boolean
+                                description: gives read access
+                              write:
+                                type: boolean
+                                description: gives write access
+                              execute:
+                                type: boolean
+                                description: gives execution rights
+                        additionalProperties: true
                       creationDate:
                         type: string
                         description: project creation date

@@ -197,32 +197,6 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /projects/{project_id}/share:
-    parameters:
-      - name: project_id
-        in: path
-        required: true
-        schema:
-          type: string
-    post:
-      tags:
-        - project
-      summary: Share a project with a users group
-      operationId: share_project
-      requestBody:
-        description: list of users groups with which to share the project
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UsersGroups"
-      responses:
-        "204":
-          description: project succesfuly shared
-
-        default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-
   /projects/{project_id}/nodes:
     parameters:
       - name: project_id

@@ -307,6 +307,7 @@ async def test_new_project(
         assert to_datetime(default_project["creationDate"]) < to_datetime(
             new_project["creationDate"]
         )
+        assert new_project["accessRights"] == {}
 
         # invariant fields
         for key in new_project.keys():
