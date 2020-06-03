@@ -66,7 +66,9 @@ def _convert_user_db_to_schema(
 
 
 def _convert_user_in_group_to_schema(row: RowProxy) -> Dict[str, str]:
-    return _convert_user_db_to_schema(row).pop("role")
+    group_user = _convert_user_db_to_schema(row)
+    group_user.pop("role")
+    return group_user
 
 
 def _check_group_permissions(
