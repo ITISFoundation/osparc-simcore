@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -30,6 +30,9 @@ GROUPS_SCHEMA_TO_DB = {
     "thumbnail": "thumbnail",
     "access_rights": "access_rights",
 }
+
+DEFAULT_GROUP_READ_ACCESS_RIGHTS = {"read": True, "write": False, "delete": False}
+DEFAULT_GROUP_OWNER_ACCESS_RIGHTS = {"read": True, "write": True, "delete": True}
 
 
 def _convert_groups_db_to_schema(
@@ -65,9 +68,10 @@ def _convert_user_db_to_schema(
     }
 
 
-def _convert_user_in_group_to_schema(row: RowProxy) -> Dict[str, str]:
+def _convert_user_in_group_to_schema(row: Union[RowProxy, Dict]) -> Dict[str, str]:
     group_user = _convert_user_db_to_schema(row)
     group_user.pop("role")
+    group_user["access_rights"] = row["access_rights"]
     return group_user
 
 
@@ -203,14 +207,17 @@ async def create_user_group(
             .returning(literal_column("*"))
         )
         group: RowProxy = await result.fetchone()
-        WRITE_ACCESS_RIGHTS = {"read": True, "write": True, "delete": True}
         await conn.execute(
             # pylint: disable=no-value-for-parameter
             user_to_groups.insert().values(
-                uid=user_id, gid=group.gid, access_rights=WRITE_ACCESS_RIGHTS,
+                uid=user_id,
+                gid=group.gid,
+                access_rights=DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
             )
         )
-    return _convert_groups_db_to_schema(group, access_rights=WRITE_ACCESS_RIGHTS)
+    return _convert_groups_db_to_schema(
+        group, access_rights=DEFAULT_GROUP_OWNER_ACCESS_RIGHTS
+    )
 
 
 async def update_user_group(
@@ -291,8 +298,7 @@ async def add_user_in_group(
         if not users_count:
             raise UserInGroupNotFoundError(new_user_id, gid)
         # add the new user to the group now
-        DEFAULT_ACCESS_RIGHTS = {"read": True, "write": False, "delete": False}
-        user_access_rights = DEFAULT_ACCESS_RIGHTS
+        user_access_rights = DEFAULT_GROUP_READ_ACCESS_RIGHTS
         if access_rights:
             user_access_rights.update(access_rights)
         await conn.execute(
@@ -343,7 +349,6 @@ async def update_user_in_group(
     new_values_for_user_in_group: Dict,
 ) -> Dict[str, str]:
     engine = app[APP_DB_ENGINE_KEY]
-
     async with engine.acquire() as conn:
         # first check if the group exists
         group: RowProxy = await _get_user_group(conn, user_id, gid)
@@ -352,7 +357,7 @@ async def update_user_in_group(
         the_user: RowProxy = await _get_user_in_group_permissions(
             conn, gid, the_user_id_in_group
         )
-        # modify the user
+        # modify the user access rights
         await conn.execute(
             # pylint: disable=no-value-for-parameter
             user_to_groups.update()
@@ -364,6 +369,8 @@ async def update_user_in_group(
                 )
             )
         )
+        the_user = dict(the_user)
+        the_user.update(**new_values_for_user_in_group)
         return _convert_user_in_group_to_schema(the_user)
 
 
