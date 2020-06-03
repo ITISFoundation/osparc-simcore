@@ -49,10 +49,11 @@ qx.Class.define("osparc.component.filter.OrganizationMembers", {
       };
       osparc.data.Resources.get("organizationMembers", params)
         .then(members => {
-          members.sort((a, b) => (a["name"] > b["name"]) ? 1 : -1);
+          members.sort((a, b) => (a["first_name"] > b["first_name"]) ? 1 : -1);
           members.forEach(member => {
-            const bnt = this._addOption(osparc.utils.Utils.capitalize(member["name"]));
-            bnt.uid = member["uid"];
+            const name = osparc.utils.Utils.capitalize(member["first_name"]) + osparc.utils.Utils.capitalize(member["last_name"]);
+            const bnt = this._addOption(name);
+            bnt.uid = member["login"];
           });
         });
     },

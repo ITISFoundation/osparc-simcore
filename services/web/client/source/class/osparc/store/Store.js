@@ -238,37 +238,6 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getOrganizationMembers: function(gid) {
-      return new Promise((resolve, reject) => {
-        if (gid === 100) {
-          resolve([{
-            "uid": 0,
-            "name": "Odei Maiz",
-            "role": "Manager",
-            "email": "maiz@itis.swiss"
-          }, {
-            "uid": 1,
-            "name": "Sylvain Anderegg",
-            "role": "Collaborator",
-            "email": "anderegg@itis.swiss"
-          }]);
-        } else if (gid === 101) {
-          resolve([{
-            "uid": 0,
-            "name": "Odei Maiz",
-            "role": "Collaborator",
-            "email": "maiz@itis.swiss"
-          }, {
-            "uid": 2,
-            "name": "Max Novelli",
-            "role": "Collaborator",
-            "email": "novelli@pitt.edu"
-          }]);
-        }
-        reject();
-      });
-    },
-
     /**
      * Invalidates the cache for the given resources.
      * If resource is a string, it will invalidate that resource.

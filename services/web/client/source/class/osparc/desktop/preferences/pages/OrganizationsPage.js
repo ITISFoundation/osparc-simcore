@@ -50,8 +50,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       });
       orgsUIList.addListener("changeSelection", e => {
         if (e.getData() && e.getData().length>0) {
-          const selectedOrg = e.getData()[0].getModel();
-          this.__organizationSelected(selectedOrg);
+          this.__organizationSelected(e.getData()[0]);
         }
       }, this);
       box.add(orgsUIList);
@@ -67,6 +66,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           ctrl.bindProperty("label", "title", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
           ctrl.bindProperty("nMembers", "contact", null, item, id);
+          const asfd = ctrl.getModel().toArray()[0];
+          item["access_rights"] = asfd.get("access_rights");
         },
         configureItem: item => {
           item.getChildControl("thumbnail").getContentElement()
@@ -84,9 +85,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             // fake
             const rNumber = Math.floor((Math.random() * 100));
             org["nMembers"] = rNumber + " members";
-            if (org["gid"] === 100) {
-              org["thumbnail"] = "https://user-images.githubusercontent.com/33152403/82996091-baa65e00-a004-11ea-9695-206d005fdf54.png";
-            } else {
+            if (org["thumbnail"] === null) {
               org["thumbnail"] = "https://raw.githubusercontent.com/Radhikadua123/superhero/master/CAX_Superhero_Test/superhero_test_" + rNumber + ".jpg";
             }
             orgsModel.append(qx.data.marshal.Json.createModel(org));
@@ -166,10 +165,15 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       return memebersUIList;
     },
 
-    __organizationSelected: function(orgId) {
+    __organizationSelected: function(orgModel) {
+      const orgId = orgModel.getModel();
       this.__memberInvitation.exclude();
       const membersModel = this.__membersModel;
       membersModel.removeAll();
+
+      if (orgModel["access_rights"].getWrite()) {
+        this.__memberInvitation.show();
+      }
 
       const params = {
         url: {
@@ -179,10 +183,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       osparc.data.Resources.get("organizationMembers", params)
         .then(members => {
           members.forEach(member => {
-            if (member["role"] === "Manager" && member["email"] === osparc.auth.Data.getInstance().getEmail()) {
-              this.__memberInvitation.show();
-            }
-            member["thumbnail"] = osparc.utils.Avatar.getUrl(member["email"], 32);
+            member["thumbnail"] = osparc.utils.Avatar.getUrl(member["login"], 32);
             membersModel.append(qx.data.marshal.Json.createModel(member));
           });
         });
