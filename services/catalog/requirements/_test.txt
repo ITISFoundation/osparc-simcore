@@ -55,7 +55,7 @@ pytest-cov==2.8.1         # via -r requirements/_test.in
 pytest-docker==0.7.2      # via -r requirements/_test.in
 pytest-mock==2.0.0        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
-pytest==5.4.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-mock
+pytest==5.4.3             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-mock
 python-dateutil==2.8.1    # via faker
 python-multipart==0.0.5   # via -r requirements/_base.txt, fastapi
 pyyaml==5.3               # via -r requirements/_base.txt, fastapi
