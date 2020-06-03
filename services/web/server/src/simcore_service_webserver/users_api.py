@@ -135,6 +135,29 @@ async def get_user_profile(app: web.Application, user_id: int) -> Dict:
     return user_profile
 
 
+async def update_user_profile(
+    app: web.Application, user_id: int, profile: Dict
+) -> Dict:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        default_name = await conn.scalar(
+            sa.select([users.c.name]).where(users.c.id == user_id)
+        )
+        parts = default_name.split(".") + [""]
+        name = (
+            profile.get("first_name", parts[0])
+            + "."
+            + profile.get("last_name", parts[1])
+        )
+        resp = await conn.execute(
+            # pylint: disable=no-value-for-parameter
+            users.update()
+            .where(users.c.id == user_id)
+            .values(name=name)
+        )
+        assert resp.rowcount == 1  # nosec
+
+
 async def list_user_groups(
     app: web.Application, user_id: str
 ) -> Tuple[Dict[str, str], List[Dict[str, str]], Dict[str, str]]:
