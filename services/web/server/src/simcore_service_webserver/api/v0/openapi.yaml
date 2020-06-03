@@ -2136,7 +2136,7 @@ paths:
                                     description: url to the group thumbnail
                                     type: string
                                     format: uri
-                                  accessRights:
+                                  access_rights:
                                     description: defines acesss rights for the user
                                     type: object
                                     properties:
@@ -2144,16 +2144,16 @@ paths:
                                         type: boolean
                                       write:
                                         type: boolean
-                                      contents:
+                                      delete:
                                         type: boolean
                                     required:
                                       - read
                                       - write
-                                      - contents
+                                      - delete
                                     example:
                                       - read: true
                                         write: false
-                                        contents: false
+                                        delete: false
                                 required:
                                   - gid
                                   - label
@@ -2190,7 +2190,7 @@ paths:
                                       description: url to the group thumbnail
                                       type: string
                                       format: uri
-                                    accessRights:
+                                    access_rights:
                                       description: defines acesss rights for the user
                                       type: object
                                       properties:
@@ -2198,16 +2198,16 @@ paths:
                                           type: boolean
                                         write:
                                           type: boolean
-                                        contents:
+                                        delete:
                                           type: boolean
                                       required:
                                         - read
                                         - write
-                                        - contents
+                                        - delete
                                       example:
                                         - read: true
                                           write: false
-                                          contents: false
+                                          delete: false
                                   required:
                                     - gid
                                     - label
@@ -2242,7 +2242,7 @@ paths:
                                     description: url to the group thumbnail
                                     type: string
                                     format: uri
-                                  accessRights:
+                                  access_rights:
                                     description: defines acesss rights for the user
                                     type: object
                                     properties:
@@ -2250,16 +2250,16 @@ paths:
                                         type: boolean
                                       write:
                                         type: boolean
-                                      contents:
+                                      delete:
                                         type: boolean
                                     required:
                                       - read
                                       - write
-                                      - contents
+                                      - delete
                                     example:
                                       - read: true
                                         write: false
-                                        contents: false
+                                        delete: false
                                 required:
                                   - gid
                                   - label
@@ -2851,7 +2851,7 @@ paths:
                             description: url to the group thumbnail
                             type: string
                             format: uri
-                          accessRights:
+                          access_rights:
                             description: defines acesss rights for the user
                             type: object
                             properties:
@@ -2859,16 +2859,16 @@ paths:
                                 type: boolean
                               write:
                                 type: boolean
-                              contents:
+                              delete:
                                 type: boolean
                             required:
                               - read
                               - write
-                              - contents
+                              - delete
                             example:
                               - read: true
                                 write: false
-                                contents: false
+                                delete: false
                         required:
                           - gid
                           - label
@@ -2905,7 +2905,7 @@ paths:
                               description: url to the group thumbnail
                               type: string
                               format: uri
-                            accessRights:
+                            access_rights:
                               description: defines acesss rights for the user
                               type: object
                               properties:
@@ -2913,16 +2913,16 @@ paths:
                                   type: boolean
                                 write:
                                   type: boolean
-                                contents:
+                                delete:
                                   type: boolean
                               required:
                                 - read
                                 - write
-                                - contents
+                                - delete
                               example:
                                 - read: true
                                   write: false
-                                  contents: false
+                                  delete: false
                           required:
                             - gid
                             - label
@@ -2957,7 +2957,7 @@ paths:
                             description: url to the group thumbnail
                             type: string
                             format: uri
-                          accessRights:
+                          access_rights:
                             description: defines acesss rights for the user
                             type: object
                             properties:
@@ -2965,16 +2965,16 @@ paths:
                                 type: boolean
                               write:
                                 type: boolean
-                              contents:
+                              delete:
                                 type: boolean
                             required:
                               - read
                               - write
-                              - contents
+                              - delete
                             example:
                               - read: true
                                 write: false
-                                contents: false
+                                delete: false
                         required:
                           - gid
                           - label
@@ -3105,7 +3105,7 @@ paths:
                   description: url to the group thumbnail
                   type: string
                   format: uri
-                accessRights:
+                access_rights:
                   description: defines acesss rights for the user
                   type: object
                   properties:
@@ -3113,16 +3113,16 @@ paths:
                       type: boolean
                     write:
                       type: boolean
-                    contents:
+                    delete:
                       type: boolean
                   required:
                     - read
                     - write
-                    - contents
+                    - delete
                   example:
                     - read: true
                       write: false
-                      contents: false
+                      delete: false
               required:
                 - gid
                 - label
@@ -3167,7 +3167,7 @@ paths:
                         description: url to the group thumbnail
                         type: string
                         format: uri
-                      accessRights:
+                      access_rights:
                         description: defines acesss rights for the user
                         type: object
                         properties:
@@ -3175,16 +3175,16 @@ paths:
                             type: boolean
                           write:
                             type: boolean
-                          contents:
+                          delete:
                             type: boolean
                         required:
                           - read
                           - write
-                          - contents
+                          - delete
                         example:
                           - read: true
                             write: false
-                            contents: false
+                            delete: false
                     required:
                       - gid
                       - label
@@ -3327,7 +3327,7 @@ paths:
                         description: url to the group thumbnail
                         type: string
                         format: uri
-                      accessRights:
+                      access_rights:
                         description: defines acesss rights for the user
                         type: object
                         properties:
@@ -3335,16 +3335,16 @@ paths:
                             type: boolean
                           write:
                             type: boolean
-                          contents:
+                          delete:
                             type: boolean
                         required:
                           - read
                           - write
-                          - contents
+                          - delete
                         example:
                           - read: true
                             write: false
-                            contents: false
+                            delete: false
                     required:
                       - gid
                       - label
@@ -3475,7 +3475,7 @@ paths:
                   description: url to the group thumbnail
                   type: string
                   format: uri
-                accessRights:
+                access_rights:
                   description: defines acesss rights for the user
                   type: object
                   properties:
@@ -3483,16 +3483,16 @@ paths:
                       type: boolean
                     write:
                       type: boolean
-                    contents:
+                    delete:
                       type: boolean
                   required:
                     - read
                     - write
-                    - contents
+                    - delete
                   example:
                     - read: true
                       write: false
-                      contents: false
+                      delete: false
               required:
                 - gid
                 - label
@@ -3537,7 +3537,7 @@ paths:
                         description: url to the group thumbnail
                         type: string
                         format: uri
-                      accessRights:
+                      access_rights:
                         description: defines acesss rights for the user
                         type: object
                         properties:
@@ -3545,16 +3545,16 @@ paths:
                             type: boolean
                           write:
                             type: boolean
-                          contents:
+                          delete:
                             type: boolean
                         required:
                           - read
                           - write
-                          - contents
+                          - delete
                         example:
                           - read: true
                             write: false
-                            contents: false
+                            delete: false
                     required:
                       - gid
                       - label
@@ -3897,16 +3897,16 @@ paths:
                       type: boolean
                     write:
                       type: boolean
-                    contents:
+                    delete:
                       type: boolean
                   required:
                     - read
                     - write
-                    - contents
+                    - delete
                   example:
                     - read: true
                       write: false
-                      contents: false
+                      delete: false
                 - type: object
                   required:
                     - uid
@@ -4055,16 +4055,16 @@ paths:
                         type: boolean
                       write:
                         type: boolean
-                      contents:
+                      delete:
                         type: boolean
                     required:
                       - read
                       - write
-                      - contents
+                      - delete
                     example:
                       - read: true
                         write: false
-                        contents: false
+                        delete: false
         default:
           description: Default http error response body
           content:
@@ -8447,7 +8447,7 @@ paths:
                     description: url to the group thumbnail
                     type: string
                     format: uri
-                  accessRights:
+                  access_rights:
                     description: defines acesss rights for the user
                     type: object
                     properties:
@@ -8455,16 +8455,16 @@ paths:
                         type: boolean
                       write:
                         type: boolean
-                      contents:
+                      delete:
                         type: boolean
                     required:
                       - read
                       - write
-                      - contents
+                      - delete
                     example:
                       - read: true
                         write: false
-                        contents: false
+                        delete: false
                 required:
                   - gid
                   - label
