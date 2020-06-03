@@ -314,40 +314,6 @@ jobs:
       - name: test
         run: ./ci/github/unit-testing/python-linting.bash test
 
-  unit-test-python-mypy:
-    name: Unit-testing python-mypy static checking
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: [3.8]
-        os: [ubuntu-18.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
-      - name: setup python environment
-        uses: actions/setup-python@v1.1.1
-        with:
-          python-version: ${{ matrix.python }}
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - name: install
-        run: pip install mypy
-      - name: mypy
-        run: mypy ./
-
   unit-test-service-library:
     name: Unit-testing service-library
     runs-on: ${{ matrix.os }}
