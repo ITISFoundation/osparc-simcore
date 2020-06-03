@@ -575,15 +575,37 @@ async def test_new_template_from_project(
     "user_role,expected",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
+        (
+            UserRole.GUEST,
+            web.HTTPOk,
+        ),  # FIXME: this should not be allowed PC how do we do that?
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
     ],
 )
-async def test_share_project(
-    client, logged_user, user_project, expected,
+async def test_share_project_with_everyone(
+    client,
+    logged_user,
+    user_project,
+    all_group: Dict[str, str],
+    expected,
+    computational_system_mock,
 ):
-    pass
+    # Use-case: the user shares his project instance with a group
+
+    # modify project to allow access to all other users
+    replace_project_url = client.app.router["replace_project"].url_for(
+        project_id=user_project["uuid"]
+    )
+    project_update = deepcopy(user_project)
+    project_update["accessRights"] = {
+        str(all_group["gid"]): {"read": True, "write": True, "execute": True}
+    }
+    resp = await client.put(replace_project_url, json=project_update)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert_replaced(current_project=data, update_data=project_update)
 
 
 # PUT --------
