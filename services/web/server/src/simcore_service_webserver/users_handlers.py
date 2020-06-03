@@ -3,13 +3,9 @@
 import json
 import logging
 
-import sqlalchemy as sa
 from aiohttp import web
 
-from servicelib.application_keys import APP_DB_ENGINE_KEY
-
 from . import users_api
-from .db_models import users
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
 from .users_exceptions import (
@@ -36,23 +32,12 @@ async def get_my_profile(request: web.Request):
 @login_required
 @permission_required("user.profile.update")
 async def update_my_profile(request: web.Request):
-    uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
+    uid = request[RQT_USERID_KEY]
 
     # TODO: validate
     body = await request.json()
 
-    async with engine.acquire() as conn:
-        query = sa.select([users.c.name]).where(users.c.id == uid)
-        default_name = await conn.scalar(query)
-        parts = default_name.split(".") + [""]
-
-    name = body.get("first_name", parts[0]) + "." + body.get("last_name", parts[1])
-
-    async with engine.acquire() as conn:
-        query = users.update().where(users.c.id == uid).values(name=name)
-        resp = await conn.execute(query)
-        assert resp.rowcount == 1  # nosec
-
+    await users_api.update_user_profile(request.app, uid, body)
     raise web.HTTPNoContent(content_type="application/json")
 
 
@@ -138,14 +123,21 @@ async def add_group_user(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     gid = request.match_info["gid"]
     new_user_in_group = await request.json()
-    assert "uid" in new_user_in_group
+    # TODO: validate!!
+    assert "uid" in new_user_in_group or "email" in new_user_in_group  # nosec
     try:
-        await users_api.add_user_in_group(
-            request.app, user_id, gid, new_user_in_group["uid"]
-        )
+        new_user_id = new_user_in_group["uid"] if "uid" in new_user_in_group else None
+        if "email" in new_user_in_group:
+            new_user = await users_api.get_user_from_email(
+                request.app, new_user_in_group["email"]
+            )
+            new_user_id = new_user["id"]
+        await users_api.add_user_in_group(request.app, user_id, gid, new_user_id)
         raise web.HTTPNoContent()
     except GroupNotFoundError:
         raise web.HTTPNotFound(reason=f"Group {gid} not found")
+    except UserInGroupNotFoundError:
+        raise web.HTTPNotFound(reason=f"User not found in group {gid}")
 
 
 @login_required

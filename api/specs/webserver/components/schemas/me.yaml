@@ -149,6 +149,9 @@ GroupUser:
           format: email
         gravatar_id:
           type: string
+        id:
+          type: string
+          description: the user id
     - $ref: "#/AccessRights"
 
 GroupUsersArrayEnveloped:
