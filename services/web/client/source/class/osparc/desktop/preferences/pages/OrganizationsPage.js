@@ -125,7 +125,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const inviteBtn = new qx.ui.form.Button(this.tr("Invite"));
       inviteBtn.addListener("execute", function() {
         if (validator.validate()) {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Invitation sent to ") + userEmail.getValue());
+          this.__addUser(userEmail.getValue());
         }
       }, this);
       hBox.add(inviteBtn);
@@ -168,16 +168,14 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       return memebersUIList;
     },
 
-    __organizationSelected: function(e) {
+    __organizationSelected: function(data) {
       this.__memberInvitation.exclude();
-      if (e.getData() && e.getData().length>0) {
-        const orgModel = e.getData()[0];
-        this.__currentOrg = orgModel.getModel();
-
-        this.__reloadOrgMembers();
+      if (data && data.length>0) {
+        this.__currentOrg = data[0];
       } else {
         this.__currentOrg = null;
       }
+      this.__reloadOrgMembers();
     },
 
     __reloadOrgMembers: function() {
@@ -215,6 +213,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         return;
       }
 
+      osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Invitation sent to ") + orgMemberKey);
       const params = {
         url: {
           gid: this.__currentOrg.getKey()
@@ -223,7 +222,6 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           "uid": orgMemberKey
         }
       };
-      this.__requestAPIKeyBtn.setFetching(true);
       osparc.data.Resources.fetch("organizationMembers", "post", params)
         .then(resp => {
           console.log(resp);
