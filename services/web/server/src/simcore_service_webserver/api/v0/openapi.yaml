@@ -3764,7 +3764,7 @@ paths:
       operationId: get_group_users
       responses:
         '200':
-          description: got list of users
+          description: got list of users and their respective rights
           content:
             application/json:
               schema:
@@ -3775,6 +3775,7 @@ paths:
                   data:
                     type: array
                     items:
+                      type: object
                       allOf:
                         - type: object
                           properties:
@@ -3792,6 +3793,23 @@ paths:
                               format: email
                             gravatar_id:
                               type: string
+                        - description: defines acesss rights for the user
+                          type: object
+                          properties:
+                            read:
+                              type: boolean
+                            write:
+                              type: boolean
+                            delete:
+                              type: boolean
+                          required:
+                            - read
+                            - write
+                            - delete
+                          example:
+                            - read: true
+                              write: false
+                              delete: false
                   error:
                     nullable: true
                     default: null
@@ -3889,30 +3907,13 @@ paths:
         content:
           application/json:
             schema:
-              allOf:
-                - description: defines acesss rights for the user
-                  type: object
-                  properties:
-                    read:
-                      type: boolean
-                    write:
-                      type: boolean
-                    delete:
-                      type: boolean
-                  required:
-                    - read
-                    - write
-                    - delete
-                  example:
-                    - read: true
-                      write: false
-                      delete: false
-                - type: object
-                  required:
-                    - uid
-                  properties:
-                    uid:
-                      type: string
+              type: object
+              required:
+                - uid
+              properties:
+                uid:
+                  type: string
+                  description: the user id
       responses:
         '204':
           description: user successfully added
@@ -4022,49 +4023,49 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - type: object
-                    required:
-                      - data
-                    properties:
-                      data:
-                        allOf:
-                          - type: object
-                            properties:
-                              first_name:
-                                type: string
-                              last_name:
-                                type: string
-                            example:
-                              first_name: Pedro
-                              last_name: Crespo
-                          - type: object
-                            properties:
-                              login:
-                                type: string
-                                format: email
-                              gravatar_id:
-                                type: string
-                      error:
-                        nullable: true
-                        default: null
-                  - description: defines acesss rights for the user
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
                     type: object
-                    properties:
-                      read:
-                        type: boolean
-                      write:
-                        type: boolean
-                      delete:
-                        type: boolean
-                    required:
-                      - read
-                      - write
-                      - delete
-                    example:
-                      - read: true
-                        write: false
-                        delete: false
+                    allOf:
+                      - type: object
+                        properties:
+                          first_name:
+                            type: string
+                          last_name:
+                            type: string
+                        example:
+                          first_name: Pedro
+                          last_name: Crespo
+                      - type: object
+                        properties:
+                          login:
+                            type: string
+                            format: email
+                          gravatar_id:
+                            type: string
+                      - description: defines acesss rights for the user
+                        type: object
+                        properties:
+                          read:
+                            type: boolean
+                          write:
+                            type: boolean
+                          delete:
+                            type: boolean
+                        required:
+                          - read
+                          - write
+                          - delete
+                        example:
+                          - read: true
+                            write: false
+                            delete: false
+                  error:
+                    nullable: true
+                    default: null
         default:
           description: Default http error response body
           content:
@@ -4153,6 +4154,29 @@ paths:
         - user
       summary: Modify specific user in group
       operationId: update_group_user
+      requestBody:
+        required: true
+        description: the user rights to modify
+        content:
+          application/json:
+            schema:
+              description: defines acesss rights for the user
+              type: object
+              properties:
+                read:
+                  type: boolean
+                write:
+                  type: boolean
+                delete:
+                  type: boolean
+              required:
+                - read
+                - write
+                - delete
+              example:
+                - read: true
+                  write: false
+                  delete: false
       responses:
         '200':
           description: modified user
@@ -4164,6 +4188,7 @@ paths:
                   - data
                 properties:
                   data:
+                    type: object
                     allOf:
                       - type: object
                         properties:
@@ -4181,6 +4206,23 @@ paths:
                             format: email
                           gravatar_id:
                             type: string
+                      - description: defines acesss rights for the user
+                        type: object
+                        properties:
+                          read:
+                            type: boolean
+                          write:
+                            type: boolean
+                          delete:
+                            type: boolean
+                        required:
+                          - read
+                          - write
+                          - delete
+                        example:
+                          - read: true
+                            write: false
+                            delete: false
                   error:
                     nullable: true
                     default: null

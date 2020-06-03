@@ -27,16 +27,7 @@ ProfileOutput:
         role:
           type: string
         groups:
-          type: object
-          properties:
-            me:
-              $ref: "#/UsersGroup"
-            organizations:
-              type: array
-              items:
-                $ref: "#/UsersGroup"
-            all:
-              $ref: "#/UsersGroup"
+          $ref: "#/AllUsersGroups"
         gravatar_id:
           type: string
   example:
@@ -57,38 +48,7 @@ ProfileEnveloped:
       nullable: true
       default: null
 
-UsersGroupsEnveloped:
-  type: object
-  required:
-    - data
-  properties:
-    data:
-      type: object
-      properties:
-        me:
-          $ref: "#/UsersGroup"
-        organizations:
-          type: array
-          items:
-            $ref: "#/UsersGroup"
-        all:
-          $ref: "#/UsersGroup"
-    error:
-      nullable: true
-      default: null
-
-UsersGroupEnveloped:
-  type: object
-  required:
-    - data
-  properties:
-    data:
-      $ref: "#/UsersGroup"
-    error:
-      nullable: true
-      default: null
-
-GroupAccessRights:
+AccessRights:
   description: defines acesss rights for the user
   type: object
   properties:
@@ -124,8 +84,7 @@ UsersGroup:
       type: string
       format: uri
     access_rights:
-      $ref: "#/GroupAccessRights"
-
+      $ref: "#/AccessRights"
   required:
     - gid
     - label
@@ -145,7 +104,54 @@ UsersGroup:
       description: "Open to all users"
       thumbnail: https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png
 
-UsersArrayEnveloped:
+UsersGroupEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: "#/UsersGroup"
+    error:
+      nullable: true
+      default: null
+
+AllUsersGroups:
+  type: object
+  properties:
+    me:
+      $ref: "#/UsersGroup"
+    organizations:
+      type: array
+      items:
+        $ref: "#/UsersGroup"
+    all:
+      $ref: "#/UsersGroup"
+
+AllUsersGroupsEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: "#/AllUsersGroups"
+    error:
+      nullable: true
+      default: null
+
+GroupUser:
+  type: object
+  allOf:
+    - $ref: "#/ProfileCommon"
+    - type: object
+      properties:
+        login:
+          type: string
+          format: email
+        gravatar_id:
+          type: string
+    - $ref: "#/AccessRights"
+
+GroupUsersArrayEnveloped:
   type: object
   required:
     - data
@@ -153,15 +159,7 @@ UsersArrayEnveloped:
     data:
       type: array
       items:
-        allOf:
-          - $ref: "#/ProfileCommon"
-          - type: object
-            properties:
-              login:
-                type: string
-                format: email
-              gravatar_id:
-                type: string
+        $ref: "#/GroupUser"
     error:
       nullable: true
       default: null
@@ -172,15 +170,7 @@ UserEnveloped:
     - data
   properties:
     data:
-      allOf:
-        - $ref: "#/ProfileCommon"
-        - type: object
-          properties:
-            login:
-              type: string
-              format: email
-            gravatar_id:
-              type: string
+      $ref: "#/GroupUser"
     error:
       nullable: true
       default: null
