@@ -627,18 +627,18 @@ async def test_share_project_with_everyone(
 
     if not error:
         assert_replaced(current_project=data, update_data=project_update)
-
+        project_update.update(data)
     # get another user logged in now
     user_2 = await log_client_in(
         client, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
     )
-    url = client.app.router["get_project"].url_for(project_id=user_project["uuid"])
+    url = client.app.router["get_project"].url_for(project_id=project_update["uuid"])
 
     resp = await client.get(url)
     data, error = await assert_status(resp, expected)
 
     if not error:
-        assert data == user_project
+        assert data == project_update
 
 
 # PUT --------
