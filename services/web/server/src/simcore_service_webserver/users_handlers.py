@@ -2,22 +2,15 @@
 
 import json
 import logging
-from typing import Dict, List
 
 import sqlalchemy as sa
-import sqlalchemy.sql as sql
 from aiohttp import web
-from aiopg.sa import Engine
-from aiopg.sa.result import RowProxy
-from tenacity import retry
 
-from servicelib.aiopg_utils import PostgresRetryPolicyUponOperation
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
 from . import users_api
-from .db_models import GroupType, groups, tokens, user_to_groups, users
+from .db_models import users
 from .login.decorators import RQT_USERID_KEY, login_required
-from .security_api import check_permission
 from .security_decorators import permission_required
 from .users_exceptions import (
     GroupNotFoundError,
@@ -25,7 +18,6 @@ from .users_exceptions import (
     UserInGroupNotFoundError,
     UserNotFoundError,
 )
-from .utils import gravatar_hash
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +90,7 @@ async def create_group(request: web.Request):
             text=json.dumps({"data": new_group}), content_type="application/json"
         )
     except UserNotFoundError:
-        raise web.HTTPNotFound(reason=f"User not found")
+        raise web.HTTPNotFound(reason=f"User {user_id} not found")
 
 
 @login_required
