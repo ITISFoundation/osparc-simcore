@@ -48,7 +48,10 @@ qx.Class.define("osparc.dashboard.OrgMemberListItem", {
             maxHeight: iconSize
           });
           control.addListener("execute", () => {
-            this.fireDataEvent("removeOrgMember", this.getKey());
+            this.fireDataEvent("removeOrgMember", {
+              key: this.getKey(),
+              name: this.getTitle()
+            });
           });
           this._add(control, {
             row: 0,

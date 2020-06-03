@@ -159,8 +159,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
               "border-radius": "16px"
             });
           item.addListener("removeOrgMember", e => {
-            const orgMemberKey = e.getData();
-            this.__deleteUser(orgMemberKey);
+            const orgMember = e.getData();
+            this.__deleteUser(orgMember);
           });
         }
       });
@@ -233,7 +233,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         });
     },
 
-    __deleteUser: function(orgMemberKey) {
+    __deleteUser: function(orgMember) {
       if (this.__currentOrg === null) {
         return;
       }
@@ -241,17 +241,17 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const params = {
         url: {
           "gid": this.__currentOrg.getKey(),
-          "uid": orgMemberKey
+          "uid": orgMember["key"]
         }
       };
       osparc.data.Resources.fetch("organizationMembers", "delete", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
+          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully removed"));
           osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong when removing"), "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + orgMember["name"], "ERROR");
           console.error(err);
         });
     }
