@@ -149,7 +149,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           ctrl.bindProperty("id", "key", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
-          ctrl.bindProperty("role", "subtitle", null, item, id);
+          ctrl.bindProperty("access_rights", "accessRights", null, item, id);
           ctrl.bindProperty("login", "contact", null, item, id);
           ctrl.bindProperty("showRemove", "showRemove", null, item, id);
         },

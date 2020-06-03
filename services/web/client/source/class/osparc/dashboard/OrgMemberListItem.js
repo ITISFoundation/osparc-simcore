@@ -23,6 +23,13 @@ qx.Class.define("osparc.dashboard.OrgMemberListItem", {
   },
 
   properties: {
+    accessRights: {
+      check: "Object",
+      apply: "_applyAccessRights",
+      event: "changeAccessRights",
+      nullable: true
+    },
+
     showRemove: {
       check: "Boolean",
       apply: "_applyShowRemove",
@@ -65,9 +72,23 @@ qx.Class.define("osparc.dashboard.OrgMemberListItem", {
       return control || this.base(arguments, id);
     },
 
+    _applyAccessRights: function(value) {
+      if (value === null) {
+        return;
+      }
+      const subtitle = this.getChildControl("subtitle");
+      if (value.getDelete()) {
+        subtitle.setValue("SuperManager");
+      } else if (value.getWrite()) {
+        subtitle.setValue("Manager");
+      } else {
+        subtitle.setValue("Member");
+      }
+    },
+
     _applyShowRemove: function(value) {
-      const label = this.getChildControl("remove");
-      label.setVisibility(value ? "visible" : "excluded");
+      const removeBtn = this.getChildControl("remove");
+      removeBtn.setVisibility(value ? "visible" : "excluded");
     }
   }
 });
