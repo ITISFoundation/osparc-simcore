@@ -37,7 +37,18 @@ class UserInGroupNotFoundError(UsersException):
         self.gid = gid
         self.uid = uid
 
+
 class UserInsufficientRightsError(UsersException):
     """User has not sufficient rights"""
+
     def __init__(self, msg):
         super(UserInsufficientRightsError, self).__init__(msg)
+
+
+class TokenNotFoundError(UsersException):
+    """Token was not found in DB"""
+
+    def __init__(self, service_id):
+        msg = "Token for service {} not found".format(service_id)
+        super(TokenNotFoundError, self).__init__(msg)
+        self.service_id = service_id

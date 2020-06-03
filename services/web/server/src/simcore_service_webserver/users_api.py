@@ -11,12 +11,12 @@ from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login.cfg import get_storage
 
-from .db_models import GroupType, groups, user_to_groups, users
+from .db_models import GroupType, groups, tokens, user_to_groups, users
 from .users_exceptions import (
     GroupNotFoundError,
     UserInGroupNotFoundError,
-    UserNotFoundError,
     UserInsufficientRightsError,
+    UserNotFoundError,
 )
 from .utils import gravatar_hash
 
@@ -32,9 +32,13 @@ GROUPS_SCHEMA_TO_DB = {
 }
 
 
-def _convert_groups_db_to_schema(db_row: RowProxy, **kwargs) -> Dict:
+def _convert_groups_db_to_schema(
+    db_row: RowProxy, *, prefix: Optional[str] = "", **kwargs
+) -> Dict:
     converted_dict = {
-        k: db_row[v] for k, v in GROUPS_SCHEMA_TO_DB.items() if v in db_row
+        k: db_row[f"{prefix}{v}"]
+        for k, v in GROUPS_SCHEMA_TO_DB.items()
+        if f"{prefix}{v}" in db_row
     }
     converted_dict.update(**kwargs)
     return converted_dict
@@ -48,14 +52,21 @@ def _convert_groups_schema_to_db(schema: Dict) -> Dict:
     }
 
 
-def _convert_user_in_group_to_schema(row: RowProxy) -> Dict[str, str]:
-    parts = row["name"].split(".") + [""]
+def _convert_user_db_to_schema(
+    row: RowProxy, prefix: Optional[str] = ""
+) -> Dict[str, str]:
+    parts = row[f"{prefix}name"].split(".") + [""]
     return {
+        "login": row[f"{prefix}email"],
         "first_name": parts[0],
         "last_name": parts[1],
-        "login": row["email"],
-        "gravatar_id": gravatar_hash(row["email"]),
+        "role": row[f"{prefix}role"].name.capitalize(),
+        "gravatar_id": gravatar_hash(row[f"{prefix}email"]),
     }
+
+
+def _convert_user_in_group_to_schema(row: RowProxy) -> Dict[str, str]:
+    return _convert_user_db_to_schema(row).pop("role")
 
 
 def _check_group_permissions(
@@ -65,6 +76,57 @@ def _check_group_permissions(
         raise UserInsufficientRightsError(
             f"User {user_id} has insufficient rights for {permission} access to group {gid}"
         )
+
+
+async def get_user_profile(app: web.Application, user_id: int) -> Dict:
+    engine = app[APP_DB_ENGINE_KEY]
+    user_profile = {}
+    user_primary_group = all_group = {}
+    user_standard_groups = []
+    async with engine.acquire() as conn:
+        async for row in conn.execute(
+            sa.select(
+                [users, groups, user_to_groups.c.access_rights,], use_labels=True,
+            )
+            .select_from(
+                users.join(
+                    user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
+                    users.c.id == user_to_groups.c.uid,
+                )
+            )
+            .where(users.c.id == user_id)
+            .order_by(sa.asc(groups.c.name))
+        ):
+            user_profile.update(_convert_user_db_to_schema(row, prefix="users_"))
+            if row["groups_type"] == GroupType.EVERYONE:
+                all_group = _convert_groups_db_to_schema(
+                    row,
+                    prefix="groups_",
+                    access_rights=row["user_to_groups_access_rights"],
+                )
+            elif row["groups_type"] == GroupType.PRIMARY:
+                user_primary_group = _convert_groups_db_to_schema(
+                    row,
+                    prefix="groups_",
+                    access_rights=row["user_to_groups_access_rights"],
+                )
+            else:
+                user_standard_groups.append(
+                    _convert_groups_db_to_schema(
+                        row,
+                        prefix="groups_",
+                        access_rights=row["user_to_groups_access_rights"],
+                    )
+                )
+    if not user_profile:
+        raise UserNotFoundError(user_id)
+
+    user_profile["groups"] = {
+        "me": user_primary_group,
+        "organizations": user_standard_groups,
+        "all": all_group,
+    }
+    return user_profile
 
 
 async def list_user_groups(
@@ -240,7 +302,7 @@ async def add_user_in_group(
 
 
 async def _get_user_in_group_permissions(
-    conn: SAConnection, user_id: str, gid: str, the_user_id_in_group: str
+    conn: SAConnection, gid: str, the_user_id_in_group: str
 ) -> RowProxy:
 
     # now get the user
@@ -266,7 +328,7 @@ async def get_user_in_group(
         _check_group_permissions(group, user_id, gid, "read")
         # get the user with its permissions
         the_user: RowProxy = await _get_user_in_group_permissions(
-            conn, user_id, gid, the_user_id_in_group
+            conn, gid, the_user_id_in_group
         )
         return _convert_user_in_group_to_schema(the_user)
 
@@ -286,7 +348,7 @@ async def update_user_in_group(
         _check_group_permissions(group, user_id, gid, "write")
         # now check the user exists
         the_user: RowProxy = await _get_user_in_group_permissions(
-            conn, user_id, gid, the_user_id_in_group
+            conn, gid, the_user_id_in_group
         )
         # modify the user
         await conn.execute(
@@ -313,9 +375,7 @@ async def delete_user_in_group(
         group: RowProxy = await _get_user_group(conn, user_id, gid)
         _check_group_permissions(group, user_id, gid, "delete")
         # check the user exists
-        the_user: RowProxy = await _get_user_in_group_permissions(
-            conn, user_id, gid, the_user_id_in_group
-        )
+        await _get_user_in_group_permissions(conn, gid, the_user_id_in_group)
         # delete him/her
         await conn.execute(
             # pylint: disable=no-value-for-parameter
@@ -350,3 +410,85 @@ async def delete_user(app: web.Application, user_id: int) -> None:
         return
 
     await db.delete_user(user)
+
+
+# TOKEN -------------------------------------------
+async def create_token(
+    app: web.Application, user_id: int, token_data: Dict[str, str]
+) -> Dict[str, str]:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        await conn.execute(
+            # pylint: disable=no-value-for-parameter
+            tokens.insert().values(
+                user_id=user_id,
+                token_service=token_data["service"],
+                token_data=token_data,
+            )
+        )
+        return token_data
+
+
+async def list_tokens(app: web.Application, user_id: int) -> List[Dict[str, str]]:
+    engine = app[APP_DB_ENGINE_KEY]
+    user_tokens = []
+    async with engine.acquire() as conn:
+        async for row in conn.execute(
+            sa.select([tokens.c.token_data]).where(tokens.c.user_id == user_id)
+        ):
+            user_tokens.append(row["token_data"])
+        return user_tokens
+
+
+async def get_token(
+    app: web.Application, user_id: int, service_id: str
+) -> Dict[str, str]:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        result = await conn.execute(
+            sa.select([tokens.c.token_data]).where(
+                and_(tokens.c.user_id == user_id, tokens.c.token_service == service_id)
+            )
+        )
+        row: RowProxy = await result.first()
+        return row["token_data"]
+
+
+async def update_token(
+    app: web.Application, user_id: int, service_id: str, token_data: Dict[str, str]
+) -> Dict[str, str]:
+    engine = app[APP_DB_ENGINE_KEY]
+    # TODO: optimize to a single call?
+    async with engine.acquire() as conn:
+        result = await conn.execute(
+            sa.select([tokens.c.token_data, tokens.c.token_id]).where(
+                and_(tokens.c.user_id == user_id, tokens.c.token_service == service_id)
+            )
+        )
+        row = await result.first()
+
+        data = dict(row["token_data"])
+        tid = row["token_id"]
+        data.update(token_data)
+
+        resp = await conn.execute(
+            # pylint: disable=no-value-for-parameter
+            tokens.update()
+            .where(tokens.c.token_id == tid)
+            .values(token_data=data)
+            .returning(literal_column("*"))
+        )
+        assert resp.rowcount == 1  # nosec
+        updated_token: RowProxy = await resp.fetchone()
+        return updated_token["token_data"]
+
+
+async def delete_token(app: web.Application, user_id: int, service_id: str) -> None:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        await conn.execute(
+            # pylint: disable=no-value-for-parameter
+            tokens.delete().where(
+                and_(tokens.c.user_id == user_id, tokens.c.token_service == service_id)
+            )
+        )
