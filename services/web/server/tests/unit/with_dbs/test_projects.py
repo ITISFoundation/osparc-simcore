@@ -16,8 +16,12 @@ from mock import call
 from yarl import URL
 
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser
-from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
+from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
+from pytest_simcore.helpers.utils_projects import (
+    NewProject,
+    create_project,
+    delete_all_projects,
+)
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
@@ -111,6 +115,22 @@ def client(
 
 @pytest.fixture()
 async def logged_user(client, user_role: UserRole):
+    """ adds a user in db and logs in with client
+
+    NOTE: `user_role` fixture is defined as a parametrization below!!!
+    """
+    async with LoggedUser(
+        client,
+        {"role": user_role.name},
+        check_if_succeeds=user_role != UserRole.ANONYMOUS,
+    ) as user:
+        print("-----> logged in user", user_role)
+        yield user
+        print("<----- logged out user", user_role)
+
+
+@pytest.fixture()
+async def logged_user2(client, user_role: UserRole):
     """ adds a user in db and logs in with client
 
     NOTE: `user_role` fixture is defined as a parametrization below!!!
@@ -586,8 +606,9 @@ async def test_new_template_from_project(
 async def test_share_project_with_everyone(
     client,
     logged_user,
-    user_project,
     all_group: Dict[str, str],
+    user_project,
+    user_role,
     expected,
     computational_system_mock,
 ):
@@ -606,6 +627,18 @@ async def test_share_project_with_everyone(
 
     if not error:
         assert_replaced(current_project=data, update_data=project_update)
+
+    # get another user logged in now
+    user_2 = await log_client_in(
+        client, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
+    )
+    url = client.app.router["get_project"].url_for(project_id=user_project["uuid"])
+
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert data == user_project
 
 
 # PUT --------
