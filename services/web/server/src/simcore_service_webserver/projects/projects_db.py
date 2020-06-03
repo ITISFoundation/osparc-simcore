@@ -19,7 +19,8 @@ from aiopg.sa.result import ResultProxy, RowProxy
 
 from change_case import ChangeCase
 from psycopg2 import IntegrityError
-from sqlalchemy.sql import and_, select
+from sqlalchemy.sql import and_, select, or_
+from sqlalchemy import Boolean
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
@@ -207,19 +208,26 @@ class ProjectDBAPI:
 
     async def load_user_projects(self, user_id: str) -> List[Dict]:
         log.info("Loading projects for user %s", user_id)
-
-        query = (
-            select([projects])
-            .select_from(user_to_projects.join(projects))
-            .where(
-                and_(
-                    user_to_projects.c.user_id == user_id,
-                    projects.c.type != ProjectType.TEMPLATE,
-                )
-            )
-        )
-
         async with self.engine.acquire() as conn:
+            user_groups: List[str] = await self.__load_user_groups(conn, user_id)
+            query = f"""
+    SELECT *
+    FROM projects
+    WHERE projects.type != 'TEMPLATE'
+    AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group}'" for group in user_groups)}])
+    OR prj_owner = {user_id})
+    """
+            # query = (
+            #     select([projects])
+            #     .select_from(user_to_projects.join(projects))
+            #     .where(
+            #         and_(
+            #             user_to_projects.c.user_id == user_id,
+            #             projects.c.type != ProjectType.TEMPLATE,
+            #         )
+            #     )
+            # )
+
             projects_list = await self.__load_projects(conn, query)
 
         return projects_list
@@ -279,18 +287,35 @@ OR prj_owner = {user_id})
     ) -> Dict:
         exclude_foreign = exclude_foreign or []
         async with self.engine.acquire() as conn:
-            joint_table = user_to_projects.join(projects)
-            query = (
-                select([projects])
-                .select_from(joint_table)
-                .where(
-                    and_(
-                        projects.c.uuid == project_uuid,
-                        user_to_projects.c.user_id == user_id,
-                    )
-                )
-            )
+            # FIXME: this is not nice
+            # this retrieves the projects where user is owner
+            user_groups: List[str] = await self.__load_user_groups(conn, user_id)
+            # NOTE: in order to use specific postgresql function jsonb_exists_any we use raw call here
+            query = f"""
+SELECT *
+FROM projects
+WHERE projects.type != 'TEMPLATE'
+AND uuid = '{project_uuid}'
+AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group}'" for group in user_groups)}])
+OR prj_owner = {user_id})
+"""
             result = await conn.execute(query)
+            # result = await conn.execute(
+            #     select([projects])
+            #     .select_from(user_to_projects.join(projects))
+            #     .where(
+            #         or_(
+            #             and_(
+            #                 projects.c.uuid == project_uuid,
+            #                 user_to_projects.c.user_id == user_id,
+            #             ),
+            #             and_(
+            #                 projects.c.uuid == project_uuid,
+            #                 projects.c.access_rights["read"].cast(Boolean) == True,
+            #             ),
+            #         )
+            #     )
+            # )
             project_row = await result.first()
 
             if not project_row:
@@ -351,7 +376,7 @@ OR prj_owner = {user_id})
         project = await self._get_project(user_id, project_uuid)
         async with self.engine.acquire() as conn:
             # pylint: disable=no-value-for-parameter
-            user_email = await self._get_user_email(conn, user_id)
+            user_email = await self._get_user_email(conn, project["prj_owner"])
             return _convert_to_schema_names(project, user_email)
 
     async def get_template_project(
