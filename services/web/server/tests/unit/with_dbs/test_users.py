@@ -6,7 +6,7 @@
 import random
 from copy import deepcopy
 from itertools import repeat
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from unittest.mock import MagicMock
 
 import faker
@@ -30,10 +30,9 @@ from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.users import setup_users
-
 from simcore_service_webserver.users_api import (
-    DEFAULT_GROUP_READ_ACCESS_RIGHTS,
     DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
+    DEFAULT_GROUP_READ_ACCESS_RIGHTS,
 )
 
 ## BUG FIXES #######################################################
@@ -348,6 +347,84 @@ def _assert__group_user(
     ],
 )
 async def test_list_groups(
+    client,
+    logged_user,
+    role,
+    expected,
+    primary_group: Dict[str, str],
+    standard_groups: List[Dict[str, str]],
+    all_group: Dict[str, str],
+):
+    url = client.app.router["list_groups"].url_for()
+    assert str(url) == "/v0/me/groups"
+
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert isinstance(data, dict)
+        assert "me" in data
+        _assert_group(data["me"])
+        assert data["me"] == primary_group
+
+        assert "organizations" in data
+        assert isinstance(data["organizations"], list)
+        for group in data["organizations"]:
+            _assert_group(group)
+        assert data["organizations"] == standard_groups
+        assert "all" in data
+        _assert_group(data["all"])
+        assert data["all"] == all_group
+
+
+def _standard_role_response() -> Tuple[
+    str, List[Tuple[UserRole, web.Response, web.Response, web.Response]]
+]:
+    return (
+        "role,expected_ok, expected_created, expected_no_contents, expected_not_found",
+        [
+            (
+                UserRole.ANONYMOUS,
+                web.HTTPUnauthorized,
+                web.HTTPUnauthorized,
+                web.HTTPUnauthorized,
+                web.HTTPUnauthorized,
+            ),
+            (
+                UserRole.GUEST,
+                web.HTTPForbidden,
+                web.HTTPForbidden,
+                web.HTTPForbidden,
+                web.HTTPForbidden,
+            ),
+            (
+                UserRole.USER,
+                web.HTTPOk,
+                web.HTTPCreated,
+                web.HTTPNoContent,
+                web.HTTPNotFound,
+            ),
+            (
+                UserRole.TESTER,
+                web.HTTPOk,
+                web.HTTPCreated,
+                web.HTTPNoContent,
+                web.HTTPNotFound,
+            ),
+        ],
+    )
+
+
+@pytest.mark.parametrize(
+    "role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_group_access_rights(
     client,
     logged_user,
     role,
