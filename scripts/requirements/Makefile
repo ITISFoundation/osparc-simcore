@@ -9,7 +9,8 @@
 #   make packages upgrade=name-of-package
 #
 #
-# WARNING: USE CAREFULLY. STILL UNDER DEVELOPMENT
+# WARNING: this batch MUST ONLY be used for non-services. Services are INDEPENDENT
+#          and to upgrade them, use services/{servicesname}/requirements/Makefile
 #
 .DEFAULT_GOAL := help
 
