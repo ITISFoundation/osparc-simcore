@@ -309,13 +309,24 @@ async def test_delete_token(
         assert not (await get_token_from_db(tokens_db, token_service=sid))
 
 
-def _assert_group(group: Dict[str,str]):
+def _assert_group(group: Dict[str, str]):
     properties = ["gid", "label", "description", "thumbnail", "access_rights"]
     assert all(x in group for x in properties)
     access_rights = group["access_rights"]
     access_rights_properties = ["read", "write", "delete"]
     assert all(x in access_rights for x in access_rights_properties)
 
+
+def _assert__group_user(expected_user: Dict, actual_user: Dict):
+    assert "first_name" in actual_user
+    parts = expected_user["name"].split(".") + [""]
+    assert actual_user["first_name"] == parts[0]
+    assert "last_name" in actual_user
+    assert actual_user["last_name"] == parts[1]
+    assert "login" in actual_user
+    assert actual_user["login"] == expected_user["email"]
+    assert "gravatar_id" in actual_user
+    assert actual_user["gravatar_id"] == gravatar_hash(expected_user["email"])
 
 
 @pytest.mark.parametrize(
@@ -407,7 +418,7 @@ async def test_group_creation_workflow(
         "gid": "some uuid that will be replaced",
         "label": "Black Sabbath",
         "description": "The founders of Rock'N'Roll",
-        "thumbnail": "https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcS3pAUISv_wtYDL9Ih4JtUfAWyHj9PkYMlEBGHJsJB9QlTZuuaK%26s&sp=1591105967T00f0b7ff95c7b3bca035102fa1ead205ab29eb6cd95acedcedf6320e64634f0c"
+        "thumbnail": "https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcS3pAUISv_wtYDL9Ih4JtUfAWyHj9PkYMlEBGHJsJB9QlTZuuaK%26s&sp=1591105967T00f0b7ff95c7b3bca035102fa1ead205ab29eb6cd95acedcedf6320e64634f0c",
     }
 
     resp = await client.post(url, json=new_group)
@@ -418,12 +429,16 @@ async def test_group_creation_workflow(
         assert isinstance(data, dict)
         assigned_group = data
         _assert_group(assigned_group)
-         # we get a new gid and the rest keeps the same
+        # we get a new gid and the rest keeps the same
         assert assigned_group["gid"] != new_group["gid"]
         for prop in ["label", "description", "thumbnail"]:
             assert assigned_group[prop] == new_group[prop]
         # we get all rights on the group since we are the creator
-        assert assigned_group["access_rights"] == {"read": True, "write": True, "delete": True}
+        assert assigned_group["access_rights"] == {
+            "read": True,
+            "write": True,
+            "delete": True,
+        }
 
     # get the groups and check we are part of this new group
     url = client.app.router["list_groups"].url_for()
@@ -511,7 +526,7 @@ async def test_group_creation_workflow(
         ),
     ],
 )
-async def test_list_users_from_group(
+async def test_add_remove_users_from_group(
     client,
     logged_user,
     role,
@@ -525,7 +540,7 @@ async def test_list_users_from_group(
         "gid": "5",
         "label": "team awesom",
         "description": "awesomeness is just the summary",
-        "thumbnail": "https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcSQMopBeN0pq2gg6iIZuLGYniFxUdzi7a2LeT1Xg0Lz84bl36Nlqw%26s&sp=1591110539Tbbb022a272bc117e58cca2f2399e83e6b5d4a2d0a7c283330057d7718ae305bd"
+        "thumbnail": "https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcSQMopBeN0pq2gg6iIZuLGYniFxUdzi7a2LeT1Xg0Lz84bl36Nlqw%26s&sp=1591110539Tbbb022a272bc117e58cca2f2399e83e6b5d4a2d0a7c283330057d7718ae305bd",
     }
 
     # check that our group does not exist
@@ -549,7 +564,11 @@ async def test_list_users_from_group(
         for prop in ["label", "description", "thumbnail"]:
             assert assigned_group[prop] == new_group[prop]
         # we get all rights on the group since we are the creator
-        assert assigned_group["access_rights"] == {"read": True, "write": True, "delete": True}
+        assert assigned_group["access_rights"] == {
+            "read": True,
+            "write": True,
+            "delete": True,
+        }
 
     # check that our user is in the group of users
     get_group_users_url = client.app.router["get_group_users"].url_for(
@@ -558,22 +577,11 @@ async def test_list_users_from_group(
     resp = await client.get(get_group_users_url)
     data, error = await assert_status(resp, expected)
 
-    def _assert_user(expected_user: Dict, actual_user: Dict):
-        assert "first_name" in actual_user
-        parts = expected_user["name"].split(".") + [""]
-        assert actual_user["first_name"] == parts[0]
-        assert "last_name" in actual_user
-        assert actual_user["last_name"] == parts[1]
-        assert "login" in actual_user
-        assert actual_user["login"] == expected_user["email"]
-        assert "gravatar_id" in actual_user
-        assert actual_user["gravatar_id"] == gravatar_hash(expected_user["email"])
-
     if not error:
         list_of_users = data
         assert len(list_of_users) == 1
         the_owner = list_of_users[0]
-        _assert_user(logged_user, the_owner)
+        _assert__group_user(logged_user, the_owner)
 
     # create a random number of users and put them in the group
     add_group_user_url = client.app.router["add_group_user"].url_for(
@@ -595,7 +603,7 @@ async def test_list_users_from_group(
         resp = await client.get(get_group_user_url)
         data, error = await assert_status(resp, expected)
         if not error:
-            _assert_user(created_users_list[i], data)
+            _assert__group_user(created_users_list[i], data)
     # check list is correct
     resp = await client.get(get_group_users_url)
     data, error = await assert_status(resp, expected)
@@ -612,7 +620,7 @@ async def test_list_users_from_group(
                 )
             )
             assert len(expected_users_list) == 1
-            _assert_user(expected_users_list[0], actual_user)
+            _assert__group_user(expected_users_list[0], actual_user)
             all_created_users.remove(expected_users_list[0])
 
     # modify the user and remove them from the group
@@ -623,7 +631,7 @@ async def test_list_users_from_group(
         resp = await client.patch(update_group_user_url, json={})
         data, error = await assert_status(resp, expected)
         if not error:
-            _assert_user(created_users_list[i], data)
+            _assert__group_user(created_users_list[i], data)
         # check it is there
         get_group_user_url = client.app.router["get_group_user"].url_for(
             gid=str(assigned_group["gid"]), uid=str(created_users_list[i]["id"])
@@ -631,7 +639,7 @@ async def test_list_users_from_group(
         resp = await client.get(get_group_user_url)
         data, error = await assert_status(resp, expected)
         if not error:
-            _assert_user(created_users_list[i], data)
+            _assert__group_user(created_users_list[i], data)
         # remove the user from the group
         delete_group_user_url = client.app.router["delete_group_user"].url_for(
             gid=str(assigned_group["gid"]), uid=str(created_users_list[i]["id"])

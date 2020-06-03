@@ -49,7 +49,7 @@ async def get_my_profile(request: web.Request):
                         groups.c.description,
                         groups.c.type,
                         groups.c.thumbnail,
-                        groups.c.accessRights,
+                        user_to_groups.c.access_rights,
                     ],
                     use_labels=True,
                 )
@@ -99,7 +99,7 @@ async def get_my_profile(request: web.Request):
                 "label": user_primary_group["groups_name"],
                 "description": user_primary_group["groups_description"],
                 "thumbnail": user_primary_group["groups_thumbnail"],
-                "accessRights": user_primary_group["groups_access_rights"],
+                "access_rights": user_primary_group["user_to_groups_access_rights"],
             },
             "organizations": [
                 {
@@ -107,7 +107,7 @@ async def get_my_profile(request: web.Request):
                     "label": group["groups_name"],
                     "description": group["groups_description"],
                     "thumbnail": group["groups_thumbnail"],
-                    "accessRights": group["groups_access_rights"],
+                    "access_rights": group["user_to_groups_access_rights"],
                 }
                 for group in other_groups
             ],
@@ -116,7 +116,7 @@ async def get_my_profile(request: web.Request):
                 "label": all_group["groups_name"],
                 "description": all_group["groups_description"],
                 "thumbnail": all_group["groups_thumbnail"],
-                "accessRights": all_group["groups_access_rights"],
+                "access_rights": all_group["user_to_groups_access_rights"],
             },
         },
     }

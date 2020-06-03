@@ -130,7 +130,7 @@ UsersGroup:
     - gid
     - label
     - description
-    - accessRights
+    - access_rights
   example:
     - gid: "27"
       label: "A user"

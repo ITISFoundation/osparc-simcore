@@ -57,9 +57,15 @@ def _convert_user_in_group_to_schema(row: RowProxy) -> Dict[str, str]:
         "gravatar_id": gravatar_hash(row["email"]),
     }
 
-def _check_group_permissions(group: RowProxy, user_id: str, gid: str, permission: str) -> None:
+
+def _check_group_permissions(
+    group: RowProxy, user_id: str, gid: str, permission: str
+) -> None:
     if not group.access_rights[permission]:
-        raise UserInsufficientRightsError(f"User {user_id} has insufficient rights for {permission} access to group {gid}")
+        raise UserInsufficientRightsError(
+            f"User {user_id} has insufficient rights for {permission} access to group {gid}"
+        )
+
 
 async def list_user_groups(
     app: web.Application, user_id: str
@@ -163,7 +169,9 @@ async def update_user_group(
             .returning(literal_column("*"))
         )
         updated_group = await result.fetchone()
-        return _convert_groups_db_to_schema(updated_group, access_rights=group.access_rights)
+        return _convert_groups_db_to_schema(
+            updated_group, access_rights=group.access_rights
+        )
 
 
 async def delete_user_group(app: web.Application, user_id: str, gid: str) -> None:
@@ -171,7 +179,7 @@ async def delete_user_group(app: web.Application, user_id: str, gid: str) -> Non
     async with engine.acquire() as conn:
         group = await _get_user_group(conn, user_id, gid)
         _check_group_permissions(group, user_id, gid, "delete")
-        
+
         await conn.execute(
             # pylint: disable=no-value-for-parameter
             groups.delete().where(groups.c.gid == group.gid)
@@ -200,7 +208,11 @@ async def list_users_in_group(
 
 
 async def add_user_in_group(
-    app: web.Application, user_id: str, gid: str, new_user_id: str, access_rights: Optional[Dict[str,bool]]
+    app: web.Application,
+    user_id: str,
+    gid: str,
+    new_user_id: str,
+    access_rights: Optional[Dict[str, bool]] = None,
 ) -> None:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
@@ -215,22 +227,22 @@ async def add_user_in_group(
         if not users_count:
             raise UserInGroupNotFoundError(new_user_id, gid)
         # add the new user to the group now
-        DEFAULT_ACCESS_RIGHTS = {"read":True, "write": False, "delete": False}
+        DEFAULT_ACCESS_RIGHTS = {"read": True, "write": False, "delete": False}
         user_access_rights = DEFAULT_ACCESS_RIGHTS
         if access_rights:
             user_access_rights.update(access_rights)
         await conn.execute(
             # pylint: disable=no-value-for-parameter
-            user_to_groups.insert().values(uid=new_user_id, gid=group.gid, access_rights=user_access_rights)
+            user_to_groups.insert().values(
+                uid=new_user_id, gid=group.gid, access_rights=user_access_rights
+            )
         )
 
 
-async def _get_user_in_group(
+async def _get_user_in_group_permissions(
     conn: SAConnection, user_id: str, gid: str, the_user_id_in_group: str
 ) -> RowProxy:
-    # first check if the group exists
-    group: RowProxy = await _get_user_group(conn, user_id, gid)
-    _check_group_permissions(group, user_id, gid, "read")
+
     # now get the user
     result = await conn.execute(
         sa.select([users, user_to_groups.c.access_rights])
@@ -249,7 +261,11 @@ async def get_user_in_group(
     engine = app[APP_DB_ENGINE_KEY]
 
     async with engine.acquire() as conn:
-        the_user: RowProxy = await _get_user_in_group(
+        # first check if the group exists
+        group: RowProxy = await _get_user_group(conn, user_id, gid)
+        _check_group_permissions(group, user_id, gid, "read")
+        # get the user with its permissions
+        the_user: RowProxy = await _get_user_in_group_permissions(
             conn, user_id, gid, the_user_id_in_group
         )
         return _convert_user_in_group_to_schema(the_user)
@@ -265,10 +281,14 @@ async def update_user_in_group(
     engine = app[APP_DB_ENGINE_KEY]
 
     async with engine.acquire() as conn:
-        the_user: RowProxy = await _get_user_in_group(
+        # first check if the group exists
+        group: RowProxy = await _get_user_group(conn, user_id, gid)
+        _check_group_permissions(group, user_id, gid, "write")
+        # now check the user exists
+        the_user: RowProxy = await _get_user_in_group_permissions(
             conn, user_id, gid, the_user_id_in_group
         )
-
+        # modify the user
         await conn.execute(
             # pylint: disable=no-value-for-parameter
             user_to_groups.update()
@@ -289,9 +309,14 @@ async def delete_user_in_group(
     engine = app[APP_DB_ENGINE_KEY]
 
     async with engine.acquire() as conn:
-        # check the user/group exists
-        await _get_user_in_group(conn, user_id, gid, the_user_id_in_group)
-        # delete it
+        # first check if the group exists
+        group: RowProxy = await _get_user_group(conn, user_id, gid)
+        _check_group_permissions(group, user_id, gid, "delete")
+        # check the user exists
+        the_user: RowProxy = await _get_user_in_group_permissions(
+            conn, user_id, gid, the_user_id_in_group
+        )
+        # delete him/her
         await conn.execute(
             # pylint: disable=no-value-for-parameter
             user_to_groups.delete().where(
