@@ -583,11 +583,7 @@ async def test_new_template_from_project(
 async def test_share_project(
     client, logged_user, user_project, expected,
 ):
-    # POST /v0/projects/{project_id}:share
-    url = client.app.router["share_project"].url_for(project_id=user_project["uuid"])
-
-    resp = await client.post(url)
-    data, error = await assert_status(resp, expected)
+    pass
 
 
 # PUT --------
