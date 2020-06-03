@@ -208,25 +208,28 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         });
     },
 
-    __addUser: function(orgMemberKey) {
+    __addUser: function(orgMemberEmail) {
       if (this.__currentOrg === null) {
         return;
       }
 
-      osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Invitation sent to ") + orgMemberKey);
       const params = {
         url: {
           "gid": this.__currentOrg.getKey()
         },
         data: {
-          "email": orgMemberKey
+          "email": orgMemberEmail
         }
       };
       osparc.data.Resources.fetch("organizationMembers", "post", params)
-        .then(resp => {
-          console.log(resp);
+        .then(() => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Invitation sent to ") + orgMemberEmail);
           osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong with the invitation"), "ERROR");
+          console.error(err);
         });
     },
 
@@ -242,10 +245,14 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         }
       };
       osparc.data.Resources.fetch("organizationMembers", "delete", params)
-        .then(resp => {
-          console.log(resp);
+        .then(() => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
           osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong when removing"), "ERROR");
+          console.error(err);
         });
     }
   }
