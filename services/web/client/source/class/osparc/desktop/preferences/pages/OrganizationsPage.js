@@ -181,9 +181,9 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const orgsModel = this.__orgsModel;
       orgsModel.removeAll();
 
-      const store = osparc.store.Store.getInstance();
-      store.getGroupsOrganizations()
-        .then(orgs => {
+      osparc.data.Resources.get("organizations")
+        .then(resp => {
+          const orgs = resp["organizations"];
           orgs.forEach(org => {
             // fake
             const rNumber = Math.floor((Math.random() * 99) + 1);

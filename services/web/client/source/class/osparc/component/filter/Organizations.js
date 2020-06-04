@@ -39,7 +39,8 @@ qx.Class.define("osparc.component.filter.Organizations", {
     __buildMenu: function() {
       const store = osparc.store.Store.getInstance();
       store.getGroupsOrganizations()
-        .then(orgs => {
+        .then(resp => {
+          const orgs = resp["organization"];
           orgs.sort((a, b) => (a["label"] > b["label"]) ? 1 : -1);
           orgs.forEach(org => {
             const bnt = this._addOption(osparc.utils.Utils.capitalize(org["label"]));
