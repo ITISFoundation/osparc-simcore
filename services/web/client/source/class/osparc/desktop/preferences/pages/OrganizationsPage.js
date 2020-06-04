@@ -105,7 +105,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
 
       const userEmail = new qx.ui.form.TextField().set({
         required: true,
-        placeholder: this.tr("Member's email")
+        placeholder: this.tr("New Member's email")
       });
       hBox.add(userEmail, {
         flex: 1
