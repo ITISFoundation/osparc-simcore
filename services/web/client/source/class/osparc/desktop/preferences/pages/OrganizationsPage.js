@@ -33,16 +33,23 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
     this.add(this.__createMembersSection(), {
       flex: 1
     });
+
+    this.__reloadOrganizations();
   },
 
   members: {
     __currentOrg: null,
+    __orgsModel: null,
     __memberInvitation: null,
     __membersModel: null,
 
     __createOrganizations: function() {
       const box = this._createSectionBox(this.tr("Organizations"));
+      box.add(this.__createOrganizationsList());
+      return box;
+    },
 
+    __createOrganizationsList: function() {
       const orgsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
@@ -52,9 +59,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       orgsUIList.addListener("changeSelection", e => {
         this.__organizationSelected(e.getData());
       }, this);
-      box.add(orgsUIList);
 
-      const orgsModel = new qx.data.Array();
+      const orgsModel = this.__orgsModel = new qx.data.Array();
       const orgsCtrl = new qx.data.controller.List(orgsModel, orgsUIList, "label");
       orgsCtrl.setDelegate({
         createItem: () => new osparc.dashboard.OrganizationListItem(),
@@ -72,25 +78,14 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             .setStyles({
               "border-radius": "16px"
             });
+
+          item.addListener("openEditOrganization", e => {
+            this.__openEditOrganization(e.getData());
+          });
         }
       });
 
-      const store = osparc.store.Store.getInstance();
-      store.getGroupsOrganizations()
-        .then(orgs => {
-          orgsModel.removeAll();
-          orgs.forEach(org => {
-            // fake
-            const rNumber = Math.floor((Math.random() * 99) + 1);
-            org["nMembers"] = rNumber + " members";
-            if (org["thumbnail"] === null) {
-              org["thumbnail"] = "https://raw.githubusercontent.com/Radhikadua123/superhero/master/CAX_Superhero_Test/superhero_test_" + rNumber + ".jpg";
-            }
-            orgsModel.append(qx.data.marshal.Json.createModel(org));
-          });
-        });
-
-      return box;
+      return orgsUIList;
     },
 
     __createMembersSection: function() {
@@ -182,6 +177,25 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       this.__reloadOrgMembers();
     },
 
+    __reloadOrganizations: function() {
+      const orgsModel = this.__orgsModel;
+      orgsModel.removeAll();
+
+      const store = osparc.store.Store.getInstance();
+      store.getGroupsOrganizations()
+        .then(orgs => {
+          orgs.forEach(org => {
+            // fake
+            const rNumber = Math.floor((Math.random() * 99) + 1);
+            org["nMembers"] = rNumber + " members";
+            if (org["thumbnail"] === null) {
+              org["thumbnail"] = "https://raw.githubusercontent.com/Radhikadua123/superhero/master/CAX_Superhero_Test/superhero_test_" + rNumber + ".jpg";
+            }
+            orgsModel.append(qx.data.marshal.Json.createModel(org));
+          });
+        });
+    },
+
     __reloadOrgMembers: function() {
       const membersModel = this.__membersModel;
       membersModel.removeAll();
@@ -209,6 +223,104 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             member["showOptions"] = canWrite;
             membersModel.append(qx.data.marshal.Json.createModel(member));
           });
+        });
+    },
+
+    __openEditOrganization: function(orgKey) {
+      let org = null;
+      this.__orgsModel.forEach(orgModel => {
+        if (orgModel.getGid() === parseInt(orgKey)) {
+          org = orgModel;
+        }
+      });
+      if (org === null) {
+        return;
+      }
+
+      const window = new qx.ui.window.Window(this.tr("Organization Details Editor")).set({
+        autoDestroy: true,
+        layout: new qx.ui.layout.VBox(),
+        appearance: "service-window",
+        showMinimize: false,
+        showMaximize: false,
+        resizable: true,
+        contentPadding: 10,
+        width: 400,
+        height: 400,
+        modal: true
+      });
+
+      const editView = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
+
+      const name = new qx.ui.form.TextField(org.getLabel()).set({
+        font: "title-18",
+        height: 35
+      });
+
+      const description = new qx.ui.form.TextArea(org.getDescription()).set({
+        autoSize: true,
+        minHeight: 100,
+        maxHeight: 500
+      });
+
+      const thumbnail = new qx.ui.form.TextField(org.getThumbnail());
+
+      editView.add(new qx.ui.basic.Label(this.tr("Title")).set({
+        font: "text-14",
+        marginTop: 20
+      }));
+      editView.add(name);
+      editView.add(new qx.ui.basic.Label(this.tr("Description")).set({
+        font: "text-14"
+      }));
+      editView.add(description);
+      editView.add(new qx.ui.basic.Label(this.tr("Thumbnail")).set({
+        font: "text-14"
+      }));
+      editView.add(thumbnail);
+
+
+      const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
+        alignX: "right"
+      }));
+      editView.add(buttons);
+
+      const saveButton = new qx.ui.form.Button(this.tr("Save"));
+      saveButton.addListener("execute", e => {
+        this.__editOrganization(window, orgKey, name.getValue(), description.getValue(), thumbnail.getValue());
+      }, this);
+      buttons.add(saveButton);
+
+      const cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
+      cancelButton.addListener("execute", () => window.close(), this);
+      buttons.add(cancelButton);
+
+      window.add(editView);
+      window.center();
+      window.open();
+    },
+
+    __editOrganization: function(window, orgKey, name, description, thumbnail) {
+      const params = {
+        url: {
+          "gid": orgKey
+        },
+        data: {
+          "label": name,
+          "description": description,
+          "thumbnail": thumbnail || null
+        }
+      };
+      osparc.data.Resources.fetch("organizations", "patch", params)
+        .then(() => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
+          window.close();
+          osparc.store.Store.getInstance().reset("organizations");
+          this.__reloadOrganizations();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
+          console.error(err);
         });
     },
 
