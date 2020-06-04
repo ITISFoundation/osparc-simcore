@@ -191,11 +191,11 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         })
       };
 
-      const modeButton = new qx.ui.form.Button("Save", "@FontAwesome5Solid/save/16").set({
+      const saveButton = new qx.ui.form.Button(this.tr("Save"), "@FontAwesome5Solid/save/16").set({
         appearance: "lg-button"
       });
-      osparc.utils.Utils.setIdToWidget(modeButton, "studyDetailsEditorSaveBtn");
-      modeButton.addListener("execute", e => {
+      osparc.utils.Utils.setIdToWidget(saveButton, "studyDetailsEditorSaveBtn");
+      saveButton.addListener("execute", e => {
         const btn = e.getTarget();
         btn.setIcon("@FontAwesome5Solid/circle-notch/16");
         btn.getChildControl("icon").getContentElement()
@@ -235,7 +235,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         editView.add(this.__tagsSection());
       }
 
-      buttons.add(modeButton);
+      buttons.add(saveButton);
       buttons.add(cancelButton);
       editView.add(buttons);
 
