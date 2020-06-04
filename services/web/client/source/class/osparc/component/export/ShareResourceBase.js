@@ -39,7 +39,7 @@ qx.Class.define("osparc.component.export.ShareResourceBase", {
         appearance: "service-window",
         layout: new qx.ui.layout.Grow(),
         autoDestroy: true,
-        contentPadding: 0,
+        contentPadding: 10,
         width: 400,
         height: 300,
         showMaximize: false,
