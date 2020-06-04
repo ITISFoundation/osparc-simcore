@@ -10,6 +10,7 @@ import logging
 
 
 class BootModeEnum(str, Enum):
+    debug = "debug-ptvsd"
     production = "production"
     development = "development"
 

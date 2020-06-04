@@ -27,3 +27,4 @@ codecov
 # scripts/templates
 change_case
 jinja2
+ptvsd
