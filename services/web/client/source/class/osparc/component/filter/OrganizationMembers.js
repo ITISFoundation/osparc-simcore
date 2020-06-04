@@ -58,7 +58,7 @@ qx.Class.define("osparc.component.filter.OrganizationMembers", {
         });
     },
 
-    getSelectedOrganizationMemberIDs: function() {
+    getSelectedOrgMemberIDs: function() {
       const selectedOrganizationMemberIDs = [];
       const activeMenuButtons = this._getActiveMenuButtons();
       activeMenuButtons.forEach(activeMenuButton => {
