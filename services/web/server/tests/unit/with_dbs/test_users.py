@@ -456,6 +456,31 @@ async def test_group_access_rights(
         _assert_group(data["all"])
         assert data["all"] == all_group
 
+        for group in standard_groups:
+            # try to delete a group
+            url = client.app.router["delete_group"].url_for(gid=str(group["gid"]))
+            resp = await client.delete(url)
+            data, error = await assert_status(resp, web.HTTPForbidden)
+            # try to add some user in the group
+            url = client.app.router["add_group_user"].url_for(gid=str(group["gid"]))
+            resp = await client.post(url, json={"uid": logged_user["id"]})
+            data, error = await assert_status(resp, web.HTTPForbidden)
+            # try to modify the user in the group
+            url = client.app.router["update_group_user"].url_for(
+                gid=str(group["gid"]), uid=str(logged_user["id"])
+            )
+            resp = await client.patch(
+                url,
+                json={"access_rights": {"read": True, "write": True, "delete": True}},
+            )
+            data, error = await assert_status(resp, web.HTTPForbidden)
+            # try to remove the user from the group
+            url = client.app.router["delete_group_user"].url_for(
+                gid=str(group["gid"]), uid=str(logged_user["id"])
+            )
+            resp = await client.delete(url)
+            data, error = await assert_status(resp, web.HTTPForbidden)
+
 
 @pytest.mark.parametrize(
     "role,expected,expected_read,expected_delete,expected_not_found",

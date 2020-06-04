@@ -46,7 +46,33 @@
     },
     "accessRights": {
       "type": "object",
-      "description": "object containing the GroupID as key and read/write/execution permissions as value"
+      "description": "object containing the GroupID as key and read/write/execution permissions as value",
+      "patternProperties": {
+        "^\\d+$": {
+          "type": "object",
+          "description": "the group id",
+          "additionalProperties": false,
+          "required": [
+            "read",
+            "write",
+            "execute"
+          ],
+          "properties": {
+            "read": {
+              "type": "boolean",
+              "description": "gives read access"
+            },
+            "write": {
+              "type": "boolean",
+              "description": "gives write access"
+            },
+            "execute": {
+              "type": "boolean",
+              "description": "gives execution rights"
+            }
+          }
+        }
+      }
     },
     "creationDate": {
       "type": "string",

@@ -16,8 +16,12 @@ from mock import call
 from yarl import URL
 
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser
-from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
+from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
+from pytest_simcore.helpers.utils_projects import (
+    NewProject,
+    create_project,
+    delete_all_projects,
+)
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import unwrap_envelope
@@ -125,6 +129,22 @@ async def logged_user(client, user_role: UserRole):
         print("<----- logged out user", user_role)
 
 
+@pytest.fixture()
+async def logged_user2(client, user_role: UserRole):
+    """ adds a user in db and logs in with client
+
+    NOTE: `user_role` fixture is defined as a parametrization below!!!
+    """
+    async with LoggedUser(
+        client,
+        {"role": user_role.name},
+        check_if_succeeds=user_role != UserRole.ANONYMOUS,
+    ) as user:
+        print("-----> logged in user", user_role)
+        yield user
+        print("<----- logged out user", user_role)
+
+
 @pytest.fixture
 async def user_project(client, fake_project, logged_user):
     async with NewProject(
@@ -142,7 +162,9 @@ async def template_project(
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
     project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"
-    project_data["accessRights"] = {str(all_group["gid"]): "rw"}
+    project_data["accessRights"] = {
+        str(all_group["gid"]): {"read": True, "write": False, "execute": False}
+    }
 
     async with NewProject(
         project_data, client.app, user_id=None, clear_all=True
@@ -288,7 +310,7 @@ async def test_new_project(
         "creationDate": now_str(),
         "lastChangeDate": now_str(),
         "thumbnail": "",
-        "accessRights": {"12": "some rights"},
+        "accessRights": {},
         "workbench": {},
         "tags": [],
     }
@@ -307,6 +329,7 @@ async def test_new_project(
         assert to_datetime(default_project["creationDate"]) < to_datetime(
             new_project["creationDate"]
         )
+        assert new_project["accessRights"] == default_project["accessRights"]
 
         # invariant fields
         for key in new_project.keys():
@@ -390,6 +413,7 @@ async def test_new_project_from_template(
 async def test_new_project_from_template_with_body(
     client,
     logged_user,
+    primary_group: Dict[str, str],
     template_project,
     expected,
     computational_system_mock,
@@ -410,7 +434,9 @@ async def test_new_project_from_template_with_body(
         "prjOwner": "",
         "creationDate": "2019-06-03T09:59:31.987Z",
         "lastChangeDate": "2019-06-03T09:59:31.987Z",
-        "accessRights": {"123": "some new access rights"},
+        "accessRights": {
+            str(primary_group["gid"]): {"read": True, "write": True, "execute": True}
+        },
         "workbench": {},
         "tags": [],
     }
@@ -466,6 +492,7 @@ async def test_new_project_from_template_with_body(
 async def test_new_template_from_project(
     client,
     logged_user,
+    all_group: Dict[str, str],
     user_project,
     expected,
     computational_system_mock,
@@ -524,7 +551,9 @@ async def test_new_template_from_project(
         "creationDate": "2019-06-03T09:59:31.987Z",
         "lastChangeDate": "2019-06-03T09:59:31.987Z",
         "workbench": {},
-        "accessRights": {"12": "rwx"},
+        "accessRights": {
+            str(all_group["gid"]): {"read": True, "write": False, "execute": False}
+        },
         "tags": [],
     }
 
@@ -538,14 +567,6 @@ async def test_new_template_from_project(
         assert template_project["description"] == predefined["description"]
         assert template_project["prjOwner"] == logged_user["email"]
         assert template_project["accessRights"] == predefined["accessRights"]
-
-        modified = [
-            "prjOwner",
-            "creationDate",
-            "lastChangeDate",
-            "uuid",
-            "accessRights",
-        ]
 
         # different ownership
         assert template_project["prjOwner"] == logged_user["email"]
@@ -568,6 +589,56 @@ async def test_new_template_from_project(
                 uuidlib.UUID(node_name)
             except ValueError:
                 pytest.fail("Invalid uuid in workbench node {}".format(node_name))
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (
+            UserRole.GUEST,
+            web.HTTPOk,
+        ),  # FIXME: this should not be allowed PC how do we do that?
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_share_project_with_everyone(
+    client,
+    logged_user,
+    all_group: Dict[str, str],
+    user_project,
+    user_role,
+    expected,
+    computational_system_mock,
+):
+    # Use-case: the user shares his project instance with a group
+
+    # modify project to allow access to all other users
+    replace_project_url = client.app.router["replace_project"].url_for(
+        project_id=user_project["uuid"]
+    )
+    project_update = deepcopy(user_project)
+    project_update["accessRights"] = {
+        str(all_group["gid"]): {"read": True, "write": True, "execute": True}
+    }
+    resp = await client.put(replace_project_url, json=project_update)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert_replaced(current_project=data, update_data=project_update)
+        project_update.update(data)
+    # get another user logged in now
+    user_2 = await log_client_in(
+        client, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
+    )
+    url = client.app.router["get_project"].url_for(project_id=project_update["uuid"])
+
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert data == project_update
 
 
 # PUT --------
