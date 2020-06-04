@@ -95,17 +95,7 @@ def create(settings: AppSettings) -> FastAPI:
 
 def get_settings(app: FastAPI) -> AppSettings:
     """ Read-only app settings """
-    return app.state["settings"].copy()
-
-
-def add_startup_handler(app: FastAPI, startup_event: Callable):
-    # TODO: this is different from fastapi_shortcuts
-    # Add Callable with and w/o arguments?
-    app.router.add_event_handler("startup", startup_event)
-
-
-def add_shutdown_handler(app: FastAPI, shutdown_event: Callable):
-    app.router.add_event_handler("shutdown", shutdown_event)
+    return app.state.settings
 
 
 def dump_openapi(app: FastAPI, filepath: Path):

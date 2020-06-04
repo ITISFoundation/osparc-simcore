@@ -14,9 +14,16 @@ log = logging.getLogger(__name__)
 
 router = APIRouter()
 
+from .api_dependencies_db import SAConnection, get_db_connection
+from . import crud_users as crud
+import os
+
 # NOTE: this path has to be the same as simcore_service_api_gateway.auth.oauth2_scheme
 @router.post("/token", response_model=Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    conn: SAConnection = Depends(get_db_connection),
+):
     """
         Returns an access-token provided a valid authorization grant
     """
@@ -39,11 +46,23 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     print("-" * 20, file=stream)
     log.debug(stream.getvalue())
 
-    user: Optional[UserInDB] = authenticate_user(form_data.username, form_data.password)
+    if crud.DUMMY_DATA:
+        user: Optional[UserInDB] = authenticate_user(
+            form_data.username, form_data.password
+        )
+    else:
+        user: int = await crud.get_user_id(
+            conn, api_key=form_data.username, api_secret=form_data.password
+        )
+
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
 
-    access_token = create_access_token(subject=user.username, scopes=form_data.scopes)
+    if crud.DUMMY_DATA:
+        access_token = create_access_token(
+            subject=user.username, scopes=form_data.scopes
+        )
+    access_token = create_access_token(subject=user)
 
     # NOTE: this reponse is defined in Oath2
     resp_data = {"access_token": access_token, "token_type": "bearer"}

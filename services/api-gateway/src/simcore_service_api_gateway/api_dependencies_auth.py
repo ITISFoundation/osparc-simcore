@@ -37,7 +37,10 @@ from .__version__ import api_vtag
 from .auth_security import get_access_token_data
 from .schemas import TokenData, User, UserInDB
 
+from .api_dependencies_db import get_db_connection, SAConnection
+
 log = logging.getLogger(__name__)
+
 
 # Declaration of security scheme:
 #   - Adds components.securitySchemes['OAuth2PasswordBearer'] to openapi.yaml
@@ -51,7 +54,9 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 
 async def get_current_user(
-    security_scopes: SecurityScopes, access_token: str = Depends(oauth2_scheme)
+    security_scopes: SecurityScopes,
+    access_token: str = Depends(oauth2_scheme),
+    conn: SAConnection = Depends(get_db_connection),
 ) -> User:
     """
         access_token: extracted access_token from request header
@@ -75,7 +80,8 @@ async def get_current_user(
         raise _create_credentials_exception("Could not validate credentials")
 
     # identify user
-    user: Optional[UserInDB] = crud.get_user(username=token_data.username)
+    # user: Optional[UserInDB] = crud.get_user(username=token_data.username)
+    user: Optional[User] = await crud.get_user_by_id(conn, int(token_data.username))
     if user is None:
         raise _create_credentials_exception("Could not validate credentials")
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Security
 
-from .auth import get_current_active_user
+from .api_dependencies_auth import get_current_active_user
 from .schemas import User
 
 router = APIRouter()

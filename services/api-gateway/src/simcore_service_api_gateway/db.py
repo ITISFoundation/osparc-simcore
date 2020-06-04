@@ -37,11 +37,12 @@ def pg_retry_policy(logger: Optional[logging.Logger] = None) -> Dict:
 async def setup_engine(app: FastAPI) -> None:
     settings = get_settings(app)
     engine = await aiopg.sa.create_engine(
-        settings.postgres_dsn,
+        str(settings.postgres_dsn),
         application_name=f"{__name__}_{id(app)}",  # unique identifier per app
         minsize=5,
         maxsize=10,
     )
+    log.debug("Connected to %s", engine.dsn)
     app.state.engine = engine
 
 
@@ -49,6 +50,7 @@ async def teardown_engine(app: FastAPI) -> None:
     engine = app.state.engine
     engine.close()
     await engine.wait_closed()
+    log.debug("Disconnected from %s", engine.dsn)
 
 
 async def get_cnx(app: FastAPI):
@@ -70,30 +72,33 @@ def create_tables(settings: AppSettings):
 
 
 # SETUP ------
+from typing import Callable
 
 
-async def start_db(app: FastAPI):
-    # TODO: tmp disabled
-    log.debug("DUMMY: Initializing db in %s", app)
+def create_start_db_handler(app: FastAPI) -> Callable:
+    async def start_db() -> None:
+        log.debug("Connenting db ...")
 
-    @retry(**pg_retry_policy(log))
-    async def _go():
-        await setup_engine(app)
+        @retry(**pg_retry_policy(log))
+        async def _go():
+            await setup_engine(app)
 
-    # if False:
-    #    log.info("Creating db tables (testing mode)")
-    #    create_tables()
+        await _go()
+
+    return start_db
 
 
-def shutdown_db(app: FastAPI):
-    # TODO: tmp disabled
-    log.debug("DUMMY: Shutting down db in %s", app)
-    # await teardown_engine(app)
+def create_stop_db_handler(app: FastAPI) -> Callable:
+    async def stop_db() -> None:
+        log.debug("Stopping db ...")
+        await teardown_engine(app)
+
+    return stop_db
 
 
 def setup_db(app: FastAPI):
-    add_event_on_startup(app, start_db)
-    add_event_on_shutdown(app, shutdown_db)
+    app.add_event_handler("startup", create_start_db_handler(app))
+    app.add_event_handler("shutdown", create_stop_db_handler(app))
 
 
 __all__ = ("Engine", "ResultProxy", "RowProxy", "SAConnection")
