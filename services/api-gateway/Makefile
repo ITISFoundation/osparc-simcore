@@ -44,8 +44,8 @@ run-devel: .env-devel down ## runs app on host with pg fixture for development [
 	uvicorn simcore_service_api_gateway.main:the_app --reload --port=8001 --host=0.0.0.0
 
 .PHONY: db-tables
-db-tables: .env-devel ## upgrades and create [for development]
-	# Creating tables
+db-tables: .env-devel ## upgrades and create tables [for development]
+	# Upgrading and creating tables
 	export $(shell grep -v '^#' $< | xargs  -d '\n'); \
 	python3 tests/utils/init-pg.py
 
