@@ -64,9 +64,9 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
       tabView.add(tagsPage);
     }
 
-    const store = osparc.store.Store.getInstance();
-    store.getGroupsOrganizations()
-      .then(orgs => {
+    osparc.data.Resources.get("organizations")
+      .then(resp => {
+        const orgs = resp["organizations"];
         if (orgs.length) {
           const orgsPage = new osparc.desktop.preferences.pages.OrganizationsPage();
           const orgsBtn = orgsPage.getChildControl("button");

@@ -108,9 +108,9 @@ qx.Class.define("osparc.component.export.ShareWith", {
               alignY: "middle"
             }));
             const myOrgsSB = new qx.ui.form.SelectBox();
-            const store = osparc.store.Store.getInstance();
-            store.getGroupsOrganizations()
-              .then(orgs => {
+            osparc.data.Resources.get("organizations")
+              .then(resp => {
+                const orgs = resp["organizations"];
                 orgs.sort(this.__sortByLabel);
                 orgs.forEach(org => {
                   const orgItem = new qx.ui.form.ListItem(org["label"]);
