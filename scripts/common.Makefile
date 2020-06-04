@@ -93,6 +93,8 @@ info: ## displays basic info
 
 .PHONY: autoformat
 autoformat: ## runs black python formatter on this service's code
+	# sort imports (NOTE: needs installed imports to work well)
+	@python3 -m isort $(CURDIR)
 	# auto formatting with black
 	@python3 -m black --verbose \
 		--exclude "/(\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist|migration|client-sdk|generated_code)/" \
