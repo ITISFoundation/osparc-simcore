@@ -7,7 +7,8 @@ from fastapi import FastAPI
 from . import (
     application,
     endpoints_auth,
-    endpoints_check,
+    endpoints_health,
+    endpoints_meta,
     endpoints_studies,
     endpoints_user,
 )
@@ -37,8 +38,9 @@ def build_app() -> FastAPI:
         setup_remote_debugging()
 
     # ROUTES
-    app.include_router(endpoints_check.router, tags=["Meta"])
+    app.include_router(endpoints_health.router)
 
+    app.include_router(endpoints_meta.router, tags=["Meta"], prefix=f"/{api_vtag}")
     app.include_router(endpoints_auth.router, tags=["Token"], prefix=f"/{api_vtag}")
     app.include_router(endpoints_user.router, tags=["User"], prefix=f"/{api_vtag}")
     app.include_router(

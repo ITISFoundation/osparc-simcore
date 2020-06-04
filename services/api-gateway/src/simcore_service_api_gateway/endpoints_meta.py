@@ -14,9 +14,3 @@ async def get_service_metadata():
         # TODO: sync this info
         "released": {api_vtag: api_version},
     }
-
-
-@router.get("/health", include_in_schema=False)
-async def check_service_health():
-    # TODO: if not, raise ServiceUnavailable (use diagnostic concept as in webserver)
-    return

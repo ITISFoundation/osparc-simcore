@@ -50,7 +50,7 @@ def _custom_openapi(zelf: FastAPI) -> Dict:
         # TODO: load code samples add if function is contained in sample
         # TODO: See if openapi-cli does this already
         # TODO: check that all url are available before exposing
-        openapi_schema["paths"]["/meta"]["get"]["x-code-samples"] = [
+        openapi_schema["paths"][f"/{api_vtag}/meta"]["get"]["x-code-samples"] = [
             {
                 "lang": "python",
                 "source": {"$ref": f"{PYTHON_CODE_SAMPLES_BASE_URL}/meta/get.py"},
