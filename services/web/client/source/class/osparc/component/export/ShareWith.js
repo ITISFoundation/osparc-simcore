@@ -85,6 +85,7 @@ qx.Class.define("osparc.component.export.ShareWith", {
     },
     __rbManager: null,
     __privateLayout: null,
+    __publicLayout: null,
     __myOrgMembersHB: null,
     __myOrgMembers: null,
     __myOrgs: null,
@@ -140,6 +141,7 @@ qx.Class.define("osparc.component.export.ShareWith", {
             break;
           }
           case "all":
+            this.__publicLayout = rb;
             this.add(rb);
             break;
         }
@@ -182,6 +184,10 @@ qx.Class.define("osparc.component.export.ShareWith", {
 
     showPrivate: function(show) {
       this.__privateLayout.setVisibility(show ? "visible" : "excluded");
+    },
+
+    showPublic: function(show) {
+      this.__publicLayout.setVisibility(show ? "visible" : "excluded");
     },
 
     getSelectedGroups: function() {

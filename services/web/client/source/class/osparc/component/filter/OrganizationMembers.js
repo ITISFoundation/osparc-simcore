@@ -53,7 +53,7 @@ qx.Class.define("osparc.component.filter.OrganizationMembers", {
           members.forEach(member => {
             const name = osparc.utils.Utils.capitalize(member["first_name"]) + osparc.utils.Utils.capitalize(member["last_name"]);
             const bnt = this._addOption(name);
-            bnt.uid = member["login"];
+            bnt.uid = member["id"];
           });
         });
     },

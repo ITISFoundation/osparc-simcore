@@ -30,7 +30,7 @@ qx.Class.define("osparc.component.export.ShareResourceBase", {
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    this.__buildLayout();
+    this._buildLayout();
   },
 
   statics: {
@@ -74,7 +74,8 @@ qx.Class.define("osparc.component.export.ShareResourceBase", {
     _studyId: null,
     _shareWith: null,
 
-    __buildLayout: function() {
+    _buildLayout: function() {
+      console.log("ShareResourceBase");
       const shareWith = this._shareWith = new osparc.component.export.ShareWith();
       this.bind("headerText", shareWith, "legend");
       this._add(shareWith, {
