@@ -33,14 +33,10 @@ qx.Class.define("osparc.component.filter.Organizations", {
   },
 
   members: {
-    /**
-     * Function that uses the information in {osparc.store.Store.getGroupsOrganizations} to build the menu for the filter.
-     */
     __buildMenu: function() {
-      const store = osparc.store.Store.getInstance();
-      store.getGroupsOrganizations()
+      osparc.data.Resources.get("organizations")
         .then(resp => {
-          const orgs = resp["organization"];
+          const orgs = resp["organizations"];
           orgs.sort((a, b) => (a["label"] > b["label"]) ? 1 : -1);
           orgs.forEach(org => {
             const bnt = this._addOption(osparc.utils.Utils.capitalize(org["label"]));

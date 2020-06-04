@@ -82,8 +82,8 @@ qx.Class.define("osparc.store.Store", {
       init: []
     },
     organizations: {
-      check: "Array",
-      init: []
+      check: "Object",
+      init: {}
     },
     organizationMembers: {
       check: "Object",
