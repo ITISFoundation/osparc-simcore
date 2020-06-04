@@ -10,13 +10,22 @@ import sqlalchemy as sa
 import yaml
 
 import simcore_service_api_gateway.db_models as orm
+import simcore_postgres_database.cli as pg_cli
 
 from typing import Dict
+import os
 
-DSN = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-    user="test", password="test", host="localhost", port=5432, database="test",
+
+DSN_FORMAT = "postgresql://{user}:{password}@{host}:{port}/{database}"
+
+default_db_settings = dict(
+    user=os.environ.get("POSTGRES_USER", "test"),
+    password=os.environ.get("POSTGRES_PASSWORD", "test"),
+    host=os.environ.get("POSTGRES_HOST", "localhost"),
+    port=os.environ.get("POSTGRES_PORT", 5432),
+    database=os.environ.get("POSTGRES_DB", 5432),
 )
-
+default_dsn = DSN_FORMAT.format(**default_db_settings)
 
 fake = faker.Faker()
 
@@ -36,11 +45,11 @@ def load_db_config() -> Dict:
     )
 
 
-def init_tables():
-    engine = sa.create_engine(DSN)
+def init_tables(dsn: str = default_dsn):
+    engine = sa.create_engine(dsn)
     meta = orm.metadata
     meta.drop_all(engine)
-    meta.create_all(engine, tables=[orm.api_keys, orm.users])
+    #meta.create_all(engine, tables=[orm.api_keys, orm.users])
 
 
 def random_user(**overrides):
@@ -63,8 +72,8 @@ def random_api_key(**overrides):
     return data
 
 
-async def fill_tables():
-    async with aiopg.sa.create_engine(DSN) as engine:
+async def fill_tables(dsn: str = default_dsn):
+    async with aiopg.sa.create_engine(dsn) as engine:
         async with engine.acquire() as conn:
             uid: int = await conn.scalar(
                 orm.users.insert().values(**random_user(name="me", email="me@bar.foo"))
@@ -72,17 +81,31 @@ async def fill_tables():
 
             await conn.scalar(
                 orm.api_keys.insert().values(
-                    **random_api_key(display_name="test key", user_id=uid)
+                    **random_api_key(
+                        display_name="test key",
+                        user_id=uid,
+                        api_key="key",
+                        api_secret="secret",
+                    )
                 )
             )
 
 
-def main():
-    init_tables()
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(fill_tables())
-    loop.stop()
+async def main():
+
+    # discover
+    settings = pg_cli.discover.callback(**default_db_settings)
+    dsn: str = DSN_FORMAT.format(**settings)
+
+    # upgrade
+    pg_cli.upgrade.callback("head")
+
+    # FIXME: if already there, it will fail
+    await fill_tables(dsn)
+
 
 
 if __name__ == "__main__":
-    main()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
+    loop.stop()

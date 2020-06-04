@@ -11,7 +11,7 @@
 
 # installs this repo's packages
 -e ../../packages/pytest-simcore/
--e ../../packages/postgres-database/
+-e ../../packages/postgres-database/[migration]
 
 # installs current package
 -e .

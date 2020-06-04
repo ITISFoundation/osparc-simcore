@@ -34,18 +34,34 @@ tests-integration: ## runs integration tests against local+production images
 	pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/integration
 
 
+# DEVELOPMENT TOOLS ########
+
 .PHONY: run-devel down
-run-devel: .env-devel down ## runs app on host with pg fixture for development
+run-devel: .env-devel down ## runs app on host with pg fixture for development [for development]
 	# running current app
 	export $(shell grep -v '^#' $< | xargs  -d '\n'); \
 	docker-compose -f $(CURDIR)/tests/utils/docker-compose.yml up --detach; \
 	uvicorn simcore_service_api_gateway.main:the_app --reload --port=8001 --host=0.0.0.0
+
+.PHONY: db-tables
+db-tables: .env-devel ## upgrades and create [for development]
+	# Creating tables
+	export $(shell grep -v '^#' $< | xargs  -d '\n'); \
+	python3 tests/utils/init-pg.py
+
+.PHONY: db-migration
+db-migration: .env-devel ## runs discover and upgrade on running pg-db [for development]
+	# Creating tables
+	export $(shell grep -v '^#' $< | xargs  -d '\n'); \
+	sc-pg discover && sc-pg upgrade
 
 down: ## stops pg fixture
 	# stopping extra services
 	-@docker-compose -f $(CURDIR)/tests/utils/docker-compose.yml down
 	# killing any process using port 8001
 	-@fuser --kill --verbose --namespace tcp 8001
+
+######################
 
 
 .PHONY: build
