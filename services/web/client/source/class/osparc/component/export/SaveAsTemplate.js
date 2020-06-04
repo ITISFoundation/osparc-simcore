@@ -43,8 +43,12 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
       btn.setFetching(true);
 
       const selectedGroupIDs = this._shareWith.getSelectedGroups();
-      selectedGroupIDs.forEach(selectedGroupID => {
-        this.__formData["accessRights"][selectedGroupID] = "rwx";
+      selectedGroupIDs.forEach(gid => {
+        this.__formData["accessRights"][gid] = {
+          "read": true,
+          "write": false,
+          "execute": false
+        };
       });
 
       const params = {

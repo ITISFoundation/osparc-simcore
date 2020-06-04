@@ -41,8 +41,12 @@ qx.Class.define("osparc.component.export.Permissions", {
 
       const shareWith = {};
       const selectedGroupIDs = this._shareWith.getSelectedGroups();
-      selectedGroupIDs.forEach(selectedGroupID => {
-        shareWith[selectedGroupID] = "rwx";
+      selectedGroupIDs.forEach(gid => {
+        shareWith[gid] = {
+          "read": true,
+          "write": true,
+          "execute": false
+        };
       });
 
       const params = {
