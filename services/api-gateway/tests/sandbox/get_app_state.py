@@ -9,11 +9,13 @@ app = FastAPI(title="get_app_state")
 def _get_app(request: Request) -> FastAPI:
     return request.app
 
+
 def _get_app_state(request: Request) -> State:
     return request.app.state
 
+
 @app.get("/app")
-async def get_server_ip( my_app: FastAPI = Depends(_get_app) ):
+async def get_server_ip(my_app: FastAPI = Depends(_get_app)):
     assert my_app == app
     return my_app.title
 

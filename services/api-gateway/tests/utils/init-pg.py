@@ -49,7 +49,7 @@ def init_tables(dsn: str = default_dsn):
     engine = sa.create_engine(dsn)
     meta = orm.metadata
     meta.drop_all(engine)
-    #meta.create_all(engine, tables=[orm.api_keys, orm.users])
+    # meta.create_all(engine, tables=[orm.api_keys, orm.users])
 
 
 def random_user(**overrides):
@@ -102,7 +102,6 @@ async def main():
 
     # FIXME: if already there, it will fail
     await fill_tables(dsn)
-
 
 
 if __name__ == "__main__":

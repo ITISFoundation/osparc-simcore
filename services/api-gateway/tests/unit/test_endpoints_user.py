@@ -55,7 +55,7 @@ def client(monkeypatch, postgres_service) -> TestClient:
 
 
 def test_get_user(client: TestClient, api_keys_in_db: Dict, user_in_db: Dict):
-    response = client.get("f"/{api_vtag}/meta")
+    response = client.get(f"/{api_vtag}/meta")
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["version"] == api_version
 
@@ -64,13 +64,14 @@ def test_get_user(client: TestClient, api_keys_in_db: Dict, user_in_db: Dict):
     # TODO: authenciate with API
     auth_data = {
         "grant_type": "password",
-        "scope": "me projects you".split(),
+        # "scope": "me projects you".split(),
         "username": api_keys_in_db["key"],
         "password": api_keys_in_db["secret"],
     }
 
-    # TODO: application/x-www-form-urlencoded
-    response = client.post(f"/{api_vtag}/token", **auth_data)
+    # form-encoded data
+    response = client.post(f"/{api_vtag}/token", data=auth_data)
+
     # json response
     assert response.json() == {"access_token": "string", "token_type": "string"}
 
