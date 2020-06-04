@@ -103,13 +103,10 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       }));
       hBox.exclude();
 
-      const emailLabel = new qx.ui.basic.Label(this.tr("Email")).set({
-        allowGrowX: true
+      const userEmail = new qx.ui.form.TextField().set({
+        required: true,
+        placeholder: this.tr("Member's email")
       });
-      hBox.add(emailLabel);
-
-      const userEmail = new qx.ui.form.TextField();
-      userEmail.setRequired(true);
       hBox.add(userEmail, {
         flex: 1
       });
