@@ -50,8 +50,10 @@ qx.Class.define("osparc.dashboard.OrgMemberListItem", {
         case "options": {
           const iconSize = 25;
           control = new qx.ui.form.MenuButton().set({
-            width: iconSize,
-            height: iconSize,
+            maxWidth: iconSize,
+            maxHeight: iconSize,
+            alignX: "center",
+            alignY: "middle",
             icon: "@FontAwesome5Solid/ellipsis-v/"+(iconSize-11),
             focusable: false
           });
