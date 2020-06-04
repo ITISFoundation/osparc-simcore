@@ -125,7 +125,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const inviteBtn = new qx.ui.form.Button(this.tr("Invite"));
       inviteBtn.addListener("execute", function() {
         if (validator.validate()) {
-          this.__addUser(userEmail.getValue());
+          this.__addMember(userEmail.getValue());
         }
       }, this);
       hBox.add(inviteBtn);
@@ -150,17 +150,21 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("access_rights", "accessRights", null, item, id);
-          ctrl.bindProperty("login", "contact", null, item, id);
-          ctrl.bindProperty("showRemove", "showRemove", null, item, id);
+          ctrl.bindProperty("login", "subtitle", null, item, id);
+          ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
         configureItem: item => {
           item.getChildControl("thumbnail").getContentElement()
             .setStyles({
               "border-radius": "16px"
             });
+          item.addListener("promoteOrgMember", e => {
+            const orgMember = e.getData();
+            this.__promoteMember(orgMember);
+          });
           item.addListener("removeOrgMember", e => {
             const orgMember = e.getData();
-            this.__deleteUser(orgMember);
+            this.__deleteMember(orgMember);
           });
         }
       });
@@ -202,13 +206,13 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           members.forEach(member => {
             member["thumbnail"] = osparc.utils.Avatar.getUrl(member["login"], 32);
             member["name"] = osparc.utils.Utils.capitalize(member["first_name"]) + " " + osparc.utils.Utils.capitalize(member["last_name"]);
-            member["showRemove"] = canWrite;
+            member["showOptions"] = canWrite;
             membersModel.append(qx.data.marshal.Json.createModel(member));
           });
         });
     },
 
-    __addUser: function(orgMemberEmail) {
+    __addMember: function(orgMemberEmail) {
       if (this.__currentOrg === null) {
         return;
       }
@@ -233,7 +237,37 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         });
     },
 
-    __deleteUser: function(orgMember) {
+    __promoteMember: function(orgMember) {
+      if (this.__currentOrg === null) {
+        return;
+      }
+
+      const params = {
+        url: {
+          "gid": this.__currentOrg.getKey(),
+          "uid": orgMember["key"]
+        },
+        data: {
+          "access_rights": {
+            "read": true,
+            "write": true,
+            "delete": false
+          }
+        }
+      };
+      osparc.data.Resources.fetch("organizationMembers", "patch", params)
+        .then(() => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully promoted"));
+          osparc.store.Store.getInstance().reset("organizationMembers");
+          this.__reloadOrgMembers();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting ") + orgMember["name"], "ERROR");
+          console.error(err);
+        });
+    },
+
+    __deleteMember: function(orgMember) {
       if (this.__currentOrg === null) {
         return;
       }

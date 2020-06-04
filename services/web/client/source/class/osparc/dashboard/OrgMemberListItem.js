@@ -30,15 +30,16 @@ qx.Class.define("osparc.dashboard.OrgMemberListItem", {
       nullable: true
     },
 
-    showRemove: {
+    showOptions: {
       check: "Boolean",
-      apply: "_applyShowRemove",
-      event: "changeShowRemove",
+      apply: "_applyShowOptions",
+      event: "changeShowOptions",
       nullable: true
     }
   },
 
   events: {
+    "promoteOrgMember": "qx.event.type.Data",
     "removeOrgMember": "qx.event.type.Data"
   },
 
@@ -46,20 +47,15 @@ qx.Class.define("osparc.dashboard.OrgMemberListItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "remove": {
-          const iconSize = 28;
-          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/trash/"+(iconSize-14)).set({
-            alignX: "center",
-            alignY: "middle",
-            maxWidth: iconSize,
-            maxHeight: iconSize
+        case "options": {
+          const iconSize = 25;
+          control = new qx.ui.form.MenuButton().set({
+            width: iconSize,
+            height: iconSize,
+            icon: "@FontAwesome5Solid/ellipsis-v/"+(iconSize-11),
+            focusable: false
           });
-          control.addListener("execute", () => {
-            this.fireDataEvent("removeOrgMember", {
-              key: this.getKey(),
-              name: this.getTitle()
-            });
-          });
+          osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           this._add(control, {
             row: 0,
             column: 3,
@@ -76,19 +72,52 @@ qx.Class.define("osparc.dashboard.OrgMemberListItem", {
       if (value === null) {
         return;
       }
-      const subtitle = this.getChildControl("subtitle");
+      const subtitle = this.getChildControl("contact");
       if (value.getDelete()) {
-        subtitle.setValue("SuperManager");
+        subtitle.setValue(this.tr("SuperManager"));
       } else if (value.getWrite()) {
-        subtitle.setValue("Manager");
+        subtitle.setValue(this.tr("Manager"));
       } else {
-        subtitle.setValue("Member");
+        subtitle.setValue(this.tr("Member"));
       }
     },
 
-    _applyShowRemove: function(value) {
-      const removeBtn = this.getChildControl("remove");
-      removeBtn.setVisibility(value ? "visible" : "excluded");
+    _applyShowOptions: function(value) {
+      const optionsMenu = this.getChildControl("options");
+      optionsMenu.setVisibility(value ? "visible" : "excluded");
+      if (value) {
+        const menu = this.__getOptionsMenu();
+        optionsMenu.setMenu(menu);
+      }
+    },
+
+    __getOptionsMenu: function() {
+      const menu = new qx.ui.menu.Menu().set({
+        position: "bottom-right"
+      });
+
+      const accessRights = this.getAccessRights();
+      if (accessRights && !accessRights.getDelete() && !accessRights.getWrite()) {
+        const promoteButton = new qx.ui.menu.Button(this.tr("Promote to Manager"));
+        promoteButton.addListener("execute", () => {
+          this.fireDataEvent("promoteOrgMember", {
+            key: this.getKey(),
+            name: this.getTitle()
+          });
+        });
+        menu.add(promoteButton);
+      }
+
+      const removeButton = new qx.ui.menu.Button(this.tr("Remove Member"));
+      removeButton.addListener("execute", () => {
+        this.fireDataEvent("removeOrgMember", {
+          key: this.getKey(),
+          name: this.getTitle()
+        });
+      });
+      menu.add(removeButton);
+
+      return menu;
     }
   }
 });

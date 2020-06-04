@@ -317,8 +317,8 @@ qx.Class.define("osparc.data.Resources", {
             method: "DELETE",
             url: statics.API + "/me/groups/{gid}/users/{uid}"
           },
-          put: {
-            method: "PUT",
+          patch: {
+            method: "PATCH",
             url: statics.API + "/me/groups/{gid}/users/{uid}"
           }
         }
