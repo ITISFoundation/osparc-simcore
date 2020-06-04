@@ -49,7 +49,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
   construct: function() {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.Grid(5, 5);
+    const layout = new qx.ui.layout.Grid(8, 5);
     layout.setColumnFlex(1, 1);
     this._setLayout(layout);
     this.setPadding(5);
