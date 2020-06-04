@@ -20,7 +20,6 @@ from .utils.fastapi_shortcuts import add_event_on_shutdown, add_event_on_startup
 ## from .orm.base import Base
 
 
-
 log = logging.getLogger(__name__)
 
 

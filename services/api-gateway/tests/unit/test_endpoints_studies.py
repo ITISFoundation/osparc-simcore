@@ -38,23 +38,19 @@ def test_studies_workflow(client: TestClient):
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["version"] == api_version
 
-
     # TODO: https://requests-oauthlib.readthedocs.io/en/latest/oauth2_workflow.html#backend-application-flow
 
     # TODO: authenciate with API
     auth_data = {
-    "grant_type": "password"
-    "scope": "me projects you".split()
-    "username": api_key,
-    "password": api_secret
+        "grant_type": "password",
+        "scope": "me projects you".split(),
+        "username": api_key,
+        "password": api_secret,
     }
 
-
-    response = client.post(f"/{api_vtag}/token",
-            grant_type = ""
-            username=api_key,
-            password=
-        )
+    response = client.post(
+        f"/{api_vtag}/token", grant_type="", username=api_key, password="",
+    )
 
     access_token = response.json()
 
@@ -64,7 +60,5 @@ def test_studies_workflow(client: TestClient):
     assert response.status_code == status.HTTP_200_OK
     profile = response.json()
     assert profile == my_profile
-
-
 
     response = client.get(f"/{api_vtag}/studies")

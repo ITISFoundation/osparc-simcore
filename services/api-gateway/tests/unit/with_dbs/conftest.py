@@ -1,4 +1,3 @@
-
 # pylint: disable=no-value-for-parameter
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
@@ -33,9 +32,12 @@ def docker_compose_file(monkeypatch) -> Path:
     dst_path = current_dir / "docker-compose.yml"
 
     # configs
-    subprocess.run(f"docker-compose config -f f{src_path} > f{dst_path}",
-        shell=True, check=True,
-        cwd=current_dir)
+    subprocess.run(
+        f"docker-compose config -f f{src_path} > f{dst_path}",
+        shell=True,
+        check=True,
+        cwd=current_dir,
+    )
 
     return dst_path
 

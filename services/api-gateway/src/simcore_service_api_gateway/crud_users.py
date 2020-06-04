@@ -41,8 +41,7 @@ async def get_user_id(
 ) -> Optional[int]:
     stmt = sa.select([orm.api_keys.c.user_id,]).where(
         sa.and_(
-            orm.api_keys.c.api_key == api_key,
-            orm.api_keys.c.api_secret == api_secret
+            orm.api_keys.c.api_key == api_key, orm.api_keys.c.api_secret == api_secret
         )
     )
     user_id: Optional[int] = await conn.scalar(stmt)

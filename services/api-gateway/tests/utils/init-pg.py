@@ -67,13 +67,13 @@ async def fill_tables():
     async with aiopg.sa.create_engine(DSN) as engine:
         async with engine.acquire() as conn:
             uid: int = await conn.scalar(
-                orm.users.insert().values(
-                    **random_user(name="me", email="me@bar.foo")
-                )
+                orm.users.insert().values(**random_user(name="me", email="me@bar.foo"))
             )
 
             await conn.scalar(
-                orm.api_keys.insert().values(**random_api_key(display_name= "test key", user_id=uid))
+                orm.api_keys.insert().values(
+                    **random_api_key(display_name="test key", user_id=uid)
+                )
             )
 
 
