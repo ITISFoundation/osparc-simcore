@@ -57,6 +57,18 @@ qx.Class.define("osparc.component.export.Permissions", {
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignY: "middle"
       }));
+      hBox.setVisibility("excluded");
+
+      const aceessRights = this.__study["accessRights"];
+      const store = osparc.store.Store.getInstance();
+      store.getGroupsMe()
+        .then(me => {
+          let executor = false;
+          if (me["gid"] in aceessRights) {
+            executor = aceessRights[me["gid"]]["execute"];
+          }
+          hBox.setVisibility(executor ? "visible" : "excluded");
+        });
 
       const userEmail = new qx.ui.form.TextField().set({
         required: true,
