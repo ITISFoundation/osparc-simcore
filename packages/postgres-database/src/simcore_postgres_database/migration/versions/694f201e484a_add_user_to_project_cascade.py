@@ -42,6 +42,13 @@ def upgrade():
         onupdate="CASCADE",
         ondelete="CASCADE",
     )
+
+    # change contents in projects access_rights    
+    op.execute(
+        sa.DDL(
+            "UPDATE projects SET access_rights = (regexp_replace(access_rights::text, '\"rwx\"', '{\"read\":true, \"write\":false, \"execute\":false}')::jsonb) WHERE access_rights != '{}'"
+        )
+    )
     # ### end Alembic commands ###
 
 
