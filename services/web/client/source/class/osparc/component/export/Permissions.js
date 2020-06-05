@@ -27,7 +27,7 @@ qx.Class.define("osparc.component.export.Permissions", {
 
     this.__study = study;
 
-    this._setLayout(new qx.ui.layout.VBox(5));
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     this.__buildLayout();
 
@@ -36,7 +36,6 @@ qx.Class.define("osparc.component.export.Permissions", {
 
   members: {
     __study: null,
-    __myself: null,
     __myFrieds: null,
 
     createWindow: function() {
@@ -110,29 +109,47 @@ qx.Class.define("osparc.component.export.Permissions", {
     },
 
     __getMyFriends: function() {
-      this.__myself = {};
       this.__myFrieds = {};
-      osparc.data.Resources.get("organizations")
-        .then(resp => {
-          this.__myself[resp["me"]["gid"]] = resp["me"];
-          const orgs = resp["organizations"];
+
+      const store = osparc.store.Store.getInstance();
+      const promises = [];
+      promises.push(store.getGroupsOrganizations());
+      promises.push(store.getVisibleMembers());
+      Promise.all(promises)
+        .then(values => {
+          const orgs = values[0];
+          const orgMembers = values[1];
           orgs.forEach(org => {
             this.__myFrieds[org["gid"]] = org;
           });
+          for (const gid of Object.keys(orgMembers)) {
+            this.__myFrieds[gid] = orgMembers[gid];
+          }
           this.__reloadCollaboratorsList();
         });
     },
 
     __reloadCollaboratorsList: function() {
+      this.__collaboratorsModel.removeAll();
+
       const aceessRights = this.__study["accessRights"];
       Object.keys(aceessRights).forEach(gid => {
-        if (Object.prototype.hasOwnProperty.call(this.__myself, gid)) {
-          this.__collaboratorsModel.insertAt(0, this.__myself[gid]);
-        }
         if (Object.prototype.hasOwnProperty.call(this.__myFrieds, gid)) {
-          this.__collaboratorsModel.append(this.__myFrieds[gid]);
+          const collaborator = this.__myFrieds[gid];
+          if ("first_name" in collaborator) {
+            collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
+            collaborator["name"] = osparc.utils.Utils.capitalize(collaborator["first_name"]) + " " + osparc.utils.Utils.capitalize(collaborator["last_name"]);
+          }
+          collaborator["access_rights"] = aceessRights[gid];
+          const collaboratorModel = qx.data.marshal.Json.createModel(collaborator);
+          if ("login" in collaborator && collaborator["login"] === osparc.auth.Data.getInstance().getEmail()) {
+            this.__collaboratorsModel.insertAt(0, collaboratorModel);
+          } else {
+            this.__collaboratorsModel.append(collaboratorModel);
+          }
         }
       });
+      console.log(this.__collaboratorsModel);
     },
 
     __addCollaborator: function(gid, btn) {

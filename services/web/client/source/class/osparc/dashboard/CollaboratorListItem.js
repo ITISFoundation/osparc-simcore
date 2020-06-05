@@ -73,7 +73,7 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
       if (value.getExecute()) {
         subtitle.setValue(this.tr("Owner"));
       } else {
-        subtitle.setValue(this.tr("Editor"));
+        subtitle.setValue(this.tr("Collaborator"));
       }
     },
 

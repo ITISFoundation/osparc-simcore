@@ -89,6 +89,10 @@ qx.Class.define("osparc.store.Store", {
       check: "Object",
       init: {}
     },
+    reachableMembers: {
+      check: "Object",
+      init: {}
+    },
     services: {
       check: "Array",
       init: []
@@ -260,6 +264,39 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
+    getVisibleMembers: function() {
+      const reachableMembers = this.getReachableMembers();
+      return new Promise((resolve, reject) => {
+        osparc.data.Resources.get("organizations")
+          .then(resp => {
+            const orgMembersPromises = [];
+            const orgs = resp["organizations"];
+            orgs.forEach(org => {
+              orgMembersPromises.push(
+                new Promise((resolve2, reject2) => {
+                  const params = {
+                    url: {
+                      "gid": org["gid"]
+                    }
+                  };
+                  osparc.data.Resources.get("organizationMembers", params)
+                    .then(orgMembers => {
+                      resolve2(orgMembers);
+                    });
+                })
+              );
+            });
+            Promise.all(orgMembersPromises)
+              .then(orgMemberss => {
+                orgMemberss.forEach(orgMembers => {
+                  orgMembers.forEach(orgMember => {
+                    reachableMembers[orgMember["gid"]] = orgMember;
+                  });
+                });
+                resolve(reachableMembers);
+              });
+          });
+      });
     },
 
     _applyStudy: function(newStudy) {
