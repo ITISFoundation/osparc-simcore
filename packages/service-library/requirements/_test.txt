@@ -57,10 +57,11 @@ typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.2  # via -r requirements/_base.txt, aiohttp
 ujson==3.0.0              # via -r requirements/_base.txt
 urllib3==1.25.9           # via requests
-wcwidth==0.1.9            # via pytest
+wcwidth==0.2.3            # via pytest
 werkzeug==1.0.1           # via -r requirements/_base.txt
 wrapt==1.12.1             # via astroid
 yarl==1.4.2               # via -r requirements/_base.txt, aiohttp
+zipp==3.1.0               # via -r requirements/_base.txt, importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
