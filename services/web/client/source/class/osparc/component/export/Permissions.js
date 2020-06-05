@@ -57,18 +57,7 @@ qx.Class.define("osparc.component.export.Permissions", {
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignY: "middle"
       }));
-      hBox.setVisibility("excluded");
-
-      const aceessRights = this.__study["accessRights"];
-      const store = osparc.store.Store.getInstance();
-      store.getGroupsMe()
-        .then(me => {
-          let executor = false;
-          if (me["gid"] in aceessRights) {
-            executor = aceessRights[me["gid"]]["execute"];
-          }
-          hBox.setVisibility(executor ? "visible" : "excluded");
-        });
+      hBox.setVisibility(this.__isUserOwner() ? "visible" : "excluded");
 
       const userEmail = new qx.ui.form.TextField().set({
         required: true,
@@ -154,15 +143,26 @@ qx.Class.define("osparc.component.export.Permissions", {
             collaborator["name"] = osparc.utils.Utils.capitalize(collaborator["first_name"]) + " " + osparc.utils.Utils.capitalize(collaborator["last_name"]);
           }
           collaborator["access_rights"] = aceessRights[gid];
+          if (this.__isUserOwner()) {
+            collaborator["showOptions"] = true;
+          }
           const collaboratorModel = qx.data.marshal.Json.createModel(collaborator);
-          if ("login" in collaborator && collaborator["login"] === osparc.auth.Data.getInstance().getEmail()) {
+          if (gid === osparc.auth.Data.getInstance().getGroupId()) {
             this.__collaboratorsModel.insertAt(0, collaboratorModel);
           } else {
             this.__collaboratorsModel.append(collaboratorModel);
           }
         }
       });
-      console.log(this.__collaboratorsModel);
+    },
+
+    __isUserOwner: function() {
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      const aceessRights = this.__study["accessRights"];
+      if (myGid in aceessRights) {
+        return aceessRights[myGid]["execute"];
+      }
+      return false;
     },
 
     __addCollaborator: function(gid, btn) {
