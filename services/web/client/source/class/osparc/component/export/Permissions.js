@@ -70,7 +70,7 @@ qx.Class.define("osparc.component.export.Permissions", {
 
       const inviteBtn = new qx.ui.form.Button(this.tr("Invite"));
       inviteBtn.addListener("execute", () => {
-        this.__addCollaborator(userEmail.getValue(), inviteBtn);
+        this.__addCollaborator(userEmail.getValue());
       }, this);
       hBox.add(inviteBtn);
 
@@ -173,35 +173,8 @@ qx.Class.define("osparc.component.export.Permissions", {
       return false;
     },
 
-    __addCollaborator: function(gid, btn) {
-      btn.setFetching(true);
-
-      const shareWith = {};
-      shareWith[gid] = {
-        "read": true,
-        "write": true,
-        "execute": false
-      };
-
-      const params = {
-        url: {
-          "study_id": this._studyId
-        },
-        data: shareWith
-      };
-      osparc.data.Resources.fetch("studies", "put", params)
-        .then(template => {
-          this.fireDataEvent("finished", template);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Study successfully shared."), "INFO");
-          this.__reloadCollaboratorsList();
-        })
-        .catch(err => {
-          console.error(err);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while sharing the study."), "ERROR");
-        })
-        .finally(() => {
-          btn.setFetching(false);
-        });
+    __addCollaborator: function(email) {
+      console.log(email);
     },
 
     __promoteCollaborator: function(collaborator) {
