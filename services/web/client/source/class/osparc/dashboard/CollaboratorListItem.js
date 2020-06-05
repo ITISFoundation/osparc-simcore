@@ -96,14 +96,17 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
         position: "bottom-right"
       });
 
-      const makeOwnerButton = new qx.ui.menu.Button(this.tr("Make Owner"));
-      makeOwnerButton.addListener("execute", () => {
-        this.fireDataEvent("promoteCollaborator", {
-          gid: this.getKey(),
-          name: this.getTitle()
+      const accessRights = this.getAccessRights();
+      if (!accessRights.getExecute()) {
+        const makeOwnerButton = new qx.ui.menu.Button(this.tr("Make Owner"));
+        makeOwnerButton.addListener("execute", () => {
+          this.fireDataEvent("promoteCollaborator", {
+            gid: this.getKey(),
+            name: this.getTitle()
+          });
         });
-      });
-      menu.add(makeOwnerButton);
+        menu.add(makeOwnerButton);
+      }
 
       const removeButton = new qx.ui.menu.Button(this.tr("Remove Collaborator"));
       removeButton.addListener("execute", () => {
