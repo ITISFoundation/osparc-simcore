@@ -17,7 +17,7 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from change_case import ChangeCase
-from psycopg2 import IntegrityError
+from sqlalchemy import literal_column
 from sqlalchemy.sql import and_, select
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
@@ -50,7 +50,9 @@ def _convert_to_db_names(project_document_data: Dict) -> Dict:
     return converted_args
 
 
-def _convert_to_schema_names(project_database_data: Mapping, user_email: str) -> Dict:
+def _convert_to_schema_names(
+    project_database_data: Mapping, user_email: str, **kwargs
+) -> Dict:
     converted_args = {}
     for key, value in project_database_data.items():
         if key in DB_EXCLUSIVE_COLUMNS:
@@ -62,6 +64,7 @@ def _convert_to_schema_names(project_database_data: Mapping, user_email: str) ->
             # this entry has to be converted to the owner e-mail address
             converted_value = user_email
         converted_args[ChangeCase.snake_to_camel(key)] = converted_value
+    converted_args.update(**kwargs)
     return converted_args
 
 
@@ -97,7 +100,7 @@ class ProjectDBAPI:
             self._init_engine()
         return self._engine
 
-    async def add_projects(self, projects_list: List[Dict], user_id: str) -> List[str]:
+    async def add_projects(self, projects_list: List[Dict], user_id: int) -> List[str]:
         """
             adds all projects and assigns to a user
 
@@ -113,7 +116,7 @@ class ProjectDBAPI:
     async def add_project(
         self,
         prj: Dict,
-        user_id: str,
+        user_id: int,
         *,
         force_project_uuid=False,
         force_as_template=False,
@@ -126,7 +129,7 @@ class ProjectDBAPI:
         :param prj: schema-compliant project data
         :type prj: Dict
         :param user_id: database's user identifier
-        :type user_id: str
+        :type user_id: int
         :param force_project_uuid: enforces valid uuid, defaults to False
         :type force_project_uuid: bool, optional
         :param force_as_template: adds data as template, defaults to False
@@ -187,7 +190,7 @@ class ProjectDBAPI:
                 prj["tags"] = []
             return prj
 
-    async def load_user_projects(self, user_id: str) -> List[Dict]:
+    async def load_user_projects(self, user_id: int) -> List[Dict]:
         log.info("Loading projects for user %s", user_id)
         async with self.engine.acquire() as conn:
             user_groups: List[str] = await self.__load_user_groups(conn, user_id)
@@ -203,7 +206,7 @@ class ProjectDBAPI:
         return projects_list
 
     async def load_template_projects(
-        self, user_id: str, *, only_published=False
+        self, user_id: int, *, only_published=False
     ) -> List[Dict]:
         log.info("Loading public template projects")
 
@@ -226,7 +229,7 @@ OR prj_owner = {user_id})
 
         return projects_list
 
-    async def __load_user_groups(self, conn: SAConnection, user_id: str) -> List[str]:
+    async def __load_user_groups(self, conn: SAConnection, user_id: int) -> List[str]:
         user_groups: List[str] = []
         query = select([user_to_groups.c.gid]).where(user_to_groups.c.uid == user_id)
         async for row in conn.execute(query):
@@ -253,7 +256,7 @@ OR prj_owner = {user_id})
         return api_projects
 
     async def _get_project(
-        self, user_id: str, project_uuid: str, exclude_foreign: Optional[List] = None
+        self, user_id: int, project_uuid: str, exclude_foreign: Optional[List] = None
     ) -> Dict:
         exclude_foreign = exclude_foreign or []
         async with self.engine.acquire() as conn:
@@ -283,7 +286,7 @@ OR prj_owner = {user_id})
 
             return project
 
-    async def add_tag(self, user_id: str, project_uuid: str, tag_id: int) -> Dict:
+    async def add_tag(self, user_id: int, project_uuid: str, tag_id: int) -> Dict:
         project = await self._get_project(user_id, project_uuid)
         async with self.engine.acquire() as conn:
             # pylint: disable=no-value-for-parameter
@@ -295,7 +298,7 @@ OR prj_owner = {user_id})
                     return _convert_to_schema_names(project, user_email)
                 raise ProjectsException()
 
-    async def remove_tag(self, user_id: str, project_uuid: str, tag_id: int) -> Dict:
+    async def remove_tag(self, user_id: int, project_uuid: str, tag_id: int) -> Dict:
         project = await self._get_project(user_id, project_uuid)
         async with self.engine.acquire() as conn:
             user_email = await self._get_user_email(conn, user_id)
@@ -311,7 +314,7 @@ OR prj_owner = {user_id})
                     project["tags"].remove(tag_id)
                 return _convert_to_schema_names(project, user_email)
 
-    async def get_user_project(self, user_id: str, project_uuid: str) -> Dict:
+    async def get_user_project(self, user_id: int, project_uuid: str) -> Dict:
         """ Returns all projects *owned* by the user
 
             - prj_owner
@@ -341,7 +344,7 @@ OR prj_owner = {user_id})
         if prj and prj.template:
             return prj.data
 
-        template_prj = None
+        template_prj = {}
         async with self.engine.acquire() as conn:
             if only_published:
                 condition = and_(
@@ -367,19 +370,8 @@ OR prj_owner = {user_id})
 
         return template_prj
 
-    async def get_project_workbench(self, project_uuid: str):
-        async with self.engine.acquire() as conn:
-            query = select([projects.c.workbench]).where(
-                projects.c.uuid == project_uuid
-            )
-            result = await conn.execute(query)
-            row = await result.first()
-            if row:
-                return row[projects.c.workbench]
-        return {}
-
     async def update_user_project(
-        self, project_data: Dict, user_id: str, project_uuid: str
+        self, project_data: Dict, user_id: int, project_uuid: str
     ):
         """ updates a project from a user
 
@@ -393,32 +385,34 @@ OR prj_owner = {user_id})
 
             # uuid can ONLY be set upon creation
             if row[projects.c.uuid.key] != project_data["uuid"]:
-                # TODO: add message
                 raise ProjectInvalidRightsError(user_id, project_data["uuid"])
-            # TODO: should also take ownership???
-
             # update timestamps
             project_data["lastChangeDate"] = now_str()
-
             # now update it
-            # FIXME: E1120:No value for argument 'dml' in method call
-            # pylint: disable=E1120
-            query = (
+            result = await conn.execute(
+                # pylint: disable=no-value-for-parameter
                 projects.update()
                 .values(**_convert_to_db_names(project_data))
                 .where(projects.c.id == row[projects.c.id.key])
+                .returning(literal_column("*"))
             )
-            await conn.execute(query)
+            project: RowProxy = await result.fetchone()
+            user_email = await self._get_user_email(conn, user_id)
+
+            tags = await self._get_tags_by_project(
+                conn, project_id=project[projects.c.id]
+            )
+            return _convert_to_schema_names(project, user_email, tags=tags)
 
     async def delete_user_project(self, user_id: int, project_uuid: str):
         log.info("Deleting project %s for user %s", project_uuid, user_id)
         project = await self._get_project(user_id, project_uuid)
         async with self.engine.acquire() as conn:
             # if we are the project owner, we delete the project
-            if project["prj_owner"] == str(user_id):
+            if project["prj_owner"] == user_id:
                 await conn.execute(
                     # pylint: disable=no-value-for-parameter
-                    projects.delete().where(projects.c.id == project_uuid)
+                    projects.delete().where(projects.c.uuid == project_uuid)
                 )
             else:
                 # let's just remove the access rights if it was shared with my primary group
@@ -431,6 +425,7 @@ OR prj_owner = {user_id})
                     )
                 access_rights.pop(primary_gid)
                 await conn.execute(
+                    # pylint: disable=no-value-for-parameter
                     projects.update().values(access_rights=access_rights)
                 )
 
@@ -455,26 +450,25 @@ OR prj_owner = {user_id})
                     break
         return project_uuid
 
-    async def _get_user_email(self, conn: SAConnection, user_id: Optional[str]) -> str:
+    async def _get_user_email(self, conn: SAConnection, user_id: Optional[int]) -> str:
         if not user_id:
             return "not_a_user@unknown.com"
         stmt = sa.select([users.c.email]).where(users.c.id == user_id)
         result: ResultProxy = await conn.execute(stmt)
         row: RowProxy = await result.first()
-        return row[users.c.email] if row else "Unknown"
+        return row[users.c.email] if row else "Unknown"  # type: ignore
 
     async def _get_user_primary_group(self, conn: SAConnection, user_id: int) -> int:
         stmt = sa.select([users.c.primary_gid]).where(users.c.id == user_id)
         result: ResultProxy = await conn.execute(stmt)
         row: RowProxy = await result.first()
-        return row[users.c.primary_gid]
+        return row[users.c.primary_gid]  # type: ignore
 
     async def _get_tags_by_project(self, conn: SAConnection, project_id: str) -> List:
         query = sa.select([study_tags.c.tag_id]).where(
             study_tags.c.study_id == project_id
         )
-        rows = await (await conn.execute(query)).fetchall()
-        return [row.tag_id for row in rows]
+        return [row.tag_id async for row in conn.execute(query)]
 
     async def get_all_node_ids_from_workbenches(
         self, project_uuid: str = None

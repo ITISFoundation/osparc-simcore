@@ -2,29 +2,22 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import collections
-import json
 import uuid as uuidlib
 from asyncio import Future, sleep
 from copy import deepcopy
-from pathlib import Path
 from typing import Dict, List
 
 import pytest
 from aiohttp import web
 from mock import call
-from yarl import URL
 
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
+from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
 from pytest_simcore.helpers.utils_projects import (
     NewProject,
-    create_project,
     delete_all_projects,
 )
 from servicelib.application import create_safe_application
-from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.director import setup_director
