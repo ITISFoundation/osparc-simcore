@@ -16,15 +16,13 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
-
 from change_case import ChangeCase
 from psycopg2 import IntegrityError
-from sqlalchemy.sql import and_, select, or_
-from sqlalchemy import Boolean
+from sqlalchemy.sql import and_, select
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
-from ..db_models import study_tags, users, user_to_groups
+from ..db_models import study_tags, user_to_groups, users
 from ..utils import format_datetime, now_str
 from .projects_exceptions import (
     ProjectInvalidRightsError,

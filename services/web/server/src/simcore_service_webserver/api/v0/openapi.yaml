@@ -3796,6 +3796,9 @@ paths:
                             id:
                               type: string
                               description: the user id
+                            gid:
+                              type: string
+                              description: the user primary gid
                         - description: defines acesss rights for the user
                           type: object
                           properties:
@@ -4061,6 +4064,9 @@ paths:
                           id:
                             type: string
                             description: the user id
+                          gid:
+                            type: string
+                            description: the user primary gid
                       - description: defines acesss rights for the user
                         type: object
                         properties:
@@ -4224,6 +4230,9 @@ paths:
                           id:
                             type: string
                             description: the user id
+                          gid:
+                            type: string
+                            description: the user primary gid
                       - description: defines acesss rights for the user
                         type: object
                         properties:

@@ -152,6 +152,9 @@ GroupUser:
         id:
           type: string
           description: the user id
+        gid:
+          type: string
+          description: the user primary gid
     - $ref: "#/AccessRights"
 
 GroupUsersArrayEnveloped:

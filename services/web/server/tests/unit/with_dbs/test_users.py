@@ -337,6 +337,7 @@ def _assert__group_user(
     assert actual_user["access_rights"] == expected_access_rights
     assert "id" in actual_user
     assert actual_user["id"] == expected_user["id"]
+    assert "gid" in actual_user
 
 
 @pytest.mark.parametrize(

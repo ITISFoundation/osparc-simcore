@@ -592,15 +592,12 @@ async def test_new_template_from_project(
 
 
 @pytest.mark.parametrize(
-    "user_role,expected",
+    "user_role,expected_change,expected_get",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (
-            UserRole.GUEST,
-            web.HTTPOk,
-        ),  # FIXME: this should not be allowed PC how do we do that?
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden, web.HTTPNotFound),
+        (UserRole.USER, web.HTTPOk, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk, web.HTTPOk),
     ],
 )
 async def test_share_project_with_everyone(
@@ -609,7 +606,8 @@ async def test_share_project_with_everyone(
     all_group: Dict[str, str],
     user_project,
     user_role,
-    expected,
+    expected_change,
+    expected_get,
     computational_system_mock,
 ):
     # Use-case: the user shares his project instance with a group
@@ -623,7 +621,7 @@ async def test_share_project_with_everyone(
         str(all_group["gid"]): {"read": True, "write": True, "execute": True}
     }
     resp = await client.put(replace_project_url, json=project_update)
-    data, error = await assert_status(resp, expected)
+    data, error = await assert_status(resp, expected_change)
 
     if not error:
         assert_replaced(current_project=data, update_data=project_update)
@@ -635,7 +633,7 @@ async def test_share_project_with_everyone(
     url = client.app.router["get_project"].url_for(project_id=project_update["uuid"])
 
     resp = await client.get(url)
-    data, error = await assert_status(resp, expected)
+    data, error = await assert_status(resp, expected_get)
 
     if not error:
         assert data == project_update
