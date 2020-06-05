@@ -36,7 +36,7 @@ from . import crud_users as crud
 from .__version__ import api_vtag
 from .api_dependencies_db import SAConnection, get_db_connection
 from .auth_security import get_access_token_data
-from .schemas import TokenData, User, UserInDB
+from .schemas import TokenData, User
 
 log = logging.getLogger(__name__)
 
@@ -79,7 +79,6 @@ async def get_current_user(
         raise _create_credentials_exception("Could not validate credentials")
 
     # identify user
-    # user: Optional[UserInDB] = crud.get_user(username=token_data.username)
     user: Optional[User] = await crud.get_user_by_id(conn, int(token_data.username))
     if user is None:
         raise _create_credentials_exception("Could not validate credentials")

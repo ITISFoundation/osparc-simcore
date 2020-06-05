@@ -1,11 +1,7 @@
-""" Helpers wrapping or producing FastAPI's app
-
-    These helpers are typically used with main.the_app singleton instance
-"""
 import json
 import types
 from pathlib import Path
-from typing import Callable, Dict
+from typing import Dict
 
 import yaml
 from fastapi import FastAPI
@@ -75,7 +71,9 @@ def _setup_redoc(app: FastAPI):
 
 
 def create(settings: AppSettings) -> FastAPI:
-    # factory
+    """  Creates a customized app
+
+    """
     app = FastAPI(
         debug=settings.debug,
         title="Public API Gateway",
@@ -86,8 +84,10 @@ def create(settings: AppSettings) -> FastAPI:
     )
     app.state.settings = settings
 
+    # overrides generation of openapi specs
     app.openapi = types.MethodType(_custom_openapi, app)
 
+    # customizes rendering of redoc
     _setup_redoc(app)
 
     return app

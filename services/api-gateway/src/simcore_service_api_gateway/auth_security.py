@@ -16,7 +16,7 @@ from .schemas import TokenData, UserInDB
 
 log = logging.getLogger(__name__)
 
-# PASSWORDS
+# PASSWORDS ---------------------------------------------------------------
 
 __pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -38,7 +38,7 @@ def authenticate_user(username: str, password: str) -> Optional[UserInDB]:
     return user
 
 
-# JSON WEB TOKENS (JWT)
+# JSON WEB TOKENS (JWT) --------------------------------------------------------------
 
 __SIGNING_KEY__ = os.environ.get("SECRET_KEY")
 __ALGORITHM__ = "HS256"
@@ -51,7 +51,8 @@ def create_access_token(
     if expires_delta is None:
         expires_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    # The JWT specification says that there's a key sub, with the subject of the token.
+    # JWT specs define "Claim Names" for the encoded payload
+    # SEE https://tools.ietf.org/html/rfc7519#section-4
     to_encode = {
         "sub": subject,
         "exp": datetime.utcnow() + expires_delta,
@@ -61,10 +62,6 @@ def create_access_token(
     return encoded_jwt
 
 
-def decode_token(encoded_jwt: str) -> Dict:
-    return jwt.decode(encoded_jwt, __SIGNING_KEY__, algorithms=[__ALGORITHM__])
-
-
 def get_access_token_data(encoded_jwt: str) -> Optional[TokenData]:
     """
         Decodes and validates JWT and returns TokenData
@@ -72,11 +69,15 @@ def get_access_token_data(encoded_jwt: str) -> Optional[TokenData]:
     """
     try:
         # decode JWT [header.payload.signature] and get payload:
-        payload: Dict = decode_token(encoded_jwt)
+        payload: Dict = jwt.decode(
+            encoded_jwt, __SIGNING_KEY__, algorithms=[__ALGORITHM__]
+        )
 
+        # FIXME: here we determine that the subject happens to be the username!
         username: str = payload.get("sub")
         if username is None:
             return None
+
         token_scopes = payload.get("scopes", [])
 
         # validate
