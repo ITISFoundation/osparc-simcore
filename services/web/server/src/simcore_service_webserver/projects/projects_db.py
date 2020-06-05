@@ -170,7 +170,7 @@ class ProjectDBAPI:
                 try:
                     query = projects.insert().values(**kargs)
                     result = await conn.execute(query)
-                    row = await result.first()
+                    await result.first()
                     retry = False
                 except psycopg2.errors.UniqueViolation as err:  # pylint: disable=no-member
                     if (
