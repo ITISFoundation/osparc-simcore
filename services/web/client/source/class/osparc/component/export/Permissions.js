@@ -229,6 +229,7 @@ qx.Class.define("osparc.component.export.Permissions", {
       osparc.data.Resources.fetch("studies", "put", params)
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator(s) successfully made Owner"));
+          this.__organizationsAndMembers.addOptions([]);
           this.__reloadCollaboratorsList();
         })
         .catch(err => {
