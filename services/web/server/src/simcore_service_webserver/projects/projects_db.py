@@ -166,7 +166,6 @@ class ProjectDBAPI:
 
             # insert project
             retry = True
-            project_id = None
             while retry:
                 try:
                     query = projects.insert().values(**kargs)
