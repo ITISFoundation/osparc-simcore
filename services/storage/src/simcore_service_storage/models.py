@@ -12,7 +12,6 @@ from simcore_postgres_database.storage_models import (
     metadata,
     projects,
     tokens,
-    user_to_projects,
     users,
     groups,
     user_to_groups,
@@ -174,7 +173,6 @@ __all__ = [
     "FileMetaDataEx",
     "projects",
     "users",
-    "user_to_projects",
     "groups",
     "user_to_groups",
 ]

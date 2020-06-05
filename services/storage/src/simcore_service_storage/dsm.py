@@ -31,7 +31,6 @@ from .models import (
     _location_from_id,
     file_meta_data,
     projects,
-    user_to_projects,
 )
 from .s3 import get_config_s3
 from .settings import (
@@ -218,11 +217,8 @@ class DataStorageManager:
                 # now parse the project to search for node/project names
                 try:
                     async with self.engine.acquire() as conn:
-                        joint_table = user_to_projects.join(projects)
-                        query = (
-                            sa.select([projects])
-                            .select_from(joint_table)
-                            .where(user_to_projects.c.user_id == user_id)
+                        query = sa.select([projects]).where(
+                            projects.c.prj_owner == user_id
                         )
 
                         async for row in conn.execute(query):
@@ -381,11 +377,8 @@ class DataStorageManager:
             if self.has_project_db:
                 try:
                     async with self.engine.acquire() as conn:
-                        joint_table = user_to_projects.join(projects)
-                        query = (
-                            sa.select([projects])
-                            .select_from(joint_table)
-                            .where(user_to_projects.c.user_id == user_id)
+                        query = sa.select([projects]).where(
+                            projects.c.prj_owner == user_id
                         )
                         async for row in conn.execute(query):
                             proj_data = dict(row.items())
