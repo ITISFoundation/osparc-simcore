@@ -38,6 +38,11 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
     }
   },
 
+  events: {
+    "promoteCollaborator": "qx.event.type.Data",
+    "removeCollaborator": "qx.event.type.Data"
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -91,10 +96,19 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
         position: "bottom-right"
       });
 
+      const makeOwnerButton = new qx.ui.menu.Button(this.tr("Make Owner"));
+      makeOwnerButton.addListener("execute", () => {
+        this.fireDataEvent("promoteCollaborator", {
+          gid: this.getKey(),
+          name: this.getTitle()
+        });
+      });
+      menu.add(makeOwnerButton);
+
       const removeButton = new qx.ui.menu.Button(this.tr("Remove Collaborator"));
       removeButton.addListener("execute", () => {
         this.fireDataEvent("removeCollaborator", {
-          key: this.getKey(),
+          gid: this.getKey(),
           name: this.getTitle()
         });
       });

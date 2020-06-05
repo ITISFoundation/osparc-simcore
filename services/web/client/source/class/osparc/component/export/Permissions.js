@@ -104,6 +104,14 @@ qx.Class.define("osparc.component.export.Permissions", {
             .setStyles({
               "border-radius": "16px"
             });
+          item.addListener("promoteCollaborator", e => {
+            const orgMember = e.getData();
+            this.__promoteCollaborator(orgMember);
+          });
+          item.addListener("removeCollaborator", e => {
+            const orgMember = e.getData();
+            this.__deleteCollaborator(orgMember);
+          });
         }
       });
 
@@ -193,6 +201,52 @@ qx.Class.define("osparc.component.export.Permissions", {
         })
         .finally(() => {
           btn.setFetching(false);
+        });
+    },
+
+    __promoteCollaborator: function(collaborator) {
+      this.__study["accessRights"][collaborator["gid"]] = {
+        "read": true,
+        "write": true,
+        "delete": true
+      };
+      const params = {
+        url: {
+          "projectId": this.__study["uuid"]
+        },
+        data: this.__study
+      };
+      osparc.data.Resources.fetch("studies", "put", params)
+        .then(() => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(collaborator["name"] + this.tr(" successfully made Owner"));
+          this.__reloadCollaboratorsList();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making ") + collaborator["name"] + this.tr(" Owner"), "ERROR");
+          console.error(err);
+        });
+    },
+
+    __deleteCollaborator: function(collaborator) {
+      const success = delete this.__study["accessRights"][collaborator["gid"]];
+      if (!success) {
+        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making ") + collaborator["name"] + this.tr(" Owner"), "ERROR");
+      }
+
+      const params = {
+        url: {
+          "projectId": this.__study["uuid"]
+        },
+        data: this.__study
+      };
+      osparc.data.Resources.fetch("studies", "put", params)
+        .then(() => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(collaborator["name"] + this.tr(" successfully removed"));
+          this.__reloadCollaboratorsList();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making ") + collaborator["name"] + this.tr(" Owner"), "ERROR");
+          console.error(err);
         });
     }
   }
