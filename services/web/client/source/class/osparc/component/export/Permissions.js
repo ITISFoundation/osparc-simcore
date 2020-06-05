@@ -25,7 +25,7 @@ qx.Class.define("osparc.component.export.Permissions", {
   construct: function(study) {
     this.base(arguments);
 
-    this.__study = study;
+    this.__study = osparc.utils.Utils.deepCloneObject(study);
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
@@ -34,8 +34,27 @@ qx.Class.define("osparc.component.export.Permissions", {
     this.__getMyFriends();
   },
 
+  statics: {
+    getCollaboratorAccessRight: function() {
+      return {
+        "read": true,
+        "write": true,
+        "execute": false
+      };
+    },
+
+    getOwnerAccessRight: function() {
+      return {
+        "read": true,
+        "write": true,
+        "execute": true
+      };
+    }
+  },
+
   members: {
     __study: null,
+    __organizationsAndMembers: null,
     __collaboratorsModel: null,
     __myFrieds: null,
 
@@ -54,27 +73,35 @@ qx.Class.define("osparc.component.export.Permissions", {
     },
 
     __createAddCollaborator: function() {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      vBox.setVisibility(this.__isUserOwner() ? "visible" : "excluded");
+
+      const label = new qx.ui.basic.Label().set({
+        value: this.tr("Add Collaborators and Organizations")
+      });
+      vBox.add(label);
+
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignY: "middle"
       }));
-      hBox.setVisibility(this.__isUserOwner() ? "visible" : "excluded");
-
-      const userEmail = new qx.ui.form.TextField().set({
-        required: true,
-        placeholder: this.tr("Add Collaborators and Organizations")
-      });
-      userEmail.setRequired(true);
-      hBox.add(userEmail, {
+      vBox.add(hBox, {
         flex: 1
       });
 
-      const inviteBtn = new qx.ui.form.Button(this.tr("Invite"));
-      inviteBtn.addListener("execute", () => {
-        this.__addCollaborator(userEmail.getValue());
-      }, this);
-      hBox.add(inviteBtn);
+      const organizationsAndMembers = this.__organizationsAndMembers = new osparc.component.filter.OrganizationsAndMembers("asfd");
+      hBox.add(organizationsAndMembers, {
+        flex: 1
+      });
 
-      return hBox;
+      const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Add")).set({
+        allowGrowY: false
+      });
+      addCollaboratorBtn.addListener("execute", () => {
+        this.__addCollaborator();
+      }, this);
+      hBox.add(addCollaboratorBtn);
+
+      return vBox;
     },
 
     __createCollaboratorsList: function() {
@@ -135,8 +162,19 @@ qx.Class.define("osparc.component.export.Permissions", {
           for (const gid of Object.keys(orgMembers)) {
             this.__myFrieds[gid] = orgMembers[gid];
           }
+          this.__populateOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
         });
+    },
+
+    __populateOrganizationsAndMembers: function() {
+      const myFriends = this.__myFrieds;
+      for (const gid of Object.keys(myFriends)) {
+        const myFriend = myFriends[gid];
+        if (gid !== osparc.auth.Data.getInstance().getGroupId()) {
+          this.__organizationsAndMembers.addOption(myFriend);
+        }
+      }
     },
 
     __reloadCollaboratorsList: function() {
@@ -173,16 +211,34 @@ qx.Class.define("osparc.component.export.Permissions", {
       return false;
     },
 
-    __addCollaborator: function(email) {
-      console.log(email);
+    __addCollaborator: function() {
+      const gids = this.__organizationsAndMembers.getSelectedGIDs();
+      if (gids.length === 0) {
+        return;
+      }
+
+      gids.forEach(gid => {
+        this.__study["accessRights"][gid] = this.self().getCollaboratorAccessRight();
+      });
+      const params = {
+        url: {
+          "projectId": this.__study["uuid"]
+        },
+        data: this.__study
+      };
+      osparc.data.Resources.fetch("studies", "put", params)
+        .then(() => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator(s) successfully made Owner"));
+          this.__reloadCollaboratorsList();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went adding collaborators"), "ERROR");
+          console.error(err);
+        });
     },
 
     __promoteCollaborator: function(collaborator) {
-      this.__study["accessRights"][collaborator["gid"]] = {
-        "read": true,
-        "write": true,
-        "delete": true
-      };
+      this.__study["accessRights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
       const params = {
         url: {
           "projectId": this.__study["uuid"]
