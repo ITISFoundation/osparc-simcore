@@ -39,7 +39,7 @@ pytest-aiohttp==0.3.0     # via -r requirements/_test.in
 pytest-cov==2.9.0         # via -r requirements/_test.in
 pytest-docker==0.7.2      # via -r requirements/_test.in
 pytest-instafail==0.4.1.post0  # via -r requirements/_test.in
-pytest-mock==3.1.0        # via -r requirements/_test.in
+pytest-mock==3.1.1        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.3       # via -r requirements/_test.in
 pytest==5.4.3             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-mock, pytest-sugar
@@ -55,7 +55,7 @@ trafaret==2.0.2           # via -r requirements/_base.txt, trafaret-config
 typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.2  # via -r requirements/_base.txt, aiohttp
 urllib3==1.25.9           # via requests
-wcwidth==0.1.9            # via pytest
+wcwidth==0.2.3            # via pytest
 websocket-client==0.57.0  # via docker
 wrapt==1.12.1             # via astroid
 yarl==1.4.2               # via -r requirements/_base.txt, aiohttp

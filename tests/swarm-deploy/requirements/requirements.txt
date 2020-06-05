@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/requirements.txt requirements/requirements.in
 #
-aio-pika==6.6.0           # via -r requirements/requirements.in
+aio-pika==6.6.1           # via -r requirements/requirements.in
 aiohttp==3.6.2            # via pytest-aiohttp
 aiormq==3.2.2             # via aio-pika
 async-timeout==3.0.1      # via aiohttp
@@ -26,7 +26,7 @@ pyparsing==2.4.7          # via packaging
 pytest-aiohttp==0.3.0     # via -r requirements/requirements.in
 pytest-cov==2.9.0         # via -r requirements/requirements.in
 pytest-instafail==0.4.1.post0  # via -r requirements/requirements.in
-pytest-mock==3.1.0        # via -r requirements/requirements.in
+pytest-mock==3.1.1        # via -r requirements/requirements.in
 pytest-runner==5.2        # via -r requirements/requirements.in
 pytest-sugar==0.9.3       # via -r requirements/requirements.in
 pytest==5.4.3             # via -r requirements/requirements.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-mock, pytest-sugar
@@ -37,7 +37,7 @@ tenacity==6.2.0           # via -r requirements/requirements.in
 termcolor==1.1.0          # via pytest-sugar
 typing-extensions==3.7.4.2  # via aiohttp
 urllib3==1.25.9           # via requests
-wcwidth==0.1.9            # via pytest
+wcwidth==0.2.3            # via pytest
 websocket-client==0.57.0  # via docker
 yarl==1.4.2               # via aio-pika, aiohttp, aiormq
 zipp==3.1.0               # via importlib-metadata

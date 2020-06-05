@@ -35,6 +35,6 @@ six==1.15.0               # via -r requirements/_base.txt, astroid, packaging, p
 toml==0.10.1              # via pylint
 typed-ast==1.4.1          # via astroid
 urllib3==1.25.9           # via -r requirements/_base.txt, minio, requests
-wcwidth==0.1.9            # via pytest
+wcwidth==0.2.3            # via pytest
 wrapt==1.12.1             # via astroid
 zipp==3.1.0               # via importlib-metadata
