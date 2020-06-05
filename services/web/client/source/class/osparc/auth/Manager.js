@@ -148,6 +148,9 @@ qx.Class.define("osparc.auth.Manager", {
     __loginUser: function(profile) {
       osparc.auth.Data.getInstance().setEmail(profile.login);
       osparc.auth.Data.getInstance().setToken(profile.login);
+      osparc.auth.Data.getInstance().setUserId(profile.id);
+      // osparc.auth.Data.getInstance().setGroupId(profile.gid);
+      osparc.auth.Data.getInstance().setGroupId(2);
       osparc.data.Permissions.getInstance().setRole(profile.role);
     },
 
