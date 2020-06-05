@@ -4,7 +4,7 @@
 import logging
 import os
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import jwt
 from jwt import PyJWTError
@@ -46,19 +46,23 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
 def create_access_token(
-    *, subject: str, scopes: List[str] = None, expires_delta: timedelta = None
+    data: TokenData, *, expires_in_mins: Optional[int] = ACCESS_TOKEN_EXPIRE_MINUTES
 ) -> str:
-    if expires_delta is None:
-        expires_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-
+    """
+        To disable expiration, set 'expires_in_mins' to None
+    """
     # JWT specs define "Claim Names" for the encoded payload
     # SEE https://tools.ietf.org/html/rfc7519#section-4
-    to_encode = {
-        "sub": subject,
-        "exp": datetime.utcnow() + expires_delta,
-        "scopes": scopes or [],
+    payload = {
+        "sub": data.user_id,
+        "scopes": data.scopes or [],
     }
-    encoded_jwt = jwt.encode(to_encode, __SIGNING_KEY__, algorithm=__ALGORITHM__)
+
+    if expires_in_mins is not None:
+        exp = datetime.utcnow() + timedelta(minutes=expires_in_mins)
+        payload["exp"] = exp
+
+    encoded_jwt = jwt.encode(payload, __SIGNING_KEY__, algorithm=__ALGORITHM__)
     return encoded_jwt
 
 
@@ -73,18 +77,16 @@ def get_access_token_data(encoded_jwt: str) -> Optional[TokenData]:
             encoded_jwt, __SIGNING_KEY__, algorithms=[__ALGORITHM__]
         )
 
-        # FIXME: here we determine that the subject happens to be the username!
-        username: str = payload.get("sub")
-        if username is None:
-            return None
+        token_data = TokenData(
+            user_id=payload.get("sub"), token_scopes=payload.get("scopes", [])
+        )
 
-        token_scopes = payload.get("scopes", [])
-
-        # validate
-        token_data = TokenData(scopes=token_scopes, username=username)
-
-    except (PyJWTError, ValidationError):
-        # invalid token!
+    except PyJWTError:
         log.debug("Invalid token", exc_info=True)
         return None
+
+    except ValidationError:
+        log.warning("Token data corrupted? Check payload -> TokenData conversion")
+        return None
+
     return token_data

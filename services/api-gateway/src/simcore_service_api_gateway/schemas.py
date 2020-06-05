@@ -9,7 +9,9 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    username: str = None
+    """ application data encoded in the JWT """
+
+    user_id: int
     scopes: List[str] = []
 
 

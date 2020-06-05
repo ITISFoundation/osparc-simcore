@@ -79,7 +79,7 @@ async def get_current_user(
         raise _create_credentials_exception("Could not validate credentials")
 
     # identify user
-    user: Optional[User] = await crud.get_user_by_id(conn, int(token_data.username))
+    user: Optional[User] = await crud.get_user_by_id(conn, token_data.user_id)
     if user is None:
         raise _create_credentials_exception("Could not validate credentials")
 

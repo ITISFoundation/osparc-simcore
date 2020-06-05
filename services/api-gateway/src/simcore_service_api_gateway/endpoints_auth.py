@@ -9,7 +9,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from . import crud_users as crud
 from .api_dependencies_db import SAConnection, get_db_connection
 from .auth_security import authenticate_user, create_access_token
-from .schemas import Token, UserInDB
+from .schemas import Token, TokenData, UserInDB
 from .utils.helpers import json_dumps
 
 log = logging.getLogger(__name__)
@@ -46,23 +46,15 @@ async def login_for_access_token(
     print("-" * 20, file=stream)
     log.debug(stream.getvalue())
 
-    if crud.DUMMY_DATA:
-        user: Optional[UserInDB] = authenticate_user(
-            form_data.username, form_data.password
-        )
-    else:
-        user: int = await crud.get_user_id(
-            conn, api_key=form_data.username, api_secret=form_data.password
-        )
+    user_id: Optional[int] = await crud.get_user_id(
+        conn, api_key=form_data.username, api_secret=form_data.password
+    )
 
-    if not user:
+    if not user_id:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
 
-    if crud.DUMMY_DATA:
-        access_token = create_access_token(
-            subject=user.username, scopes=form_data.scopes
-        )
-    access_token = create_access_token(subject=user)
+    # FIXME: expiration disabled since for the moment we do NOT have any renewal mechanims in place!!!
+    access_token = create_access_token(TokenData(user_id), expires_in_mins=None)
 
     # NOTE: this reponse is defined in Oath2
     resp_data = {"access_token": access_token, "token_type": "bearer"}
