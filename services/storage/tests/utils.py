@@ -130,7 +130,7 @@ def create_full_tables(url):
         bind=engine, tables=[file_meta_data, projects, users, groups, user_to_groups,],
     )
 
-    for t in ["file_meta_data", "projects", "users"]:
+    for t in ["users", "file_meta_data", "projects"]:
         filename = t + ".csv"
         csv_file = str(data_dir() / Path(filename))
         with open(csv_file, "r") as file:
