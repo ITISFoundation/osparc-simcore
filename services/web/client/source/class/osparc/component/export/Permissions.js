@@ -36,6 +36,7 @@ qx.Class.define("osparc.component.export.Permissions", {
 
   members: {
     __study: null,
+    __collaboratorsModel: null,
     __myFrieds: null,
 
     createWindow: function() {
@@ -67,7 +68,7 @@ qx.Class.define("osparc.component.export.Permissions", {
       });
 
       const inviteBtn = new qx.ui.form.Button(this.tr("Invite"));
-      inviteBtn.addListener("execute", function() {
+      inviteBtn.addListener("execute", () => {
         this.__addCollaborator(userEmail.getValue(), inviteBtn);
       }, this);
       hBox.add(inviteBtn);
