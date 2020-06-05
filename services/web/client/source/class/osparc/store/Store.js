@@ -167,6 +167,28 @@ qx.Class.define("osparc.store.Store", {
     },
 
     /**
+     * Invalidates the cache for the given resources.
+     * If resource is a string, it will invalidate that resource.
+     * If it is an array, it will try to invalidate every resource in the array.
+     * If it is not provided, it will invalidate all resources.
+     *
+     * @param {(string|string[])} [resources] Property or array of property names that must be reset
+     */
+    invalidate: function(resources) {
+      if (typeof resources === "string" || resources instanceof String) {
+        this.reset(resources);
+      } else {
+        let propertyArray;
+        if (resources == null) {
+          propertyArray = Object.keys(qx.util.PropertyUtil.getProperties(osparc.store.Store));
+        } else if (Array.isArray(resources)) {
+          propertyArray = resources;
+        }
+        propertyArray.forEach(propName => this.reset(propName));
+      }
+    },
+
+    /**
      * This functions does the needed processing in order to have a working list of services and DAGs.
      * @param {Boolean} reload ?
      */
@@ -238,26 +260,6 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    /**
-     * Invalidates the cache for the given resources.
-     * If resource is a string, it will invalidate that resource.
-     * If it is an array, it will try to invalidate every resource in the array.
-     * If it is not provided, it will invalidate all resources.
-     *
-     * @param {(string|string[])} [resources] Property or array of property names that must be reset
-     */
-    invalidate: function(resources) {
-      if (typeof resources === "string" || resources instanceof String) {
-        this.reset(resources);
-      } else {
-        let propertyArray;
-        if (resources == null) {
-          propertyArray = Object.keys(qx.util.PropertyUtil.getProperties(osparc.store.Store));
-        } else if (Array.isArray(resources)) {
-          propertyArray = resources;
-        }
-        propertyArray.forEach(propName => this.reset(propName));
-      }
     },
 
     _applyStudy: function(newStudy) {
