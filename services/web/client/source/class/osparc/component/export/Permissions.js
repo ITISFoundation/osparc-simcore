@@ -171,7 +171,7 @@ qx.Class.define("osparc.component.export.Permissions", {
       const myFriends = this.__myFrieds;
       for (const gid of Object.keys(myFriends)) {
         const myFriend = myFriends[gid];
-        if (gid !== osparc.auth.Data.getInstance().getGroupId()) {
+        if (parseInt(gid) !== osparc.auth.Data.getInstance().getGroupId()) {
           this.__organizationsAndMembers.addOption(myFriend);
         }
       }
@@ -193,7 +193,7 @@ qx.Class.define("osparc.component.export.Permissions", {
             collaborator["showOptions"] = true;
           }
           const collaboratorModel = qx.data.marshal.Json.createModel(collaborator);
-          if (gid === osparc.auth.Data.getInstance().getGroupId()) {
+          if (parseInt(gid) === osparc.auth.Data.getInstance().getGroupId()) {
             this.__collaboratorsModel.insertAt(0, collaboratorModel);
           } else {
             this.__collaboratorsModel.append(collaboratorModel);

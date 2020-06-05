@@ -36,7 +36,7 @@ qx.Class.define("osparc.component.filter.OrganizationsAndMembers", {
       if ("first_name" in group) {
         name = group["first_name"] + " " + group["last_name"];
       } else {
-        name = group["name"];
+        name = group["label"];
       }
       const btn = this._addOption(name);
       btn.gid = group["gid"];
