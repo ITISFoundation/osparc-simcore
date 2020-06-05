@@ -44,6 +44,7 @@ async def _check_node_uuid_available(
     log.debug("Checked if UUID %s is already in use", node_uuid)
     # check if service with same uuid already exists
     try:
+        # not filtering by "swarm_stack_name" label because it's safer
         list_of_running_services_w_uuid = await client.services.list(
             filters={"label": "uuid=" + node_uuid}
         )
@@ -812,7 +813,7 @@ async def get_services_details(
 ) -> List[Dict]:
     async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
         try:
-            filters = ["type=main"]
+            filters = ["type=main", f"swarm_stack_name={config.SWARM_STACK_NAME}"]
             if user_id:
                 filters.append("user_id=" + user_id)
             if study_id:
@@ -844,7 +845,7 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
                     "label": [
                         f"uuid={node_uuid}",
                         "type=main",
-                        f"swarm_stack_name={config.SWARM_STACK_NAME}"
+                        f"swarm_stack_name={config.SWARM_STACK_NAME}",
                     ]
                 }
             )
@@ -875,7 +876,12 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
     async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
         try:
             list_running_services_with_uuid = await client.services.list(
-                filters={"label": "uuid=" + node_uuid}
+                filters={
+                    "label": [
+                        f"uuid={node_uuid}",
+                        f"swarm_stack_name={config.SWARM_STACK_NAME}",
+                    ]
+                }
             )
         except aiodocker.exceptions.DockerError as err:
             log.exception("Error while stopping container with uuid: %s", node_uuid)
