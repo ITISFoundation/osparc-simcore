@@ -4,6 +4,9 @@ from .base import metadata
 from .projects import projects
 from .users import users
 
+
+## DEPRECTATED TABLE, WILL BE REMOVED IN A SECOND DEPLOY!!! DO NOT USE!!!
+
 user_to_projects = sa.Table(
     "user_to_projects",
     metadata,
