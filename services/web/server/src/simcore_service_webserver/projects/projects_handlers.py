@@ -204,8 +204,18 @@ async def replace_project(request: web.Request):
     )
 
     try:
-        projects_api.validate_project(request.app, new_project)
+        # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+        from .projects_api import get_project_for_user
 
+        projects_api.validate_project(request.app, new_project)
+        current_project = await get_project_for_user(
+            request.app,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            include_templates=False,
+        )
+        if current_project["accessRights"] != new_project["accessRights"]:
+            await check_permission(request, "project.access_rights.update")
         await db.update_user_project(new_project, user_id, project_uuid)
         await update_pipeline_db(
             request.app, project_uuid, new_project["workbench"], replace_pipeline
