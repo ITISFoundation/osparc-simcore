@@ -4,6 +4,8 @@ from .base import metadata
 from .projects import projects
 from .users import users
 
+
+# DEPRECATED!!!!!!!!!!!!!! DO NOT USE!!!!!!!
 user_to_projects = sa.Table(
     "user_to_projects",
     metadata,
