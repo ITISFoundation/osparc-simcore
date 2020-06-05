@@ -70,10 +70,12 @@ qx.Class.define("osparc.component.export.ShareWith", {
         contextId: 0,
         label: "Private"
       },
+      /*
       "orgMembers": {
         contextId: 1,
         label: "Organization Members"
       },
+      */
       "orgs": {
         contextId: 2,
         label: "Organizations"
@@ -156,7 +158,7 @@ qx.Class.define("osparc.component.export.ShareWith", {
       const selection = this.__rbManager.getSelection();
       this.setReady(Boolean(selection.length));
 
-      this.__myOrgMembersHB.setVisibility(this.__isGroupSelected("orgMembers") ? "visible" : "excluded");
+      // this.__myOrgMembersHB.setVisibility(this.__isGroupSelected("orgMembers") ? "visible" : "excluded");
       this.__myOrgs.setVisibility(this.__isGroupSelected("orgs") ? "visible" : "excluded");
     },
 
