@@ -3,18 +3,16 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import os
+import subprocess
+import sys
+from pathlib import Path
 from typing import Callable, Coroutine, Union
 
 import aiopg.sa
 import pytest
 import sqlalchemy as sa
 import yaml
-from pathlib import Path
-import sys
-import subprocess
-
-import os
-
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.resolve()
 utils_dir = (current_dir / ".." / ".." / "utils").resolve()

@@ -1,8 +1,7 @@
-from fastapi.requests import Request
-from fastapi import FastAPI, Depends
-
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
+from fastapi import Depends, FastAPI
+from fastapi.requests import Request
 
 
 def _get_app(request: Request) -> FastAPI:

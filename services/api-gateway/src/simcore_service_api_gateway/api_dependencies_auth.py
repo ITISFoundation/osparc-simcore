@@ -34,10 +34,9 @@ from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 
 from . import crud_users as crud
 from .__version__ import api_vtag
+from .api_dependencies_db import SAConnection, get_db_connection
 from .auth_security import get_access_token_data
 from .schemas import TokenData, User, UserInDB
-
-from .api_dependencies_db import get_db_connection, SAConnection
 
 log = logging.getLogger(__name__)
 

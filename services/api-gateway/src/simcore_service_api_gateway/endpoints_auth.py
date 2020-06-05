@@ -1,10 +1,13 @@
 import logging
+import os
 from io import StringIO
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 
+from . import crud_users as crud
+from .api_dependencies_db import SAConnection, get_db_connection
 from .auth_security import authenticate_user, create_access_token
 from .schemas import Token, UserInDB
 from .utils.helpers import json_dumps
@@ -14,9 +17,6 @@ log = logging.getLogger(__name__)
 
 router = APIRouter()
 
-from .api_dependencies_db import SAConnection, get_db_connection
-from . import crud_users as crud
-import os
 
 # NOTE: this path has to be the same as simcore_service_api_gateway.auth.oauth2_scheme
 @router.post("/token", response_model=Token)

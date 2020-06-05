@@ -3,7 +3,9 @@
 """
 
 import logging
-from typing import Dict, Optional
+
+# SETUP ------
+from typing import Callable, Dict, Optional
 
 import aiopg.sa
 import sqlalchemy as sa
@@ -69,10 +71,6 @@ def create_tables(settings: AppSettings):
     log.info("creating tables")
     _engine = sa.create_engine(settings.postgres_dsn)
     ## Base.metadata.create_all(bind=engine)
-
-
-# SETUP ------
-from typing import Callable
 
 
 def create_start_db_handler(app: FastAPI) -> Callable:

@@ -4,11 +4,22 @@
 # pylint: disable=protected-access
 
 
+# simcore_api_sdk.abc.py
+import abc as _abc
+import json
 from pprint import pprint
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 
+import aiohttp
+
+# DEV ---------------------------------------------------------------------
+import attr
 import pytest
+
+# simcore_api_sdk/v0/me_api.py
+from attr import NOTHING
 from starlette.testclient import TestClient
+from yarl import URL
 
 from simcore_service_api_gateway import application, endpoints_check
 from simcore_service_api_gateway.__version__ import api_vtag
@@ -34,19 +45,6 @@ def client(monkeypatch) -> TestClient:
     # Context manager to trigger events: https://fastapi.tiangolo.com/advanced/testing-events/
     with TestClient(app) as cli:
         yield cli
-
-
-# DEV ---------------------------------------------------------------------
-import attr
-import aiohttp
-
-from yarl import URL
-from typing import Optional, Any
-import json
-
-
-# simcore_api_sdk.abc.py
-import abc as _abc
 
 
 @attr.s(auto_attribs=True)
@@ -99,9 +97,6 @@ class API(_abc.ABC):
 
 # simcore_api_sdk/v0/__init__.py
 # from ._openapi import ApiSession
-
-# simcore_api_sdk/v0/me_api.py
-from attr import NOTHING
 
 
 class MeAPI(API):

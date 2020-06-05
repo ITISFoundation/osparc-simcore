@@ -1,8 +1,8 @@
-from simcore_service_api_gateway.settings import AppSettings, BootModeEnum, URL
-
 # import pytest
 import logging
 from pprint import pprint
+
+from simcore_service_api_gateway.settings import URL, AppSettings, BootModeEnum
 
 
 def test_app_settings(monkeypatch):

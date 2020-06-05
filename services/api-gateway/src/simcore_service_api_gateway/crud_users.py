@@ -2,14 +2,14 @@
     API layer to access dbs and return schema-based data structures
 """
 
-from typing import Optional
 import os
+from typing import Optional
 
 import sqlalchemy as sa
 
 from . import db
 from . import db_models as orm
-from .schemas import UserInDB, User
+from .schemas import User, UserInDB
 
 DUMMY_DATA = os.environ.get("DUMMY_DATA", False)
 

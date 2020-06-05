@@ -5,10 +5,10 @@
 import os
 import re
 from pathlib import Path
-from pytest_simcore.helpers.utils_pylint import assert_pylint_is_passing
-
 
 import pytest
+
+from pytest_simcore.helpers.utils_pylint import assert_pylint_is_passing
 
 
 @pytest.fixture

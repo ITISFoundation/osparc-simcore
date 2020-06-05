@@ -2,6 +2,8 @@
 # TODO: reuse in auto and manual testing!
 
 import asyncio
+import os
+from typing import Dict
 from uuid import uuid4
 
 import aiopg.sa
@@ -9,12 +11,8 @@ import faker
 import sqlalchemy as sa
 import yaml
 
-import simcore_service_api_gateway.db_models as orm
 import simcore_postgres_database.cli as pg_cli
-
-from typing import Dict
-import os
-
+import simcore_service_api_gateway.db_models as orm
 
 DSN_FORMAT = "postgresql://{user}:{password}@{host}:{port}/{database}"
 

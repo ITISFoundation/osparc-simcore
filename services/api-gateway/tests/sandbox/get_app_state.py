@@ -1,7 +1,7 @@
-from fastapi import Depends, FastAPI
-from fastapi.requests import Request
-from fastapi.applications import State
 import uvicorn
+from fastapi import Depends, FastAPI
+from fastapi.applications import State
+from fastapi.requests import Request
 
 app = FastAPI(title="get_app_state")
 

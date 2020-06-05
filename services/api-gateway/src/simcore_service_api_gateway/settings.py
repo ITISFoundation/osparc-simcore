@@ -2,11 +2,12 @@
 
 # NOTE: SEE https://pydantic-docs.helpmanual.io/usage/settings/ for usage
 
-from pydantic import BaseSettings, Field, SecretStr, validator
+import logging
 from enum import Enum
 from typing import Optional
+
+from pydantic import BaseSettings, Field, SecretStr, validator
 from yarl import URL
-import logging
 
 
 class BootModeEnum(str, Enum):
