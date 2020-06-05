@@ -340,8 +340,6 @@ async def test_new_project(
         # FIXME: cannot delete user until project is deleted. See cascade  or too coupled??
         #  i.e. removing a user, removes all its projects!!
 
-        # asyncpg.exceptions.ForeignKeyViolationError: update or delete on table "users"
-        #   violates foreign key constraint "user_to_projects_user_id_fkey" on table "user_to_projects"
         await delete_all_projects(client.app)
 
 

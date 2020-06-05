@@ -30,7 +30,7 @@ from .projects_exceptions import (
     ProjectsException,
 )
 from .projects_fakes import Fake
-from .projects_models import ProjectType, projects, user_to_projects
+from .projects_models import ProjectType, projects
 
 log = logging.getLogger(__name__)
 
@@ -180,23 +180,6 @@ class ProjectDBAPI:
                     kargs["uuid"] = str(uuidlib.uuid1())
                     retry = True
 
-            if user_id is not None:
-                try:
-                    query = user_to_projects.insert().values(
-                        user_id=user_id, project_id=project_id
-                    )
-                    await conn.execute(query)
-                except IntegrityError as exc:
-                    log.exception(
-                        "Cannot associate project %d to user %d", project_id, user_id
-                    )
-
-                    # rollback projects database
-                    query = projects.delete().where(projects.c.id == project_id)
-                    await conn.execute(query)
-
-                    raise ProjectInvalidRightsError(user_id, prj["uuid"]) from exc
-
             # Updated values
             user_email = await self._get_user_email(conn, user_id)
             prj = _convert_to_schema_names(kargs, user_email)
@@ -215,17 +198,6 @@ class ProjectDBAPI:
     AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group}'" for group in user_groups)}])
     OR prj_owner = {user_id})
     """
-            # query = (
-            #     select([projects])
-            #     .select_from(user_to_projects.join(projects))
-            #     .where(
-            #         and_(
-            #             user_to_projects.c.user_id == user_id,
-            #             projects.c.type != ProjectType.TEMPLATE,
-            #         )
-            #     )
-            # )
-
             projects_list = await self.__load_projects(conn, query)
 
         return projects_list
@@ -298,22 +270,6 @@ AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group}'" for 
 OR prj_owner = {user_id})
 """
             result = await conn.execute(query)
-            # result = await conn.execute(
-            #     select([projects])
-            #     .select_from(user_to_projects.join(projects))
-            #     .where(
-            #         or_(
-            #             and_(
-            #                 projects.c.uuid == project_uuid,
-            #                 user_to_projects.c.user_id == user_id,
-            #             ),
-            #             and_(
-            #                 projects.c.uuid == project_uuid,
-            #                 projects.c.access_rights["read"].cast(Boolean) == True,
-            #             ),
-            #         )
-            #     )
-            # )
             project_row = await result.first()
 
             if not project_row:
@@ -358,9 +314,9 @@ OR prj_owner = {user_id})
     async def get_user_project(self, user_id: str, project_uuid: str) -> Dict:
         """ Returns all projects *owned* by the user
 
-            - A project is owned with it is mapped in user_to_projects list
-            - prj_owner field is not
+            - prj_owner
             - Notice that a user can have access to a template but he might not onw it
+            - Notice that a user can have access to a project where he/she has read access
 
         :raises ProjectNotFoundError: project is not assigned to user
         :return: schema-compliant project
@@ -456,47 +412,27 @@ OR prj_owner = {user_id})
 
     async def delete_user_project(self, user_id: int, project_uuid: str):
         log.info("Deleting project %s for user %s", project_uuid, user_id)
+        project = await self._get_project(user_id, project_uuid)
         async with self.engine.acquire() as conn:
-            joint_table = user_to_projects.join(projects)
-            query = (
-                select([projects.c.id, user_to_projects.c.id], use_labels=True)
-                .select_from(joint_table)
-                .where(
-                    and_(
-                        projects.c.uuid == project_uuid,
-                        user_to_projects.c.user_id == user_id,
+            # if we are the project owner, we delete the project
+            if project["prj_owner"] == str(user_id):
+                await conn.execute(
+                    # pylint: disable=no-value-for-parameter
+                    projects.delete().where(projects.c.id == project_uuid)
+                )
+            else:
+                # let's just remove the access rights if it was shared with my primary group
+                access_rights = project["access_rights"]
+                primary_gid: int = await self._get_user_primary_group(conn, user_id)
+                if not primary_gid in access_rights:
+                    # sharing was done through a bigger group so it's not possible to remove that study
+                    raise ProjectsException(
+                        f"project cannot be removed for user {user_id}, project was shared through organization"
                     )
+                access_rights.pop(primary_gid)
+                await conn.execute(
+                    projects.update().values(access_rights=access_rights)
                 )
-            )
-            result = await conn.execute(query)
-            # ensure we have found one
-            rows = await result.fetchall()
-
-            if not rows:
-                # no project found
-                raise ProjectNotFoundError(project_uuid)
-
-            if len(rows) == 1:
-                row = rows[0]
-                # now let's delete the link to the user
-                # FIXME: E1120:No value for argument 'dml' in method call
-                # pylint: disable=E1120
-                project_id = row[user_to_projects.c.id]
-                log.info("will delete row with project_id %s", project_id)
-                query = user_to_projects.delete().where(
-                    user_to_projects.c.id == project_id
-                )
-                await conn.execute(query)
-
-                query = user_to_projects.select().where(
-                    user_to_projects.c.project_id == row[projects.c.id]
-                )
-                result = await conn.execute(query)
-                remaining_users = await result.fetchall()
-                if not remaining_users:
-                    # only delete project if there are no other user mapped
-                    query = projects.delete().where(projects.c.id == row[projects.c.id])
-                    await conn.execute(query)
 
     async def make_unique_project_uuid(self) -> str:
         """ Generates a project identifier still not used in database
@@ -526,6 +462,12 @@ OR prj_owner = {user_id})
         result: ResultProxy = await conn.execute(stmt)
         row: RowProxy = await result.first()
         return row[users.c.email] if row else "Unknown"
+
+    async def _get_user_primary_group(self, conn: SAConnection, user_id: int) -> int:
+        stmt = sa.select([users.c.primary_gid]).where(users.c.id == user_id)
+        result: ResultProxy = await conn.execute(stmt)
+        row: RowProxy = await result.first()
+        return row[users.c.primary_gid]
 
     async def _get_tags_by_project(self, conn: SAConnection, project_id: str) -> List:
         query = sa.select([study_tags.c.tag_id]).where(
