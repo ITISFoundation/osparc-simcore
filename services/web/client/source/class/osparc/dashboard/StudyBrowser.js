@@ -338,6 +338,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         };
         osparc.data.Resources.fetch("studies", "postFromTemplate", params)
           .then(studyData => {
+            studyData.accessRights = osparc.component.export.Permissions.getOwnerAccessRight();
             this.__startStudy(studyData);
           })
           .catch(err => {
@@ -368,7 +369,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __loadStudy: function(studyData) {
       const study = new osparc.data.model.Study(studyData);
-      study.setAccessRights({});
       this.__studyEditor = this.__studyEditor || new osparc.desktop.StudyEditor();
       this.__studyEditor.setStudy(study);
       this.fireDataEvent("startStudy", this.__studyEditor);
