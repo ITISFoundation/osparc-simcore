@@ -4,6 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_base.txt requirements/_base.in
 #
+aiocontextvars==0.2.2     # via loguru
 aiofiles==0.5.0           # via fastapi
 aiopg[sa]==1.0.0          # via -r requirements/_base.in
 aniso8601==7.0.0          # via graphene
@@ -14,6 +15,7 @@ certifi==2020.4.5.1       # via requests
 cffi==1.14.0              # via bcrypt
 chardet==3.0.4            # via requests
 click==7.1.2              # via uvicorn
+contextvars==2.4          # via aiocontextvars
 dataclasses==0.7          # via pydantic
 dnspython==1.16.0         # via email-validator
 email-validator==1.1.1    # via fastapi
@@ -24,8 +26,10 @@ graphql-relay==2.0.1      # via graphene
 h11==0.9.0                # via uvicorn
 httptools==0.1.1          # via uvicorn
 idna==2.9                 # via email-validator, requests, yarl
+immutables==0.14          # via contextvars
 itsdangerous==1.1.0       # via fastapi
 jinja2==2.11.2            # via fastapi
+loguru==0.5.0             # via -r requirements/_base.in
 markupsafe==1.1.1         # via jinja2
 multidict==4.7.6          # via yarl
 orjson==3.0.2             # via fastapi
