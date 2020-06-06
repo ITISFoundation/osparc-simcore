@@ -10,10 +10,9 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     """ application data encoded in the JWT """
+
     user_id: int
     scopes: List[str] = []
-
-
 
 
 # TODO: Replace by real user models
