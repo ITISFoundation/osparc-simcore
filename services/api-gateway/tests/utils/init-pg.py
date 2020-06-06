@@ -12,7 +12,7 @@ import sqlalchemy as sa
 import yaml
 
 import simcore_postgres_database.cli as pg_cli
-import simcore_service_api_gateway.db_models as orm
+import simcore_service_api_gateway.models.pg_tables as pg
 
 DSN_FORMAT = "postgresql://{user}:{password}@{host}:{port}/{database}"
 
@@ -45,9 +45,9 @@ def load_db_config() -> Dict:
 
 def init_tables(dsn: str = default_dsn):
     engine = sa.create_engine(dsn)
-    meta = orm.metadata
+    meta = pg.metadata
     meta.drop_all(engine)
-    # meta.create_all(engine, tables=[orm.api_keys, orm.users])
+    # meta.create_all(engine, tables=[pg.api_keys, pg.users])
 
 
 def random_user(**overrides):
@@ -55,7 +55,7 @@ def random_user(**overrides):
         name=fake.name(),
         email=fake.email(),
         password_hash=fake.numerify(text="#" * 5),
-        status=orm.UserStatus.ACTIVE,
+        status=pg.UserStatus.ACTIVE,
         created_ip=fake.ipv4(),
     )
     data.update(overrides)
@@ -74,11 +74,11 @@ async def fill_tables(dsn: str = default_dsn):
     async with aiopg.sa.create_engine(dsn) as engine:
         async with engine.acquire() as conn:
             uid: int = await conn.scalar(
-                orm.users.insert().values(**random_user(name="me", email="me@bar.foo"))
+                pg.users.insert().values(**random_user(name="me", email="me@bar.foo"))
             )
 
             await conn.scalar(
-                orm.api_keys.insert().values(
+                pg.api_keys.insert().values(
                     **random_api_key(
                         display_name="test key",
                         user_id=uid,

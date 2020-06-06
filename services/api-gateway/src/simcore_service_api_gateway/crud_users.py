@@ -5,11 +5,9 @@
 from typing import Optional
 
 import sqlalchemy as sa
-from aiopg.sa.result import ResultProxy
 
 from . import db
-from . import db_models as orm
-from .schemas import UserInDB
+from .models import pg_tables as orm
 
 
 async def get_user_id(
