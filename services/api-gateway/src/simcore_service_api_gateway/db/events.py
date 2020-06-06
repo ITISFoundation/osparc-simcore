@@ -5,7 +5,7 @@ from aiopg.sa import Engine, create_engine
 from fastapi import FastAPI
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
-from ..settings import AppSettings
+from ..core.config import AppSettings
 
 ENGINE_ATTRS = "closed driver dsn freesize maxsize minsize name size timeout".split()
 

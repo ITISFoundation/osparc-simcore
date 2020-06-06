@@ -4,7 +4,8 @@ from pathlib import Path
 
 from fastapi import FastAPI
 
-from . import application, settings
+from .core import application
+from .core.config import AppSettings
 from .__version__ import api_vtag
 from .api.routes.openapi import router as api_router
 from .core.events import create_start_app_handler, create_stop_app_handler
@@ -19,7 +20,7 @@ def init_application() -> FastAPI:
     """
         Creates a sets up app
     """
-    config = settings.AppSettings()
+    config = AppSettings()
     logging.root.setLevel(config.loglevel)
 
     app: FastAPI = application.create(settings=config)

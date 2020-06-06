@@ -1,7 +1,3 @@
-# pylint: disable=no-name-in-module
-
-# NOTE: SEE https://pydantic-docs.helpmanual.io/usage/settings/ for usage
-
 import logging
 from enum import Enum
 from typing import Optional

@@ -5,19 +5,19 @@
 """
 import uvicorn
 
-from simcore_service_api_gateway.application import get_settings
+
 from simcore_service_api_gateway.main import the_app
-from simcore_service_api_gateway.settings import AppSettings, BootModeEnum
+from simcore_service_api_gateway.core.config import AppSettings, BootModeEnum
 
 
 def main():
-    settings: AppSettings = get_settings(the_app)
+    cfg: AppSettings = the_app.state.settings
     uvicorn.run(
         the_app,
-        host=settings.host,
-        port=settings.port,
-        reload=settings.boot_mode == BootModeEnum.development,
-        log_level=settings.log_level_name.lower(),
+        host=cfg.host,
+        port=cfg.port,
+        reload=cfg.boot_mode == BootModeEnum.development,
+        log_level=cfg.log_level_name.lower(),
     )
 
 
