@@ -10,18 +10,19 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     """ application data encoded in the JWT """
-
     user_id: int
     scopes: List[str] = []
 
 
+
+
+# TODO: Replace by real user models
 class User(BaseModel):
     name: str
     email: str = None
     # role: str = None
 
 
-# DUMMY
 class UserInDB(User):
-    hashed_password: str
-    disabled: bool = None
+    class Config:
+        orm_mode = True
