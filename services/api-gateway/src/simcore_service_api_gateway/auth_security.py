@@ -7,14 +7,13 @@ from typing import Dict, Optional
 
 import jwt
 from jwt import PyJWTError
+from loguru import logger
 from passlib.context import CryptContext
 from pydantic import ValidationError
 
-from loguru import logger
-
-from . import crud_users as crud
 from .models.schemas.tokens import TokenData
-from .models.schemas.users import UserInDB
+
+# from .models.schemas.users import UserInDB
 
 # PASSWORDS ---------------------------------------------------------------
 
@@ -29,13 +28,13 @@ def get_password_hash(password: str) -> str:
     return __pwd_context.hash(password)
 
 
-def authenticate_user(username: str, password: str) -> Optional[UserInDB]:
-    user = crud.get_user(username)
-    if not user:
-        return None
-    if not verify_password(password, user.hashed_password):
-        return None
-    return user
+# def authenticate_user(username: str, password: str) -> Optional[UserInDB]:
+#     user = crud.get_user(username)
+#     if not user:
+#         return None
+#     if not verify_password(password, user.hashed_password):
+#         return None
+#     return user
 
 
 # JSON WEB TOKENS (JWT) --------------------------------------------------------------

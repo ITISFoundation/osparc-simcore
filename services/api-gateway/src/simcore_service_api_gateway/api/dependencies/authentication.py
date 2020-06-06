@@ -30,15 +30,14 @@ from typing import Optional
 
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
-
 from loguru import logger
 
-from ... import crud_users as crud
 from ...__version__ import api_vtag
 from ...auth_security import get_access_token_data
+from ...db.repositories.users import UsersRepository
 from ...models.domain.users import User
 from ...models.schemas.tokens import TokenData
-from .database import SAConnection, get_db_connection
+from .database import get_repository
 
 # Declaration of security scheme:
 #   - Adds components.securitySchemes['OAuth2PasswordBearer'] to openapi.yaml
@@ -54,7 +53,7 @@ oauth2_scheme = OAuth2PasswordBearer(
 async def get_current_user_id(
     security_scopes: SecurityScopes,
     access_token: str = Depends(oauth2_scheme),
-    conn: SAConnection = Depends(get_db_connection),
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> int:
     """
         access_token: extracted access_token from request header
@@ -78,7 +77,7 @@ async def get_current_user_id(
         raise _create_credentials_exception("Could not validate credentials")
 
     # identify user
-    identified = await crud.any_user_with_id(conn, token_data.user_id)
+    identified = await users_repo.any_user_with_id(token_data.user_id)
     if not identified:
         raise _create_credentials_exception("Could not validate credentials")
 

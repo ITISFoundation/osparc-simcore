@@ -1,18 +1,15 @@
-import logging
 from io import StringIO
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
+from loguru import logger
 
-from .... import crud_users as crud
 from ....auth_security import create_access_token
+from ....db.repositories.users import UsersRepository
 from ....models.schemas.tokens import Token, TokenData
 from ....utils.helpers import json_dumps
 from ..dependencies.database import SAConnection, get_db_connection
-
-log = logging.getLogger(__name__)
-
 
 router = APIRouter()
 
@@ -41,7 +38,7 @@ def _compose_msg(*, fd=None, rd=None) -> str:
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    conn: SAConnection = Depends(get_db_connection),
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ):
     """
         Returns an access-token provided a valid authorization grant
@@ -58,9 +55,9 @@ async def login_for_access_token(
     # |        |                               +---------------+
     #
 
-    log.debug(_compose_msg(fd=form_data))
+    logger.debug(_compose_msg(fd=form_data))
 
-    user_id: Optional[int] = await crud.get_user_id(
+    user_id: Optional[int] = await users_repo.get_user_id(
         conn, api_key=form_data.username, api_secret=form_data.password
     )
 
@@ -75,6 +72,6 @@ async def login_for_access_token(
     # NOTE: this reponse is defined in Oath2
     resp_data = {"access_token": access_token, "token_type": "bearer"}
 
-    log.debug(_compose_msg(rd=resp_data))
+    logger.debug(_compose_msg(rd=resp_data))
 
     return resp_data

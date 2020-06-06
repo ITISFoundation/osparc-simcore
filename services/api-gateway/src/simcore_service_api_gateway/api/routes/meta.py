@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from .__version__ import __version__, api_version, api_vtag
+from ...__version__ import __version__, api_version, api_vtag
 
 router = APIRouter()
 

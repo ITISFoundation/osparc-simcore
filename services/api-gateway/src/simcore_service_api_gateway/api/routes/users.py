@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Security
 
-from .api_dependencies_auth import get_active_user_id
-from .models.schemas.users import UserInResponse
+from ...models.schemas.users import UserInResponse
+from ..dependencies.authentication import get_active_user_id
 
 router = APIRouter()
 

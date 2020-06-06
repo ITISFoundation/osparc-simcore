@@ -1,14 +1,21 @@
+from typing import AsyncGenerator, Callable, Type
+
 from aiopg.sa import Engine
-from aiopg.sa.connection import SAConnection
-from fastapi import Depends, FastAPI
+from fastapi import Depends
 from fastapi.requests import Request
 
-
-def _get_app(request: Request) -> FastAPI:
-    return request.app
+from ...db.repositories.base import BaseRepository
 
 
-async def get_db_connection(app: FastAPI = Depends(_get_app)) -> SAConnection:
-    engine: Engine = app.state.engine
-    async with engine.acquire() as conn:
-        yield conn
+def _get_db_engine(request: Request) -> Engine:
+    return request.app.engine
+
+
+def get_repository(repo_type: Type[BaseRepository]) -> Callable:
+    async def _get_repo(
+        engine: Engine = Depends(_get_db_engine),
+    ) -> AsyncGenerator[BaseRepository, None]:
+        async with engine.acquire() as conn:
+            yield repo_type(conn)
+
+    return _get_repo

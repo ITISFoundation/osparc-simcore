@@ -2,7 +2,6 @@ import sys
 from pathlib import Path
 
 from fastapi import FastAPI
-
 from loguru import logger
 
 from .__version__ import api_vtag
@@ -19,7 +18,7 @@ def init_application() -> FastAPI:
         Creates a sets up app
     """
     config = AppSettings()
-    logging.root.setLevel(config.loglevel)
+    logger.add(sys.stderr, level=config.loglevel)
 
     app: FastAPI = application.create(settings=config)
 

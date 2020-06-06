@@ -1,10 +1,10 @@
+import logging
 from io import StringIO
 
 from aiopg.sa import Engine, create_engine
 from fastapi import FastAPI
-from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
-
 from loguru import logger
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from ..core.config import AppSettings
 
@@ -14,7 +14,7 @@ ENGINE_ATTRS = "closed driver dsn freesize maxsize minsize name size timeout".sp
 pg_retry_policy = dict(
     wait=wait_fixed(5),
     stop=stop_after_attempt(20),
-    before_sleep=before_sleep_log(log, logging.WARNING),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
     reraise=True,
 )
 

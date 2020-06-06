@@ -1,7 +1,6 @@
 from typing import Callable
 
 from fastapi import FastAPI
-
 from loguru import logger
 
 from ..db.events import close_db_connection, connect_to_db
