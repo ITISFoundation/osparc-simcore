@@ -52,11 +52,11 @@ oauth2_scheme = OAuth2PasswordBearer(
 )
 
 
-async def get_current_user(
+async def get_current_user_id(
     security_scopes: SecurityScopes,
     access_token: str = Depends(oauth2_scheme),
     conn: SAConnection = Depends(get_db_connection),
-) -> User:
+) -> int:
     """
         access_token: extracted access_token from request header
         security_scopes: iterable with all REQUIRED scopes to run operation
@@ -79,8 +79,8 @@ async def get_current_user(
         raise _create_credentials_exception("Could not validate credentials")
 
     # identify user
-    user: Optional[User] = await crud.get_user_by_id(conn, token_data.user_id)
-    if user is None:
+    identified = await crud.any_user_with_id(conn, token_data.user_id)
+    if not identified:
         raise _create_credentials_exception("Could not validate credentials")
 
     # Checks whether user has ALL required scopes for this call
@@ -93,12 +93,11 @@ async def get_current_user(
                 "Missing required scope for this operation"
             )
 
-    return user
+    return token_data.user_id
 
 
-async def get_current_active_user(
-    current_user: User = Security(get_current_user, scopes=["read"])
-):
-    if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
+async def get_active_user_id(
+    current_user_id: User = Security(get_current_user_id, scopes=["read"])
+) -> int:
+    # FIXME: Adds read scope. rename properly and activate scopes
+    return current_user_id

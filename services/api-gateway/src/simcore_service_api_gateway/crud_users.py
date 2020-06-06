@@ -5,6 +5,7 @@
 from typing import Optional
 
 import sqlalchemy as sa
+from aiopg.sa.result import ResultProxy
 
 from . import db
 from . import db_models as orm
@@ -23,12 +24,7 @@ async def get_user_id(
     return user_id
 
 
-async def get_user_by_id(conn: db.SAConnection, user_id: int) -> Optional[UserInDB]:
-    stmt = sa.select([orm.users,]).where(orm.users.c.id == user_id)
-
-    res: db.ResultProxy = await conn.execute(stmt)
-    row: Optional[db.RowProxy] = await res.fetchone()
-    return UserInDB.from_orm(row) if row else None
-
-
-get_profile_by_userid = get_user_by_id
+async def any_user_with_id(conn: db.SAConnection, user_id: int) -> bool:
+    # FIXME: shall identify api_key or api_secret instead
+    stmt = sa.select([orm.api_keys.c.user_id,]).where(orm.api_keys.c.user_id == user_id)
+    return (await conn.scalar(stmt)) is not None

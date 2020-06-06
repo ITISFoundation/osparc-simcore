@@ -1,24 +1,20 @@
 from fastapi import APIRouter, Depends, Security
 
-from .api_dependencies_auth import get_current_active_user
+from .api_dependencies_auth import get_active_user_id
 from .schemas import User
-
-# from . import crud_users as crud
 
 router = APIRouter()
 
 
 @router.get("/user", response_model=User)
-async def get_my_profile(current_user: User = Depends(get_current_active_user)):
-
-    # TODO: conn??
-    my_profile = current_user
-    # my_profile = await crud.get_profile_by_userid(conn, current_user_id)
-    return my_profile
+async def get_my_profile(user_id: int = Depends(get_active_user_id)):
+    # TODO: Replace code by calls to web-server api
+    return user_id
 
 
 @router.patch("/user", response_model=User)
 async def update_my_profile(
-    current_user: User = Security(get_current_active_user, scopes=["write"])
+    user_id: int = Security(get_active_user_id, scopes=["write"])
 ):
-    return current_user
+    # TODO: Replace code by calls to web-server api
+    return user_id

@@ -38,7 +38,6 @@ def _compose_msg(*, fd=None, rd=None) -> str:
     return stream.getvalue()
 
 
-
 # NOTE: this path has to be the same as simcore_service_api_gateway.auth.oauth2_scheme
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
@@ -65,6 +64,8 @@ async def login_for_access_token(
     user_id: Optional[int] = await crud.get_user_id(
         conn, api_key=form_data.username, api_secret=form_data.password
     )
+
+    # TODO: check is NOT banned
 
     if not user_id:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
