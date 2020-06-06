@@ -1,4 +1,4 @@
-import logging
+from loguru import logger
 from typing import List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
@@ -9,8 +9,6 @@ from ..store import crud_{{ rnp }} as crud
 from ..schemas import schemas_{{ rnp }} as schemas
 
 router = APIRouter()
-log = logging.getLogger(__name__)
-
 
 {#  STANDARD METHODS: https://cloud.google.com/apis/design/standard_methods  #}
 
@@ -37,7 +35,7 @@ async def list_{{ rnp }}(
     # Applicable naming conventions
     # TODO: filter: https://cloud.google.com/apis/design/naming_convention#list_filter_field
     # SEE response: https://cloud.google.com/apis/design/naming_convention#list_response
-    log.debug("%s %s %s", page_token, page_size, order_by)
+    logger.debug("%s %s %s", page_token, page_size, order_by)
     {{ rnp }} = await crud.list_{{ rnp }}(conn)
     return {{ rnp }}
 

@@ -1,11 +1,10 @@
 {#  STANDARD METHODS: https://cloud.google.com/apis/design/custom_methods  #}
 
-import logging
+from loguru import logger
 
 from fastapi import APIRouter, HTTPException
 from starlette import status
 
-log = logging.getLogger(__name__)
 
 router = APIRouter()
 

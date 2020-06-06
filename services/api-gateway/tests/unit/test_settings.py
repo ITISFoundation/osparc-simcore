@@ -1,5 +1,5 @@
 # import pytest
-import logging
+
 from pprint import pprint
 
 from simcore_service_api_gateway.settings import URL, AppSettings, BootModeEnum

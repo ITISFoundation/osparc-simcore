@@ -1,19 +1,17 @@
-import logging
 import sys
 from pathlib import Path
 
 from fastapi import FastAPI
 
-from .core import application
-from .core.config import AppSettings
+from loguru import logger
+
 from .__version__ import api_vtag
 from .api.routes.openapi import router as api_router
+from .core import application
+from .core.config import AppSettings
 from .core.events import create_start_app_handler, create_stop_app_handler
 
-
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-log = logging.getLogger(__name__)
 
 
 def init_application() -> FastAPI:

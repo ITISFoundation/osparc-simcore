@@ -1,7 +1,6 @@
 """ Utility functions related with security
 
 """
-import logging
 import os
 from datetime import datetime, timedelta
 from typing import Dict, Optional
@@ -11,11 +10,11 @@ from jwt import PyJWTError
 from passlib.context import CryptContext
 from pydantic import ValidationError
 
+from loguru import logger
+
 from . import crud_users as crud
 from .models.schemas.tokens import TokenData
 from .models.schemas.users import UserInDB
-
-log = logging.getLogger(__name__)
 
 # PASSWORDS ---------------------------------------------------------------
 
@@ -83,11 +82,11 @@ def get_access_token_data(encoded_jwt: str) -> Optional[TokenData]:
         )
 
     except PyJWTError:
-        log.debug("Invalid token", exc_info=True)
+        logger.debug("Invalid token", exc_info=True)
         return None
 
     except ValidationError:
-        log.warning("Token data corrupted? Check payload -> TokenData conversion")
+        logger.warning("Token data corrupted? Check payload -> TokenData conversion")
         return None
 
     return token_data

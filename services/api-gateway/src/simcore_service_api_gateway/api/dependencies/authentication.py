@@ -26,11 +26,12 @@ SEE
 """
 # TODO: this module shall delegate the auth functionality to a separate service
 
-import logging
 from typing import Optional
 
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
+
+from loguru import logger
 
 from ... import crud_users as crud
 from ...__version__ import api_vtag
@@ -38,9 +39,6 @@ from ...auth_security import get_access_token_data
 from ...models.domain.users import User
 from ...models.schemas.tokens import TokenData
 from .database import SAConnection, get_db_connection
-
-log = logging.getLogger(__name__)
-
 
 # Declaration of security scheme:
 #   - Adds components.securitySchemes['OAuth2PasswordBearer'] to openapi.yaml
@@ -87,7 +85,7 @@ async def get_current_user_id(
     # Checks whether user has ALL required scopes for this call
     for required_scope in security_scopes.scopes:
         if required_scope not in token_data.scopes:
-            log.debug(
+            logger.debug(
                 "Access denied. Client is missing required scope '%s' ", required_scope
             )
             raise _create_credentials_exception(

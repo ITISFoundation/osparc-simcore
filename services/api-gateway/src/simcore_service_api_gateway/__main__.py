@@ -5,9 +5,8 @@
 """
 import uvicorn
 
-
-from simcore_service_api_gateway.main import the_app
 from simcore_service_api_gateway.core.config import AppSettings, BootModeEnum
+from simcore_service_api_gateway.main import the_app
 
 
 def main():
