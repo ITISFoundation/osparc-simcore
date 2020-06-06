@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 
-from ..pg_tables import UserRole, UserStatus
+from simcore_postgres_database.models.users import UserRole, UserStatus
+
 from .groups import Groups
 
 
