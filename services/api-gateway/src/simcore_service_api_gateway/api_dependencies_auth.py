@@ -36,7 +36,8 @@ from . import crud_users as crud
 from .__version__ import api_vtag
 from .api_dependencies_db import SAConnection, get_db_connection
 from .auth_security import get_access_token_data
-from .schemas import TokenData, User
+from .models.schemas.tokens import TokenData
+from .models.domain.users import User
 
 log = logging.getLogger(__name__)
 

@@ -1,5 +1,4 @@
 import logging
-import os
 from io import StringIO
 from typing import Optional
 
@@ -8,8 +7,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from . import crud_users as crud
 from .api_dependencies_db import SAConnection, get_db_connection
-from .auth_security import authenticate_user, create_access_token
-from .schemas import Token, TokenData, UserInDB
+from .auth_security import create_access_token
+from .models.schemas.tokens import Token, TokenData
 from .utils.helpers import json_dumps
 
 log = logging.getLogger(__name__)

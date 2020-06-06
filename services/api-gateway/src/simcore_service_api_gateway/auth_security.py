@@ -12,7 +12,8 @@ from passlib.context import CryptContext
 from pydantic import ValidationError
 
 from . import crud_users as crud
-from .schemas import TokenData, UserInDB
+from .models.schemas.tokens import TokenData
+from .models.schemas.users import UserInDB
 
 log = logging.getLogger(__name__)
 
