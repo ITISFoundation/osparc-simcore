@@ -4,60 +4,36 @@ from pathlib import Path
 
 from fastapi import FastAPI
 
-from . import (
-    application,
-    endpoints_auth,
-    endpoints_health,
-    endpoints_meta,
-    endpoints_studies,
-    endpoints_user,
-)
+from . import application, settings
 from .__version__ import api_vtag
-from .db import setup_db
-from .settings import AppSettings
-from .utils.remote_debug import setup_remote_debugging
+from .api.routes.openapi import router as api_router
+from .core.events import create_start_app_handler, create_stop_app_handler
+
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 log = logging.getLogger(__name__)
 
 
-def build_app() -> FastAPI:
+def init_application() -> FastAPI:
     """
         Creates a sets up app
     """
-    app_settings = AppSettings()
+    config = settings.AppSettings()
+    logging.root.setLevel(config.loglevel)
 
-    logging.root.setLevel(app_settings.loglevel)
+    app: FastAPI = application.create(settings=config)
 
-    app: FastAPI = application.create(settings=app_settings)
+    app.add_event_handler("startup", create_start_app_handler(app))
+    app.add_event_handler("shutdown", create_stop_app_handler(app))
 
-    @app.on_event("startup")
-    def startup_event():  # pylint: disable=unused-variable
-        log.info("Application started")
-        setup_remote_debugging()
+    # app.add_exception_handler(HTTPException, http_error_handler)
+    # app.add_exception_handler(RequestValidationError, http422_error_handler)
 
-    # ROUTES
-    app.include_router(endpoints_health.router)
-
-    app.include_router(endpoints_meta.router, tags=["Meta"], prefix=f"/{api_vtag}")
-    app.include_router(endpoints_auth.router, tags=["Token"], prefix=f"/{api_vtag}")
-    app.include_router(endpoints_user.router, tags=["User"], prefix=f"/{api_vtag}")
-    app.include_router(
-        endpoints_studies.router, tags=["Studies"], prefix=f"/{api_vtag}"
-    )
-
-    # SUBMODULES setups
-    setup_db(app)
-    # NOTE: add new here!
-    #  ...
-
-    @app.on_event("shutdown")
-    def shutdown_event():  # pylint: disable=unused-variable
-        log.info("Application shutdown")
+    app.include_router(api_router, prefix=f"/{api_vtag}")
 
     return app
 
 
 # SINGLETON FastAPI app
-the_app: FastAPI = build_app()
+the_app: FastAPI = init_application()
