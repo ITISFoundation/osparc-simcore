@@ -18,6 +18,27 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _compose_msg(*, fd=None, rd=None) -> str:
+    assert not (fd ^ rd), "Mutally exclusive"  # nosec
+
+    stream = StringIO()
+
+    if fd:
+        print("Form Request", "-" * 20, file=stream)
+        for (
+            attr
+        ) in "grant_type username password scopes client_id client_secret".split():
+            print("-", attr, ":", getattr(fd, attr), file=stream)
+        print("-" * 20, file=stream)
+    elif rd:
+        print("{:-^30}".format("/token response"), file=stream)
+        print(json_dumps(rd), file=stream)
+        print("-" * 30, file=stream)
+
+    return stream.getvalue()
+
+
+
 # NOTE: this path has to be the same as simcore_service_api_gateway.auth.oauth2_scheme
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
@@ -39,12 +60,7 @@ async def login_for_access_token(
     # |        |                               +---------------+
     #
 
-    stream = StringIO()
-    print("Form Request", "-" * 20, file=stream)
-    for attr in "grant_type username password scopes client_id client_secret".split():
-        print("-", attr, ":", getattr(form_data, attr), file=stream)
-    print("-" * 20, file=stream)
-    log.debug(stream.getvalue())
+    log.debug(_compose_msg(fd=form_data))
 
     user_id: Optional[int] = await crud.get_user_id(
         conn, api_key=form_data.username, api_secret=form_data.password
@@ -59,10 +75,6 @@ async def login_for_access_token(
     # NOTE: this reponse is defined in Oath2
     resp_data = {"access_token": access_token, "token_type": "bearer"}
 
-    stream = StringIO()
-    print("{:-^30}".format("/token response"), file=stream)
-    print(json_dumps(resp_data), file=stream)
-    print("-" * 30, file=stream)
-    log.debug(stream.getvalue())
+    log.debug(_compose_msg(rd=resp_data))
 
     return resp_data
