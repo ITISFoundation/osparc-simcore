@@ -1,7 +1,7 @@
+from datetime import datetime
 from typing import List
 
 from pydantic import BaseModel
-from datetime import datetime
 
 
 class JWTMeta(BaseModel):
@@ -20,5 +20,6 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     """ application data encoded in the JWT """
+
     user_id: int
     scopes: List[str] = []

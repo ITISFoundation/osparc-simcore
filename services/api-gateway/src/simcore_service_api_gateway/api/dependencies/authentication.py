@@ -32,12 +32,12 @@ from typing import Optional
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 
-from . import crud_users as crud
-from .__version__ import api_vtag
-from .api_dependencies_db import SAConnection, get_db_connection
-from .auth_security import get_access_token_data
-from .models.schemas.tokens import TokenData
-from .models.domain.users import User
+from ... import crud_users as crud
+from ...__version__ import api_vtag
+from ...auth_security import get_access_token_data
+from ...models.domain.users import User
+from ...models.schemas.tokens import TokenData
+from .database import SAConnection, get_db_connection
 
 log = logging.getLogger(__name__)
 

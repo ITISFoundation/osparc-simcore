@@ -1,4 +1,5 @@
-from pydantic import BaseModel, SecretStr, Field
+from pydantic import BaseModel, Field, SecretStr
+
 
 class ApiKey(BaseModel):
     api_key: str
@@ -6,6 +7,6 @@ class ApiKey(BaseModel):
 
 
 class ApiKeyInDB(ApiKey):
-    id_: int = Field(0, alias='id')
+    id_: int = Field(0, alias="id")
     display_name: str
     user_id: int

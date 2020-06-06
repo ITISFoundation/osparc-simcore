@@ -5,7 +5,7 @@ from fastapi import APIRouter
 router = APIRouter()
 
 
-@router.get("/", include_in_schema=False)
+@router.get("", include_in_schema=False)
 async def check_service_health():
     # TODO: if not, raise ServiceUnavailable (use diagnostic concept as in webserver)
     return

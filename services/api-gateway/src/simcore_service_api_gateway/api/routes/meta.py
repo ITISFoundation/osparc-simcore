@@ -5,7 +5,7 @@ from .__version__ import __version__, api_version, api_vtag
 router = APIRouter()
 
 
-@router.get("/meta")
+@router.get("")
 async def get_service_metadata():
     return {
         "name": __name__.split(".")[0],

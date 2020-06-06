@@ -5,13 +5,13 @@ from .api_dependencies_auth import get_active_user_id
 router = APIRouter()
 
 
-@router.get("/studies")
+@router.get("")
 async def list_studies(user_id: int = Security(get_active_user_id, scopes=["read"])):
     # TODO: Replace code by calls to web-server api
     return [{"project_id": "Foo", "owner": user_id}]
 
 
-@router.get("/studies/{study_id}")
+@router.get("/{study_id}")
 async def get_study(
     study_id: str, user_id: int = Security(get_active_user_id, scopes=["read"]),
 ):
@@ -19,13 +19,13 @@ async def get_study(
     return [{"project_id": study_id, "owner": user_id}]
 
 
-@router.post("/studies")
+@router.post("")
 async def create_study(user_id: int = Security(get_active_user_id, scopes=["write"])):
     # TODO: Replace code by calls to web-server api
     return {"project_id": "Foo", "owner": user_id}
 
 
-@router.put("/studies/{study_id}")
+@router.put("/{study_id}")
 async def replace_study(
     study_id: str, user_id: int = Security(get_active_user_id, scopes=["write"]),
 ):
@@ -33,7 +33,7 @@ async def replace_study(
     return {"project_id": study_id, "owner": user_id}
 
 
-@router.patch("/studies/{study_id}")
+@router.patch("/{study_id}")
 async def update_study(
     study_id: str, user_id: int = Security(get_active_user_id, scopes=["write"]),
 ):
@@ -41,7 +41,7 @@ async def update_study(
     return {"project_id": study_id, "owner": user_id}
 
 
-@router.delete("/studies/{study_id}")
+@router.delete("/{study_id}")
 async def delete_study(
     study_id: str, user_id: int = Security(get_active_user_id, scopes=["write"]),
 ):

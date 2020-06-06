@@ -1,5 +1,6 @@
-from ..domain.api_keys import ApiKey
 from pydantic import BaseModel
+
+from ..domain.api_keys import ApiKey
 
 
 class ApiKeyInLogin(ApiKey):
