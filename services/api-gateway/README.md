@@ -21,3 +21,8 @@ Platform's API Gateway for external clients
 
 - [Design patterns for modern web APIs](https://blog.feathersjs.com/design-patterns-for-modern-web-apis-1f046635215) by D. Luecke
 - [API Design Guide](https://cloud.google.com/apis/design/) by Google Cloud
+
+
+## Acknoledgments
+
+  The design of this service was heavily influence by the **excellent** work at https://github.com/nsidnev/fastapi-realworld-example-app by *nsidnev* using the **extraordinary** [fastapi](https://fastapi.tiangolo.com/) package by *S. Ramirez*.
