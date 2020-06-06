@@ -8,20 +8,20 @@
 
 import asyncio
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from aiohttp import web
+from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
 
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
-from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
 
 from ..login.decorators import RQT_USERID_KEY, login_required
-from ..resource_manager.websocket_manager import managed_resource
 from ..resource_manager.config import get_service_deletion_timeout
+from ..resource_manager.websocket_manager import managed_resource
 from .config import get_socket_server
-from .handlers_utils import register_socketio_handler
 from .events import post_messages
+from .handlers_utils import register_socketio_handler
 
 ANONYMOUS_USER_ID = -1
 _SOCKET_IO_AIOHTTP_REQUEST_KEY = "aiohttp.request"

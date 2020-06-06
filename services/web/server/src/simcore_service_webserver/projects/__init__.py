@@ -4,11 +4,11 @@
     It contains metadata about the study (e.g. name, description, owner, etc) and a workbench section that describes the study pipeline
 """
 import asyncio
+import json
 import logging
 from pprint import pformat
 
 import jsonschema
-import json
 from aiohttp import ClientSession, web
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 

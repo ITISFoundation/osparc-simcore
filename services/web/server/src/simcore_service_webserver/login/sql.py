@@ -1,6 +1,5 @@
 from logging import getLogger
 
-
 log = getLogger(__name__)
 LOG_TPL = "%s <--%s"
 

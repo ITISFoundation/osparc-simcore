@@ -10,6 +10,7 @@ from typing import Coroutine
 import pytest
 from aiohttp import web
 from tenacity import before_log, retry, stop_after_attempt, wait_fixed
+from yarl import URL
 
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.application import create_safe_application
@@ -25,7 +26,6 @@ from simcore_service_webserver.diagnostics_plugin import (
 )
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
-from yarl import URL
 
 logger = logging.getLogger(__name__)
 

@@ -20,9 +20,10 @@ from pathlib import Path
 from typing import Dict
 
 import trafaret as T
+from trafaret_config.simple import read_and_validate
+
 from servicelib import application_keys  # pylint:disable=unused-import
 from servicelib.config_schema_utils import addon_section, minimal_addon_schema
-from trafaret_config.simple import read_and_validate
 
 from . import (
     catalog_config,
