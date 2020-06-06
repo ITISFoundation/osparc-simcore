@@ -1,5 +1,5 @@
 """ Access to postgres service
- DUMMY!
+
 """
 
 import logging
