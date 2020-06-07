@@ -96,7 +96,7 @@ GENERATOR_NAME := python
 
 # TODO: put instead to additional-props.yaml and --config=openapi-generator/python-config.yaml
 ADDITIONAL_PROPS := \
-	generateSourceCodeOnly=false\
+	generateSourceCodeOnly=true\
 	hideGenerationTimestamp=true\
 	library=urllib3\
 	packageName=osparc\
@@ -116,22 +116,27 @@ openapi.json:
 # TODO: code_samples still added by hand!
 client:
 	# cloning $(GIT_USER_ID)/$(GIT_REPO_ID) -> $@
-	git clone git@github.com:$(GIT_USER_ID)/$(GIT_REPO_ID).git $@
+	#git clone git@github.com:$(GIT_USER_ID)/$(GIT_REPO_ID).git $@
+	mkdir client
 
 python-client: openapi.json client ## runs python client generator
 	# running python generator on $(word 2,$^)
 	cd $(CURDIR); \
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash generate \
-		--input-spec=/local/$< \
+		--api-package=osparc\
 		--generator-name=$(GENERATOR_NAME) \
-		--output=/local/$(word 2,$^) \
 		--git-user-id=$(GIT_USER_ID)\
 		--git-repo-id=$(GIT_REPO_ID)\
+		--http-user-agent="osparc-api/{packageVersion}/{language}"\
+		--input-spec=/local/$< \
 		--minimal-update\
+		--output=/local/$(word 2,$^) \
 		--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS)))\
 		--package-name=osparc\
 		--release-note="Updated tof $(APP_VERSION)"\
 		--remove-operation-id-prefix
+
+
 
 
 generator-help: ## help on client-api generator
