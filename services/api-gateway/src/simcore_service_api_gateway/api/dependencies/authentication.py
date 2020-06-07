@@ -33,10 +33,10 @@ from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from loguru import logger
 
 from ...__version__ import api_vtag
-from ...auth_security import get_access_token_data
 from ...db.repositories.users import UsersRepository
 from ...models.domain.users import User
 from ...models.schemas.tokens import TokenData
+from ...services.jwt import get_access_token_data
 from .database import get_repository
 
 # Declaration of security scheme:
