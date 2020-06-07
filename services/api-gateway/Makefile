@@ -5,9 +5,9 @@ include ../../scripts/common.Makefile
 
 # Custom variables
 APP_NAME     := $(notdir $(CURDIR))
-APP_CLI_NAME := simcore-service-api-gateway
+APP_CLI_NAME := simcore-service-$(APP_NAME)
 export APP_VERSION = $(shell cat VERSION)
-
+SRC_DIR      := $(abspath $(CURDIR)/src/$(subst -,_,$(APP_CLI_NAME)))
 
 .PHONY: reqs
 reqs: ## compiles pip requirements (.in -> .txt)
@@ -41,7 +41,9 @@ run-devel: .env-devel down ## runs app on host with pg fixture for development [
 	# running current app
 	export $(shell grep -v '^#' $< | xargs  -d '\n'); \
 	docker-compose -f $(CURDIR)/tests/utils/docker-compose.yml up --detach; \
-	uvicorn simcore_service_api_gateway.main:the_app --reload --port=8001 --host=0.0.0.0
+	uvicorn simcore_service_api_gateway.main:the_app \
+		--reload --reload-dir $(SRC_DIR) \
+		--port=8001 --host=0.0.0.0
 
 .PHONY: db-tables
 db-tables: .env-devel ## upgrades and create tables [for development]
