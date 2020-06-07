@@ -5,8 +5,8 @@
 import pytest
 from starlette.testclient import TestClient
 
-from simcore_service_api_gateway import application, endpoints_meta
 from simcore_service_api_gateway.__version__ import api_version, api_vtag
+from simcore_service_api_gateway.main import init_application
 from simcore_service_api_gateway.settings import AppSettings
 
 
@@ -19,11 +19,7 @@ def client(monkeypatch) -> TestClient:
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
     # app
-    test_settings = AppSettings()
-    app = application.create(settings=test_settings)
-
-    # routes
-    app.include_router(endpoints_meta.router, tags=["check"])
+    app = init_application()
 
     # test client:
     # Context manager to trigger events: https://fastapi.tiangolo.com/advanced/testing-events/

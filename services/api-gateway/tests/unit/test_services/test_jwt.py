@@ -6,28 +6,20 @@ import importlib
 
 import pytest
 
-from simcore_service_api_gateway.auth_security import (
+from simcore_service_api_gateway.models.schemas.tokens import TokenData
+from simcore_service_api_gateway.services.jwt import (
     create_access_token,
     get_access_token_data,
-    get_password_hash,
-    verify_password,
 )
-from simcore_service_api_gateway.schemas import TokenData
-
-
-def test_has_password():
-    hashed_pass = get_password_hash("secret")
-    assert hashed_pass != "secret"
-    assert verify_password("secret", hashed_pass)
 
 
 @pytest.fixture()
 def mock_secret_key(monkeypatch):
     monkeypatch.setenv("SECRET_KEY", "your-256-bit-secret")
 
-    import simcore_service_api_gateway.auth_security
+    import simcore_service_api_gateway.services.jwt
 
-    importlib.reload(simcore_service_api_gateway.auth_security)
+    importlib.reload(simcore_service_api_gateway.services.jwt)
 
 
 def test_access_token_data(mock_secret_key):

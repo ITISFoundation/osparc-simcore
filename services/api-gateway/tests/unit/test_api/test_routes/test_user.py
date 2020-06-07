@@ -9,10 +9,10 @@ from aiopg.sa.engine import Engine, create_engine
 from starlette import status
 from starlette.testclient import TestClient
 
-from simcore_service_api_gateway import application
 from simcore_service_api_gateway.__version__ import api_version, api_vtag
-from simcore_service_api_gateway.main import build_app
-from simcore_service_api_gateway.settings import AppSettings
+from simcore_service_api_gateway.core import application
+from simcore_service_api_gateway.core.settings import AppSettings
+from simcore_service_api_gateway.main import init_application
 
 
 @pytest.fixture(scope="module")
@@ -46,7 +46,7 @@ def client(monkeypatch, postgres_service) -> TestClient:
     monkeypatch.setenv("LOGLEVEL", "debug")
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
-    app = build_app()
+    app = init_application()
 
     # test client:
     # Context manager to trigger events: https://fastapi.tiangolo.com/advanced/testing-events/
