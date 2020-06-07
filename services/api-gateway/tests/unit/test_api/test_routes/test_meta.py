@@ -7,7 +7,6 @@ from starlette.testclient import TestClient
 
 from simcore_service_api_gateway.__version__ import api_version, api_vtag
 from simcore_service_api_gateway.main import init_application
-from simcore_service_api_gateway.settings import AppSettings
 
 
 @pytest.fixture
