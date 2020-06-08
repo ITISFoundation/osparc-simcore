@@ -509,6 +509,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
       permissionsButton.addListener("execute", () => {
         const permissionsView = new osparc.component.export.Permissions(studyData);
+        permissionsView.addListener("updateStudy", () => this.reloadUserStudies(), this);
         const window = permissionsView.createWindow();
         permissionsView.addListener("finished", e => {
           if (e.getData()) {

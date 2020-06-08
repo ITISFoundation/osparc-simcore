@@ -34,6 +34,10 @@ qx.Class.define("osparc.component.export.Permissions", {
     this.__getMyFriends();
   },
 
+  events: {
+    "updateStudy": "qx.event.type.Event"
+  },
+
   statics: {
     getCollaboratorAccessRight: function() {
       return {
