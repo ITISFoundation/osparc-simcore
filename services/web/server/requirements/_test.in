@@ -30,7 +30,7 @@ docker
 redis
 
 # tools
-pylint==2.5.0 # 2.5.2 fails to run in parallel. SEE https://github.com/PyCQA/pylint/releases for updates
+pylint
 coveralls
 codecov
 ptvsd
