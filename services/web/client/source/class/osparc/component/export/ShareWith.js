@@ -201,9 +201,9 @@ qx.Class.define("osparc.component.export.ShareWith", {
           case this.__sharingOpts["all"].contextId:
             groupIDs = [selection[0].gid];
             break;
-          case this.__sharingOpts["orgMembers"].contextId:
-            groupIDs = this.__getSelectedOrgMemberIDs();
-            break;
+          // case this.__sharingOpts["orgMembers"].contextId:
+          //   groupIDs = this.__getSelectedOrgMemberIDs();
+          //   break;
           case this.__sharingOpts["orgs"].contextId:
             groupIDs = this.__getSelectedOrgIDs();
             break;
