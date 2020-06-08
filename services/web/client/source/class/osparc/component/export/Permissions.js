@@ -157,10 +157,13 @@ qx.Class.define("osparc.component.export.Permissions", {
           const orgs = values[0];
           const orgMembers = values[1];
           orgs.forEach(org => {
+            org["isOrg"] = true;
             this.__myFrieds[org["gid"]] = org;
           });
           for (const gid of Object.keys(orgMembers)) {
-            this.__myFrieds[gid] = orgMembers[gid];
+            const orgMember = orgMembers[gid];
+            orgMember["isOrg"] = false;
+            this.__myFrieds[gid] = orgMember;
           }
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
@@ -175,7 +178,8 @@ qx.Class.define("osparc.component.export.Permissions", {
       for (const gid of Object.keys(myFriends)) {
         const myFriend = myFriends[gid];
         if (parseInt(gid) !== osparc.auth.Data.getInstance().getGroupId() && !(parseInt(gid) in aceessRights)) {
-          this.__organizationsAndMembers.addOption(myFriend);
+          const btn = this.__organizationsAndMembers.addOption(myFriend);
+          btn.setIcon(myFriend["isOrg"] ? "@FontAwesome5Solid/users/14" : "@FontAwesome5Solid/user/14");
         }
       }
     },
