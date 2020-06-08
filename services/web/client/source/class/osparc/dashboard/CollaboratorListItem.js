@@ -81,7 +81,7 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
         return;
       }
       const subtitle = this.getChildControl("contact");
-      if (value.getExecute()) {
+      if (value.getDelete()) {
         subtitle.setValue(this.tr("Owner"));
       } else {
         subtitle.setValue(this.tr("Collaborator"));
@@ -103,7 +103,7 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
       });
 
       const accessRights = this.getAccessRights();
-      if (!accessRights.getExecute() && !this.getIsOrganization()) {
+      if (!accessRights.getDelete() && !this.getIsOrganization()) {
         const makeOwnerButton = new qx.ui.menu.Button(this.tr("Make Owner"));
         makeOwnerButton.addListener("execute", () => {
           this.fireDataEvent("promoteCollaborator", {

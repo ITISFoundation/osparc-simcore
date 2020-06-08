@@ -43,7 +43,7 @@ qx.Class.define("osparc.component.export.Permissions", {
       return {
         "read": true,
         "write": true,
-        "execute": false
+        "delete": false
       };
     },
 
@@ -51,7 +51,7 @@ qx.Class.define("osparc.component.export.Permissions", {
       return {
         "read": true,
         "write": true,
-        "execute": true
+        "delete": true
       };
     },
 
@@ -222,7 +222,7 @@ qx.Class.define("osparc.component.export.Permissions", {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const aceessRights = this.__study["accessRights"];
       if (myGid in aceessRights) {
-        return aceessRights[myGid]["execute"];
+        return aceessRights[myGid]["delete"];
       }
       return false;
     },
