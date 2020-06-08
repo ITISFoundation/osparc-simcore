@@ -149,7 +149,7 @@ async def get_user_profile(app: web.Application, user_id: int) -> Dict:
 
 async def update_user_profile(
     app: web.Application, user_id: int, profile: Dict
-) -> Dict:
+) -> None:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         default_name = await conn.scalar(
