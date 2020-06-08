@@ -76,7 +76,7 @@ qx.Class.define("osparc.dashboard.OrgMemberListItem", {
       }
       const subtitle = this.getChildControl("contact");
       if (value.getDelete()) {
-        subtitle.setValue(this.tr("SuperManager"));
+        subtitle.setValue(this.tr("Administrator"));
       } else if (value.getWrite()) {
         subtitle.setValue(this.tr("Manager"));
       } else {
