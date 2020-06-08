@@ -552,7 +552,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         win.open();
         win.addListener("close", () => {
           if (win.getConfirmed()) {
-            this.__deleteStudies([studyData], isTemplate);
+            this.__deleteStudy(studyData, isTemplate);
           }
         }, this);
       }, this);
@@ -669,20 +669,24 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
+    __deleteStudy: function(studyData, isTemplate = false) {
+      const params = {
+        url: {
+          projectId: studyData.uuid
+        }
+      };
+      osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "delete", params, studyData.uuid)
+        .then(() => this.__removeFromStudyList(studyData.uuid, isTemplate))
+        .catch(err => {
+          console.error(err);
+          osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");
+        })
+        .finally(this.__itemSelected(null));
+    },
+
     __deleteStudies: function(studiesData, areTemplates = false) {
       studiesData.forEach(studyData => {
-        const params = {
-          url: {
-            projectId: studyData.uuid
-          }
-        };
-        osparc.data.Resources.fetch(areTemplates ? "templates" : "studies", "delete", params, studyData.uuid)
-          .then(() => this.__removeFromStudyList(studyData.uuid, areTemplates))
-          .catch(err => {
-            console.error(err);
-            osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");
-          })
-          .finally(this.__itemSelected(null));
+        this.__deleteStudy(studyData, areTemplates);
       });
     },
 
