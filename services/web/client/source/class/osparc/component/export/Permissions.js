@@ -53,6 +53,10 @@ qx.Class.define("osparc.component.export.Permissions", {
         "write": true,
         "execute": true
       };
+    },
+
+    removeCollaborator: function(studyData, gid) {
+      return delete studyData["accessRights"][gid];
     }
   },
 
@@ -270,7 +274,7 @@ qx.Class.define("osparc.component.export.Permissions", {
     },
 
     __deleteCollaborator: function(collaborator) {
-      const success = delete this.__study["accessRights"][collaborator["gid"]];
+      const success = this.self().removeCollaborator(this.__study, collaborator["gid"]);
       if (!success) {
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
       }
