@@ -133,8 +133,7 @@ python-client: openapi.json client ## runs python client generator
 		--output=/local/$(word 2,$^) \
 		--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS)))\
 		--package-name=osparc\
-		--release-note="Updated tof $(APP_VERSION)"\
-		--remove-operation-id-prefix
+		--release-note="Updated tof $(APP_VERSION)"
 
 
 

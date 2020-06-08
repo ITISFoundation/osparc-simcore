@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.routing import APIRoute
 from loguru import logger
 
 from .__version__ import api_vtag
@@ -30,7 +31,25 @@ def init_application() -> FastAPI:
 
     app.include_router(api_router, prefix=f"/{api_vtag}")
 
+    use_route_names_as_operation_ids(app)
     return app
+
+
+def use_route_names_as_operation_ids(app: FastAPI) -> None:
+    """
+    Simplify operation IDs so that generated API clients have simpler function
+    names.
+
+    Should be called only after all routes have been added.
+
+    PROS: auto-generated client has one-to-one correspondence and human readable names
+    CONS: highly coupled. Changes in server handler names will change client
+    """
+    for route in app.routes:
+        if isinstance(route, APIRoute):
+            route.operation_id = route.name
+
+
 
 
 # SINGLETON FastAPI app
