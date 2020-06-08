@@ -16,7 +16,7 @@ coverage==5.1             # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==2.0.0          # via -r requirements/_test.in
 dataclasses==0.7          # via -r requirements/_base.txt, pydantic
 decorator==4.4.2          # via -r requirements/_base.txt, networkx
-docker==4.2.0             # via -r requirements/_test.in
+docker==4.2.1             # via -r requirements/_test.in
 docopt==0.6.2             # via coveralls
 idna-ssl==1.1.0           # via -r requirements/_base.txt, aiohttp
 idna==2.9                 # via -r requirements/_base.txt, idna-ssl, requests, yarl
@@ -42,7 +42,7 @@ pytest-instafail==0.4.1.post0  # via -r requirements/_test.in
 pytest-mock==3.1.0        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.3       # via -r requirements/_test.in
-pytest==5.4.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-mock, pytest-sugar
+pytest==5.4.3             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-mock, pytest-sugar
 pyyaml==5.3.1             # via -r requirements/_base.txt, trafaret-config
 requests==2.23.0          # via -r requirements/_test.in, coveralls, docker
 six==1.15.0               # via -r requirements/_base.txt, astroid, docker, packaging, tenacity, websocket-client
