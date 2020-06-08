@@ -50,7 +50,7 @@ properties:
           write:
             type: boolean
             description: gives write access
-          execute:
+          delete:
             type: boolean
             description: gives execution rights
     additionalProperties: true

@@ -156,7 +156,7 @@ async def template_project(
     project_data["name"] = "Fake template"
     project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"
     project_data["accessRights"] = {
-        str(all_group["gid"]): {"read": True, "write": False, "execute": False}
+        str(all_group["gid"]): {"read": True, "write": False, "delete": False}
     }
 
     async with NewProject(
@@ -426,7 +426,7 @@ async def test_new_project_from_template_with_body(
         "creationDate": "2019-06-03T09:59:31.987Z",
         "lastChangeDate": "2019-06-03T09:59:31.987Z",
         "accessRights": {
-            str(primary_group["gid"]): {"read": True, "write": True, "execute": True}
+            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
         },
         "workbench": {},
         "tags": [],
@@ -543,7 +543,7 @@ async def test_new_template_from_project(
         "lastChangeDate": "2019-06-03T09:59:31.987Z",
         "workbench": {},
         "accessRights": {
-            str(all_group["gid"]): {"read": True, "write": False, "execute": False}
+            str(all_group["gid"]): {"read": True, "write": False, "delete": False}
         },
         "tags": [],
     }
@@ -609,7 +609,7 @@ async def test_share_project_with_everyone(
     )
     project_update = deepcopy(user_project)
     project_update["accessRights"] = {
-        str(all_group["gid"]): {"read": True, "write": True, "execute": True}
+        str(all_group["gid"]): {"read": True, "write": True, "delete": True}
     }
     resp = await client.put(replace_project_url, json=project_update)
     data, error = await assert_status(resp, expected_change)
