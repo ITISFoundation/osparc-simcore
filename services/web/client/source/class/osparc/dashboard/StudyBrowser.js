@@ -540,7 +540,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getDeleteStudyMenuButton: function(studyData, isTemplate) {
       const isCurrentUserOwner = this.__isUserOwner(studyData);
-      if (!isCurrentUserOwner) {
+      if (isTemplate && !isCurrentUserOwner) {
         return null;
       }
 
