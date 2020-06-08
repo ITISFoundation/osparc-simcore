@@ -23,6 +23,12 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
   },
 
   properties: {
+    isOrganization: {
+      check: "Boolean",
+      event: "changeIsOrganization",
+      nullable: true
+    },
+
     accessRights: {
       check: "Object",
       apply: "_applyAccessRights",
@@ -97,7 +103,7 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
       });
 
       const accessRights = this.getAccessRights();
-      if (!accessRights.getExecute()) {
+      if (!accessRights.getExecute() && !this.getIsOrganization()) {
         const makeOwnerButton = new qx.ui.menu.Button(this.tr("Make Owner"));
         makeOwnerButton.addListener("execute", () => {
           this.fireDataEvent("promoteCollaborator", {
