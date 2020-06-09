@@ -2,15 +2,21 @@ from typing import Callable
 
 from fastapi import FastAPI
 from loguru import logger
+from .config import BootModeEnum
 
 from ..db.events import close_db_connection, connect_to_db
-from ..utils.remote_debug import setup_remote_debugging
+from ..services.remote_debug import setup_remote_debugging
 
 
 def create_start_app_handler(app: FastAPI) -> Callable:
     async def start_app() -> None:
         logger.info("Application started")
-        setup_remote_debugging()
+
+        # setup connection to remote debugger (if applies)
+        setup_remote_debugging(
+            force_enabled=app.state.settings.boot_mode == BootModeEnum.debug
+        )
+        # setup connection to pg db
         await connect_to_db(app)
 
     return start_app
