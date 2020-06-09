@@ -227,6 +227,7 @@ async def test_workflow(
     client,
     fake_project_data,
     logged_user,
+    primary_group: Dict[str,str],
     computational_system_mock,
     storage_subsystem_mock,
 ):
@@ -241,8 +242,10 @@ async def test_workflow(
     projects = await _request_list(client)
     assert len(projects) == 1
     for key in projects[0].keys():
-        if key not in ("uuid", "prjOwner", "creationDate", "lastChangeDate"):
+        if key not in ("uuid", "prjOwner", "creationDate", "lastChangeDate", "accessRights"):
             assert projects[0][key] == fake_project_data[key]
+    assert projects[0]["prjOwner"] == logged_user["email"]
+    assert projects[0]["accessRights"] == {str(primary_group["gid"]):{"read":True,"write":True,"delete":True}}
 
     modified_project = deepcopy(projects[0])
     modified_project["name"] = "some other name"
