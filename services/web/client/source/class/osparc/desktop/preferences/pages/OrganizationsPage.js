@@ -28,9 +28,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
     const title = this.tr("Organizations");
     this.base(arguments, title, iconSrc);
 
-
-    this.add(this.__createOrganizations());
-    this.add(this.__createMembersSection(), {
+    this.add(this.__getOrganizationsSection());
+    this.add(this.__getMembersSection(), {
       flex: 1
     });
 
@@ -43,7 +42,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
     __memberInvitation: null,
     __membersModel: null,
 
-    __createOrganizations: function() {
+    __getOrganizationsSection: function() {
       const box = this._createSectionBox(this.tr("Organizations"));
       box.add(this.__createOrganizationsList());
       return box;
@@ -88,7 +87,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       return orgsUIList;
     },
 
-    __createMembersSection: function() {
+    __getMembersSection: function() {
       const box = this._createSectionBox(this.tr("Members"));
       box.add(this.__createMemberInvitation());
       box.add(this.__createMembersList(), {
@@ -234,70 +233,23 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         return;
       }
 
-      const window = new qx.ui.window.Window(this.tr("Organization Details Editor")).set({
-        autoDestroy: true,
-        layout: new qx.ui.layout.VBox(),
-        appearance: "service-window",
-        showMinimize: false,
-        showMaximize: false,
-        resizable: true,
-        contentPadding: 10,
-        width: 400,
-        height: 400,
-        modal: true
+      const newOrg = false;
+      const orgEditor = new osparc.dashboard.OrganizationEditor(newOrg);
+      org.bind("gid", orgEditor, "gid");
+      org.bind("label", orgEditor, "label");
+      org.bind("description", orgEditor, "description");
+      org.bind("thumbnail", orgEditor, "thumbnail");
+      const win = osparc.dashboard.OrganizationEditor.popUpInWindow(this.tr("Organization Details Editor"), orgEditor);
+      orgEditor.addListener("updateOrg", () => {
+        this.__editOrganization(win, orgEditor.getChildControl("save"), orgEditor);
       });
-
-      const editView = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
-
-      const name = new qx.ui.form.TextField(org.getLabel()).set({
-        font: "title-18",
-        height: 35
-      });
-
-      const description = new qx.ui.form.TextArea(org.getDescription()).set({
-        autoSize: true,
-        minHeight: 100,
-        maxHeight: 500
-      });
-
-      const thumbnail = new qx.ui.form.TextField(org.getThumbnail());
-
-      editView.add(new qx.ui.basic.Label(this.tr("Title")).set({
-        font: "text-14",
-        marginTop: 20
-      }));
-      editView.add(name);
-      editView.add(new qx.ui.basic.Label(this.tr("Description")).set({
-        font: "text-14"
-      }));
-      editView.add(description);
-      editView.add(new qx.ui.basic.Label(this.tr("Thumbnail")).set({
-        font: "text-14"
-      }));
-      editView.add(thumbnail);
-
-
-      const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
-        alignX: "right"
-      }));
-      editView.add(buttons);
-
-      const saveButton = new qx.ui.form.Button(this.tr("Save"));
-      saveButton.addListener("execute", e => {
-        this.__editOrganization(window, orgKey, name.getValue(), description.getValue(), thumbnail.getValue());
-      }, this);
-      buttons.add(saveButton);
-
-      const cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
-      cancelButton.addListener("execute", () => window.close(), this);
-      buttons.add(cancelButton);
-
-      window.add(editView);
-      window.center();
-      window.open();
     },
 
-    __editOrganization: function(window, orgKey, name, description, thumbnail) {
+    __editOrganization: function(win, button, orgEditor) {
+      const orgKey = orgEditor.getGid();
+      const name = orgEditor.getLabel();
+      const description = orgEditor.getDescription();
+      const thumbnail = orgEditor.getThumbnail();
       const params = {
         url: {
           "gid": orgKey
@@ -311,12 +263,14 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       osparc.data.Resources.fetch("organizations", "patch", params)
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
-          window.close();
+          button.setFetching(false);
+          win.close();
           osparc.store.Store.getInstance().reset("organizations");
           this.__reloadOrganizations();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
+          button.setFetching(false);
           console.error(err);
         });
     },
