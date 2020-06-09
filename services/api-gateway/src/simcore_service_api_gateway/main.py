@@ -30,17 +30,16 @@ def init_application() -> FastAPI:
     # app.add_exception_handler(RequestValidationError, http422_error_handler)
 
     app.include_router(api_router, prefix=f"/{api_vtag}")
-
     use_route_names_as_operation_ids(app)
+
     return app
 
 
 def use_route_names_as_operation_ids(app: FastAPI) -> None:
     """
-    Simplify operation IDs so that generated API clients have simpler function
-    names.
+    Overrides default operation_ids assigning the same name as the handler functions
 
-    Should be called only after all routes have been added.
+    MUST be called only after all routes have been added.
 
     PROS: auto-generated client has one-to-one correspondence and human readable names
     CONS: highly coupled. Changes in server handler names will change client
