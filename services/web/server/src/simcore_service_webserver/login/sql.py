@@ -1,5 +1,7 @@
 from logging import getLogger
 
+# FIXME: Possible SQL injection vector through string-based query construction.
+
 log = getLogger(__name__)
 LOG_TPL = "%s <--%s"
 
@@ -20,7 +22,7 @@ def find_one_sql(table, filter_, fields=None):
     keys, values = _split_dict(filter_)
     fields = ", ".join(fields) if fields else "*"
     where = _pairs(keys)
-    sql = "SELECT {} FROM {} WHERE {}".format(fields, table, where)
+    sql = "SELECT {} FROM {} WHERE {}".format(fields, table, where)  # nosec
     return sql, values
 
 
@@ -42,7 +44,7 @@ def insert_sql(table, data, returning="id"):
     ('INSERT INTO tbl (foo, id) VALUES ($1, $2) RETURNING pk', ['bar', 1])
     """
     keys, values = _split_dict(data)
-    sql = "INSERT INTO {} ({}) VALUES ({}){}".format(
+    sql = "INSERT INTO {} ({}) VALUES ({}){}".format( # nosec
         table,
         ", ".join(keys),
         ", ".join(_placeholders(data)),
@@ -66,7 +68,7 @@ def update_sql(table, filter_, updates):
     up_keys, up_vals = _split_dict(updates)
     changes = _pairs(up_keys, sep=", ")
     where = _pairs(where_keys, start=len(up_keys) + 1)
-    sql = "UPDATE {} SET {} WHERE {}".format(table, changes, where)
+    sql = "UPDATE {} SET {} WHERE {}".format(table, changes, where)  # nosec
     return sql, up_vals + where_vals
 
 
@@ -83,7 +85,7 @@ def delete_sql(table, filter_):
     """
     keys, values = _split_dict(filter_)
     where = _pairs(keys)
-    sql = "DELETE FROM {} WHERE {}".format(table, where)
+    sql = "DELETE FROM {} WHERE {}".format(table, where)  # nosec
     return sql, values
 
 
