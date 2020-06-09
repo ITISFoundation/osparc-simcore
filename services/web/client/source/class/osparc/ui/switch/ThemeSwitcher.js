@@ -28,9 +28,9 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
       return;
     }
 
-    const themeMgr = qx.theme.manager.Meta.getInstance();
     this.addListener("changeChecked", e => {
       const val = e.getData();
+      const themeMgr = qx.theme.manager.Meta.getInstance();
       themeMgr.setTheme(val ? validThemes[1] : validThemes[0]);
     });
   }

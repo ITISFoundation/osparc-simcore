@@ -52,6 +52,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ExperimentalPage", {
       if (Object.keys(validThemes).length === 1) {
         return null;
       }
+      // If only 2 themes are provided, the ThemeSwitcher will manage them
+      if (Object.keys(validThemes).length === 2) {
+        return null;
+      }
 
       // layout
       const box = this._createSectionBox("UI Theme");
