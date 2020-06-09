@@ -1772,7 +1772,7 @@ paths:
                           required:
                             - read
                             - write
-                            - execute
+                            - delete
                           properties:
                             read:
                               type: boolean
@@ -2004,7 +2004,7 @@ paths:
                           required:
                             - read
                             - write
-                            - execute
+                            - delete
                           properties:
                             read:
                               type: boolean
@@ -2246,7 +2246,7 @@ paths:
                         required:
                           - read
                           - write
-                          - execute
+                          - delete
                         properties:
                           read:
                             type: boolean
@@ -2588,7 +2588,7 @@ components:
               required:
                 - read
                 - write
-                - execute
+                - delete
               properties:
                 read:
                   type: boolean
