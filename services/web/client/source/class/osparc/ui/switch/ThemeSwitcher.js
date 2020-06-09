@@ -28,10 +28,14 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
       return;
     }
 
-    this.addListener("changeChecked", e => {
-      const val = e.getData();
+    this.addListener("changeChecked", () => {
       const themeMgr = qx.theme.manager.Meta.getInstance();
-      themeMgr.setTheme(val ? validThemes[1] : validThemes[0]);
+      const currentTheme = themeMgr.getTheme();
+      if (currentTheme === validThemes[0]) {
+        themeMgr.setTheme(validThemes[1]);
+      } else {
+        themeMgr.setTheme(validThemes[0]);
+      }
     });
   }
 });

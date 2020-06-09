@@ -17,7 +17,8 @@ qx.Class.define("osparc.ui.switch.Switch", {
 
     this.set({
       cursor: "pointer",
-      backgroundColor: "transparent"
+      backgroundColor: "transparent",
+      source: "@FontAwesome5Solid/toggle-on/22"
     });
 
     this.addListener("tap", () => {
@@ -40,7 +41,11 @@ qx.Class.define("osparc.ui.switch.Switch", {
     __slider: null,
 
     _applyChecked: function(newVal) {
-      this.setSource(newVal ? "@FontAwesome5Solid/toggle-on/22" : "@FontAwesome5Solid/toggle-off/22");
+      if (newVal) {
+        this.getContentElement().addClass("rotated");
+      } else {
+        this.getContentElement().removeClass("rotated");
+      }
     }
   }
 });
