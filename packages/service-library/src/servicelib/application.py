@@ -11,7 +11,7 @@ async def startup_info(app: web.Application):
 
 
 async def shutdown_info(app: web.Application):
-    print(f"INFO: SHUTING DOWN {app} ...", flush=True)
+    print(f"INFO: SHUTTING DOWN {app} ...", flush=True)
 
 
 def create_safe_application(config: Optional[Dict] = None) -> web.Application:

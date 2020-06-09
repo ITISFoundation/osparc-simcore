@@ -1780,7 +1780,7 @@ paths:
                             write:
                               type: boolean
                               description: gives write access
-                            execute:
+                            delete:
                               type: boolean
                               description: gives execution rights
                       additionalProperties: true
@@ -2012,7 +2012,7 @@ paths:
                             write:
                               type: boolean
                               description: gives write access
-                            execute:
+                            delete:
                               type: boolean
                               description: gives execution rights
                       additionalProperties: true
@@ -2254,7 +2254,7 @@ paths:
                           write:
                             type: boolean
                             description: gives write access
-                          execute:
+                          delete:
                             type: boolean
                             description: gives execution rights
                     additionalProperties: true
@@ -2596,7 +2596,7 @@ components:
                 write:
                   type: boolean
                   description: gives write access
-                execute:
+                delete:
                   type: boolean
                   description: gives execution rights
           additionalProperties: true
