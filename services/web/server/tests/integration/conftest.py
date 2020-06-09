@@ -14,22 +14,28 @@
 
 import logging
 import sys
+from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
-from typing import Dict
-from asyncio import Future
+from typing import Dict, List
 
 import pytest
 import trafaret_config
 import yaml
 
 from pytest_simcore.helpers.utils_docker import get_service_published_port
+from pytest_simcore.helpers.utils_login import NewUser
 from simcore_service_webserver.application_config import app_schema
 from simcore_service_webserver.cli import create_environ
 from simcore_service_webserver.resources import resources as app_resources
+from simcore_service_webserver.users_api import (add_user_in_group,
+                                                 create_user_group,
+                                                 delete_user_group,
+                                                 list_user_groups)
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+current_dir = Path(sys.argv[0] if __name__ ==
+                   "__main__" else __file__).resolve().parent
 
 # imports the fixtures for the integration tests
 pytest_plugins = [
@@ -99,7 +105,8 @@ def webserver_environ(
         assert port_key in environ
 
         # to swarm boundary since webserver is installed in the host and therefore outside the swarm's network
-        published_port = get_service_published_port(name, int(environ.get(port_key)))
+        published_port = get_service_published_port(
+            name, int(environ.get(port_key)))
         environ[host_key] = "127.0.0.1"
         environ[port_key] = published_port
 
@@ -169,3 +176,51 @@ def mock_orphaned_services(mocker):
     )
     remove_orphaned_services.return_value.set_result("")
     return remove_orphaned_services
+
+
+@pytest.fixture
+async def primary_group(client, logged_user) -> Dict[str, str]:
+    primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
+    return primary_group
+
+
+@pytest.fixture
+async def standard_groups(client, logged_user: Dict) -> List[Dict[str, str]]:
+    # create a separate admin account to create some standard groups for the logged user
+    sparc_group = {
+        "gid": "5",  # this will be replaced
+        "label": "SPARC",
+        "description": "Stimulating Peripheral Activity to Relieve Conditions",
+        "thumbnail": "https://commonfund.nih.gov/sites/default/files/sparc-image-homepage500px.png",
+    }
+    team_black_group = {
+        "gid": "5",  # this will be replaced
+        "label": "team Black",
+        "description": "THE incredible black team",
+        "thumbnail": None,
+    }
+    async with NewUser(
+        {"name": f"{logged_user['name']}_admin", "role": "USER"}, client.app
+    ) as admin_user:
+        sparc_group = await create_user_group(client.app, admin_user["id"], sparc_group)
+        team_black_group = await create_user_group(
+            client.app, admin_user["id"], team_black_group
+        )
+        await add_user_in_group(
+            client.app, admin_user["id"], sparc_group["gid"], logged_user["id"]
+        )
+        await add_user_in_group(
+            client.app, admin_user["id"], team_black_group["gid"], logged_user["id"]
+        )
+
+        _, standard_groups, _ = await list_user_groups(client.app, logged_user["id"])
+        yield standard_groups
+        # clean groups
+        await delete_user_group(client.app, admin_user["id"], sparc_group["gid"])
+        await delete_user_group(client.app, admin_user["id"], team_black_group["gid"])
+
+
+@pytest.fixture
+async def all_group(client, logged_user) -> Dict[str, str]:
+    _, _, all_group = await list_user_groups(client.app, logged_user["id"])
+    return all_group
