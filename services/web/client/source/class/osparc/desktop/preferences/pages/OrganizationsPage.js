@@ -28,6 +28,9 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
     const title = this.tr("Organizations");
     this.base(arguments, title, iconSrc);
 
+    if (osparc.data.Permissions.getInstance().canDo("user.organizations.create")) {
+      this.add(this.__getCreateOrganizationSection());
+    }
     this.add(this.__getOrganizationsSection());
     this.add(this.__getMembersSection(), {
       flex: 1
@@ -41,6 +44,21 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
     __orgsModel: null,
     __memberInvitation: null,
     __membersModel: null,
+
+    __getCreateOrganizationSection: function() {
+      const box = this._createSectionBox(this.tr("Create Organization"));
+      const createOrgBtn = new qx.ui.form.Button(this.tr("Create New Organization"));
+      createOrgBtn.addListener("execute", function() {
+        const newOrg = true;
+        const orgEditor = new osparc.dashboard.OrganizationEditor(newOrg);
+        const win = osparc.dashboard.OrganizationEditor.popUpInWindow(this.tr("Organization Details Editor"), orgEditor);
+        orgEditor.addListener("createOrg", () => {
+          this.__createOrganization(win, orgEditor.getChildControl("create"), orgEditor);
+        });
+      }, this);
+      box.add(createOrgBtn);
+      return box;
+    },
 
     __getOrganizationsSection: function() {
       const box = this._createSectionBox(this.tr("Organizations"));
@@ -241,11 +259,41 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       org.bind("thumbnail", orgEditor, "thumbnail");
       const win = osparc.dashboard.OrganizationEditor.popUpInWindow(this.tr("Organization Details Editor"), orgEditor);
       orgEditor.addListener("updateOrg", () => {
-        this.__editOrganization(win, orgEditor.getChildControl("save"), orgEditor);
+        this.__updateOrganization(win, orgEditor.getChildControl("save"), orgEditor);
       });
     },
 
-    __editOrganization: function(win, button, orgEditor) {
+    __createOrganization: function(win, button, orgEditor) {
+      const orgKey = orgEditor.getGid();
+      const name = orgEditor.getLabel();
+      const description = orgEditor.getDescription();
+      const thumbnail = orgEditor.getThumbnail();
+      const params = {
+        url: {
+          "gid": orgKey
+        },
+        data: {
+          "label": name,
+          "description": description,
+          "thumbnail": thumbnail || null
+        }
+      };
+      osparc.data.Resources.fetch("organizations", "post", params)
+        .then(() => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
+          button.setFetching(false);
+          win.close();
+          osparc.store.Store.getInstance().reset("organizations");
+          this.__reloadOrganizations();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong creating ") + name, "ERROR");
+          button.setFetching(false);
+          console.error(err);
+        });
+    },
+
+    __updateOrganization: function(win, button, orgEditor) {
       const orgKey = orgEditor.getGid();
       const name = orgEditor.getLabel();
       const description = orgEditor.getDescription();
