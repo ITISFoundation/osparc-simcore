@@ -62,11 +62,11 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
 
     __getOrganizationsSection: function() {
       const box = this._createSectionBox(this.tr("Organizations"));
-      box.add(this.__createOrganizationsList());
+      box.add(this.__getOrganizationsList());
       return box;
     },
 
-    __createOrganizationsList: function() {
+    __getOrganizationsList: function() {
       const orgsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
@@ -107,14 +107,14 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
 
     __getMembersSection: function() {
       const box = this._createSectionBox(this.tr("Members"));
-      box.add(this.__createMemberInvitation());
-      box.add(this.__createMembersList(), {
+      box.add(this.__getMemberInvitation());
+      box.add(this.__getMembersList(), {
         flex: 1
       });
       return box;
     },
 
-    __createMemberInvitation: function() {
+    __getMemberInvitation: function() {
       const hBox = this.__memberInvitation = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignY: "middle"
       }));
@@ -142,7 +142,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       return hBox;
     },
 
-    __createMembersList: function() {
+    __getMembersList: function() {
       const memebersUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
