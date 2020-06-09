@@ -59,7 +59,7 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     osparc.utils.Utils.setIdToWidget(expBtn, "preferencesExperimentalTabBtn");
     tabView.add(expPage);
 
-    if (osparc.data.Permissions.getInstance().canDo("preferences.tag")) {
+    if (osparc.data.Permissions.getInstance().canDo("user.tag")) {
       const tagsPage = new osparc.desktop.preferences.pages.TagsPage();
       tabView.add(tagsPage);
     }

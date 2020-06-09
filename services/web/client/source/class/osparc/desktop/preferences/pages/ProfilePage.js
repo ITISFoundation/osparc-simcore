@@ -60,7 +60,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
 
       let role = null;
       const permissions = osparc.data.Permissions.getInstance();
-      if (permissions.canDo("preferences.role.update")) {
+      if (permissions.canDo("user.role.update")) {
         role = new qx.ui.form.SelectBox();
         const roles = permissions.getChildrenRoles(permissions.getRole());
         for (let i=0; i<roles.length; i++) {
@@ -141,7 +141,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
 
       // update trigger
       updateBtn.addListener("execute", () => {
-        if (!osparc.data.Permissions.getInstance().canDo("preferences.user.update", true)) {
+        if (!osparc.data.Permissions.getInstance().canDo("user.user.update", true)) {
           this.__resetDataToModel();
           return;
         }

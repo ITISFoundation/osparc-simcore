@@ -55,14 +55,14 @@ ROLES_PERMISSIONS = {
             "project.node.create",
             "project.node.delete",
             "project.tag.*",  # "study.tag"
-            "user.profile.update",  # "preferences.user.update",
-            # "preferences.role.update"
-            "user.apikey.*",  # "preferences.apikey.create",
-            # "preferences.apikey.delete"
-            "user.tokens.*",  # "preferences.token.create",
-            # "preferences.token.delete"
+            "user.profile.update",  # "user.user.update",
+            # "user.role.update"
+            "user.apikey.*",  # "user.apikey.create",
+            # "user.apikey.delete"
+            "user.tokens.*",  # "user.token.create",
+            # "user.token.delete"
             "user.groups.*",
-            "tag.crud.*"  # "preferences.tag"
+            "tag.crud.*"  # "user.tag"
             # NOTE: All services* are not necessary since it only requires login
             # and there is no distinction among logged in users.
             # TODO: kept temporarily as a way to denote resources
@@ -88,11 +88,11 @@ ROLES_PERMISSIONS = {
 ###   "studies.user.read",
 ###   "studies.user.create",
 ###   "storage.datcore.read",
-###   "preferences.user.update",
-###   "preferences.apikey.create",
-###   "preferences.apikey.delete",
-###   "preferences.token.create",
-###   "preferences.token.delete",
+###   "user.user.update",
+###   "user.apikey.create",
+###   "user.apikey.delete",
+###   "user.token.create",
+###   "user.token.delete",
 ###   "study.node.create",
 ###   "study.node.delete",
 ###   "study.node.rename",
@@ -104,7 +104,7 @@ ROLES_PERMISSIONS = {
 # ],
 # "tester": [
 #   "services.all.read",   <----------???
-###   "preferences.role.update",
+###   "user.role.update",
 #   "study.nodestree.uuid.read", <----------???
 #   "study.logger.debug.read" <----------???
 # ],
