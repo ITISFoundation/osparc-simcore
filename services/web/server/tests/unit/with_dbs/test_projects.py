@@ -186,6 +186,12 @@ def fake_services():
     yield create_fakes
 
 
+@pytest.fixture
+async def project_db_cleaner(client):
+    yield
+    await delete_all_projects(client.app)
+
+
 def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
         return {k: dikt[k] for k in keys}
@@ -288,7 +294,13 @@ async def test_get_project(
     ],
 )
 async def test_new_project(
-    client, logged_user, expected, computational_system_mock, storage_subsystem_mock,
+    client,
+    logged_user,
+    primary_group,
+    expected,
+    computational_system_mock,
+    storage_subsystem_mock,
+    project_db_cleaner,
 ):
     # POST /v0/projects
     url = client.app.router["create_projects"].url_for()
@@ -318,22 +330,27 @@ async def test_new_project(
         # updated fields
         assert default_project["uuid"] != new_project["uuid"]
         assert default_project["prjOwner"] != logged_user["email"]
-        assert new_project["prjOwner"] == logged_user["email"]
+        assert (
+            new_project["prjOwner"] == logged_user["email"]
+        )  # the project owner is assigned the user id e-mail
         assert to_datetime(default_project["creationDate"]) < to_datetime(
             new_project["creationDate"]
         )
-        assert new_project["accessRights"] == default_project["accessRights"]
+        # the access rights are set to use the logged user primary group
+        assert new_project["accessRights"] == {
+            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
+        }
 
         # invariant fields
         for key in new_project.keys():
-            if key not in ("uuid", "prjOwner", "creationDate", "lastChangeDate"):
+            if key not in (
+                "uuid",
+                "prjOwner",
+                "creationDate",
+                "lastChangeDate",
+                "accessRights",
+            ):
                 assert default_project[key] == new_project[key]
-
-        # TODO: validate response using OAS?
-        # FIXME: cannot delete user until project is deleted. See cascade  or too coupled??
-        #  i.e. removing a user, removes all its projects!!
-
-        await delete_all_projects(client.app)
 
 
 @pytest.mark.parametrize(
@@ -348,10 +365,12 @@ async def test_new_project(
 async def test_new_project_from_template(
     client,
     logged_user,
+    primary_group: Dict[str, str],
     template_project,
     expected,
     computational_system_mock,
     storage_subsystem_mock,
+    project_db_cleaner,
 ):
     # POST /v0/projects?from_template={template_uuid}
     url = (
@@ -371,7 +390,9 @@ async def test_new_project_from_template(
         # different ownership
         assert project["prjOwner"] == logged_user["email"]
         assert project["prjOwner"] != template_project["prjOwner"]
-        assert project["accessRights"] == template_project["accessRights"]
+        assert project["accessRights"] == {
+            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
+        }
 
         # different timestamps
         assert to_datetime(template_project["creationDate"]) < to_datetime(
@@ -405,6 +426,7 @@ async def test_new_project_from_template_with_body(
     client,
     logged_user,
     primary_group: Dict[str, str],
+    standard_groups: List[Dict[str, str]],
     template_project,
     expected,
     computational_system_mock,
@@ -426,7 +448,11 @@ async def test_new_project_from_template_with_body(
         "creationDate": "2019-06-03T09:59:31.987Z",
         "lastChangeDate": "2019-06-03T09:59:31.987Z",
         "accessRights": {
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
+            str(standard_groups[0]["gid"]): {
+                "read": True,
+                "write": True,
+                "delete": False,
+            }
         },
         "workbench": {},
         "tags": [],
@@ -450,6 +476,15 @@ async def test_new_project_from_template_with_body(
         assert project["prjOwner"] != template_project["prjOwner"]
         # different access rights
         assert project["accessRights"] != template_project["accessRights"]
+        predefined["accessRights"].update(
+                {
+                    str(primary_group["gid"]): {
+                        "read": True,
+                        "write": True,
+                        "delete": True,
+                    }
+                }
+            )
         assert project["accessRights"] == predefined["accessRights"]
 
         # different timestamps
@@ -483,6 +518,7 @@ async def test_new_project_from_template_with_body(
 async def test_new_template_from_project(
     client,
     logged_user,
+    primary_group: Dict[str,str],
     all_group: Dict[str, str],
     user_project,
     expected,
@@ -543,6 +579,7 @@ async def test_new_template_from_project(
         "lastChangeDate": "2019-06-03T09:59:31.987Z",
         "workbench": {},
         "accessRights": {
+            str(primary_group["gid"]): {"read":True, "write":True, "delete":True},
             str(all_group["gid"]): {"read": True, "write": False, "delete": False}
         },
         "tags": [],
