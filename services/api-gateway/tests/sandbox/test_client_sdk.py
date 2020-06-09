@@ -171,7 +171,7 @@ async def test_client_sdk():
     async with ApiSession(api_key="1234", api_secret="secret") as api:
 
         # GET /me is a special resource that is unique
-        me: Dict = await api.me.get()
+        me: Profile = await api.me.get()
         pprint(me)
 
         # can update SOME entries
@@ -201,7 +201,7 @@ async def test_client_sdk():
         prj: Dict = await api.studies.get("1234")
 
         # POST /studies
-        new_prj: Dict = await api.studies.create()
+        new_prj: Study = await api.studies.create()
 
         # PUT or PATCH /studies/{prj_id}
         # this is a patch
