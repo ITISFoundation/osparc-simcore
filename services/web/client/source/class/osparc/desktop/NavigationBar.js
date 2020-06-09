@@ -74,6 +74,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     this.getChildControl("user-manual");
     this.getChildControl("feedback");
+    this.getChildControl("theme-switch");
     this.getChildControl("user-menu");
   },
 
@@ -171,6 +172,10 @@ qx.Class.define("osparc.desktop.NavigationBar", {
             appearance: "link-button",
             font: "text-14"
           });
+          this._add(control);
+          break;
+        case "theme-switch":
+          control = new osparc.ui.switch.ThemeSwitcher();
           this._add(control);
           break;
         case "user-menu":
