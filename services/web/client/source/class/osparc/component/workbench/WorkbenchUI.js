@@ -870,14 +870,17 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
         qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", false);
 
+        this.addListener("resize", () => this.__updateAllEdges(), this);
+      });
+
+      this.addListenerOnce("appear", () => {
         const domEl = this.getContentElement().getDomElement();
         domEl.addEventListener("dragenter", this.__dragEnter.bind(this), false);
         domEl.addEventListener("dragover", this.__dragOver.bind(this), false);
         domEl.addEventListener("dragleave", this.__dragLeave.bind(this), false);
         domEl.addEventListener("drop", this.__drop.bind(this), false);
-
-        this.addListener("resize", () => this.__updateAllEdges(), this);
       });
+
       this.addListener("disappear", () => {
         // Reset filters
         osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
