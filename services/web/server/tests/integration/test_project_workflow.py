@@ -50,7 +50,7 @@ def client(
     loop,
     mock_orphaned_services,
     aiohttp_client,
-    app_config,  ## waits until swarm with *_services are up
+    app_config,  # waits until swarm with *_services are up
 ):
     assert app_config["rest"]["version"] == API_VERSION
 
@@ -227,7 +227,8 @@ async def test_workflow(
     client,
     fake_project_data,
     logged_user,
-    primary_group: Dict[str,str],
+    primary_group: Dict[str, str],
+    standard_groups: List[Dict[str, str]],
     computational_system_mock,
     storage_subsystem_mock,
 ):
@@ -245,7 +246,8 @@ async def test_workflow(
         if key not in ("uuid", "prjOwner", "creationDate", "lastChangeDate", "accessRights"):
             assert projects[0][key] == fake_project_data[key]
     assert projects[0]["prjOwner"] == logged_user["email"]
-    assert projects[0]["accessRights"] == {str(primary_group["gid"]):{"read":True,"write":True,"delete":True}}
+    assert projects[0]["accessRights"] == {
+        str(primary_group["gid"]): {"read": True, "write": True, "delete": True}}
 
     modified_project = deepcopy(projects[0])
     modified_project["name"] = "some other name"
@@ -254,6 +256,9 @@ async def test_workflow(
         list(modified_project["workbench"].keys())[0]
     )
     modified_project["workbench"]["ReNamed"]["position"]["x"] = 0
+    # share with some group
+    modified_project["accessRights"].update(
+        {str(standard_groups[0]["gid"]): {"read": True, "write": True, "delete": False}})
     # modify
     pid = modified_project["uuid"]
     await _request_update(client, modified_project, pid)
@@ -294,14 +299,16 @@ async def test_get_invalid_project(client, logged_user):
 
 
 async def test_update_invalid_project(client, logged_user):
-    url = client.app.router["replace_project"].url_for(project_id="some-fake-id")
+    url = client.app.router["replace_project"].url_for(
+        project_id="some-fake-id")
     resp = await client.get(url)
 
     await assert_status(resp, web.HTTPNotFound)
 
 
 async def test_delete_invalid_project(client, logged_user):
-    url = client.app.router["delete_project"].url_for(project_id="some-fake-id")
+    url = client.app.router["delete_project"].url_for(
+        project_id="some-fake-id")
     resp = await client.delete(url)
 
     await assert_status(resp, web.HTTPNotFound)
