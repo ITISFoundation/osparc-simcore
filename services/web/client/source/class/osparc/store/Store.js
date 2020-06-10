@@ -188,7 +188,12 @@ qx.Class.define("osparc.store.Store", {
         } else if (Array.isArray(resources)) {
           propertyArray = resources;
         }
-        propertyArray.forEach(propName => this.reset(propName));
+        propertyArray.forEach(propName => {
+          this.reset();
+          // Not sure reset actually works
+          const initVal = qx.util.PropertyUtil.getInitValue(this, propName);
+          qx.util.PropertyUtil.getUserValue(this, propName, initVal);
+        });
       }
     },
 
