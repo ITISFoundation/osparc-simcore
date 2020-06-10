@@ -5,8 +5,7 @@ class UsersException(Exception):
     """Basic exception for errors raised in projects"""
 
     def __init__(self, msg=None):
-        if msg is None:
-            msg = "Unexpected error occured in projects subpackage"
+        msg = msg or "Unexpected error occured in projects subpackage"
         super(UsersException, self).__init__(msg)
 
 
