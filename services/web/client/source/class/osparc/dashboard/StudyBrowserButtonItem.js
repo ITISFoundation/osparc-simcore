@@ -272,6 +272,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
         break;
       }
+      if (image.getSource() === null) {
+        image.setVisibility("excluded");
+      }
     },
 
     _applyTags: function(tags) {
