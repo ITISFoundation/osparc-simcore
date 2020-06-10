@@ -19,6 +19,10 @@ pytest-runner
 # fixtures
 faker
 
+# db migration
+alembic
+docker
+
 # tools
 pylint
 coveralls
