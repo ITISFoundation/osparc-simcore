@@ -67,7 +67,7 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     osparc.data.Resources.get("organizations")
       .then(resp => {
         const orgs = resp["organizations"];
-        if (orgs.length) {
+        if (orgs.length || osparc.data.Permissions.getInstance().canDo("user.organizations.create")) {
           const orgsPage = new osparc.desktop.preferences.pages.OrganizationsPage();
           const orgsBtn = orgsPage.getChildControl("button");
           osparc.utils.Utils.setIdToWidget(orgsBtn, "preferencesOrganizationsTabBtn");
