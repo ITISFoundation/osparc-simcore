@@ -12,7 +12,7 @@ import sqlalchemy as sa
 import yaml
 
 import simcore_postgres_database.cli as pg_cli
-import simcore_service_api_gateway.models.pg_tables as pg
+import simcore_service_api_gateway.db.tables as pg
 
 DSN_FORMAT = "postgresql://{user}:{password}@{host}:{port}/{database}"
 
