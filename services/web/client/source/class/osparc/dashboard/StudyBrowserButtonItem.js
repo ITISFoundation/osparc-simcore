@@ -199,7 +199,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyLastChangeDate: function(value, old) {
       if (value && !this.getIsTemplate()) {
-        const label = this.getChildControl("description");
+        const label = this.getChildControl("description2");
         let dateStr = null;
         if (value.getDate() === (new Date()).getDate()) {
           dateStr = this.tr("Today");
@@ -215,7 +215,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyCreator: function(value, old) {
       if (this.getIsTemplate()) {
-        const label = this.getChildControl("creator");
+        const label = this.getChildControl("description2");
         label.setValue(value);
       }
     },
