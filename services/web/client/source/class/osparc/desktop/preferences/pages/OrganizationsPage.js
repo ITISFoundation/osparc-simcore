@@ -233,7 +233,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         .then(members => {
           members.forEach(member => {
             member["thumbnail"] = osparc.utils.Avatar.getUrl(member["login"], 32);
-            member["name"] = osparc.utils.Utils.capitalize(member["first_name"]) + " " + osparc.utils.Utils.capitalize(member["last_name"]);
+            member["name"] = osparc.utils.Utils.firstsUp(member["first_name"], member["last_name"]);
             member["showOptions"] = canWrite;
             membersModel.append(qx.data.marshal.Json.createModel(member));
           });

@@ -362,6 +362,12 @@ qx.Class.define("osparc.utils.Utils", {
 
     fetchJSON: function() {
       return fetch.apply(null, arguments).then(response => response.json());
+    },
+
+    firstsUp: function(...args) {
+      const labels = [];
+      args.forEach(arg => labels.push(qx.lang.String.firstUp(arg)));
+      return labels.join(" ");
     }
   }
 });

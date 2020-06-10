@@ -51,7 +51,7 @@ qx.Class.define("osparc.component.filter.OrganizationMembers", {
         .then(members => {
           members.sort((a, b) => (a["first_name"] > b["first_name"]) ? 1 : -1);
           members.forEach(member => {
-            const name = osparc.utils.Utils.capitalize(member["first_name"]) + osparc.utils.Utils.capitalize(member["last_name"]);
+            const name = osparc.utils.Utils.firstsUp(member["first_name"], member["last_name"]);
             const bnt = this._addOption(name);
             bnt.uid = member["id"];
           });

@@ -202,7 +202,7 @@ qx.Class.define("osparc.component.export.Permissions", {
           const collaborator = this.__myFrieds[gid];
           if ("first_name" in collaborator) {
             collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
-            collaborator["name"] = osparc.utils.Utils.capitalize(collaborator["first_name"]) + " " + osparc.utils.Utils.capitalize(collaborator["last_name"]);
+            collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
           collaborator["access_rights"] = aceessRights[gid];
           if (this.__isUserOwner()) {
