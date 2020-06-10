@@ -1,8 +1,5 @@
-# pylint: disable=unused-variable
-# pylint: disable=unused-argument
-# pylint: disable=redefined-outer-name
-# pylint: disable=protected-access
-
+# pylint: disable-all
+# fmt: off
 
 # simcore_api_sdk.abc.py
 import abc as _abc

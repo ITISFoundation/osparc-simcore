@@ -1,3 +1,6 @@
+# pylint: disable-all
+# fmt: off
+
 import json
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -17,6 +20,7 @@ def _get_app(request: Request) -> FastAPI:
 def get_my_user_id(app: FastAPI):
     return 3
 
+
 class ItemFOO(BaseModel):
     name: str
     description: str = None
@@ -25,9 +29,7 @@ class ItemFOO(BaseModel):
 
 
 @app.post("/studies")
-async def get_studies(
-    q1: int, body: List[ItemFOO]
-) -> ItemFOO:
+async def get_studies(q1: int, body: List[ItemFOO]) -> ItemFOO:
 
     return body
 

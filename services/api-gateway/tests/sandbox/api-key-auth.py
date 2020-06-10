@@ -1,12 +1,13 @@
-from fastapi import FastAPI, Depends, Security, HTTPException
+# pylint: disable-all
+# fmt: off
 
 import uvicorn
-
+from fastapi import Depends, FastAPI, HTTPException, Security
 from fastapi.security.api_key import APIKeyHeader
 from starlette.status import HTTP_403_FORBIDDEN
 
 API_KEY = "1234567asdfgh"
-API_KEY_NAME = "access_token" # this is acces
+API_KEY_NAME = "access_token"  # this is acces
 
 
 def get_active_user(
@@ -21,7 +22,6 @@ def get_active_user(
         raise HTTPException(
             status_code=HTTP_403_FORBIDDEN, detail="Invalid credentials"
         )
-
 
     return user_id
 
