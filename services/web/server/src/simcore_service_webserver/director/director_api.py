@@ -122,3 +122,26 @@ async def get_service_by_key_version(
         if not services:
             return
         return services[0]
+
+
+async def get_services_extras(
+    app: web.Application, service_key: str, service_version: str
+) -> Optional[Dict]:
+    session, api_endpoint = _get_director_client(app)
+
+    url = (
+        api_endpoint
+        / "service_extras"
+        / urllib.parse.quote(service_key, safe="")
+        / service_version
+    )
+    async with session.get(url) as resp:
+        if resp.status != 200:
+            log.warning("Status not 200 %s", resp)
+            return
+        payload = await resp.json()
+        service_extras = payload["data"]
+        if not service_extras:
+            log.warning("Service extras is missing %s", resp)
+            return
+        return service_extras
