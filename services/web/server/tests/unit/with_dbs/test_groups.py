@@ -5,25 +5,15 @@
 
 import random
 from copy import deepcopy
-from itertools import repeat
 from typing import Dict, List, Tuple
-from unittest.mock import MagicMock
 
-import faker
 import pytest
 from aiohttp import web
-from aiopg.sa.connection import SAConnection
-from psycopg2 import OperationalError
 
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, create_user
-from pytest_simcore.helpers.utils_tokens import (
-    create_token_in_db,
-    delete_all_tokens_from_db,
-    get_token_from_db,
-)
 from servicelib.application import create_safe_application
-from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
+from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.groups import setup_groups
 from simcore_service_webserver.groups_api import (
     DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
@@ -88,231 +78,8 @@ async def logged_user(client, role: UserRole):
         yield user
 
 
-@pytest.fixture
-async def tokens_db(logged_user, client):
-    engine = client.app[APP_DB_ENGINE_KEY]
-    yield engine
-    await delete_all_tokens_from_db(engine)
-
-
-@pytest.fixture
-async def fake_tokens(logged_user, tokens_db):
-    # pylint: disable=E1101
-    from faker.providers import lorem
-
-    fake = faker.Factory.create()
-    fake.seed(4567)  # Always the same fakes
-    fake.add_provider(lorem)
-
-    all_tokens = []
-
-    # TODO: automatically create data from oas!
-    # See api/specs/webserver/v0/components/schemas/me.yaml
-    for _ in repeat(None, 5):
-        # TODO: add tokens from other users
-        data = {
-            "service": fake.word(ext_word_list=None),
-            "token_key": fake.md5(raw_output=False),
-            "token_secret": fake.md5(raw_output=False),
-        }
-        row = await create_token_in_db(
-            tokens_db,
-            user_id=logged_user["id"],
-            token_service=data["service"],
-            token_data=data,
-        )
-        all_tokens.append(data)
-    return all_tokens
-
-
 # --------------------------------------------------------------------------
-PREFIX = "/" + API_VERSION + "/me"
-
-
-@pytest.mark.parametrize(
-    "role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
-    ],
-)
-async def test_get_profile(
-    logged_user: Dict,
-    client,
-    role: UserRole,
-    expected: web.HTTPException,
-    primary_group: Dict[str, str],
-    standard_groups: List[Dict[str, str]],
-    all_group: Dict[str, str],
-):
-    url = client.app.router["get_my_profile"].url_for()
-    assert str(url) == "/v0/me"
-
-    resp = await client.get(url)
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        assert data["login"] == logged_user["email"]
-        assert data["gravatar_id"]
-        assert data["first_name"] == logged_user["name"]
-        assert data["last_name"] == ""
-        assert data["role"] == role.name.capitalize()
-        assert data["groups"] == {
-            "me": primary_group,
-            "organizations": standard_groups,
-            "all": all_group,
-        }
-
-
-@pytest.mark.parametrize(
-    "role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
-    ],
-)
-async def test_update_profile(logged_user, client, role, expected):
-    url = client.app.router["update_my_profile"].url_for()
-    assert str(url) == "/v0/me"
-
-    resp = await client.put(url, json={"last_name": "Foo"})
-    _, error = await assert_status(resp, expected)
-
-    if not error:
-        resp = await client.get(url)
-        data, _ = await assert_status(resp, web.HTTPOk)
-
-        assert data["first_name"] == logged_user["name"]
-        assert data["last_name"] == "Foo"
-        assert data["role"] == role.name.capitalize()
-
-
-# Test CRUD on tokens --------------------------------------------
-# TODO: template for CRUD testing?
-# TODO: create parametrize fixture with resource_name
-
-RESOURCE_NAME = "tokens"
-PREFIX = "/" + API_VERSION + "/me/" + RESOURCE_NAME
-
-
-@pytest.mark.parametrize(
-    "role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPCreated),
-        (UserRole.TESTER, web.HTTPCreated),
-    ],
-)
-async def test_create_token(client, logged_user, tokens_db, role, expected):
-    url = client.app.router["create_tokens"].url_for()
-    assert "/v0/me/tokens" == str(url)
-
-    token = {
-        "service": "blackfynn",
-        "token_key": "4k9lyzBTS",
-        "token_secret": "my secret",
-    }
-
-    resp = await client.post(url, json=token)
-    data, error = await assert_status(resp, expected)
-    if not error:
-        db_token = await get_token_from_db(tokens_db, token_data=token)
-        assert db_token["token_data"] == token
-        assert db_token["user_id"] == logged_user["id"]
-
-
-@pytest.mark.parametrize(
-    "role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
-    ],
-)
-async def test_read_token(client, logged_user, tokens_db, fake_tokens, role, expected):
-    # list all
-    url = client.app.router["list_tokens"].url_for()
-    assert "/v0/me/tokens" == str(url)
-
-    resp = await client.get(url)
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        expected_token = random.choice(fake_tokens)
-        sid = expected_token["service"]
-
-        # get one
-        url = client.app.router["get_token"].url_for(service=sid)
-        assert "/v0/me/tokens/%s" % sid == str(url)
-        resp = await client.get(url)
-
-        data, error = await assert_status(resp, expected)
-
-        assert data == expected_token, "list and read item are both read operations"
-
-
-@pytest.mark.parametrize(
-    "role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
-    ],
-)
-async def test_update_token(
-    client, logged_user, tokens_db, fake_tokens, role, expected
-):
-
-    selected = random.choice(fake_tokens)
-    sid = selected["service"]
-
-    url = client.app.router["get_token"].url_for(service=sid)
-    assert "/v0/me/tokens/%s" % sid == str(url)
-
-    resp = await client.put(url, json={"token_secret": "some completely new secret"})
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        # check in db
-        token_in_db = await get_token_from_db(tokens_db, token_service=sid)
-
-        assert token_in_db["token_data"]["token_secret"] == "some completely new secret"
-        assert token_in_db["token_data"]["token_secret"] != selected["token_secret"]
-
-        selected["token_secret"] = "some completely new secret"
-        assert token_in_db["token_data"] == selected
-
-
-@pytest.mark.parametrize(
-    "role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
-    ],
-)
-async def test_delete_token(
-    client, logged_user, tokens_db, fake_tokens, role, expected
-):
-    sid = fake_tokens[0]["service"]
-
-    url = client.app.router["delete_token"].url_for(service=sid)
-    assert "/v0/me/tokens/%s" % sid == str(url)
-
-    resp = await client.delete(url)
-
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        assert not (await get_token_from_db(tokens_db, token_service=sid))
+PREFIX = "/" + API_VERSION + "/groups"
 
 
 def _assert_group(group: Dict[str, str]):
@@ -361,7 +128,7 @@ async def test_list_groups(
     all_group: Dict[str, str],
 ):
     url = client.app.router["list_groups"].url_for()
-    assert str(url) == "/v0/me/groups"
+    assert str(url) == f"{PREFIX}"
 
     resp = await client.get(url)
     data, error = await assert_status(resp, expected)
@@ -439,7 +206,7 @@ async def test_group_access_rights(
     all_group: Dict[str, str],
 ):
     url = client.app.router["list_groups"].url_for()
-    assert str(url) == "/v0/me/groups"
+    assert str(url) == f"{PREFIX}"
 
     resp = await client.get(url)
     data, error = await assert_status(resp, expected)
@@ -528,10 +295,10 @@ async def test_group_creation_workflow(
     expected_not_found,
 ):
     url = client.app.router["create_group"].url_for()
-    assert str(url) == "/v0/me/groups"
+    assert str(url) == f"{PREFIX}"
 
     new_group = {
-        "gid": "some uuid that will be replaced",
+        "gid": "4564",
         "label": "Black Sabbath",
         "description": "The founders of Rock'N'Roll",
         "thumbnail": "https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcS3pAUISv_wtYDL9Ih4JtUfAWyHj9PkYMlEBGHJsJB9QlTZuuaK%26s&sp=1591105967T00f0b7ff95c7b3bca035102fa1ead205ab29eb6cd95acedcedf6320e64634f0c",
@@ -558,7 +325,7 @@ async def test_group_creation_workflow(
 
     # get the groups and check we are part of this new group
     url = client.app.router["list_groups"].url_for()
-    assert str(url) == "/v0/me/groups"
+    assert str(url) == f"{PREFIX}"
 
     resp = await client.get(url)
     data, error = await assert_status(resp, expected_read)
@@ -568,6 +335,7 @@ async def test_group_creation_workflow(
 
     # check getting one group
     url = client.app.router["get_group"].url_for(gid=str(assigned_group["gid"]))
+    assert str(url) == f"{PREFIX}/{assigned_group['gid']}"
     resp = await client.get(url)
     data, error = await assert_status(resp, expected_read)
     if not error:
@@ -576,6 +344,7 @@ async def test_group_creation_workflow(
     # modify the group
     modified_group = {"label": "Led Zeppelin"}
     url = client.app.router["update_group"].url_for(gid=str(assigned_group["gid"]))
+    assert str(url) == f"{PREFIX}/{assigned_group['gid']}"
     resp = await client.patch(url, json=modified_group)
     data, error = await assert_status(resp, expected_read)
     if not error:
@@ -585,6 +354,7 @@ async def test_group_creation_workflow(
         assert data == assigned_group
     # check getting the group returns the newly modified group
     url = client.app.router["get_group"].url_for(gid=str(assigned_group["gid"]))
+    assert str(url) == f"{PREFIX}/{assigned_group['gid']}"
     resp = await client.get(url)
     data, error = await assert_status(resp, expected_read)
     if not error:
@@ -593,6 +363,7 @@ async def test_group_creation_workflow(
 
     # delete the group
     url = client.app.router["delete_group"].url_for(gid=str(assigned_group["gid"]))
+    assert str(url) == f"{PREFIX}/{assigned_group['gid']}"
     resp = await client.delete(url)
     data, error = await assert_status(resp, expected_delete)
     if not error:
@@ -600,11 +371,13 @@ async def test_group_creation_workflow(
 
     # check deleting the same group again fails
     url = client.app.router["delete_group"].url_for(gid=str(assigned_group["gid"]))
+    assert str(url) == f"{PREFIX}/{assigned_group['gid']}"
     resp = await client.delete(url)
     data, error = await assert_status(resp, expected_not_found)
 
     # check getting the group fails
     url = client.app.router["get_group"].url_for(gid=str(assigned_group["gid"]))
+    assert str(url) == f"{PREFIX}/{assigned_group['gid']}"
     resp = await client.get(url)
     data, error = await assert_status(resp, expected_not_found)
 
@@ -661,11 +434,12 @@ async def test_add_remove_users_from_group(
 
     # check that our group does not exist
     url = client.app.router["get_group_users"].url_for(gid=new_group["gid"])
+    assert str(url) == f"{PREFIX}/{new_group['gid']}/users"
     resp = await client.get(url)
     data, error = await assert_status(resp, expected_not_found)
 
     url = client.app.router["create_group"].url_for()
-    assert str(url) == "/v0/me/groups"
+    assert str(url) == f"{PREFIX}"
 
     resp = await client.post(url, json=new_group)
     data, error = await assert_status(resp, expected_created)
@@ -690,6 +464,7 @@ async def test_add_remove_users_from_group(
     get_group_users_url = client.app.router["get_group_users"].url_for(
         gid=str(assigned_group["gid"])
     )
+    assert str(get_group_users_url) == f"{PREFIX}/{assigned_group['gid']}/users"
     resp = await client.get(get_group_users_url)
     data, error = await assert_status(resp, expected)
 
@@ -703,6 +478,7 @@ async def test_add_remove_users_from_group(
     add_group_user_url = client.app.router["add_group_user"].url_for(
         gid=str(assigned_group["gid"])
     )
+    assert str(add_group_user_url) == f"{PREFIX}/{assigned_group['gid']}/users"
     num_new_users = random.randint(1, 10)
     created_users_list = []
     for i in range(num_new_users):
@@ -719,6 +495,10 @@ async def test_add_remove_users_from_group(
 
         get_group_user_url = client.app.router["get_group_user"].url_for(
             gid=str(assigned_group["gid"]), uid=str(created_users_list[i]["id"])
+        )
+        assert (
+            str(get_group_user_url)
+            == f"{PREFIX}/{assigned_group['gid']}/users/{created_users_list[i]['id']}"
         )
         resp = await client.get(get_group_user_url)
         data, error = await assert_status(resp, expected)
@@ -787,49 +567,3 @@ async def test_add_remove_users_from_group(
         )
         resp = await client.get(get_group_user_url)
         data, error = await assert_status(resp, expected_not_found)
-
-
-@pytest.fixture
-def mock_failing_connection(mocker) -> MagicMock:
-    """
-        async with engine.acquire() as conn:
-            await conn.execute(query)  --> will raise OperationalError
-    """
-    # See http://initd.org/psycopg/docs/module.html
-    conn_execute = mocker.patch.object(SAConnection, "execute")
-    conn_execute.side_effect = OperationalError(
-        "MOCK: server closed the connection unexpectedly"
-    )
-    return conn_execute
-
-
-@pytest.mark.parametrize(
-    "role,expected", [(UserRole.USER, web.HTTPServiceUnavailable),]
-)
-async def test_get_profile_with_failing_db_connection(
-    logged_user,
-    client,
-    mock_failing_connection: MagicMock,
-    role: UserRole,
-    expected: web.HTTPException,
-):
-    """
-        Reproduces issue https://github.com/ITISFoundation/osparc-simcore/pull/1160
-
-        A logged user fails to get profie because though authentication because
-
-        i.e. conn.execute(query) will raise psycopg2.OperationalError: server closed the connection unexpectedly
-
-        ISSUES: #880, #1160
-    """
-    url = client.app.router["get_my_profile"].url_for()
-    assert str(url) == "/v0/me"
-
-    resp = await client.get(url)
-
-    NUM_RETRY = 3
-    assert (
-        mock_failing_connection.call_count == NUM_RETRY
-    ), "Expected mock failure raised in AuthorizationPolicy.authorized_userid after severals"
-
-    data, error = await assert_status(resp, expected)
