@@ -80,7 +80,9 @@ def is_gpu_node() -> bool:
             cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
         )
 
-        stdout, _ = await proc.communicate()
+        stdout, stderr = await proc.communicate()
+        logger.error("Stdout %s", stdout)
+        logger.error("Stderr %s", stderr)
         container_id = stdout.decode("utf-8").strip()
 
         docker = aiodocker.Docker()
