@@ -5,14 +5,14 @@ IFS=$'\n\t'
 
 install() {
     bash ci/helpers/ensure_python_pip.bash
-    pushd services/api-gateway; pip3 install -r requirements/ci.txt; popd
+    pushd services/api-server; pip3 install -r requirements/ci.txt; popd
     pip list --verbose
 }
 
 test() {
-    pytest --cov=simcore_service_api_gateway --durations=10 --cov-append \
+    pytest --cov=simcore_service_api_server --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml \
-          -v -m "not travis" services/api-gateway/tests/unit
+          -v -m "not travis" services/api-server/tests/unit
 }
 
 # Check if the function exists (bash specific)

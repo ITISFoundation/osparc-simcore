@@ -3,7 +3,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-FOLDER_CHECKS=(api/ api-gateway packages/ .travis.yml)
+FOLDER_CHECKS=(api/ api-server packages/ .travis.yml)
 
 before_install() {
     if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
@@ -18,7 +18,7 @@ install() {
     if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
         bash ci/helpers/ensure_python_pip.bash
-        pushd services/api-gateway; pip3 install -r requirements/ci.txt; popd
+        pushd services/api-server; pip3 install -r requirements/ci.txt; popd
     fi
 }
 
@@ -32,11 +32,11 @@ before_script() {
 script() {
     if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
-        pytest --cov=simcore_service_api_gateway --durations=10 --cov-append \
+        pytest --cov=simcore_service_api_server --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml \
-          -v -m "not travis" services/api-gateway/tests/unit
+          -v -m "not travis" services/api-server/tests/unit
     else
-        echo "No changes detected. Skipping unit-testing of api-gateway."
+        echo "No changes detected. Skipping unit-testing of api-server."
     fi
 }
 
