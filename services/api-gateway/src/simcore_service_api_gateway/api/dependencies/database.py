@@ -8,7 +8,7 @@ from ...db.repositories.base import BaseRepository
 
 
 def _get_db_engine(request: Request) -> Engine:
-    return request.app.engine
+    return request.app.state.engine
 
 
 def get_repository(repo_type: Type[BaseRepository]) -> Callable:

@@ -32,12 +32,11 @@ from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from loguru import logger
 
-from ....__version__ import api_vtag
-from ....db.repositories.users import UsersRepository
-from ....models.domain.users import User
-from ....models.schemas.tokens import TokenData
-from ....services.jwt import get_access_token_data
-from ..database import get_repository
+from ...__version__ import api_vtag
+from ...db.repositories.users import UsersRepository
+from ...models.schemas.tokens import TokenData
+from ...services.jwt import get_access_token_data
+from .database import get_repository
 
 # Declaration of security scheme:
 #   - Adds components.securitySchemes['OAuth2PasswordBearer'] to openapi.yaml
@@ -95,7 +94,7 @@ async def get_current_user_id(
 
 
 async def get_active_user_id(
-    current_user_id: User = Security(get_current_user_id, scopes=["read"])
+    current_user_id: int = Security(get_current_user_id, scopes=["read"])
 ) -> int:
     # FIXME: Adds read scope. rename properly and activate scopes
     return current_user_id
