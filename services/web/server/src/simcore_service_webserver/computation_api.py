@@ -198,7 +198,11 @@ async def _parse_project_data(pipeline_data: Dict, app: web.Application):
                 "outputs": node_details["outputs"],
             }
 
-        requires_gpu = "GPU" in node_extras["node_requirements"]
+        requires_gpu = (
+            "GPU" in node_extras.get("node_requirements", [])
+            if node_extras is not None
+            else False
+        )
 
         task = {
             "schema": node_schema,
