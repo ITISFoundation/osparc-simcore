@@ -10,13 +10,12 @@ schedule it accordingly.
 import os
 
 from typing import Tuple
-from celery import Celery, states, result
+from celery import Celery, states
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 from .cli import run_sidecar
 from .utils import wrap_async_call, is_gpu_node
 from .celery_log_setup import get_task_logger
 from .utils import assemble_celery_app
-from simcore_postgres_database.models.comp_tasks import comp_tasks
 from .core import does_task_require_gpu
 
 log = get_task_logger(__name__)
