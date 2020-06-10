@@ -152,6 +152,7 @@ async def get_project(request: web.Request):
 
     """
     # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+    user_id = request[RQT_USERID_KEY]
     from .projects_api import get_project_for_user
 
     project_uuid = request.match_info.get("project_id")
@@ -164,6 +165,10 @@ async def get_project(request: web.Request):
         )
 
         return {"data": project}
+    except ProjectInvalidRightsError:
+        raise web.HTTPForbidden(
+            reason=f"User {user_id} has no right to read {project_uuid}"
+        )
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
 
@@ -225,6 +230,10 @@ async def replace_project(request: web.Request):
     except ValidationError:
         raise web.HTTPBadRequest
 
+    except ProjectInvalidRightsError:
+        raise web.HTTPForbidden(
+            reason=f"User {user_id} has no rights to write to project {project_uuid}"
+        )
     except ProjectNotFoundError:
         raise web.HTTPNotFound
 
@@ -254,6 +263,10 @@ async def delete_project(request: web.Request):
                 raise web.HTTPForbidden(reason=message)
 
         await projects_api.delete_project(request, project_uuid, user_id)
+    except ProjectInvalidRightsError:
+        raise web.HTTPForbidden(
+            reason=f"User {user_id} has no rights to delete project"
+        )
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
 

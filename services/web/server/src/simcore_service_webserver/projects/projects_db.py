@@ -9,7 +9,7 @@ import logging
 import uuid as uuidlib
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Mapping, Optional, Set
+from typing import Dict, List, Mapping, Optional, Set, Union
 
 import psycopg2.errors
 import sqlalchemy as sa
@@ -23,7 +23,7 @@ from sqlalchemy.sql import and_, select
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
-from ..db_models import study_tags, user_to_groups, users
+from ..db_models import GroupType, groups, study_tags, user_to_groups, users
 from ..utils import format_datetime, now_str
 from .projects_exceptions import (
     ProjectInvalidRightsError,
@@ -43,6 +43,37 @@ class ProjectAccessRights(Enum):
     OWNER = {"read": True, "write": True, "delete": True}
     COLLABORATOR = {"read": True, "write": True, "delete": False}
     VIEWER = {"read": True, "write": False, "delete": False}
+
+
+def _check_project_permissions(
+    project: Union[RowProxy, Dict],
+    user_id: int,
+    user_groups: List[RowProxy],
+    permission: str,
+) -> None:
+    # compute access rights by order of priority all group > organizations > primary
+    primary_group = next(filter(lambda x: x.type == GroupType.PRIMARY, user_groups))
+    standard_groups = filter(lambda x: x.type == GroupType.STANDARD, user_groups)
+    all_group = next(filter(lambda x: x.type == GroupType.EVERYONE, user_groups))
+
+    if f"{primary_group.gid}" in project["access_rights"]:
+        if not project["access_rights"][f"{primary_group.gid}"][permission]:
+            raise ProjectInvalidRightsError(user_id, project["uuid"])
+        return
+    # let's check if standard groups are in there and take the most liberal rights
+    standard_groups_permissions = []
+    for group in standard_groups:
+        if f"{group.gid}" in project["access_rights"]:
+            standard_groups_permissions.append(
+                project["access_rights"][f"{group.gid}"][permission]
+            )
+    if standard_groups_permissions:
+        if not any(standard_groups_permissions):
+            raise ProjectInvalidRightsError(user_id, project["uuid"])
+        return
+
+    if not project["access_rights"][f"{all_group.gid}"][permission]:
+        raise ProjectInvalidRightsError(user_id, project["uuid"])
 
 
 def _create_project_access_rights(
@@ -213,15 +244,17 @@ class ProjectDBAPI:
     async def load_user_projects(self, user_id: int) -> List[Dict]:
         log.info("Loading projects for user %s", user_id)
         async with self.engine.acquire() as conn:
-            user_groups: List[str] = await self.__load_user_groups(conn, user_id)
+            user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
             query = f"""
     SELECT *
     FROM projects
     WHERE projects.type != 'TEMPLATE'
-    AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group}'" for group in user_groups)}])
+    AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
     OR prj_owner = {user_id})
     """
-            projects_list = await self.__load_projects(conn, query)
+            projects_list = await self.__load_projects(
+                conn, query, user_id, user_groups
+            )
 
         return projects_list
 
@@ -234,32 +267,44 @@ class ProjectDBAPI:
         projects_list = [prj.data for prj in Fake.projects.values() if prj.template]
 
         async with self.engine.acquire() as conn:
-            user_groups: List[str] = await self.__load_user_groups(conn, user_id)
+            user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
             # NOTE: in order to use specific postgresql function jsonb_exists_any we use raw call here
             query = f"""
 SELECT *
 FROM projects
 WHERE projects.type = 'TEMPLATE'
 {'AND projects.published ' if only_published else ''}
-AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group}'" for group in user_groups)}])
+AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
 OR prj_owner = {user_id})
             """
-            db_projects = await self.__load_projects(conn, query)
+            db_projects = await self.__load_projects(conn, query, user_id, user_groups)
             projects_list.extend(db_projects)
 
         return projects_list
 
-    async def __load_user_groups(self, conn: SAConnection, user_id: int) -> List[str]:
-        user_groups: List[str] = []
-        query = select([user_to_groups.c.gid]).where(user_to_groups.c.uid == user_id)
+    async def __load_user_groups(
+        self, conn: SAConnection, user_id: int
+    ) -> List[RowProxy]:
+        user_groups: List[RowProxy] = []
+        query = (
+            select([groups])
+            .select_from(groups.join(user_to_groups))
+            .where(user_to_groups.c.uid == user_id)
+        )
         async for row in conn.execute(query):
-            user_groups.append(row[user_to_groups.c.gid])
+            user_groups.append(row)
         return user_groups
 
-    async def __load_projects(self, conn: SAConnection, query) -> List[Dict]:
+    async def __load_projects(
+        self, conn: SAConnection, query: str, user_id: int, user_groups: List[RowProxy]
+    ) -> List[Dict]:
         api_projects: List[Dict] = []  # API model-compatible projects
         db_projects: List[Dict] = []  # DB model-compatible projects
         async for row in conn.execute(query):
+            try:
+                _check_project_permissions(row, user_id, user_groups, "read")
+            except ProjectInvalidRightsError:
+                continue
             prj = dict(row.items())
             log.debug("found project: %s", prj)
             db_projects.append(prj)
@@ -280,16 +325,16 @@ OR prj_owner = {user_id})
     ) -> Dict:
         exclude_foreign = exclude_foreign or []
         async with self.engine.acquire() as conn:
-            # FIXME: this is not nice
             # this retrieves the projects where user is owner
-            user_groups: List[str] = await self.__load_user_groups(conn, user_id)
+            user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
+
             # NOTE: in order to use specific postgresql function jsonb_exists_any we use raw call here
             query = f"""
 SELECT *
 FROM projects
 WHERE projects.type != 'TEMPLATE'
 AND uuid = '{project_uuid}'
-AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group}'" for group in user_groups)}])
+AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
 OR prj_owner = {user_id})
 """
             result = await conn.execute(query)
@@ -297,6 +342,9 @@ OR prj_owner = {user_id})
 
             if not project_row:
                 raise ProjectNotFoundError(project_uuid)
+
+            # now carefuly check the access rights
+            _check_project_permissions(project_row, user_id, user_groups, "read")
 
             project = dict(project_row.items())
 
@@ -402,7 +450,8 @@ OR prj_owner = {user_id})
             row = await self._get_project(
                 user_id, project_uuid, exclude_foreign=["tags"]
             )
-
+            user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
+            _check_project_permissions(row, user_id, user_groups, "write")
             # uuid can ONLY be set upon creation
             if row[projects.c.uuid.key] != project_data["uuid"]:
                 raise ProjectInvalidRightsError(user_id, project_data["uuid"])
@@ -417,7 +466,7 @@ OR prj_owner = {user_id})
                 .returning(literal_column("*"))
             )
             project: RowProxy = await result.fetchone()
-            user_email = await self._get_user_email(conn, user_id)
+            user_email = await self._get_user_email(conn, project.prj_owner)
 
             tags = await self._get_tags_by_project(
                 conn, project_id=project[projects.c.id]
@@ -428,26 +477,13 @@ OR prj_owner = {user_id})
         log.info("Deleting project %s for user %s", project_uuid, user_id)
         project = await self._get_project(user_id, project_uuid)
         async with self.engine.acquire() as conn:
-            # if we are the project owner, we delete the project
-            if project["prj_owner"] == user_id:
-                await conn.execute(
-                    # pylint: disable=no-value-for-parameter
-                    projects.delete().where(projects.c.uuid == project_uuid)
-                )
-            else:
-                # let's just remove the access rights if it was shared with my primary group
-                access_rights = project["access_rights"]
-                primary_gid: int = await self._get_user_primary_group_gid(conn, user_id)
-                if not primary_gid in access_rights:
-                    # sharing was done through a bigger group so it's not possible to remove that study
-                    raise ProjectsException(
-                        f"project cannot be removed for user {user_id}, project was shared through organization"
-                    )
-                access_rights.pop(primary_gid)
-                await conn.execute(
-                    # pylint: disable=no-value-for-parameter
-                    projects.update().values(access_rights=access_rights)
-                )
+            # if we have delete access we delete the project
+            user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
+            _check_project_permissions(project, user_id, user_groups, "delete")
+            await conn.execute(
+                # pylint: disable=no-value-for-parameter
+                projects.delete().where(projects.c.uuid == project_uuid)
+            )
 
     async def make_unique_project_uuid(self) -> str:
         """ Generates a project identifier still not used in database
