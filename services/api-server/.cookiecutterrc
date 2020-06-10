@@ -1,0 +1,20 @@
+# This file exists so you can easily regenerate your project.
+#
+#  cookiecutter --overwrite-if-exists --config-file=.cookiecutterrc /home/crespo/devp/osparc-simcore/services/api-server/../../../cookiecutter-simcore-py-fastapi
+#
+
+default_context:
+
+    _extensions:               ['jinja2_time.TimeExtension']
+    _template:                 '/home/crespo/devp/osparc-simcore/services/api-server/../../../cookiecutter-simcore-py-fastapi'
+    distribution_name:         'simcore-service-api-server'
+    enable_docker_daemon_access: 'False'
+    full_name:                 'Pedro Crespo'
+    github_username:           'pcrespov'
+    is_standalone_repo:        'False'
+    package_name:              'simcore_service_api_server'
+    project_name:              'Public API Server'
+    project_short_description: "Platform's API Server for external clients"
+    project_slug:              'api-server'
+    version:                   '0.2.1'
+    year:                      '2020'
