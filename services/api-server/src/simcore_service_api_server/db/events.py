@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from loguru import logger
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
-from ..core.config import AppSettings
+from ..core.settings import AppSettings
 
 ENGINE_ATTRS = "closed driver dsn freesize maxsize minsize name size timeout".split()
 

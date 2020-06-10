@@ -11,6 +11,7 @@ tenacity
 passlib[bcrypt]
 pyjwt
 loguru
+pydantic[dotenv]
 
 
 async-exit-stack  # not needed when python>=3.7

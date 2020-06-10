@@ -9,7 +9,7 @@ from fastapi.openapi.docs import get_redoc_html
 from fastapi.openapi.utils import get_openapi
 
 from ..__version__ import api_version, api_vtag
-from .config import AppSettings
+from .settings import AppSettings
 
 FAVICON = "https://osparc.io/resource/osparc/favicon.png"
 LOGO = "https://raw.githubusercontent.com/ITISFoundation/osparc-manual/b809d93619512eb60c827b7e769c6145758378d0/_media/osparc-logo.svg"

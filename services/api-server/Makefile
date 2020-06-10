@@ -17,7 +17,7 @@ reqs: ## compiles pip requirements (.in -> .txt)
 .PHONY: install-dev install-prod install-ci
 install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
-	pip-sync requirements/$(subst install-,,$@).txt
+	pip-sync --quiet requirements/$(subst install-,,$@).txt
 
 
 PHONY: tests-unit tests-integration tests
@@ -36,11 +36,17 @@ tests-integration: ## runs integration tests against local+production images
 
 # DEVELOPMENT TOOLS ########
 
+.env:
+	cp .env-devel $@
+
+docker-compose.yml:
+	cp $(CURDIR)/tests/utils/docker-compose.yml $@
+
 .PHONY: run-devel down
-run-devel: .env-devel down ## runs app on host with pg fixture for development [for development]
-	# running current app
-	export $(shell grep -v '^#' $< | xargs  -d '\n'); \
-	docker-compose -f $(CURDIR)/tests/utils/docker-compose.yml up --detach; \
+run-devel: .env docker-compose.yml down ## runs app on host with pg fixture for development [for development]
+	# Starting db (under $<)
+	docker-compose up --detach
+	# start app (under $<)
 	uvicorn simcore_service_api_server.main:the_app \
 		--reload --reload-dir $(SRC_DIR) \
 		--port=8001 --host=0.0.0.0

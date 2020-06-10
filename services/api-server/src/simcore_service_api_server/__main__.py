@@ -8,7 +8,7 @@ from pathlib import Path
 
 import uvicorn
 
-from simcore_service_api_server.core.config import AppSettings, BootModeEnum
+from simcore_service_api_server.core.settings import AppSettings, BootModeEnum
 from simcore_service_api_server.main import the_app
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent

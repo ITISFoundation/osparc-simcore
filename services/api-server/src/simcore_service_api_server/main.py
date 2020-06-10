@@ -8,7 +8,7 @@ from loguru import logger
 from .__version__ import api_vtag
 from .api.routes.openapi import router as api_router
 from .core import application
-from .core.config import AppSettings
+from .core.settings import AppSettings
 from .core.events import create_start_app_handler, create_stop_app_handler
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -18,10 +18,10 @@ def init_application() -> FastAPI:
     """
         Creates a sets up app
     """
-    config = AppSettings()
-    logger.add(sys.stderr, level=config.loglevel)
+    app_settings = AppSettings()
+    logger.add(sys.stderr, level=app_settings.loglevel)
 
-    app: FastAPI = application.create(settings=config)
+    app: FastAPI = application.create(settings=app_settings)
 
     app.add_event_handler("startup", create_start_app_handler(app))
     app.add_event_handler("shutdown", create_stop_app_handler(app))

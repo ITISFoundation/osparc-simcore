@@ -5,7 +5,7 @@ from loguru import logger
 
 from ..db.events import close_db_connection, connect_to_db
 from ..services.remote_debug import setup_remote_debugging
-from .config import BootModeEnum
+from .settings import BootModeEnum
 
 
 def create_start_app_handler(app: FastAPI) -> Callable:

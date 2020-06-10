@@ -16,7 +16,7 @@ async-generator==1.10     # via -r requirements/_base.txt, fastapi
 async-timeout==3.0.1      # via aiohttp
 attrs==19.3.0             # via aiohttp, pytest, pytest-docker
 bcrypt==3.1.7             # via -r requirements/_base.txt, passlib
-certifi==2020.4.5.1       # via -r requirements/_base.txt, requests
+certifi==2020.4.5.2       # via -r requirements/_base.txt, requests
 cffi==1.14.0              # via -r requirements/_base.txt, bcrypt
 change-case==0.5.2        # via -r requirements/_test.in
 chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, requests
@@ -51,7 +51,7 @@ markupsafe==1.1.1         # via -r requirements/_base.txt, jinja2, mako
 mccabe==0.6.1             # via pylint
 more-itertools==8.3.0     # via pytest
 multidict==4.7.6          # via -r requirements/_base.txt, aiohttp, yarl
-orjson==3.0.2             # via -r requirements/_base.txt, fastapi
+orjson==3.1.0             # via -r requirements/_base.txt, fastapi
 packaging==20.4           # via pytest
 passlib[bcrypt]==1.7.2    # via -r requirements/_base.txt
 pluggy==0.13.1            # via pytest
@@ -60,7 +60,7 @@ psycopg2-binary==2.8.5    # via -r requirements/_base.txt, aiopg, sqlalchemy
 ptvsd==4.3.2              # via -r requirements/_test.in
 py==1.8.1                 # via pytest
 pycparser==2.20           # via -r requirements/_base.txt, cffi
-pydantic==1.5.1           # via -r requirements/_base.txt, fastapi
+pydantic[dotenv]==1.5.1   # via -r requirements/_base.txt, fastapi
 pyjwt==1.7.1              # via -r requirements/_base.txt
 pylint==2.5.3             # via -r requirements/_test.in
 pyparsing==2.4.7          # via packaging
@@ -71,6 +71,7 @@ pytest-mock==3.1.1        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest==5.4.3             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-mock
 python-dateutil==2.8.1    # via alembic, faker
+python-dotenv==0.13.0     # via -r requirements/_base.txt, pydantic
 python-editor==1.0.4      # via alembic
 python-multipart==0.0.5   # via -r requirements/_base.txt, fastapi
 pyyaml==5.3.1             # via -r requirements/_base.txt, fastapi

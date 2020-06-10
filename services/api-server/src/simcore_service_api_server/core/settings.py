@@ -63,5 +63,6 @@ class AppSettings(BaseSettings):
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
 
     class Config:
-        env_prefix = ""
         case_sensitive = False
+        env_file = ".env"
+        env_prefix = ""

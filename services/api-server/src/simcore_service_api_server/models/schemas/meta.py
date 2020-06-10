@@ -7,12 +7,13 @@ from pydantic import BaseModel, Field, constr
 # or https://www.python.org/dev/peps/pep-0440/#appendix-b-parsing-version-strings-with-regular-expressions
 #
 VERSION_RE = r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
+VersionStr = constr(regex=VERSION_RE)
 
 
 class Meta(BaseModel):
     name: str
-    version: constr(regex=VERSION_RE)
-    released: Optional[Dict[str, str]] = Field(
+    version: VersionStr
+    released: Optional[Dict[str, VersionStr]] = Field(
         None, description="Maps every route's path tag with a released version"
     )
 
