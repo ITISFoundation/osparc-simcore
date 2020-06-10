@@ -90,6 +90,8 @@ def test_all_services_up(core_services_running: str, make_up_prod: Dict):
         f"{stack_name}_{service_name}"
         for service_name in make_up_prod[stack_name]["services"].keys()
     ]
+    # remove sidecar_gpu because its a special case for development
+    expected = [x for x in expected if not x.endswith("sidecar_gpu")]
     assert running_services == sorted(expected)
 
 
