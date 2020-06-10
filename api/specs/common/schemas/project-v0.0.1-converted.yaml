@@ -42,7 +42,7 @@ properties:
         required:
           - read
           - write
-          - execute
+          - delete
         properties:
           read:
             type: boolean

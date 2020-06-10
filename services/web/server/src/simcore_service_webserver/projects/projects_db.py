@@ -155,6 +155,12 @@ class ProjectDBAPI:
                     "prj_owner": user_id if user_id else None,
                 }
             )
+            # validate access_rights. are the gids valid? also ensure prj_owner is in there
+            if user_id:
+                primary_gid = await self._get_user_primary_group(conn, user_id)
+                default_access_rights = {str(primary_gid): {"read": True, "write": True, "delete": True}}
+                kargs["access_rights"].update(default_access_rights)
+
 
             # must be valid uuid
             try:

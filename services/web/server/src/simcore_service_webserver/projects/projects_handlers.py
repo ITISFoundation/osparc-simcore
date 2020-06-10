@@ -70,6 +70,8 @@ async def create_projects(request: web.Request):
                 )
 
             project = await clone_project(request, template_prj, user_id)
+            # remove template access rights
+            project["accessRights"] = {}
             # FIXME: parameterized inputs should get defaults provided by service
 
         # overrides with body

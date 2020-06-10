@@ -27,14 +27,20 @@ from yarl import URL
 
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
+from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiopg_utils import DSN
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.application_config import app_schema as app_schema
-from simcore_service_webserver.users_api import list_user_groups
+from simcore_service_webserver.application_config import \
+    app_schema as app_schema
+from simcore_service_webserver.users_api import (add_user_in_group,
+                                                 create_user_group,
+                                                 delete_user_group,
+                                                 list_user_groups)
 
-## current directory
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+# current directory
+current_dir = Path(sys.argv[0] if __name__ ==
+                   "__main__" else __file__).resolve().parent
 
 
 @pytest.fixture(scope="session")
@@ -45,11 +51,12 @@ def default_app_cfg(osparc_simcore_root_dir, fake_static_dir):
 
     variables = dict(os.environ)
     variables.update(
-        {"OSPARC_SIMCORE_REPO_ROOTDIR": str(osparc_simcore_root_dir),}
+        {"OSPARC_SIMCORE_REPO_ROOTDIR": str(osparc_simcore_root_dir), }
     )
 
     # validates and fills all defaults/optional entries that normal load would not do
-    cfg_dict = trafaret_config.read_and_validate(cfg_path, app_schema, vars=variables)
+    cfg_dict = trafaret_config.read_and_validate(
+        cfg_path, app_schema, vars=variables)
 
     assert Path(cfg_dict["main"]["client_outdir"]) == fake_static_dir
 
@@ -144,7 +151,8 @@ def web_server(loop, aiohttp_server, app_cfg, monkeypatch, postgres_db):
     # with patched email
     path_mail(monkeypatch)
 
-    server = loop.run_until_complete(aiohttp_server(app, port=app_cfg["main"]["port"]))
+    server = loop.run_until_complete(
+        aiohttp_server(app, port=app_cfg["main"]["port"]))
     return server
 
 
@@ -262,7 +270,8 @@ async def socketio_client(socketio_url: str, security_cookie: str):
         sio = socketio.AsyncClient(ssl_verify=False)
         # enginio 3.10.0 introduced ssl verification
         url = str(
-            URL(socketio_url).with_query({"client_session_id": client_session_id})
+            URL(socketio_url).with_query(
+                {"client_session_id": client_session_id})
         )
         headers = {}
         if security_cookie:
@@ -335,7 +344,8 @@ async def mocked_dynamic_service(loop, client, mocked_director_api):
 
         services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
-        mocked_director_api["get_running_interactive_services"].return_value = Future()
+        mocked_director_api["get_running_interactive_services"].return_value = Future(
+        )
         mocked_director_api["get_running_interactive_services"].return_value.set_result(
             services
         )
@@ -349,13 +359,6 @@ async def primary_group(client, logged_user) -> Dict[str, str]:
     primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
     return primary_group
 
-
-from simcore_service_webserver.users_api import (
-    create_user_group,
-    add_user_in_group,
-    delete_user_group,
-)
-from pytest_simcore.helpers.utils_login import NewUser
 
 
 @pytest.fixture

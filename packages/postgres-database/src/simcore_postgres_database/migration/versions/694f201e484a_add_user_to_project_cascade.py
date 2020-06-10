@@ -43,10 +43,30 @@ def upgrade():
         ondelete="CASCADE",
     )
 
-    # change contents in projects access_rights    
+    # change contents in projects access_rights
+    # NOTE: this does not need to be reversed as it was not used before
     op.execute(
         sa.DDL(
             "UPDATE projects SET access_rights = (regexp_replace(access_rights::text, '\"rwx\"', '{\"read\":true, \"write\":false, \"delete\":false}')::jsonb) WHERE access_rights != '{}'"
+        )
+    )
+    # add prj_owner into access rights column
+    # NOTE: this dows not need to be reversed
+    op.execute(
+        sa.DDL(
+    """
+WITH user_project as (
+ SELECT projects.id AS pid, projects.access_rights AS current_rights, '{"' || users.primary_gid || '"}' AS json_key
+  FROM projects
+  INNER JOIN users
+  ON (projects.prj_owner = users.id)
+)
+
+UPDATE projects
+ SET access_rights = jsonb_insert(current_rights::jsonb,json_key::text[], '{"read":true, "write":true, "delete":true}'::jsonb, true)
+ FROM user_project
+ WHERE projects.id = pid
+    """
         )
     )
     # ### end Alembic commands ###
