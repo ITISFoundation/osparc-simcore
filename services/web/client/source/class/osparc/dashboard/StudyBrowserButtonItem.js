@@ -108,7 +108,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
   statics: {
     MENU_BTN_Z: 20,
     MENU_BTN_WIDTH: 25,
-    SHARED_ME: "@FontAwesome5Solid/user/14",
+    SHARED_USER: "@FontAwesome5Solid/user/14",
     SHARED_ORGS: "@FontAwesome5Solid/users/14",
     SHARED_ALL: "@FontAwesome5Solid/globe/14"
   },
@@ -260,7 +260,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             image.setSource(this.self().SHARED_ORGS);
             break;
           case 2:
-            image.setSource(this.self().SHARED_ME);
+            image.setSource(this.self().SHARED_USER);
             break;
         }
 
