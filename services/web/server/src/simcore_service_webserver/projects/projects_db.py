@@ -473,18 +473,18 @@ OR prj_owner = {user_id})
     async def _get_user_email(self, conn: SAConnection, user_id: Optional[int]) -> str:
         if not user_id:
             return "not_a_user@unknown.com"
-        stmt = sa.select([users.c.email]).where(users.c.id == user_id)
-        result: ResultProxy = await conn.execute(stmt)
-        row: RowProxy = await result.first()
-        return row[users.c.email] if row else "Unknown"  # type: ignore
+        email: ResultProxy = await conn.scalar(
+            sa.select([users.c.email]).where(users.c.id == user_id)
+        )
+        return email or "Unknown"
 
     async def _get_user_primary_group_gid(
         self, conn: SAConnection, user_id: int
     ) -> int:
-        stmt = sa.select([users.c.primary_gid]).where(users.c.id == user_id)
-        result: ResultProxy = await conn.execute(stmt)
-        row: RowProxy = await result.first()
-        return row[users.c.primary_gid]  # type: ignore
+        primary_gid: int = await conn.scalar(
+            sa.select([users.c.primary_gid]).where(users.c.id == user_id)
+        )
+        return primary_gid
 
     async def _get_tags_by_project(self, conn: SAConnection, project_id: str) -> List:
         query = sa.select([study_tags.c.tag_id]).where(
