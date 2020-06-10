@@ -2282,8 +2282,6 @@ paths:
                             type: string
                     example:
                       login: pcrespov@foo.com
-                      first_name: Pedro
-                      last_name: Crespo
                       role: Admin
                       gravatar_id: 205e460b479e2e5b48aec07710c08d50
                   error:
