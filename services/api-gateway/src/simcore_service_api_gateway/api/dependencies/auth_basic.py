@@ -1,8 +1,8 @@
-from ...db.repositories.api_keys import ApiKeysRepository
-from .database import get_repository
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
+from ...db.repositories.api_keys import ApiKeysRepository
+from .database import get_repository
 
 # SEE https://swagger.io/docs/specification/authentication/basic-authentication/
 basic_scheme = HTTPBasic()
@@ -28,5 +28,6 @@ async def get_current_user_id(
             headers=_unauthorized_headers,
         )
     return user_id
+
 
 get_active_user_id = get_current_user_id

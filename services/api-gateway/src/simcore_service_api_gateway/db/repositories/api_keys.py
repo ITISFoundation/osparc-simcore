@@ -2,14 +2,15 @@ from typing import Optional
 
 import sqlalchemy as sa
 from loguru import logger
+from psycopg2 import DatabaseError
 
 from .. import tables as tbl
 from .base import BaseRepository
-from psycopg2 import DatabaseError
 
 # from ...models.domain.users import User, UserInDB
 
 # For psycopg2 errors SEE https://www.psycopg.org/docs/errors.html#sqlstate-exception-classes
+
 
 class ApiKeysRepository(BaseRepository):
     async def get_user_id(self, api_key: str, api_secret: str) -> Optional[int]:

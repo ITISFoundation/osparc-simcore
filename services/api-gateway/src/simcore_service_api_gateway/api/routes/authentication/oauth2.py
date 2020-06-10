@@ -5,9 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from loguru import logger
 
-from ....services.jwt import create_access_token
 from ....db.repositories.users import UsersRepository
 from ....models.schemas.tokens import Token, TokenData
+from ....services.jwt import create_access_token
 from ....utils.helpers import json_dumps
 from ...dependencies.database import get_repository
 
@@ -58,8 +58,7 @@ async def login_for_access_token(
     logger.debug(_compose_msg(fd=form_data))
 
     user_id: Optional[int] = await users_repo.get_user_id(
-        user=form_data.username,
-        password=form_data.password
+        user=form_data.username, password=form_data.password
     )
 
     # TODO: check is NOT banned

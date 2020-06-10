@@ -49,7 +49,5 @@ def use_route_names_as_operation_ids(app: FastAPI) -> None:
             route.operation_id = route.name
 
 
-
-
 # SINGLETON FastAPI app
 the_app: FastAPI = init_application()

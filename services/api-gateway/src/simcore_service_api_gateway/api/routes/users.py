@@ -1,9 +1,7 @@
 from fastapi import APIRouter, Depends, Security
 
 from ...models.schemas.profiles import Profile, ProfileUpdate
-
 from ..dependencies.authentication import get_active_user_id
-
 
 router = APIRouter()
 
