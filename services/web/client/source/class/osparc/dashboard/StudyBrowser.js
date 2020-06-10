@@ -338,7 +338,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         };
         osparc.data.Resources.fetch("studies", "postFromTemplate", params)
           .then(studyData => {
-            studyData.accessRights = osparc.component.export.Permissions.getOwnerAccessRight();
             this.__startStudy(studyData);
           })
           .catch(err => {
