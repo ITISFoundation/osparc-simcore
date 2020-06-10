@@ -1783,7 +1783,7 @@ paths:
                               description: gives write access
                             delete:
                               type: boolean
-                              description: gives execution rights
+                              description: gives deletion rights
                     creationDate:
                       type: string
                       description: project creation date
@@ -2015,7 +2015,7 @@ paths:
                               description: gives write access
                             delete:
                               type: boolean
-                              description: gives execution rights
+                              description: gives deletion rights
                     creationDate:
                       type: string
                       description: project creation date
@@ -2257,7 +2257,7 @@ paths:
                             description: gives write access
                           delete:
                             type: boolean
-                            description: gives execution rights
+                            description: gives deletion rights
                   creationDate:
                     type: string
                     description: project creation date
@@ -2599,7 +2599,7 @@ components:
                   description: gives write access
                 delete:
                   type: boolean
-                  description: gives execution rights
+                  description: gives deletion rights
         creationDate:
           type: string
           description: project creation date

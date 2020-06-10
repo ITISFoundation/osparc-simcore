@@ -69,7 +69,7 @@
             },
             "delete": {
               "type": "boolean",
-              "description": "gives execution rights"
+              "description": "gives deletion rights"
             }
           }
         }
