@@ -8,11 +8,9 @@ from pprint import pprint
 from typing import Any, Dict, List, Optional
 
 import aiohttp
-
 # DEV ---------------------------------------------------------------------
 import attr
 import pytest
-
 # simcore_api_sdk/v0/me_api.py
 from attr import NOTHING
 from starlette.testclient import TestClient
