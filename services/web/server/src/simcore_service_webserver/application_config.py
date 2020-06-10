@@ -91,6 +91,7 @@ def create_schema() -> T.Dict:
             addon_section("reverse_proxy", optional=True): minimal_addon_schema(),
             addon_section("application_proxy", optional=True): minimal_addon_schema(),
             addon_section("users", optional=True): minimal_addon_schema(),
+            addon_section("groups", optional=True): minimal_addon_schema(),
             addon_section("studies_access", optional=True): minimal_addon_schema(),
             addon_section("tags", optional=True): minimal_addon_schema(),
             addon_section("publications", optional=True): minimal_addon_schema(),

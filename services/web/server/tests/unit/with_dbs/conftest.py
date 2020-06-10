@@ -32,7 +32,7 @@ from servicelib.aiopg_utils import DSN
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_config import app_schema as app_schema
-from simcore_service_webserver.users_api import (
+from simcore_service_webserver.groups_api import (
     add_user_in_group,
     create_user_group,
     delete_user_group,
@@ -379,10 +379,16 @@ async def standard_groups(client, logged_user: Dict) -> List[Dict[str, str]]:
             client.app, admin_user["id"], team_black_group
         )
         await add_user_in_group(
-            client.app, admin_user["id"], sparc_group["gid"], logged_user["id"]
+            client.app,
+            admin_user["id"],
+            sparc_group["gid"],
+            new_user_id=logged_user["id"],
         )
         await add_user_in_group(
-            client.app, admin_user["id"], team_black_group["gid"], logged_user["id"]
+            client.app,
+            admin_user["id"],
+            team_black_group["gid"],
+            new_user_email=logged_user["email"],
         )
 
         _, standard_groups, _ = await list_user_groups(client.app, logged_user["id"])
