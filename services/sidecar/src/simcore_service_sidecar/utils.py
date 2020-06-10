@@ -81,13 +81,16 @@ def is_gpu_node() -> bool:
         possible_candidates = {x for x in cat_cgrup_content.split() if len(x) >= 64}
         result_set = {x.split("/")[-1] for x in possible_candidates}
         if len(result_set) != 1:
+            # pylint: disable=raising-format-tuple
             raise ValueError(
-                "There should only be one entry in this list, have a look at %s",
+                "There should only be one entry in this set of possible container_ids"
+                ", have a look at %s",
                 possible_candidates,
             )
         return_value = result_set.pop()
         # check if length is 64 and all char match this regex [A-Fa-f0-9]
         if len(return_value) != 64 and re.findall("[A-Fa-f0-9]{64}", return_value):
+            # pylint: disable=raising-format-tuple
             raise ValueError(
                 "Found container ID is not a valid sha256 string %s", return_value
             )
