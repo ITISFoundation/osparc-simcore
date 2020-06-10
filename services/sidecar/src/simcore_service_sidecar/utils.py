@@ -75,7 +75,7 @@ def is_gpu_node() -> bool:
     meaning that the `VRAM` label was added to it."""
 
     async def async_is_gpu_node():
-        cmd = "grep -o -P -m1 'docker.*\K[0-9a-f]{64,}' /proc/self/cgroup"
+        cmd = "grep -o -P -m1 'docker.*\K[0-9a-f]{64,}' /proc/self/cgroup"  # pylint: disable=anomalous-backslash-in-string
         proc = await asyncio.create_subprocess_shell(
             cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
         )
