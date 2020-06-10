@@ -65,11 +65,39 @@ async def _get_node_details(
         app, node_key, node_version
     )
     if not node_details:
-        log.error("Error could not find service %s:%s", node_key, node_version)
+        log.error(
+            "Error (while getting node details) could not find service %s:%s",
+            node_key,
+            node_version,
+        )
         raise web_exceptions.HTTPNotFound(
             reason=f"details of service {node_key}:{node_version} could not be found"
         )
     return node_details
+
+
+async def _get_node_extras(
+    node_key: str, node_version: str, app: web.Application
+) -> Dict:
+    """Returns the service_extras if possible otherwise None"""
+    if "file-picker" in node_key:
+        return None
+    if "frontend/nodes-group" in node_key:
+        return None
+    if "StimulationSelectivity" in node_key:
+        return None
+
+    node_extras = await director_api.get_services_extras(app, node_key, node_version)
+    if not node_extras:
+        log.error(
+            "Error (while getting node extras) could not find service %s:%s",
+            node_key,
+            node_version,
+        )
+        raise web_exceptions.HTTPNotFound(
+            reason=f"details of service {node_key}:{node_version} could not be found"
+        )
+    return node_extras
 
 
 async def _build_adjacency_list(
@@ -148,6 +176,8 @@ async def _parse_project_data(pipeline_data: Dict, app: web.Application):
         )
 
         node_details = await _get_node_details(node_key, node_version, app)
+        node_extras = await _get_node_extras(node_key, node_version, app)
+
         log.debug(
             "node %s:%s has schema:\n %s", node_key, node_version, pformat(node_details)
         )
@@ -167,11 +197,18 @@ async def _parse_project_data(pipeline_data: Dict, app: web.Application):
                 "inputs": node_details["inputs"],
                 "outputs": node_details["outputs"],
             }
+
+        requires_gpu = "GPU" in node_extras["node_requirements"]
+
         task = {
             "schema": node_schema,
             "inputs": node_inputs,
             "outputs": node_outputs,
-            "image": {"name": node_key, "tag": node_version},
+            "image": {
+                "name": node_key,
+                "tag": node_version,
+                "requires_gpu": requires_gpu,
+            },
             "node_class": to_node_class(node_key),
         }
 
