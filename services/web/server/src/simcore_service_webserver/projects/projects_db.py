@@ -8,6 +8,7 @@
 import logging
 import uuid as uuidlib
 from datetime import datetime
+from enum import Enum
 from typing import Dict, List, Mapping, Optional, Set
 
 import psycopg2.errors
@@ -36,6 +37,19 @@ log = logging.getLogger(__name__)
 
 APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
 DB_EXCLUSIVE_COLUMNS = ["type", "id", "published"]
+
+
+class ProjectAccessRights(Enum):
+    OWNER = {"read": True, "write": True, "delete": True}
+    COLLABORATOR = {"read": True, "write": True, "delete": False}
+    VIEWER = {"read": True, "write": False, "delete": False}
+
+
+def _create_project_access_rights(
+    gid: int, access: ProjectAccessRights
+) -> Dict[str, Dict[str, bool]]:
+    return {f"{gid}": access.value}
+
 
 # TODO: check here how schema to model db works!?
 def _convert_to_db_names(project_document_data: Dict) -> Dict:
@@ -157,10 +171,12 @@ class ProjectDBAPI:
             )
             # validate access_rights. are the gids valid? also ensure prj_owner is in there
             if user_id:
-                primary_gid = await self._get_user_primary_group(conn, user_id)
-                default_access_rights = {str(primary_gid): {"read": True, "write": True, "delete": True}}
-                kargs["access_rights"].update(default_access_rights)
-
+                primary_gid = await self._get_user_primary_group_gid(conn, user_id)
+                kargs["access_rights"].update(
+                    _create_project_access_rights(
+                        primary_gid, ProjectAccessRights.OWNER
+                    )
+                )
 
             # must be valid uuid
             try:
@@ -421,7 +437,7 @@ OR prj_owner = {user_id})
             else:
                 # let's just remove the access rights if it was shared with my primary group
                 access_rights = project["access_rights"]
-                primary_gid: int = await self._get_user_primary_group(conn, user_id)
+                primary_gid: int = await self._get_user_primary_group_gid(conn, user_id)
                 if not primary_gid in access_rights:
                     # sharing was done through a bigger group so it's not possible to remove that study
                     raise ProjectsException(
@@ -462,7 +478,9 @@ OR prj_owner = {user_id})
         row: RowProxy = await result.first()
         return row[users.c.email] if row else "Unknown"  # type: ignore
 
-    async def _get_user_primary_group(self, conn: SAConnection, user_id: int) -> int:
+    async def _get_user_primary_group_gid(
+        self, conn: SAConnection, user_id: int
+    ) -> int:
         stmt = sa.select([users.c.primary_gid]).where(users.c.id == user_id)
         result: ResultProxy = await conn.execute(stmt)
         row: RowProxy = await result.first()
