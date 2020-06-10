@@ -83,6 +83,8 @@ def is_gpu_node() -> bool:
         stdout, stderr = await proc.communicate()
         logger.error("Stdout %s", stdout)
         logger.error("Stderr %s", stderr)
+        import os
+        logger.error("Cat /proc/self/cgroup %s", os.system("cat /proc/self/cgroup"))
         container_id = stdout.decode("utf-8").strip()
 
         docker = aiodocker.Docker()
