@@ -228,28 +228,40 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         Promise.all([
           store.getGroupsAll(),
           store.getGroupsMe(),
+          store.getVisibleMembers(),
           store.getGroupsOrganizations()
         ])
           .then(values => {
             const all = values[0];
             const me = values[1];
-            const orgs = values.length === 3 ? values[2] : [];
-            const groups = [[all], orgs, [me]];
+            const orgMembs = [];
+            const orgMembers = values[2];
+            for (const gid of Object.keys(orgMembers)) {
+              orgMembs.push(orgMembers[gid]);
+            }
+            const orgs = values.length === 4 ? values[3] : [];
+            const groups = [[all], orgs, orgMembs, [me]];
             this.__setSharedIcon(image, value, groups);
           });
       }
     },
 
     __setSharedIcon: function(image, value, groups) {
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       for (let i=0; i<groups.length; i++) {
-        let hintText = "";
-        Object.keys(value).forEach(key => {
-          const grp = groups[i].find(group => group["gid"] === parseInt(key));
-          if (grp) {
-            hintText += (grp["label"] + "<br>");
+        const sharedGrps = [];
+        const gids = Object.keys(value);
+        for (let j=0; j<gids.length; j++) {
+          const gid = parseInt(gids[j]);
+          if (!this.getIsTemplate() && (gid === myGroupId)) {
+            continue;
           }
-        });
-        if (hintText === "") {
+          const grp = groups[i].find(group => group["gid"] === gid);
+          if (grp) {
+            sharedGrps.push(grp);
+          }
+        }
+        if (sharedGrps.length === 0) {
           continue;
         }
         switch (i) {
@@ -260,10 +272,15 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             image.setSource(this.self().SHARED_ORGS);
             break;
           case 2:
+          case 3:
             image.setSource(this.self().SHARED_USER);
             break;
         }
 
+        let hintText = "";
+        sharedGrps.forEach(sharedGrp => {
+          hintText += (sharedGrp["label"] + "<br>");
+        });
         const hint = new osparc.ui.hint.Hint(image, hintText).set({
           active: false
         });
