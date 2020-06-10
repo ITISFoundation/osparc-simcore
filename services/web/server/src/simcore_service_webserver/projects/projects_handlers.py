@@ -77,7 +77,6 @@ async def create_projects(request: web.Request):
         # overrides with body
         if request.has_body:
             predefined = await request.json()
-
             if project:
                 for key in OVERRIDABLE_DOCUMENT_KEYS:
                     non_null_value = predefined.get(key)
