@@ -1,11 +1,16 @@
 import asyncio
 import logging
+import aiodocker
 from typing import List
 
 import aiopg
 import networkx as nx
 from simcore_postgres_database.sidecar_models import SUCCESS, comp_pipeline, comp_tasks
 from sqlalchemy import and_
+from simcore_sdk.config.rabbit import Config as RabbitConfig
+from celery import Celery
+
+logger = logging.getLogger(__name__)
 
 
 def wrap_async_call(fct: asyncio.coroutine):
@@ -63,3 +68,54 @@ def execution_graph(pipeline: comp_pipeline) -> nx.DiGraph:
             continue
         G.add_edges_from([(node, n) for n in nodes])
     return G
+
+
+def is_gpu_node() -> bool:
+    """Returns True if this node has support to GPU,
+    meaning that the `VRAM` label was added to it."""
+
+    async def async_is_gpu_node():
+        cmd = "grep -o -P -m1 'docker.*\K[0-9a-f]{64,}' /proc/self/cgroup"
+        proc = await asyncio.create_subprocess_shell(
+            cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        )
+
+        stdout, _ = await proc.communicate()
+        container_id = stdout.decode("utf-8").strip()
+
+        docker = aiodocker.Docker()
+
+        container = await docker.containers.get(container_id)
+        container_info = await container.show()
+        node_id = container_info["Config"]["Labels"]["com.docker.swarm.node.id"]
+        node_info = await docker.nodes.inspect(node_id=node_id)
+
+        generic_resources = (
+            node_info.get("Description", {})
+            .get("Resources", {})
+            .get("GenericResources", [])
+        )
+
+        has_gpu_support = False
+        for entry in generic_resources:
+            if entry["DiscreteResourceSpec"]["Kind"] == "VRAM":
+                has_gpu_support = True
+                break
+
+        await docker.close()
+
+        logger.info("Node GPU support: %s", has_gpu_support)
+        return has_gpu_support
+
+    return wrap_async_call(async_is_gpu_node())
+
+
+def assemble_celery_app(task_default_queue: str, rabbit_config: RabbitConfig) -> Celery:
+    """Returns an instance of Celery using a different RabbitMQ queue"""
+    app = Celery(
+        rabbit_config.name,
+        broker=rabbit_config.broker_url,
+        backend=rabbit_config.backend,
+    )
+    app.conf.task_default_queue = task_default_queue
+    return app
