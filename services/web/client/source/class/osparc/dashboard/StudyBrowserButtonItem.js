@@ -227,11 +227,14 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         const store = osparc.store.Store.getInstance();
         Promise.all([
           store.getGroupsAll(),
-          store.getGroupsOrganizations(),
-          store.getGroupsMe()
+          store.getGroupsMe(),
+          store.getGroupsOrganizations()
         ])
           .then(values => {
-            const groups = [[values[0]], values[1], [values[2]]];
+            const all = values[0];
+            const me = values[1];
+            const orgs = values.length === 3 ? values[2] : [];
+            const groups = [[all], orgs, [me]];
             this.__setSharedIcon(image, value, groups);
           });
       }
