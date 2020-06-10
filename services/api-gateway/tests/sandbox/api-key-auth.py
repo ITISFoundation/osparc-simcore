@@ -1,4 +1,4 @@
-# pylint: disable-all
+# pylint: skip-file
 # fmt: off
 
 import uvicorn

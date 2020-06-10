@@ -1,4 +1,4 @@
-# pylint: disable-all
+# pylint: skip-file
 # fmt: off
 
 # simcore_api_sdk.abc.py
