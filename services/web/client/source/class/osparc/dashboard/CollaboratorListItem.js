@@ -83,8 +83,10 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
       const subtitle = this.getChildControl("contact");
       if (value.getDelete()) {
         subtitle.setValue(this.tr("Owner"));
-      } else {
+      } else if (value.getWrite()) {
         subtitle.setValue(this.tr("Collaborator"));
+      } else {
+        subtitle.setValue(this.tr("Viewer"));
       }
     },
 
