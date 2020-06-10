@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import aiodocker
+import re
 from typing import List
 
 import aiopg
@@ -74,18 +75,32 @@ def is_gpu_node() -> bool:
     """Returns True if this node has support to GPU,
     meaning that the `VRAM` label was added to it."""
 
+    def get_cotnainer_id_from_cgroup(cat_cgrup_content):
+        """Parses the result of cat cat /proc/self/cgroup and returns a container_id or
+        raises an error in case only one unique id was not found."""
+        possible_candidates = {x for x in cat_cgrup_content.split() if len(x) >= 64}
+        result_set = {x.split("/")[-1] for x in possible_candidates}
+        if len(result_set) != 1:
+            raise ValueError(
+                "There should only be one entry in this list, have a look at %s",
+                possible_candidates,
+            )
+        return_value = result_set.pop()
+        # check if length is 64 and all char match this regex [A-Fa-f0-9]
+        if len(return_value) != 64 and re.findall("[A-Fa-f0-9]{64}", return_value):
+            raise ValueError(
+                "Found container ID is not a valid sha256 string %s", return_value
+            )
+        return return_value
+
     async def async_is_gpu_node():
-        cmd = "grep -o -P -m1 'docker.*\K[0-9a-f]{64,}' /proc/self/cgroup"  # pylint: disable=anomalous-backslash-in-string
+        cmd = "cat /proc/self/cgroup"
         proc = await asyncio.create_subprocess_shell(
             cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
         )
 
-        stdout, stderr = await proc.communicate()
-        logger.error("Stdout %s", stdout)
-        logger.error("Stderr %s", stderr)
-        import os
-        logger.error("Cat /proc/self/cgroup %s", os.system("cat /proc/self/cgroup"))
-        container_id = stdout.decode("utf-8").strip()
+        stdout, _ = await proc.communicate()
+        container_id = get_cotnainer_id_from_cgroup(stdout.decode("utf-8").strip())
 
         docker = aiodocker.Docker()
 
