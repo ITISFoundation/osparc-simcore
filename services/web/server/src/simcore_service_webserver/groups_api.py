@@ -206,7 +206,7 @@ async def add_user_in_group(
         # now check the new user exists
         users_count = await conn.scalar(
             # pylint: disable=no-value-for-parameter
-            users.count().where(users.c.id == new_user_id)
+            sa.select([sa.func.count()]).where(users.c.id == new_user_id)
         )
         if not users_count:
             raise UserInGroupNotFoundError(new_user_id, gid)  # type: ignore
