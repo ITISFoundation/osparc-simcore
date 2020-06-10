@@ -4,35 +4,31 @@
 class UsersException(Exception):
     """Basic exception for errors raised in projects"""
 
-    def __init__(self, msg=None):
-        msg = msg or "Unexpected error occured in projects subpackage"
-        super(UsersException, self).__init__(msg)
+    def __init__(self, msg: str = None):
+        super().__init__(msg or "Unexpected error occured in projects subpackage")
 
 
 class UserNotFoundError(UsersException):
     """User in group was not found in DB"""
 
-    def __init__(self, uid):
-        msg = "User id {} not found".format(uid)
-        super(UserNotFoundError, self).__init__(msg)
+    def __init__(self, uid: int):
+        super().__init__(f"User id {uid} not found")
         self.uid = uid
 
 
 class GroupNotFoundError(UsersException):
     """Group was not found in DB"""
 
-    def __init__(self, gid):
-        msg = "Group with id {} not found".format(gid)
-        super(GroupNotFoundError, self).__init__(msg)
+    def __init__(self, gid: int):
+        super().__init__(f"Group with id {gid} not found")
         self.gid = gid
 
 
 class UserInGroupNotFoundError(UsersException):
     """User in group was not found in DB"""
 
-    def __init__(self, gid, uid):
-        msg = "User id {} in Group {} not found".format(uid, gid)
-        super(UserInGroupNotFoundError, self).__init__(msg)
+    def __init__(self, gid: int, uid: int):
+        super().__init__(f"User id {uid} in Group {gid} not found")
         self.gid = gid
         self.uid = uid
 
@@ -40,14 +36,13 @@ class UserInGroupNotFoundError(UsersException):
 class UserInsufficientRightsError(UsersException):
     """User has not sufficient rights"""
 
-    def __init__(self, msg):
-        super(UserInsufficientRightsError, self).__init__(msg)
+    def __init__(self, msg: str):
+        super().__init__(msg)
 
 
 class TokenNotFoundError(UsersException):
     """Token was not found in DB"""
 
-    def __init__(self, service_id):
-        msg = "Token for service {} not found".format(service_id)
-        super(TokenNotFoundError, self).__init__(msg)
+    def __init__(self, service_id: str):
+        super().__init__(f"Token for service {service_id} not found")
         self.service_id = service_id
