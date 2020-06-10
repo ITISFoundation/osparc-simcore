@@ -3,9 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
-
 from ..domain.groups import Groups
-
 
 
 class ProfileCommon(BaseModel):
@@ -30,7 +28,11 @@ class Profile(ProfileCommon):
     login: EmailStr
     role: UserRoleEnum
     groups: Optional[Groups] = None
-    gravatar_id: Optional[str] = None
+    gravatar_id: Optional[str] = Field(
+        None,
+        description="Hash value of email to retrieve an avatar image from https://www.gravatar.com",
+        max_length=40,
+    )
 
     class Config:
         schema_extra = {}
