@@ -669,12 +669,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __deleteStudy: function(studyData, isTemplate = false) {
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      const collabGids = Object.keys(studyData["accessRights"]);
+      const amICollaborator = collabGids.indexOf(myGid) > -1;
+
       const params = {
         url: {
           projectId: studyData.uuid
         }
       };
-      osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "delete", params, studyData.uuid)
+      let operationPromise = null;
+      if (collabGids.length > 1 && amICollaborator) {
+        // remove collaborator
+        const permissions = osparc.component.export.Permissions;
+        permissions.removeCollaborator(studyData, myGid);
+        params["data"] = studyData;
+        operationPromise = osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "put", params);
+      } else {
+        // delete study
+        operationPromise = osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "delete", params, studyData.uuid);
+      }
+      operationPromise
         .then(() => this.__removeFromStudyList(studyData.uuid, isTemplate))
         .catch(err => {
           console.error(err);
