@@ -12,7 +12,6 @@ from starlette.testclient import TestClient
 from simcore_service_api_server.__version__ import api_version, api_vtag
 
 
-
 @pytest.fixture(scope="module")
 async def user_in_db(postgres_service):
     user = {}
@@ -24,9 +23,6 @@ async def api_keys_in_db(postgres_service):
     api_keys = {"key": "key", "secret": "secret"}
     # TODO: inject api-keys in db
     return api_keys
-
-
-
 
 
 def test_get_user(client: TestClient, api_keys_in_db: Dict, user_in_db: Dict):

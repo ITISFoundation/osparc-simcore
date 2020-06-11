@@ -47,7 +47,7 @@ run-devel: .env docker-compose.yml down ## runs app on host with pg fixture for 
 	# Starting db (under $<)
 	docker-compose up --detach
 	# start app (under $<)
-	uvicorn simcore_service_api_server.main:the_app \
+	uvicorn simcore_service_api_server.__main__:the_app \
 		--reload --reload-dir $(SRC_DIR) \
 		--port=8001 --host=0.0.0.0
 

@@ -37,3 +37,18 @@ def osparc_simcore_root_dir(project_slug_dir):
         "%s not look like rootdir" % root_dir
     )
     return root_dir
+
+
+@pytest.fixture(scope="session")
+def tests_dir() -> Path:
+    tdir = (current_dir / ".." ).resolve()
+    assert tdir.exists()
+    assert tdir.name == "tests"
+    return tdir
+
+
+@pytest.fixture(scope="session")
+def tests_utils_dir(tests_dir: Path) -> Path:
+    utils_dir = (tests_dir / "utils").resolve()
+    assert utils_dir.exists()
+    return utils_dir
