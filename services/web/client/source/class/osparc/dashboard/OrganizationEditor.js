@@ -23,7 +23,10 @@ qx.Class.define("osparc.dashboard.OrganizationEditor", {
 
     this._setLayout(new qx.ui.layout.VBox(8));
 
-    this.getChildControl("title");
+    const manager = this.__validator = new qx.ui.form.validation.Manager();
+    const title = this.getChildControl("title");
+    title.setRequired(true);
+    manager.add(title);
     this.getChildControl("description");
     this.getChildControl("thumbnail");
     newOrg ? this.getChildControl("create") : this.getChildControl("save");
@@ -132,8 +135,10 @@ qx.Class.define("osparc.dashboard.OrganizationEditor", {
           const buttons = this.getChildControl("buttonsLayout");
           control = new osparc.ui.form.FetchButton(this.tr("Create"));
           control.addListener("execute", () => {
-            control.setFetching(true);
-            this.fireEvent("createOrg");
+            if (this.__validator.validate()) {
+              control.setFetching(true);
+              this.fireEvent("createOrg");
+            }
           }, this);
           buttons.addAt(control, 0);
           break;
@@ -142,8 +147,10 @@ qx.Class.define("osparc.dashboard.OrganizationEditor", {
           const buttons = this.getChildControl("buttonsLayout");
           control = new osparc.ui.form.FetchButton(this.tr("Save"));
           control.addListener("execute", () => {
-            control.setFetching(true);
-            this.fireEvent("updateOrg");
+            if (this.__validator.validate()) {
+              control.setFetching(true);
+              this.fireEvent("updateOrg");
+            }
           }, this);
           buttons.addAt(control, 0);
           break;
