@@ -1,4 +1,4 @@
-# pylint: disable=unused-argument, redefined-outer-name
+# pylint: disable=unused-argument,redefined-outer-name,no-member
 import pytest
 import asyncio
 
