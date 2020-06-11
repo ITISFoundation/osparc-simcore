@@ -240,16 +240,17 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
               orgMembs.push(orgMembers[gid]);
             }
             const orgs = values.length === 4 ? values[3] : [];
-            const groups = [[all], orgs, orgMembs, [me]];
+            const groups = [[me], orgMembs, orgs, [all]];
             this.__setSharedIcon(image, value, groups);
           });
       }
     },
 
     __setSharedIcon: function(image, value, groups) {
+      let sharedGrps = [];
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       for (let i=0; i<groups.length; i++) {
-        const sharedGrps = [];
+        const sharedGrp = [];
         const gids = Object.keys(value);
         for (let j=0; j<gids.length; j++) {
           const gid = parseInt(gids[j]);
@@ -258,40 +259,44 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           }
           const grp = groups[i].find(group => group["gid"] === gid);
           if (grp) {
-            sharedGrps.push(grp);
+            sharedGrp.push(grp);
           }
         }
-        if (sharedGrps.length === 0) {
+        if (sharedGrp.length === 0) {
           continue;
+        } else {
+          sharedGrps = sharedGrps.concat(sharedGrp);
         }
         switch (i) {
           case 0:
-            image.setSource(this.self().SHARED_ALL);
-            break;
           case 1:
-            image.setSource(this.self().SHARED_ORGS);
-            break;
-          case 2:
-          case 3:
             image.setSource(this.self().SHARED_USER);
             break;
+          case 2:
+            image.setSource(this.self().SHARED_ORGS);
+            break;
+          case 3:
+            image.setSource(this.self().SHARED_ALL);
+            break;
         }
-
-        let hintText = "";
-        sharedGrps.forEach(sharedGrp => {
-          hintText += (sharedGrp["label"] + "<br>");
-        });
-        const hint = new osparc.ui.hint.Hint(image, hintText).set({
-          active: false
-        });
-        image.addListener("mouseover", () => hint.show(), this);
-        image.addListener("mouseout", () => hint.exclude(), this);
-
-        break;
       }
-      if (image.getSource() === null) {
+
+      if (sharedGrps.length === 0) {
         image.setVisibility("excluded");
+        return;
       }
+
+      let hintText = "";
+      for (let i=0; i<sharedGrps.length; i++) {
+        if (i > 6) {
+          hintText += "...";
+          break;
+        }
+        hintText += (sharedGrps[i]["label"] + "<br>");
+      }
+      const hint = new osparc.ui.hint.Hint(image, hintText);
+      image.addListener("mouseover", () => hint.show(), this);
+      image.addListener("mouseout", () => hint.exclude(), this);
     },
 
     _applyTags: function(tags) {
