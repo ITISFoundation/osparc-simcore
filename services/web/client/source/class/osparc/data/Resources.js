@@ -270,23 +270,23 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           get: {
             method: "GET",
-            url: statics.API + "/me/groups"
+            url: statics.API + "/groups"
           },
           post: {
             method: "POST",
-            url: statics.API + "/me/groups"
+            url: statics.API + "/groups"
           },
           getOne: {
             method: "GET",
-            url: statics.API + "/me/groups/{gid}"
+            url: statics.API + "/groups/{gid}"
           },
           delete: {
             method: "DELETE",
-            url: statics.API + "/me/groups/{gid}"
+            url: statics.API + "/groups/{gid}"
           },
           patch: {
             method: "PATCH",
-            url: statics.API + "/me/groups/{gid}"
+            url: statics.API + "/groups/{gid}"
           }
         }
       },
@@ -298,23 +298,23 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           get: {
             method: "GET",
-            url: statics.API + "/me/groups/{gid}/users"
+            url: statics.API + "/groups/{gid}/users"
           },
           post: {
             method: "POST",
-            url: statics.API + "/me/groups/{gid}/users"
+            url: statics.API + "/groups/{gid}/users"
           },
           getOne: {
             method: "GET",
-            url: statics.API + "/me/groups/{gid}/users/{uid}"
+            url: statics.API + "/groups/{gid}/users/{uid}"
           },
           delete: {
             method: "DELETE",
-            url: statics.API + "/me/groups/{gid}/users/{uid}"
+            url: statics.API + "/groups/{gid}/users/{uid}"
           },
           patch: {
             method: "PATCH",
-            url: statics.API + "/me/groups/{gid}/users/{uid}"
+            url: statics.API + "/groups/{gid}/users/{uid}"
           }
         }
       },
