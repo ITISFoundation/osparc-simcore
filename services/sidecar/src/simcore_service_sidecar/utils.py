@@ -120,7 +120,7 @@ def is_gpu_node() -> bool:
 
         has_gpu_support = False
         for entry in generic_resources:
-            if entry["DiscreteResourceSpec"]["Kind"] == "VRAM":
+            if entry.get("DiscreteResourceSpec", {}).get("Kind") == "VRAM":
                 has_gpu_support = True
                 break
 
