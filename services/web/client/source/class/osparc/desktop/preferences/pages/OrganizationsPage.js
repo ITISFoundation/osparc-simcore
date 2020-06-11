@@ -260,7 +260,9 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       org.bind("gid", orgEditor, "gid");
       org.bind("label", orgEditor, "label");
       org.bind("description", orgEditor, "description");
-      org.bind("thumbnail", orgEditor, "thumbnail");
+      org.bind("thumbnail", orgEditor, "thumbnail", {
+        converter: val => val ? val : ""
+      });
       const win = osparc.dashboard.OrganizationEditor.popUpInWindow(this.tr("Organization Details Editor"), orgEditor);
       orgEditor.addListener("updateOrg", () => {
         this.__updateOrganization(win, orgEditor.getChildControl("save"), orgEditor);
