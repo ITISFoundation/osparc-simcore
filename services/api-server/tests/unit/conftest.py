@@ -93,24 +93,20 @@ def docker_compose_file(environment, tests_utils_dir, tmpdir_factory) -> Path:
     src_path = tests_utils_dir / "docker-compose.yml"
     assert src_path.exists
 
-    dst_path = tmpdir_factory.mktemp("config").join("docker-compose.yml")
-    shutil.copy(src_path, dst_path)
+    dst_path = Path(str(tmpdir_factory.mktemp("config").join("docker-compose.yml")))
 
-    import pdb
+    shutil.copy(src_path, dst_path.parent)
 
-    pdb.set_trace()
 
     # configs
     subprocess.run(
-        f"docker-compose config -f f{src_path} > f{dst_path}",
+        f"docker-compose -f {src_path} config > {dst_path}",
         shell=True,
         check=True,
-        cwd=current_dir,
+        cwd=dst_path.parent,
         env=environment,
     )
 
-    print(dst_path)
-    pprint(dst_path.read_text())
 
     return dst_path
 
