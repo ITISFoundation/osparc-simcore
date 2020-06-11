@@ -189,7 +189,7 @@ qx.Class.define("osparc.store.Store", {
           propertyArray = resources;
         }
         propertyArray.forEach(propName => {
-          this.reset();
+          this.reset(propName);
           // Not sure reset actually works
           const initVal = qx.util.PropertyUtil.getInitValue(this, propName);
           qx.util.PropertyUtil.getUserValue(this, propName, initVal);
