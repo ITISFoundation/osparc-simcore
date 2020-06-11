@@ -91,7 +91,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           ctrl.bindProperty("access_rights", "accessRights", null, item, id);
         },
         configureItem: item => {
-          item.getChildControl("thumbnail").getContentElement()
+          const thumbanil = item.getChildControl("thumbnail");
+          thumbanil.getContentElement()
             .setStyles({
               "border-radius": "16px"
             });
@@ -196,16 +197,19 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       orgsModel.removeAll();
 
       osparc.data.Resources.get("organizations")
-        .then(resp => {
-          const orgs = resp["organizations"];
+        .then(respOrgs => {
+          const orgs = respOrgs["organizations"];
           orgs.forEach(org => {
-            // fake
-            const rNumber = Math.floor((Math.random() * 99) + 1);
-            org["nMembers"] = rNumber + " members";
-            if (org["thumbnail"] === null) {
-              org["thumbnail"] = "https://raw.githubusercontent.com/Radhikadua123/superhero/master/CAX_Superhero_Test/superhero_test_" + rNumber + ".jpg";
-            }
-            orgsModel.append(qx.data.marshal.Json.createModel(org));
+            const params = {
+              url: {
+                gid: org["gid"]
+              }
+            };
+            osparc.data.Resources.get("organizationMembers", params)
+              .then(respOrgMembers => {
+                org["nMembers"] = Object.keys(respOrgMembers).length + this.tr(" members");
+                orgsModel.append(qx.data.marshal.Json.createModel(org));
+              });
           });
         });
     },
