@@ -28,14 +28,15 @@ from pytest_simcore.helpers.utils_docker import get_service_published_port
 from pytest_simcore.helpers.utils_login import NewUser
 from simcore_service_webserver.application_config import app_schema
 from simcore_service_webserver.cli import create_environ
+from simcore_service_webserver.groups_api import (
+    add_user_in_group,
+    create_user_group,
+    delete_user_group,
+    list_user_groups,
+)
 from simcore_service_webserver.resources import resources as app_resources
-from simcore_service_webserver.users_api import (add_user_in_group,
-                                                 create_user_group,
-                                                 delete_user_group,
-                                                 list_user_groups)
 
-current_dir = Path(sys.argv[0] if __name__ ==
-                   "__main__" else __file__).resolve().parent
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 # imports the fixtures for the integration tests
 pytest_plugins = [
@@ -105,8 +106,7 @@ def webserver_environ(
         assert port_key in environ
 
         # to swarm boundary since webserver is installed in the host and therefore outside the swarm's network
-        published_port = get_service_published_port(
-            name, int(environ.get(port_key)))
+        published_port = get_service_published_port(name, int(environ.get(port_key)))
         environ[host_key] = "127.0.0.1"
         environ[port_key] = published_port
 
@@ -207,10 +207,16 @@ async def standard_groups(client, logged_user: Dict) -> List[Dict[str, str]]:
             client.app, admin_user["id"], team_black_group
         )
         await add_user_in_group(
-            client.app, admin_user["id"], sparc_group["gid"], logged_user["id"]
+            client.app,
+            admin_user["id"],
+            sparc_group["gid"],
+            new_user_id=logged_user["id"],
         )
         await add_user_in_group(
-            client.app, admin_user["id"], team_black_group["gid"], logged_user["id"]
+            client.app,
+            admin_user["id"],
+            team_black_group["gid"],
+            new_user_email=logged_user["email"],
         )
 
         _, standard_groups, _ = await list_user_groups(client.app, logged_user["id"])

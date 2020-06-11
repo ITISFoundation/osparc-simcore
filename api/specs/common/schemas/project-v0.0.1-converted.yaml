@@ -34,6 +34,7 @@ properties:
     description: >-
       object containing the GroupID as key and read/write/execution permissions
       as value
+    additionalProperties: false
     x-patternProperties:
       ^\d+$:
         type: object
@@ -52,8 +53,7 @@ properties:
             description: gives write access
           delete:
             type: boolean
-            description: gives execution rights
-    additionalProperties: true
+            description: gives deletion rights
   creationDate:
     type: string
     description: project creation date

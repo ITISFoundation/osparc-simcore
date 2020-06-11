@@ -101,17 +101,19 @@ paths:
   /me/tokens/{service}:
     $ref: "./openapi-user.yaml#/paths/~1me~1tokens~1{service}"
 
-  /me/groups:
-    $ref: "./openapi-user.yaml#/paths/~1me~1groups"
+  # GROUP SETTINGS ------------------------------------------------------------------
 
-  /me/groups/{gid}:
-    $ref: "./openapi-user.yaml#/paths/~1me~1groups~1{gid}"
+  /groups:
+    $ref: "./openapi-groups.yaml#/paths/~1groups"
 
-  /me/groups/{gid}/users:
-    $ref: "./openapi-user.yaml#/paths/~1me~1groups~1{gid}~1users"
+  /groups/{gid}:
+    $ref: "./openapi-groups.yaml#/paths/~1groups~1{gid}"
 
-  /me/groups/{gid}/users/{uid}:
-    $ref: "./openapi-user.yaml#/paths/~1me~1groups~1{gid}~1users~1{uid}"
+  /groups/{gid}/users:
+    $ref: "./openapi-groups.yaml#/paths/~1groups~1{gid}~1users"
+
+  /groups/{gid}/users/{uid}:
+    $ref: "./openapi-groups.yaml#/paths/~1groups~1{gid}~1users~1{uid}"
 
   # DATA STORAGE SERVICES ----------------------------------------------------------
 

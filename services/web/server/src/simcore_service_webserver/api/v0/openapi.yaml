@@ -2154,6 +2154,12 @@ paths:
                                       - read: true
                                         write: false
                                         delete: false
+                                      - read: true
+                                        write: true
+                                        delete: false
+                                      - read: true
+                                        write: true
+                                        delete: true
                                 required:
                                   - gid
                                   - label
@@ -2208,6 +2214,12 @@ paths:
                                         - read: true
                                           write: false
                                           delete: false
+                                        - read: true
+                                          write: true
+                                          delete: false
+                                        - read: true
+                                          write: true
+                                          delete: true
                                   required:
                                     - gid
                                     - label
@@ -2260,6 +2272,12 @@ paths:
                                       - read: true
                                         write: false
                                         delete: false
+                                      - read: true
+                                        write: true
+                                        delete: false
+                                      - read: true
+                                        write: true
+                                        delete: true
                                 required:
                                   - gid
                                   - label
@@ -2282,8 +2300,6 @@ paths:
                             type: string
                     example:
                       login: pcrespov@foo.com
-                      first_name: Pedro
-                      last_name: Crespo
                       role: Admin
                       gravatar_id: 205e460b479e2e5b48aec07710c08d50
                   error:
@@ -2816,12 +2832,12 @@ paths:
       responses:
         '204':
           description: token has been successfully deleted
-  /me/groups:
+  /groups:
     get:
       summary: List my groups
       operationId: list_groups
       tags:
-        - user
+        - group
       responses:
         '200':
           description: list of the groups I belonged to
@@ -2869,6 +2885,12 @@ paths:
                               - read: true
                                 write: false
                                 delete: false
+                              - read: true
+                                write: true
+                                delete: false
+                              - read: true
+                                write: true
+                                delete: true
                         required:
                           - gid
                           - label
@@ -2923,6 +2945,12 @@ paths:
                                 - read: true
                                   write: false
                                   delete: false
+                                - read: true
+                                  write: true
+                                  delete: false
+                                - read: true
+                                  write: true
+                                  delete: true
                           required:
                             - gid
                             - label
@@ -2975,6 +3003,12 @@ paths:
                               - read: true
                                 write: false
                                 delete: false
+                              - read: true
+                                write: true
+                                delete: false
+                              - read: true
+                                write: true
+                                delete: true
                         required:
                           - gid
                           - label
@@ -3083,7 +3117,7 @@ paths:
       summary: Create a new group
       operationId: create_group
       tags:
-        - user
+        - group
       requestBody:
         required: true
         description: the group to create
@@ -3123,6 +3157,12 @@ paths:
                     - read: true
                       write: false
                       delete: false
+                    - read: true
+                      write: true
+                      delete: false
+                    - read: true
+                      write: true
+                      delete: true
               required:
                 - gid
                 - label
@@ -3185,6 +3225,12 @@ paths:
                           - read: true
                             write: false
                             delete: false
+                          - read: true
+                            write: true
+                            delete: false
+                          - read: true
+                            write: true
+                            delete: true
                     required:
                       - gid
                       - label
@@ -3289,7 +3335,7 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
-  '/me/groups/{gid}':
+  '/groups/{gid}':
     parameters:
       - name: gid
         in: path
@@ -3298,7 +3344,7 @@ paths:
           type: string
     get:
       tags:
-        - user
+        - group
       summary: Gets one group details
       operationId: get_group
       responses:
@@ -3345,6 +3391,12 @@ paths:
                           - read: true
                             write: false
                             delete: false
+                          - read: true
+                            write: true
+                            delete: false
+                          - read: true
+                            write: true
+                            delete: true
                     required:
                       - gid
                       - label
@@ -3453,7 +3505,7 @@ paths:
       summary: Update one group
       operationId: update_group
       tags:
-        - user
+        - group
       requestBody:
         required: true
         description: the group to update
@@ -3493,6 +3545,12 @@ paths:
                     - read: true
                       write: false
                       delete: false
+                    - read: true
+                      write: true
+                      delete: false
+                    - read: true
+                      write: true
+                      delete: true
               required:
                 - gid
                 - label
@@ -3555,6 +3613,12 @@ paths:
                           - read: true
                             write: false
                             delete: false
+                          - read: true
+                            write: true
+                            delete: false
+                          - read: true
+                            write: true
+                            delete: true
                     required:
                       - gid
                       - label
@@ -3661,7 +3725,7 @@ paths:
                         status: 400
     delete:
       tags:
-        - user
+        - group
       summary: Deletes one group
       operationId: delete_group
       responses:
@@ -3750,7 +3814,7 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
-  '/me/groups/{gid}/users':
+  '/groups/{gid}/users':
     parameters:
       - name: gid
         in: path
@@ -3759,7 +3823,7 @@ paths:
           type: string
     get:
       tags:
-        - user
+        - group
       summary: Gets list of users in group
       operationId: get_group_users
       responses:
@@ -3781,24 +3845,30 @@ paths:
                           properties:
                             first_name:
                               type: string
+                              description: the user first name
                             last_name:
                               type: string
-                          example:
-                            first_name: Pedro
-                            last_name: Crespo
-                        - type: object
-                          properties:
+                              description: the user last name
                             login:
                               type: string
                               format: email
+                              description: the user login email
                             gravatar_id:
                               type: string
+                              description: the user gravatar id hash
                             id:
                               type: string
                               description: the user id
                             gid:
                               type: string
                               description: the user primary gid
+                          example:
+                            first_name: Mr
+                            last_name: Smith
+                            login: mr.smith@matrix.com
+                            gravatar_id: a1af5c6ecc38e81f29695f01d6ceb540
+                            id: '1'
+                            gid: '3'
                         - description: defines acesss rights for the user
                           type: object
                           properties:
@@ -3816,6 +3886,12 @@ paths:
                             - read: true
                               write: false
                               delete: false
+                            - read: true
+                              write: true
+                              delete: false
+                            - read: true
+                              write: true
+                              delete: true
                   error:
                     nullable: true
                     default: null
@@ -3904,7 +3980,7 @@ paths:
                         status: 400
     post:
       tags:
-        - user
+        - group
       summary: Adds a user in the group
       operationId: add_group_user
       requestBody:
@@ -4015,7 +4091,7 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
-  '/me/groups/{gid}/users/{uid}':
+  '/groups/{gid}/users/{uid}':
     parameters:
       - name: gid
         in: path
@@ -4029,7 +4105,7 @@ paths:
           type: string
     get:
       tags:
-        - user
+        - group
       summary: Gets specific user in group
       operationId: get_group_user
       responses:
@@ -4049,24 +4125,30 @@ paths:
                         properties:
                           first_name:
                             type: string
+                            description: the user first name
                           last_name:
                             type: string
-                        example:
-                          first_name: Pedro
-                          last_name: Crespo
-                      - type: object
-                        properties:
+                            description: the user last name
                           login:
                             type: string
                             format: email
+                            description: the user login email
                           gravatar_id:
                             type: string
+                            description: the user gravatar id hash
                           id:
                             type: string
                             description: the user id
                           gid:
                             type: string
                             description: the user primary gid
+                        example:
+                          first_name: Mr
+                          last_name: Smith
+                          login: mr.smith@matrix.com
+                          gravatar_id: a1af5c6ecc38e81f29695f01d6ceb540
+                          id: '1'
+                          gid: '3'
                       - description: defines acesss rights for the user
                         type: object
                         properties:
@@ -4084,6 +4166,12 @@ paths:
                           - read: true
                             write: false
                             delete: false
+                          - read: true
+                            write: true
+                            delete: false
+                          - read: true
+                            write: true
+                            delete: true
                   error:
                     nullable: true
                     default: null
@@ -4172,7 +4260,7 @@ paths:
                         status: 400
     patch:
       tags:
-        - user
+        - group
       summary: Modify specific user in group
       operationId: update_group_user
       requestBody:
@@ -4198,6 +4286,12 @@ paths:
                 - read: true
                   write: false
                   delete: false
+                - read: true
+                  write: true
+                  delete: false
+                - read: true
+                  write: true
+                  delete: true
       responses:
         '200':
           description: modified user
@@ -4215,24 +4309,30 @@ paths:
                         properties:
                           first_name:
                             type: string
+                            description: the user first name
                           last_name:
                             type: string
-                        example:
-                          first_name: Pedro
-                          last_name: Crespo
-                      - type: object
-                        properties:
+                            description: the user last name
                           login:
                             type: string
                             format: email
+                            description: the user login email
                           gravatar_id:
                             type: string
+                            description: the user gravatar id hash
                           id:
                             type: string
                             description: the user id
                           gid:
                             type: string
                             description: the user primary gid
+                        example:
+                          first_name: Mr
+                          last_name: Smith
+                          login: mr.smith@matrix.com
+                          gravatar_id: a1af5c6ecc38e81f29695f01d6ceb540
+                          id: '1'
+                          gid: '3'
                       - description: defines acesss rights for the user
                         type: object
                         properties:
@@ -4250,6 +4350,12 @@ paths:
                           - read: true
                             write: false
                             delete: false
+                          - read: true
+                            write: true
+                            delete: false
+                          - read: true
+                            write: true
+                            delete: true
                   error:
                     nullable: true
                     default: null
@@ -4338,7 +4444,7 @@ paths:
                         status: 400
     delete:
       tags:
-        - user
+        - group
       summary: Delete specific user in group
       operationId: delete_group_user
       responses:
@@ -6069,6 +6175,7 @@ paths:
                         accessRights:
                           type: object
                           description: object containing the GroupID as key and read/write/execution permissions as value
+                          additionalProperties: false
                           x-patternProperties:
                             ^\d+$:
                               type: object
@@ -6087,8 +6194,7 @@ paths:
                                   description: gives write access
                                 delete:
                                   type: boolean
-                                  description: gives execution rights
-                          additionalProperties: true
+                                  description: gives deletion rights
                         creationDate:
                           type: string
                           description: project creation date
@@ -6406,6 +6512,7 @@ paths:
                 accessRights:
                   type: object
                   description: object containing the GroupID as key and read/write/execution permissions as value
+                  additionalProperties: false
                   x-patternProperties:
                     ^\d+$:
                       type: object
@@ -6424,8 +6531,7 @@ paths:
                           description: gives write access
                         delete:
                           type: boolean
-                          description: gives execution rights
-                  additionalProperties: true
+                          description: gives deletion rights
                 creationDate:
                   type: string
                   description: project creation date
@@ -6648,6 +6754,7 @@ paths:
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
+                        additionalProperties: false
                         x-patternProperties:
                           ^\d+$:
                             type: object
@@ -6666,8 +6773,7 @@ paths:
                                 description: gives write access
                               delete:
                                 type: boolean
-                                description: gives execution rights
-                        additionalProperties: true
+                                description: gives deletion rights
                       creationDate:
                         type: string
                         description: project creation date
@@ -6982,6 +7088,7 @@ paths:
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
+                        additionalProperties: false
                         x-patternProperties:
                           ^\d+$:
                             type: object
@@ -7000,8 +7107,7 @@ paths:
                                 description: gives write access
                               delete:
                                 type: boolean
-                                description: gives execution rights
-                        additionalProperties: true
+                                description: gives deletion rights
                       creationDate:
                         type: string
                         description: project creation date
@@ -7322,6 +7428,7 @@ paths:
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
+                        additionalProperties: false
                         x-patternProperties:
                           ^\d+$:
                             type: object
@@ -7340,8 +7447,7 @@ paths:
                                 description: gives write access
                               delete:
                                 type: boolean
-                                description: gives execution rights
-                        additionalProperties: true
+                                description: gives deletion rights
                       creationDate:
                         type: string
                         description: project creation date
@@ -7654,6 +7760,7 @@ paths:
                 accessRights:
                   type: object
                   description: object containing the GroupID as key and read/write/execution permissions as value
+                  additionalProperties: false
                   x-patternProperties:
                     ^\d+$:
                       type: object
@@ -7672,8 +7779,7 @@ paths:
                           description: gives write access
                         delete:
                           type: boolean
-                          description: gives execution rights
-                  additionalProperties: true
+                          description: gives deletion rights
                 creationDate:
                   type: string
                   description: project creation date
@@ -7896,6 +8002,7 @@ paths:
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
+                        additionalProperties: false
                         x-patternProperties:
                           ^\d+$:
                             type: object
@@ -7914,8 +8021,7 @@ paths:
                                 description: gives write access
                               delete:
                                 type: boolean
-                                description: gives execution rights
-                        additionalProperties: true
+                                description: gives deletion rights
                       creationDate:
                         type: string
                         description: project creation date
@@ -8252,6 +8358,7 @@ paths:
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
+                        additionalProperties: false
                         x-patternProperties:
                           ^\d+$:
                             type: object
@@ -8270,8 +8377,7 @@ paths:
                                 description: gives write access
                               delete:
                                 type: boolean
-                                description: gives execution rights
-                        additionalProperties: true
+                                description: gives deletion rights
                       creationDate:
                         type: string
                         description: project creation date
@@ -9288,6 +9394,7 @@ paths:
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
+                        additionalProperties: false
                         x-patternProperties:
                           ^\d+$:
                             type: object
@@ -9306,8 +9413,7 @@ paths:
                                 description: gives write access
                               delete:
                                 type: boolean
-                                description: gives execution rights
-                        additionalProperties: true
+                                description: gives deletion rights
                       creationDate:
                         type: string
                         description: project creation date
@@ -9621,6 +9727,7 @@ paths:
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
+                        additionalProperties: false
                         x-patternProperties:
                           ^\d+$:
                             type: object
@@ -9639,8 +9746,7 @@ paths:
                                 description: gives write access
                               delete:
                                 type: boolean
-                                description: gives execution rights
-                        additionalProperties: true
+                                description: gives deletion rights
                       creationDate:
                         type: string
                         description: project creation date

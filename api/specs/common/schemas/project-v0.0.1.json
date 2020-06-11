@@ -47,6 +47,7 @@
     "accessRights": {
       "type": "object",
       "description": "object containing the GroupID as key and read/write/execution permissions as value",
+      "additionalProperties": false,
       "patternProperties": {
         "^\\d+$": {
           "type": "object",
@@ -68,7 +69,7 @@
             },
             "delete": {
               "type": "boolean",
-              "description": "gives execution rights"
+              "description": "gives deletion rights"
             }
           }
         }

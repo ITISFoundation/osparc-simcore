@@ -5,7 +5,7 @@
 import uuid as uuidlib
 from asyncio import Future, sleep
 from copy import deepcopy
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import pytest
 from aiohttp import web
@@ -13,16 +13,16 @@ from mock import call
 
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
-from pytest_simcore.helpers.utils_projects import (
-    NewProject,
-    delete_all_projects,
-)
+from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
+from simcore_service_webserver.projects.projects_handlers import (
+    OVERRIDABLE_DOCUMENT_KEYS,
+)
 from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
@@ -207,6 +207,20 @@ def assert_replaced(current_project, update_data):
     assert to_datetime(update_data[k]) < to_datetime(current_project[k])
 
 
+async def _list_projects(
+    client, expected: web.Response, query_parameters: Optional[Dict] = None
+) -> List[Dict]:
+    # GET /v0/projects
+    url = client.app.router["list_projects"].url_for()
+    assert str(url) == API_PREFIX + "/projects"
+    if query_parameters:
+        url = url.with_query(**query_parameters)
+
+    resp = await client.get(url)
+    data, errors = await assert_status(resp, expected)
+    return data
+
+
 # GET --------
 @pytest.mark.parametrize(
     "user_role,expected",
@@ -220,34 +234,38 @@ def assert_replaced(current_project, update_data):
 async def test_list_projects(
     client, logged_user, user_project, template_project, expected,
 ):
-    # TODO: GET /v0/projects?start=0&count=3
-
-    # GET /v0/projects
-    url = client.app.router["list_projects"].url_for()
-    assert str(url) == API_PREFIX + "/projects"
-
-    resp = await client.get(url)
-    data, errors = await assert_status(resp, expected)
-
-    if not errors:
+    data = await _list_projects(client, expected)
+    if data:
         assert len(data) == 2
         assert data[0] == template_project
         assert data[1] == user_project
 
     # GET /v0/projects?type=user
-    resp = await client.get(url.with_query(type="user"))
-    data, errors = await assert_status(resp, expected)
-    if not errors:
+    data = await _list_projects(client, expected, {"type": "user"})
+    if data:
         assert len(data) == 1
         assert data[0] == user_project
 
     # GET /v0/projects?type=template
     # instead /v0/projects/templates ??
-    resp = await client.get(url.with_query(type="template"))
-    data, errors = await assert_status(resp, expected)
-    if not errors:
+    data = await _list_projects(client, expected, {"type": "template"})
+    if data:
         assert len(data) == 1
         assert data[0] == template_project
+
+
+async def _get_project(client, project: Dict, expected: web.Response) -> Dict:
+    # GET /v0/projects/{project_id}
+
+    # with a project owned by user
+    url = client.app.router["get_project"].url_for(project_id=project["uuid"])
+    assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        assert data == project
+    return data
 
 
 @pytest.mark.parametrize(
@@ -262,25 +280,95 @@ async def test_list_projects(
 async def test_get_project(
     client, logged_user, user_project, template_project, expected,
 ):
-    # GET /v0/projects/{project_id}
-
-    # with a project owned by user
-    url = client.app.router["get_project"].url_for(project_id=user_project["uuid"])
-
-    resp = await client.get(url)
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        assert data == user_project
+    await _get_project(client, user_project, expected)
 
     # with a template
-    url = client.app.router["get_project"].url_for(project_id=template_project["uuid"])
+    await _get_project(client, template_project, expected)
 
-    resp = await client.get(url)
-    data, error = await assert_status(resp, expected)
 
+async def _new_project(
+    client,
+    expected_response: web.Response,
+    logged_user: Dict[str, str],
+    primary_group: Dict[str, str],
+    *,
+    project: Optional[Dict] = None,
+    from_template: Optional[Dict] = None,
+) -> Dict:
+    # POST /v0/projects
+    url = client.app.router["create_projects"].url_for()
+    assert str(url) == f"{API_PREFIX}/projects"
+    if from_template:
+        url = url.with_query(from_template=from_template["uuid"])
+
+    # Pre-defined fields imposed by required properties in schema
+    project_data = {}
+    expected_data = {}
+    if from_template:
+        # access rights are replaced
+        expected_data = deepcopy(from_template)
+        expected_data["accessRights"] = {}
+
+    if not from_template or project:
+        project_data = {
+            "uuid": "0000000-invalid-uuid",
+            "name": "Minimal name",
+            "description": "this description should not change",
+            "prjOwner": "me but I will be removed anyway",
+            "creationDate": now_str(),
+            "lastChangeDate": now_str(),
+            "thumbnail": "",
+            "accessRights": {},
+            "workbench": {},
+            "tags": [],
+        }
+        if project:
+            project_data.update(project)
+
+        for key in project_data:
+            expected_data[key] = project_data[key]
+            if (
+                key in OVERRIDABLE_DOCUMENT_KEYS
+                and not project_data[key]
+                and from_template
+            ):
+                expected_data[key] = from_template[key]
+
+    resp = await client.post(url, json=project_data)
+
+    new_project, error = await assert_status(resp, expected_response)
     if not error:
-        assert data == template_project
+        # updated fields
+        assert expected_data["uuid"] != new_project["uuid"]
+        assert (
+            new_project["prjOwner"] == logged_user["email"]
+        )  # the project owner is assigned the user id e-mail
+        assert to_datetime(expected_data["creationDate"]) < to_datetime(
+            new_project["creationDate"]
+        )
+        assert to_datetime(expected_data["lastChangeDate"]) < to_datetime(
+            new_project["lastChangeDate"]
+        )
+        # the access rights are set to use the logged user primary group + whatever was inside the project
+        expected_data["accessRights"].update(
+            {str(primary_group["gid"]): {"read": True, "write": True, "delete": True}}
+        )
+        assert new_project["accessRights"] == expected_data["accessRights"]
+
+        # invariant fields
+        modified_fields = [
+            "uuid",
+            "prjOwner",
+            "creationDate",
+            "lastChangeDate",
+            "accessRights",
+            "workbench" if from_template else None,
+        ]
+
+        for key in new_project.keys():
+            if key not in modified_fields:
+                assert expected_data[key] == new_project[key]
+    return new_project
 
 
 # POST --------
@@ -302,55 +390,7 @@ async def test_new_project(
     storage_subsystem_mock,
     project_db_cleaner,
 ):
-    # POST /v0/projects
-    url = client.app.router["create_projects"].url_for()
-    assert str(url) == API_PREFIX + "/projects"
-
-    # Pre-defined fields imposed by required properties in schema
-    default_project = {
-        "uuid": "0000000-invalid-uuid",
-        "name": "Minimal name",
-        "description": "this description should not change",
-        "prjOwner": "me but I will be removed anyway",
-        "creationDate": now_str(),
-        "lastChangeDate": now_str(),
-        "thumbnail": "",
-        "accessRights": {},
-        "workbench": {},
-        "tags": [],
-    }
-
-    resp = await client.post(url, json=default_project)
-
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        new_project = data
-
-        # updated fields
-        assert default_project["uuid"] != new_project["uuid"]
-        assert default_project["prjOwner"] != logged_user["email"]
-        assert (
-            new_project["prjOwner"] == logged_user["email"]
-        )  # the project owner is assigned the user id e-mail
-        assert to_datetime(default_project["creationDate"]) < to_datetime(
-            new_project["creationDate"]
-        )
-        # the access rights are set to use the logged user primary group
-        assert new_project["accessRights"] == {
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        }
-
-        # invariant fields
-        for key in new_project.keys():
-            if key not in (
-                "uuid",
-                "prjOwner",
-                "creationDate",
-                "lastChangeDate",
-                "accessRights",
-            ):
-                assert default_project[key] == new_project[key]
+    new_project = await _new_project(client, expected, logged_user, primary_group)
 
 
 @pytest.mark.parametrize(
@@ -372,41 +412,13 @@ async def test_new_project_from_template(
     storage_subsystem_mock,
     project_db_cleaner,
 ):
-    # POST /v0/projects?from_template={template_uuid}
-    url = (
-        client.app.router["create_projects"]
-        .url_for()
-        .with_query(from_template=template_project["uuid"])
+    new_project = await _new_project(
+        client, expected, logged_user, primary_group, from_template=template_project
     )
 
-    resp = await client.post(url)
-
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        project = data
-        modified = ["prjOwner", "creationDate", "lastChangeDate", "uuid"]
-
-        # different ownership
-        assert project["prjOwner"] == logged_user["email"]
-        assert project["prjOwner"] != template_project["prjOwner"]
-        assert project["accessRights"] == {
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        }
-
-        # different timestamps
-        assert to_datetime(template_project["creationDate"]) < to_datetime(
-            project["creationDate"]
-        )
-        assert to_datetime(template_project["lastChangeDate"]) < to_datetime(
-            project["lastChangeDate"]
-        )
-
-        # different uuids for project and nodes!?
-        assert project["uuid"] != template_project["uuid"]
-
+    if new_project:
         # check uuid replacement
-        for node_name in project["workbench"]:
+        for node_name in new_project["workbench"]:
             try:
                 uuidlib.UUID(node_name)
             except ValueError:
@@ -431,14 +443,8 @@ async def test_new_project_from_template_with_body(
     expected,
     computational_system_mock,
     storage_subsystem_mock,
+    project_db_cleaner,
 ):
-    # POST /v0/projects?from_template={template_uuid}
-    url = (
-        client.app.router["create_projects"]
-        .url_for()
-        .with_query(from_template=template_project["uuid"])
-    )
-
     predefined = {
         "uuid": "",
         "name": "Sleepers8",
@@ -457,43 +463,19 @@ async def test_new_project_from_template_with_body(
         "workbench": {},
         "tags": [],
     }
+    project = await _new_project(
+        client,
+        expected,
+        logged_user,
+        primary_group,
+        project=predefined,
+        from_template=template_project,
+    )
 
-    resp = await client.post(url, json=predefined)
-
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        project = data
-
+    if project:
         # uses predefined
         assert project["name"] == predefined["name"]
         assert project["description"] == predefined["description"]
-
-        modified = ["prjOwner", "creationDate", "lastChangeDate", "uuid"]
-
-        # different ownership
-        assert project["prjOwner"] == logged_user["email"]
-        assert project["prjOwner"] != template_project["prjOwner"]
-        # different access rights
-        assert project["accessRights"] != template_project["accessRights"]
-        predefined["accessRights"].update(
-                {
-                    str(primary_group["gid"]): {
-                        "read": True,
-                        "write": True,
-                        "delete": True,
-                    }
-                }
-            )
-        assert project["accessRights"] == predefined["accessRights"]
-
-        # different timestamps
-        assert to_datetime(template_project["creationDate"]) < to_datetime(
-            project["creationDate"]
-        )
-        assert to_datetime(template_project["lastChangeDate"]) < to_datetime(
-            project["lastChangeDate"]
-        )
 
         # different uuids for project and nodes!?
         assert project["uuid"] != template_project["uuid"]
@@ -518,12 +500,13 @@ async def test_new_project_from_template_with_body(
 async def test_new_template_from_project(
     client,
     logged_user,
-    primary_group: Dict[str,str],
+    primary_group: Dict[str, str],
     all_group: Dict[str, str],
     user_project,
     expected,
     computational_system_mock,
     storage_subsystem_mock,
+    project_db_cleaner,
 ):
     # POST /v0/projects?as_template={user_uuid}
     url = (
@@ -538,9 +521,7 @@ async def test_new_template_from_project(
     if not error:
         template_project = data
 
-        url = client.app.router["list_projects"].url_for().with_query(type="template")
-        resp = await client.get(url)
-        templates, _ = await assert_status(resp, web.HTTPOk)
+        templates = await _list_projects(client, web.HTTPOk, {"type": "template"})
 
         assert len(templates) == 1
         assert templates[0] == template_project
@@ -579,8 +560,7 @@ async def test_new_template_from_project(
         "lastChangeDate": "2019-06-03T09:59:31.987Z",
         "workbench": {},
         "accessRights": {
-            str(primary_group["gid"]): {"read":True, "write":True, "delete":True},
-            str(all_group["gid"]): {"read": True, "write": False, "delete": False}
+            str(all_group["gid"]): {"read": True, "write": False, "delete": False},
         },
         "tags": [],
     }
@@ -594,6 +574,10 @@ async def test_new_template_from_project(
         assert template_project["name"] == predefined["name"]
         assert template_project["description"] == predefined["description"]
         assert template_project["prjOwner"] == logged_user["email"]
+        # the logged in user access rights are added by default
+        predefined["accessRights"].update(
+            {str(primary_group["gid"]): {"read": True, "write": True, "delete": True}}
+        )
         assert template_project["accessRights"] == predefined["accessRights"]
 
         # different ownership
@@ -620,77 +604,160 @@ async def test_new_template_from_project(
 
 
 @pytest.mark.parametrize(
-    "user_role,expected_change,expected_get",
+    "user_role,expected_created,expected_ok,expected_notfound,expected_nocontents,expected_forbidden",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden, web.HTTPNotFound),
-        (UserRole.USER, web.HTTPOk, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk, web.HTTPOk),
+        (
+            UserRole.ANONYMOUS,
+            web.HTTPUnauthorized,
+            web.HTTPUnauthorized,
+            web.HTTPUnauthorized,
+            web.HTTPUnauthorized,
+            web.HTTPUnauthorized,
+        ),
+        (
+            UserRole.GUEST,
+            web.HTTPForbidden,
+            web.HTTPForbidden,
+            web.HTTPNotFound,
+            web.HTTPForbidden,
+            web.HTTPForbidden,
+        ),
+        (
+            UserRole.USER,
+            web.HTTPCreated,
+            web.HTTPOk,
+            web.HTTPNotFound,
+            web.HTTPNoContent,
+            web.HTTPForbidden,
+        ),
+        (
+            UserRole.TESTER,
+            web.HTTPCreated,
+            web.HTTPOk,
+            web.HTTPNotFound,
+            web.HTTPNoContent,
+            web.HTTPForbidden,
+        ),
     ],
 )
-async def test_share_project_with_everyone(
+@pytest.mark.parametrize(
+    "share_rights",
+    [
+        {"read": True, "write": True, "delete": True},
+        {"read": True, "write": True, "delete": False},
+        {"read": True, "write": False, "delete": False},
+        {"read": False, "write": False, "delete": False},
+    ],
+)
+async def test_share_project(
     client,
     logged_user,
+    primary_group: Dict[str, str],
+    standard_groups: List[Dict[str, str]],
     all_group: Dict[str, str],
-    user_project,
     user_role,
-    expected_change,
-    expected_get,
+    expected_created,
+    expected_ok,
+    expected_notfound,
+    expected_nocontents,
+    expected_forbidden,
+    storage_subsystem_mock,
+    mocked_director_subsystem,
     computational_system_mock,
+    share_rights,
+    project_db_cleaner,
 ):
-    # Use-case: the user shares his project instance with a group
+    # Use-case: the user shares some projects with a group
 
-    # modify project to allow access to all other users
-    replace_project_url = client.app.router["replace_project"].url_for(
-        project_id=user_project["uuid"]
+    # create a few projects
+    new_project = await _new_project(
+        client,
+        expected_created,
+        logged_user,
+        primary_group,
+        project={"accessRights": {str(all_group["gid"]): share_rights}},
     )
-    project_update = deepcopy(user_project)
-    project_update["accessRights"] = {
-        str(all_group["gid"]): {"read": True, "write": True, "delete": True}
-    }
-    resp = await client.put(replace_project_url, json=project_update)
-    data, error = await assert_status(resp, expected_change)
+    if new_project:
+        assert new_project["accessRights"] == {
+            str(primary_group["gid"]): {"read": True, "write": True, "delete": True},
+            str(all_group["gid"]): share_rights,
+        }
 
-    if not error:
-        assert_replaced(current_project=data, update_data=project_update)
-        project_update.update(data)
+        # user 1 can always get to his project
+        await _get_project(client, new_project, expected_ok)
+
     # get another user logged in now
     user_2 = await log_client_in(
         client, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
     )
-    url = client.app.router["get_project"].url_for(project_id=project_update["uuid"])
+    if new_project:
+        # user 2 can only get the project if user 2 has read access
+        await _get_project(
+            client,
+            new_project,
+            expected_ok if share_rights["read"] else expected_forbidden,
+        )
+        # user 2 can only list projects if user 2 has read access
+        list_projects = await _list_projects(client, expected_ok)
+        assert len(list_projects) == (1 if share_rights["read"] else 0)
+        # user 2 can only update the project is user 2 has write access
+        project_update = deepcopy(new_project)
+        project_update["name"] = "my super name"
+        await _replace_project(
+            client,
+            project_update,
+            expected_ok if share_rights["write"] else expected_forbidden,
+        )
+        # user 2 can only delete projects if user 2 has delete access
+        await _delete_project(
+            client,
+            new_project,
+            expected_nocontents if share_rights["delete"] else expected_forbidden,
+        )
 
-    resp = await client.get(url)
-    data, error = await assert_status(resp, expected_get)
 
+async def _replace_project(
+    client, project_update: Dict, expected: web.Response
+) -> Dict:
+    # PUT /v0/projects/{project_id}
+    url = client.app.router["replace_project"].url_for(
+        project_id=project_update["uuid"]
+    )
+    assert str(url) == f"{API_PREFIX}/projects/{project_update['uuid']}"
+    resp = await client.put(url, json=project_update)
+    data, error = await assert_status(resp, expected)
     if not error:
-        assert data == project_update
+        assert_replaced(current_project=data, update_data=project_update)
+    return data
 
 
 # PUT --------
 @pytest.mark.parametrize(
-    "user_role,expected",
+    "user_role,expected,expected_change_access",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPOk, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk, web.HTTPOk),
     ],
 )
 async def test_replace_project(
-    client, logged_user, user_project, expected, computational_system_mock,
+    client,
+    logged_user,
+    user_project,
+    expected,
+    expected_change_access,
+    computational_system_mock,
+    all_group,
 ):
-    # PUT /v0/projects/{project_id}
-    url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
-
     project_update = deepcopy(user_project)
     project_update["description"] = "some updated from original project!!!"
+    await _replace_project(client, project_update, expected)
 
-    resp = await client.put(url, json=project_update)
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        assert_replaced(current_project=data, update_data=project_update)
+    project_update["accessRights"] = {
+        str(all_group["gid"]): {"read": True, "write": True, "delete": True}
+    }
+    await _replace_project(client, project_update, expected_change_access)
 
 
 @pytest.mark.parametrize(
@@ -705,9 +772,6 @@ async def test_replace_project(
 async def test_replace_project_updated_inputs(
     client, logged_user, user_project, expected, computational_system_mock,
 ):
-    # PUT /v0/projects/{project_id}
-    url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
-
     project_update = deepcopy(user_project)
     #
     # "inputAccess": {
@@ -721,12 +785,7 @@ async def test_replace_project_updated_inputs(
     project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
         "Na"
     ] = 55
-
-    resp = await client.put(url, json=project_update)
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        assert_replaced(current_project=data, update_data=project_update)
+    await _replace_project(client, project_update, expected)
 
 
 @pytest.mark.parametrize(
@@ -741,9 +800,6 @@ async def test_replace_project_updated_inputs(
 async def test_replace_project_updated_readonly_inputs(
     client, logged_user, user_project, expected, computational_system_mock,
 ):
-    # PUT /v0/projects/{project_id}
-    url = client.app.router["replace_project"].url_for(project_id=user_project["uuid"])
-
     project_update = deepcopy(user_project)
     project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
         "Na"
@@ -751,15 +807,17 @@ async def test_replace_project_updated_readonly_inputs(
     project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
         "Kr"
     ] = 5
-
-    resp = await client.put(url, json=project_update)
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        assert_replaced(current_project=data, update_data=project_update)
+    await _replace_project(client, project_update, expected)
 
 
 # DELETE -------
+
+
+async def _delete_project(client, project: Dict, expected: web.Response) -> None:
+    url = client.app.router["delete_project"].url_for(project_id=project["uuid"])
+    assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
+    resp = await client.delete(url)
+    await assert_status(resp, expected)
 
 
 @pytest.mark.parametrize(
@@ -787,11 +845,9 @@ async def test_delete_project(
         "get_running_interactive_services"
     ].return_value = future_with_result(fakes)
 
-    url = client.app.router["delete_project"].url_for(project_id=user_project["uuid"])
+    await _delete_project(client, user_project, expected)
 
-    resp = await client.delete(url)
-    await assert_status(resp, expected)
-    if resp.status == web.HTTPNoContent.status_code:
+    if expected == web.HTTPNoContent:
         mocked_director_subsystem[
             "get_running_interactive_services"
         ].assert_called_once()
@@ -799,11 +855,7 @@ async def test_delete_project(
         mocked_director_subsystem["stop_service"].has_calls(calls)
         # wait for the fire&forget to run
         await sleep(2)
-        # check if database entries are correctly removed, there should be no project available here
-        url = client.app.router["get_project"].url_for(project_id=user_project["uuid"])
-
-        resp = await client.get(url)
-        data, error = await assert_status(resp, web.HTTPNotFound)
+        await _get_project(client, user_project, web.HTTPNotFound)
 
 
 @pytest.mark.parametrize(
@@ -995,9 +1047,7 @@ async def test_delete_shared_project_forbidden(
     # delete project in tab2
     client_session_id2 = client_session_id()
     sio2 = await socketio_client(client_session_id2)
-    url = client.app.router["delete_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.delete(url)
-    await assert_status(resp, expected)
+    await _delete_project(client, user_project, expected)
 
 
 @pytest.mark.parametrize(
@@ -1141,16 +1191,17 @@ async def test_tags_to_studies(
         # Tag is included in response
         assert added_tag.get("id") in data.get("tags")
 
+    # check the tags are in
+    user_project["tags"] = [tag["id"] for tag in added_tags]
+    data = await _get_project(client, user_project, expected)
+
     # Delete tag0
     url = client.app.router["delete_tag"].url_for(tag_id=str(added_tags[0].get("id")))
     resp = await client.delete(url)
     await assert_status(resp, web.HTTPNoContent)
     # Get project and check that tag is no longer there
-    url = client.app.router["get_project"].url_for(
-        project_id=str(user_project.get("uuid"))
-    )
-    resp = await client.get(url)
-    data, _ = await assert_status(resp, expected)
+    user_project["tags"].remove(added_tags[0]["id"])
+    data = await _get_project(client, user_project, expected)
     assert added_tags[0].get("id") not in data.get("tags")
 
     # Remove tag1 from project
@@ -1160,11 +1211,8 @@ async def test_tags_to_studies(
     resp = await client.delete(url)
     await assert_status(resp, expected)
     # Get project and check that tag is no longer there
-    url = client.app.router["get_project"].url_for(
-        project_id=str(user_project.get("uuid"))
-    )
-    resp = await client.get(url)
-    data, _ = await assert_status(resp, expected)
+    user_project["tags"].remove(added_tags[1]["id"])
+    data = await _get_project(client, user_project, expected)
     assert added_tags[1].get("id") not in data.get("tags")
 
     # Delete tag1
