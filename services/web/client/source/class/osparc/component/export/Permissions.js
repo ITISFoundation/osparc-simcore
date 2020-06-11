@@ -22,10 +22,10 @@
 qx.Class.define("osparc.component.export.Permissions", {
   extend: qx.ui.core.Widget,
 
-  construct: function(study) {
+  construct: function(studyData) {
     this.base(arguments);
 
-    this.__study = osparc.utils.Utils.deepCloneObject(study);
+    this.__study = osparc.utils.Utils.deepCloneObject(studyData);
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
