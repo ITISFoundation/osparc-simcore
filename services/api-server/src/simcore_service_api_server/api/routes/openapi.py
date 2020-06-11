@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from . import health, meta, studies, users
+from . import health, meta, users
 
 router = APIRouter()
 router.include_router(health.router, prefix="/health")

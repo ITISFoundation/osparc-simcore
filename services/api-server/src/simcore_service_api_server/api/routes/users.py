@@ -1,3 +1,7 @@
+# FIXME: Until tests
+# pylint: skip-file
+#
+
 from fastapi import APIRouter, Depends, Security
 
 from ...models.schemas.profiles import Profile, ProfileUpdate

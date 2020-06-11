@@ -97,7 +97,6 @@ def docker_compose_file(environment, tests_utils_dir, tmpdir_factory) -> Path:
 
     shutil.copy(src_path, dst_path.parent)
 
-
     # configs
     subprocess.run(
         f"docker-compose -f {src_path} config > {dst_path}",
@@ -106,7 +105,6 @@ def docker_compose_file(environment, tests_utils_dir, tmpdir_factory) -> Path:
         cwd=dst_path.parent,
         env=environment,
     )
-
 
     return dst_path
 

@@ -2,7 +2,6 @@ from typing import Optional
 
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security.api_key import APIKeyHeader
-from loguru import logger
 
 from ...db.repositories.users import UsersRepository
 from ...models.schemas.tokens import TokenData
