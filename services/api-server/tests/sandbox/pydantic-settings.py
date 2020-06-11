@@ -4,8 +4,6 @@ from pathlib import Path
 
 from pydantic import BaseSettings, SecretStr
 
-
-
 env_path = Path(".env-ignore")
 
 env_path.write_text(
@@ -51,4 +49,3 @@ print(settings.json())
 assert settings.meaning_of_life == 42
 assert settings.environment == "production"
 assert settings.pg.password.get_secret_value() == "test"
-

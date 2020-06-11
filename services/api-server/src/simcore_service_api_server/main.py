@@ -8,8 +8,8 @@ from loguru import logger
 from .__version__ import api_vtag
 from .api.routes.openapi import router as api_router
 from .core import application
-from .core.settings import AppSettings
 from .core.events import create_start_app_handler, create_stop_app_handler
+from .core.settings import AppSettings
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
