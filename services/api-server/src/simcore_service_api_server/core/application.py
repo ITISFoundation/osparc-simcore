@@ -13,7 +13,6 @@ from loguru import logger
 
 from ..__version__ import api_version, api_vtag
 from ..api.routes.openapi import router as api_router
-
 from .events import create_start_app_handler, create_stop_app_handler
 from .settings import AppSettings
 
