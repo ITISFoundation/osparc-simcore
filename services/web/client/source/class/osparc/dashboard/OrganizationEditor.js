@@ -46,6 +46,9 @@ qx.Class.define("osparc.dashboard.OrganizationEditor", {
       win.add(organizationEditor);
       win.center();
       win.open();
+      organizationEditor.addListener("cancel", () => {
+        win.close();
+      });
       return win;
     }
   },
@@ -82,7 +85,8 @@ qx.Class.define("osparc.dashboard.OrganizationEditor", {
 
   events: {
     "createOrg": "qx.event.type.Event",
-    "updateOrg": "qx.event.type.Event"
+    "updateOrg": "qx.event.type.Event",
+    "cancel": "qx.event.type.Event"
   },
 
   members: {
