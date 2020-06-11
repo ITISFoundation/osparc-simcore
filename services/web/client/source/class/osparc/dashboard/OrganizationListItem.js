@@ -85,6 +85,16 @@ qx.Class.define("osparc.dashboard.OrganizationListItem", {
       menu.add(editOrgButton);
 
       return menu;
+    },
+
+    // overriden
+    _applyThumbnail: function(value) {
+      const thumbnail = this.getChildControl("thumbnail");
+      if (value === "") {
+        thumbnail.setSource("@FontAwesome5Solid/users/24");
+      } else {
+        thumbnail.setSource(value);
+      }
     }
   }
 });

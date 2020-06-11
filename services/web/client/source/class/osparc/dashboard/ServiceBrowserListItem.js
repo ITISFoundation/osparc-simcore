@@ -207,8 +207,8 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
       if (value === null) {
         return;
       }
-      const label = this.getChildControl("thumbnail");
-      label.setSource(value);
+      const thumbnail = this.getChildControl("thumbnail");
+      thumbnail.setSource(value);
     },
 
     _applyTitle: function(value) {
