@@ -35,6 +35,9 @@ class AppSettings(BaseSettings):
         return getattr(logging, self.log_level_name)
 
     # POSTGRES
+    postgres_enabled: bool = Field(
+        True, description="Enables/Disables connection with postgres service"
+    )
     postgres_user: str
     postgres_password: SecretStr
     postgres_db: str
@@ -53,6 +56,9 @@ class AppSettings(BaseSettings):
         )
 
     # WEBSERVER
+    webserver_enabled: bool = Field(
+        True, description="Enables/Disables connection with webserver service"
+    )
     webserver_host: str = "webserver"
     webserver_port: int = 8080
 

@@ -16,16 +16,19 @@ def create_start_app_handler(app: FastAPI) -> Callable:
         setup_remote_debugging(
             force_enabled=app.state.settings.boot_mode == BootModeEnum.debug
         )
+
         # setup connection to pg db
-        await connect_to_db(app)
+        if app.state.settings.postgres_enabled:
+            await connect_to_db(app)
 
     return start_app
 
 
 def create_stop_app_handler(app: FastAPI) -> Callable:
-    # @logger.catch
+    @logger.catch
     async def stop_app() -> None:
         logger.info("Application stopping")
-        await close_db_connection(app)
+        if app.state.settings.postgres_enabled:
+            await close_db_connection(app)
 
     return stop_app
