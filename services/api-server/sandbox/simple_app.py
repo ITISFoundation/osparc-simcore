@@ -3,12 +3,12 @@
 
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import uvicorn
 from fastapi import Depends, FastAPI
 from fastapi.requests import Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 app = FastAPI(title="My app")
 
@@ -25,17 +25,17 @@ class ItemFOO(BaseModel):
     name: str
     description: str = None
     price: float
-    tax: float = None
+    tax: Optional[float] = Field(None, description="description tax")
 
 
-@app.post("/studies")
-async def get_studies(q1: int, body: List[ItemFOO]) -> ItemFOO:
+@app.post("/studies/{study_id}")
+async def get_studies(q: int, study_id: int, body: List[ItemFOO]) -> ItemFOO:
 
     return body
 
 
 def dump_oas():
-    Path("openapi.json").write_text(json.dumps(app.openapi(), indent=2))
+    Path("openapi-ignore.json").write_text(json.dumps(app.openapi(), indent=2))
 
 
 app.add_event_handler("startup", dump_oas)
