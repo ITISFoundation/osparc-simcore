@@ -46,8 +46,9 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
     __membersModel: null,
 
     __getCreateOrganizationSection: function() {
-      const box = this._createSectionBox(this.tr("Create Organization"));
-      const createOrgBtn = new qx.ui.form.Button(this.tr("Create New Organization"));
+      const createOrgBtn = new qx.ui.form.Button(this.tr("Create New Organization")).set({
+        allowGrowX: false
+      });
       createOrgBtn.addListener("execute", function() {
         const newOrg = true;
         const orgEditor = new osparc.dashboard.OrganizationEditor(newOrg);
@@ -56,8 +57,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           this.__createOrganization(win, orgEditor.getChildControl("create"), orgEditor);
         });
       }, this);
-      box.add(createOrgBtn);
-      return box;
+      return createOrgBtn;
     },
 
     __getOrganizationsSection: function() {
