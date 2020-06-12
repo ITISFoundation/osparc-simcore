@@ -224,37 +224,6 @@ async def get_image_details(
     return image_tags
 
 
-async def generate_service_extras(
-    app: web.Application, image_key: str, image_tag: str
-) -> Dict:
-    result = {}
-    labels = await get_image_labels(app, image_key, image_tag)
-    _logger.debug("Compiling service extras from labels %s", labels)
-
-    # check physical node requirements
-    # all nodes require "CPU"
-    result["node_requirements"] = ["CPU"]
-    # check if the service requires GPU support
-
-    def validate_vram(entry_to_validate):
-        for element in (
-            entry_to_validate.get("value", {})
-            .get("Reservations", {})
-            .get("GenericResources", [])
-        ):
-            if element.get("DiscreteResourceSpec", {}).get("Kind") == "VRAM":
-                return True
-        return False
-
-    if "simcore.service.settings" in labels:
-        service_settings = json.loads(labels["simcore.service.settings"])
-        for entry in service_settings:
-            if entry.get("name") == "Resources" and validate_vram(entry):
-                result["node_requirements"].append("GPU")
-
-    return result
-
-
 async def get_repo_details(app: web.Application, image_key: str) -> List[Dict]:
     repo_details = []
     image_tags = await list_image_tags(app, image_key)

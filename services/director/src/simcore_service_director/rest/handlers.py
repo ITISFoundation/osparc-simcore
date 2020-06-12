@@ -93,7 +93,7 @@ async def services_extras_get(
         service_version,
     )
     try:
-        service_extras = await registry_proxy.generate_service_extras(
+        service_extras = await producer.generate_service_extras(
             request.app, service_key, service_version
         )
         return web.json_response(data=dict(data=service_extras))

@@ -946,3 +946,34 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
                 "DYNAMIC",
                 "SUCCESS",
             )
+
+
+async def generate_service_extras(
+    app: web.Application, image_key: str, image_tag: str
+) -> Dict:
+    result = {}
+    labels = await registry_proxy.get_image_labels(app, image_key, image_tag)
+    log.debug("Compiling service extras from labels %s", labels)
+
+    # check physical node requirements
+    # all nodes require "CPU"
+    result["node_requirements"] = ["CPU"]
+    # check if the service requires GPU support
+
+    def validate_vram(entry_to_validate):
+        for element in (
+            entry_to_validate.get("value", {})
+            .get("Reservations", {})
+            .get("GenericResources", [])
+        ):
+            if element.get("DiscreteResourceSpec", {}).get("Kind") == "VRAM":
+                return True
+        return False
+
+    if SERVICE_RUNTIME_SETTINGS in labels:
+        service_settings = json.loads(labels[SERVICE_RUNTIME_SETTINGS])
+        for entry in service_settings:
+            if entry.get("name") == "Resources" and validate_vram(entry):
+                result["node_requirements"].append("GPU")
+
+    return result
