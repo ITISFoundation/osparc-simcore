@@ -15,3 +15,9 @@ class DatabaseError(SidecarException):
 
     def __init__(self, msg: str):
         super(DatabaseError, self).__init__(msg)
+
+
+class TaskNotFound(SidecarException):
+    """Task was not found """
+    def __init__(self, msg: str):
+        super().__init__(msg)
