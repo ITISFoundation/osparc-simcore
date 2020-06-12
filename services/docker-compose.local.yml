@@ -83,6 +83,8 @@ services:
     ports:
       - target: 80
         published: 9081
+      - target: 10081
+        published: 10081
       - target: 8080
         published: 8080
     deploy:

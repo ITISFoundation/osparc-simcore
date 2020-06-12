@@ -1,5 +1,23 @@
 version: "3.7"
 services:
+  api-gateway:
+    # get info here: https://www.mock-server.com
+    image: mockserver/mockserver
+    init: true
+    environment:
+      - MOCKSERVER_LIVENESS_HTTP_GET_PATH=/live
+    deploy:
+      labels:
+        - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
+        # gzip compression
+        - traefik.http.middlewares.gzip.compress=true
+        - traefik.enable=true
+        - traefik.http.services.${SWARM_STACK_NAME}_api-gateway.loadbalancer.server.port=1080
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-gateway.rule=hostregexp(`{host:.+}`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-gateway.entrypoints=api
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-gateway.priority=1
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-gateway.middlewares=gzip@docker, simcore_sslheader@docker
+
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -227,7 +245,7 @@ services:
       - default
 
   traefik:
-    image: traefik:v2.2.0
+    image: traefik:v2.2.1
     init: true
     command:
       - "--api=true"
@@ -241,6 +259,8 @@ services:
       - "--metrics.prometheus.entryPoint=metrics"
       - "--entryPoints.http.address=:80"
       - "--entryPoints.http.forwardedHeaders.insecure"
+      - "--entryPoints.api.address=:10081"
+      - "--entryPoints.api.forwardedHeaders.insecure"
       - "--entryPoints.traefik_monitor.address=:8080"
       - "--entryPoints.traefik_monitor.forwardedHeaders.insecure"
       - "--providers.docker.endpoint=unix:///var/run/docker.sock"
