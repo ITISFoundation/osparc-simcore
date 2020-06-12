@@ -13,6 +13,7 @@ from aiopg.sa.result import RowProxy
 from sqlalchemy.sql import select
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
+from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import user_to_groups
 
 from .projects import projects_api, projects_exceptions
@@ -125,8 +126,10 @@ async def listen(app: web.Application):
                     clients.append(user["uid"])
 
             messages = {"nodeUpdated": {"Node": node_id, "Data": node_data}}
-            for client in clients:
-                await post_messages(app, client, messages)
+
+            await logged_gather(
+                *[post_messages(app, client, messages) for client in clients], False
+            )
 
 
 async def comp_tasks_listening_task(app: web.Application) -> None:
