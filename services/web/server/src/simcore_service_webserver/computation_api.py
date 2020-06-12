@@ -80,11 +80,10 @@ async def _get_node_extras(
     node_key: str, node_version: str, app: web.Application
 ) -> Dict:
     """Returns the service_extras if possible otherwise None"""
-    if "file-picker" in node_key:
-        return None
-    if "frontend/nodes-group" in node_key:
-        return None
-    if "StimulationSelectivity" in node_key:
+    if any(
+        key in node_key
+        for key in ("file-picker", "frontend/nodes-group", "StimulationSelectivity")
+    ):
         return None
 
     node_extras = await director_api.get_services_extras(app, node_key, node_version)
@@ -198,6 +197,7 @@ async def _parse_project_data(pipeline_data: Dict, app: web.Application):
                 "outputs": node_details["outputs"],
             }
 
+        # _get_node_extras returns None ins ome situation, the below check is required
         requires_gpu = (
             "GPU" in node_extras.get("node_requirements", [])
             if node_extras is not None
