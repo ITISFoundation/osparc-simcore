@@ -10,6 +10,7 @@ from simcore_postgres_database.sidecar_models import SUCCESS, comp_pipeline, com
 from sqlalchemy import and_
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 from celery import Celery
+from .exceptions import MoreThenOneItemDetected
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +83,7 @@ def is_gpu_node() -> bool:
         result_set = {x.split("/")[-1] for x in possible_candidates}
         if len(result_set) != 1:
             # pylint: disable=raising-format-tuple
-            raise ValueError(
+            raise MoreThenOneItemDetected(
                 "There should only be one entry in this set of possible container_ids"
                 ", have a look at %s",
                 possible_candidates,
