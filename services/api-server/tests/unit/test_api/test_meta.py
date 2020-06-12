@@ -1,16 +1,10 @@
 # pylint: disable=unused-variable
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
-import pytest
 from fastapi.testclient import TestClient
 
 from simcore_service_api_server.__version__ import api_version, api_vtag
 from simcore_service_api_server.models.schemas.meta import Meta
-
-
-@pytest.fixture(scope="module")
-def enable_db() -> bool:
-    return False
 
 
 def test_read_service_meta(client: TestClient):
