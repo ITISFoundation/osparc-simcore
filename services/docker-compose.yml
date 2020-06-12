@@ -17,6 +17,8 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_api-gateway.entrypoints=simcore_api
         - traefik.http.routers.${SWARM_STACK_NAME}_api-gateway.priority=1
         - traefik.http.routers.${SWARM_STACK_NAME}_api-gateway.middlewares=gzip@docker
+    networks:
+      - default
 
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
