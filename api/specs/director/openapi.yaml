@@ -134,9 +134,7 @@ paths:
       tags:
         - users
       summary: Returns the service's details which should be hidden from the user defined as extras.
-      description: |
-        For scheduling reasons or other future operations it is important to hide some of the underlying details
-        from the users. This endpoint returns such details, named as extras, needed by other services.
+      description: Currently returns the node_requirements an array of resoruces needed for scheduling.
       operationId: services_extras_get
       parameters:
         - $ref: '#/components/parameters/ServiceKeyPath'
