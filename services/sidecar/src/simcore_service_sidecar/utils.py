@@ -75,10 +75,10 @@ def is_gpu_node() -> bool:
     """Returns True if this node has support to GPU,
     meaning that the `VRAM` label was added to it."""
 
-    def get_cotnainer_id_from_cgroup(cat_cgrup_content):
+    def get_container_id_from_cgroup(cat_cgroup_content) -> str:
         """Parses the result of cat cat /proc/self/cgroup and returns a container_id or
         raises an error in case only one unique id was not found."""
-        possible_candidates = {x for x in cat_cgrup_content.split() if len(x) >= 64}
+        possible_candidates = {x for x in cat_cgroup_content.split() if len(x) >= 64}
         result_set = {x.split("/")[-1] for x in possible_candidates}
         if len(result_set) != 1:
             # pylint: disable=raising-format-tuple
@@ -96,14 +96,14 @@ def is_gpu_node() -> bool:
             )
         return return_value
 
-    async def async_is_gpu_node():
+    async def async_is_gpu_node() -> bool:
         cmd = "cat /proc/self/cgroup"
         proc = await asyncio.create_subprocess_shell(
             cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
         )
 
         stdout, _ = await proc.communicate()
-        container_id = get_cotnainer_id_from_cgroup(stdout.decode("utf-8").strip())
+        container_id = get_container_id_from_cgroup(stdout.decode("utf-8").strip())
 
         docker = aiodocker.Docker()
 
