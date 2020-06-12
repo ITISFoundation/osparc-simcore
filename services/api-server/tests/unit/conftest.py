@@ -2,23 +2,23 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
-from pprint import pprint
 from typing import Callable, Coroutine, Dict, Union
 
 import aiopg.sa
 import pytest
 import sqlalchemy as sa
 import yaml
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_api_server
+from _helpers import RWApiKeysRepository, RWUsersRepository
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -187,3 +187,26 @@ def client(app: FastAPI) -> TestClient:
     # Context manager to trigger events: https://fastapi.tiangolo.com/advanced/testing-events/
     with TestClient(app) as cli:
         yield cli
+
+
+## FAKE DATA  ---
+
+
+@pytest.fixture
+async def test_user_id(app) -> int:
+    # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
+    async with app.state.engine.acquire() as conn:
+        user_id = await RWUsersRepository(conn).create(
+            email="test@test.com", password="password", username="username"
+        )
+        return user_id
+
+
+@pytest.fixture
+async def test_api_key(app, test_user_id) -> ApiKeyInDB:
+    # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
+    async with app.state.engine.acquire() as conn:
+        apikey = await RWApiKeysRepository(conn).create(
+            "test-api-key", api_key="key", api_secret="secret", user_id=test_user_id
+        )
+        return apikey
