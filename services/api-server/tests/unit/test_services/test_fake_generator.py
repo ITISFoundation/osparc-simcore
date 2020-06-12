@@ -5,6 +5,7 @@ import pytest
 from pydantic import BaseModel
 
 
+@pytest.mark.skip(reason="TODO")
 def create_fake(model: BaseModel):
     from faker import Faker
 
