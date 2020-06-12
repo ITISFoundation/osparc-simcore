@@ -246,7 +246,7 @@ async def generate_service_extras(
                 return True
         return False
 
-    if "simcore.service.settings" in set(labels.keys()):
+    if "simcore.service.settings" in labels:
         service_settings = json.loads(labels["simcore.service.settings"])
         for entry in service_settings:
             if entry.get("name") == "Resources" and validate_vram(entry):
