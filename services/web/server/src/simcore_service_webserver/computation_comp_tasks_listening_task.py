@@ -102,12 +102,12 @@ async def listen(app: web.Application):
                     app, the_project_owner, project_id, node_id, data=task_output
                 )
             except projects_exceptions.ProjectNotFoundError:
-                log.exception(
+                log.warning(
                     "Project %s was not found and cannot be updated", project_id
                 )
                 continue
             except projects_exceptions.NodeNotFoundError:
-                log.exception(
+                log.warning(
                     "Node %s ib project %s not found and cannot be updated",
                     node_id,
                     project_id,
