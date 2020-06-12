@@ -1,4 +1,5 @@
-# pylint: disable=E1120
+# pylint: disable=no-name-in-module
+# pylint: disable=no-value-for-parameter
 
 import faker
 import pytest
