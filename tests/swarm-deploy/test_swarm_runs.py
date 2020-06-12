@@ -84,16 +84,12 @@ def core_services_running(docker_client: DockerClient) -> List[Service]:
 
 def test_all_services_up(core_services_running: str, make_up_prod: Dict):
     running_services = sorted([s.name for s in core_services_running])
-    # remove sidecar_gpu because its a special case for development
-    running_services = [x for x in running_services if not x.endswith("sidecar_gpu")]
     assert running_services == stack_service_names
 
     expected = [
         f"{stack_name}_{service_name}"
         for service_name in make_up_prod[stack_name]["services"].keys()
     ]
-    # remove sidecar_gpu because its a special case for development
-    expected = [x for x in expected if not x.endswith("sidecar_gpu")]
     assert running_services == sorted(expected)
 
 

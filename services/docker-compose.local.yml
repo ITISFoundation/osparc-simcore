@@ -44,6 +44,51 @@ services:
       - "8080"
       - "3001:3000"
 
+  sidecar_gpu:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    deploy:
+      mode: replicated
+      replicas: 8
+      endpoint_mode: dnsrr
+      resources:
+        reservations:
+          cpus: "0.1"
+          memory: "100M"
+    volumes:
+      - input:/home/scu/input
+      - output:/home/scu/output
+      - log:/home/scu/log
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - START_AS_MODE_GPU=1
+      - RABBIT_HOST=${RABBIT_HOST}
+      - RABBIT_PORT=${RABBIT_PORT}
+      - RABBIT_USER=${RABBIT_USER}
+      - RABBIT_PASSWORD=${RABBIT_PASSWORD}
+      - RABBIT_CHANNELS=${RABBIT_CHANNELS}
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
+      - REGISTRY_URL=${REGISTRY_URL}
+      - REGISTRY_USER=${REGISTRY_USER}
+      - REGISTRY_PW=${REGISTRY_PW}
+      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
+      - SIDECAR_LOGLEVEL=${LOG_LEVEL:-WARNING}
+    depends_on:
+      - rabbit
+      - postgres
+    networks:
+      - computational_services_subnet
+
   postgres:
     ports:
       - "5432:5432"
