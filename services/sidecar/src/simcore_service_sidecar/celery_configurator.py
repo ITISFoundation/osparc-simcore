@@ -11,11 +11,8 @@ import os
 
 from typing import Tuple
 from celery import Celery, states
-from simcore_sdk.config.rabbit import (
-    Config as RabbitConfig,
-    FORCE_START_CPU_MODE,
-    FORCE_START_GPU_MODE,
-)
+from simcore_sdk.config.rabbit import Config as RabbitConfig
+from .config import FORCE_START_CPU_MODE, FORCE_START_GPU_MODE
 from .cli import run_sidecar
 from .utils import wrap_async_call, is_gpu_node
 from .celery_log_setup import get_task_logger
