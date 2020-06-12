@@ -365,11 +365,6 @@ components:
     RunningServiceEnveloped:
       $ref: "../common/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped"
 
-    UsersGroups:
-      type: array
-      items:
-        $ref: "./components/schemas/me.yaml#/UsersGroup"
-
   responses:
     DefaultErrorResponse:
       $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
