@@ -11,7 +11,11 @@ import os
 
 from typing import Tuple
 from celery import Celery, states
-from simcore_sdk.config.rabbit import Config as RabbitConfig
+from simcore_sdk.config.rabbit import (
+    Config as RabbitConfig,
+    FORCE_START_CPU_MODE,
+    FORCE_START_GPU_MODE,
+)
 from .cli import run_sidecar
 from .utils import wrap_async_call, is_gpu_node
 from .celery_log_setup import get_task_logger
@@ -125,14 +129,12 @@ def configure_gpu_mode() -> Tuple[RabbitConfig, Celery]:
 
 def get_rabbitmq_config_and_celery_app() -> Tuple[RabbitConfig, Celery]:
     """Returns a CPU or GPU configured celery app"""
-    force_start_cpu_mode = os.environ.get("START_AS_MODE_CPU")
-    force_start_gpu_mode = os.environ.get("START_AS_MODE_GPU")
     node_has_gpu_support = is_gpu_node()
 
-    if force_start_cpu_mode:
+    if FORCE_START_CPU_MODE:
         return configure_cpu_mode()
 
-    if force_start_gpu_mode or node_has_gpu_support:
+    if FORCE_START_GPU_MODE or node_has_gpu_support:
         return configure_gpu_mode()
 
     return configure_cpu_mode()
