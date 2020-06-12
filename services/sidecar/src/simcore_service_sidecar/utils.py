@@ -85,8 +85,7 @@ def is_gpu_node() -> bool:
             # pylint: disable=raising-format-tuple
             raise MoreThenOneItemDetected(
                 "There should only be one entry in this set of possible container_ids"
-                ", have a look at %s",
-                possible_candidates,
+                ", have a look at %s" % possible_candidates
             )
         return_value = result_set.pop()
         # check if length is 64 and all char match this regex [A-Fa-f0-9]
