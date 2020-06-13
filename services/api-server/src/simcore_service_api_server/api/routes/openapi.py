@@ -6,6 +6,7 @@ router = APIRouter()
 router.include_router(health.router, prefix="/health")
 router.include_router(meta.router, tags=["meta"], prefix="/meta")
 
+# TODO: keeps for oauth or apikey schemes
 # router.include_router(authentication.router, tags=["authentication"], prefix="/users")
 
 router.include_router(users.router, tags=["users"], prefix="/me")
