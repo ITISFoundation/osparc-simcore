@@ -25,3 +25,6 @@ class UserInDB(BaseModel):
     primary_gid: int
     status: UserStatus
     role: UserRole
+
+    class Config:
+        orm_mode=True
