@@ -1,7 +1,5 @@
 from typing import Dict, Optional
 
-# TODO: why pylint error in pydantic???
-# pylint: disable=no-name-in-module
 from pydantic import BaseModel, EmailStr, Field, Json
 
 from . import project
