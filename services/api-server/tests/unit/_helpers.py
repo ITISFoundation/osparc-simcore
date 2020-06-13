@@ -2,16 +2,13 @@ from pprint import pformat
 from typing import Dict
 
 import faker
-
-# import sqlalchemy as sa
-# from aiopg.sa.result import ResultProxy
+import passlib.hash
 from aiopg.sa.result import RowProxy
 
-import passlib.hash
 import simcore_service_api_server.db.tables as orm
-from simcore_service_api_server.db.repositories.api_keys import ApiKeyInDB
 from simcore_service_api_server.db.repositories.base import BaseRepository
 from simcore_service_api_server.db.repositories.users import UsersRepository
+from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
 fake = faker.Faker()
 

@@ -12,12 +12,12 @@ import aiopg.sa
 import pytest
 import sqlalchemy as sa
 import yaml
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_api_server
 from _helpers import RWApiKeysRepository, RWUsersRepository
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
