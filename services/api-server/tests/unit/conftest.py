@@ -220,7 +220,7 @@ async def test_user_id(loop, initialized_app) -> int:
     # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
     async with initialized_app.state.engine.acquire() as conn:
         user_id = await RWUsersRepository(conn).create(
-            email="test@test.com", password="password", username="username"
+            email="test@test.com", password="password", name="username",
         )
         return user_id
 
