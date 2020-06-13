@@ -3,9 +3,12 @@
 #
 
 from fastapi import APIRouter, Depends, Security
+from starlette import status
 
+from ...db.repositories.users import UsersRepository
 from ...models.schemas.profiles import Profile, ProfileUpdate
 from ..dependencies.authentication import get_active_user_id
+from ..dependencies.database import get_repository
 
 router = APIRouter()
 
@@ -29,9 +32,19 @@ FAKE_PROFILE = Profile.parse_obj(
 
 
 @router.get("", response_model=Profile)
-async def get_my_profile(user_id: int = Depends(get_active_user_id)):
+async def get_my_profile(
+    user_id: int = Depends(get_active_user_id),
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+):
+    profile = await users_repo.get_my_profile(user_id)
+    if not profile:
+        # FIXME: headers!
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid profile"
+        )
+
     # TODO: Replace code by calls to web-server api
-    return FAKE_PROFILE
+    return profile
 
 
 @router.patch("", response_model=Profile)
