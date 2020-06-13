@@ -27,4 +27,4 @@ class UserInDB(BaseModel):
     role: UserRole
 
     class Config:
-        orm_mode=True
+        orm_mode = True

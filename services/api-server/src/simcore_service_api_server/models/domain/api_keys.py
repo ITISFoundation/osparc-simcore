@@ -12,4 +12,4 @@ class ApiKeyInDB(ApiKey):
     user_id: int
 
     class Config:
-        orm_mode=True
+        orm_mode = True
