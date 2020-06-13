@@ -18,6 +18,7 @@ from fastapi.testclient import TestClient
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_api_server
 from _helpers import RWApiKeysRepository, RWUsersRepository
+from simcore_postgres_database.models.base import metadata
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -159,7 +160,7 @@ def make_engine(postgres_service: Dict) -> Callable:
 
 
 @pytest.fixture
-def apply_migration(postgres_service: Dict) -> None:
+def apply_migration(postgres_service: Dict, make_engine) -> None:
     kwargs = postgres_service.copy()
     kwargs.pop("dsn")
     pg_cli.discover.callback(**kwargs)
@@ -167,6 +168,10 @@ def apply_migration(postgres_service: Dict) -> None:
     yield
     pg_cli.downgrade.callback("base")
     pg_cli.clean.callback()
+
+    # FIXME: deletes all because downgrade is not reliable!
+    engine = make_engine(False)
+    metadata.drop_all(engine)
 
 
 @pytest.fixture
@@ -193,7 +198,7 @@ def client(app: FastAPI) -> TestClient:
 
 
 @pytest.fixture
-async def test_user_id(app) -> int:
+async def test_user_id(loop, app) -> int:
     # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
     async with app.state.engine.acquire() as conn:
         user_id = await RWUsersRepository(conn).create(
@@ -203,7 +208,7 @@ async def test_user_id(app) -> int:
 
 
 @pytest.fixture
-async def test_api_key(app, test_user_id) -> ApiKeyInDB:
+async def test_api_key(loop, app, test_user_id) -> ApiKeyInDB:
     # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
     async with app.state.engine.acquire() as conn:
         apikey = await RWApiKeysRepository(conn).create(

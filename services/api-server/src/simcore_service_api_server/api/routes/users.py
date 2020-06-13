@@ -28,7 +28,6 @@ FAKE_PROFILE = Profile.parse_obj(
 )
 
 
-
 @router.get("", response_model=Profile)
 async def get_my_profile(user_id: int = Depends(get_active_user_id)):
     # TODO: Replace code by calls to web-server api
