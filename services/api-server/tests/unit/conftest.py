@@ -99,10 +99,11 @@ def docker_compose_file(environment, tests_utils_dir, tmpdir_factory) -> Path:
     dst_path = Path(str(tmpdir_factory.mktemp("config").join("docker-compose.yml")))
 
     shutil.copy(src_path, dst_path.parent)
+    print(dst_path.parent.glob("*"))
 
     # configs
     subprocess.run(
-        f"docker-compose -f {src_path} config > {dst_path}",
+        f"docker-compose --file {src_path} config > {dst_path.name}",
         shell=True,
         check=True,
         cwd=dst_path.parent,
