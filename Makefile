@@ -303,7 +303,8 @@ pylint: ## Runs python linter framework's wide
 	/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
 											-not -path "*egg*" \
 											-not -path "*migration*" \
-											-not -path "*contrib*" \
+											-not -path "*datcore.py" \
+											-not -path "*sandbox*" \
 											-not -path "*-sdk/python*" \
 											-not -path "*generated_code*" \
 											-not -path "*datcore.py" \
