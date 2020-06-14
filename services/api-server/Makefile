@@ -77,17 +77,6 @@ build: ## builds docker image (using main services/docker-compose-build.yml)
 	@$(MAKE_C) ${REPO_BASE_DIR} target=${APP_NAME} $@
 
 
-.PHONY: replay
-# TODO: replay shall point to online cookiecutter
-replay: .cookiecutterrc ## re-applies cookiecutter
-	# Replaying /home/crespo/devp/osparc-simcore/services/api-server/../../../cookiecutter-simcore-py-fastapi ...
-	@cookiecutter --no-input --overwrite-if-exists \
-		--config-file=$< \
-		--output-dir="$(abspath $(CURDIR)/..)" \
-		"/home/crespo/devp/osparc-simcore/services/api-server/../../../cookiecutter-simcore-py-fastapi"
-
-
-
 # GENERATION python client -------------------------------------------------
 .PHONY: python-client generator-help
 # SEE https://openapi-generator.tech/docs/usage#generate
