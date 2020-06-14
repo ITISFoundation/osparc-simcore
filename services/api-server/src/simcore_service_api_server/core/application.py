@@ -2,9 +2,13 @@ import sys
 from typing import Optional
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from loguru import logger
+from starlette.exceptions import HTTPException
 
 from ..__version__ import api_version, api_vtag
+from ..api.errors.http_error import http_error_handler
+from ..api.errors.validation_error import http422_error_handler
 from ..api.routes.openapi import router as api_router
 from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
@@ -13,9 +17,6 @@ from .settings import AppSettings
 
 
 def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
-    """  Creates a customized app
-
-    """
     if settings is None:
         settings = AppSettings()
 
@@ -34,14 +35,13 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     logger.debug(settings)
     app.state.settings = settings
 
-    # overrides generation of openapi specs
     override_openapi_method(app)
 
     app.add_event_handler("startup", create_start_app_handler(app))
     app.add_event_handler("shutdown", create_stop_app_handler(app))
 
-    # app.add_exception_handler(HTTPException, http_error_handler)
-    # app.add_exception_handler(RequestValidationError, http422_error_handler)
+    app.add_exception_handler(HTTPException, http_error_handler)
+    app.add_exception_handler(RequestValidationError, http422_error_handler)
 
     redoc_html = create_redoc_handler(app)
     app.add_route("/docs", redoc_html, include_in_schema=False)
