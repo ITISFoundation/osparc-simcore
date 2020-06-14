@@ -12,6 +12,24 @@ class BootModeEnum(str, Enum):
     development = "development"
 
 
+class _CommonConfig:
+    case_sensitive = False
+    env_file = ".env"
+
+
+class WebServerSettings(BaseSettings):
+    enabled: bool = Field(
+        True, description="Enables/Disables connection with webserver service"
+    )
+    host: str = "webserver"
+    port: int = 8080
+    session_secret_key: SecretStr
+    session_name: str = "osparc.WEBAPI_SESSION"
+
+    class Config(_CommonConfig):
+        env_prefix = "WEBSERVER_"
+
+
 class AppSettings(BaseSettings):
     # pylint: disable=no-self-use
     # pylint: disable=no-self-argument
@@ -55,12 +73,8 @@ class AppSettings(BaseSettings):
             path=f"/{self.postgres_db}",
         )
 
-    # WEBSERVER
-    webserver_enabled: bool = Field(
-        True, description="Enables/Disables connection with webserver service"
-    )
-    webserver_host: str = "webserver"
-    webserver_port: int = 8080
+    # WEB-SERVER SERVICE
+    webserver = WebServerSettings()
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
     host: str = "localhost"  # "0.0.0.0" if is_containerized else "127.0.0.1",
@@ -68,7 +82,5 @@ class AppSettings(BaseSettings):
 
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
 
-    class Config:
-        case_sensitive = False
-        env_file = ".env"
+    class Config(_CommonConfig):
         env_prefix = ""

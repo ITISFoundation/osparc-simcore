@@ -30,6 +30,8 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         docs_url="/devdocs",
         redoc_url=None,  # disabled
     )
+
+    logger.debug(settings)
     app.state.settings = settings
 
     # overrides generation of openapi specs
