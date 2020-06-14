@@ -30,11 +30,9 @@ def setup_remote_debugging(force_enabled=False, *, boot_mode=None):
                 "Cannot enable remote debugging. Please install ptvsd first"
             )
 
-        logger.info("Remote debugging enabled: listening port %s", REMOTE_DEBUG_PORT)
+        logger.info(f"Remote debugging enabled: listening port {REMOTE_DEBUG_PORT}")
     else:
-        logger.debug(
-            "Booting without remote debugging since SC_BOOT_MODE=%s", boot_mode
-        )
+        logger.debug(f"Booting without remote debugging since SC_BOOT_MODE={boot_mode}")
 
 
 __all__ = ["setup_remote_debugging"]
