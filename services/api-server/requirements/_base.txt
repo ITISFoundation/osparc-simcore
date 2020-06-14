@@ -11,11 +11,11 @@ aniso8601==7.0.0          # via graphene
 async-exit-stack==1.0.1   # via -r requirements/_base.in, fastapi
 async-generator==1.10     # via -r requirements/_base.in, fastapi
 bcrypt==3.1.7             # via passlib
-certifi==2020.4.5.2       # via requests
+certifi==2020.4.5.2       # via httpx, requests
 cffi==1.14.0              # via bcrypt, cryptography
-chardet==3.0.4            # via requests
+chardet==3.0.4            # via httpx, requests
 click==7.1.2              # via uvicorn
-contextvars==2.4          # via aiocontextvars
+contextvars==2.4          # via aiocontextvars, sniffio
 cryptography==2.9.2       # via -r requirements/_base.in
 dataclasses==0.7          # via pydantic
 dnspython==1.16.0         # via email-validator
@@ -24,9 +24,15 @@ fastapi[all]==0.57.0      # via -r requirements/_base.in
 graphene==2.1.8           # via fastapi
 graphql-core==2.3.2       # via graphene, graphql-relay
 graphql-relay==2.0.1      # via graphene
-h11==0.9.0                # via uvicorn
+h11==0.9.0                # via httpcore, uvicorn
+h2==3.2.0                 # via httpcore
+hpack==3.0.0              # via h2
+hstspreload==2020.6.9     # via httpx
+httpcore==0.9.1           # via httpx
 httptools==0.1.1          # via uvicorn
-idna==2.9                 # via email-validator, requests, yarl
+httpx==0.13.3             # via -r requirements/_base.in
+hyperframe==5.2.0         # via h2
+idna==2.9                 # via email-validator, httpx, requests, yarl
 immutables==0.14          # via contextvars
 itsdangerous==1.1.0       # via fastapi
 jinja2==2.11.2            # via fastapi
@@ -44,8 +50,10 @@ python-dotenv==0.13.0     # via pydantic
 python-multipart==0.0.5   # via fastapi
 pyyaml==5.3.1             # via fastapi
 requests==2.23.0          # via fastapi
+rfc3986==1.4.0            # via httpx
 rx==1.6.1                 # via graphql-core
 six==1.15.0               # via bcrypt, cryptography, graphene, graphql-core, graphql-relay, python-multipart, tenacity
+sniffio==1.1.0            # via httpcore, httpx
 sqlalchemy[postgresql_psycopg2binary]==1.3.17  # via -r requirements/../../../packages/postgres-database/requirements/_base.in, aiopg
 starlette==0.13.4         # via fastapi
 tenacity==6.2.0           # via -r requirements/_base.in

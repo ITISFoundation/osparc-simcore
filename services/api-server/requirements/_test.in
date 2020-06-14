@@ -15,7 +15,6 @@ pytest-cov
 pytest-docker
 pytest-mock
 pytest-runner
-httpx
 asgi_lifespan
 
 # fixtures
