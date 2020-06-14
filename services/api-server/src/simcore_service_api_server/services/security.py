@@ -1,12 +1,7 @@
-""" Utility functions related with security
-
-"""
+import subprocess  # nosec
+from subprocess import CalledProcessError, CompletedProcess  # nosec
 
 from passlib.context import CryptContext
-
-# from .models.schemas.users import UserInDB
-
-# PASSWORDS ---------------------------------------------------------------
 
 __pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -19,10 +14,12 @@ def get_password_hash(password: str) -> str:
     return __pwd_context.hash(password)
 
 
-# def authenticate_user(username: str, password: str) -> Optional[UserInDB]:
-#     user = crud.get_user(username)
-#     if not user:
-#         return None
-#     if not verify_password(password, user.hashed_password):
-#         return None
-#     return user
+def create_secret_key() -> str:
+    # NOTICE that this key is reset when server is restarted!
+    try:
+        proc: CompletedProcess = subprocess.run(  # nosec
+            "openssl rand -hex 32", check=True, shell=True
+        )
+    except (CalledProcessError, FileNotFoundError) as why:
+        raise ValueError("Cannot create secret key") from why
+    return str(proc.stdout).strip()

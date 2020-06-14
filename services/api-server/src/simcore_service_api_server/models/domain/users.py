@@ -26,5 +26,7 @@ class UserInDB(BaseModel):
     status: UserStatus
     role: UserRole
 
+    # TODO: connect name <-> first_name, last_name
+
     class Config:
         orm_mode = True

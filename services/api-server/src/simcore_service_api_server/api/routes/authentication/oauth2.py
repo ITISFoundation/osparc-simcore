@@ -8,7 +8,7 @@ from loguru import logger
 from ....db.repositories.users import UsersRepository
 from ....models.schemas.tokens import Token, TokenData
 from ....services.jwt import create_access_token
-from ....utils.helpers import json_dumps
+from ....services.serialization import json_dumps
 from ...dependencies.database import get_repository
 
 router = APIRouter()
