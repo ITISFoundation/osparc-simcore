@@ -1,18 +1,17 @@
-# FIXME: Until tests
-# pylint: skip-file
-#
 
 from typing import Dict
 
 from fastapi import APIRouter, Depends, HTTPException, Security
-from httpx import Response, StatusCode
+from httpx import AsyncClient, Response, StatusCode
 from starlette import status
+from loguru import logger
 
-from ...db.repositories.users import UsersRepository
 from ...models.schemas.profiles import Profile, ProfileUpdate
-from ..dependencies.authentication import get_active_user_id
-from ..dependencies.database import get_repository
 from ..dependencies.webserver import get_session_cookie, get_webserver_client
+
+#from ...db.repositories.users import UsersRepository
+#from ..dependencies.authentication import get_active_user_id
+#from ..dependencies.database import get_repository
 
 router = APIRouter()
 
@@ -27,7 +26,7 @@ async def get_my_profile(
     client: AsyncClient = Depends(get_webserver_client),
     session_cookies: Dict = Depends(get_session_cookie),
 ) -> Profile:
-    response = await client.get("/v0/me/", cookies=session_cookie)
+    response = await client.get("/v0/me/", cookies=session_cookies)
     profile = Profile.parse_obj(response.json())
     return profile
 
@@ -39,7 +38,7 @@ async def update_my_profile(
     session_cookies: Dict = Security(get_session_cookie, scopes=["write"]),
 ) -> Profile:
     resp: Response = await client.patch(
-        "/v0/me/", data=profile_update.dict(), cookies=session_cookie
+        "/v0/me/", data=profile_update.dict(), cookies=session_cookies
     )
 
     if StatusCode.is_server_error(resp.status_code):
