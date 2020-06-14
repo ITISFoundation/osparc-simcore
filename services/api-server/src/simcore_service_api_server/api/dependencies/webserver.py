@@ -1,14 +1,16 @@
 import base64
 import json
 import time
-from typing import Coroutine, Dict, Tuple
+from typing import Dict
 
 from cryptography import fernet
 from fastapi import Depends
 from fastapi.requests import Request
+from httpx import AsyncClient
 
 from ...core.settings import AppSettings, WebServerSettings
-from ...services.clients import AsyncClient, get_webserver_client
+from ...services.clients import AsyncClient
+from ...services.clients import get_webserver_client as _get_from_settings
 from .authentication import get_active_user_email
 
 
@@ -17,11 +19,11 @@ def _get_settings(request: Request) -> WebServerSettings:
     return app_settings.webserver
 
 
-def _get_client(request: Request) -> AsyncClient:
-    return get_webserver_client(request.app)
+def get_webserver_client(request: Request) -> AsyncClient:
+    return _get_from_settings(request.app)
 
 
-def _get_session_cookie(
+def get_session_cookie(
     identity: str = Depends(get_active_user_email),
     settings: WebServerSettings = Depends(_get_settings),
 ) -> Dict:
@@ -56,10 +58,3 @@ def _get_session_cookie(
     encrypted_cookie_data = _fernet.encrypt(cookie_data).decode("utf-8")
 
     return {cookie_name: encrypted_cookie_data}
-
-
-async def get_client(
-    session_cookie: Dict = Depends(_get_session_cookie),
-    client: AsyncClient = Depends(_get_settings),
-) -> Tuple[Coroutine, Dict]:
-    return client, session_cookie
