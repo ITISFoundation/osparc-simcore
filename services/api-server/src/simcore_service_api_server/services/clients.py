@@ -5,6 +5,10 @@ from loguru import logger
 from ..core.settings import WebServerSettings
 
 
+def get_webserver_client(app: FastAPI) -> AsyncClient:
+    return app.state.webserver_client
+
+
 def setup_webserver_client(app: FastAPI) -> None:
     settings: WebServerSettings = app.state.settings.webserver
     base_url = f"http://{settings.host}:{settings.port}"
