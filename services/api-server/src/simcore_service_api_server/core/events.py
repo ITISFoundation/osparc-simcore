@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from loguru import logger
 
 from ..db.events import close_db_connection, connect_to_db
+from ..services.clients import close_webserver_client, setup_webserver_client
 from ..services.remote_debug import setup_remote_debugging
 from .settings import BootModeEnum
 
@@ -21,6 +22,9 @@ def create_start_app_handler(app: FastAPI) -> Callable:
         if app.state.settings.postgres_enabled:
             await connect_to_db(app)
 
+        if app.state.settings.webserver.enabled:
+            setup_webserver_client(app)
+
     return start_app
 
 
@@ -30,5 +34,7 @@ def create_stop_app_handler(app: FastAPI) -> Callable:
         logger.info("Application stopping")
         if app.state.settings.postgres_enabled:
             await close_db_connection(app)
+        if app.state.settings.webserver.enabled:
+            await close_webserver_client(app)
 
     return stop_app
