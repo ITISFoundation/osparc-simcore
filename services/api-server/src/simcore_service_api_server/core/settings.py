@@ -25,9 +25,14 @@ class WebServerSettings(BaseSettings):
     port: int = 8080
     session_secret_key: SecretStr
     session_name: str = "osparc.WEBAPI_SESSION"
+    vtag: str = "v0"
 
     class Config(_CommonConfig):
         env_prefix = "WEBSERVER_"
+
+    @property
+    def base_url(self):
+        return f"http://{self.host}:{self.port}/{self.vtag}"
 
 
 class AppSettings(BaseSettings):

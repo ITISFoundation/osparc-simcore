@@ -1,17 +1,16 @@
-import base64
 import json
 import time
-from typing import Dict
+from typing import Dict, Optional
 
-from cryptography import fernet
-from fastapi import Depends
+from cryptography.fernet import Fernet
+from fastapi import Depends, HTTPException, status
 from fastapi.requests import Request
 from httpx import AsyncClient
 
 from ...core.settings import AppSettings, WebServerSettings
-from ...services.clients import AsyncClient
-from ...services.clients import get_webserver_client as _get_from_settings
 from .authentication import get_active_user_email
+
+UNAVAILBLE_MSG = "backend service is disabled or unreachable"
 
 
 def _get_settings(request: Request) -> WebServerSettings:
@@ -19,31 +18,26 @@ def _get_settings(request: Request) -> WebServerSettings:
     return app_settings.webserver
 
 
-def get_webserver_client(request: Request) -> AsyncClient:
-    return _get_from_settings(request.app)
+def _get_encrypt(request: Request) -> Optional[Fernet]:
+    return getattr(request.app.state, "webserver_fernet", None)
+
+
+def get_webserver_client(request: Request) -> Optional[AsyncClient]:
+    client = getattr(request.app.state, "webserver_client", None)
+    if not client:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=UNAVAILBLE_MSG)
 
 
 def get_session_cookie(
     identity: str = Depends(get_active_user_email),
     settings: WebServerSettings = Depends(_get_settings),
+    fernet: Optional[Fernet] = Depends(_get_encrypt),
 ) -> Dict:
     # Based on aiohttp_session and aiohttp_security
     # SEE services/web/server/tests/unit/with_dbs/test_login.py
 
-    # normalize
-    secret_key_bytes = settings.session_secret_key.get_secret_value().encode("utf-8")
-    while len(secret_key_bytes) < 32:
-        secret_key_bytes += secret_key_bytes
-    secret_key = secret_key_bytes[:32]
-
-    if isinstance(secret_key, str):
-        pass
-    elif isinstance(secret_key, (bytes, bytearray)):
-        secret_key = base64.urlsafe_b64encode(secret_key)
-
-    # encrypt
-    _fernet = fernet.Fernet(secret_key)
-    # TODO: move up to here this to settings or startup
+    if fernet is None:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=UNAVAILBLE_MSG)
 
     # builds session cookie
     cookie_name = settings.session_name
@@ -55,6 +49,6 @@ def get_session_cookie(
             # extras? e.g. expiration
         }
     ).encode("utf-8")
-    encrypted_cookie_data = _fernet.encrypt(cookie_data).decode("utf-8")
+    encrypted_cookie_data = fernet.encrypt(cookie_data).decode("utf-8")
 
     return {cookie_name: encrypted_cookie_data}
