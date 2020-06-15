@@ -25,7 +25,7 @@ async def get_my_profile(
     client: AsyncClient = Depends(get_webserver_client),
     session_cookies: Dict = Depends(get_session_cookie),
 ) -> Profile:
-    response = await client.get("/me/", cookies=session_cookies)
+    response = await client.get("/me", cookies=session_cookies)
     profile = Profile.parse_obj(response.json())
     return profile
 
@@ -37,7 +37,7 @@ async def update_my_profile(
     session_cookies: Dict = Security(get_session_cookie, scopes=["write"]),
 ) -> Profile:
     resp: Response = await client.patch(
-        "/me/", data=profile_update.dict(), cookies=session_cookies
+        "/me", data=profile_update.dict(), cookies=session_cookies
     )
 
     if StatusCode.is_server_error(resp.status_code):

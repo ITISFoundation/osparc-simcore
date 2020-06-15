@@ -22,10 +22,11 @@ def _get_encrypt(request: Request) -> Optional[Fernet]:
     return getattr(request.app.state, "webserver_fernet", None)
 
 
-def get_webserver_client(request: Request) -> Optional[AsyncClient]:
+def get_webserver_client(request: Request) -> AsyncClient:
     client = getattr(request.app.state, "webserver_client", None)
     if not client:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=UNAVAILBLE_MSG)
+    return client
 
 
 def get_session_cookie(
