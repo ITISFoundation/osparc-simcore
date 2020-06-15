@@ -83,6 +83,8 @@ services:
     ports:
       - target: 80
         published: 9081
+      - target: 10081
+        published: 10081
       - target: 8080
         published: 8080
     deploy:
@@ -94,7 +96,7 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.service=api@internal
         - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api`)
         - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.entrypoints=traefik_monitor
-        - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.middlewares=gzip@docker
+        - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.middlewares=${SWARM_STACK_NAME}_gzip@docker
         - traefik.http.services.${SWARM_STACK_NAME}_api_internal.loadbalancer.server.port=8080
 
   whoami:
@@ -108,4 +110,4 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_whoami.loadbalancer.server.port=80
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.rule=PathPrefix(`/whoami`)
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.entrypoints=traefik_monitor
-        - traefik.http.routers.${SWARM_STACK_NAME}_whoami.middlewares=gzip@docker
+        - traefik.http.routers.${SWARM_STACK_NAME}_whoami.middlewares=${SWARM_STACK_NAME}_gzip@docker
