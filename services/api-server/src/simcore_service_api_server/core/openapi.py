@@ -13,7 +13,9 @@ from .redoc import add_vendor_extensions, compose_long_description
 
 
 def override_openapi_method(app: FastAPI):
-    def _custom_openapi_method(zelf: FastAPI) -> Dict:
+    # TODO: test openapi(*) member does not change interface
+
+    def _custom_openapi_method(zelf: FastAPI, openapi_prefix: str = "") -> Dict:
         """ Overrides FastAPI.openapi member function
             returns OAS schema with vendor extensions
         """
@@ -26,7 +28,8 @@ def override_openapi_method(app: FastAPI):
                 openapi_version=zelf.openapi_version,
                 description=desc,
                 routes=zelf.routes,
-                openapi_prefix=zelf.openapi_prefix,
+                openapi_prefix=openapi_prefix,
+                tags=zelf.openapi_tags,
             )
 
             add_vendor_extensions(openapi_schema)

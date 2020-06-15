@@ -9,7 +9,7 @@ from starlette.exceptions import HTTPException
 from ..__version__ import api_version, api_vtag
 from ..api.errors.http_error import http_error_handler
 from ..api.errors.validation_error import http422_error_handler
-from ..api.routes.openapi import router as api_router
+from ..api.root import router as api_router
 from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .redoc import create_redoc_handler
