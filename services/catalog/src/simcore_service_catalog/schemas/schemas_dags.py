@@ -30,7 +30,7 @@ class DAGInPath(DAGBase):
 
 class DAGAtDB(DAGBase):
     id: int
-    workbench: Json[Dict[str, project.Node]]
+    workbench: Json[Dict[str, project.Node]]  # pylint: disable=unsubscriptable-object
 
     class Config:
         orm_mode = True
