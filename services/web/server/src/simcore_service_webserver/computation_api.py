@@ -24,6 +24,12 @@ from .director import director_api
 
 log = logging.getLogger(__file__)
 
+EXCLUDE_NODE_KEYNAMES = (
+    "file-picker",
+    "frontend/nodes-group",
+    "StimulationSelectivity",
+)
+
 
 async def _get_node_details(
     node_key: str, node_version: str, app: web.Application
@@ -80,10 +86,7 @@ async def _get_node_extras(
     node_key: str, node_version: str, app: web.Application
 ) -> Dict:
     """Returns the service_extras if possible otherwise None"""
-    if any(
-        key in node_key
-        for key in ("file-picker", "frontend/nodes-group", "StimulationSelectivity")
-    ):
+    if any(key in node_key for key in EXCLUDE_NODE_KEYNAMES):
         return None
 
     node_extras = await director_api.get_services_extras(app, node_key, node_version)
