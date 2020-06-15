@@ -16,9 +16,7 @@ chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, requests
 coverage==5.1             # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==2.0.0          # via -r requirements/_test.in
 docopt==0.6.2             # via coveralls
-idna-ssl==1.1.0           # via -r requirements/_base.txt
-idna==2.9                 # via -r requirements/_base.txt, idna-ssl, requests, yarl
-importlib-metadata==1.6.0  # via -r requirements/_base.txt
+idna==2.9                 # via -r requirements/_base.txt, requests, yarl
 isodate==0.6.0            # via -r requirements/_base.txt, openapi-core
 isort==4.3.21             # via pylint
 jsonschema==3.2.0         # via -r requirements/_base.txt, openapi-spec-validator
@@ -39,7 +37,7 @@ pyrsistent==0.16.0        # via -r requirements/_base.txt, jsonschema
 pytest-aiohttp==0.3.0     # via -r requirements/_test.in
 pytest-cov==2.9.0         # via -r requirements/_test.in
 pytest-docker==0.7.2      # via -r requirements/_test.in
-pytest-instafail==0.4.1.post0  # via -r requirements/_test.in
+pytest-instafail==0.4.2   # via -r requirements/_test.in
 pytest-mock==3.1.1        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.3       # via -r requirements/_test.in
