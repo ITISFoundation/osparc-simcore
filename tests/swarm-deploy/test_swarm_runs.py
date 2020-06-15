@@ -27,6 +27,7 @@ MAX_WAIT_TIME = 240
 
 
 docker_compose_service_names = [
+    "api-gateway",
     "catalog",
     "director",
     "sidecar",
