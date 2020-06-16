@@ -6,6 +6,14 @@
 #
 version: "3.7"
 services:
+  api-server:
+    environment:
+      - SC_BOOT_MODE=debug-ptvsd
+      - LOGLEVEL=debug
+    volumes:
+      - ./api-server:/devel/services/api-server
+      - ../packages:/devel/packages
+
   catalog:
     environment:
       - SC_BOOT_MODE=debug-ptvsd

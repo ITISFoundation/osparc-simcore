@@ -49,7 +49,7 @@ run-devel: .env docker-compose.yml down ## runs app on host with pg fixture for 
 	# start app (under $<)
 	uvicorn simcore_service_api_server.__main__:the_app \
 		--reload --reload-dir $(SRC_DIR) \
-		--port=8001 --host=0.0.0.0
+		--port=8000 --host=0.0.0.0
 
 .PHONY: db-tables
 db-tables: .env-devel ## upgrades and create tables [for development]
@@ -66,8 +66,8 @@ db-migration: .env-devel ## runs discover and upgrade on running pg-db [for deve
 down: docker-compose.yml ## stops pg fixture
 	# stopping extra services
 	-@docker-compose -f $< down
-	# killing any process using port 8001
-	-@fuser --kill --verbose --namespace tcp 8001
+	# killing any process using port 8000
+	-@fuser --kill --verbose --namespace tcp 8000
 
 ######################
 
