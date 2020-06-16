@@ -2,7 +2,6 @@
 import logging
 from pprint import pprint
 
-
 from simcore_service_api_server.core.settings import (
     URL,
     AppSettings,
@@ -32,4 +31,6 @@ def test_min_environ_for_settings(monkeypatch):
     assert settings.boot_mode == BootModeEnum.production
     assert settings.loglevel == logging.DEBUG
 
-    assert settings.postgres.dsn == URL("postgresql://test:test@production_postgres:5432/simcoredb")
+    assert settings.postgres.dsn == URL(
+        "postgresql://test:test@production_postgres:5432/simcoredb"
+    )

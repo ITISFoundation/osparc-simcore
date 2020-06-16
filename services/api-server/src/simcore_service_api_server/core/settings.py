@@ -45,8 +45,8 @@ class PostgresSettings(BaseSettings):
     host: str
     port: int = 5432
 
-    minsize: int=10
-    maxsize: int=10
+    minsize: int = 10
+    maxsize: int = 10
 
     @property
     def dsn(self) -> URL:
@@ -63,9 +63,7 @@ class PostgresSettings(BaseSettings):
         env_prefix = "POSTGRES_"
 
 
-
 class AppSettings(BaseSettings):
-
     @classmethod
     def create_default(cls) -> "AppSettings":
         # This call triggers parsers
