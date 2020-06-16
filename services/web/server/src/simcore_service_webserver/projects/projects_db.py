@@ -521,7 +521,7 @@ OR prj_owner = {user_id})
         self, conn: SAConnection, user_id: int
     ) -> int:
         primary_gid: int = await conn.scalar(
-            sa.select([users.c.primary_gid]).where(users.c.id == user_id)
+            sa.select([users.c.primary_gid]).where(users.c.id == str(user_id))
         )
         return primary_gid
 
