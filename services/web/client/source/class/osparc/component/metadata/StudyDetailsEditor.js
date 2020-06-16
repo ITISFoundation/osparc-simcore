@@ -34,9 +34,6 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.Grow());
 
-    if (study instanceof osparc.data.model.Study) {
-      this.__study = study;
-      this.__selectedTags = study.getTags();
     console.log(study["creationDate"]);
 
     this.__model = qx.data.marshal.Json.createModel(study);
