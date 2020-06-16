@@ -43,7 +43,6 @@ services:
       # force to start as cpu mode otherwise it will boot in gpu mode in development
       - START_AS_MODE_CPU=1
       - SC_BOOT_MODE=debug-ptvsd
-      - SIDECAR_LOGLEVEL=DEBUG
     ports:
       - "3002:3000"
     deploy:
@@ -99,7 +98,6 @@ services:
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
-      - SIDECAR_LOGLEVEL=${LOG_LEVEL:-WARNING}
     depends_on:
       - rabbit
       - postgres
