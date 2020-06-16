@@ -55,8 +55,8 @@ FROM base as build
 
 ENV SC_BUILD_TARGET=build
 
-RUN apt-get update
-RUN apt-get install -y --no-install-recommends \
+RUN apt-get update &&\
+    apt-get install -y --no-install-recommends \
     build-essential
 
 # NOTE: python virtualenv is used here such that installed
@@ -119,7 +119,7 @@ HEALTHCHECK --interval=30s \
     --timeout=20s \
     --start-period=30s \
     --retries=3 \
-    CMD ["python3", "services/api-server/docker/healthcheck.py", "http://localhost:8001/"]
+    CMD ["python3", "services/api-server/docker/healthcheck.py", "http://localhost:8000/"]
 
 ENTRYPOINT [ "/bin/sh", "services/api-server/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/api-server/docker/boot.sh"]
@@ -138,6 +138,8 @@ FROM build as development
 ENV SC_BUILD_TARGET=development
 
 WORKDIR /devel
+
+RUN chown -R scu:scu ${VIRTUAL_ENV}
 
 ENTRYPOINT ["/bin/sh", "services/api-server/docker/entrypoint.sh"]
 CMD ["/bin/sh", "services/api-server/docker/boot.sh"]
