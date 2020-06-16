@@ -294,7 +294,7 @@ qx.Class.define("osparc.data.Resources", {
        * ORGANIZATION MEMBERS
        */
       "organizationMembers": {
-        useCache: false,
+        useCache: true,
         endpoints: {
           get: {
             method: "GET",
