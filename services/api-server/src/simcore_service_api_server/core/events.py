@@ -19,7 +19,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
         )
 
         # setup connection to pg db
-        if app.state.settings.postgres_enabled:
+        if app.state.settings.postgres.enabled:
             await connect_to_db(app)
 
         if app.state.settings.webserver.enabled:
@@ -32,7 +32,7 @@ def create_stop_app_handler(app: FastAPI) -> Callable:
     @logger.catch
     async def stop_app() -> None:
         logger.info("Application stopping")
-        if app.state.settings.postgres_enabled:
+        if app.state.settings.postgres.enabled:
             await close_db_connection(app)
         if app.state.settings.webserver.enabled:
             await close_webserver(app)

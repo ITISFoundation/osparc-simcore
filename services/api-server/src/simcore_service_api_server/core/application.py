@@ -18,7 +18,7 @@ from .settings import AppSettings
 
 def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings is None:
-        settings = AppSettings()
+        settings = AppSettings.create_default()
 
     logger.add(sys.stderr, level=settings.loglevel)
 

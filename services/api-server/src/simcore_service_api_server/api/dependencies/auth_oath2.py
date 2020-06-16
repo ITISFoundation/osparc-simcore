@@ -84,7 +84,7 @@ async def get_current_user_id(
     for required_scope in security_scopes.scopes:
         if required_scope not in token_data.scopes:
             logger.debug(
-                "Access denied. Client is missing required scope '%s' ", required_scope
+                "Access denied. Client is missing required scope '{}' ", required_scope
             )
             raise _create_credentials_exception(
                 "Missing required scope for this operation"

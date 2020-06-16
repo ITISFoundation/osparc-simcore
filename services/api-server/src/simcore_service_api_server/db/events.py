@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from loguru import logger
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
-from ..core.settings import AppSettings
+from ..core.settings import PostgresSettings
 
 ENGINE_ATTRS = "closed driver dsn freesize maxsize minsize name size timeout".split()
 
@@ -32,14 +32,14 @@ def _compose_info_on_engine(app: FastAPI) -> str:
 async def connect_to_db(app: FastAPI) -> None:
     logger.debug("Connenting db ...")
 
-    settings: AppSettings = app.state.settings
+    cfg: PostgresSettings = app.state.settings.postgres
     engine: Engine = await create_engine(
-        str(settings.postgres_dsn),
+        str(cfg.dsn),
         application_name=f"{__name__}_{id(app)}",  # unique identifier per app
-        minsize=10,
-        maxsize=10,
+        minsize=cfg.minsize,
+        maxsize=cfg.maxsize,
     )
-    logger.debug("Connected to %s", engine.dsn)
+    logger.debug("Connected to {}", engine.dsn)
     app.state.engine = engine
 
     logger.debug(_compose_info_on_engine(app))
@@ -51,4 +51,4 @@ async def close_db_connection(app: FastAPI) -> None:
     engine: Engine = app.state.engine
     engine.close()
     await engine.wait_closed()
-    logger.debug("Disconnected from %s", engine.dsn)
+    logger.debug("Disconnected from {}", engine.dsn)
