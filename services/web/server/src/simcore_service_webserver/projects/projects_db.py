@@ -72,7 +72,10 @@ def _check_project_permissions(
             raise ProjectInvalidRightsError(user_id, project["uuid"])
         return
 
-    if not project["access_rights"][f"{all_group.gid}"][permission]:
+    if (
+        not f"{all_group.gid}" in project["access_rights"]
+        or not project["access_rights"][f"{all_group.gid}"][permission]
+    ):
         raise ProjectInvalidRightsError(user_id, project["uuid"])
 
 
