@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from .routes import health, meta, users
 
 router = APIRouter()
-router.include_router(health.router, prefix="/health")
+router.include_router(health.router)
 router.include_router(meta.router, tags=["meta"], prefix="/meta")
 
 # TODO: keeps for oauth or apikey schemes

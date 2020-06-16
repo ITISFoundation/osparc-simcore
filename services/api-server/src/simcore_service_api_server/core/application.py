@@ -10,6 +10,7 @@ from ..__version__ import api_version, api_vtag
 from ..api.errors.http_error import http_error_handler
 from ..api.errors.validation_error import http422_error_handler
 from ..api.root import router as api_router
+from ..api.routes.health import router as health_router
 from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .redoc import create_redoc_handler
@@ -43,9 +44,16 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     app.add_exception_handler(HTTPException, http_error_handler)
     app.add_exception_handler(RequestValidationError, http422_error_handler)
 
+    # Routing
+
+    # healthcheck at / and at /v0/
+    app.include_router(health_router)
+
+    # docs
     redoc_html = create_redoc_handler(app)
     app.add_route("/docs", redoc_html, include_in_schema=False)
 
+    # api under /v*
     app.include_router(api_router, prefix=f"/{api_vtag}")
 
     use_route_names_as_operation_ids(app)
