@@ -63,9 +63,9 @@ db-migration: .env-devel ## runs discover and upgrade on running pg-db [for deve
 	export $(shell grep -v '^#' $< | xargs  -d '\n'); \
 	sc-pg discover && sc-pg upgrade
 
-down: ## stops pg fixture
+down: docker-compose.yml ## stops pg fixture
 	# stopping extra services
-	-@docker-compose -f $(CURDIR)/tests/utils/docker-compose.yml down
+	-@docker-compose -f $< down
 	# killing any process using port 8001
 	-@fuser --kill --verbose --namespace tcp 8001
 
