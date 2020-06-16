@@ -37,13 +37,11 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     if (study instanceof osparc.data.model.Study) {
       this.__study = study;
       this.__selectedTags = study.getTags();
-      this.__workbench = study.getWorkbench();
-    } else {
-      this.__model = qx.data.marshal.Json.createModel(study);
-      this.__selectedTags = study.tags;
-      // Workaround: qx serializer is not doing well with uuid as object keys.
-      this.__workbench = study.workbench;
-    }
+    console.log(study["creationDate"]);
+
+    this.__model = qx.data.marshal.Json.createModel(study);
+    this.__selectedTags = study.tags;
+    this.__workbench = study.workbench;
 
     this.__stack = new qx.ui.container.Stack();
     this.__displayView = this.__createDisplayView(study, isTemplate, winWidth);
@@ -309,7 +307,8 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __openPermissions: function() {
-      const permissionsView = new osparc.component.export.Permissions(this.__model);
+      const studyData = qx.util.Serializer.toNativeObject(this.__model);
+      const permissionsView = new osparc.component.export.Permissions(studyData);
       const window = permissionsView.createWindow();
       permissionsView.addListener("updateStudy", e => {
         this.fireEvent("updateStudy");
@@ -339,14 +338,10 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
 
     __serializeForm: function() {
       let data = {};
-      if (this.__model === null) {
-        data = this.__study.serializeStudy();
-      } else {
-        data = {
-          ...qx.util.Serializer.toNativeObject(this.__model),
-          workbench: this.__workbench
-        };
-      }
+      data = {
+        ...qx.util.Serializer.toNativeObject(this.__model),
+        workbench: this.__workbench
+      };
 
       for (let key in this.__fields) {
         data[key] = this.__fields[key].getValue();
