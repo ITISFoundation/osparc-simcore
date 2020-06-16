@@ -1,8 +1,6 @@
 version: "3.7"
 services:
-  api-gateway:
-    # get info here: https://www.mock-server.com
-    image: mockserver/mockserver
+  api-server:
     init: true
     environment:
       - MOCKSERVER_LIVENESS_HTTP_GET_PATH=/live
@@ -14,11 +12,11 @@ services:
         # ssl header necessary so that socket.io upgrades correctly from polling to websocket mode. the middleware must be attached to the right connection.
         - traefik.http.middlewares.${SWARM_STACK_NAME}_sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
         - traefik.enable=true
-        - traefik.http.services.${SWARM_STACK_NAME}_api-gateway.loadbalancer.server.port=1080
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-gateway.rule=hostregexp(`{host:.+}`)
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-gateway.entrypoints=simcore_api
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-gateway.priority=1
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-gateway.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME}_sslheader
+        - traefik.http.services.${SWARM_STACK_NAME}_api-server.loadbalancer.server.port=1080
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.rule=hostregexp(`{host:.+}`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.entrypoints=simcore_api
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.priority=1
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME}_sslheader
     networks:
       - default
 
