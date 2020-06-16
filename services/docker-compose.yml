@@ -140,7 +140,6 @@ services:
       - log:/home/scu/log
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      - START_AS_MODE_CPU=1
       - RABBIT_HOST=${RABBIT_HOST}
       - RABBIT_PORT=${RABBIT_PORT}
       - RABBIT_USER=${RABBIT_USER}

@@ -40,6 +40,8 @@ services:
       - ./storage/client-sdk:/devel/services/storage/client-sdk
       - ../packages:/devel/packages
     environment:
+      # force to start as cpu mode otherwise it will boot in gpu mode in development
+      - START_AS_MODE_CPU=1
       - SC_BOOT_MODE=debug-ptvsd
       - SIDECAR_LOGLEVEL=DEBUG
     ports:
@@ -49,6 +51,8 @@ services:
       endpoint_mode: vip
       replicas: 1
 
+  # adding a separate worker to handling GPU mode for development
+  # in production the sidecar autodetects its hardware and start either in CPU or GPU mode
   sidecar_gpu:
     image: ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -73,7 +77,7 @@ services:
       - "3006:3000"
     environment:
       - SC_BOOT_MODE=debug-ptvsd
-      - SIDECAR_LOGLEVEL=DEBU
+      - SIDECAR_LOGLEVEL=DEBUG
       - START_AS_MODE_GPU=1
       - RABBIT_HOST=${RABBIT_HOST}
       - RABBIT_PORT=${RABBIT_PORT}
