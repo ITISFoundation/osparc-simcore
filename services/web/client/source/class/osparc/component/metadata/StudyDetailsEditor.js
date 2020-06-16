@@ -311,6 +311,9 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     __openPermissions: function() {
       const permissionsView = new osparc.component.export.Permissions(this.__model);
       const window = permissionsView.createWindow();
+      permissionsView.addListener("updateStudy", e => {
+        this.fireEvent("updateStudy");
+      });
       permissionsView.addListener("finished", e => {
         if (e.getData()) {
           window.close();
