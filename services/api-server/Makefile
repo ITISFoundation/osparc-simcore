@@ -17,7 +17,7 @@ reqs: ## compiles pip requirements (.in -> .txt)
 .PHONY: install-dev install-prod install-ci
 install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
-	pip-sync --quiet requirements/$(subst install-,,$@).txt
+	pip-sync requirements/$(subst install-,,$@).txt
 
 
 PHONY: tests-unit tests-integration tests
@@ -91,7 +91,7 @@ GENERATOR_NAME := python
 
 # TODO: put instead to additional-props.yaml and --config=openapi-generator/python-config.yaml
 ADDITIONAL_PROPS := \
-	generateSourceCodeOnly=true\
+	generateSourceCodeOnly=false\
 	hideGenerationTimestamp=true\
 	library=urllib3\
 	packageName=osparc\
@@ -111,8 +111,8 @@ openapi.json:
 # TODO: code_samples still added by hand!
 client:
 	# cloning $(GIT_USER_ID)/$(GIT_REPO_ID) -> $@
-	#git clone git@github.com:$(GIT_USER_ID)/$(GIT_REPO_ID).git $@
-	mkdir client
+	git clone git@github.com:$(GIT_USER_ID)/$(GIT_REPO_ID).git $@
+
 
 python-client: openapi.json client ## runs python client generator
 	# running python generator on $(word 2,$^)
@@ -128,7 +128,7 @@ python-client: openapi.json client ## runs python client generator
 		--output=/local/$(word 2,$^) \
 		--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS)))\
 		--package-name=osparc\
-		--release-note="Updated tof $(APP_VERSION)"
+		--release-note="Updated to $(APP_VERSION)"
 
 
 

@@ -28,8 +28,8 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         description="osparc-simcore Public RESTful API Specifications",
         version=api_version,
         openapi_url=f"/api/{api_vtag}/openapi.json",
-        docs_url="/devdocs",
-        redoc_url=None,  # disabled
+        docs_url="/dev/docs",
+        redoc_url=None,  # default disabled, see below
     )
 
     logger.debug(settings)
