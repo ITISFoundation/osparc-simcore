@@ -29,6 +29,7 @@ class WebServerSettings(BaseSettings):
 
     @property
     def base_url(self):
+        # FIXME: httpx.client does not consder vtag
         return f"http://{self.host}:{self.port}/{self.vtag}"
 
     class Config(_CommonConfig):

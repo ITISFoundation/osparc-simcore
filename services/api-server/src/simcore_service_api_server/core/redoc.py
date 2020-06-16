@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.applications import HTMLResponse, Request
 from fastapi.openapi.docs import get_redoc_html
 
-from ..__version__ import api_vtag
+# from ..__version__ import api_vtag
 
 FAVICON = "https://osparc.io/resource/osparc/favicon.png"
 LOGO = "https://raw.githubusercontent.com/ITISFoundation/osparc-manual/b809d93619512eb60c827b7e769c6145758378d0/_media/osparc-logo.svg"
@@ -32,12 +32,12 @@ def add_vendor_extensions(openapi_schema: Dict):
     # TODO: load code samples add if function is contained in sample
     # TODO: See if openapi-cli does this already
     # TODO: check that all url are available before exposing
-    openapi_schema["paths"][f"/{api_vtag}/meta"]["get"]["x-code-samples"] = [
-        {
-            "lang": "python",
-            "source": {"$ref": f"{PYTHON_CODE_SAMPLES_BASE_URL}/meta/get.py"},
-        },
-    ]
+    # openapi_schema["paths"][f"/{api_vtag}/meta"]["get"]["x-code-samples"] = [
+    #     {
+    #         "lang": "python",
+    #         "source": {"$ref": f"{PYTHON_CODE_SAMPLES_BASE_URL}/meta/get.py"},
+    #     },
+    # ]
 
 
 def create_redoc_handler(app: FastAPI) -> Callable:

@@ -3,21 +3,18 @@ from typing import Dict
 from fastapi import APIRouter, Depends, HTTPException, Security
 from httpx import AsyncClient, Response, StatusCode
 from loguru import logger
-from starlette import status
-
-from ...models.schemas.profiles import Profile, ProfileUpdate
-from ..dependencies.webserver import get_session_cookie, get_webserver_client
-
-# from ...db.repositories.users import UsersRepository
-# from ..dependencies.authentication import get_active_user_id
-# from ..dependencies.database import get_repository
-
-router = APIRouter()
 
 # SEE: https://www.python-httpx.org/async/
 # TODO: path mapping and operation
 # TODO: if fails, raise for status and translates to service unavailable if fails
 #
+from pydantic import ValidationError
+from starlette import status
+
+from ...models.schemas.profiles import Profile, ProfileUpdate
+from ..dependencies.webserver import get_session_cookie, get_webserver_client
+
+router = APIRouter()
 
 
 @router.get("", response_model=Profile)
@@ -25,66 +22,39 @@ async def get_my_profile(
     client: AsyncClient = Depends(get_webserver_client),
     session_cookies: Dict = Depends(get_session_cookie),
 ) -> Profile:
-    response = await client.get("/me", cookies=session_cookies)
-    profile = Profile.parse_obj(response.json())
-    return profile
+    resp = await client.get("/v0/me", cookies=session_cookies)
+
+    if resp.status_code == status.HTTP_200_OK:
+        data = resp.json()["data"]
+        try:
+            # FIXME: temporary patch until web-API is reviewed
+            data["role"] = data["role"].upper()
+            profile = Profile.parse_obj(data)
+            return profile
+        except ValidationError:
+            logger.exception("webserver response invalid")
+            raise
+
+    elif StatusCode.is_server_error(resp.status_code):
+        logger.error("webserver failed :{}", resp.reason_phrase)
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    raise HTTPException(resp.status_code, resp.reason_phrase)
 
 
-@router.patch("", response_model=Profile)
+@router.put("", response_model=Profile)
 async def update_my_profile(
     profile_update: ProfileUpdate,
     client: AsyncClient = Depends(get_webserver_client),
     session_cookies: Dict = Security(get_session_cookie, scopes=["write"]),
 ) -> Profile:
-    resp: Response = await client.patch(
-        "/me", data=profile_update.dict(), cookies=session_cookies
+    resp: Response = await client.put(
+        "/v0/me", json=profile_update.dict(), cookies=session_cookies
     )
 
-    if StatusCode.is_server_error(resp.status_code):
-        logger.error(resp.reason_phrase)
+    if StatusCode.is_error(resp.status_code):
+        logger.error("webserver failed: {}", resp.reason_phrase)
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
     profile = await get_my_profile(client, session_cookies)
     return profile
-
-
-####### BACKUP ####
-
-# FAKE_PROFILE = Profile.parse_obj(
-#     {
-#         "first_name": "James",
-#         "last_name": "Maxwell",
-#         "login": "user@example.com",
-#         "role": "ANONYMOUS",
-#         "groups": {
-#             "me": {"gid": "string", "label": "string", "description": "string"},
-#             "organizations": [
-#                 {"gid": "string", "label": "string", "description": "string"}
-#             ],
-#             "all": {"gid": "string", "label": "string", "description": "string"},
-#         },
-#         "gravatar_id": "string",
-#     }
-# )
-# @router.get("", response_model=Profile)
-# async def get_my_profile(
-#     user_id: int = Depends(get_active_user_id),
-#     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-# ):
-#     profile = await users_repo.get_my_profile(user_id)
-#     if not profile:
-#         # FIXME: headers!
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid profile"
-#         )
-#     return profile
-
-
-# @router.patch("", response_model=Profile)
-# async def update_my_profile(
-#     profile_update: ProfileUpdate,
-#     user_id: int = Security(get_active_user_id, scopes=["write"]),
-# ):
-#     global FAKE_PROFILE
-#     FAKE_PROFILE = FAKE_PROFILE.copy(update=profile_update.dict())
-#     return FAKE_PROFILE
