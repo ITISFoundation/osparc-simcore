@@ -22,10 +22,13 @@
 qx.Class.define("osparc.component.export.Permissions", {
   extend: qx.ui.core.Widget,
 
+  /**
+    * @param studyData {Object} Object containing the serialized Study Data
+    */
   construct: function(studyData) {
     this.base(arguments);
 
-    this.__study = osparc.utils.Utils.deepCloneObject(studyData);
+    this.__studyData = osparc.utils.Utils.deepCloneObject(studyData);
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
@@ -61,7 +64,7 @@ qx.Class.define("osparc.component.export.Permissions", {
   },
 
   members: {
-    __study: null,
+    __studyData: null,
     __organizationsAndMembers: null,
     __collaboratorsModel: null,
     __myFrieds: null,
@@ -182,7 +185,7 @@ qx.Class.define("osparc.component.export.Permissions", {
     __reloadOrganizationsAndMembers: function() {
       this.__organizationsAndMembers.reset();
 
-      const aceessRights = this.__study["accessRights"];
+      const aceessRights = this.__studyData["accessRights"];
       const myFriends = this.__myFrieds;
       for (const gid of Object.keys(myFriends)) {
         const myFriend = myFriends[gid];
@@ -196,7 +199,7 @@ qx.Class.define("osparc.component.export.Permissions", {
     __reloadCollaboratorsList: function() {
       this.__collaboratorsModel.removeAll();
 
-      const aceessRights = this.__study["accessRights"];
+      const aceessRights = this.__studyData["accessRights"];
       Object.keys(aceessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__myFrieds, gid)) {
           const collaborator = this.__myFrieds[gid];
@@ -220,7 +223,7 @@ qx.Class.define("osparc.component.export.Permissions", {
 
     __isUserOwner: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const aceessRights = this.__study["accessRights"];
+      const aceessRights = this.__studyData["accessRights"];
       if (myGid in aceessRights) {
         return aceessRights[myGid]["delete"];
       }
@@ -234,17 +237,17 @@ qx.Class.define("osparc.component.export.Permissions", {
       }
 
       gids.forEach(gid => {
-        this.__study["accessRights"][gid] = this.self().getCollaboratorAccessRight();
+        this.__studyData["accessRights"][gid] = this.self().getCollaboratorAccessRight();
       });
       const params = {
         url: {
-          "projectId": this.__study["uuid"]
+          "projectId": this.__studyData["uuid"]
         },
-        data: this.__study
+        data: this.__studyData
       };
       osparc.data.Resources.fetch("studies", "put", params)
         .then(() => {
-          this.fireDataEvent("updateStudy", this.__study["uuid"]);
+          this.fireDataEvent("updateStudy", this.__studyData["uuid"]);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator(s) successfully added"));
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
@@ -256,16 +259,16 @@ qx.Class.define("osparc.component.export.Permissions", {
     },
 
     __promoteCollaborator: function(collaborator) {
-      this.__study["accessRights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
+      this.__studyData["accessRights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
       const params = {
         url: {
-          "projectId": this.__study["uuid"]
+          "projectId": this.__studyData["uuid"]
         },
-        data: this.__study
+        data: this.__studyData
       };
       osparc.data.Resources.fetch("studies", "put", params)
         .then(() => {
-          this.fireDataEvent("updateStudy", this.__study["uuid"]);
+          this.fireDataEvent("updateStudy", this.__studyData["uuid"]);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully made Owner"));
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
@@ -277,20 +280,20 @@ qx.Class.define("osparc.component.export.Permissions", {
     },
 
     __deleteCollaborator: function(collaborator) {
-      const success = this.self().removeCollaborator(this.__study, collaborator["gid"]);
+      const success = this.self().removeCollaborator(this.__studyData, collaborator["gid"]);
       if (!success) {
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
       }
 
       const params = {
         url: {
-          "projectId": this.__study["uuid"]
+          "projectId": this.__studyData["uuid"]
         },
-        data: this.__study
+        data: this.__studyData
       };
       osparc.data.Resources.fetch("studies", "put", params)
         .then(() => {
-          this.fireDataEvent("updateStudy", this.__study["uuid"]);
+          this.fireDataEvent("updateStudy", this.__studyData["uuid"]);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully removed"));
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();

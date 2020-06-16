@@ -26,20 +26,20 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param study {Object|osparc.data.model.Study} Study (metadata)
+    * @param studyData {Object} Object containing the serialized Study Data
     * @param isTemplate {Boolean} Weather the study is template or not
     * @param winWidth {Number} Width for the window, needed for stretching the thumbnail
     */
-  construct: function(study, isTemplate, winWidth) {
+  construct: function(studyData, isTemplate, winWidth) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.Grow());
 
-    this.__model = qx.data.marshal.Json.createModel(study);
-    this.__selectedTags = study.tags;
-    this.__workbench = study.workbench;
+    this.__studyModel = qx.data.marshal.Json.createModel(studyData);
+    this.__selectedTags = studyData.tags;
+    this.__workbench = studyData.workbench;
 
     this.__stack = new qx.ui.container.Stack();
-    this.__displayView = this.__createDisplayView(study, isTemplate, winWidth);
+    this.__displayView = this.__createDisplayView(studyData, isTemplate, winWidth);
     this.__editView = this.__createEditView(isTemplate);
     this.__stack.add(this.__displayView);
     this.__stack.add(this.__editView);
@@ -89,7 +89,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     __fields: null,
     __openButton: null,
     __study: null,
-    __model: null,
+    __studyModel: null,
     __workbench: null,
     __selectedTags: null,
 
@@ -170,18 +170,18 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       }));
 
       this.__fields = {
-        name: new qx.ui.form.TextField(this.__model.getName()).set({
+        name: new qx.ui.form.TextField(this.__studyModel.getName()).set({
           font: "title-18",
           height: 35,
           enabled: fieldIsEnabled
         }),
-        description: new qx.ui.form.TextArea(this.__model.getDescription()).set({
+        description: new qx.ui.form.TextArea(this.__studyModel.getDescription()).set({
           autoSize: true,
           minHeight: 100,
           maxHeight: 500,
           enabled: fieldIsEnabled
         }),
-        thumbnail: new qx.ui.form.TextField(this.__model.getThumbnail()).set({
+        thumbnail: new qx.ui.form.TextField(this.__studyModel.getThumbnail()).set({
           enabled: fieldIsEnabled
         })
       };
@@ -249,13 +249,13 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         appearance: "link-button"
       });
       editButton.addListener("execute", () => {
-        const tagManager = new osparc.component.form.tag.TagManager(this.__selectedTags, editButton, "study", this.__model.getUuid());
+        const tagManager = new osparc.component.form.tag.TagManager(this.__selectedTags, editButton, "study", this.__studyModel.getUuid());
         tagManager.addListener("changeSelected", evt => {
           this.__selectedTags = evt.getData().selected;
         }, this);
         tagManager.addListener("close", () => {
           this.__renderTags();
-          this.fireDataEvent("updateTags", this.__model.getUuid());
+          this.fireDataEvent("updateTags", this.__studyModel.getUuid());
         }, this);
       });
       header.add(editButton);
@@ -281,7 +281,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     __saveStudy: function(isTemplate, btn) {
       const params = {
         url: {
-          projectId: this.__model.getUuid()
+          projectId: this.__studyModel.getUuid()
         },
         data: this.__serializeForm()
       };
@@ -290,7 +290,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
           btn.resetIcon();
           btn.getChildControl("icon").getContentElement()
             .removeClass("rotate");
-          this.__model.set(data);
+          this.__studyModel.set(data);
           this.setMode("display");
           this.fireEvent(isTemplate ? "updateTemplate" : "updateStudy");
         })
@@ -304,7 +304,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __openPermissions: function() {
-      const studyData = qx.util.Serializer.toNativeObject(this.__model);
+      const studyData = qx.util.Serializer.toNativeObject(this.__studyModel);
       const permissionsView = new osparc.component.export.Permissions(studyData);
       const window = permissionsView.createWindow();
       permissionsView.addListener("updateStudy", e => {
@@ -319,12 +319,12 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __openSaveAsTemplate: function() {
-      const saveAsTemplateView = new osparc.component.export.SaveAsTemplate(this.__model.getUuid(), this.__serializeForm());
+      const saveAsTemplateView = new osparc.component.export.SaveAsTemplate(this.__studyModel.getUuid(), this.__serializeForm());
       const window = saveAsTemplateView.createWindow();
       saveAsTemplateView.addListener("finished", e => {
         const template = e.getData();
         if (template) {
-          this.__model.set(template);
+          this.__studyModel.set(template);
           this.setMode("display");
           this.fireEvent("updateTemplate");
           window.close();
@@ -336,7 +336,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     __serializeForm: function() {
       let data = {};
       data = {
-        ...qx.util.Serializer.toNativeObject(this.__model),
+        ...qx.util.Serializer.toNativeObject(this.__studyModel),
         workbench: this.__workbench
       };
 
@@ -372,8 +372,8 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __isUserOwner: function() {
-      if (this.__model) {
-        return this.__model.getPrjOwner() === osparc.auth.Data.getInstance().getEmail();
+      if (this.__studyModel) {
+        return this.__studyModel.getPrjOwner() === osparc.auth.Data.getInstance().getEmail();
       }
       return false;
     }
