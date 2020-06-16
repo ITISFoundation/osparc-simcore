@@ -19,6 +19,8 @@ from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.comp_pipeline import UNKNOWN
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
+
+# TODO: move this to computation_models
 from simcore_service_webserver.computation_models import to_node_class
 
 from .director import director_api
@@ -143,9 +145,6 @@ async def _build_adjacency_list(
 
 
 async def _parse_project_data(pipeline_data: Dict, app: web.Application):
-    # TODO: move this to computation_models
-    from .computation_models import to_node_class
-
     dag_adjacency_list = dict()
     tasks = dict()
 
