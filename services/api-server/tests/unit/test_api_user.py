@@ -21,7 +21,7 @@ def auth(test_api_key: ApiKeyInDB):
     auth = (test_api_key.api_key, test_api_key.api_secret.get_secret_value())
     return auth
 
-
+@pytest.mark.skip(reason="fixture under dev")
 async def test_get_profile(client: AsyncClient, auth):
 
     resp = await client.get(f"/{api_vtag}/meta", auth=auth)
@@ -34,7 +34,7 @@ async def test_get_profile(client: AsyncClient, auth):
     profile = Profile(**resp.json())
     assert profile.first_name == "James"
 
-
+@pytest.mark.skip(reason="fixture under dev")
 async def test_patch_profile(client: AsyncClient, auth):
 
     resp = await client.patch(
