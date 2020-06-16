@@ -134,24 +134,26 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         flex: 1
       });
 
-      const permissionsButton = new qx.ui.form.Button(this.tr("Permissions")).set({
-        appearance: "md-button"
-      });
-      osparc.utils.Utils.setIdToWidget(permissionsButton, "permissionsBtn");
-      permissionsButton.addListener("execute", e => {
-        this.__openPermissions();
-      }, this);
-      buttonsLayout.add(permissionsButton);
-
-      if (isCurrentUserOwner && (!isTemplate && canCreateTemplate)) {
-        const saveAsTemplateButton = new qx.ui.form.Button(this.tr("Save as Template")).set({
+      if (!isTemplate) {
+        const permissionsButton = new qx.ui.form.Button(this.tr("Permissions")).set({
           appearance: "md-button"
         });
-        osparc.utils.Utils.setIdToWidget(saveAsTemplateButton, "saveAsTemplateBtn");
-        saveAsTemplateButton.addListener("execute", e => {
-          this.__openSaveAsTemplate();
+        osparc.utils.Utils.setIdToWidget(permissionsButton, "permissionsBtn");
+        permissionsButton.addListener("execute", e => {
+          this.__openPermissions();
         }, this);
-        buttonsLayout.add(saveAsTemplateButton);
+        buttonsLayout.add(permissionsButton);
+
+        if (isCurrentUserOwner && canCreateTemplate) {
+          const saveAsTemplateButton = new qx.ui.form.Button(this.tr("Save as Template")).set({
+            appearance: "md-button"
+          });
+          osparc.utils.Utils.setIdToWidget(saveAsTemplateButton, "saveAsTemplateBtn");
+          saveAsTemplateButton.addListener("execute", e => {
+            this.__openSaveAsTemplate();
+          }, this);
+          buttonsLayout.add(saveAsTemplateButton);
+        }
       }
 
       return buttonsLayout;
