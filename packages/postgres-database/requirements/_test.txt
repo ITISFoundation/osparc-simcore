@@ -35,7 +35,7 @@ pyparsing==2.4.7          # via packaging
 pytest-aiohttp==0.3.0     # via -r requirements/_test.in
 pytest-cov==2.10.0        # via -r requirements/_test.in
 pytest-docker==0.7.2      # via -r requirements/_test.in
-pytest-instafail==0.4.1.post0  # via -r requirements/_test.in
+pytest-instafail==0.4.2   # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest==5.4.3             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-instafail
 python-dateutil==2.8.1    # via -r requirements/_migration.txt, alembic, faker
