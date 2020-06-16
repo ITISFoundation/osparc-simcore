@@ -458,6 +458,16 @@ OR prj_owner = {user_id})
             # uuid can ONLY be set upon creation
             if row[projects.c.uuid.key] != project_data["uuid"]:
                 raise ProjectInvalidRightsError(user_id, project_data["uuid"])
+            # ensure the prj owner is always in the access rights
+            owner_primary_gid = await self._get_user_primary_group_gid(
+                conn, row[projects.c.prj_owner.key]
+            )
+            project_data["accessRights"].update(
+                _create_project_access_rights(
+                    owner_primary_gid, ProjectAccessRights.OWNER
+                )
+            )
+
             # update timestamps
             project_data["lastChangeDate"] = now_str()
             # now update it
