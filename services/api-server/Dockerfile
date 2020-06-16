@@ -10,6 +10,13 @@ FROM python:${PYTHON_VERSION}-slim as base
 
 LABEL maintainer=pcrespov
 
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y gosu; \
+	rm -rf /var/lib/apt/lists/*; \
+# verify that the binary works
+	gosu nobody true
+
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
     SC_USER_NAME=scu \
@@ -50,9 +57,10 @@ ENV SC_BUILD_TARGET=build
 
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends \
-    build-essential \
-    gcc
+    build-essential
 
+# NOTE: python virtualenv is used here such that installed
+# packages may be moved to production image easily by copying the venv
 RUN python -m venv ${VIRTUAL_ENV}
 
 RUN pip install --upgrade --no-cache-dir \
@@ -105,13 +113,13 @@ WORKDIR /home/scu
 
 COPY --chown=scu:scu --from=cache  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/api-server/docker services/api-server/docker
-
+RUN chmod +x services/api-server/docker/*.sh
 
 HEALTHCHECK --interval=30s \
     --timeout=20s \
     --start-period=30s \
     --retries=3 \
-    CMD ["python3", "services/api-server/docker/healthcheck.py", "http://localhost:8000/"]
+    CMD ["python3", "services/api-server/docker/healthcheck.py", "http://localhost:8001/"]
 
 ENTRYPOINT [ "/bin/sh", "services/api-server/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/api-server/docker/boot.sh"]
