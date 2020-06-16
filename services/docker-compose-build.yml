@@ -22,7 +22,7 @@ services:
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "${VCS_URL}"
         org.label-schema.vcs-ref: "${VCS_REF}"
-        io.osparc.api-version: "${STORAGE_API_VERSION}"
+        io.osparc.api-version: "${API_SERVER_API_VERSION}"
 
   catalog:
     image: local/catalog:${BUILD_TARGET:?build_target_required}

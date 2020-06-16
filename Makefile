@@ -46,10 +46,12 @@ export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','cle
 export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # api-versions
-export CATALOG_API_VERSION  := $(shell cat $(CURDIR)/services/catalog/VERSION)
-export DIRECTOR_API_VERSION := $(shell cat $(CURDIR)/services/director/VERSION)
-export STORAGE_API_VERSION  := $(shell cat $(CURDIR)/services/storage/VERSION)
-export WEBSERVER_API_VERSION:= $(shell cat $(CURDIR)/services/web/server/VERSION)
+export API_SERVER_API_VERSION := $(shell cat $(CURDIR)/services/api-server/VERSION)
+export CATALOG_API_VERSION    := $(shell cat $(CURDIR)/services/catalog/VERSION)
+export DIRECTOR_API_VERSION   := $(shell cat $(CURDIR)/services/director/VERSION)
+export STORAGE_API_VERSION    := $(shell cat $(CURDIR)/services/storage/VERSION)
+export WEBSERVER_API_VERSION  := $(shell cat $(CURDIR)/services/web/server/VERSION)
+
 
 # swarm stacks
 export SWARM_STACK_NAME ?= simcore
