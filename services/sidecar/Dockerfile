@@ -110,7 +110,7 @@ COPY --chown=scu:scu services/sidecar/docker services/sidecar/docker
 #             --timeout=20s \
 #             --start-period=30s \
 #             --retries=3 \
-#             CMD ["python3", "services/api-gateway/docker/healthcheck.py", "http://localhost:8000/"]
+#             CMD ["python3", "services/api-server/docker/healthcheck.py", "http://localhost:8000/"]
 
 ENTRYPOINT [ "/bin/sh", "services/sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/sidecar/docker/boot.sh"]

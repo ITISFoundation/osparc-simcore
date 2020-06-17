@@ -64,7 +64,8 @@ async def start_db():
             async with engine.acquire() as conn:
                 await create_tables(conn)
 
-    await go() # NOTE: non-blocking this way
+    await go()  # NOTE: non-blocking this way
+
 
 @app.on_event("shutdown")
 def shutdown_event():

@@ -3,11 +3,12 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import pytest
-import yaml
+from typing import Callable, Coroutine, Union
 
-import sqlalchemy as sa
 import aiopg.sa
+import pytest
+import sqlalchemy as sa
+import yaml
 
 
 @pytest.fixture(scope="session")
@@ -32,11 +33,8 @@ def postgres_service(docker_services, docker_ip, docker_compose_file) -> str:
     return dsn
 
 
-from typing import Union, Coroutine, Callable
-
-
 @pytest.fixture
-def make_engine(postgres_service):
+def make_engine(postgres_service: str) -> Callable:
     dsn = postgres_service
 
     def maker(is_async=True) -> Union[Coroutine, Callable]:

@@ -11,6 +11,7 @@ import sys
 from copy import deepcopy
 from logging.config import fileConfig
 from pathlib import Path
+from typing import Dict
 
 import alembic.command
 import click
@@ -116,7 +117,7 @@ def main():
 @click.option("--host")
 @click.option("--port", type=int)
 @click.option("--database", "-d")
-def discover(**cli_inputs):
+def discover(**cli_inputs) -> Dict:
     """ Discovers databases and caches configs in ~/.simcore_postgres_database.json (except if --no-cache)"""
     # NOTE: Do not add defaults to user, password so we get a chance to ping urls
     # TODO: if multiple candidates online, then query user to select
@@ -173,7 +174,7 @@ def discover(**cli_inputs):
                 fg="green",
             )
 
-            return
+            return cfg
 
         except Exception as err:
             inline_msg = str(err).replace("\n", ". ")
