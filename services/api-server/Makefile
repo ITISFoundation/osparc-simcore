@@ -105,27 +105,30 @@ space := $(null) #
 comma := ,
 
 # TODO: fix this, shall be generated upon start when flag is provided
-openapi.json:
-	wget http://localhost:8001/api/v0/openapi.json
+
+
 
 # TODO: code_samples still added by hand!
 client:
 	# cloning $(GIT_USER_ID)/$(GIT_REPO_ID) -> $@
 	git clone git@github.com:$(GIT_USER_ID)/$(GIT_REPO_ID).git $@
+	cd client; git checkout -b "upgrade-${APP_VERSION}"
 
 
-python-client: openapi.json client ## runs python client generator
-	# running python generator on $(word 2,$^)
+python-client: client ## runs python client generator
+	# download openapi.json
+	curl -O http://localhost:8000/api/v0/openapi.json
+
 	cd $(CURDIR); \
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash generate \
-		--api-package=osparc\
+		--api-package=api\
 		--generator-name=$(GENERATOR_NAME) \
 		--git-user-id=$(GIT_USER_ID)\
 		--git-repo-id=$(GIT_REPO_ID)\
 		--http-user-agent="osparc-api/{packageVersion}/{language}"\
-		--input-spec=/local/$< \
+		--input-spec=/local/openapi.json \
 		--minimal-update\
-		--output=/local/$(word 2,$^) \
+		--output=/local/client \
 		--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS)))\
 		--package-name=osparc\
 		--release-note="Updated to $(APP_VERSION)"

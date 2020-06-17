@@ -1,1 +1,296 @@
-{"openapi":"3.0.2","info":{"title":"Public API Server","description":"**osparc-simcore Public RESTful API Specifications**\n## Python Client\n- Github [repo](https://github.com/ITISFoundation/osparc-simcore-python-client)\n- Quick install: ``pip install git+https://github.com/ITISFoundation/osparc-simcore-python-client.git``\n","version":"0.2.1","x-logo":{"url":"https://raw.githubusercontent.com/ITISFoundation/osparc-manual/b809d93619512eb60c827b7e769c6145758378d0/_media/osparc-logo.svg","altText":"osparc-simcore logo"}},"paths":{"/v0/meta":{"get":{"tags":["meta"],"summary":"Get Service Metadata","operationId":"get_service_metadata","parameters":[{"required":false,"schema":{"title":"Extended Info","type":"boolean","default":false},"name":"extended_info","in":"query"}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"title":"Response Get Service Metadata V0 Meta Get","anyOf":[{"$ref":"#/components/schemas/Meta"},{"pattern":"^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$","type":"string"}]}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"x-code-samples":[{"lang":"python","source":{"$ref":"https://raw.githubusercontent.com/ITISFoundation/osparc-simcore-python-client/master/code_samples/meta/get.py"}}]}},"/v0/me":{"get":{"tags":["users"],"summary":"Get My Profile","operationId":"get_my_profile","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Profile"}}}}},"security":[{"HTTPBasic":[]}]},"patch":{"tags":["users"],"summary":"Update My Profile","operationId":"update_my_profile","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ProfileUpdate"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Profile"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBasic":[]}]}}},"components":{"schemas":{"Groups":{"title":"Groups","required":["me","all"],"type":"object","properties":{"me":{"$ref":"#/components/schemas/UsersGroup"},"organizations":{"title":"Organizations","type":"array","items":{"$ref":"#/components/schemas/UsersGroup"},"default":[]},"all":{"$ref":"#/components/schemas/UsersGroup"}}},"HTTPValidationError":{"title":"HTTPValidationError","type":"object","properties":{"errors":{"title":"Errors","type":"array","items":{"$ref":"#/components/schemas/ValidationError"}}}},"Meta":{"title":"Meta","required":["name","version"],"type":"object","properties":{"name":{"title":"Name","type":"string"},"version":{"title":"Version","pattern":"^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$","type":"string"},"released":{"title":"Released","type":"object","additionalProperties":{"type":"string","pattern":"^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"},"description":"Maps every route's path tag with a released version"}},"example":{"name":"simcore_service_foo","version":"2.4.45","released":{"v1":"1.3.4","v2":"2.4.45"}}},"Profile":{"title":"Profile","required":["login","role"],"type":"object","properties":{"first_name":{"title":"First Name","type":"string","example":"James"},"last_name":{"title":"Last Name","type":"string","example":"Maxwell"},"login":{"title":"Login","type":"string","format":"email"},"role":{"title":"Role","enum":["ANONYMOUS","GUEST","USER","TESTER"],"type":"string"},"groups":{"$ref":"#/components/schemas/Groups"},"gravatar_id":{"title":"Gravatar Id","maxLength":40,"type":"string","description":"Hash value of email to retrieve an avatar image from https://www.gravatar.com"}}},"ProfileUpdate":{"title":"ProfileUpdate","type":"object","properties":{"first_name":{"title":"First Name","type":"string","example":"James"},"last_name":{"title":"Last Name","type":"string","example":"Maxwell"}}},"UsersGroup":{"title":"UsersGroup","required":["gid","label"],"type":"object","properties":{"gid":{"title":"Gid","type":"string"},"label":{"title":"Label","type":"string"},"description":{"title":"Description","type":"string"}}},"ValidationError":{"title":"ValidationError","required":["loc","msg","type"],"type":"object","properties":{"loc":{"title":"Location","type":"array","items":{"type":"string"}},"msg":{"title":"Message","type":"string"},"type":{"title":"Error Type","type":"string"}}}},"securitySchemes":{"HTTPBasic":{"type":"http","scheme":"basic"}}}}
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "Public API Server",
+    "description": "**osparc-simcore Public RESTful API Specifications**\n## Python Client\n- Github [repo](https://github.com/ITISFoundation/osparc-simcore-python-client)\n- Quick install: ``pip install git+https://github.com/ITISFoundation/osparc-simcore-python-client.git``\n",
+    "version": "0.3.0",
+    "x-logo": {
+      "url": "https://raw.githubusercontent.com/ITISFoundation/osparc-manual/b809d93619512eb60c827b7e769c6145758378d0/_media/osparc-logo.svg",
+      "altText": "osparc-simcore logo"
+    }
+  },
+  "paths": {
+    "/v0/meta": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Get Service Metadata",
+        "operationId": "get_service_metadata",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/me": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Get My Profile",
+        "operationId": "get_my_profile",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Update My Profile",
+        "operationId": "update_my_profile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Groups": {
+        "title": "Groups",
+        "required": [
+          "me",
+          "all"
+        ],
+        "type": "object",
+        "properties": {
+          "me": {
+            "$ref": "#/components/schemas/UsersGroup"
+          },
+          "organizations": {
+            "title": "Organizations",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsersGroup"
+            },
+            "default": []
+          },
+          "all": {
+            "$ref": "#/components/schemas/UsersGroup"
+          }
+        }
+      },
+      "HTTPValidationError": {
+        "title": "HTTPValidationError",
+        "type": "object",
+        "properties": {
+          "errors": {
+            "title": "Errors",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "Meta": {
+        "title": "Meta",
+        "required": [
+          "name",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string"
+          },
+          "released": {
+            "title": "Released",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+            },
+            "description": "Maps every route's path tag with a released version"
+          }
+        },
+        "example": {
+          "name": "simcore_service_foo",
+          "version": "2.4.45",
+          "released": {
+            "v1": "1.3.4",
+            "v2": "2.4.45"
+          }
+        }
+      },
+      "Profile": {
+        "title": "Profile",
+        "required": [
+          "login",
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "first_name": {
+            "title": "First Name",
+            "type": "string",
+            "example": "James"
+          },
+          "last_name": {
+            "title": "Last Name",
+            "type": "string",
+            "example": "Maxwell"
+          },
+          "login": {
+            "title": "Login",
+            "type": "string",
+            "format": "email"
+          },
+          "role": {
+            "title": "Role",
+            "enum": [
+              "ANONYMOUS",
+              "GUEST",
+              "USER",
+              "TESTER"
+            ],
+            "type": "string"
+          },
+          "groups": {
+            "$ref": "#/components/schemas/Groups"
+          },
+          "gravatar_id": {
+            "title": "Gravatar Id",
+            "maxLength": 40,
+            "type": "string",
+            "description": "Hash value of email to retrieve an avatar image from https://www.gravatar.com"
+          }
+        }
+      },
+      "ProfileUpdate": {
+        "title": "ProfileUpdate",
+        "type": "object",
+        "properties": {
+          "first_name": {
+            "title": "First Name",
+            "type": "string",
+            "example": "James"
+          },
+          "last_name": {
+            "title": "Last Name",
+            "type": "string",
+            "example": "Maxwell"
+          }
+        }
+      },
+      "UsersGroup": {
+        "title": "UsersGroup",
+        "required": [
+          "gid",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "gid": {
+            "title": "Gid",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          }
+        }
+      },
+      "ValidationError": {
+        "title": "ValidationError",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "loc": {
+            "title": "Location",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "HTTPBasic": {
+        "type": "http",
+        "scheme": "basic"
+      }
+    }
+  }
+}
