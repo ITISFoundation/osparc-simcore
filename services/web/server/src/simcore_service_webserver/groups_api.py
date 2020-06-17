@@ -295,7 +295,7 @@ async def delete_user_in_group(
     async with engine.acquire() as conn:
         # first check if the group exists
         group: RowProxy = await _get_user_group(conn, user_id, gid)
-        check_group_permissions(group, user_id, gid, "delete")
+        check_group_permissions(group, user_id, gid, "write")
         # check the user exists
         await _get_user_in_group_permissions(conn, gid, the_user_id_in_group)
         # delete him/her
