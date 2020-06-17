@@ -13,8 +13,6 @@
 version: "3.7"
 services:
   api-server:
-    environment:
-      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
     ports:
       - "8006:8000"
       - "3006:3000"

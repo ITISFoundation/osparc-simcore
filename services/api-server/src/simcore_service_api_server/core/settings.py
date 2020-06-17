@@ -77,7 +77,7 @@ class AppSettings(BaseSettings):
     boot_mode: Optional[BootModeEnum] = Field(..., env="SC_BOOT_MODE")
 
     # LOGGING
-    log_level_name: str = Field("DEBUG", env="loglevel")
+    log_level_name: str = Field("DEBUG", env="LOG_LEVEL")
 
     @validator("log_level_name")
     def match_logging_level(cls, value) -> str:

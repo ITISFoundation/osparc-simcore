@@ -22,11 +22,11 @@ the_app: FastAPI = init_app()
 def main():
     cfg: AppSettings = the_app.state.settings
     uvicorn.run(
-        the_app,
+        "simcore_service_api_server.__main__:the_app",
         host=cfg.host,
         port=cfg.port,
         reload=cfg.boot_mode == BootModeEnum.development,
-        reload_dir=current_dir,
+        reload_dirs=[current_dir,],
         log_level=cfg.log_level_name.lower(),
     )
 
