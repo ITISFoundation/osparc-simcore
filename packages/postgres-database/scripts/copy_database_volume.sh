@@ -55,7 +55,7 @@ IFS=$(printf '\n\t')
 if [ ! -z $folder ]; then
   #folder mode
   ssh $host \
-    "cd $folder; tar -cf - . " \
+    "tar -cf - $folder " \
     | \
     docker run --rm -i -v "$target":/to alpine ash -c "cd /to ; tar -xpvf - "
 else
