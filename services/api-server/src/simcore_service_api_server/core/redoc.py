@@ -13,8 +13,8 @@ PYTHON_CODE_SAMPLES_BASE_URL = "https://raw.githubusercontent.com/ITISFoundation
 
 def compose_long_description(description: str) -> str:
     desc = f"**{description}**\n"
-    desc += "## Python Client\n"
-    desc += "- Github [repo](https://github.com/ITISFoundation/osparc-simcore-python-client)\n"
+    desc += "## Python Library\n"
+    desc += "- Documentation (https://itisfoundation.github.io/osparc-simcore-python-client/#/)\n"
     desc += "- Quick install: ``pip install git+https://github.com/ITISFoundation/osparc-simcore-python-client.git``\n"
 
     return desc

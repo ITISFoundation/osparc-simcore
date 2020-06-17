@@ -48,6 +48,10 @@ async def update_my_profile(
     client: AsyncClient = Depends(get_webserver_client),
     session_cookies: Dict = Security(get_session_cookie, scopes=["write"]),
 ) -> Profile:
+    # FIXME: replace by patch
+    # TODO: improve. from patch -> put, we need to ensure it has a default in place
+    profile_update.first_name = profile_update.first_name or ""
+    profile_update.last_name = profile_update.last_name or ""
     resp: Response = await client.put(
         "/v0/me", json=profile_update.dict(), cookies=session_cookies
     )
