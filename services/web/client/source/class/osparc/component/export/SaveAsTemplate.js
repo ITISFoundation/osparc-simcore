@@ -20,29 +20,91 @@
  */
 
 qx.Class.define("osparc.component.export.SaveAsTemplate", {
-  extend: osparc.component.export.ShareResourceBase,
+  extend: qx.ui.core.Widget,
 
   construct: function(studyId, formData) {
-    this.base(arguments, studyId);
+    this.base(arguments);
 
+    this._setLayout(new qx.ui.layout.VBox(5));
+
+    this.__studyId = studyId;
     this.__formData = osparc.utils.Utils.deepCloneObject(formData);
+
+    this.__buildLayout();
 
     this.setHeaderText(this.tr("Make Template accessible to"));
     this.setButtonText(this.tr("Publish"));
   },
 
+  statics: {
+    createWindow: function(winText, shareResourceWidget) {
+      const window = new qx.ui.window.Window(winText).set({
+        appearance: "service-window",
+        layout: new qx.ui.layout.Grow(),
+        autoDestroy: true,
+        contentPadding: 10,
+        width: 400,
+        height: 300,
+        showMaximize: false,
+        showMinimize: false,
+        modal: true
+      });
+      window.add(shareResourceWidget);
+      window.center();
+      return window;
+    }
+  },
+
+  properties: {
+    headerText: {
+      check: "String",
+      init: "",
+      event: "changeHeaderText"
+    },
+
+    buttonText: {
+      check: "String",
+      init: "",
+      event: "changeButtonText"
+    }
+  },
+
+  events: {
+    "finished": "qx.event.type.Data"
+  },
+
   members: {
+    __studyId: null,
+    __shareWith: null,
     __formData: null,
 
     createWindow: function() {
-      return osparc.component.export.ShareResourceBase.createWindow(this.tr("Save as Template"), this);
+      return this.self().createWindow(this.tr("Save as Template"), this);
     },
 
-    // overridden
-    _shareResource: function(btn) {
+    __buildLayout: function() {
+      const shareWith = this.__shareWith = new osparc.component.export.ShareWith();
+      this.bind("headerText", shareWith, "legend");
+      this._add(shareWith, {
+        flex: 1
+      });
+
+      const shareResourceBtn = new osparc.ui.form.FetchButton().set({
+        allowGrowX: false,
+        alignX: "right"
+      });
+      this.bind("buttonText", shareResourceBtn, "label");
+      shareResourceBtn.addListener("execute", () => {
+        this.__shareResource(shareResourceBtn);
+      }, this);
+      shareWith.bind("ready", shareResourceBtn, "enabled");
+      this._add(shareResourceBtn);
+    },
+
+    __shareResource: function(btn) {
       btn.setFetching(true);
 
-      const selectedGroupIDs = this._shareWith.getSelectedGroups();
+      const selectedGroupIDs = this.__shareWith.getSelectedGroups();
       selectedGroupIDs.forEach(gid => {
         this.__formData["accessRights"][gid] = {
           "read": true,
@@ -53,7 +115,7 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
 
       const params = {
         url: {
-          "study_id": this._studyId
+          "study_id": this.__studyId
         },
         data: this.__formData
       };

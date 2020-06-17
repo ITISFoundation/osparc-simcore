@@ -18,7 +18,7 @@
 /**
  * Widget containing:
  * - LogoOnOff
- * - Dashboard button
+ * - Dashboard (button)
  * - List of buttons for node navigation (only study editing)
  * - User menu
  *   - Preferences
