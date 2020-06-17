@@ -115,7 +115,7 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
         this.__formData["accessRights"][gid] = {
           "read": true,
           "write": false,
-          "execute": false
+          "delete": false
         };
       });
 
