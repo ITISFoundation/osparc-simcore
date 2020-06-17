@@ -16,19 +16,25 @@
 ************************************************************************ */
 
 /**
- *
+ * Widget for creating a template from a study
+ * - Creates a copy of study data
+ * - Using the ShareWith widget allows to publish the template
  */
 
 qx.Class.define("osparc.component.export.SaveAsTemplate", {
   extend: qx.ui.core.Widget,
 
-  construct: function(studyId, formData) {
+  /**
+   * @param studyId {String} Study Id
+   * @param studyData {Object} Object containing part or the entire serialized Study Data
+   */
+  construct: function(studyId, studyData) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
     this.__studyId = studyId;
-    this.__formData = osparc.utils.Utils.deepCloneObject(formData);
+    this.__formData = osparc.utils.Utils.deepCloneObject(studyData);
 
     this.__buildLayout();
 

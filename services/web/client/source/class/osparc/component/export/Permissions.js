@@ -16,7 +16,12 @@
 ************************************************************************ */
 
 /**
- *
+ * Widget for modifying Study permissions. This is the way for sharing studies
+ * - Creates a copy of study data
+ * - It allows changing study's access right, so that the study owners can:
+ *   - Share it with Organizations and/or Organization Members (Collaborators)
+ *   - Make other Collaborators Owner
+ *   - Remove collaborators
  */
 
 qx.Class.define("osparc.component.export.Permissions", {
