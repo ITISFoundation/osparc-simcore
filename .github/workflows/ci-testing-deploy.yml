@@ -56,8 +56,8 @@ jobs:
       - name: test
         run: ./ci/github/unit-testing/api.bash test
 
-  unit-test-api-gateway:
-    name: Unit-testing api-gateway
+  unit-test-api-server:
+    name: Unit-testing api-server
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -86,9 +86,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install
-        run: ./ci/github/unit-testing/api-gateway.bash install
+        run: ./ci/github/unit-testing/api-server.bash install
       - name: test
-        run: ./ci/github/unit-testing/api-gateway.bash test
+        run: ./ci/github/unit-testing/api-server.bash test
       - uses: codecov/codecov-action@v1
         with:
           flags: unittests #optional
@@ -96,12 +96,12 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_api_gateway_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_api_server_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v1
         with:
-          name: unit_api_gateway_coverage
-          path: codeclimate.unit_api_gateway_coverage.json
+          name: unit_api_server_coverage
+          path: codeclimate.unit_api_server_coverage.json
 
   unit-test-catalog:
     name: Unit-testing catalog
@@ -838,7 +838,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
         with:
-          name: unit_api_gateway_coverage
+          name: unit_api_server_coverage
       - uses: actions/download-artifact@v1
         with:
           name: unit_catalog_coverage
@@ -873,7 +873,7 @@ jobs:
         run: |
           mkdir all_coverages
           cp \
-            unit_api_gateway_coverage/*.json \
+            unit_api_server_coverage/*.json \
             unit_catalog_coverage/*.json \
             unit_director_coverage/*.json \
             unit_sidecar_coverage/*.json \

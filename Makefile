@@ -29,7 +29,7 @@ $(if $(IS_WIN),$(error Windows is not supported in all recipes. Use WSL instead.
 # TODO: read from docker-compose file instead $(shell find  $(CURDIR)/services -type f -name 'Dockerfile')
 # or $(notdir $(subst /Dockerfile,,$(wildcard services/*/Dockerfile))) ...
 SERVICES_LIST := \
-	api-gateway \
+	api-server \
 	catalog \
 	director \
 	sidecar \
@@ -46,10 +46,12 @@ export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','cle
 export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # api-versions
-export CATALOG_API_VERSION  := $(shell cat $(CURDIR)/services/catalog/VERSION)
-export DIRECTOR_API_VERSION := $(shell cat $(CURDIR)/services/director/VERSION)
-export STORAGE_API_VERSION  := $(shell cat $(CURDIR)/services/storage/VERSION)
-export WEBSERVER_API_VERSION:= $(shell cat $(CURDIR)/services/web/server/VERSION)
+export API_SERVER_API_VERSION := $(shell cat $(CURDIR)/services/api-server/VERSION)
+export CATALOG_API_VERSION    := $(shell cat $(CURDIR)/services/catalog/VERSION)
+export DIRECTOR_API_VERSION   := $(shell cat $(CURDIR)/services/director/VERSION)
+export STORAGE_API_VERSION    := $(shell cat $(CURDIR)/services/storage/VERSION)
+export WEBSERVER_API_VERSION  := $(shell cat $(CURDIR)/services/web/server/VERSION)
+
 
 # swarm stacks
 export SWARM_STACK_NAME ?= simcore
@@ -189,7 +191,7 @@ endif
 
 
 up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
-	# Start compile+watch front-end container [front-end]	
+	# Start compile+watch front-end container [front-end]
 	$(MAKE_C) services/web/client down compile-dev flags=--watch
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy -c $< $(SWARM_STACK_NAME)
@@ -303,7 +305,8 @@ pylint: ## Runs python linter framework's wide
 	/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
 											-not -path "*egg*" \
 											-not -path "*migration*" \
-											-not -path "*contrib*" \
+											-not -path "*datcore.py" \
+											-not -path "*sandbox*" \
 											-not -path "*-sdk/python*" \
 											-not -path "*generated_code*" \
 											-not -path "*datcore.py" \

@@ -14,7 +14,8 @@ pip3 install "$PYLINT_VERSION"
 # Minimal packages to pass linter
 pip install \
   celery\
-  docker
+  docker\
+  pyjwt
 
 
 echo "INFO:" "$(pylint --version)" "@" "$(command -v pylint)"

@@ -1,4 +1,4 @@
-""" Current version of the simcore_service_api_gateway application
+""" Current version of the simcore_service_sidecar application
 """
 import pkg_resources
 

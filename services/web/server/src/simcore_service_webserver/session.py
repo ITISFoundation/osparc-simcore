@@ -56,7 +56,7 @@ def setup_session(app: web.Application):
 
     # EncryptedCookieStorage urlsafe_b64decode inside if passes bytes
     storage = EncryptedCookieStorage(
-        secret_key=secret_key_bytes[:32], cookie_name="API_SESSION"
+        secret_key=secret_key_bytes[:32], cookie_name="osparc.WEBAPI_SESSION"
     )
 
     aiohttp_session.setup(app, storage)

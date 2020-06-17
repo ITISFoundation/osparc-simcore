@@ -92,7 +92,9 @@ info: ## displays basic info
 
 
 .PHONY: autoformat
-autoformat: ## runs black python formatter on this service's code
+autoformat: ## runs black python formatter on this service's code. Use AFTER make install-*
+	# sort imports
+	@python3 -m isort --atomic -rc $(CURDIR)
 	# auto formatting with black
 	@python3 -m black --verbose \
 		--exclude "/(\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist|migration|client-sdk|generated_code)/" \
