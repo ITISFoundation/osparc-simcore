@@ -754,9 +754,10 @@ async def test_replace_project(
     project_update["description"] = "some updated from original project!!!"
     await _replace_project(client, project_update, expected)
 
-    project_update["accessRights"] = {
-        str(all_group["gid"]): {"read": True, "write": True, "delete": True}
-    }
+    # replacing the owner access is not possible, it will keep the owner as well
+    project_update["accessRights"].update(
+        {str(all_group["gid"]): {"read": True, "write": True, "delete": True}}
+    )
     await _replace_project(client, project_update, expected_change_access)
 
 

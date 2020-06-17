@@ -17,7 +17,7 @@ const {
 } = utils.getUserAndPass(args);
 const templateName = "Sleepers";
 
-async function runTutorial () {
+async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, user, pass, newUser, templateName);
 
   tutorial.init();
