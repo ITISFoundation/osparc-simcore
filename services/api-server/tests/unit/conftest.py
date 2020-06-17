@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import os
 import shutil
 import subprocess
 import sys
@@ -32,10 +33,16 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 @pytest.fixture(scope="session")
 def environment() -> Dict:
     env = {
+        "WEBSERVER_HOST": "webserver",
+        "WEBSERVER_SESSION_SECRET_KEY": "REPLACE ME with a key of at least length 32.",
+
+        "POSTGRES_HOST": "localhost",
         "POSTGRES_USER": "test",
         "POSTGRES_PASSWORD": "test",
         "POSTGRES_DB": "test",
-        "LOGLEVEL": "debug",
+
+        "LOG_LEVEL": "debug",
+
         "SC_BOOT_MODE": "production",
     }
     return env
@@ -93,21 +100,24 @@ def tests_utils_dir(tests_dir: Path) -> Path:
 def docker_compose_file(environment, tests_utils_dir, tmpdir_factory) -> Path:
     # Overrides fixture in https://github.com/avast/pytest-docker
 
+    # NOTE: do not forget to add the current environ here, otherwise docker-compose fails
+    environ = dict(os.environ)
+    environ.update(environment)
+
     src_path = tests_utils_dir / "docker-compose.yml"
     assert src_path.exists
 
     dst_path = Path(str(tmpdir_factory.mktemp("config").join("docker-compose.yml")))
 
     shutil.copy(src_path, dst_path.parent)
-    print(list(dst_path.parent.glob("*")))
+    assert dst_path.exists()
 
     # configs
     subprocess.run(
-        f"docker-compose --file {src_path} config > {dst_path.name}",
+        f'docker-compose --file "{src_path}" config > "{dst_path}"',
         shell=True,
         check=True,
-        cwd=dst_path.parent,
-        env=environment,
+        env=environ,
     )
 
     return dst_path

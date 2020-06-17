@@ -14,7 +14,7 @@ from simcore_service_api_server.core.settings import (
 # bring .env-devel in here
 def test_min_environ_for_settings(monkeypatch):
     monkeypatch.setenv("WEBSERVER_HOST", "production_webserver")
-    monkeypatch.setenv("WEBSERVER_SESSION_SECRET_KEY", "test")
+    monkeypatch.setenv("WEBSERVER_SESSION_SECRET_KEY", "REPLACE ME with a key of at least length 32.")
 
     monkeypatch.setenv("POSTGRES_HOST", "production_postgres")
     monkeypatch.setenv("POSTGRES_USER", "test")
