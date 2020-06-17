@@ -96,6 +96,7 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
       if (value) {
         const menu = this.__getOptionsMenu();
         optionsMenu.setMenu(menu);
+        optionsMenu.setVisibility(menu.getChildren().length ? "visible" : "excluded");
       }
     },
 
@@ -116,14 +117,16 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
         menu.add(makeOwnerButton);
       }
 
-      const removeButton = new qx.ui.menu.Button(this.tr("Remove Collaborator"));
-      removeButton.addListener("execute", () => {
-        this.fireDataEvent("removeCollaborator", {
-          gid: this.getKey(),
-          name: this.getTitle()
+      if (!accessRights.getDelete()) {
+        const removeButton = new qx.ui.menu.Button(this.tr("Remove Collaborator"));
+        removeButton.addListener("execute", () => {
+          this.fireDataEvent("removeCollaborator", {
+            gid: this.getKey(),
+            name: this.getTitle()
+          });
         });
-      });
-      menu.add(removeButton);
+        menu.add(removeButton);
+      }
 
       return menu;
     }
