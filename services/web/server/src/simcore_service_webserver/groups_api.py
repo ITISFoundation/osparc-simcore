@@ -153,7 +153,7 @@ async def delete_user_group(app: web.Application, user_id: int, gid: int) -> Non
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         group = await _get_user_group(conn, user_id, gid)
-        check_group_permissions(group, user_id, gid, "delete")
+        check_group_permissions(group, user_id, gid, "write")
 
         await conn.execute(
             # pylint: disable=no-value-for-parameter
