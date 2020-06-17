@@ -12,6 +12,7 @@ from pprint import pformat
 from typing import Dict, List
 
 import pytest
+import tenacity
 from docker import DockerClient
 from docker.models.services import Service
 from yarl import URL
@@ -146,10 +147,25 @@ def test_core_service_running(
         )
 
 
+RETRY_WAIT_SECS = 2
+RETRY_COUNT = 20
+
+
 def test_check_serve_root(loop, make_up_prod: Dict, traefik_service: URL):
+
     req = urllib.request.Request("http://127.0.0.1:9081/")
     try:
-        resp = urllib.request.urlopen(req)
+        # it takes a bit of time until traefik sets up the correct proxy and the webserver takes time to start
+        @tenacity.retry(
+            wait=tenacity.wait_fixed(RETRY_WAIT_SECS),
+            stop=tenacity.stop_after_attempt(RETRY_COUNT),
+            before_sleep=tenacity.before_sleep_log(logger, logging.INFO),
+        )
+        def check_root(request):
+            resp = urllib.request.urlopen(req)
+            return resp
+
+        resp = check_root(req)
         charset = resp.info().get_content_charset()
         content = resp.read().decode(charset)
         # TODO: serch osparc-simcore commit id e.g. 'osparc-simcore v817d82e'
