@@ -121,13 +121,11 @@ python-client: client ## runs python client generator
 
 	cd $(CURDIR); \
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash generate \
-		--api-package=api\
 		--generator-name=$(GENERATOR_NAME) \
 		--git-user-id=$(GIT_USER_ID)\
 		--git-repo-id=$(GIT_REPO_ID)\
 		--http-user-agent="osparc-api/{packageVersion}/{language}"\
 		--input-spec=/local/openapi.json \
-		--minimal-update\
 		--output=/local/client \
 		--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS)))\
 		--package-name=osparc\
