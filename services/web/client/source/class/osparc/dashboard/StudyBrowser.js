@@ -545,19 +545,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createStudyItem: function(study) {
-      let isTemplate = false;
       let defaultThumbnail = "";
       switch (study["resourceType"]) {
         case "template":
-          isTemplate = true;
           defaultThumbnail = "@FontAwesome5Solid/copy/50";
           break;
         case "service":
-          isTemplate = true;
-          defaultThumbnail = "@FontAwesome5Solid/cat/50";
+          defaultThumbnail = "@FontAwesome5Solid/paw/50";
           break;
         case "study":
-          isTemplate = false;
           defaultThumbnail = "@FontAwesome5Solid/file-alt/50";
           break;
       }
@@ -574,20 +570,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         icon: study.thumbnail || defaultThumbnail,
         tags
       });
-      const menu = this.__getStudyItemMenu(item, study, isTemplate);
+      const menu = this.__getStudyItemMenu(item, study);
       item.setMenu(menu);
       item.subscribeToFilterGroup("studyBrowser");
       item.addListener("execute", () => {
-        this.__itemClicked(item, isTemplate);
+        this.__itemClicked(item);
       }, this);
 
       return item;
     },
 
-    __getStudyItemMenu: function(item, studyData, isTemplate) {
+    __getStudyItemMenu: function(item, studyData) {
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
+
+      const isTemplate = !(item.isResourceType("study"));
 
       const selectButton = this.__getSelectMenuButton(item, studyData, isTemplate);
       if (selectButton) {
@@ -709,12 +707,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return isTemplate ? this.__templateStudies.find(matchesId) : this.__userStudies.find(matchesId);
     },
 
-    __itemClicked: function(item, isTemplate) {
+    __itemClicked: function(item) {
       if (item.isResourceType("service")) {
         const serviceKey = item.getUuid();
         this.__createStudyFromServiceBtnClkd(serviceKey);
+        this.__itemSelected(null);
         return;
       }
+      const isTemplate = item.isResourceType("template");
       const selected = item.getValue();
       const studyData = this.__getStudyData(item.getUuid(), isTemplate);
       const studyContainer = isTemplate ? this.__templateStudyContainer : this.__userStudyContainer;
