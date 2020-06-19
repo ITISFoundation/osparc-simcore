@@ -429,20 +429,37 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
     },
 
-    __createStudyItem: function(study, isTemplate) {
+    __createStudyItem: function(study) {
+      let isTemplate = false;
+      let defaultThumbnail = "";
+      switch (study["resourceType"]) {
+        case "template":
+          isTemplate = true;
+          defaultThumbnail = "@FontAwesome5Solid/copy/50";
+          break;
+        case "service":
+          isTemplate = true;
+          defaultThumbnail = "@FontAwesome5Solid/cat/50";
+          break;
+        case "study":
+          isTemplate = false;
+          defaultThumbnail = "@FontAwesome5Solid/file-alt/50";
+          break;
+      }
       const tags =
-        study.tags ?
-          osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id)) :
-          [];
+      study.tags ?
+        osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id)) :
+        [];
+
       const item = new osparc.dashboard.StudyBrowserButtonItem().set({
-        isTemplate,
+        resourceType: study.resourceType,
         uuid: study.uuid,
         studyTitle: study.name,
         studyDescription: study.description,
         creator: study.prjOwner ? study.prjOwner : null,
         accessRights: study.accessRights ? study.accessRights : null,
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
-        icon: study.thumbnail || (isTemplate ? "@FontAwesome5Solid/copy/50" : "@FontAwesome5Solid/file-alt/50"),
+        icon: study.thumbnail || defaultThumbnail,
         tags
       });
       const menu = this.__getStudyItemMenu(item, study, isTemplate);

@@ -50,11 +50,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
   },
 
   properties: {
-    isTemplate: {
-      check: "Boolean",
+    resourceType: {
+      check: ["study", "template", "service"],
       nullable: false,
-      init: false,
-      event: "changeIsTemplate"
+      event: "changeResourceType"
     },
 
     menu: {
@@ -116,6 +115,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
   members: {
     __dateFormat: null,
     __timeFormat: null,
+
+    isTemplate: function() {
+      return this.getResourceType() === "template";
+    },
 
     multiSelection: function(on) {
       const menuButton = this.getChildControl("menu-button");
@@ -198,7 +201,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyLastChangeDate: function(value, old) {
-      if (value && !this.getIsTemplate()) {
+      if (value && !this.isTemplate()) {
         const label = this.getChildControl("description");
         let dateStr = null;
         if (value.getDate() === (new Date()).getDate()) {
@@ -214,7 +217,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyCreator: function(value, old) {
-      if (this.getIsTemplate()) {
+      if (this.isTemplate()) {
         const label = this.getChildControl("creator");
         label.setValue(value);
       }
