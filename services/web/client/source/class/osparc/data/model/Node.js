@@ -950,14 +950,15 @@ qx.Class.define("osparc.data.model.Node", {
     __onNodeState: function(data) {
       const serviceState = data["service_state"];
       switch (serviceState) {
-        case "starting": {
-          this.setInteractiveStatus("starting");
-          const interval = 5000;
+        case "idle": {
+          this.setInteractiveStatus("idle");
+          const interval = 1000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
           break;
         }
+        case "starting":
         case "pulling": {
-          this.setInteractiveStatus("pulling");
+          this.setInteractiveStatus(serviceState);
           const interval = 5000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
           break;
