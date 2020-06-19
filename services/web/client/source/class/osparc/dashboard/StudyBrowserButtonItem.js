@@ -193,7 +193,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyStudyDescription: function(value, old) {
       /*
-      if (value !== "" && this.getIsTemplate()) {
+      if (value !== "" && this.isTemplate()) {
         const label = this.getChildControl("description");
         label.setValue(value);
       }
@@ -202,7 +202,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyLastChangeDate: function(value, old) {
       if (value && !this.isTemplate()) {
-        const label = this.getChildControl("description");
+        const label = this.getChildControl("description2");
         let dateStr = null;
         if (value.getDate() === (new Date()).getDate()) {
           dateStr = this.tr("Today");
@@ -218,7 +218,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyCreator: function(value, old) {
       if (this.isTemplate()) {
-        const label = this.getChildControl("creator");
+        const label = this.getChildControl("description2");
         label.setValue(value);
       }
     },
@@ -257,7 +257,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         const gids = Object.keys(value);
         for (let j=0; j<gids.length; j++) {
           const gid = parseInt(gids[j]);
-          if (!this.getIsTemplate() && (gid === myGroupId)) {
+          if (!this.isTemplate() && (gid === myGroupId)) {
             continue;
           }
           const grp = groups[i].find(group => group["gid"] === gid);
