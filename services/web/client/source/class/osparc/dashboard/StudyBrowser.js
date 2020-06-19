@@ -710,7 +710,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __itemClicked: function(item, isTemplate) {
-      if (item.getResourceType() === "service") {
+      if (item.isResourceType("service")) {
         const serviceKey = item.getUuid();
         this.__createStudyFromServiceBtnClkd(serviceKey);
         return;

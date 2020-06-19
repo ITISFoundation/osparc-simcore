@@ -116,8 +116,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     __dateFormat: null,
     __timeFormat: null,
 
-    isTemplate: function() {
-      return this.getResourceType() === "template";
+    isResourceType: function(resourceType) {
+      return this.getResourceType() === resourceType;
     },
 
     multiSelection: function(on) {
@@ -193,7 +193,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyStudyDescription: function(value, old) {
       /*
-      if (value !== "" && this.isTemplate()) {
+      if (value !== "" && this.isResourceType("template")) {
         const label = this.getChildControl("description");
         label.setValue(value);
       }
@@ -201,7 +201,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyLastChangeDate: function(value, old) {
-      if (value && !this.isTemplate()) {
+      if (value && this.isResourceType("study")) {
         const label = this.getChildControl("description2");
         let dateStr = null;
         if (value.getDate() === (new Date()).getDate()) {
@@ -217,7 +217,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyCreator: function(value, old) {
-      if (this.isTemplate()) {
+      if (this.isResourceType("service") || this.isResourceType("template")) {
         const label = this.getChildControl("description2");
         label.setValue(value);
       }
@@ -257,7 +257,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         const gids = Object.keys(value);
         for (let j=0; j<gids.length; j++) {
           const gid = parseInt(gids[j]);
-          if (!this.isTemplate() && (gid === myGroupId)) {
+          if (this.isResourceType("study") && (gid === myGroupId)) {
             continue;
           }
           const grp = groups[i].find(group => group["gid"] === gid);
