@@ -407,14 +407,8 @@ qx.Class.define("osparc.utils.Services", {
             const serv = service[version];
             if (Object.prototype.hasOwnProperty.call(service, version)) {
               serv["category"] = categories[serviceKey]["category"];
-            } else {
-              serv["category"] = "Unknown";
             }
           });
-        } else {
-          for (const version in service) {
-            service[version]["category"] = "Unknown";
-          }
         }
       });
     }
