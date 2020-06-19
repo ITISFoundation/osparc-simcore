@@ -41,21 +41,6 @@ coverage:
           - api
           - packages
           - services
-      api:
-        informational: true
-        threshold: 1%
-        paths:
-          - api
-      packages:
-        informational: true
-        threshold: 1%
-        paths:
-          - packages
-      services:
-        informational: true
-        threshold: 1%
-        paths:
-          - services
 
 parsers:
   gcov:
