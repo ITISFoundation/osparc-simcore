@@ -81,9 +81,13 @@ async def instrumentation_message_handler(
 ) -> None:
     data = json.loads(message.body)
     if data["metrics"] == "service_started":
-        service_started(app, **{key:value for key, value in data.items() if key != "metrics"})
+        service_started(
+            app, **{key: value for key, value in data.items() if key != "metrics"}
+        )
     elif data["metrics"] == "service_stopped":
-        service_stopped(app, **{key:value for key, value in data.items() if key != "metrics"})
+        service_stopped(
+            app, **{key: value for key, value in data.items() if key != "metrics"}
+        )
     await message.ack()
 
 

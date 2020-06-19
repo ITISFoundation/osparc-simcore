@@ -16,7 +16,6 @@ from psycopg2.errors import ForeignKeyViolation  # pylint: disable=no-name-in-mo
 from simcore_postgres_database.webserver_models import (
     UserStatus,
     projects,
-    user_to_projects,
     users,
 )
 
@@ -69,16 +68,6 @@ def engine(make_engine, loop):
                 await conn.execute(
                     projects.insert().values(**random_project(prj_owner=4))
                 )
-
-            await conn.execute(
-                user_to_projects.insert().values(user_id=1, project_id=1)
-            )
-            await conn.execute(
-                user_to_projects.insert().values(user_id=1, project_id=2)
-            )
-            await conn.execute(
-                user_to_projects.insert().values(user_id=2, project_id=3)
-            )
 
         return engine
 
@@ -175,10 +164,3 @@ async def test_view(engine):
         res = await conn.execute(projects.select())
         rows = await res.fetchall()
         assert len(rows) == 3
-
-        # effect of cascade is that relation deletes as well
-        res = await conn.execute(user_to_projects.select())
-        rows = await res.fetchall()
-
-        assert len(rows) == 1
-        assert not any(row[user_to_projects.c.user_id] == 1 for row in rows)

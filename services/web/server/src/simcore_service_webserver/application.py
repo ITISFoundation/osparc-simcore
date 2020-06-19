@@ -9,7 +9,6 @@ from aiohttp import web
 
 from servicelib.application import create_safe_application
 
-
 from .activity import setup_activity
 from .application_proxy import setup_app_proxy
 from .catalog import setup_catalog
@@ -18,8 +17,10 @@ from .db import setup_db
 from .diagnostics_plugin import setup_diagnostics
 from .director import setup_director
 from .email import setup_email
+from .groups import setup_groups
 from .login import setup_login
 from .projects import setup_projects
+from .publications import setup_publications
 from .resource_manager import setup_resource_manager
 from .rest import setup_rest
 from .security import setup_security
@@ -31,7 +32,6 @@ from .studies_access import setup_studies_access
 from .tags import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
-from .publications import setup_publications
 
 log = logging.getLogger(__name__)
 
@@ -63,6 +63,7 @@ def create_application(config: Dict) -> web.Application:
     setup_director(app)
     setup_storage(app)
     setup_users(app)
+    setup_groups(app)
     setup_projects(app)  # needs storage
     setup_studies_access(app)
     setup_activity(app)

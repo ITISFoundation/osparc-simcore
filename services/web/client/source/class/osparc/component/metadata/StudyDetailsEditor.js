@@ -26,35 +26,32 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param study {Object|osparc.data.model.Study} Study (metadata)
+    * @param studyData {Object} Object containing the serialized Study Data
     * @param isTemplate {Boolean} Weather the study is template or not
     * @param winWidth {Number} Width for the window, needed for stretching the thumbnail
     */
-  construct: function(study, isTemplate, winWidth) {
+  construct: function(studyData, isTemplate, winWidth) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.Grow());
 
-    this.__isTemplate = isTemplate;
-    this.__selectedTags = study.tags;
-    this.__model = qx.data.marshal.Json.createModel(study);
+    this.__studyModel = qx.data.marshal.Json.createModel(studyData);
+    this.__selectedTags = studyData.tags;
+    this.__workbench = studyData.workbench;
 
     this.__stack = new qx.ui.container.Stack();
-    this.__displayView = this.__createDisplayView(study, winWidth);
-    this.__editView = this.__createEditView();
+    this.__displayView = this.__createDisplayView(studyData, isTemplate, winWidth);
+    this.__editView = this.__createEditView(isTemplate);
     this.__stack.add(this.__displayView);
     this.__stack.add(this.__editView);
     this._add(this.__stack);
-
-    // Workaround: qx serializer is not doing well with uuid as object keys.
-    this.__workbench = study.workbench;
   },
 
   events: {
-    updatedStudy: "qx.event.type.Data",
-    updatedTemplate: "qx.event.type.Data",
-    updateTags: "qx.event.type.Data",
-    closed: "qx.event.type.Event",
-    openedStudy: "qx.event.type.Event"
+    "updateStudy": "qx.event.type.Event",
+    "updateTemplate": "qx.event.type.Event",
+    "updateTags": "qx.event.type.Data",
+    "closed": "qx.event.type.Event",
+    "openStudy": "qx.event.type.Event"
   },
 
   properties: {
@@ -66,22 +63,48 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     }
   },
 
+  statics: {
+    popUpInWindow: function(title, studyDetailsEditor, width = 400, height = 400) {
+      const win = new qx.ui.window.Window(title).set({
+        autoDestroy: true,
+        layout: new qx.ui.layout.VBox(),
+        appearance: "service-window",
+        showMinimize: false,
+        showMaximize: false,
+        resizable: true,
+        contentPadding: 10,
+        width: width,
+        height: height,
+        modal: true
+      });
+      win.add(studyDetailsEditor);
+      win.center();
+      win.open();
+      return win;
+    }
+  },
+
   members: {
     __stack: null,
-    __workbench: null,
-    __model: null,
-    __isTemplate: null,
     __fields: null,
+    __openButton: null,
+    __study: null,
+    __studyModel: null,
+    __workbench: null,
     __selectedTags: null,
 
-    __createDisplayView: function(study, winWidth) {
+    showOpenButton: function(show) {
+      this.__openButton.setVisibility(show ? "visible" : "excluded");
+    },
+
+    __createDisplayView: function(study, isTemplate, winWidth) {
       const displayView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      displayView.add(this.__createButtons());
+      displayView.add(this.__createButtons(isTemplate));
       displayView.add(new osparc.component.metadata.StudyDetails(study, winWidth));
       return displayView;
     },
 
-    __createButtons: function() {
+    __createButtons: function(isTemplate) {
       const isCurrentUserOwner = this.__isUserOwner();
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       const canUpdateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.update");
@@ -92,16 +115,16 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         marginTop: 10
       });
 
-      const openButton = new qx.ui.form.Button("Open").set({
-        appearance: "lg-button"
+      const openButton = this.__openButton = new qx.ui.form.Button("Open").set({
+        appearance: "md-button"
       });
       osparc.utils.Utils.setIdToWidget(openButton, "openStudyBtn");
-      openButton.addListener("execute", () => this.fireEvent("openedStudy"), this);
+      openButton.addListener("execute", () => this.fireEvent("openStudy"), this);
       buttonsLayout.add(openButton);
 
       const modeButton = new qx.ui.form.Button("Edit", "@FontAwesome5Solid/edit/16").set({
-        appearance: "lg-button",
-        visibility: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate) ? "visible" : "excluded"
+        appearance: "md-button",
+        visibility: isCurrentUserOwner && (!isTemplate || canUpdateTemplate) ? "visible" : "excluded"
       });
       osparc.utils.Utils.setIdToWidget(modeButton, "editStudyBtn");
       modeButton.addListener("execute", () => this.setMode("edit"), this);
@@ -111,24 +134,35 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         flex: 1
       });
 
-      if (isCurrentUserOwner && (!this.__isTemplate && canCreateTemplate)) {
-        const saveAsTemplateButton = new qx.ui.form.Button(this.tr("Save as template")).set({
-          appearance: "lg-button"
+      if (!isTemplate) {
+        const permissionsButton = new qx.ui.form.Button(this.tr("Permissions")).set({
+          appearance: "md-button"
         });
-        osparc.utils.Utils.setIdToWidget(saveAsTemplateButton, "saveAsTemplateBtn");
-        saveAsTemplateButton.addListener("execute", e => {
-          this.__openSaveAsTemplate();
+        osparc.utils.Utils.setIdToWidget(permissionsButton, "permissionsBtn");
+        permissionsButton.addListener("execute", e => {
+          this.__openPermissions();
         }, this);
-        buttonsLayout.add(saveAsTemplateButton);
+        buttonsLayout.add(permissionsButton);
+
+        if (isCurrentUserOwner && canCreateTemplate) {
+          const saveAsTemplateButton = new qx.ui.form.Button(this.tr("Save as Template")).set({
+            appearance: "md-button"
+          });
+          osparc.utils.Utils.setIdToWidget(saveAsTemplateButton, "saveAsTemplateBtn");
+          saveAsTemplateButton.addListener("execute", e => {
+            this.__openSaveAsTemplate();
+          }, this);
+          buttonsLayout.add(saveAsTemplateButton);
+        }
       }
 
       return buttonsLayout;
     },
 
-    __createEditView: function() {
+    __createEditView: function(isTemplate) {
       const isCurrentUserOwner = this.__isUserOwner();
       const canUpdateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.update");
-      const fieldIsEnabled = isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate);
+      const fieldIsEnabled = isCurrentUserOwner && (!isTemplate || canUpdateTemplate);
 
       const editView = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
       const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
@@ -136,36 +170,36 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       }));
 
       this.__fields = {
-        name: new qx.ui.form.TextField(this.__model.getName()).set({
+        name: new qx.ui.form.TextField(this.__studyModel.getName()).set({
           font: "title-18",
           height: 35,
           enabled: fieldIsEnabled
         }),
-        description: new qx.ui.form.TextArea(this.__model.getDescription()).set({
+        description: new qx.ui.form.TextArea(this.__studyModel.getDescription()).set({
           autoSize: true,
           minHeight: 100,
           maxHeight: 500,
           enabled: fieldIsEnabled
         }),
-        thumbnail: new qx.ui.form.TextField(this.__model.getThumbnail()).set({
+        thumbnail: new qx.ui.form.TextField(this.__studyModel.getThumbnail()).set({
           enabled: fieldIsEnabled
         })
       };
 
-      const modeButton = new qx.ui.form.Button("Save", "@FontAwesome5Solid/save/16").set({
+      const saveButton = new qx.ui.form.Button(this.tr("Save"), "@FontAwesome5Solid/save/16").set({
         appearance: "lg-button"
       });
-      osparc.utils.Utils.setIdToWidget(modeButton, "studyDetailsEditorSaveBtn");
-      modeButton.addListener("execute", e => {
+      osparc.utils.Utils.setIdToWidget(saveButton, "studyDetailsEditorSaveBtn");
+      saveButton.addListener("execute", e => {
         const btn = e.getTarget();
         btn.setIcon("@FontAwesome5Solid/circle-notch/16");
         btn.getChildControl("icon").getContentElement()
           .addClass("rotate");
-        this.__saveStudy(btn);
+        this.__saveStudy(isTemplate, btn);
       }, this);
       const cancelButton = new qx.ui.form.Button(this.tr("Cancel")).set({
         appearance: "lg-button",
-        enabled: isCurrentUserOwner && (!this.__isTemplate || canUpdateTemplate)
+        enabled: isCurrentUserOwner && (!isTemplate || canUpdateTemplate)
       });
       osparc.utils.Utils.setIdToWidget(cancelButton, "studyDetailsEditorCancelBtn");
       cancelButton.addListener("execute", () => this.setMode("display"), this);
@@ -196,7 +230,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         editView.add(this.__tagsSection());
       }
 
-      buttons.add(modeButton);
+      buttons.add(saveButton);
       buttons.add(cancelButton);
       editView.add(buttons);
 
@@ -215,13 +249,13 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         appearance: "link-button"
       });
       editButton.addListener("execute", () => {
-        const tagManager = new osparc.component.form.tag.TagManager(this.__selectedTags, editButton, "study", this.__model.getUuid());
+        const tagManager = new osparc.component.form.tag.TagManager(this.__selectedTags, editButton, "study", this.__studyModel.getUuid());
         tagManager.addListener("changeSelected", evt => {
           this.__selectedTags = evt.getData().selected;
         }, this);
         tagManager.addListener("close", () => {
           this.__renderTags();
-          this.fireDataEvent("updateTags", this.__model.getUuid());
+          this.fireDataEvent("updateTags", this.__studyModel.getUuid());
         }, this);
       });
       header.add(editButton);
@@ -244,21 +278,21 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       return this.__tagsContainer;
     },
 
-    __saveStudy: function(btn) {
+    __saveStudy: function(isTemplate, btn) {
       const params = {
         url: {
-          projectId: this.__model.getUuid()
+          projectId: this.__studyModel.getUuid()
         },
         data: this.__serializeForm()
       };
-      osparc.data.Resources.fetch(this.__isTemplate ? "templates" : "studies", "put", params)
+      osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "put", params)
         .then(data => {
           btn.resetIcon();
           btn.getChildControl("icon").getContentElement()
             .removeClass("rotate");
-          this.__model.set(data);
+          this.__studyModel.set(data);
           this.setMode("display");
-          this.fireDataEvent(this.__isTemplate ? "updatedTemplate" : "updatedStudy", data);
+          this.fireEvent(isTemplate ? "updateTemplate" : "updateStudy");
         })
         .catch(err => {
           btn.resetIcon();
@@ -269,28 +303,43 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         });
     },
 
-    __openSaveAsTemplate: function() {
-      const saveAsTemplateView = new osparc.component.export.SaveAsTemplate(this.__model.getUuid(), this.__serializeForm());
-      const window = osparc.component.export.SaveAsTemplate.createSaveAsTemplateWindow(saveAsTemplateView);
-      saveAsTemplateView.addListener("finished", e => {
-        const template = e.getData();
-        if (template) {
-          this.fireDataEvent("updatedTemplate", template);
-          this.__model.set(template);
-          this.setMode("display");
-
+    __openPermissions: function() {
+      const studyData = qx.util.Serializer.toNativeObject(this.__studyModel);
+      const permissionsView = new osparc.component.export.Permissions(studyData);
+      const window = permissionsView.createWindow();
+      permissionsView.addListener("updateStudy", e => {
+        this.fireEvent("updateStudy");
+      });
+      permissionsView.addListener("finished", e => {
+        if (e.getData()) {
           window.close();
         }
       }, this);
+      window.open();
+    },
 
+    __openSaveAsTemplate: function() {
+      const saveAsTemplateView = new osparc.component.export.SaveAsTemplate(this.__studyModel.getUuid(), this.__serializeForm());
+      const window = saveAsTemplateView.createWindow();
+      saveAsTemplateView.addListener("finished", e => {
+        const template = e.getData();
+        if (template) {
+          this.__studyModel.set(template);
+          this.setMode("display");
+          this.fireEvent("updateTemplate");
+          window.close();
+        }
+      }, this);
       window.open();
     },
 
     __serializeForm: function() {
-      const data = {
-        ...qx.util.Serializer.toNativeObject(this.__model),
+      let data = {};
+      data = {
+        ...qx.util.Serializer.toNativeObject(this.__studyModel),
         workbench: this.__workbench
       };
+
       for (let key in this.__fields) {
         data[key] = this.__fields[key].getValue();
       }
@@ -323,8 +372,8 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __isUserOwner: function() {
-      if (this.__model) {
-        return this.__model.getPrjOwner() === osparc.auth.Data.getInstance().getEmail();
+      if (this.__studyModel) {
+        return this.__studyModel.getPrjOwner() === osparc.auth.Data.getInstance().getEmail();
       }
       return false;
     }

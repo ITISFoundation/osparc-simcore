@@ -17,21 +17,24 @@
 
 /**
  * View that shows who you want to share the resource with:
- * - Everyone
- * - My organizations
  * - Private
+ * - Organization members
+ * - My organizations
+ * - Everyone
  */
 
 qx.Class.define("osparc.component.export.ShareWith", {
   extend: qx.ui.groupbox.GroupBox,
 
-  construct: function(filterGroupId) {
-    this.base(arguments, this.tr("Share with"));
+  construct: function(header) {
+    this.base(arguments, header);
 
     this.set({
       appearance: "settings-groupbox",
       layout: new qx.ui.layout.VBox(10)
     });
+
+    this.__buildLayout();
 
     const store = osparc.store.Store.getInstance();
     Promise.all([
@@ -41,9 +44,14 @@ qx.Class.define("osparc.component.export.ShareWith", {
       .then(values => {
         const groupMe = values[0];
         const groupAll = values[1];
-        this.__sharingOptions["me"]["gid"] = groupMe["gid"];
-        this.__sharingOptions["all"]["gid"] = groupAll["gid"];
-        this.__buildLayout(filterGroupId);
+        this.__rbManager.getChildren().forEach(rb => {
+          if (rb.contextId === this.__sharingOpts["me"].contextId) {
+            rb.gid = groupMe["gid"];
+          }
+          if (rb.contextId === this.__sharingOpts["all"].contextId) {
+            rb.gid = groupAll["gid"];
+          }
+        });
       });
   },
 
@@ -57,43 +65,87 @@ qx.Class.define("osparc.component.export.ShareWith", {
   },
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members
-    __sharingOptions: {
+    __sharingOpts: {
       "me": {
-        shareContextId: 0,
-        label: "Private",
-        gid: null
+        contextId: 0,
+        label: "Private"
       },
+      /*
+      "orgMembers": {
+        contextId: 1,
+        label: "Organization Members"
+      },
+      */
       "orgs": {
-        shareContextId: 1,
-        label: "Organizations",
-        gid: null
+        contextId: 2,
+        label: "Organizations"
       },
       "all": {
-        shareContextId: 2,
-        label: "Everyone",
-        gid: null
+        contextId: 3,
+        label: "Everyone"
       }
     },
     __rbManager: null,
-    __myOrganizationsHB: null,
+    __privateLayout: null,
+    __publicLayout: null,
+    __myOrgMembersHB: null,
+    __myOrgMembers: null,
+    __myOrgs: null,
 
-    __buildLayout: function(filterGroupId) {
+    __buildLayout: function() {
       this.__rbManager = new qx.ui.form.RadioGroup().set({
         allowEmptySelection: true
       });
 
-      for (let [sharingOptionKey, sharingOption] of Object.entries(this.__sharingOptions)) {
+      for (let [sharingOptionKey, sharingOption] of Object.entries(this.__sharingOpts)) {
         const rb = new qx.ui.form.RadioButton(sharingOption.label);
-        rb.shareContextId = sharingOption.shareContextId;
-        if (sharingOptionKey === "orgs") {
-          const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-          const myOrganizationsHB = this.__myOrganizationsHB = new osparc.component.filter.Organizations(filterGroupId);
-          vBox.add(rb);
-          vBox.add(myOrganizationsHB);
-          this.add(vBox);
-        } else {
-          rb.gid = sharingOption["gid"];
-          this.add(rb);
+        rb.contextId = sharingOption.contextId;
+        switch (sharingOptionKey) {
+          case "me":
+            this.__privateLayout = rb;
+            this.add(rb);
+            break;
+          case "orgMembers": {
+            const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+            const myOrgMembersHB = this.__myOrgMembersHB = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+              alignY: "middle"
+            }));
+            const myOrgsSB = new qx.ui.form.SelectBox();
+            osparc.data.Resources.get("organizations")
+              .then(resp => {
+                const orgs = resp["organizations"];
+                orgs.sort(this.__sortByLabel);
+                orgs.forEach(org => {
+                  const orgItem = new qx.ui.form.ListItem(org["label"]);
+                  orgItem.gid = org["gid"];
+                  myOrgsSB.add(orgItem);
+                });
+              });
+            myOrgMembersHB.add(myOrgsSB);
+            const myOrgMembers = this.__myOrgMembers = new osparc.component.filter.OrganizationMembers("asdfasdf");
+            myOrgMembersHB.add(myOrgMembers, {
+              flex: 1
+            });
+            myOrgsSB.addListener("changeSelection", e => {
+              myOrgMembers.setOrganizationId(e.getData()[0].gid);
+            });
+            vBox.add(rb);
+            vBox.add(myOrgMembersHB);
+            this.add(vBox);
+            break;
+          }
+          case "orgs": {
+            const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+            const myOrgs = this.__myOrgs = new osparc.component.filter.Organizations();
+            vBox.add(rb);
+            vBox.add(myOrgs);
+            this.add(vBox);
+            break;
+          }
+          case "all":
+            this.__publicLayout = rb;
+            this.add(rb);
+            break;
         }
         this.__rbManager.add(rb);
       }
@@ -106,36 +158,54 @@ qx.Class.define("osparc.component.export.ShareWith", {
       const selection = this.__rbManager.getSelection();
       this.setReady(Boolean(selection.length));
 
-      const isOrganizationsSelected = this.__isGroupSelected("orgs");
-      this.__myOrganizationsHB.setVisibility(isOrganizationsSelected ? "visible" : "excluded");
+      // this.__myOrgMembersHB.setVisibility(this.__isGroupSelected("orgMembers") ? "visible" : "excluded");
+      this.__myOrgs.setVisibility(this.__isGroupSelected("orgs") ? "visible" : "excluded");
     },
 
     __isGroupSelected: function(groupKey) {
       const selection = this.__rbManager.getSelection();
-      if (selection.length === 1 && selection[0].shareContextId === this.__sharingOptions[groupKey].shareContextId) {
+      if (selection.length === 1 && selection[0].contextId === this.__sharingOpts[groupKey].contextId) {
         return true;
       }
       return false;
     },
 
-    __getSelectedOrganizationIDs: function() {
-      if (this.__isGroupSelected("orgs")) {
-        return this.__myOrganizationsHB.getSelectedOrganizationIDs();
+    __getSelectedOrgMemberIDs: function() {
+      if (this.__isGroupSelected("orgMembers")) {
+        return this.__myOrgMembers.getSelectedOrgMemberIDs();
       }
       return [];
+    },
+
+    __getSelectedOrgIDs: function() {
+      if (this.__isGroupSelected("orgs")) {
+        return this.__myOrgs.getSelectedOrgIDs();
+      }
+      return [];
+    },
+
+    showPrivate: function(show) {
+      this.__privateLayout.setVisibility(show ? "visible" : "excluded");
+    },
+
+    showPublic: function(show) {
+      this.__publicLayout.setVisibility(show ? "visible" : "excluded");
     },
 
     getSelectedGroups: function() {
       let groupIDs = [];
       const selection = this.__rbManager.getSelection();
       if (selection.length) {
-        switch (selection[0].shareContextId) {
-          case 0:
-          case 2:
+        switch (selection[0].contextId) {
+          case this.__sharingOpts["me"].contextId:
+          case this.__sharingOpts["all"].contextId:
             groupIDs = [selection[0].gid];
             break;
-          case 1:
-            groupIDs = this.__getSelectedOrganizationIDs();
+          // case this.__sharingOpts["orgMembers"].contextId:
+          //   groupIDs = this.__getSelectedOrgMemberIDs();
+          //   break;
+          case this.__sharingOpts["orgs"].contextId:
+            groupIDs = this.__getSelectedOrgIDs();
             break;
         }
       }

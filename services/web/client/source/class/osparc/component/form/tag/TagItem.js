@@ -53,8 +53,8 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
     }
   },
   events: {
-    cancelNewTag: "qx.event.type.Event",
-    deleteTag: "qx.event.type.Event"
+    "cancelNewTag": "qx.event.type.Event",
+    "deleteTag": "qx.event.type.Event"
   },
   members: {
     __tag: null,
