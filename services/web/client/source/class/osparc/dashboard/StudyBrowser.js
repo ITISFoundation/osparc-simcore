@@ -157,7 +157,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const latestService = osparc.utils.Services.getLatest(services, serviceKey);
             servicesList.push(latestService);
           }
-          this.__setServicesList(servicesList);
+          this.__resetServicesList(servicesList);
           this.__itemSelected(null);
         })
         .catch(err => {
@@ -518,7 +518,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
     },
 
-    __setServicesList: function(servicesList) {
+    __resetServicesList: function(servicesList) {
       this.__services = servicesList;
       this.__servicesContainer.removeAll();
       servicesList.forEach(service => {
