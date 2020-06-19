@@ -756,6 +756,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (this.__templateStudyContainer) {
           this.__templateStudyContainer.resetSelection();
         }
+        if (this.__servicesContainer) {
+          this.__servicesContainer.resetSelection();
+        }
       }
     },
 
