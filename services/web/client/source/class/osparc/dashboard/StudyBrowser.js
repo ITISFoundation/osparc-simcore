@@ -393,9 +393,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__userStudies = userStudyList;
       this.__userStudyContainer.removeAll();
       this.self().sortStudyList(userStudyList);
-      for (let i=0; i<userStudyList.length; i++) {
-        this.__userStudyContainer.add(this.__createStudyItem(userStudyList[i], false));
-      }
+      userStudyList.forEach(userStudy => {
+        this.__userStudyContainer.add(this.__createStudyItem(userStudy));
+      });
       osparc.component.filter.UIFilterController.dispatch("studyBrowser");
     },
 
@@ -404,9 +404,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__templateStudyContainer.removeAll();
       this.__templateStudyContainer.add(this.__createNewStudyButton());
       this.self().sortStudyList(tempStudyList);
-      for (let i=0; i<tempStudyList.length; i++) {
-        this.__templateStudyContainer.add(this.__createStudyItem(tempStudyList[i], true));
-      }
+      tempStudyList.forEach(tempStudy => {
+        this.__templateStudyContainer.add(this.__createStudyItem(tempStudy));
+      });
     },
 
     __removeFromStudyList: function(studyId, isTemplate) {
