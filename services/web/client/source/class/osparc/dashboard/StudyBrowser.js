@@ -135,7 +135,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__hideLoadingPage();
           this.__createStudiesLayout();
-          this.__reloadStudies();
+          this.__reloadResources();
           this.__attachEventHandlers();
           const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
           if (loadStudyId) {
@@ -144,7 +144,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __reloadStudies: function() {
+    __reloadResources: function() {
       this.__getActiveStudy();
       this.reloadUserStudies();
       this.reloadTemplateStudies();
