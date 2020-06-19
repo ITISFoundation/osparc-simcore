@@ -233,12 +233,35 @@ qx.Class.define("osparc.utils.Services", {
 
     servicesToCache: function(services) {
       this.servicesCached = {};
-      this.__addCategory(services);
+      this.__addExtraInfo(services);
       this.servicesCached = Object.assign(this.servicesCached, services);
     },
 
-    __addCategory: function(services) {
-      const categories = {
+    __addExtraInfo: function(services) {
+      const categories = this.__getCategories();
+      Object.values(services).forEach(serviceWVersion => {
+        Object.values(serviceWVersion).forEach(service => {
+          service["uuid"] = service["key"];
+          service["prjOwner"] = service["contact"];
+          service["thumbnail"] = "@FontAwesome5Solid/paw/50";
+          service["accessRights"] = {
+            "1": {
+              "read": true,
+              "write": true,
+              "delete": false
+            }
+          };
+          if (Object.prototype.hasOwnProperty.call(categories, service["key"])) {
+            service["category"] = categories[service["key"]]["category"];
+          } else {
+            service["category"] = "Unknown";
+          }
+        });
+      });
+    },
+
+    __getCategories: function(services) {
+      return {
         "simcore/services/frontend/file-picker": {
           "category": "Data"
         },
@@ -400,17 +423,6 @@ qx.Class.define("osparc.utils.Services", {
           "category": "PostPro"
         }
       };
-      Object.keys(services).forEach(serviceKey => {
-        const service = services[serviceKey];
-        if (serviceKey in categories) {
-          Object.keys(service).forEach(version => {
-            const serv = service[version];
-            if (Object.prototype.hasOwnProperty.call(service, version)) {
-              serv["category"] = categories[serviceKey]["category"];
-            }
-          });
-        }
-      });
     }
   }
 });
