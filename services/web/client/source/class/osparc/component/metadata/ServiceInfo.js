@@ -48,8 +48,8 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
       }));
 
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
-      hBox.add(this.__createThumbnail());
-      hBox.add(this.__createExtraInfo(), {
+      hBox.add(this.__createExtraInfo());
+      hBox.add(this.__createThumbnail(), {
         flex: 1
       });
       container.add(hBox);
@@ -68,12 +68,7 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
     },
 
     __createThumbnail: function() {
-      return new qx.ui.basic.Image(this.__metadata.thumbnail || "@FontAwesome5Solid/flask/50").set({
-        scale: true,
-        width: 300,
-        height: 180,
-        paddingTop: this.__metadata.thumbnail ? 0 : 60
-      });
+      return new osparc.component.widget.Thumbnail(this.__metadata.thumbnail || "@FontAwesome5Solid/flask/50", 300, 180);
     },
 
     __createExtraInfo: function() {
