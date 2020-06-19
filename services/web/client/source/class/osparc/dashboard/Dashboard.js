@@ -75,7 +75,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     __createMainViewLayout: function() {
       [
         [this.tr("Studies"), this.__createStudyBrowser],
-        [this.tr("Services"), this.__createServiceBrowser],
+        // [this.tr("Services"), this.__createServiceBrowser],
         [this.tr("Data"), this.__createDataBrowser]
       ].forEach(tuple => {
         const tabPage = new qx.ui.tabview.Page(tuple[0]).set({

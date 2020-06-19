@@ -77,8 +77,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __studyFilters: null,
     __userStudyContainer: null,
     __templateStudyContainer: null,
+    __servicesContainer: null,
     __userStudies: null,
     __templateStudies: null,
+    __services: null,
     __newStudyBtn: null,
 
     /**
@@ -128,10 +130,37 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __initResources: function() {
-      this.__showLoadingPage(this.tr("Loading studies"));
+    /**
+     *  Function that asks the backend for the list of services and sets it
+     */
+    reloadServices: function() {
+      const store = osparc.store.Store.getInstance();
+      store.getServicesDAGs()
+        .then(services => {
+          const servicesList = [];
+          for (const serviceKey in services) {
+            const latestService = osparc.utils.Services.getLatest(services, serviceKey);
+            servicesList.push(latestService);
+          }
+          this.__setServicesList(servicesList);
+          this.__itemSelected(null);
+        })
+        .catch(err => {
+          console.error(err);
+        });
+    },
 
-      this.__getTags()
+    __initResources: function() {
+      this.__showLoadingPage(this.tr("Loading Studies and Apps"));
+
+      const servicesTags = this.__getTags();
+      const store = osparc.store.Store.getInstance();
+      const servicesPromise = store.getServicesDAGs(true);
+
+      Promise.all([
+        servicesTags,
+        servicesPromise
+      ])
         .then(() => {
           this.__hideLoadingPage();
           this.__createStudiesLayout();
@@ -148,6 +177,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__getActiveStudy();
       this.reloadUserStudies();
       this.reloadTemplateStudies();
+      this.reloadServices();
     },
 
     __getActiveStudy: function() {
@@ -190,6 +220,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyBrowserLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
       const tempStudyLayout = this.__createTemplateStudiesLayout();
       studyBrowserLayout.add(tempStudyLayout);
+      const servicesLayout = this.__createServicesLayout();
+      studyBrowserLayout.add(servicesLayout);
       const userStudyLayout = this.__createUserStudiesLayout();
       studyBrowserLayout.add(userStudyLayout);
 
@@ -258,6 +290,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return tempStudyLayout;
     },
 
+    __createServicesLayout: function() {
+      const servicesContainer = this.__servicesContainer = this.__createServicesList();
+      const servicesLayout = this.__createButtonsLayout(this.tr("Apps"), servicesContainer);
+      return servicesLayout;
+    },
+
     __getStudyAndStart: function(loadStudyId) {
       const params = {
         url: {
@@ -322,6 +360,46 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       minStudyData["name"] = title;
       minStudyData["description"] = templateData ? templateData.description : "";
       this.__createStudy(minStudyData, templateData ? templateData.uuid : null);
+    },
+
+    __createStudyFromServiceBtnClkd: function(serviceKey) {
+      this.__showLoadingPage(this.tr("Creating Study"));
+      const store = osparc.store.Store.getInstance();
+      store.getServicesDAGs()
+        .then(services => {
+          if (serviceKey in services) {
+            const latestService = osparc.utils.Services.getLatest(services, serviceKey);
+            const newUuid = osparc.utils.Utils.uuidv4();
+            const minStudyData = osparc.data.model.Study.createMinimumStudyObject();
+            minStudyData["name"] = latestService["name"];
+            minStudyData["workbench"] = {};
+            minStudyData["workbench"][newUuid] = {
+              "key": latestService["key"],
+              "version": latestService["version"],
+              "label": latestService["name"],
+              "inputs": {},
+              "inputNodes": [],
+              "thumbnail": "",
+              "position": {
+                "x": 50,
+                "y": 50
+              }
+            };
+            const params = {
+              data: minStudyData
+            };
+            osparc.data.Resources.fetch("studies", "post", params)
+              .then(studyData => {
+                this.__startStudy(studyData);
+              })
+              .catch(er => {
+                console.error(er);
+              });
+          }
+        })
+        .catch(err => {
+          console.error(err);
+        });
     },
 
     __createStudy: function(minStudyData, templateId) {
@@ -389,11 +467,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return tempList;
     },
 
+    __createServicesList: function() {
+      const servicesList = this.__servicesContainer = this.__createStudyListLayout();
+      osparc.utils.Utils.setIdToWidget(servicesList, "servicesList");
+      return servicesList;
+    },
+
     __setStudyList: function(userStudyList) {
       this.__userStudies = userStudyList;
       this.__userStudyContainer.removeAll();
       this.self().sortStudyList(userStudyList);
       userStudyList.forEach(userStudy => {
+        userStudy["resourceType"] = "study";
         this.__userStudyContainer.add(this.__createStudyItem(userStudy));
       });
       osparc.component.filter.UIFilterController.dispatch("studyBrowser");
@@ -405,7 +490,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__templateStudyContainer.add(this.__createNewStudyButton());
       this.self().sortStudyList(tempStudyList);
       tempStudyList.forEach(tempStudy => {
+        tempStudy["resourceType"] = "template";
         this.__templateStudyContainer.add(this.__createStudyItem(tempStudy));
+      });
+    },
+
+    __setServicesList: function(servicesList) {
+      this.__services = servicesList;
+      this.__servicesContainer.removeAll();
+      servicesList.forEach(service => {
+        service["resourceType"] = "service";
+        this.__servicesContainer.add(this.__createStudyItem(service));
       });
     },
 
@@ -443,10 +538,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           defaultThumbnail = "@FontAwesome5Solid/file-alt/50";
           break;
       }
-      const tags =
-      study.tags ?
-        osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id)) :
-        [];
+      const tags = study.tags ? osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id)) : [];
 
       const item = new osparc.dashboard.StudyBrowserButtonItem().set({
         resourceType: study.resourceType,
@@ -462,7 +554,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const menu = this.__getStudyItemMenu(item, study, isTemplate);
       item.setMenu(menu);
       item.subscribeToFilterGroup("studyBrowser");
-
       item.addListener("execute", () => {
         this.__itemClicked(item, isTemplate);
       }, this);
@@ -502,6 +593,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getSelectMenuButton: function(item, studyData, isTemplate) {
+      if (studyData["resourceType"] === "service") {
+        return null;
+      }
       const selectButton = new qx.ui.menu.Button(this.tr("Select"));
       selectButton.addListener("execute", () => {
         item.setValue(true);
@@ -513,32 +607,38 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getMoreInfoMenuButton: function(studyData, isTemplate) {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
-        const winWidth = 400;
-        const studyDetailsEditor = this.__createStudyDetailsEditor(studyData, isTemplate, winWidth);
-        const win = new qx.ui.window.Window(this.tr("Study Details Editor")).set({
-          autoDestroy: true,
-          layout: new qx.ui.layout.VBox(),
-          appearance: "service-window",
-          showMinimize: false,
-          showMaximize: false,
-          resizable: true,
-          contentPadding: 10,
-          width: winWidth,
-          height: 400,
-          modal: true
-        });
-        [
-          "updatedStudy",
-          "updatedTemplate",
-          "openedStudy"
-        ].forEach(event => {
-          studyDetailsEditor.addListener(event, () => {
-            win.close();
+        if (studyData["resourceType"] === "service") {
+          const win = new osparc.component.metadata.ServiceInfoWindow(studyData);
+          win.open();
+          win.center();
+        } else {
+          const winWidth = 400;
+          const win = new qx.ui.window.Window(this.tr("Study Details Editor")).set({
+            autoDestroy: true,
+            layout: new qx.ui.layout.VBox(),
+            appearance: "service-window",
+            showMinimize: false,
+            showMaximize: false,
+            resizable: true,
+            contentPadding: 10,
+            width: winWidth,
+            height: 400,
+            modal: true
           });
-        });
-        win.add(studyDetailsEditor);
-        win.open();
-        win.center();
+          const studyDetailsEditor = this.__createStudyDetailsEditor(studyData, isTemplate, winWidth);
+          [
+            "updatedStudy",
+            "updatedTemplate",
+            "openedStudy"
+          ].forEach(event => {
+            studyDetailsEditor.addListener(event, () => {
+              win.close();
+            });
+          });
+          win.add(studyDetailsEditor);
+          win.open();
+          win.center();
+        }
       }, this);
       return moreInfoButton;
     },
@@ -587,6 +687,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __itemClicked: function(item, isTemplate) {
+      if (item.getResourceType() === "service") {
+        const serviceKey = item.getUuid();
+        this.__createStudyFromServiceBtnClkd(serviceKey);
+        return;
+      }
       const selected = item.getValue();
       const studyData = this.__getStudyData(item.getUuid(), isTemplate);
       const studyContainer = isTemplate ? this.__templateStudyContainer : this.__userStudyContainer;
