@@ -162,7 +162,7 @@ qx.Class.define("osparc.store.Store", {
      * This functions does the needed processing in order to have a working list of services and DAGs.
      * @param {Boolean} reload ?
      */
-    getServicesDAGs: function(reload) {
+    getServicesDAGs: function(reload = false) {
       return new Promise((resolve, reject) => {
         const allServices = osparc.utils.Services.getBuiltInServices();
         const servicesPromise = osparc.data.Resources.get("services", null, !reload);

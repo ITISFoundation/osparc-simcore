@@ -359,7 +359,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __startStudy: function(studyData) {
       this.__showLoadingPage(this.tr("Starting Study"));
-      osparc.store.Store.getInstance().getServicesDAGs(false)
+      osparc.store.Store.getInstance().getServicesDAGs()
         .then(() => {
           this.__hideLoadingPage();
           this.__loadStudy(studyData);
