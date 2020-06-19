@@ -28,7 +28,7 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
 
     // Page title
     this.add(new qx.ui.basic.Label(title + " Settings").set({
-      font: qx.bom.Font.fromConfig(osparc.theme.Font.fonts["title-16"])
+      font: "title-16"
     }));
 
     // spacer
@@ -36,8 +36,8 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
   },
 
   members: {
-    /** Common layout of secion's box
-     *
+    /**
+     * Common layout of secion's box
      * @param {page section's name} sectionName
      */
     _createSectionBox: function(sectionName) {
@@ -47,14 +47,14 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
       return box;
     },
 
-    /** Common layout for and font for tooltip label
-     *
+    /**
+     * Common layout for tooltip label
      */
     _createHelpLabel: function(message=null) {
       let label = new qx.ui.basic.Label().set({
         value: message,
         rich: true,
-        font: osparc.utils.Utils.getFont(12)
+        font: "text-12"
       });
       return label;
     }

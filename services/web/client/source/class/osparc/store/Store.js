@@ -81,6 +81,18 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
+    organizations: {
+      check: "Object",
+      init: {}
+    },
+    organizationMembers: {
+      check: "Object",
+      init: {}
+    },
+    reachableMembers: {
+      check: "Object",
+      init: {}
+    },
     services: {
       check: "Array",
       init: []
@@ -159,6 +171,33 @@ qx.Class.define("osparc.store.Store", {
     },
 
     /**
+     * Invalidates the cache for the given resources.
+     * If resource is a string, it will invalidate that resource.
+     * If it is an array, it will try to invalidate every resource in the array.
+     * If it is not provided, it will invalidate all resources.
+     *
+     * @param {(string|string[])} [resources] Property or array of property names that must be reset
+     */
+    invalidate: function(resources) {
+      if (typeof resources === "string" || resources instanceof String) {
+        this.reset(resources);
+      } else {
+        let propertyArray;
+        if (resources == null) {
+          propertyArray = Object.keys(qx.util.PropertyUtil.getProperties(osparc.store.Store));
+        } else if (Array.isArray(resources)) {
+          propertyArray = resources;
+        }
+        propertyArray.forEach(propName => {
+          this.reset(propName);
+          // Not sure reset actually works
+          const initVal = qx.util.PropertyUtil.getInitValue(this, propName);
+          qx.util.PropertyUtil.getUserValue(this, propName, initVal);
+        });
+      }
+    },
+
+    /**
      * This functions does the needed processing in order to have a working list of services and DAGs.
      * @param {Boolean} reload ?
      */
@@ -230,26 +269,40 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    /**
-     * Invalidates the cache for the given resources.
-     * If resource is a string, it will invalidate that resource.
-     * If it is an array, it will try to invalidate every resource in the array.
-     * If it is not provided, it will invalidate all resources.
-     *
-     * @param {(string|string[])} [resources] Property or array of property names that must be reset
-     */
-    invalidate: function(resources) {
-      if (typeof resources === "string" || resources instanceof String) {
-        this.reset(resources);
-      } else {
-        let propertyArray;
-        if (resources == null) {
-          propertyArray = Object.keys(qx.util.PropertyUtil.getProperties(osparc.store.Store));
-        } else if (Array.isArray(resources)) {
-          propertyArray = resources;
-        }
-        propertyArray.forEach(propName => this.reset(propName));
-      }
+    getVisibleMembers: function() {
+      const reachableMembers = this.getReachableMembers();
+      return new Promise((resolve, reject) => {
+        osparc.data.Resources.get("organizations")
+          .then(resp => {
+            const orgMembersPromises = [];
+            const orgs = resp["organizations"];
+            orgs.forEach(org => {
+              orgMembersPromises.push(
+                new Promise((resolve2, reject2) => {
+                  const params = {
+                    url: {
+                      "gid": org["gid"]
+                    }
+                  };
+                  osparc.data.Resources.get("organizationMembers", params)
+                    .then(orgMembers => {
+                      resolve2(orgMembers);
+                    });
+                })
+              );
+            });
+            Promise.all(orgMembersPromises)
+              .then(orgMemberss => {
+                orgMemberss.forEach(orgMembers => {
+                  orgMembers.forEach(orgMember => {
+                    orgMember["label"] = osparc.utils.Utils.firstsUp(orgMember["first_name"], orgMember["last_name"]);
+                    reachableMembers[orgMember["gid"]] = orgMember;
+                  });
+                });
+                resolve(reachableMembers);
+              });
+          });
+      });
     },
 
     _applyStudy: function(newStudy) {

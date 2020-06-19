@@ -59,10 +59,21 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     osparc.utils.Utils.setIdToWidget(expBtn, "preferencesExperimentalTabBtn");
     tabView.add(expPage);
 
-    if (osparc.data.Permissions.getInstance().canDo("preferences.tag")) {
+    if (osparc.data.Permissions.getInstance().canDo("user.tag")) {
       const tagsPage = new osparc.desktop.preferences.pages.TagsPage();
       tabView.add(tagsPage);
     }
+
+    osparc.data.Resources.get("organizations")
+      .then(resp => {
+        const orgs = resp["organizations"];
+        if (orgs.length || osparc.data.Permissions.getInstance().canDo("user.organizations.create")) {
+          const orgsPage = new osparc.desktop.preferences.pages.OrganizationsPage();
+          const orgsBtn = orgsPage.getChildControl("button");
+          osparc.utils.Utils.setIdToWidget(orgsBtn, "preferencesOrganizationsTabBtn");
+          tabView.add(orgsPage);
+        }
+      });
 
     this.add(tabView);
   }

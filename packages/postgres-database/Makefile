@@ -74,6 +74,7 @@ setup-commit: install-dev up-pg ## sets up a database to create a new commit int
 	# some info
 	sc-pg info
 	@echo "To add new commit, sc-pg review -m \"Some message\" "
+	# adminer: http://127.0.0.1:18080/?pgsql=postgres&username=test&db=test&ns=public
 
 
 .PHONY: migrate
@@ -96,5 +97,3 @@ up-pg up-prod: $(docker-compose-configs) ## starts pg server
 
 down-pg down-prod: $(docker-compose-configs) ## stops pg server
 	docker-compose -f tests/docker-compose.yml  $(if $(findstring -prod,$@),-f tests/docker-compose.prod.yml,) down
-
-

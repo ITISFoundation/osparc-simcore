@@ -129,7 +129,7 @@
                             "name": {
                                 "type": "string",
                                 "title": "Name",
-                                "description": "Input's ID (variable name)."
+                                "description": "Output's ID (variable name)."
                             },
                             "type": {
                                 "type": "string",

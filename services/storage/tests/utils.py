@@ -12,7 +12,6 @@ from simcore_service_storage.models import (
     FileMetaData,
     file_meta_data,
     projects,
-    user_to_projects,
     users,
     groups,
     user_to_groups,
@@ -124,29 +123,14 @@ def create_full_tables(url):
 
     meta.drop_all(
         bind=engine,
-        tables=[
-            user_to_groups,
-            file_meta_data,
-            projects,
-            user_to_projects,
-            users,
-            groups,
-        ],
+        tables=[user_to_groups, file_meta_data, projects, users, groups,],
         checkfirst=True,
     )
     meta.create_all(
-        bind=engine,
-        tables=[
-            file_meta_data,
-            projects,
-            user_to_projects,
-            users,
-            groups,
-            user_to_groups,
-        ],
+        bind=engine, tables=[file_meta_data, projects, users, groups, user_to_groups,],
     )
 
-    for t in ["file_meta_data", "projects", "users", "user_to_projects"]:
+    for t in ["users", "file_meta_data", "projects"]:
         filename = t + ".csv"
         csv_file = str(data_dir() / Path(filename))
         with open(csv_file, "r") as file:
@@ -161,12 +145,12 @@ def create_full_tables(url):
     # cur = conn.cursor()
     # columns = [["file_uuid","location_id","location","bucket_name","object_name","project_id","project_name","node_id","node_name","file_name","user_id","user_name"],[],[],[]]
     # if False:
-    #     for t in ["file_meta_data", "projects", "users", "user_to_projects"]:
+    #     for t in ["file_meta_data", "projects", "users"]:
     #         filename = t + ".sql"
     #         sqlfile = str(data_dir() / Path(filename))
     #         cur.execute(open(sqlfile, "r").read())
     # else:
-    #     for t in ["file_meta_data", "projects", "users", "user_to_projects"]:
+    #     for t in ["file_meta_data", "projects", "users"]:
     #         filename = t + ".csv"
     #         csv_file = str(data_dir() / Path(filename))
     #         if False:
@@ -189,14 +173,6 @@ def drop_all_tables(url):
     engine = sa.create_engine(url)
 
     meta.drop_all(
-        bind=engine,
-        tables=[
-            file_meta_data,
-            projects,
-            user_to_projects,
-            users,
-            groups,
-            user_to_groups,
-        ],
+        bind=engine, tables=[file_meta_data, projects, users, groups, user_to_groups,],
     )
     engine.dispose()

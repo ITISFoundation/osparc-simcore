@@ -75,7 +75,7 @@ qx.Class.define("osparc.component.service.manager.ActivityTree", {
   },
 
   events: {
-    treeUpdated: "qx.event.type.Event"
+    "treeUpdated": "qx.event.type.Event"
   },
 
   members: {

@@ -108,7 +108,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
   statics: {
     MENU_BTN_Z: 20,
     MENU_BTN_WIDTH: 25,
-    SHARED_ME: "@FontAwesome5Solid/user/14",
+    SHARED_USER: "@FontAwesome5Solid/user/14",
     SHARED_ORGS: "@FontAwesome5Solid/users/14",
     SHARED_ALL: "@FontAwesome5Solid/globe/14"
   },
@@ -199,7 +199,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyLastChangeDate: function(value, old) {
       if (value && !this.getIsTemplate()) {
-        const label = this.getChildControl("description");
+        const label = this.getChildControl("description2");
         let dateStr = null;
         if (value.getDate() === (new Date()).getDate()) {
           dateStr = this.tr("Today");
@@ -215,7 +215,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyCreator: function(value, old) {
       if (this.getIsTemplate()) {
-        const label = this.getChildControl("creator");
+        const label = this.getChildControl("description2");
         label.setValue(value);
       }
     },
@@ -227,48 +227,76 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         const store = osparc.store.Store.getInstance();
         Promise.all([
           store.getGroupsAll(),
-          store.getGroupsOrganizations(),
-          store.getGroupsMe()
+          store.getGroupsMe(),
+          store.getVisibleMembers(),
+          store.getGroupsOrganizations()
         ])
           .then(values => {
-            const groups = [[values[0]], values[1], [values[2]]];
+            const all = values[0];
+            const me = values[1];
+            const orgMembs = [];
+            const orgMembers = values[2];
+            for (const gid of Object.keys(orgMembers)) {
+              orgMembs.push(orgMembers[gid]);
+            }
+            const orgs = values.length === 4 ? values[3] : [];
+            const groups = [[me], orgMembs, orgs, [all]];
             this.__setSharedIcon(image, value, groups);
           });
       }
     },
 
     __setSharedIcon: function(image, value, groups) {
+      let sharedGrps = [];
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       for (let i=0; i<groups.length; i++) {
-        let hintText = "";
-        Object.keys(value).forEach(key => {
-          const grp = groups[i].find(group => group["gid"] === parseInt(key));
-          if (grp) {
-            hintText += (grp["label"] + "<br>");
+        const sharedGrp = [];
+        const gids = Object.keys(value);
+        for (let j=0; j<gids.length; j++) {
+          const gid = parseInt(gids[j]);
+          if (!this.getIsTemplate() && (gid === myGroupId)) {
+            continue;
           }
-        });
-        if (hintText === "") {
+          const grp = groups[i].find(group => group["gid"] === gid);
+          if (grp) {
+            sharedGrp.push(grp);
+          }
+        }
+        if (sharedGrp.length === 0) {
           continue;
+        } else {
+          sharedGrps = sharedGrps.concat(sharedGrp);
         }
         switch (i) {
           case 0:
-            image.setSource(this.self().SHARED_ALL);
-            break;
           case 1:
-            image.setSource(this.self().SHARED_ORGS);
+            image.setSource(this.self().SHARED_USER);
             break;
           case 2:
-            image.setSource(this.self().SHARED_ME);
+            image.setSource(this.self().SHARED_ORGS);
+            break;
+          case 3:
+            image.setSource(this.self().SHARED_ALL);
             break;
         }
-
-        const hint = new osparc.ui.hint.Hint(image, hintText).set({
-          active: false
-        });
-        image.addListener("mouseover", () => hint.show(), this);
-        image.addListener("mouseout", () => hint.exclude(), this);
-
-        break;
       }
+
+      if (sharedGrps.length === 0) {
+        image.setVisibility("excluded");
+        return;
+      }
+
+      let hintText = "";
+      for (let i=0; i<sharedGrps.length; i++) {
+        if (i > 6) {
+          hintText += "...";
+          break;
+        }
+        hintText += (sharedGrps[i]["label"] + "<br>");
+      }
+      const hint = new osparc.ui.hint.Hint(image, hintText);
+      image.addListener("mouseover", () => hint.show(), this);
+      image.addListener("mouseout", () => hint.exclude(), this);
     },
 
     _applyTags: function(tags) {

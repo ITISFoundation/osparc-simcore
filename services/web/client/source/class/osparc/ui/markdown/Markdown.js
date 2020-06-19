@@ -147,7 +147,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
     },
 
     __getDomElement: function() {
-      if (!this.getContentElement) {
+      if (!this.getContentElement || this.getContentElement() === null) {
         return null;
       }
       const domElement = this.getContentElement().getDomElement();

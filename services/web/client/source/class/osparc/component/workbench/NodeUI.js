@@ -64,6 +64,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     this.__createNodeLayout();
 
     this.subscribeToFilterGroup("workbench");
+
+    this.getChildControl("captionbar").setCursor("move");
+    this.getChildControl("title").setCursor("move");
   },
 
   properties: {
@@ -109,10 +112,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     getNodeId: function() {
       return this.getNode().getNodeId();
-    },
-
-    getCaptionBar: function() {
-      return this.getChildControl("captionbar");
     },
 
     _createChildControlImpl: function(id) {
@@ -241,6 +240,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         paddingLeft: 5,
         paddingRight: 5
       });
+      uiPort.setCursor("pointer");
       return uiPort;
     },
 

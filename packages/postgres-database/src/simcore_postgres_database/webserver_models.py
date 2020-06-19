@@ -12,7 +12,6 @@ from .models.groups import GroupType, groups, user_to_groups
 from .models.projects import ProjectType, projects
 from .models.tags import study_tags, tags
 from .models.tokens import tokens
-from .models.user_to_projects import user_to_projects
 from .models.users import UserRole, UserStatus, users
 
 __all__ = [
@@ -24,7 +23,6 @@ __all__ = [
     "UserStatus",
     "projects",
     "ProjectType",
-    "user_to_projects",
     "confirmations",
     "ConfirmationAction",
     "tokens",

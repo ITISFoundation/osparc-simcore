@@ -13,25 +13,32 @@ from ..computation_api import update_pipeline_db
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from ..security_api import check_permission
+from ..security_decorators import permission_required
 from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 
-OVERRIDABLE_DOCUMENT_KEYS = ["name", "description", "thumbnail", "prjOwner", "accessRights"]
+OVERRIDABLE_DOCUMENT_KEYS = [
+    "name",
+    "description",
+    "thumbnail",
+    "prjOwner",
+    "accessRights",
+]
 # TODO: validate these against api/specs/webserver/v0/components/schemas/project-v0.0.1.json
 
 log = logging.getLogger(__name__)
 
 
 @login_required
+@permission_required("project.create")
+@permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def create_projects(request: web.Request):
     from .projects_api import (
         clone_project,
     )  # TODO: keep here since is async and parser thinks it is a handler
 
     # pylint: disable=too-many-branches
-    await check_permission(request, "project.create")
-    await check_permission(request, "services.pipeline.*")  # due to update_pipeline_db
 
     user_id = request[RQT_USERID_KEY]
     db = request.config_dict[APP_PROJECT_DBAPI]
@@ -63,12 +70,13 @@ async def create_projects(request: web.Request):
                 )
 
             project = await clone_project(request, template_prj, user_id)
+            # remove template access rights
+            project["accessRights"] = {}
             # FIXME: parameterized inputs should get defaults provided by service
 
         # overrides with body
         if request.has_body:
             predefined = await request.json()
-
             if project:
                 for key in OVERRIDABLE_DOCUMENT_KEYS:
                     non_null_value = predefined.get(key)
@@ -101,8 +109,8 @@ async def create_projects(request: web.Request):
 
 
 @login_required
+@permission_required("project.read")
 async def list_projects(request: web.Request):
-    await check_permission(request, "project.read")
 
     # TODO: implement all query parameters as
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
@@ -138,12 +146,13 @@ async def list_projects(request: web.Request):
 
 
 @login_required
+@permission_required("project.read")
 async def get_project(request: web.Request):
     """ Returns all projects accessible to a user (not necesarly owned)
 
     """
     # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-    await check_permission(request, "project.read")
+    user_id = request[RQT_USERID_KEY]
     from .projects_api import get_project_for_user
 
     project_uuid = request.match_info.get("project_id")
@@ -156,11 +165,16 @@ async def get_project(request: web.Request):
         )
 
         return {"data": project}
+    except ProjectInvalidRightsError:
+        raise web.HTTPForbidden(
+            reason=f"User {user_id} has no right to read {project_uuid}"
+        )
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
 
 
 @login_required
+@permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def replace_project(request: web.Request):
     """ Implements PUT /projects
 
@@ -176,8 +190,6 @@ async def replace_project(request: web.Request):
 
     :raises web.HTTPNotFound: cannot find project id in repository
     """
-    await check_permission(request, "services.pipeline.*")  # due to update_pipeline_db
-
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     replace_pipeline = request.query.get(
@@ -198,9 +210,19 @@ async def replace_project(request: web.Request):
     )
 
     try:
-        projects_api.validate_project(request.app, new_project)
+        # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+        from .projects_api import get_project_for_user
 
-        await db.update_user_project(new_project, user_id, project_uuid)
+        projects_api.validate_project(request.app, new_project)
+        current_project = await get_project_for_user(
+            request.app,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            include_templates=False,
+        )
+        if current_project["accessRights"] != new_project["accessRights"]:
+            await check_permission(request, "project.access_rights.update")
+        new_project = await db.update_user_project(new_project, user_id, project_uuid)
         await update_pipeline_db(
             request.app, project_uuid, new_project["workbench"], replace_pipeline
         )
@@ -208,6 +230,10 @@ async def replace_project(request: web.Request):
     except ValidationError:
         raise web.HTTPBadRequest
 
+    except ProjectInvalidRightsError:
+        raise web.HTTPForbidden(
+            reason=f"User {user_id} has no rights to write to project {project_uuid}"
+        )
     except ProjectNotFoundError:
         raise web.HTTPNotFound
 
@@ -215,10 +241,8 @@ async def replace_project(request: web.Request):
 
 
 @login_required
+@permission_required("project.delete")
 async def delete_project(request: web.Request):
-    # TODO: replace by decorator since it checks again authentication
-    await check_permission(request, "project.delete")
-
     # first check if the project exists
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
@@ -239,6 +263,10 @@ async def delete_project(request: web.Request):
                 raise web.HTTPForbidden(reason=message)
 
         await projects_api.delete_project(request, project_uuid, user_id)
+    except ProjectInvalidRightsError:
+        raise web.HTTPForbidden(
+            reason=f"User {user_id} has no rights to delete project"
+        )
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
 
@@ -246,9 +274,8 @@ async def delete_project(request: web.Request):
 
 
 @login_required
+@permission_required("project.open")
 async def open_project(request: web.Request) -> web.Response:
-    # TODO: replace by decorator since it checks again authentication
-    await check_permission(request, "project.open")
 
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
@@ -275,10 +302,8 @@ async def open_project(request: web.Request) -> web.Response:
 
 
 @login_required
+@permission_required("project.close")
 async def close_project(request: web.Request) -> web.Response:
-    # TODO: replace by decorator since it checks again authentication
-    await check_permission(request, "project.close")
-
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     client_session_id = await request.json()
@@ -311,8 +336,8 @@ async def close_project(request: web.Request) -> web.Response:
 
 
 @login_required
+@permission_required("project.read")
 async def get_active_project(request: web.Request) -> web.Response:
-    await check_permission(request, "project.read")
     user_id = request[RQT_USERID_KEY]
     client_session_id = request.query["client_session_id"]
 
@@ -338,9 +363,8 @@ async def get_active_project(request: web.Request) -> web.Response:
 
 
 @login_required
+@permission_required("project.node.create")
 async def create_node(request: web.Request) -> web.Response:
-    # TODO: replace by decorator since it checks again authentication
-    await check_permission(request, "project.node.create")
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     body = await request.json()
@@ -372,9 +396,8 @@ async def create_node(request: web.Request) -> web.Response:
 
 
 @login_required
+@permission_required("project.node.read")
 async def get_node(request: web.Request) -> web.Response:
-    # TODO: replace by decorator since it checks again authentication
-    await check_permission(request, "project.node.read")
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     node_uuid = request.match_info.get("node_id")
@@ -399,9 +422,8 @@ async def get_node(request: web.Request) -> web.Response:
 
 
 @login_required
+@permission_required("project.node.delete")
 async def delete_node(request: web.Request) -> web.Response:
-    # TODO: replace by decorator since it checks again authentication
-    await check_permission(request, "project.node.delete")
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     node_uuid = request.match_info.get("node_id")
@@ -427,8 +449,8 @@ async def delete_node(request: web.Request) -> web.Response:
 
 
 @login_required
+@permission_required("project.tag.*")
 async def add_tag(request: web.Request):
-    await check_permission(request, "project.tag.*")
     uid, db = request[RQT_USERID_KEY], request.config_dict[APP_PROJECT_DBAPI]
     tag_id, study_uuid = (
         request.match_info.get("tag_id"),
@@ -438,8 +460,8 @@ async def add_tag(request: web.Request):
 
 
 @login_required
+@permission_required("project.tag.*")
 async def remove_tag(request: web.Request):
-    await check_permission(request, "project.tag.*")
     uid, db = request[RQT_USERID_KEY], request.config_dict[APP_PROJECT_DBAPI]
     tag_id, study_uuid = (
         request.match_info.get("tag_id"),
