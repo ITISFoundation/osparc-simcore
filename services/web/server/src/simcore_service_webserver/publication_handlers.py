@@ -25,7 +25,7 @@ async def service_submission(request: web.Request):
 
     # Read multipart email
     while True:
-        part = await reader.next() # pylint: disable=not-callable
+        part = await reader.next()  # pylint: disable=not-callable
         if part is None:
             break
         if part.headers[hdrs.CONTENT_TYPE] == "application/json":

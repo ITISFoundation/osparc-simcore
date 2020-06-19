@@ -18,3 +18,7 @@
   -moz-transform: rotate(-90deg);
   -o-transform: rotate(-90deg);
 }
+
+.rotated {
+  transform: rotateZ(180deg);
+}

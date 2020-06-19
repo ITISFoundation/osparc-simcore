@@ -78,6 +78,8 @@ def mock_db_engine(mocker):
         mock_connection = mocker.patch("aiopg.sa.SAConnection", spec=True)
         mock_connection.execute.return_value = Future()
         mock_connection.execute.return_value.set_result(mock_result)
+        mock_connection.scalar.return_value = Future()
+        mock_connection.scalar.return_value.set_result(mock_result)
 
         mock_context_manager = MockAsyncContextManager()
         mock_context_manager.mock_object = mock_connection
@@ -103,8 +105,8 @@ async def test_add_projects(fake_project, user_id, mocker, mock_db_engine):
     await db.add_projects([fake_project], user_id=user_id)
 
     db_engine.acquire.assert_called()
+    mock_connection.scalar.assert_called()
     mock_connection.execute.assert_called()
-    assert mock_connection.execute.call_count == 3
 
 
 # not sure this is useful...

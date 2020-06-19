@@ -67,7 +67,7 @@ rest:
 reverse_proxy:
   enabled: false
 session:
-  secret_key: 'TODO: Replace with a key of at least length 32'
+  secret_key: "TODO: Replace with a key of at least length 32"
 smtp:
   host: mail.foo.com
   password: null
@@ -97,4 +97,6 @@ tracing:
   zipkin_endpoint: http://jaeger:9411
 users:
   enabled: true
-version: '1.0'
+groups:
+  enabled: true
+version: "1.0"
