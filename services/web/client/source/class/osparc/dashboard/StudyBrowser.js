@@ -475,11 +475,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         position: "bottom-right"
       });
 
-      const selectButton = this.__getSelectMenuButton(item, isTemplate);
-      menu.add(selectButton);
+      const selectButton = this.__getSelectMenuButton(item, studyData, isTemplate);
+      if (selectButton) {
+        menu.add(selectButton);
+      }
 
       const moreInfoButton = this.__getMoreInfoMenuButton(studyData, isTemplate);
-      menu.add(moreInfoButton);
+      if (moreInfoButton) {
+        menu.add(moreInfoButton);
+      }
 
       const isCurrentUserOwner = this.__isUserOwner(studyData);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
@@ -497,7 +501,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return menu;
     },
 
-    __getSelectMenuButton: function(item, isTemplate) {
+    __getSelectMenuButton: function(item, studyData, isTemplate) {
       const selectButton = new qx.ui.menu.Button(this.tr("Select"));
       selectButton.addListener("execute", () => {
         item.setValue(true);
