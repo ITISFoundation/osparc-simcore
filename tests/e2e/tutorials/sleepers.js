@@ -17,7 +17,7 @@ const {
 } = utils.getUserAndPass(args);
 const templateName = "Sleepers";
 
-async function runTutorial () {
+async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, user, pass, newUser, templateName);
 
   tutorial.init();
@@ -34,11 +34,17 @@ async function runTutorial () {
   await tutorial.waitFor(5000);
 
   await tutorial.runPipeline(25000);
+  console.log('Checking results for the first sleeper:');
   await tutorial.openNodeFiles(0);
   const outFiles = [
     "logs.zip",
     "out_1"
   ];
+  await tutorial.checkResults(outFiles.length);
+
+  await tutorial.waitFor(20000);
+  console.log('Checking results for the last sleeper:');
+  await tutorial.openNodeFiles(4);
   await tutorial.checkResults(outFiles.length);
 
   await tutorial.removeStudy();

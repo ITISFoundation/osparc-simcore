@@ -10,8 +10,8 @@ from starlette.status import (
 )
 
 from .. import db
-from ..store import crud_dags as crud
 from ..schemas import schemas_dags as schemas
+from ..store import crud_dags as crud
 
 router = APIRouter()
 log = logging.getLogger(__name__)

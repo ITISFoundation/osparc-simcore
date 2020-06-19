@@ -35,7 +35,7 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
     this.open();
   },
   events: {
-    changeSelected: "qx.event.type.Data"
+    "changeSelected": "qx.event.type.Data"
   },
   properties: {
     liveUpdate: {

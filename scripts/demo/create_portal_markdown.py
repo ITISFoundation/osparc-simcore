@@ -3,6 +3,9 @@
     Aims to emulate links
 
 """
+
+# TODO: extend cli to generate invitations use jinja templates (see folder)
+
 import argparse
 import json
 import logging
@@ -118,13 +121,14 @@ def main(mock_codes):
 
         print("", file=fh)
 
+    today = datetime.today()
     file_path = current_path.parent / CONFIRMATIONS_FILENAME
     with _open(file_path) as fh:
         print("code,user_id,action,data,created_at", file=fh)
         for n, code in enumerate(mock_codes, start=1):
             print('%s,1,INVITATION,"{' % code, file=fh)
-            print(f'""guest"": ""invitation-{n}"" ,', file=fh)
-            print('""host"" : ""support@osparc.io""', file=fh)
+            print(f'""guest"": ""invitation-{today.year:04d}{today.month:02d}{today.day:02d}-{n}"" ,', file=fh)
+            print('""issuer"" : ""support@osparc.io""', file=fh)
             print('}",%s' % datetime.now().isoformat(sep=" "), file=fh)
 
 

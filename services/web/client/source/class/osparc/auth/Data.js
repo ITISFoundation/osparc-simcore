@@ -26,6 +26,24 @@ qx.Class.define("osparc.auth.Data", {
 
   properties: {
     /**
+     *  User Id
+     */
+    userId: {
+      init: null,
+      nullable: false,
+      check: "Number"
+    },
+
+    /**
+     *  Group ID
+     */
+    groupId: {
+      init: null,
+      nullable: false,
+      check: "Number"
+    },
+
+    /**
      *  Basic authentification with a token
     */
     auth: {

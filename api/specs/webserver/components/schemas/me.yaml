@@ -6,44 +6,32 @@ ProfileCommon:
     last_name:
       type: string
   example:
-    login: pcrespov@foo.com
     first_name: Pedro
     last_name: Crespo
 
 ProfileInput:
   allOf:
-  - $ref: '#/ProfileCommon'
+    - $ref: "#/ProfileCommon"
   example:
     first_name: Pedro
     last_name: Crespo
 
 ProfileOutput:
   allOf:
-  - $ref: '#/ProfileCommon'
-  - type: object
-    properties:
-      login:
-        type: string
-        format: email
-      role:
-        type: string
-      groups:
-        type: object
-        properties:
-          me:
-            $ref: '#/UsersGroup'
-          organizations:
-            type: array
-            items:
-              $ref: '#/UsersGroup'
-          all:
-            $ref: '#/UsersGroup'
-      gravatar_id:
-        type: string
+    - $ref: "#/ProfileCommon"
+    - type: object
+      properties:
+        login:
+          type: string
+          format: email
+        role:
+          type: string
+        groups:
+          $ref: "./group.yaml#/AllUsersGroups"
+        gravatar_id:
+          type: string
   example:
     login: pcrespov@foo.com
-    first_name: Pedro
-    last_name: Crespo
     role: Admin
     gravatar_id: 205e460b479e2e5b48aec07710c08d50
 
@@ -53,31 +41,10 @@ ProfileEnveloped:
     - data
   properties:
     data:
-      $ref: '#/ProfileOutput'
+      $ref: "#/ProfileOutput"
     error:
       nullable: true
       default: null
-
-
-UsersGroup:
-  type: object
-  properties:
-    gid:
-      type: string
-    label:
-      type: string
-    description:
-      type: string
-  example:
-    - gid: '27'
-      label: 'A user'
-      description: 'A very special user'
-    - gid: '1'
-      label: 'ITIS Foundation'
-      description: 'The Foundation for Research on Information Technologies in Society'
-    - gid: '0'
-      label: 'All'
-      description: 'Open to all users'
 
 Token:
   description: api keys for third party services
@@ -97,15 +64,13 @@ Token:
     - service
     - token_key
   example:
-    service: 'github-api-v1'
+    service: "github-api-v1"
     token_key: N1BP5ZSpB
-
 
 TokenId:
   description: toke identifier
   type: string
   # format: uuid
-
 
 TokenEnveloped:
   type: object
@@ -113,11 +78,10 @@ TokenEnveloped:
     - data
   properties:
     data:
-      $ref: '#/Token'
+      $ref: "#/Token"
     error:
       nullable: true
       default: null
-
 
 TokensArrayEnveloped:
   type: object
@@ -127,7 +91,7 @@ TokensArrayEnveloped:
     data:
       type: array
       items:
-        $ref: '#/Token'
+        $ref: "#/Token"
     error:
       nullable: true
       default: null
@@ -138,7 +102,7 @@ TokenIdEnveloped:
     - data
   properties:
     data:
-      $ref: '#/TokenId'
+      $ref: "#/TokenId"
     error:
       nullable: true
       default: null

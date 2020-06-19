@@ -3,6 +3,7 @@
  * Copyright: 2019 IT'IS Foundation - https://itis.swiss
  * License: MIT - https://opensource.org/licenses/MIT
  * Authors: Ignacio Pascual (ignapas)
+ *          Odei Maiz (odeimaiz)
  */
 
 /**
@@ -66,7 +67,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * STUDIES
        */
-      studies: {
+      "studies": {
         useCache: true,
         endpoints: {
           get: {
@@ -136,7 +137,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * TEMPLATES (actually studies flagged as templates)
        */
-      templates: {
+      "templates": {
         useCache: true,
         endpoints: {
           get: {
@@ -160,7 +161,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * SERVICES
        */
-      services: {
+      "services": {
         useCache: true,
         endpoints: {
           get: {
@@ -172,7 +173,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * GROUPS/DAGS
        */
-      dags: {
+      "dags": {
         usesCache: true,
         endpoints: {
           post: {
@@ -192,7 +193,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * CONFIG
        */
-      config: {
+      "config": {
         useCache: true,
         endpoints: {
           getOne: {
@@ -204,7 +205,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * PROFILE
        */
-      profile: {
+      "profile": {
         useCache: true,
         endpoints: {
           getOne: {
@@ -216,7 +217,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * API-KEYS
        */
-      apiKeys: {
+      "apiKeys": {
         endpoints: {
           get: {
             method: "GET",
@@ -235,7 +236,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * TOKENS
        */
-      tokens: {
+      "tokens": {
         idField: "service",
         useCache: true,
         endpoints: {
@@ -262,9 +263,65 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * ORGANIZATIONS
+       */
+      "organizations": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/groups"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/groups"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/groups/{gid}"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/groups/{gid}"
+          },
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/groups/{gid}"
+          }
+        }
+      },
+      /*
+       * ORGANIZATION MEMBERS
+       */
+      "organizationMembers": {
+        useCache: false,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/groups/{gid}/users"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/groups/{gid}/users"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/groups/{gid}/users/{uid}"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/groups/{gid}/users/{uid}"
+          },
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/groups/{gid}/users/{uid}"
+          }
+        }
+      },
+      /*
        * PASSWORD
        */
-      password: {
+      "password": {
         useCache: false,
         endpoints: {
           post: {
@@ -276,7 +333,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * HEALTHCHECK
        */
-      healthCheck: {
+      "healthCheck": {
         useCache: false,
         endpoints: {
           get: {
@@ -288,7 +345,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * AUTH
        */
-      auth: {
+      "auth": {
         useCache: false,
         endpoints: {
           postLogin: {
@@ -316,7 +373,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * STORAGE LOCATIONS
        */
-      storageLocations: {
+      "storageLocations": {
         useCache: true,
         endpoints: {
           get: {
@@ -328,7 +385,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * STORAGE DATASETS
        */
-      storageDatasets: {
+      "storageDatasets": {
         useCache: false,
         endpoints: {
           getByLocation: {
@@ -340,7 +397,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * STORAGE FILES
        */
-      storageFiles: {
+      "storageFiles": {
         useCache: false,
         endpoints: {
           getByLocationAndDataset: {
@@ -364,7 +421,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * STORAGE LINK
        */
-      storageLink: {
+      "storageLink": {
         useCache: false,
         endpoints: {
           getOne: {
@@ -380,7 +437,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * ACTIVITY
        */
-      activity: {
+      "activity": {
         useCache: false,
         endpoints: {
           getOne: {
@@ -393,7 +450,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * Test/Diagnonstic entrypoint
        */
-      checkEP: {
+      "checkEP": {
         useCache: false,
         endpoints: {
           postFail: {
@@ -410,7 +467,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * TAGS
        */
-      tags: {
+      "tags": {
         idField: "id",
         useCache: true,
         endpoints: {
@@ -437,7 +494,7 @@ qx.Class.define("osparc.data.Resources", {
        * STATICS
        * Gets the json file containing some runtime server variables.
        */
-      statics: {
+      "statics": {
         useCache: true,
         endpoints: {
           get: {
