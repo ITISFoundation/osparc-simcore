@@ -59,13 +59,6 @@ def client(loop, aiohttp_client, app_cfg, postgres_service):
     return client
 
 
-# WARNING: pytest-asyncio and pytest-aiohttp are not compatible
-#
-# https://github.com/aio-libs/pytest-aiohttp/issues/8#issuecomment-405602020
-# https://github.com/pytest-dev/pytest-asyncio/issues/76
-#
-
-
 @pytest.fixture
 async def logged_user(client, role: UserRole):
     """ adds a user in db and logs in with client
@@ -567,3 +560,108 @@ async def test_add_remove_users_from_group(
         )
         resp = await client.get(get_group_user_url)
         data, error = await assert_status(resp, expected_not_found)
+
+
+@pytest.mark.parametrize(
+    "role, expected_created,expected_ok,expected_not_found,expected_no_content",
+    [
+        (
+            UserRole.ANONYMOUS,
+            web.HTTPUnauthorized,
+            web.HTTPUnauthorized,
+            web.HTTPUnauthorized,
+            web.HTTPUnauthorized,
+        ),
+        (
+            UserRole.GUEST,
+            web.HTTPForbidden,
+            web.HTTPForbidden,
+            web.HTTPForbidden,
+            web.HTTPForbidden,
+        ),
+        (
+            UserRole.USER,
+            web.HTTPCreated,
+            web.HTTPOk,
+            web.HTTPNotFound,
+            web.HTTPNoContent,
+        ),
+        (
+            UserRole.TESTER,
+            web.HTTPCreated,
+            web.HTTPOk,
+            web.HTTPNotFound,
+            web.HTTPNoContent,
+        ),
+    ],
+)
+async def test_group_access_rights(
+    client,
+    logged_user,
+    role,
+    expected_created,
+    expected_ok,
+    expected_not_found,
+    expected_no_content,
+):
+    # Use-case:
+
+
+    # 1. create a group
+    url = client.app.router["create_group"].url_for()
+    assert str(url) == f"{PREFIX}"
+
+    new_group = {
+        "gid": "4564",
+        "label": f"this is user {logged_user['id']} group",
+        "description": f"user {logged_user['email']} is the owner of that one",
+        "thumbnail": None,
+    }
+
+    resp = await client.post(url, json=new_group)
+    data, error = await assert_status(resp, expected_ok)
+    if not data:
+        # role cannot create a group so stop here
+        return
+    assigned_group = data
+
+    # 1. have 2 users
+    users = [await create_user()]*2
+    import pdb; pdb.set_trace()
+    # 2. add the users to the group
+    add_group_user_url = client.app.router["add_group_user"].url_for(
+        gid=str(assigned_group["gid"])
+    )
+    assert str(add_group_user_url) == f"{PREFIX}/{assigned_group['gid']}/users"
+    for i in users:
+        params = (
+            {"uid": users[i]["id"]}
+            if i % 2 == 0
+            else {"email": users[i]["email"]}
+        )
+        resp = await client.post(add_group_user_url, json=params)
+        data, error = await assert_status(resp, expected_no_content)
+    # 3. user 1 shall be a manager
+    patch_group_user_url = client.app.router["update_group_user"].url_for(
+        gid=str(assigned_group["gid"]), uid=str(users[0]["id"])
+    )
+    assert str(patch_group_user_url) == f"{PREFIX}/{assigned_group['gid']}/users/{users[0]['id']}"
+    params={
+        "read": True,
+        "write": True,
+        "delete": False
+    }
+    resp = await client.patch(patch_group_user_url, json=params)
+    data, error = await assert_status(resp, expected_ok)
+    # 4. user 2 shall be a member
+    patch_group_user_url = client.app.router["update_group_user"].url_for(
+        gid=str(assigned_group["gid"]), uid=users[1]["id"]
+    )
+    assert str(patch_group_user_url) == f"{PREFIX}/{assigned_group['gid']}/users/{users[1]['id']}"
+    params={
+        "read": True,
+        "write": False,
+        "delete": False
+    }
+    resp = await client.patch(patch_group_user_url, json=params)
+    data, error = await assert_status(resp, expected_ok)
