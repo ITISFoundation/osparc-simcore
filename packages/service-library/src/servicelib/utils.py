@@ -60,15 +60,25 @@ def fire_and_forget_task(obj: Union[Coroutine, asyncio.Future]) -> asyncio.Futur
 
 
 # // tasks
-async def logged_gather(*tasks, reraise: bool = True) -> List[Any]:
-    # all coroutine called in // and we take care of returning the exceptions
+async def logged_gather(
+    *tasks, reraise: bool = True, log: logging.Logger = logger
+) -> List[Any]:
+    """ 
+        *all* coroutine passed are executed in parallel and once they are all
+        completed, the first error (if any) is reraised or all returned
+
+        log: passing the logger gives a chance to identify the origin of the gather call
+    """
     results = await asyncio.gather(*tasks, return_exceptions=True)
     for value in results:
+        # WARN: note that ONLY THE FIRST exception is raised
         if isinstance(value, Exception):
             if reraise:
                 raise value
-            logger.error(
-                "Exception occured while running %s: %s",
+            # Exception is returned, therefore it is not logged as error but as warning
+            # It was user's decision not to reraise them
+            log.warning(
+                "Exception occured while running task %s in gather: %s",
                 str(tasks[results.index(value)]),
                 str(value),
             )
