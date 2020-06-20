@@ -166,16 +166,18 @@ async def access_study(request: web.Request) -> web.Response:
              Please contact the data curators for more information."
         )
 
+    # Get or create a valid user
     user = None
     is_anonymous_user = await is_anonymous(request)
-    if is_anonymous_user:
-        log.debug("Creating temporary user ...")
-        user = await create_temporary_user(request)
-    else:
+    if not is_anonymous_user:
+        # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
+        # TODO: test if temp user overrides old cookie properly 
         user = await get_authorized_user(request)
 
     if not user:
-        raise RuntimeError("Unable to start user session")
+        log.debug("Creating temporary user ...")
+        user = await create_temporary_user(request)
+        is_anonymous_user = True
 
     log.debug(
         "Granted access to study '%s' for user %s. Copying study over ...",
