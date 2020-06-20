@@ -171,7 +171,7 @@ async def access_study(request: web.Request) -> web.Response:
     is_anonymous_user = await is_anonymous(request)
     if not is_anonymous_user:
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
-        # TODO: test if temp user overrides old cookie properly 
+        # TODO: test if temp user overrides old cookie properly
         user = await get_authorized_user(request)
 
     if not user:
