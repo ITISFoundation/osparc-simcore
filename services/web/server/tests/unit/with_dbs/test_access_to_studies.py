@@ -278,7 +278,7 @@ async def test_access_cookie_of_expired_user(
     resp = await client.get(me_url)
 
     data, _ = await assert_status(resp, web.HTTPOk)
-    data["id"] = 1 # This field is available in master!!
+    data["id"] = 3 # WARNING when merging to master. This field is available in master!!
     assert await is_user_guest(app, data["id"])
 
     async def garbage_collect_guest(uid):
@@ -309,7 +309,7 @@ async def test_access_cookie_of_expired_user(
     # as a guest user
     resp = await client.get(me_url)
     data, _ = await assert_status(resp, web.HTTPOk)
-    data["id"] = 2 # This field is available in master!!
+    data["id"] = 4 # WARNING when merging to master. This field is available in master!!
     assert await is_user_guest(app, data["id"])
 
     # But I am another user
