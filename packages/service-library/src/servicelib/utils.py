@@ -64,7 +64,7 @@ async def logged_gather(
     *tasks, reraise: bool = True, log: logging.Logger = logger
 ) -> List[Any]:
     """ 
-        *all* coroutine passed are executed in parallel and once they are all
+        *all* coroutine passed are executed concurrently and once they are all
         completed, the first error (if any) is reraised or all returned
 
         log: passing the logger gives a chance to identify the origin of the gather call
