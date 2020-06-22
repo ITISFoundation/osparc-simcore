@@ -13,7 +13,7 @@ attrs==19.3.0             # via -r requirements/_base.in, aiohttp, jsonschema, o
 chardet==3.0.4            # via aiohttp
 idna-ssl==1.1.0           # via aiohttp
 idna==2.9                 # via idna-ssl, yarl
-importlib-metadata==1.6.0  # via jsonschema
+importlib-metadata==1.6.1  # via jsonschema
 isodate==0.6.0            # via openapi-core
 jsonschema==3.2.0         # via -r requirements/_base.in, openapi-spec-validator
 lazy-object-proxy==1.4.3  # via -r requirements/_base.in, openapi-core
