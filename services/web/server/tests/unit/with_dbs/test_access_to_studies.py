@@ -183,7 +183,7 @@ async def assert_redirected_to_study(
     ), "Expected front-end rendering workbench's study, got %s" % str(content)
 
     # Expects auth cookie for current user
-    assert "osparc.WEBAPI_SESSION" in [c.key for c in session.cookie_jar]
+    assert "API_SESSION" in [c.key for c in session.cookie_jar]
 
     # Expects fragment to indicate client where to find newly created project
     m = re.match(r"/study/([\d\w-]+)", resp.real_url.fragment)
@@ -207,7 +207,7 @@ async def test_access_to_forbidden_study(client, unpublished_project):
 
     valid_but_not_sharable = unpublished_project["uuid"]
 
-    resp = await client.get(f"/study/valid_but_not_sharable")
+    resp = await client.get("/study/valid_but_not_sharable")
     content = await resp.text()
 
     assert (
@@ -278,6 +278,7 @@ async def test_access_cookie_of_expired_user(
     resp = await client.get(me_url)
 
     data, _ = await assert_status(resp, web.HTTPOk)
+    data["id"] = 1 # This field is available in master!!
     assert await is_user_guest(app, data["id"])
 
     async def garbage_collect_guest(uid):
@@ -308,6 +309,7 @@ async def test_access_cookie_of_expired_user(
     # as a guest user
     resp = await client.get(me_url)
     data, _ = await assert_status(resp, web.HTTPOk)
+    data["id"] = 2 # This field is available in master!!
     assert await is_user_guest(app, data["id"])
 
     # But I am another user
