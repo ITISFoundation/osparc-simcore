@@ -4,30 +4,28 @@
 #
 #    pip-compile --output-file=requirements/_base.txt requirements/_base.in
 #
-aiocontextvars==0.2.2     # via loguru
 aiofiles==0.5.0           # via fastapi
 aiopg[sa]==1.0.0          # via -r requirements/_base.in
 aniso8601==7.0.0          # via graphene
 async-exit-stack==1.0.1   # via -r requirements/_base.in, fastapi
 async-generator==1.10     # via -r requirements/_base.in, fastapi
-bcrypt==3.1.7             # via passlib
-certifi==2020.4.5.2       # via httpx, requests
-cffi==1.14.0              # via bcrypt, cryptography
+certifi==2020.6.20        # via httpx, requests
+cffi==1.14.0              # via cryptography
 chardet==3.0.4            # via httpx, requests
 click==7.1.2              # via uvicorn
-contextvars==2.4          # via aiocontextvars, sniffio
+contextvars==2.4          # via sniffio
 cryptography==2.9.2       # via -r requirements/_base.in
 dataclasses==0.7          # via pydantic
 dnspython==1.16.0         # via email-validator
 email-validator==1.1.1    # via fastapi
-fastapi[all]==0.57.0      # via -r requirements/_base.in
+fastapi[all]==0.58.0      # via -r requirements/_base.in
 graphene==2.1.8           # via fastapi
 graphql-core==2.3.2       # via graphene, graphql-relay
 graphql-relay==2.0.1      # via graphene
 h11==0.9.0                # via httpcore, uvicorn
 h2==3.2.0                 # via httpcore
 hpack==3.0.0              # via h2
-hstspreload==2020.6.9     # via httpx
+hstspreload==2020.6.16    # via httpx
 httpcore==0.9.1           # via httpx
 httptools==0.1.1          # via uvicorn
 httpx==0.13.3             # via -r requirements/_base.in
@@ -36,23 +34,20 @@ idna==2.9                 # via email-validator, httpx, requests, yarl
 immutables==0.14          # via contextvars
 itsdangerous==1.1.0       # via fastapi
 jinja2==2.11.2            # via fastapi
-loguru==0.5.1             # via -r requirements/_base.in
 markupsafe==1.1.1         # via jinja2
 multidict==4.7.6          # via yarl
-orjson==3.1.0             # via fastapi
-passlib[bcrypt]==1.7.2    # via -r requirements/_base.in
+orjson==3.1.1             # via fastapi
 promise==2.3              # via graphql-core, graphql-relay
 psycopg2-binary==2.8.5    # via aiopg, sqlalchemy
 pycparser==2.20           # via cffi
 pydantic[dotenv]==1.5.1   # via -r requirements/_base.in, fastapi
-pyjwt==1.7.1              # via -r requirements/_base.in
 python-dotenv==0.13.0     # via pydantic
 python-multipart==0.0.5   # via fastapi
 pyyaml==5.3.1             # via fastapi
-requests==2.23.0          # via fastapi
+requests==2.24.0          # via fastapi
 rfc3986==1.4.0            # via httpx
 rx==1.6.1                 # via graphql-core
-six==1.15.0               # via bcrypt, cryptography, graphene, graphql-core, graphql-relay, python-multipart, tenacity
+six==1.15.0               # via cryptography, graphene, graphql-core, graphql-relay, python-multipart, tenacity
 sniffio==1.1.0            # via httpcore, httpx
 sqlalchemy[postgresql_psycopg2binary]==1.3.17  # via -r requirements/../../../packages/postgres-database/requirements/_base.in, aiopg
 starlette==0.13.4         # via fastapi
