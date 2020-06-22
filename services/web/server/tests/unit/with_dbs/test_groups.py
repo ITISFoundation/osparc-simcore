@@ -605,8 +605,6 @@ async def test_group_access_rights(
     expected_no_content,
 ):
     # Use-case:
-
-
     # 1. create a group
     url = client.app.router["create_group"].url_for()
     assert str(url) == f"{PREFIX}"
@@ -619,25 +617,25 @@ async def test_group_access_rights(
     }
 
     resp = await client.post(url, json=new_group)
-    data, error = await assert_status(resp, expected_ok)
+    data, error = await assert_status(resp, expected_created)
     if not data:
         # role cannot create a group so stop here
         return
     assigned_group = data
 
     # 1. have 2 users
-    users = [await create_user()]*2
-    import pdb; pdb.set_trace()
+    users = [await create_user() for i in range(2)]
+
     # 2. add the users to the group
     add_group_user_url = client.app.router["add_group_user"].url_for(
         gid=str(assigned_group["gid"])
     )
     assert str(add_group_user_url) == f"{PREFIX}/{assigned_group['gid']}/users"
-    for i in users:
+    for i, user in enumerate(users):
         params = (
-            {"uid": users[i]["id"]}
+            {"uid": user["id"]}
             if i % 2 == 0
-            else {"email": users[i]["email"]}
+            else {"email": user["email"]}
         )
         resp = await client.post(add_group_user_url, json=params)
         data, error = await assert_status(resp, expected_no_content)
