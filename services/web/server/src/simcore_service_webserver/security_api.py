@@ -49,7 +49,7 @@ def get_access_model(app: web.Application) -> RoleBasedAccessModel:
     return autz_policy.access_model
 
 
-def clean_auth_policy_cache(app: web.Application):
+def clean_auth_policy_cache(app: web.Application) -> None:
     autz_policy: AuthorizationPolicy = app[AUTZ_KEY]
     autz_policy.timed_cache.clear()
 
