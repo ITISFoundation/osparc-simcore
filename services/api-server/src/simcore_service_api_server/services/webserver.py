@@ -34,7 +34,7 @@ def setup_webserver(app: FastAPI) -> None:
     app.state.webserver_fernet = fernet.Fernet(secret_key)
 
     # init client
-    logger.debug(f"Setup webserver at {settings.base_url}...")
+    logger.debug("Setup webserver at %s...", settings.base_url)
 
     client = AsyncClient(base_url=settings.base_url)
     app.state.webserver_client = client

@@ -4,7 +4,7 @@ from aiopg.sa import Engine
 from fastapi import Depends
 from fastapi.requests import Request
 
-from ...db.repositories._base import BaseRepository
+from ...db.repositories import BaseRepository
 
 
 def _get_db_engine(request: Request) -> Engine:

@@ -159,7 +159,7 @@ def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> D
     return config
 
 
-@pytest.fixture("session")
+@pytest.fixture(scope="session")
 def make_engine(postgres_service: Dict) -> Callable:
     dsn = postgres_service["dsn"]  # session scope freezes dsn
 
