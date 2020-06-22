@@ -196,3 +196,8 @@ def get_tracemalloc_info(top=10) -> List[str]:
         )
 
     return top_trace
+
+
+def compose_error_msg(msg: str) -> str:
+    msg = msg.strip()
+    return f"{msg}. Please send this message to support@osparc.io [{now_str()}]"

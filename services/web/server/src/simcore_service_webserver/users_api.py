@@ -11,6 +11,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login.cfg import get_storage
 
 from .db_models import groups, user_to_groups, GroupType
+from .security_api import clean_auth_policy_cache
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,11 @@ async def is_user_guest(app: web.Application, user_id: int) -> bool:
 
 async def delete_user(app: web.Application, user_id: int) -> None:
     """Deletes a user from the database if the user exists"""
+    # FIXME: user cannot be deleted without deleting first all ist project
+    # otherwise this function will raise asyncpg.exceptions.ForeignKeyViolationError
+    # Consider "marking" users as deleted and havning a background job that
+    # cleans it up
+
     db = get_storage(app)
     user = await db.get_user({"id": user_id})
     if not user:
@@ -75,3 +81,7 @@ async def delete_user(app: web.Application, user_id: int) -> None:
         return
 
     await db.delete_user(user)
+
+    # This user might be cached in the auth. If so, any request
+    # with this user-id will get thru producing unexpected side-effects
+    clean_auth_policy_cache(app)
