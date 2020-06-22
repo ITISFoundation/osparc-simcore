@@ -5,13 +5,13 @@
 
 import random
 from copy import deepcopy
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import pytest
 from aiohttp import web
-
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
+from pytest_simcore.helpers.utils_login import LoggedUser, create_user
+
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.groups import setup_groups
@@ -28,6 +28,8 @@ from simcore_service_webserver.users import setup_users
 
 ## BUG FIXES #######################################################
 from simcore_service_webserver.utils import gravatar_hash
+
+from .helpers import standard_role_response
 
 API_VERSION = "v0"
 
@@ -102,53 +104,7 @@ def _assert__group_user(
     assert "gid" in actual_user
 
 
-from collections import namedtuple
-
-ExpectedResponse = namedtuple(
-    "ExpectedResponse", ["ok", "created", "no_content", "not_found"]
-)
-
-
-def _standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse]]]:
-    return (
-        "role,expected",
-        [
-            (
-                UserRole.ANONYMOUS,
-                ExpectedResponse(
-                    web.HTTPUnauthorized,
-                    web.HTTPUnauthorized,
-                    web.HTTPUnauthorized,
-                    web.HTTPUnauthorized,
-                ),
-            ),
-            (
-                UserRole.GUEST,
-                ExpectedResponse(
-                    web.HTTPForbidden,
-                    web.HTTPForbidden,
-                    web.HTTPForbidden,
-                    web.HTTPForbidden,
-                ),
-            ),
-            (
-                UserRole.USER,
-                ExpectedResponse(
-                    web.HTTPOk, web.HTTPCreated, web.HTTPNoContent, web.HTTPNotFound,
-                ),
-            ),
-            (
-                UserRole.TESTER,
-                ExpectedResponse(
-                    web.HTTPOk, web.HTTPCreated, web.HTTPNoContent, web.HTTPNotFound,
-                ),
-            ),
-        ],
-    )
-
-@pytest.mark.parametrize(
-    *_standard_role_response()
-)
+@pytest.mark.parametrize(*standard_role_response())
 async def test_list_groups(
     client,
     logged_user,
@@ -180,7 +136,7 @@ async def test_list_groups(
         assert data["all"] == all_group
 
 
-@pytest.mark.parametrize(*_standard_role_response(),)
+@pytest.mark.parametrize(*standard_role_response(),)
 async def test_group_access_rights(
     client,
     logged_user,
@@ -237,14 +193,8 @@ async def test_group_access_rights(
             data, error = await assert_status(resp, web.HTTPForbidden)
 
 
-@pytest.mark.parametrize(*_standard_role_response()
-)
-async def test_group_creation_workflow(
-    client,
-    logged_user,
-    role,
-    expected
-):
+@pytest.mark.parametrize(*standard_role_response())
+async def test_group_creation_workflow(client, logged_user, role, expected):
     url = client.app.router["create_group"].url_for()
     assert str(url) == f"{PREFIX}"
 
@@ -333,13 +283,9 @@ async def test_group_creation_workflow(
     data, error = await assert_status(resp, expected.not_found)
 
 
-@pytest.mark.parametrize(*_standard_role_response()
-)
+@pytest.mark.parametrize(*standard_role_response())
 async def test_add_remove_users_from_group(
-    client,
-    logged_user,
-    role,
-    expected,
+    client, logged_user, role, expected,
 ):
 
     new_group = {
@@ -486,13 +432,9 @@ async def test_add_remove_users_from_group(
         data, error = await assert_status(resp, expected.not_found)
 
 
-@pytest.mark.parametrize(*_standard_role_response()
-)
+@pytest.mark.parametrize(*standard_role_response())
 async def test_group_access_rights(
-    client,
-    logged_user,
-    role,
-    expected,
+    client, logged_user, role, expected,
 ):
     # Use-case:
     # 1. create a group

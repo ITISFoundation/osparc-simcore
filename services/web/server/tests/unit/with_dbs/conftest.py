@@ -12,6 +12,7 @@
 import os
 import sys
 from asyncio import Future
+
 from copy import deepcopy
 from pathlib import Path
 from typing import Dict, List
@@ -23,11 +24,11 @@ import redis
 import socketio
 import sqlalchemy as sa
 import trafaret_config
+from pytest_simcore.helpers.utils_login import NewUser
 from yarl import URL
 
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
-from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiopg_utils import DSN
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.application import create_application
@@ -38,6 +39,7 @@ from simcore_service_webserver.groups_api import (
     delete_user_group,
     list_user_groups,
 )
+
 
 # current directory
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
