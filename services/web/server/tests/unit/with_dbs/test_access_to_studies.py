@@ -156,12 +156,14 @@ def _assert_same_projects(got: Dict, expected: Dict):
     # TODO: validate using api/specs/webserver/v0/components/schemas/project-v0.0.1.json
     # TODO: validate workbench!
     exclude = set(
-        "creationDate",
-        "lastChangeDate",
-        "prjOwner",
-        "uuid",
-        "workbench",
-        "accessRights",
+        [
+            "creationDate",
+            "lastChangeDate",
+            "prjOwner",
+            "uuid",
+            "workbench",
+            "accessRights",
+        ]
     )
     for key in expected.keys():
         if key not in exclude:
