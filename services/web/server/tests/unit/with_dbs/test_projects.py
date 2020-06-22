@@ -10,10 +10,10 @@ from typing import Dict, List, Optional
 import pytest
 from aiohttp import web
 from mock import call
-
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
+
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
@@ -142,6 +142,21 @@ async def logged_user2(client, user_role: UserRole):
 async def user_project(client, fake_project, logged_user):
     async with NewProject(
         fake_project, client.app, user_id=logged_user["id"]
+    ) as project:
+        print("-----> added project", project["name"])
+        yield project
+        print("<----- removed project", project["name"])
+
+
+@pytest.fixture
+async def shared_project(client, fake_project, logged_user, all_group):
+    async with NewProject(
+        fake_project,
+        client.app,
+        user_id=logged_user["id"],
+        accessRights={
+            f"{all_group['gid']}": {"read": True, "write": False, "delete": False}
+        },
     ) as project:
         print("-----> added project", project["name"])
         yield project
@@ -1026,7 +1041,7 @@ async def test_get_active_project(
         (UserRole.TESTER, web.HTTPForbidden),
     ],
 )
-async def test_delete_shared_project_forbidden(
+async def test_delete_multiple_opened_project_forbidden(
     client,
     logged_user,
     user_project,
@@ -1220,3 +1235,32 @@ async def test_tags_to_studies(
     url = client.app.router["delete_tag"].url_for(tag_id=str(added_tags[1].get("id")))
     resp = await client.delete(url)
     await assert_status(resp, web.HTTPNoContent)
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
+async def test_open_shared_project_2_users_forbidden(
+    client,
+    logged_user,
+    shared_project,
+    socketio_client,
+    client_session_id,
+    user_role,
+    expected,
+):
+    # Use-case: user 1 opens a shared project, user 2 tries to open it as well
+    # 1. log as user 1 and open the project
+    client_session_id1 = client_session_id()
+    sio1 = await socketio_client(client_session_id1)
+    url = client.app.router["open_project"].url_for(project_id=shared_project["uuid"])
+    resp = await client.post(url, json=client_session_id1)
+    await assert_status(resp, web.HTTPOk)
+    # 2. log as user 2 and open the project since it's shared with everyone
+    # get another user logged in now
+    user_2 = await log_client_in(
+        client, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
+    )
+    client_session_id2 = client_session_id()
+    sio2 = await socketio_client(client_session_id1)
+    url = client.app.router["open_project"].url_for(project_id=shared_project["uuid"])
+    resp = await client.post(url, json=client_session_id1)
+    assert resp.status_code == 423  # the locked HTTP code does not exist in aiohttp...
