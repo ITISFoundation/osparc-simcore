@@ -11,7 +11,7 @@ import pytest
 from aiohttp import web
 
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, create_user
+from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.groups import setup_groups
@@ -95,7 +95,7 @@ def _assert__group_user(
     assert actual_user["login"] == expected_user["email"]
     assert "gravatar_id" in actual_user
     assert actual_user["gravatar_id"] == gravatar_hash(expected_user["email"])
-    assert "access_rights" in actual_user
+    assert "accessRights" in actual_user
     assert actual_user["accessRights"] == expected_access_rights
     assert "id" in actual_user
     assert actual_user["id"] == expected_user["id"]
@@ -310,7 +310,7 @@ async def test_group_creation_workflow(
         for prop in ["label", "description", "thumbnail"]:
             assert assigned_group[prop] == new_group[prop]
         # we get all rights on the group since we are the creator
-        assert assigned_group["access_rights"] == {
+        assert assigned_group["accessRights"] == {
             "read": True,
             "write": True,
             "delete": True,
@@ -447,7 +447,7 @@ async def test_add_remove_users_from_group(
         for prop in ["label", "description", "thumbnail"]:
             assert assigned_group[prop] == new_group[prop]
         # we get all rights on the group since we are the creator
-        assert assigned_group["access_rights"] == {
+        assert assigned_group["accessRights"] == {
             "read": True,
             "write": True,
             "delete": True,
@@ -531,7 +531,7 @@ async def test_add_remove_users_from_group(
             gid=str(assigned_group["gid"]), uid=str(created_users_list[i]["id"])
         )
         resp = await client.patch(
-            update_group_user_url, json={"access_rights": MANAGER_ACCESS_RIGHTS}
+            update_group_user_url, json={"accessRights": MANAGER_ACCESS_RIGHTS}
         )
         data, error = await assert_status(resp, expected)
         if not error:
@@ -657,3 +657,53 @@ async def test_group_access_rights(
     params = {"accessRights": {"read": True, "write": False, "delete": False}}
     resp = await client.patch(patch_group_user_url, json=params)
     data, error = await assert_status(resp, expected_ok)
+
+    # let's login as user 1
+    # login
+    url = client.app.router["auth_login"].url_for()
+    resp = await client.post(
+        url, json={"email": users[0]["email"], "password": users[0]["raw_password"],}
+    )
+    await assert_status(resp, expected_ok)
+    # check as a manager I can remove user 2
+    delete_group_user_url = client.app.router["delete_group_user"].url_for(
+        gid=str(assigned_group["gid"]), uid=str(users[1]["id"])
+    )
+    assert (
+        str(delete_group_user_url)
+        == f"{PREFIX}/{assigned_group['gid']}/users/{users[1]['id']}"
+    )
+    resp = await client.delete(delete_group_user_url)
+    data, error = await assert_status(resp, expected_no_content)
+    # as a manager I can add user 2 again
+    resp = await client.post(add_group_user_url, json={"uid": users[1]["id"]})
+    data, error = await assert_status(resp, expected_no_content)
+    # as a manager I cannot delete the group
+    url = client.app.router["delete_group"].url_for(gid=str(assigned_group["gid"]))
+    resp = await client.delete(url)
+    data, error = await assert_status(resp, web.HTTPForbidden)
+
+    # now log in as user 2
+    # login
+    url = client.app.router["auth_login"].url_for()
+    resp = await client.post(
+        url, json={"email": users[1]["email"], "password": users[1]["raw_password"],}
+    )
+    await assert_status(resp, expected_ok)
+    # as a member I cannot remove user 1
+    delete_group_user_url = client.app.router["delete_group_user"].url_for(
+        gid=str(assigned_group["gid"]), uid=str(users[0]["id"])
+    )
+    assert (
+        str(delete_group_user_url)
+        == f"{PREFIX}/{assigned_group['gid']}/users/{users[0]['id']}"
+    )
+    resp = await client.delete(delete_group_user_url)
+    data, error = await assert_status(resp, web.HTTPForbidden)
+    # as a member I cannot add user 1
+    resp = await client.post(add_group_user_url, json={"uid": users[0]["id"]})
+    data, error = await assert_status(resp, web.HTTPForbidden)
+    # as a member I cannot delete the grouop
+    url = client.app.router["delete_group"].url_for(gid=str(assigned_group["gid"]))
+    resp = await client.delete(url)
+    data, error = await assert_status(resp, web.HTTPForbidden)

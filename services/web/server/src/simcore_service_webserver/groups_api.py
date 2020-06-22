@@ -120,7 +120,7 @@ async def create_user_group(
             )
         )
     return convert_groups_db_to_schema(
-        group, access_rights=DEFAULT_GROUP_OWNER_ACCESS_RIGHTS
+        group, accessRights=DEFAULT_GROUP_OWNER_ACCESS_RIGHTS
     )
 
 
@@ -145,7 +145,7 @@ async def update_user_group(
         )
         updated_group = await result.fetchone()
         return convert_groups_db_to_schema(
-            updated_group, access_rights=group.access_rights
+            updated_group, accessRights=group.access_rights
         )
 
 
@@ -153,7 +153,7 @@ async def delete_user_group(app: web.Application, user_id: int, gid: int) -> Non
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         group = await _get_user_group(conn, user_id, gid)
-        check_group_permissions(group, user_id, gid, "write")
+        check_group_permissions(group, user_id, gid, "delete")
 
         await conn.execute(
             # pylint: disable=no-value-for-parameter
@@ -284,7 +284,7 @@ async def update_user_in_group(
             )
         )
         the_user = dict(the_user)
-        the_user.update(**new_values_for_user_in_group)
+        the_user.update(**new_db_values)
         return convert_user_in_group_to_schema(the_user)
 
 
