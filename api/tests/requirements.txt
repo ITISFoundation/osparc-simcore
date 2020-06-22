@@ -11,11 +11,11 @@ chardet==3.0.4            # via aiohttp
 coverage==5.1             # via -r requirements.in, pytest-cov
 idna-ssl==1.1.0           # via aiohttp
 idna==2.9                 # via idna-ssl, yarl
-importlib-metadata==1.6.0  # via jsonschema, pluggy, pytest
+importlib-metadata==1.6.1  # via jsonschema, pluggy, pytest
 isodate==0.6.0            # via openapi-schema-validator
 jsonschema==3.2.0         # via openapi-schema-validator, openapi-spec-validator
-lazy-object-proxy==1.4.3  # via openapi-core
-more-itertools==8.3.0     # via openapi-core, pytest
+lazy-object-proxy==1.5.0  # via openapi-core
+more-itertools==8.4.0     # via openapi-core, pytest
 multidict==4.7.6          # via aiohttp, yarl
 openapi-core==0.13.3      # via -r requirements.in
 openapi-schema-validator==0.1.1  # via openapi-core
@@ -23,12 +23,12 @@ openapi-spec-validator==0.2.8  # via openapi-core
 packaging==20.4           # via pytest, pytest-sugar
 parse==1.15.0             # via openapi-core
 pluggy==0.13.1            # via pytest
-py==1.8.1                 # via pytest
+py==1.8.2                 # via pytest
 pyparsing==2.4.7          # via packaging
 pyrsistent==0.16.0        # via jsonschema
 pytest-aiohttp==0.3.0     # via -r requirements.in
-pytest-cov==2.9.0         # via -r requirements.in
-pytest-instafail==0.4.1.post0  # via -r requirements.in
+pytest-cov==2.10.0        # via -r requirements.in
+pytest-instafail==0.4.2   # via -r requirements.in
 pytest-sugar==0.9.3       # via -r requirements.in
 pytest==5.4.3             # via -r requirements.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-sugar
 pyyaml==5.3.1             # via openapi-spec-validator
@@ -36,7 +36,7 @@ six==1.15.0               # via isodate, jsonschema, openapi-core, openapi-schem
 strict-rfc3339==0.7       # via openapi-schema-validator
 termcolor==1.1.0          # via pytest-sugar
 typing-extensions==3.7.4.2  # via aiohttp
-wcwidth==0.1.9            # via pytest
+wcwidth==0.2.4            # via pytest
 werkzeug==1.0.1           # via openapi-core
 yarl==1.4.2               # via aiohttp
 zipp==3.1.0               # via importlib-metadata

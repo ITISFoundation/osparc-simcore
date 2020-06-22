@@ -94,6 +94,7 @@ async def update_user_profile(
         assert resp.rowcount == 1  # nosec
 
 
+
 async def is_user_guest(app: web.Application, user_id: int) -> bool:
     """Returns True if the user exists and is a GUEST"""
     db = get_storage(app)

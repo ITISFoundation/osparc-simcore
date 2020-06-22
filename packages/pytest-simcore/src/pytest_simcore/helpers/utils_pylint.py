@@ -13,7 +13,7 @@ def assert_pylint_is_passing(pylintrc, package_dir, number_of_jobs: int = AUTODE
     command = f"pylint --jobs={number_of_jobs} --rcfile {pylintrc} -v {package_dir}".split(
         " "
     )
-    pipes = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    pipes = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     std_out, _ = pipes.communicate()
     if pipes.returncode != 0:
         print(f'>>>> Exit code "{pipes.returncode}"\n{std_out.decode("utf-8")}\n<<<<')

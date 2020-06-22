@@ -7,7 +7,6 @@ from asyncio import Future
 import pytest
 from yarl import URL
 
-
 from servicelib.application import create_safe_application
 from servicelib.client_session import APP_CLIENT_SESSION_KEY
 from simcore_service_webserver.__version__ import api_version_prefix

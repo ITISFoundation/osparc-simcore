@@ -6,11 +6,11 @@
 # 	- In windows, only WSL is supported
 #
 # by sanderegg, pcrespov
+#
 .DEFAULT_GOAL := help
+
 SHELL := /bin/bash
 
-
-# TOOLS --------------------------------------
 
 MAKE_C := $(MAKE) --no-print-directory --directory
 
@@ -60,7 +60,9 @@ export SWARM_STACK_NAME ?= simcore
 export DOCKER_IMAGE_TAG ?= latest
 export DOCKER_REGISTRY  ?= itisfoundation
 
+
 .PHONY: help
+
 help: ## help on rule's targets
 ifeq ($(IS_WIN),)
 	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -70,7 +72,7 @@ endif
 
 
 
-## docker BUILD -------------------------------
+## DOCKER BUILD -------------------------------
 #
 # - all builds are inmediatly tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
 # - only production and cache images are released (i.e. tagged pushed into registry)
@@ -127,7 +129,6 @@ endif
 endif
 
 
-# TODO: should download cache if any??
 build-cache build-cache-nc build-cache-kit build-cache-x: .env ## Build cache images and tags them as 'local/{service-name}:cache'
 ifeq ($(target),)
 	# Compiling front-end
@@ -152,7 +153,7 @@ shell:
 	docker run -it local/$(target):production /bin/sh
 
 
-## docker SWARM -------------------------------
+## DOCKER SWARM -------------------------------
 #
 # - All resolved configuration are named as .stack-${name}-*.yml to distinguish from docker-compose files which can be parametrized
 #
@@ -178,6 +179,7 @@ docker-compose-configs = $(wildcard services/docker-compose*.yml)
 .stack-ops.yml: .env $(docker-compose-configs)
 	# Creating config for ops stack to $@
 	@docker-compose -f services/docker-compose-ops.yml --log-level=ERROR config > $@
+
 
 .PHONY: up-devel up-prod up-version up-latest .deploy-ops
 
@@ -235,7 +237,7 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 	$(if $(SWARM_HOSTS),,docker swarm init)
 
 
-## docker TAGS  -------------------------------
+## DOCKER TAGS  -------------------------------
 
 .PHONY: tag-local tag-cache tag-version tag-latest
 
@@ -263,10 +265,10 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 
 
 
-## docker PULL/PUSH  -------------------------------
+## DOCKER PULL/PUSH  -------------------------------
 #
-# TODO: cannot push modified/untracke
-# TODO: cannot push discetedD
+# TODO: cannot push modified/untracked
+# TODO: cannot push disceted
 #
 .PHONY: pull-cache pull-version
 pull-cache: .env
@@ -296,21 +298,7 @@ push-version: tag-version
 	)
 
 
-## PYTHON -------------------------------
-.PHONY: pylint
-
-pylint: ## Runs python linter framework's wide
-	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
-	# TODO: NOT windows friendly
-	/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
-											-not -path "*egg*" \
-											-not -path "*migration*" \
-											-not -path "*datcore.py" \
-											-not -path "*sandbox*" \
-											-not -path "*-sdk/python*" \
-											-not -path "*generated_code*" \
-											-not -path "*datcore.py" \
-											-not -path "*web/server*"))"
+## ENVIRONMENT -------------------------------
 
 .PHONY: devenv devenv-all
 
@@ -332,24 +320,41 @@ devenv-all: devenv ## sets up extra development tools (everything else besides p
 	@$(MAKE_C) scripts/json-schema-to-openapi-schema
 
 
-## MISC -------------------------------
+.env: .env-devel ## creates .env file from defaults in .env-devel
+	$(if $(wildcard $@), \
+	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
+
+
+.vscode/settings.json: .vscode-template/settings.json
+	$(info WARNING: #####  $< is newer than $@ ####)
+	@diff -uN $@ $<
+	@false
+
+
+
+## TOOLS -------------------------------
+
+.PHONY: pylint
+
+pylint: ## Runs python linter framework's wide
+	/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
+											-not -path "*egg*" \
+											-not -path "*migration*" \
+											-not -path "*datcore.py" \
+											-not -path "*sandbox*" \
+											-not -path "*-sdk/python*" \
+											-not -path "*generated_code*" \
+											-not -path "*datcore.py" \
+											-not -path "*web/server*"))"
+	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
+
 
 .PHONY: new-service
 new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice and drops it under services/ [UNDER DEV]
 	$</bin/pip3 --quiet install cookiecutter
 	.venv/bin/cookiecutter gh:itisfoundation/cookiecutter-simcore-pyservice --output-dir $(CURDIR)/services
 
-# TODO: NOT windows friendly
-.env: .env-devel ## creates .env file from defaults in .env-devel
-	$(if $(wildcard $@), \
-	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
-	@echo "WARNING ##### $@ does not exist, copying $< ############"; cp $< $@)
-
-# TODO: NOT windows friendly
-.vscode/settings.json: .vscode-template/settings.json
-	$(info WARNING: #####  $< is newer than $@ ####)
-	@diff -uN $@ $<
-	@false
 
 .PHONY: openapi-specs
 openapi-specs: ## bundles and validates openapi specifications and schemas of ALL service's API
@@ -365,6 +370,23 @@ code-analysis: .codeclimate.yml ## runs code-climate analysis
 	# Running analysis
 	./scripts/code-climate.bash analyze
 
+
+.PHONY: auto-doc
+auto-doc: .stack-simcore-version.yml ## updates diagrams for README.md
+	# Parsing docker-compose config $< and creating graph
+	@./scripts/docker-compose-viz.bash $<
+	# Updating docs/img
+	@mv --verbose $<.png docs/img/
+
+
+.PHONY: postgres-upgrade
+postgres-upgrade: ## initalize or upgrade postgres db to latest state
+	@$(MAKE_C) packages/postgres-database/docker build
+	@$(MAKE_C) packages/postgres-database/docker upgrade
+
+
+
+## INFO -------------------------------
 
 .PHONY: info info-images info-swarm  info-tools
 info: ## displays setup information
@@ -386,7 +408,6 @@ info: ## displays setup information
 	@echo ' jq     : $(shell jq --version)'
 	@echo ' awk    : $(shell awk -W version 2>&1 | head -n 1)'
 	@echo ' python : $(shell python3 --version)'
-
 
 
 define show-meta
@@ -422,6 +443,9 @@ ifneq ($(SWARM_HOSTS), )
 	@docker network ls
 endif
 
+
+
+## CLEAN -------------------------------
 
 .PHONY: clean clean-images clean-venv clean-all clean-ps
 
@@ -460,19 +484,6 @@ clean-all: clean clean-ps clean-images # Deep clean including .venv and produced
 	-rm -rf .venv
 
 
-.PHONY: postgres-upgrade
-postgres-upgrade: ## initalize or upgrade postgres db to latest state
-	@$(MAKE_C) packages/postgres-database/docker build
-	@$(MAKE_C) packages/postgres-database/docker upgrade
-
-
 .PHONY: reset
 reset: ## restart docker daemon (LINUX ONLY)
 	sudo systemctl restart docker
-
-.PHONY: auto-doc
-auto-doc: .stack-simcore-version.yml ## updates diagrams for README.md
-	# Parsing docker-compose config $< and creating graph
-	@./scripts/docker-compose-viz.bash $<
-	# Updating docs/img
-	@mv --verbose $<.png docs/img/

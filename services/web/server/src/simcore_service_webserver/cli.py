@@ -18,8 +18,8 @@ import sys
 from argparse import ArgumentParser
 from typing import Dict, List, Optional
 
-from aiohttp.log import access_logger
 from aiodebug import log_slow_callbacks
+from aiohttp.log import access_logger
 
 from .application import run_service
 from .application_config import CLI_DEFAULT_CONFIGFILE, app_schema

@@ -17,5 +17,5 @@ pytest-mock
 pytest-sugar
 
 # tools
-pylint==2.5.0 # 2.5.3 fails to run in parallel
+pylint  # NOTE: The version in pylint at _text.txt is used as a reference for ci/helpers/install_pylint.bash
 coveralls

@@ -6,7 +6,6 @@
 
 from simcore_postgres_database.models.users import UserRole
 
-
 # A role defines a set of operations that the user *can* perform
 #    - Every operation is named as a resource and an action
 #    - Resource is named hierarchically

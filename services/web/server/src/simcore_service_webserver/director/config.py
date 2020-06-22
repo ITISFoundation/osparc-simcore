@@ -7,8 +7,9 @@ from typing import Dict
 
 import trafaret as T
 from aiohttp import ClientSession, web
-from servicelib.application_keys import APP_CONFIG_KEY, APP_CLIENT_SESSION_KEY
 from yarl import URL
+
+from servicelib.application_keys import APP_CLIENT_SESSION_KEY, APP_CONFIG_KEY
 
 APP_DIRECTOR_API_KEY = __name__ + ".director_api"
 
