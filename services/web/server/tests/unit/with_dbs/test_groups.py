@@ -632,34 +632,28 @@ async def test_group_access_rights(
     )
     assert str(add_group_user_url) == f"{PREFIX}/{assigned_group['gid']}/users"
     for i, user in enumerate(users):
-        params = (
-            {"uid": user["id"]}
-            if i % 2 == 0
-            else {"email": user["email"]}
-        )
+        params = {"uid": user["id"]} if i % 2 == 0 else {"email": user["email"]}
         resp = await client.post(add_group_user_url, json=params)
         data, error = await assert_status(resp, expected_no_content)
     # 3. user 1 shall be a manager
     patch_group_user_url = client.app.router["update_group_user"].url_for(
         gid=str(assigned_group["gid"]), uid=str(users[0]["id"])
     )
-    assert str(patch_group_user_url) == f"{PREFIX}/{assigned_group['gid']}/users/{users[0]['id']}"
-    params={
-        "read": True,
-        "write": True,
-        "delete": False
-    }
+    assert (
+        str(patch_group_user_url)
+        == f"{PREFIX}/{assigned_group['gid']}/users/{users[0]['id']}"
+    )
+    params = {"accessRights": {"read": True, "write": True, "delete": False}}
     resp = await client.patch(patch_group_user_url, json=params)
     data, error = await assert_status(resp, expected_ok)
     # 4. user 2 shall be a member
     patch_group_user_url = client.app.router["update_group_user"].url_for(
-        gid=str(assigned_group["gid"]), uid=users[1]["id"]
+        gid=str(assigned_group["gid"]), uid=str(users[1]["id"])
     )
-    assert str(patch_group_user_url) == f"{PREFIX}/{assigned_group['gid']}/users/{users[1]['id']}"
-    params={
-        "read": True,
-        "write": False,
-        "delete": False
-    }
+    assert (
+        str(patch_group_user_url)
+        == f"{PREFIX}/{assigned_group['gid']}/users/{users[1]['id']}"
+    )
+    params = {"accessRights": {"read": True, "write": False, "delete": False}}
     resp = await client.patch(patch_group_user_url, json=params)
     data, error = await assert_status(resp, expected_ok)

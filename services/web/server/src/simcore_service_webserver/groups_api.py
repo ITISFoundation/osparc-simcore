@@ -271,10 +271,11 @@ async def update_user_in_group(
             conn, gid, the_user_id_in_group
         )
         # modify the user access rights
+        new_db_values = {"access_rights": new_values_for_user_in_group["accessRights"]}
         await conn.execute(
             # pylint: disable=no-value-for-parameter
             user_to_groups.update()
-            .values(**new_values_for_user_in_group)
+            .values(**new_db_values)
             .where(
                 and_(
                     user_to_groups.c.uid == the_user_id_in_group,
