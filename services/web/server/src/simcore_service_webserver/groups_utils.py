@@ -13,7 +13,7 @@ GROUPS_SCHEMA_TO_DB = {
     "label": "name",
     "description": "description",
     "thumbnail": "thumbnail",
-    "access_rights": "access_rights",
+    "accessRights": "access_rights",
 }
 
 

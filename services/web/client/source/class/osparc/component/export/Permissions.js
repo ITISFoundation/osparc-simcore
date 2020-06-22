@@ -157,7 +157,7 @@ qx.Class.define("osparc.component.export.Permissions", {
           ctrl.bindProperty("login", "subtitle", null, item, id); // user
           ctrl.bindProperty("description", "subtitle", null, item, id); // organization
           ctrl.bindProperty("isOrg", "isOrganization", null, item, id);
-          ctrl.bindProperty("access_rights", "accessRights", null, item, id);
+          ctrl.bindProperty("accessRights", "accessRights", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
         configureItem: item => {
@@ -229,7 +229,7 @@ qx.Class.define("osparc.component.export.Permissions", {
             collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
-          collaborator["access_rights"] = aceessRights[gid];
+          collaborator["accessRights"] = aceessRights[gid];
           if (this.__isUserOwner()) {
             collaborator["showOptions"] = true;
           }

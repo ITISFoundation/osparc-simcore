@@ -76,9 +76,9 @@ PREFIX = "/" + API_VERSION + "/groups"
 
 
 def _assert_group(group: Dict[str, str]):
-    properties = ["gid", "label", "description", "thumbnail", "access_rights"]
+    properties = ["gid", "label", "description", "thumbnail", "accessRights"]
     assert all(x in group for x in properties)
-    access_rights = group["access_rights"]
+    access_rights = group["accessRights"]
     access_rights_properties = ["read", "write", "delete"]
     assert all(x in access_rights for x in access_rights_properties)
 
@@ -96,7 +96,7 @@ def _assert__group_user(
     assert "gravatar_id" in actual_user
     assert actual_user["gravatar_id"] == gravatar_hash(expected_user["email"])
     assert "access_rights" in actual_user
-    assert actual_user["access_rights"] == expected_access_rights
+    assert actual_user["accessRights"] == expected_access_rights
     assert "id" in actual_user
     assert actual_user["id"] == expected_user["id"]
     assert "gid" in actual_user
