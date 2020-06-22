@@ -31,7 +31,6 @@ def create_start_app_handler(app: FastAPI) -> Callable:
 
 
 def create_stop_app_handler(app: FastAPI) -> Callable:
-
     async def stop_app() -> None:
         try:
             logger.info("Application stopping")
@@ -39,7 +38,7 @@ def create_stop_app_handler(app: FastAPI) -> Callable:
                 await close_db_connection(app)
             if app.state.settings.webserver.enabled:
                 await close_webserver(app)
-        finally:
-            logger.info("Stopping application", exc_info=True)
+        except Exception:  # pylint: disable=broad-except
+            logger.exception("Stopping application")
 
     return stop_app

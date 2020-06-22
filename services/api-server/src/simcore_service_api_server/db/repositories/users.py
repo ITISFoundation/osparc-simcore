@@ -1,12 +1,9 @@
-import hashlib
-from typing import List, Optional
+from typing import Optional
 
 import sqlalchemy as sa
-from aiopg.sa.result import RowProxy
 
-from ...models.schemas.profiles import Profile
-from ..tables import GroupType, api_keys, groups, user_to_groups, users
-from .base import BaseRepository
+from ..tables import api_keys, users
+from ._base import BaseRepository
 
 
 class UsersRepository(BaseRepository):

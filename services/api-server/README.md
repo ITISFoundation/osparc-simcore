@@ -16,6 +16,26 @@ Platform's public API server
 <!------------------------->
 
 
+## Development
+
+Setup environment
+```cmd
+make devenv
+source .venv/bin/activate
+cd services/api-service
+make install-dev
+```
+To run a dev server just
+```cmd
+make run-devel
+```
+and the following sites are available
+
+- http://127.0.0.1:8000/docs: redoc documentation
+- http://127.0.0.1:8000/dev/docs: swagger type of documentation
+
+
+
 
 ## References
 
