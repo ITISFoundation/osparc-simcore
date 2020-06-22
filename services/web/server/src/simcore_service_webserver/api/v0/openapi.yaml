@@ -2136,7 +2136,7 @@ paths:
                                     description: url to the group thumbnail
                                     type: string
                                     format: uri
-                                  access_rights:
+                                  accessRights:
                                     description: defines acesss rights for the user
                                     type: object
                                     properties:
@@ -2164,7 +2164,7 @@ paths:
                                   - gid
                                   - label
                                   - description
-                                  - access_rights
+                                  - accessRights
                                 example:
                                   - gid: '27'
                                     label: A user
@@ -2196,7 +2196,7 @@ paths:
                                       description: url to the group thumbnail
                                       type: string
                                       format: uri
-                                    access_rights:
+                                    accessRights:
                                       description: defines acesss rights for the user
                                       type: object
                                       properties:
@@ -2224,7 +2224,7 @@ paths:
                                     - gid
                                     - label
                                     - description
-                                    - access_rights
+                                    - accessRights
                                   example:
                                     - gid: '27'
                                       label: A user
@@ -2254,7 +2254,7 @@ paths:
                                     description: url to the group thumbnail
                                     type: string
                                     format: uri
-                                  access_rights:
+                                  accessRights:
                                     description: defines acesss rights for the user
                                     type: object
                                     properties:
@@ -2282,7 +2282,7 @@ paths:
                                   - gid
                                   - label
                                   - description
-                                  - access_rights
+                                  - accessRights
                                 example:
                                   - gid: '27'
                                     label: A user
@@ -2867,7 +2867,7 @@ paths:
                             description: url to the group thumbnail
                             type: string
                             format: uri
-                          access_rights:
+                          accessRights:
                             description: defines acesss rights for the user
                             type: object
                             properties:
@@ -2895,7 +2895,7 @@ paths:
                           - gid
                           - label
                           - description
-                          - access_rights
+                          - accessRights
                         example:
                           - gid: '27'
                             label: A user
@@ -2927,7 +2927,7 @@ paths:
                               description: url to the group thumbnail
                               type: string
                               format: uri
-                            access_rights:
+                            accessRights:
                               description: defines acesss rights for the user
                               type: object
                               properties:
@@ -2955,7 +2955,7 @@ paths:
                             - gid
                             - label
                             - description
-                            - access_rights
+                            - accessRights
                           example:
                             - gid: '27'
                               label: A user
@@ -2985,7 +2985,7 @@ paths:
                             description: url to the group thumbnail
                             type: string
                             format: uri
-                          access_rights:
+                          accessRights:
                             description: defines acesss rights for the user
                             type: object
                             properties:
@@ -3013,7 +3013,7 @@ paths:
                           - gid
                           - label
                           - description
-                          - access_rights
+                          - accessRights
                         example:
                           - gid: '27'
                             label: A user
@@ -3139,7 +3139,7 @@ paths:
                   description: url to the group thumbnail
                   type: string
                   format: uri
-                access_rights:
+                accessRights:
                   description: defines acesss rights for the user
                   type: object
                   properties:
@@ -3167,7 +3167,7 @@ paths:
                 - gid
                 - label
                 - description
-                - access_rights
+                - accessRights
               example:
                 - gid: '27'
                   label: A user
@@ -3207,7 +3207,7 @@ paths:
                         description: url to the group thumbnail
                         type: string
                         format: uri
-                      access_rights:
+                      accessRights:
                         description: defines acesss rights for the user
                         type: object
                         properties:
@@ -3235,7 +3235,7 @@ paths:
                       - gid
                       - label
                       - description
-                      - access_rights
+                      - accessRights
                     example:
                       - gid: '27'
                         label: A user
@@ -3373,7 +3373,7 @@ paths:
                         description: url to the group thumbnail
                         type: string
                         format: uri
-                      access_rights:
+                      accessRights:
                         description: defines acesss rights for the user
                         type: object
                         properties:
@@ -3401,7 +3401,7 @@ paths:
                       - gid
                       - label
                       - description
-                      - access_rights
+                      - accessRights
                     example:
                       - gid: '27'
                         label: A user
@@ -3527,7 +3527,7 @@ paths:
                   description: url to the group thumbnail
                   type: string
                   format: uri
-                access_rights:
+                accessRights:
                   description: defines acesss rights for the user
                   type: object
                   properties:
@@ -3555,7 +3555,7 @@ paths:
                 - gid
                 - label
                 - description
-                - access_rights
+                - accessRights
               example:
                 - gid: '27'
                   label: A user
@@ -3595,7 +3595,7 @@ paths:
                         description: url to the group thumbnail
                         type: string
                         format: uri
-                      access_rights:
+                      accessRights:
                         description: defines acesss rights for the user
                         type: object
                         properties:
@@ -3623,7 +3623,7 @@ paths:
                       - gid
                       - label
                       - description
-                      - access_rights
+                      - accessRights
                     example:
                       - gid: '27'
                         label: A user
