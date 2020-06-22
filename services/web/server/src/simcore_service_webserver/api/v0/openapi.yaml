@@ -4269,29 +4269,34 @@ paths:
         content:
           application/json:
             schema:
-              description: defines acesss rights for the user
-              type: object
-              properties:
-                read:
-                  type: boolean
-                write:
-                  type: boolean
-                delete:
-                  type: boolean
-              required:
-                - read
-                - write
-                - delete
-              example:
-                - read: true
-                  write: false
-                  delete: false
-                - read: true
-                  write: true
-                  delete: false
-                - read: true
-                  write: true
-                  delete: true
+              - type: object
+                required:
+                  - accessRights
+                properties:
+                  accessRights:
+                    description: defines acesss rights for the user
+                    type: object
+                    properties:
+                      read:
+                        type: boolean
+                      write:
+                        type: boolean
+                      delete:
+                        type: boolean
+                    required:
+                      - read
+                      - write
+                      - delete
+                    example:
+                      - read: true
+                        write: false
+                        delete: false
+                      - read: true
+                        write: true
+                        delete: false
+                      - read: true
+                        write: true
+                        delete: true
       responses:
         '200':
           description: modified user
