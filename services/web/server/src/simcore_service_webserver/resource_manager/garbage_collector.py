@@ -177,7 +177,7 @@ async def garbage_collector_task(app: web.Application):
             keep_alive = False
             logger.info("Garbage collection task was cancelled, it will not restart!")
         except Exception:  # pylint: disable=broad-except
-            logger.warning("There was an error during garbage collection, restarting...")
+            logger.warning("There was an error during garbage collection, restarting...", exc_info=True)
             # will wait 5 seconds before restarting to avoid restart loops
             await asyncio.sleep(5)
 
