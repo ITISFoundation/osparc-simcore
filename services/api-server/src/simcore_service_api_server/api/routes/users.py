@@ -39,7 +39,7 @@ async def get_my_profile(
             raise
 
     elif StatusCode.is_server_error(resp.status_code):
-        logger.error("webserver failed :{}", resp.reason_phrase)
+        logger.error("webserver failed :%s", resp.reason_phrase)
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
     raise HTTPException(resp.status_code, resp.reason_phrase)
@@ -60,7 +60,7 @@ async def update_my_profile(
     )
 
     if StatusCode.is_error(resp.status_code):
-        logger.error("webserver failed: {}", resp.reason_phrase)
+        logger.error("webserver failed: %s", resp.reason_phrase)
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
     profile = await get_my_profile(client, session_cookies)

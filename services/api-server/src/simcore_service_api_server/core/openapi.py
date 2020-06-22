@@ -57,7 +57,7 @@ def use_route_names_as_operation_ids(app: FastAPI) -> None:
 
 
 def dump_openapi(app: FastAPI, filepath: Path):
-    logger.info("Dumping openapi specs as {}", filepath)
+    logger.info("Dumping openapi specs as %s", filepath)
     with open(filepath, "wt") as fh:
         if filepath.suffix == ".json":
             json.dump(app.openapi(), fh, indent=2)
