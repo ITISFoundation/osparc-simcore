@@ -1,4 +1,5 @@
 import json
+import logging
 import types
 from pathlib import Path
 from typing import Dict
@@ -7,10 +8,10 @@ import yaml
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.routing import APIRoute
-import logging
-logger = logging.getLogger(__name__)
 
 from .redoc import add_vendor_extensions, compose_long_description
+
+logger = logging.getLogger(__name__)
 
 
 def override_openapi_method(app: FastAPI):

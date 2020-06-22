@@ -1,9 +1,8 @@
+import logging
 from typing import Dict
 
 from fastapi import APIRouter, Depends, HTTPException, Security
 from httpx import AsyncClient, Response, StatusCode
-import logging
-logger = logging.getLogger(__name__)
 
 # SEE: https://www.python-httpx.org/async/
 # TODO: path mapping and operation
@@ -14,6 +13,9 @@ from starlette import status
 
 from ...models.schemas.profiles import Profile, ProfileUpdate
 from ..dependencies.webserver import get_session_cookie, get_webserver_client
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter()
 

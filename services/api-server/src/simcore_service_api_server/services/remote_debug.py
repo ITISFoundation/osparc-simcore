@@ -2,9 +2,9 @@
 
 """
 
+import logging
 import os
 
-import logging
 logger = logging.getLogger(__name__)
 
 REMOTE_DEBUG_PORT = 3000

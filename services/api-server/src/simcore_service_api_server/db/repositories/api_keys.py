@@ -1,12 +1,14 @@
+import logging
 from typing import Optional
 
 import sqlalchemy as sa
-import logging
-logger = logging.getLogger(__name__)
 from psycopg2 import DatabaseError
 
 from .. import tables as tbl
 from .base import BaseRepository
+
+logger = logging.getLogger(__name__)
+
 
 # from ...models.domain.users import User, UserInDB
 

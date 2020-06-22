@@ -1,13 +1,14 @@
+import logging
 from typing import Callable
 
 from fastapi import FastAPI
-import logging
-logger = logging.getLogger(__name__)
 
 from ..db.events import close_db_connection, connect_to_db
 from ..services.remote_debug import setup_remote_debugging
 from ..services.webserver import close_webserver, setup_webserver
 from .settings import BootModeEnum
+
+logger = logging.getLogger(__name__)
 
 
 def create_start_app_handler(app: FastAPI) -> Callable:
