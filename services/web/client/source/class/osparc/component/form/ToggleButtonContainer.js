@@ -16,8 +16,8 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
   },
 
   events: {
-    changeSelection: "qx.event.type.Data",
-    changeVisibility: "qx.event.type.Data"
+    "changeSelection": "qx.event.type.Data",
+    "changeVisibility": "qx.event.type.Data"
   },
 
   members: {
