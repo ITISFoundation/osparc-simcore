@@ -2,7 +2,8 @@ from typing import Dict
 
 from fastapi import APIRouter, Depends, HTTPException, Security
 from httpx import AsyncClient, Response, StatusCode
-from loguru import logger
+import logging
+logger = logging.getLogger(__name__)
 
 # SEE: https://www.python-httpx.org/async/
 # TODO: path mapping and operation

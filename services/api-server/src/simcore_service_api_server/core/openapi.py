@@ -7,7 +7,8 @@ import yaml
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.routing import APIRoute
-from loguru import logger
+import logging
+logger = logging.getLogger(__name__)
 
 from .redoc import add_vendor_extensions, compose_long_description
 

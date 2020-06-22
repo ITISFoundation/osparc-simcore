@@ -4,7 +4,8 @@
 
 import os
 
-from loguru import logger
+import logging
+logger = logging.getLogger(__name__)
 
 REMOTE_DEBUG_PORT = 3000
 

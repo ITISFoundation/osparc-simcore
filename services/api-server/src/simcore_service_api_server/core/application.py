@@ -3,7 +3,8 @@ from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
-from loguru import logger
+import logging
+logger = logging.getLogger(__name__)
 from starlette.exceptions import HTTPException
 
 from ..__version__ import api_version, api_vtag

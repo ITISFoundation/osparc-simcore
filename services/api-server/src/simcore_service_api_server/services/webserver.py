@@ -3,10 +3,13 @@ import base64
 from cryptography import fernet
 from fastapi import FastAPI
 from httpx import AsyncClient
-from loguru import logger
+import logging
+logger = logging.getLogger(__name__)
 
 from ..core.settings import WebServerSettings
 
+
+# TODO: create client setup with all info inside
 
 def _get_secret_key(settings: WebServerSettings):
     secret_key_bytes = settings.session_secret_key.get_secret_value().encode("utf-8")

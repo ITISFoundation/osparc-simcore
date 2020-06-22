@@ -1,7 +1,8 @@
 from typing import Optional
 
 import sqlalchemy as sa
-from loguru import logger
+import logging
+logger = logging.getLogger(__name__)
 from psycopg2 import DatabaseError
 
 from .. import tables as tbl

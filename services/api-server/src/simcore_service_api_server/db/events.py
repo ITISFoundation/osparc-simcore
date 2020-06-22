@@ -3,7 +3,8 @@ from io import StringIO
 
 from aiopg.sa import Engine, create_engine
 from fastapi import FastAPI
-from loguru import logger
+import logging
+logger = logging.getLogger(__name__)
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
 from ..core.settings import PostgresSettings
