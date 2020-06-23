@@ -1285,17 +1285,19 @@ async def test_open_shared_project_2_users_locked(
     url = client.app.router["close_project"].url_for(project_id=shared_project["uuid"])
     resp = await client.post(url, json=client_id1)
     data, error = await assert_status(resp, expected.no_content)
-    # test state
-    url = client.app.router["state_project"].url_for(project_id=shared_project["uuid"])
-    resp = await client.get(url)
-    data, error = await assert_status(
-        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
-    )
-    if not error:
-        assert "locked" in data
-        assert data["locked"] == False
 
     if not error:
+        # test state
+        url = client.app.router["state_project"].url_for(
+            project_id=shared_project["uuid"]
+        )
+        resp = await client.get(url)
+        data, error = await assert_status(
+            resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
+        )
+        if not error:
+            assert "locked" in data
+            assert data["locked"] == False
         # user 2 now should be able to open the project
         url = client.app.router["open_project"].url_for(
             project_id=shared_project["uuid"]

@@ -354,21 +354,14 @@ async def state_project(request: web.Request) -> web.Response:
         # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
         from .projects_api import get_project_for_user
 
-        project = await get_project_for_user(
+        await get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True,
         )
-
-        return {
-            "data": {
-                "locked": len(
-                    await rt.find_users_of_resource("project_id", project_uuid)
-                )
-                > 0
-            }
-        }
+        users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
+        return {"data": {"locked": len(users_of_project) > 0}}
 
 
 @login_required

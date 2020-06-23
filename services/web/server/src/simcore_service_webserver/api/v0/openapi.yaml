@@ -8646,7 +8646,7 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
-  '/projects/{project_id}:state':
+  '/projects/{project_id}/state':
     parameters:
       - name: project_id
         in: path
