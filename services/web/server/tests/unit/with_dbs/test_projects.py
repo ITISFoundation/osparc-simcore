@@ -11,9 +11,8 @@ import pytest
 from aiohttp import web
 from mock import call
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
-from pytest_simcore.helpers.utils_projects import (NewProject,
-                                                   delete_all_projects)
+from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in, create_user
+from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 
 from _helpers import ExpectedResponse, standard_role_response
 from servicelib.application import create_safe_application
@@ -22,8 +21,9 @@ from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
-from simcore_service_webserver.projects.projects_handlers import \
-    OVERRIDABLE_DOCUMENT_KEYS
+from simcore_service_webserver.projects.projects_handlers import (
+    OVERRIDABLE_DOCUMENT_KEYS,
+)
 from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
@@ -61,12 +61,15 @@ def mocked_director_subsystem(mocker):
     }
     return mock_director_api
 
+
 DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS: int = 3
 DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
+
 
 @pytest.fixture
 def gc_long_deletion_timeout():
     DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS = 900
+
 
 @pytest.fixture
 def client(
@@ -624,9 +627,8 @@ async def test_new_template_from_project(
             except ValueError:
                 pytest.fail("Invalid uuid in workbench node {}".format(node_name))
 
-@pytest.mark.parametrize(*standard_role_response()
-    "user_role,expected_created,expected_ok,expected_notfound,expected_nocontents,expected_forbidden",
-)
+
+@pytest.mark.parametrize(*standard_role_response())
 @pytest.mark.parametrize(
     "share_rights",
     [
@@ -1204,9 +1206,10 @@ async def test_tags_to_studies(
     resp = await client.delete(url)
     await assert_status(resp, web.HTTPNoContent)
 
+
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
 async def test_open_shared_project_2_users_forbidden(
-    gc_long_deletion_timeout,
+    gc_long_deletion_timeout,  # ensure garbage collector does not delete the project too early
     client,
     logged_user: Dict,
     shared_project: Dict,
@@ -1223,12 +1226,17 @@ async def test_open_shared_project_2_users_forbidden(
     resp = await client.post(url, json=client_session_id1)
     await assert_status(resp, web.HTTPOk)
     # 2. log as user 2 and open the project since it's shared with everyone
-    # get another user logged in now
-    user_2 = await log_client_in(
-        client, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
+    # get another user logged in with another client
+    user_2 = await create_user({"role": user_role.name})
+    import requests
+
+    url = client.app.router["auth_login"].url_for()
+    resp = requests.post(
+        url, json={"email": user["email"], "password": user["raw_password"],}
     )
+    assert resp.status_code == expected.ok.status_count
     client_session_id2 = client_session_id()
-    sio2 = await socketio_client(client_session_id1)
+    sio2 = await socketio_client(client_session_id2)
     url = client.app.router["open_project"].url_for(project_id=shared_project["uuid"])
     resp = await client.post(url, json=client_session_id1)
     assert resp.status_code == 423  # the locked HTTP code does not exist in aiohttp...
