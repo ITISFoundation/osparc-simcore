@@ -340,7 +340,7 @@ async def test_add_remove_users_from_group(
             )
     # check list is correct
     resp = await client.get(get_group_users_url)
-    data, error = await assert_status(resp, expected)
+    data, error = await assert_status(resp, expected.ok)
     if not error:
         list_of_users = data
         # now we should have all the users in the group + the owner
@@ -372,7 +372,7 @@ async def test_add_remove_users_from_group(
         resp = await client.patch(
             update_group_user_url, json={"accessRights": MANAGER_ACCESS_RIGHTS}
         )
-        data, error = await assert_status(resp, expected)
+        data, error = await assert_status(resp, expected.ok)
         if not error:
             _assert__group_user(created_users_list[i], MANAGER_ACCESS_RIGHTS, data)
         # check it is there
@@ -380,7 +380,7 @@ async def test_add_remove_users_from_group(
             gid=str(assigned_group["gid"]), uid=str(created_users_list[i]["id"])
         )
         resp = await client.get(get_group_user_url)
-        data, error = await assert_status(resp, expected)
+        data, error = await assert_status(resp, expected.ok)
         if not error:
             _assert__group_user(created_users_list[i], MANAGER_ACCESS_RIGHTS, data)
         # remove the user from the group
