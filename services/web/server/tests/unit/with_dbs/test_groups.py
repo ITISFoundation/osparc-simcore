@@ -61,13 +61,15 @@ def client(loop, aiohttp_client, app_cfg, postgres_service):
 
 
 @pytest.fixture
-async def logged_user(client, role: UserRole):
+async def logged_user(client, user_role: UserRole):
     """ adds a user in db and logs in with client
 
     NOTE: role fixture is defined as a parametrization below
     """
     async with LoggedUser(
-        client, {"role": role.name}, check_if_succeeds=role != UserRole.ANONYMOUS
+        client,
+        {"role": user_role.name},
+        check_if_succeeds=user_role != UserRole.ANONYMOUS,
     ) as user:
         yield user
 
@@ -107,7 +109,7 @@ def _assert__group_user(
 async def test_list_groups(
     client,
     logged_user,
-    role,
+    user_role,
     expected,
     primary_group: Dict[str, str],
     standard_groups: List[Dict[str, str]],
@@ -161,7 +163,7 @@ async def test_list_groups(
 
 
 @pytest.mark.parametrize(*standard_role_response())
-async def test_group_creation_workflow(client, logged_user, role, expected):
+async def test_group_creation_workflow(client, logged_user, user_role, expected):
     url = client.app.router["create_group"].url_for()
     assert str(url) == f"{PREFIX}"
 
@@ -252,7 +254,7 @@ async def test_group_creation_workflow(client, logged_user, role, expected):
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_add_remove_users_from_group(
-    client, logged_user, role, expected,
+    client, logged_user, user_role, expected,
 ):
 
     new_group = {
@@ -401,7 +403,7 @@ async def test_add_remove_users_from_group(
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_group_access_rights(
-    client, logged_user, role, expected,
+    client, logged_user, user_role, expected,
 ):
     # Use-case:
     # 1. create a group
