@@ -69,6 +69,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         };
       };
       studyList.sort(sortByProperty("lastChangeDate"));
+    },
+
+    resources: {
+      "templates": {
+        "label": "New studies"
+      },
+      "services": {
+        "label": "Apps"
+      },
+      "studies": {
+        "label": "Recent studies"
+      }
     }
   },
 
@@ -267,7 +279,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createUserStudiesLayout: function() {
       const userStudyContainer = this.__userStudyContainer = this.__createUserStudyList();
-      const userStudyLayout = this.__createButtonsLayout(this.tr("Recent studies"), userStudyContainer);
+      const userStudyLayout = this.__createButtonsLayout(this.self().resources["studies"]["label"], userStudyContainer);
 
       const studiesTitleContainer = userStudyLayout.getTitleBar();
 
@@ -290,7 +302,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createTemplateStudiesLayout: function() {
       const templateStudyContainer = this.__templateStudyContainer = this.__createTemplateStudyList();
-      const tempStudyLayout = this.__createButtonsLayout(this.tr("New studies"), templateStudyContainer);
+      const tempStudyLayout = this.__createButtonsLayout(this.self().resources["templates"]["label"], templateStudyContainer);
 
       const temapltesTitleContainer = tempStudyLayout.getTitleBar();
 
@@ -316,7 +328,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createServicesLayout: function() {
       const servicesContainer = this.__servicesContainer = this.__createServicesList();
-      const servicesLayout = this.__createButtonsLayout(this.tr("Apps"), servicesContainer);
+      const servicesLayout = this.__createButtonsLayout(this.self().resources["services"]["label"], servicesContainer);
       return servicesLayout;
     },
 
