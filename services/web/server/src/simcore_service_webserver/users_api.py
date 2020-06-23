@@ -44,20 +44,20 @@ async def get_user_profile(app: web.Application, user_id: int) -> Dict[str, Any]
                 all_group = convert_groups_db_to_schema(
                     row,
                     prefix="groups_",
-                    access_rights=row["user_to_groups_access_rights"],
+                    accessRights=row["user_to_groups_access_rights"],
                 )
             elif row["groups_type"] == GroupType.PRIMARY:
                 user_primary_group = convert_groups_db_to_schema(
                     row,
                     prefix="groups_",
-                    access_rights=row["user_to_groups_access_rights"],
+                    accessRights=row["user_to_groups_access_rights"],
                 )
             else:
                 user_standard_groups.append(
                     convert_groups_db_to_schema(
                         row,
                         prefix="groups_",
-                        access_rights=row["user_to_groups_access_rights"],
+                        accessRights=row["user_to_groups_access_rights"],
                     )
                 )
     if not user_profile:
@@ -92,7 +92,6 @@ async def update_user_profile(
             .values(name=name)
         )
         assert resp.rowcount == 1  # nosec
-
 
 
 async def is_user_guest(app: web.Application, user_id: int) -> bool:
