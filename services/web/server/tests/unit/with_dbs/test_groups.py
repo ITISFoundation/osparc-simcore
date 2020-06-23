@@ -12,6 +12,7 @@ from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, create_user
 
+from _helpers import standard_role_response
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.groups import setup_groups
@@ -28,8 +29,6 @@ from simcore_service_webserver.users import setup_users
 
 ## BUG FIXES #######################################################
 from simcore_service_webserver.utils import gravatar_hash
-
-from .helpers import standard_role_response
 
 API_VERSION = "v0"
 
