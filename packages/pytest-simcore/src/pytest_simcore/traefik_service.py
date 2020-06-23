@@ -48,5 +48,5 @@ async def wait_till_traefik_responsive(api_endpoint: URL):
                 assert "service" in proxied_service
                 if "webserver" in proxied_service["service"]:
                     assert proxied_service["status"] == "enabled"
-                elif "api-gateway" in proxied_service["service"]:
+                elif "api-server" in proxied_service["service"]:
                     assert proxied_service["status"] == "enabled"

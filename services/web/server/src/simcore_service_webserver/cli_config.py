@@ -1,6 +1,6 @@
 import argparse
-import os
 import logging
+import os
 
 import trafaret_config
 import trafaret_config.commandline as commandline

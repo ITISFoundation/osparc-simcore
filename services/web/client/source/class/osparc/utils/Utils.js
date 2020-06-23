@@ -50,8 +50,8 @@ qx.Class.define("osparc.utils.Utils", {
       return loadingUri;
     },
 
-    addBorder: function(sidePanel, where = "right") {
-      sidePanel.getContentElement().setStyle("border-"+where, "1px solid " + qx.theme.manager.Color.getInstance().resolve("material-button-background"));
+    addBorder: function(sidePanel, width = 1, where = "right") {
+      sidePanel.getContentElement().setStyle("border-"+where, width+"px solid " + qx.theme.manager.Color.getInstance().resolve("material-button-background"));
     },
 
     __setStyleToIFrame: function(domEl) {
@@ -362,6 +362,12 @@ qx.Class.define("osparc.utils.Utils", {
 
     fetchJSON: function() {
       return fetch.apply(null, arguments).then(response => response.json());
+    },
+
+    firstsUp: function(...args) {
+      const labels = [];
+      args.forEach(arg => labels.push(qx.lang.String.firstUp(arg)));
+      return labels.join(" ");
     }
   }
 });

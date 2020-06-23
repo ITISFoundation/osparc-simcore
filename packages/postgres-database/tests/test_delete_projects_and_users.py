@@ -16,7 +16,6 @@ from psycopg2.errors import ForeignKeyViolation  # pylint: disable=no-name-in-mo
 from simcore_postgres_database.webserver_models import (
     UserStatus,
     projects,
-    user_to_projects,
     users,
 )
 
@@ -70,19 +69,61 @@ def engine(make_engine, loop):
                     projects.insert().values(**random_project(prj_owner=4))
                 )
 
-            await conn.execute(
-                user_to_projects.insert().values(user_id=1, project_id=1)
-            )
-            await conn.execute(
-                user_to_projects.insert().values(user_id=1, project_id=2)
-            )
-            await conn.execute(
-                user_to_projects.insert().values(user_id=2, project_id=3)
-            )
-
         return engine
 
     return loop.run_until_complete(start())
+
+
+@pytest.mark.skip(reason="sandbox for dev purposes")
+async def test_insert_user(engine):
+    async with engine.acquire() as conn:
+
+        # execute + scalar
+        res: ResultProxy = await conn.execute(
+            users.insert().values(**random_user(name="FOO"))
+        )
+        assert res.returns_rows
+        assert res.rowcount == 1
+        assert res.keys() == ("id",)
+
+        user_id = await res.scalar()
+        assert isinstance(user_id, int)
+        assert user_id > 0
+
+        # only scalar
+        user2_id: int = await conn.scalar(
+            users.insert().values(**random_user(name="BAR"))
+        )
+        assert isinstance(user2_id, int)
+        assert user2_id == user_id + 1
+
+        # query result
+        res: ResultProxy = await conn.execute(
+            users.select().where(users.c.id == user2_id)
+        )
+        assert res.returns_rows
+        assert res.rowcount == 1
+        assert len(res.keys()) > 1
+
+        # DIFFERENT betwen .first() and fetchone()
+
+        user2: RowProxy = await res.first()
+        # Fetch the first row and then close the result set unconditionally.
+        assert res.closed
+
+        res: ResultProxy = await conn.execute(
+            users.select().where(users.c.id == user2_id)
+        )
+        user2a: RowProxy = await res.fetchone()
+        # If rows are present, the cursor remains open after this is called.
+        assert not res.closed
+        assert user2 == user2a
+
+        user2b: RowProxy = await res.fetchone()
+        # If no more rows, the cursor is automatically closed and None is returned
+        assert user2b is None
+        assert res.closed
+
 
 
 async def test_count_users(engine):
@@ -123,10 +164,3 @@ async def test_view(engine):
         res = await conn.execute(projects.select())
         rows = await res.fetchall()
         assert len(rows) == 3
-
-        # effect of cascade is that relation deletes as well
-        res = await conn.execute(user_to_projects.select())
-        rows = await res.fetchall()
-
-        assert len(rows) == 1
-        assert not any(row[user_to_projects.c.user_id] == 1 for row in rows)

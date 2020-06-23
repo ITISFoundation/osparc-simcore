@@ -23,6 +23,7 @@ from servicelib.application_setup import ModuleCategory, app_module_setup
 from .login.decorators import login_required
 from .security_api import is_anonymous, remember
 from .statics import INDEX_RESOURCE_NAME
+from .utils import compose_error_msg
 
 log = logging.getLogger(__name__)
 
@@ -156,7 +157,9 @@ async def access_study(request: web.Request) -> web.Response:
 
         - public studies are templates that are marked as published in the database
         - if user is not registered, it creates a temporary guest account with limited resources and expiration
+        - this handler is NOT part of the API and therefore does NOT respond with json
     """
+    # TODO: implement nice error-page.html
     project_id = request.match_info["id"]
 
     template_project = await get_public_project(request.app, project_id)
@@ -166,25 +169,38 @@ async def access_study(request: web.Request) -> web.Response:
              Please contact the data curators for more information."
         )
 
+    # Get or create a valid user
     user = None
     is_anonymous_user = await is_anonymous(request)
-    if is_anonymous_user:
-        log.debug("Creating temporary user ...")
-        user = await create_temporary_user(request)
-    else:
+    if not is_anonymous_user:
+        # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
+        # TODO: test if temp user overrides old cookie properly
         user = await get_authorized_user(request)
 
     if not user:
-        raise RuntimeError("Unable to start user session")
+        log.debug("Creating temporary user ...")
+        user = await create_temporary_user(request)
+        is_anonymous_user = True
 
-    log.debug(
-        "Granted access to study '%s' for user %s. Copying study over ...",
-        template_project.get("name"),
-        user.get("email"),
-    )
-    copied_project_id = await copy_study_to_account(request, template_project, user)
+    try:
+        log.debug(
+            "Granted access to study '%s' for user %s. Copying study over ...",
+            template_project.get("name"),
+            user.get("email"),
+        )
+        copied_project_id = await copy_study_to_account(request, template_project, user)
 
-    log.debug("Study %s copied", copied_project_id)
+        log.debug("Study %s copied", copied_project_id)
+
+    except Exception:  # pylint: disable=broad-except
+        log.exception(
+            "Failed while copying project '%s' to '%s'",
+            template_project.get("name"),
+            user.get("email"),
+        )
+        raise web.HTTPInternalServerError(
+            reason=compose_error_msg("Unable to copy project.")
+        )
 
     try:
         redirect_url = (
@@ -193,11 +209,11 @@ async def access_study(request: web.Request) -> web.Response:
             .with_fragment("/study/{}".format(copied_project_id))
         )
     except KeyError:
-        log.error(
+        log.exception(
             "Cannot redirect to website because route was not registered. Probably qx output was not ready and it was disabled (see statics.py)"
         )
-        raise RuntimeError(
-            "Unable to serve front-end. Study has been anyway copied over to user."
+        raise web.HTTPInternalServerError(
+            reason=compose_error_msg("Unable to serve front-end.")
         )
 
     response = web.HTTPFound(location=redirect_url)

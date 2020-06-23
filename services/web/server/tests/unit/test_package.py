@@ -2,13 +2,13 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import pytest
-from pytest_simcore.helpers.utils_pylint import assert_pylint_is_passing
 import os
 import re
-
 from pathlib import Path
 
+import pytest
+
+from pytest_simcore.helpers.utils_pylint import assert_pylint_is_passing
 from simcore_service_webserver.cli import main
 
 

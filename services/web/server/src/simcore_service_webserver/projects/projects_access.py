@@ -1,7 +1,7 @@
 import jsondiff
 from aiohttp import web
 
-from ..security_api import get_access_model, UserRole
+from ..security_api import UserRole, get_access_model
 
 
 async def can_update_node_inputs(context):

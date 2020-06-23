@@ -22,21 +22,47 @@ tests: ## runs unit tests
 
 
 .PHONY: import-db
-import-db: scripts/copy_database_volume.sh guard-SOURCE_HOST guard-SOURCE_DATA_VOLUME guard-TARGET_DATA_VOLUME ## copy volume $(SOURCE_DATA_VOLUME) from $(SOURCE_HOST) into local $(TARGET_DATA_VOLUME)
-	./scripts/copy_database_volume.sh
+#guard-SOURCE_HOST guard-SOURCE_DATA_VOLUME guard-TARGET_DATA_VOLUME
+import-db-from-docker-volume import-db-from-folder: scripts/copy_database_volume.sh  ## copy postgresql data from remote $host from $host_volume or $host_folder to a local $local_volume docker volume
+	@:$(if $(findstring -from-folder,$@),\
+	$(call check_defined, host host_folder local_volume, please define this variable when calling $@), \
+	$(call check_defined, host host_volume local_volume, please define this variable when calling $@))
+	./scripts/copy_database_volume.sh \
+		--host $(host) \
+		$(if $(findstring -from-folder, $@),--folder $(host_folder),--volume $(host_volume)) \
+		--target $(local_volume)
 
+# Check that given variables are set and all have non-empty values,
+# die with an error otherwise.
+#
+# Params:
+#   1. Variable name(s) to test.
+#   2. (optional) Error message to print.
 guard-%:
 	@ if [ "${${*}}" = "" ]; then \
 		echo "Environment variable $* not set"; \
 		exit 1; \
 	fi
 
+# Check that given variables are set and all have non-empty values,
+# die with an error otherwise.
+#
+# Params:
+#   1. Variable name(s) to test.
+#   2. (optional) Error message to print.
+check_defined = \
+    $(strip $(foreach 1,$1, \
+        $(call __check_defined,$1,$(strip $(value 2)))))
+__check_defined = \
+    $(if $(value $1),, \
+      $(error Undefined $1$(if $2, ($2))))
+
 .PHONY: setup-prod
-export POSTGRES_DATA_VOLUME = $(TARGET_DATA_VOLUME)
-setup-prod: install-dev up-prod  ## sets up a database using an external postgres volume to test migration
+setup-prod: guard-POSTGRES_DATA_VOLUME install-dev up-prod ## sets up a database using an external postgres volume defined as $POSTGRES_DATA_VOLUME to test migration
 	# discovering
 	sc-pg --help
 	@echo "To test migration, sc-pg discover -u USER -p PASSWORD, then sc-pg upgrade"
+	# adminer: http://127.0.0.1:18080/?pgsql=postgres&ns=public
 
 .PHONY: setup-commit
 setup-commit: install-dev up-pg ## sets up a database to create a new commit into migration history
@@ -48,6 +74,7 @@ setup-commit: install-dev up-pg ## sets up a database to create a new commit int
 	# some info
 	sc-pg info
 	@echo "To add new commit, sc-pg review -m \"Some message\" "
+	# adminer: http://127.0.0.1:18080/?pgsql=postgres&username=test&db=test&ns=public
 
 
 .PHONY: migrate
@@ -70,5 +97,3 @@ up-pg up-prod: $(docker-compose-configs) ## starts pg server
 
 down-pg down-prod: $(docker-compose-configs) ## stops pg server
 	docker-compose -f tests/docker-compose.yml  $(if $(findstring -prod,$@),-f tests/docker-compose.prod.yml,) down
-
-

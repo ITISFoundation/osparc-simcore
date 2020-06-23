@@ -6,7 +6,6 @@
 
 from simcore_postgres_database.models.users import UserRole
 
-
 # A role defines a set of operations that the user *can* perform
 #    - Every operation is named as a resource and an action
 #    - Resource is named hierarchically
@@ -47,6 +46,7 @@ ROLES_PERMISSIONS = {
             "project.create",  # "studies.user.create",
             "project.close",
             "project.delete",  # "study.node.create",
+            "project.access_rights.update",
             # "study.node.delete",
             # "study.node.rename",
             # "study.edge.create",
@@ -54,25 +54,21 @@ ROLES_PERMISSIONS = {
             "project.node.create",
             "project.node.delete",
             "project.tag.*",  # "study.tag"
-            "user.profile.update",  # "preferences.user.update",
-            # "preferences.role.update"
-            "user.apikey.*",  # "preferences.apikey.create",
-            # "preferences.apikey.delete"
-            "user.tokens.*",  # "preferences.token.create",
-            # "preferences.token.delete"
-            "tag.crud.*"  # "preferences.tag"
+            "user.profile.update",  # "user.user.update",
+            # "user.role.update"
+            "user.apikey.*",  # "user.apikey.create",
+            # "user.apikey.delete"
+            "user.tokens.*",  # "user.token.create",
+            # "user.token.delete"
+            "groups.*",
+            "tag.crud.*"  # "user.tag"
             # NOTE: All services* are not necessary since it only requires login
             # and there is no distinction among logged in users.
             # TODO: kept temporarily as a way to denote resources
         ],
         "inherits": [UserRole.GUEST, UserRole.ANONYMOUS],
     },
-    UserRole.TESTER: {
-        "can": [
-            "project.template.create"
-        ],
-        "inherits": [UserRole.USER]
-    },
+    UserRole.TESTER: {"can": ["project.template.create"], "inherits": [UserRole.USER]},
 }
 
 #
@@ -91,11 +87,11 @@ ROLES_PERMISSIONS = {
 ###   "studies.user.read",
 ###   "studies.user.create",
 ###   "storage.datcore.read",
-###   "preferences.user.update",
-###   "preferences.apikey.create",
-###   "preferences.apikey.delete",
-###   "preferences.token.create",
-###   "preferences.token.delete",
+###   "user.user.update",
+###   "user.apikey.create",
+###   "user.apikey.delete",
+###   "user.token.create",
+###   "user.token.delete",
 ###   "study.node.create",
 ###   "study.node.delete",
 ###   "study.node.rename",
@@ -107,7 +103,7 @@ ROLES_PERMISSIONS = {
 # ],
 # "tester": [
 #   "services.all.read",   <----------???
-###   "preferences.role.update",
+###   "user.role.update",
 #   "study.nodestree.uuid.read", <----------???
 #   "study.logger.debug.read" <----------???
 # ],
