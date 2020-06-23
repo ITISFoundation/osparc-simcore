@@ -31,12 +31,13 @@ import simcore_service_webserver.utils
 from servicelib.aiopg_utils import DSN
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.application_config import \
-    app_schema as app_schema
-from simcore_service_webserver.groups_api import (add_user_in_group,
-                                                  create_user_group,
-                                                  delete_user_group,
-                                                  list_user_groups)
+from simcore_service_webserver.application_config import app_schema as app_schema
+from simcore_service_webserver.groups_api import (
+    add_user_in_group,
+    create_user_group,
+    delete_user_group,
+    list_user_groups,
+)
 
 # current directory
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -89,7 +90,7 @@ def docker_compose_file(default_app_cfg):
     os.environ["TEST_POSTGRES_USER"] = cfg["user"]
     os.environ["TEST_POSTGRES_PASSWORD"] = cfg["password"]
 
-    dc_path = current_dir / "docker-compose.yml"
+    dc_path = current_dir / "docker-compose-devel.yml"
 
     assert dc_path.exists()
     yield str(dc_path)
@@ -257,6 +258,7 @@ async def security_cookie(client) -> str:
     if "Cookie" in resp.request_info.headers:
         cookie = resp.request_info.headers["Cookie"]
     yield cookie
+
 
 @pytest.fixture()
 async def socketio_client(socketio_url: str, security_cookie: str) -> Callable:

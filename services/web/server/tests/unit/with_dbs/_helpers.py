@@ -12,7 +12,7 @@ ExpectedResponse = namedtuple(
 
 def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse]]]:
     return (
-        "role,expected",
+        "user_role,expected",
         [
             (
                 UserRole.ANONYMOUS,

@@ -10,11 +10,11 @@ from typing import Callable, Dict, List, Optional
 import pytest
 from aiohttp import web
 from mock import call
+
+from _helpers import ExpectedResponse, standard_role_response
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
-
-from _helpers import ExpectedResponse, standard_role_response
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
@@ -160,13 +160,15 @@ async def user_project(client, fake_project, logged_user):
 
 @pytest.fixture
 async def shared_project(client, fake_project, logged_user, all_group):
-    async with NewProject(
-        fake_project,
-        client.app,
-        user_id=logged_user["id"],
-        accessRights={
-            f"{all_group['gid']}": {"read": True, "write": False, "delete": False}
+    fake_project.update(
+        {
+            "accessRights": {
+                f"{all_group['gid']}": {"read": True, "write": False, "delete": False}
+            },
         },
+    )
+    async with NewProject(
+        fake_project, client.app, user_id=logged_user["id"],
     ) as project:
         print("-----> added project", project["name"])
         yield project
@@ -640,16 +642,16 @@ async def test_new_template_from_project(
 )
 async def test_share_project(
     client,
-    logged_user,
+    logged_user: Dict,
     primary_group: Dict[str, str],
     standard_groups: List[Dict[str, str]],
     all_group: Dict[str, str],
-    user_role,
-    expected,
+    user_role: UserRole,
+    expected: ExpectedResponse,
     storage_subsystem_mock,
     mocked_director_subsystem,
     computational_system_mock,
-    share_rights,
+    share_rights: Dict,
     project_db_cleaner,
 ):
     # Use-case: the user shares some projects with a group
@@ -657,7 +659,7 @@ async def test_share_project(
     # create a few projects
     new_project = await _new_project(
         client,
-        expected_created,
+        expected.created,
         logged_user,
         primary_group,
         project={"accessRights": {str(all_group["gid"]): share_rights}},
@@ -939,10 +941,13 @@ async def test_close_project(
         mocked_director_subsystem["stop_service"].has_calls(calls)
 
 
+from socketio.exceptions import ConnectionError
+
+
 @pytest.mark.parametrize(
     "user_role, expected",
     [
-        # (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPOk),
         (UserRole.USER, web.HTTPOk),
         (UserRole.TESTER, web.HTTPOk),
@@ -959,8 +964,14 @@ async def test_get_active_project(
 ):
     # login with socket using client session id
     client_id1 = client_session_id()
-    sio = await socketio_client(client_id1)
-    assert sio.sid
+    sio = None
+    try:
+        sio = await socketio_client(client_id1)
+        assert sio.sid
+    except ConnectionError:
+        if expected == web.HTTPOk:
+            pytest.fail("socket io connection should not fail")
+
     # get active projects -> empty
     get_active_projects_url = (
         client.app.router["get_active_project"]
@@ -987,8 +998,12 @@ async def test_get_active_project(
 
     # login with socket using client session id2
     client_id2 = client_session_id()
-    sio = await socketio_client(client_id2)
-    assert sio.sid
+    try:
+        sio = await socketio_client(client_id2)
+        assert sio.sid
+    except ConnectionError:
+        if expected == web.HTTPOk:
+            pytest.fail("socket io connection should not fail")
     # get active projects -> empty
     get_active_projects_url = (
         client.app.router["get_active_project"]
@@ -1207,36 +1222,45 @@ async def test_tags_to_studies(
     await assert_status(resp, web.HTTPNoContent)
 
 
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
+@pytest.mark.parametrize(*standard_role_response())
 async def test_open_shared_project_2_users_forbidden(
-    gc_long_deletion_timeout,  # ensure garbage collector does not delete the project too early
     client,
     logged_user: Dict,
     shared_project: Dict,
     socketio_client: Callable,
+    # mocked_director_subsystem,
     client_session_id: str,
     user_role: UserRole,
     expected: ExpectedResponse,
+    aiohttp_client,
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
     # 1. log as user 1 and open the project
-    client_session_id1 = client_session_id()
-    sio1 = await socketio_client(client_session_id1)
-    url = client.app.router["open_project"].url_for(project_id=shared_project["uuid"])
-    resp = await client.post(url, json=client_session_id1)
-    await assert_status(resp, web.HTTPOk)
-    # 2. log as user 2 and open the project since it's shared with everyone
-    # get another user logged in with another client
-    user_2 = await create_user({"role": user_role.name})
-    import requests
+    # import pdb
 
-    url = client.app.router["auth_login"].url_for()
-    resp = requests.post(
-        url, json={"email": user["email"], "password": user["raw_password"],}
-    )
-    assert resp.status_code == expected.ok.status_count
-    client_session_id2 = client_session_id()
-    sio2 = await socketio_client(client_session_id2)
+    # pdb.set_trace()
+    # login with socket using client session id
+    client_id1 = client_session_id()
+    try:
+        sio = await socketio_client(client_id1)
+        assert sio.sid
+    except ConnectionError:
+        if user_role != UserRole.ANONYMOUS:
+            pytest.fail("socket io connection should not fail")
     url = client.app.router["open_project"].url_for(project_id=shared_project["uuid"])
-    resp = await client.post(url, json=client_session_id1)
-    assert resp.status_code == 423  # the locked HTTP code does not exist in aiohttp...
+    resp = await client.post(url, json=client_id1)
+    await assert_status(
+        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
+    )
+
+    # create a separate client now
+    # client_2 = await aiohttp_client(client.app)
+    # user_2 = await log_client_in(
+    #     client_2, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
+    # )
+    # client_id2 = client_session_id()
+    # sio2 = await socketio_client(client_id2)
+    # assert sio2.sid
+    # url = client.app.router["open_project"].url_for(project_id=shared_project["uuid"])
+    # resp = await client.post(url, json=client_id2)
+    # assert resp.status_code == 423  # the locked HTTP code does not exist in aiohttp...

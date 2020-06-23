@@ -103,40 +103,8 @@ def _assert__group_user(
     assert "gid" in actual_user
 
 
-@pytest.mark.parametrize(*standard_role_response())
-async def test_list_groups(
-    client,
-    logged_user,
-    role,
-    expected,
-    primary_group: Dict[str, str],
-    standard_groups: List[Dict[str, str]],
-    all_group: Dict[str, str],
-):
-    url = client.app.router["list_groups"].url_for()
-    assert str(url) == f"{PREFIX}"
-
-    resp = await client.get(url)
-    data, error = await assert_status(resp, expected.ok)
-
-    if not error:
-        assert isinstance(data, dict)
-        assert "me" in data
-        _assert_group(data["me"])
-        assert data["me"] == primary_group
-
-        assert "organizations" in data
-        assert isinstance(data["organizations"], list)
-        for group in data["organizations"]:
-            _assert_group(group)
-        assert data["organizations"] == standard_groups
-        assert "all" in data
-        _assert_group(data["all"])
-        assert data["all"] == all_group
-
-
 @pytest.mark.parametrize(*standard_role_response(),)
-async def test_group_access_rights(
+async def test_list_groups(
     client,
     logged_user,
     role,
