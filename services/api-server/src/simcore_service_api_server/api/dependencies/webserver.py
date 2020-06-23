@@ -3,14 +3,18 @@ import time
 from typing import Dict, Optional
 
 from cryptography.fernet import Fernet
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.requests import Request
-from httpx import AsyncClient
 
 from ...core.settings import AppSettings, WebServerSettings
+from ...services.webserver import AuthSession
 from .authentication import get_active_user_email
 
 UNAVAILBLE_MSG = "backend service is disabled or unreachable"
+
+
+def _get_app(request: Request) -> FastAPI:
+    return request.app
 
 
 def _get_settings(request: Request) -> WebServerSettings:
@@ -20,13 +24,6 @@ def _get_settings(request: Request) -> WebServerSettings:
 
 def _get_encrypt(request: Request) -> Optional[Fernet]:
     return getattr(request.app.state, "webserver_fernet", None)
-
-
-def get_webserver_client(request: Request) -> AsyncClient:
-    client = getattr(request.app.state, "webserver_client", None)
-    if not client:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=UNAVAILBLE_MSG)
-    return client
 
 
 def get_session_cookie(
@@ -53,3 +50,14 @@ def get_session_cookie(
     encrypted_cookie_data = fernet.encrypt(cookie_data).decode("utf-8")
 
     return {cookie_name: encrypted_cookie_data}
+
+
+def get_webserver_session(
+    app: FastAPI = Depends(_get_app),
+    session_cookies: Dict = Depends(get_session_cookie),
+) -> AuthSession:
+    """
+        Lifetime of AuthSession wrapper is one request because it needs different session cookies
+        Lifetime of embedded client is attached to the app lifetime
+    """
+    return AuthSession.create(app, session_cookies)

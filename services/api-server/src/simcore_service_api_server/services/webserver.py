@@ -1,16 +1,17 @@
 import base64
+import json
 import logging
+from typing import Dict, Optional
 
+import attr
 from cryptography import fernet
-from fastapi import FastAPI
-from httpx import AsyncClient
+from fastapi import FastAPI, HTTPException
+from httpx import AsyncClient, Response, StatusCode
+from starlette import status
 
 from ..core.settings import WebServerSettings
 
 logger = logging.getLogger(__name__)
-
-
-# TODO: create client setup with all info inside
 
 
 def _get_secret_key(settings: WebServerSettings):
@@ -53,5 +54,67 @@ async def close_webserver(app: FastAPI) -> None:
     logger.debug("Webserver closed successfully")
 
 
-def get_webserver_client(app: FastAPI) -> AsyncClient:
-    return app.state.webserver_client
+@attr.s(auto_attribs=True)
+class AuthSession:
+    """
+    - wrapper around thin-client to simplify webserver's API
+    - sets endspoint upon construction
+    - MIME type: application/json
+    - processes responses, returning data or raising formatted HTTP exception
+    - The lifetime of an AuthSession is ONE request.
+
+    SEE services/api-server/src/simcore_service_api_server/api/dependencies/webserver.py
+    """
+
+    client: AsyncClient  # Its lifetime is attached to app
+    vtag: str
+    session_cookies: Dict = None
+
+    @classmethod
+    def create(cls, app: FastAPI, session_cookies: Dict):
+        return cls(
+            client=app.state.webserver_client,
+            vtag=app.state.settings.webserver.vtag,
+            session_cookies=session_cookies,
+        )
+
+    def _url(self, path: str) -> str:
+        return f"/{self.vtag}/{path.ltrip('/')}"
+
+    @classmethod
+    def _process(cls, resp: Response) -> Optional[Dict]:
+        # enveloped answer
+        data, error = None, None
+        try:
+            body = resp.json()
+            data, error = body["data"], body["error"]
+        except (json.JSONDecodeError, KeyError):
+            logger.warning("Failed to unenvelop webserver response", exc_info=True)
+
+        if StatusCode.is_server_error(resp.status_code):
+            logger.error(
+                "webserver error %d [%s]: %s",
+                resp.status_code,
+                resp.reason_phrase,
+                error,
+            )
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        elif StatusCode.is_client_error(resp.status_code):
+            msg = error or resp.reason_phrase
+            raise HTTPException(resp.status_code, detail=msg)
+
+        return data
+
+    # OPERATIONS
+    # TODO: automate conversion
+
+    async def get(self, path: str) -> Optional[Dict]:
+        url = self._url(path)
+        resp = await self.client.get(url, cookies=self.session_cookies)
+        return self._process(resp)
+
+    async def put(self, path: str, body: Dict) -> Optional[Dict]:
+        url = self._url(path)
+        resp = await self.client.put(url, json=body, cookies=self.session_cookies)
+        return self._process(resp)
