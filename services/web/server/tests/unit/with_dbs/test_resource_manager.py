@@ -158,7 +158,7 @@ async def test_anonymous_websocket_connection(
         URL(socketio_url()).with_query({"client_session_id": client_session_id()})
     )
     headers = {}
-    cookie = await security_cookie(client)
+    cookie = await security_cookie()
     if cookie:
         # WARNING: engineio fails with empty cookies. Expects "key=value"
         headers.update({"Cookie": cookie})
