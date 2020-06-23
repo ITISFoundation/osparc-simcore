@@ -79,7 +79,7 @@ class AuthSession:
         )
 
     def _url(self, path: str) -> str:
-        return f"/{self.vtag}/{path.ltrip('/')}"
+        return f"/{self.vtag}/{path.lstrip('/')}"
 
     @classmethod
     def _process(cls, resp: Response) -> Optional[Dict]:
@@ -107,14 +107,26 @@ class AuthSession:
         return data
 
     # OPERATIONS
-    # TODO: automate conversion
+    # TODO: refactor and code below
+    # TODO: policy to retry if NetworkError/timeout?
+    # TODO: add ping to healthcheck
 
     async def get(self, path: str) -> Optional[Dict]:
         url = self._url(path)
-        resp = await self.client.get(url, cookies=self.session_cookies)
+        try:
+            resp = await self.client.get(url, cookies=self.session_cookies)
+        except Exception:
+            logger.exception("Failed to get %s", url)
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
+
         return self._process(resp)
 
     async def put(self, path: str, body: Dict) -> Optional[Dict]:
         url = self._url(path)
-        resp = await self.client.put(url, json=body, cookies=self.session_cookies)
+        try:
+            resp = await self.client.put(url, json=body, cookies=self.session_cookies)
+        except Exception:
+            logger.exception("Failed to put %s", url)
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
+
         return self._process(resp)
