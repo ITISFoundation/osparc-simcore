@@ -12,10 +12,9 @@
 import os
 import sys
 from asyncio import Future
-
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, List
+from typing import Callable, Dict, List
 from uuid import uuid4
 
 import aioredis
@@ -32,14 +31,12 @@ import simcore_service_webserver.utils
 from servicelib.aiopg_utils import DSN
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.application_config import app_schema as app_schema
-from simcore_service_webserver.groups_api import (
-    add_user_in_group,
-    create_user_group,
-    delete_user_group,
-    list_user_groups,
-)
-
+from simcore_service_webserver.application_config import \
+    app_schema as app_schema
+from simcore_service_webserver.groups_api import (add_user_in_group,
+                                                  create_user_group,
+                                                  delete_user_group,
+                                                  list_user_groups)
 
 # current directory
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -261,9 +258,8 @@ async def security_cookie(client) -> str:
         cookie = resp.request_info.headers["Cookie"]
     yield cookie
 
-
 @pytest.fixture()
-async def socketio_client(socketio_url: str, security_cookie: str):
+async def socketio_client(socketio_url: str, security_cookie: str) -> Callable:
     clients = []
 
     async def connect(client_session_id) -> socketio.AsyncClient:

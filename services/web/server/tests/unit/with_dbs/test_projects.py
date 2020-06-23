@@ -12,17 +12,18 @@ from aiohttp import web
 from mock import call
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
-from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
+from pytest_simcore.helpers.utils_projects import (NewProject,
+                                                   delete_all_projects)
 
+from _helpers import ExpectedResponse, standard_role_response
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
-from simcore_service_webserver.projects.projects_handlers import (
-    OVERRIDABLE_DOCUMENT_KEYS,
-)
+from simcore_service_webserver.projects.projects_handlers import \
+    OVERRIDABLE_DOCUMENT_KEYS
 from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
@@ -60,6 +61,12 @@ def mocked_director_subsystem(mocker):
     }
     return mock_director_api
 
+DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS: int = 3
+DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
+
+@pytest.fixture
+def gc_long_deletion_timeout():
+    DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS = 900
 
 @pytest.fixture
 def client(
@@ -80,10 +87,10 @@ def client(
     cfg["director"]["enabled"] = True
     cfg["resource_manager"][
         "garbage_collection_interval_seconds"
-    ] = 3  # increase speed of garbage collection
+    ] = DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS  # increase speed of garbage collection
     cfg["resource_manager"][
         "resource_deletion_timeout_seconds"
-    ] = 3  # reduce deletion delay
+    ] = DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS  # reduce deletion delay
     app = create_safe_application(cfg)
 
     # setup app
@@ -617,7 +624,6 @@ async def test_new_template_from_project(
             except ValueError:
                 pytest.fail("Invalid uuid in workbench node {}".format(node_name))
 
-from _helpers import standard_role_response
 @pytest.mark.parametrize(*standard_role_response()
     "user_role,expected_created,expected_ok,expected_notfound,expected_nocontents,expected_forbidden",
 )
@@ -1198,16 +1204,16 @@ async def test_tags_to_studies(
     resp = await client.delete(url)
     await assert_status(resp, web.HTTPNoContent)
 
-
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
 async def test_open_shared_project_2_users_forbidden(
+    gc_long_deletion_timeout,
     client,
-    logged_user,
-    shared_project,
-    socketio_client,
-    client_session_id,
-    user_role,
-    expected,
+    logged_user: Dict,
+    shared_project: Dict,
+    socketio_client: Callable,
+    client_session_id: str,
+    user_role: UserRole,
+    expected: ExpectedResponse,
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
     # 1. log as user 1 and open the project
