@@ -89,7 +89,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const nStudyItemsPerRow = 5;
       const studyButtons = osparc.dashboard.StudyBrowserButtonBase;
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard().set({
-        width: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) + 25 // padding + scrollbar
+        width: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) + 10 // padding + scrollbar
       });
       dashboard.getStudyBrowser().addListener("startStudy", e => {
         const studyEditor = e.getData();
