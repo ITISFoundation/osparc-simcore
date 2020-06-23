@@ -900,6 +900,163 @@ paths:
                         description: Error code
                         type: integer
                         example: 404
+  '/service_extras/{service_key}/{service_version}':
+    get:
+      tags:
+        - users
+      summary: Returns the service's details which should be hidden from the user defined as extras.
+      description: Currently returns the node_requirements an array of resoruces needed for scheduling.
+      operationId: services_extras_get
+      parameters:
+        - in: path
+          name: service_key
+          description: The key (url) of the service
+          required: true
+          schema:
+            type: string
+            description: distinctive name for the node based on the docker registry path
+            pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+            example:
+              - simcore/services/comp/itis/sleeper
+              - simcore/services/dynamic/3dviewer
+        - in: path
+          name: service_version
+          description: The tag/version of the service
+          required: true
+          schema:
+            type: string
+            description: semantic version number
+            pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+            example:
+              - 1.0.0
+              - 0.0.1
+      responses:
+        '200':
+          description: 'Success, returns an object containing details hidden from the user'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    required:
+                      - node_requirements
+                    properties:
+                      node_requirements:
+                        type: array
+                        items:
+                          type: string
+                          enum:
+                            - CPU
+                            - GPU
+                  error:
+                    nullable: true
+                    default: null
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    required:
+                      - status
+                      - message
+                    properties:
+                      message:
+                        description: Error message
+                        type: string
+                        example: Unexpected error
+                      errors:
+                        type: array
+                        items:
+                          properties:
+                            code:
+                              type: string
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                      status:
+                        description: Error code
+                        type: integer
+                        example: 404
+        '404':
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    required:
+                      - status
+                      - message
+                    properties:
+                      message:
+                        description: Error message
+                        type: string
+                        example: Unexpected error
+                      errors:
+                        type: array
+                        items:
+                          properties:
+                            code:
+                              type: string
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                      status:
+                        description: Error code
+                        type: integer
+                        example: 404
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    required:
+                      - status
+                      - message
+                    properties:
+                      message:
+                        description: Error message
+                        type: string
+                        example: Unexpected error
+                      errors:
+                        type: array
+                        items:
+                          properties:
+                            code:
+                              type: string
+                              description: Server Exception
+                              example: ServiceUUIDNotFoundError
+                      status:
+                        description: Error code
+                        type: integer
+                        example: 404
   /running_interactive_services:
     get:
       tags:
@@ -2227,6 +2384,26 @@ components:
                           - dir/input1.txt: key_1
                             dir33/input2.txt: key2
                 additionalProperties: true
+        error:
+          nullable: true
+          default: null
+    ServiceExtrasEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - node_requirements
+          properties:
+            node_requirements:
+              type: array
+              items:
+                type: string
+                enum:
+                  - CPU
+                  - GPU
         error:
           nullable: true
           default: null
