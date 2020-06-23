@@ -278,8 +278,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createUserStudiesLayout: function() {
+      const resource = this.self().resources["studies"];
       const userStudyContainer = this.__userStudyContainer = this.__createUserStudyList();
-      const userStudyLayout = this.__createButtonsLayout(this.self().resources["studies"]["label"], userStudyContainer);
+      const userStudyLayout = this.__createButtonsLayout(resource["label"], userStudyContainer);
 
       const studiesTitleContainer = userStudyLayout.getTitleBar();
 
@@ -295,21 +296,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__updateDeleteStudiesButton(studiesDeleteButton);
       }, this);
 
-      // ShowAll Studies Button
-
       return userStudyLayout;
     },
 
     __createTemplateStudiesLayout: function() {
+      const resource = this.self().resources["templates"];
       const templateStudyContainer = this.__templateStudyContainer = this.__createTemplateStudyList();
-      const tempStudyLayout = this.__createButtonsLayout(this.self().resources["templates"]["label"], templateStudyContainer);
+      const tempStudyLayout = this.__createButtonsLayout(resource["label"], templateStudyContainer);
 
-      const temapltesTitleContainer = tempStudyLayout.getTitleBar();
+      const templatesTitleContainer = tempStudyLayout.getTitleBar();
 
       // Delete Templates Button
       const templateDeleteButton = this.__createDeleteButton(true);
-      temapltesTitleContainer.add(new qx.ui.core.Spacer(20, null));
-      temapltesTitleContainer.add(templateDeleteButton);
+      templatesTitleContainer.add(new qx.ui.core.Spacer(20, null));
+      templatesTitleContainer.add(templateDeleteButton);
       templateStudyContainer.addListener("changeSelection", e => {
         const nSelected = e.getData().length;
         this.__newStudyBtn.setEnabled(!nSelected);
@@ -321,14 +321,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__updateDeleteTemplatesButton(templateDeleteButton);
       }, this);
 
-      // ShowAll Templates Button
-
       return tempStudyLayout;
     },
 
     __createServicesLayout: function() {
+      const resource = this.self().resources["services"];
       const servicesContainer = this.__servicesContainer = this.__createServicesList();
-      const servicesLayout = this.__createButtonsLayout(this.self().resources["services"]["label"], servicesContainer);
+      const servicesLayout = this.__createButtonsLayout(resource["label"], servicesContainer);
       return servicesLayout;
     },
 
