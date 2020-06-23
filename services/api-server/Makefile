@@ -46,19 +46,21 @@ docker-compose.yml:
 run-devel: .env docker-compose.yml down ## runs app on host with pg fixture for development [for development]
 	# Starting db (under $<)
 	docker-compose up --detach
+	# Creating db-tables: user=key, password=secret
+	@$(MAKE) db-tables
 	# start app (under $<)
 	uvicorn simcore_service_api_server.__main__:the_app \
 		--reload --reload-dir $(SRC_DIR) \
 		--port=8000 --host=0.0.0.0
 
 .PHONY: db-tables
-db-tables: .env-devel ## upgrades and create tables [for development]
+db-tables: .env ## upgrades and create tables [for development]
 	# Upgrading and creating tables
 	export $(shell grep -v '^#' $< | xargs  -d '\n'); \
 	python3 tests/utils/init-pg.py
 
 .PHONY: db-migration
-db-migration: .env-devel ## runs discover and upgrade on running pg-db [for development]
+db-migration: .env ## runs discover and upgrade on running pg-db [for development]
 	# Creating tables
 	export $(shell grep -v '^#' $< | xargs  -d '\n'); \
 	sc-pg discover && sc-pg upgrade
