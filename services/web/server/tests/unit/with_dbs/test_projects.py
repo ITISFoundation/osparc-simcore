@@ -1254,13 +1254,19 @@ async def test_open_shared_project_2_users_forbidden(
     )
 
     # create a separate client now
-    # client_2 = await aiohttp_client(client.app)
-    # user_2 = await log_client_in(
-    #     client_2, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
-    # )
-    # client_id2 = client_session_id()
-    # sio2 = await socketio_client(client_id2)
-    # assert sio2.sid
-    # url = client.app.router["open_project"].url_for(project_id=shared_project["uuid"])
-    # resp = await client.post(url, json=client_id2)
-    # assert resp.status_code == 423  # the locked HTTP code does not exist in aiohttp...
+    client_2 = await aiohttp_client(client.app)
+    user_2 = await log_client_in(
+        client_2, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
+    )
+    client_id2 = client_session_id()
+    try:
+        sio2 = await socketio_client(client_id2, client_2)
+        assert sio2.sid
+    except ConnectionError:
+        if user_role != UserRole.ANONYMOUS:
+            pytest.fail("socket io connection should not fail")
+    url = client.app.router["open_project"].url_for(project_id=shared_project["uuid"])
+    resp = await client.post(url, json=client_id2)
+    assert (
+        resp.status == 423 if user_role != UserRole.ANONYMOUS else web.HTTPUnauthorized
+    )  # the locked HTTP code does not exist in aiohttp...

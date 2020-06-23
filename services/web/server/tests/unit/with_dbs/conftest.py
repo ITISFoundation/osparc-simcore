@@ -14,7 +14,7 @@ import sys
 from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Optional
 from uuid import uuid4
 
 import aioredis
@@ -23,11 +23,11 @@ import redis
 import socketio
 import sqlalchemy as sa
 import trafaret_config
-from pytest_simcore.helpers.utils_login import NewUser
 from yarl import URL
 
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
+from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiopg_utils import DSN
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.application import create_application
@@ -239,41 +239,56 @@ async def redis_client(loop, redis_service):
 
 
 @pytest.fixture()
-async def socketio_url(client) -> str:
-    SOCKET_IO_PATH = "/socket.io/"
-    return str(client.make_url(SOCKET_IO_PATH))
+def socketio_url(client) -> Callable:
+    def create_url(client_override: Optional = None) -> str:
+        SOCKET_IO_PATH = "/socket.io/"
+        return str((client_override or client).make_url(SOCKET_IO_PATH))
+
+    yield create_url
 
 
 @pytest.fixture()
-async def security_cookie(client) -> str:
-    # get the cookie by calling the root entrypoint
-    resp = await client.get("/v0/")
-    payload = await resp.json()
-    assert resp.status == 200, str(payload)
-    data, error = unwrap_envelope(payload)
-    assert data
-    assert not error
+async def security_cookie(client) -> Callable:
+    async def creator(client_override: Optional = None) -> str:
+        # get the cookie by calling the root entrypoint
+        resp = await (client_override or client).get("/v0/")
+        payload = await resp.json()
+        assert resp.status == 200, str(payload)
+        data, error = unwrap_envelope(payload)
+        assert data
+        assert not error
 
-    cookie = ""
-    if "Cookie" in resp.request_info.headers:
-        cookie = resp.request_info.headers["Cookie"]
-    yield cookie
+        cookie = (
+            resp.request_info.headers["Cookie"]
+            if "Cookie" in resp.request_info.headers
+            else ""
+        )
+        return cookie
+
+    yield creator
 
 
 @pytest.fixture()
-async def socketio_client(socketio_url: str, security_cookie: str) -> Callable:
+async def socketio_client(
+    socketio_url: Callable, security_cookie: Callable
+) -> Callable:
     clients = []
 
-    async def connect(client_session_id) -> socketio.AsyncClient:
+    async def connect(
+        client_session_id: str, client: Optional = None
+    ) -> socketio.AsyncClient:
         sio = socketio.AsyncClient(ssl_verify=False)
         # enginio 3.10.0 introduced ssl verification
         url = str(
-            URL(socketio_url).with_query({"client_session_id": client_session_id})
+            URL(socketio_url(client)).with_query(
+                {"client_session_id": client_session_id}
+            )
         )
         headers = {}
-        if security_cookie:
+        cookie = await security_cookie(client)
+        if cookie:
             # WARNING: engineio fails with empty cookies. Expects "key=value"
-            headers.update({"Cookie": security_cookie})
+            headers.update({"Cookie": cookie})
 
         await sio.connect(url, headers=headers)
         assert sio.sid

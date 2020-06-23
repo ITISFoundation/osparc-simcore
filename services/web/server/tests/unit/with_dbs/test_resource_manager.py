@@ -143,19 +143,25 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
 
 
 # ------------------------ TESTS -------------------------------
+from typing import Callable
+
+
 async def test_anonymous_websocket_connection(
-    client_session_id, socketio_url: str, security_cookie, mocker,
+    client_session_id: str, socketio_url: Callable, security_cookie: Callable, mocker,
 ):
     from yarl import URL
 
     sio = socketio.AsyncClient(
         ssl_verify=False
     )  # enginio 3.10.0 introduced ssl verification
-    url = str(URL(socketio_url).with_query({"client_session_id": client_session_id()}))
+    url = str(
+        URL(socketio_url()).with_query({"client_session_id": client_session_id()})
+    )
     headers = {}
-    if security_cookie:
+    cookie = await security_cookie(client)
+    if cookie:
         # WARNING: engineio fails with empty cookies. Expects "key=value"
-        headers.update({"Cookie": security_cookie})
+        headers.update({"Cookie": cookie})
 
     socket_connect_error = mocker.Mock()
     sio.on("connect_error", handler=socket_connect_error)
