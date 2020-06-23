@@ -617,43 +617,9 @@ async def test_new_template_from_project(
             except ValueError:
                 pytest.fail("Invalid uuid in workbench node {}".format(node_name))
 
-
-@pytest.mark.parametrize(
+from _helpers import standard_role_response
+@pytest.mark.parametrize(*standard_role_response()
     "user_role,expected_created,expected_ok,expected_notfound,expected_nocontents,expected_forbidden",
-    [
-        (
-            UserRole.ANONYMOUS,
-            web.HTTPUnauthorized,
-            web.HTTPUnauthorized,
-            web.HTTPUnauthorized,
-            web.HTTPUnauthorized,
-            web.HTTPUnauthorized,
-        ),
-        (
-            UserRole.GUEST,
-            web.HTTPForbidden,
-            web.HTTPForbidden,
-            web.HTTPNotFound,
-            web.HTTPForbidden,
-            web.HTTPForbidden,
-        ),
-        (
-            UserRole.USER,
-            web.HTTPCreated,
-            web.HTTPOk,
-            web.HTTPNotFound,
-            web.HTTPNoContent,
-            web.HTTPForbidden,
-        ),
-        (
-            UserRole.TESTER,
-            web.HTTPCreated,
-            web.HTTPOk,
-            web.HTTPNotFound,
-            web.HTTPNoContent,
-            web.HTTPForbidden,
-        ),
-    ],
 )
 @pytest.mark.parametrize(
     "share_rights",
@@ -671,11 +637,7 @@ async def test_share_project(
     standard_groups: List[Dict[str, str]],
     all_group: Dict[str, str],
     user_role,
-    expected_created,
-    expected_ok,
-    expected_notfound,
-    expected_nocontents,
-    expected_forbidden,
+    expected,
     storage_subsystem_mock,
     mocked_director_subsystem,
     computational_system_mock,
@@ -699,7 +661,7 @@ async def test_share_project(
         }
 
         # user 1 can always get to his project
-        await _get_project(client, new_project, expected_ok)
+        await _get_project(client, new_project, expected.ok)
 
     # get another user logged in now
     user_2 = await log_client_in(
@@ -710,10 +672,10 @@ async def test_share_project(
         await _get_project(
             client,
             new_project,
-            expected_ok if share_rights["read"] else expected_forbidden,
+            expected.ok if share_rights["read"] else expected.forbidden,
         )
         # user 2 can only list projects if user 2 has read access
-        list_projects = await _list_projects(client, expected_ok)
+        list_projects = await _list_projects(client, expected.ok)
         assert len(list_projects) == (1 if share_rights["read"] else 0)
         # user 2 can only update the project is user 2 has write access
         project_update = deepcopy(new_project)
@@ -721,13 +683,13 @@ async def test_share_project(
         await _replace_project(
             client,
             project_update,
-            expected_ok if share_rights["write"] else expected_forbidden,
+            expected.ok if share_rights["write"] else expected.forbidden,
         )
         # user 2 can only delete projects if user 2 has delete access
         await _delete_project(
             client,
             new_project,
-            expected_nocontents if share_rights["delete"] else expected_forbidden,
+            expected.no_content if share_rights["delete"] else expected.forbidden,
         )
 
 
