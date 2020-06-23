@@ -5,13 +5,13 @@
 import uuid as uuidlib
 from asyncio import Future, sleep
 from copy import deepcopy
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 import pytest
 from aiohttp import web
 from mock import call
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in, create_user
+from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 
 from _helpers import ExpectedResponse, standard_role_response
