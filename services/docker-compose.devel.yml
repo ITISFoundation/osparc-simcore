@@ -66,7 +66,7 @@ services:
     deploy:
       mode: replicated
       replicas: 1
-      # NOTE: Allows 3006 to be exposed for ptvsd
+      # NOTE: Allows 3007 to be exposed for ptvsd
       endpoint_mode: vip
       resources:
         reservations:
@@ -81,7 +81,7 @@ services:
       - ./storage/client-sdk:/devel/services/storage/client-sdk
       - ../packages:/devel/packages
     ports:
-      - "3006:3000"
+      - "3007:3000"
     environment:
       - SC_BOOT_MODE=debug-ptvsd
       - SIDECAR_LOGLEVEL=DEBUG
