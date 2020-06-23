@@ -1270,3 +1270,16 @@ async def test_open_shared_project_2_users_forbidden(
     assert (
         resp.status == 423 if user_role != UserRole.ANONYMOUS else web.HTTPUnauthorized
     )  # the locked HTTP code does not exist in aiohttp...
+
+    # user 1 closes the project
+    url = client.app.router["close_project"].url_for(project_id=shared_project["uuid"])
+    resp = await client.post(url, json=client_id1)
+    await assert_status(
+        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
+    )
+    # user 2 now should be able to open the project
+    url = client.app.router["open_project"].url_for(project_id=shared_project["uuid"])
+    resp = await client.post(url, json=client_id2)
+    await assert_status(
+        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
+    )
