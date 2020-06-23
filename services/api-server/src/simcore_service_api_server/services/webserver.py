@@ -100,7 +100,7 @@ class AuthSession:
             )
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        elif StatusCode.is_client_error(resp.status_code):
+        if StatusCode.is_client_error(resp.status_code):
             msg = error or resp.reason_phrase
             raise HTTPException(resp.status_code, detail=msg)
 
