@@ -89,7 +89,7 @@ qx.Class.define("osparc.component.message.FlashMessenger", {
      * @param {*} logMessage.logger IDK
      */
     log: function(logMessage) {
-      let message = logMessage.message;
+      let message = ("message" in logMessage.message) ? logMessage.message["message"] : logMessage.message;
       const level = logMessage.level.toUpperCase(); // "DEBUG", "INFO", "WARNING", "ERROR"
       let logger = logMessage.logger;
       if (logger) {
