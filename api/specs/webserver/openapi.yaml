@@ -159,6 +159,9 @@ paths:
   /projects/{project_id}:open:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1open"
 
+  /projects/{project_id}:state:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1state"
+
   /projects/{project_id}:close:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1close"
 
