@@ -1223,7 +1223,7 @@ async def test_tags_to_studies(
 
 
 @pytest.mark.parametrize(*standard_role_response())
-async def test_open_shared_project_2_users_forbidden(
+async def test_open_shared_project_2_users_locked(
     client,
     logged_user: Dict,
     shared_project: Dict,
@@ -1274,12 +1274,14 @@ async def test_open_shared_project_2_users_forbidden(
     # user 1 closes the project
     url = client.app.router["close_project"].url_for(project_id=shared_project["uuid"])
     resp = await client.post(url, json=client_id1)
-    await assert_status(
-        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
-    )
-    # user 2 now should be able to open the project
-    url = client.app.router["open_project"].url_for(project_id=shared_project["uuid"])
-    resp = await client.post(url, json=client_id2)
-    await assert_status(
-        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
-    )
+    data, error = await assert_status(resp, expected.no_content)
+
+    if not error:
+        # user 2 now should be able to open the project
+        url = client.app.router["open_project"].url_for(
+            project_id=shared_project["uuid"]
+        )
+        resp = await client.post(url, json=client_id2)
+        await assert_status(
+            resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
+        )
