@@ -1,5 +1,5 @@
 ARG PYTHON_VERSION="3.6.10"
-FROM python:${PYTHON_VERSION}-slim as base
+FROM python:${PYTHON_VERSION}-slim-buster as base
 #
 #  USAGE:
 #     cd sercices/web
