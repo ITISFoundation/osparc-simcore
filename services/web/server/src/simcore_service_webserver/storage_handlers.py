@@ -4,9 +4,10 @@
 """
 
 from aiohttp import web
+from yarl import URL
+
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_utils import extract_and_validate
-from yarl import URL
 
 from .login.decorators import login_required
 from .security_api import check_permission

@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.applications import HTMLResponse, Request
 from fastapi.openapi.docs import get_redoc_html
 
-# from ..__version__ import api_vtag
+# TODO: move all these static resources away from the server!
 
 FAVICON = "https://osparc.io/resource/osparc/favicon.png"
 LOGO = "https://raw.githubusercontent.com/ITISFoundation/osparc-manual/b809d93619512eb60c827b7e769c6145758378d0/_media/osparc-logo.svg"
@@ -14,9 +14,8 @@ PYTHON_CODE_SAMPLES_BASE_URL = "https://raw.githubusercontent.com/ITISFoundation
 def compose_long_description(description: str) -> str:
     desc = f"**{description}**\n"
     desc += "## Python Library\n"
-    desc += "- Documentation (https://itisfoundation.github.io/osparc-simcore-python-client/#/)\n"
+    desc += "- Check the [documentation](https://itisfoundation.github.io/osparc-simcore-python-client)\n"
     desc += "- Quick install: ``pip install git+https://github.com/ITISFoundation/osparc-simcore-python-client.git``\n"
-
     return desc
 
 

@@ -12,8 +12,8 @@ from aiohttp import web
 from servicelib import openapi
 from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
 
-from . import handlers as login_handlers
 from . import api_keys_handlers
+from . import handlers as login_handlers
 
 log = logging.getLogger(__name__)
 

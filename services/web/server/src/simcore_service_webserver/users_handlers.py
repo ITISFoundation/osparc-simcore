@@ -8,10 +8,7 @@ from aiohttp import web
 from . import users_api
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
-from .users_exceptions import (
-    TokenNotFoundError,
-    UserNotFoundError,
-)
+from .users_exceptions import TokenNotFoundError, UserNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +21,8 @@ async def get_my_profile(request: web.Request):
     try:
         return await users_api.get_user_profile(request.app, uid)
     except UserNotFoundError:
-        raise web.HTTPServerError(reason="could not find profile!")
+        # NOTE: invalid user_id could happen due to timed-cache in AuthorizationPolicy
+        raise web.HTTPNotFound(reason="Could not find profile!")
 
 
 @login_required
