@@ -4,10 +4,11 @@
 include ../../scripts/common.Makefile
 
 # Custom variables
-APP_NAME     := $(notdir $(CURDIR))
-APP_CLI_NAME := simcore-service-$(APP_NAME)
-APP_VERSION  := $(shell cat VERSION)
-SRC_DIR      := $(abspath $(CURDIR)/src/$(subst -,_,$(APP_CLI_NAME)))
+APP_NAME         := $(notdir $(CURDIR))
+APP_CLI_NAME     := simcore-service-$(APP_NAME)
+APP_PACKAGE_NAME := $(subst -,_,$(APP_CLI_NAME))
+APP_VERSION      := $(shell cat VERSION)
+SRC_DIR          := $(abspath $(CURDIR)/src/$(APP_PACKAGE_NAME))
 
 export APP_VERSION
 
@@ -83,6 +84,13 @@ build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## builds 
 	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
 
+.PHONY: openapi-specs openapi.json
+openapi-specs: openapi.json
+openapi.json: .env
+	# generating openapi specs file
+	python3 -c "import json; from $(APP_PACKAGE_NAME).__main__ import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
+
+
 # GENERATION python client ########
 .PHONY: python-client generator-help
 
@@ -119,10 +127,8 @@ client:
 	git clone git@github.com:$(GIT_USER_ID)/$(GIT_REPO_ID).git $@
 	cd client; git checkout -b "upgrade-${APP_VERSION}"
 
-python-client: client ## runs python client generator
-	# download openapi.json
-	curl -O http://localhost:8000/api/v0/openapi.json
 
+python-client: client openapi.json ## runs python client generator
 	cd $(CURDIR); \
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash generate \
 		--generator-name=$(GENERATOR_NAME) \
