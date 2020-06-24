@@ -10,11 +10,12 @@ from typing import Callable, Dict, List, Optional
 import pytest
 from aiohttp import web
 from mock import call
-
-from _helpers import ExpectedResponse, standard_role_response
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
+from socketio.exceptions import ConnectionError
+
+from _helpers import ExpectedResponse, future_with_result, standard_role_response
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
@@ -35,12 +36,6 @@ from simcore_service_webserver.utils import now_str, to_datetime
 API_VERSION = "v0"
 RESOURCE_NAME = "projects"
 API_PREFIX = "/" + API_VERSION
-
-
-def future_with_result(result) -> Future:
-    f = Future()
-    f.set_result(result)
-    return f
 
 
 @pytest.fixture
@@ -118,22 +113,6 @@ def client(
 
 @pytest.fixture()
 async def logged_user(client, user_role: UserRole):
-    """ adds a user in db and logs in with client
-
-    NOTE: `user_role` fixture is defined as a parametrization below!!!
-    """
-    async with LoggedUser(
-        client,
-        {"role": user_role.name},
-        check_if_succeeds=user_role != UserRole.ANONYMOUS,
-    ) as user:
-        print("-----> logged in user", user_role)
-        yield user
-        print("<----- logged out user", user_role)
-
-
-@pytest.fixture()
-async def logged_user2(client, user_role: UserRole):
     """ adds a user in db and logs in with client
 
     NOTE: `user_role` fixture is defined as a parametrization below!!!
@@ -399,15 +378,7 @@ async def _new_project(
 
 
 # POST --------
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPCreated),
-        (UserRole.TESTER, web.HTTPCreated),
-    ],
-)
+@pytest.mark.parametrize(*standard_role_response())
 async def test_new_project(
     client,
     logged_user,
@@ -417,18 +388,12 @@ async def test_new_project(
     storage_subsystem_mock,
     project_db_cleaner,
 ):
-    new_project = await _new_project(client, expected, logged_user, primary_group)
+    new_project = await _new_project(
+        client, expected.created, logged_user, primary_group
+    )
 
 
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPCreated),
-        (UserRole.TESTER, web.HTTPCreated),
-    ],
-)
+@pytest.mark.parametrize(*standard_role_response())
 async def test_new_project_from_template(
     client,
     logged_user,
@@ -440,7 +405,11 @@ async def test_new_project_from_template(
     project_db_cleaner,
 ):
     new_project = await _new_project(
-        client, expected, logged_user, primary_group, from_template=template_project
+        client,
+        expected.created,
+        logged_user,
+        primary_group,
+        from_template=template_project,
     )
 
     if new_project:
@@ -452,15 +421,7 @@ async def test_new_project_from_template(
                 pytest.fail("Invalid uuid in workbench node {}".format(node_name))
 
 
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPCreated),
-        (UserRole.TESTER, web.HTTPCreated),
-    ],
-)
+@pytest.mark.parametrize(*standard_role_response())
 async def test_new_project_from_template_with_body(
     client,
     logged_user,
@@ -492,7 +453,7 @@ async def test_new_project_from_template_with_body(
     }
     project = await _new_project(
         client,
-        expected,
+        expected.created,
         logged_user,
         primary_group,
         project=predefined,
@@ -890,15 +851,7 @@ async def test_open_project(
         mocked_director_subsystem["start_service"].assert_has_calls(calls)
 
 
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
-    ],
-)
+@pytest.mark.parametrize(*standard_role_response())
 async def test_close_project(
     client,
     logged_user,
@@ -930,7 +883,7 @@ async def test_close_project(
     # close project
     url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
-    await assert_status(resp, expected)
+    await assert_status(resp, expected.no_content)
     if resp.status == web.HTTPNoContent.status_code:
         calls = [
             call(client.server.app, user_project["uuid"], None),
@@ -939,9 +892,6 @@ async def test_close_project(
         mocked_director_subsystem["get_running_interactive_services"].has_calls(calls)
         calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
         mocked_director_subsystem["stop_service"].has_calls(calls)
-
-
-from socketio.exceptions import ConnectionError
 
 
 @pytest.mark.parametrize(
