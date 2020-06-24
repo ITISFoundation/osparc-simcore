@@ -8,6 +8,8 @@ IFS=$'\n\t'
 DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
 export DOCKER_IMAGE_TAG
 
+SWARM_STACK_NAME=e2e_test_stack
+
 install() {
     echo "--------------- installing psql client..."
     /bin/bash -c 'sudo apt install -y postgresql-client'
