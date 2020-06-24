@@ -20,5 +20,6 @@ aiopg[sa]
 httpx
 
 #
+attrs
 tenacity
 cryptography
