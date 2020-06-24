@@ -273,7 +273,7 @@ async def delete_project(request: web.Request):
     raise web.HTTPNoContent(content_type="application/json")
 
 
-class HTTPConflict(web.HTTPClientError):
+class HTTPLocked(web.HTTPClientError):
     # pylint: disable=too-many-ancestors
     status_code = 423
 
@@ -300,7 +300,7 @@ async def open_project(request: web.Request) -> web.Response:
             # let's check if that project is already opened by someone
             other_users = await rt.find_users_of_resource("project_id", project_uuid)
             if other_users:
-                raise HTTPConflict(reason="Project is already opened by another user")
+                raise HTTPLocked(reason="Project is already opened by another user")
             await rt.add("project_id", project_uuid)
 
         # user id opened project uuid
