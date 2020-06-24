@@ -43,7 +43,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
-EXPOSE 8001
+EXPOSE 8000
 EXPOSE 3000
 
 # -------------------------- Build stage -------------------
@@ -111,7 +111,10 @@ ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
+# Starting from clean base image, copies pre-installed virtualenv from cache
 COPY --chown=scu:scu --from=cache  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+
+# Copies booting scripts
 COPY --chown=scu:scu services/api-server/docker services/api-server/docker
 RUN chmod +x services/api-server/docker/*.sh
 
