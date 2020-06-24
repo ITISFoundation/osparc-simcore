@@ -9,7 +9,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # Pin pip version to a compatible release https://www.python.org/dev/peps/pep-0440/#compatible-release
-PIP_VERSION=19.3.1
+PIP_VERSION=20.1.1
 
 echo "INFO:" "$(python --version)" "@" "$(command -v python)"
 
