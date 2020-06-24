@@ -1,15 +1,17 @@
+import logging
 from typing import Optional
 
 import sqlalchemy as sa
-from loguru import logger
 from psycopg2 import DatabaseError
 
 from .. import tables as tbl
-from .base import BaseRepository
+from ._base import BaseRepository
 
-# from ...models.domain.users import User, UserInDB
+logger = logging.getLogger(__name__)
 
-# For psycopg2 errors SEE https://www.psycopg.org/docs/errors.html#sqlstate-exception-classes
+
+# TODO: see if can use services/api-server/src/simcore_service_api_server/models/domain/api_keys.py
+# NOTE: For psycopg2 errors SEE https://www.psycopg.org/docs/errors.html#sqlstate-exception-classes
 
 
 class ApiKeysRepository(BaseRepository):
@@ -25,7 +27,7 @@ class ApiKeysRepository(BaseRepository):
             user_id: Optional[int] = await self.connection.scalar(stmt)
 
         except DatabaseError as err:
-            logger.debug(f"Failed to get user id: {err}")
+            logger.debug("Failed to get user id: %s", err)
             user_id = None
 
         return user_id

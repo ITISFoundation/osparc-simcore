@@ -6,7 +6,7 @@ import passlib.hash
 from aiopg.sa.result import RowProxy
 
 import simcore_service_api_server.db.tables as orm
-from simcore_service_api_server.db.repositories.base import BaseRepository
+from simcore_service_api_server.db.repositories import BaseRepository
 from simcore_service_api_server.db.repositories.users import UsersRepository
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
