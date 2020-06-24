@@ -146,6 +146,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __initResources: function() {
       this.__showLoadingPage(this.tr("Loading studies"));
 
+      this.__userStudies = [];
+      this.__templateStudies = [];
       this.__getTags()
         .then(() => {
           this.__hideLoadingPage();
