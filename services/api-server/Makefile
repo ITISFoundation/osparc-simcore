@@ -6,8 +6,10 @@ include ../../scripts/common.Makefile
 # Custom variables
 APP_NAME     := $(notdir $(CURDIR))
 APP_CLI_NAME := simcore-service-$(APP_NAME)
-export APP_VERSION = $(shell cat VERSION)
+APP_VERSION  := $(shell cat VERSION)
 SRC_DIR      := $(abspath $(CURDIR)/src/$(subst -,_,$(APP_CLI_NAME)))
+
+export APP_VERSION
 
 .PHONY: reqs
 reqs: ## compiles pip requirements (.in -> .txt)
@@ -71,18 +73,25 @@ down: docker-compose.yml ## stops pg fixture
 	# killing any process using port 8000
 	-@fuser --kill --verbose --namespace tcp 8000
 
-######################
 
 
-.PHONY: build
-build: ## builds docker image (using main services/docker-compose-build.yml)
-	@$(MAKE_C) ${REPO_BASE_DIR} target=${APP_NAME} $@
+# BUILD ########
 
 
-# GENERATION python client -------------------------------------------------
+.PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
+build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## builds docker image (using main services/docker-compose-build.yml)
+	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
+
+
+# GENERATION python client ########
 .PHONY: python-client generator-help
+
 # SEE https://openapi-generator.tech/docs/usage#generate
 # SEE https://openapi-generator.tech/docs/generators/python
+#
+# TODO: put instead to additional-props.yaml and --config=openapi-generator/python-config.yaml
+# TODO: copy this code to https://github.com/ITISFoundation/osparc-simcore-python-client/blob/master/Makefile
+#
 
 # NOTE: assumes this repo exists
 GIT_USER_ID := ITISFoundation
@@ -91,7 +100,6 @@ GIT_REPO_ID := osparc-simcore-python-client
 SCRIPTS_DIR := $(abspath $(CURDIR)/../../scripts)
 GENERATOR_NAME := python
 
-# TODO: put instead to additional-props.yaml and --config=openapi-generator/python-config.yaml
 ADDITIONAL_PROPS := \
 	generateSourceCodeOnly=false\
 	hideGenerationTimestamp=true\
@@ -106,16 +114,10 @@ null  :=
 space := $(null) #
 comma := ,
 
-# TODO: fix this, shall be generated upon start when flag is provided
-
-
-
-# TODO: code_samples still added by hand!
 client:
 	# cloning $(GIT_USER_ID)/$(GIT_REPO_ID) -> $@
 	git clone git@github.com:$(GIT_USER_ID)/$(GIT_REPO_ID).git $@
 	cd client; git checkout -b "upgrade-${APP_VERSION}"
-
 
 python-client: client ## runs python client generator
 	# download openapi.json
@@ -132,8 +134,6 @@ python-client: client ## runs python client generator
 		--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS)))\
 		--package-name=osparc\
 		--release-note="Updated to $(APP_VERSION)"
-
-
 
 
 generator-help: ## help on client-api generator
