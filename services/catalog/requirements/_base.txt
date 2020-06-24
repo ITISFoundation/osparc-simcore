@@ -29,7 +29,8 @@ multidict==4.7.6          # via yarl
 orjson==3.1.2             # via fastapi
 promise==2.3              # via graphql-core, graphql-relay
 psycopg2-binary==2.8.5    # via aiopg, sqlalchemy
-pydantic==1.5.1           # via fastapi
+pydantic[dotenv]==1.5.1   # via -r requirements/_base.in, fastapi
+python-dotenv==0.13.0     # via pydantic
 python-multipart==0.0.5   # via fastapi
 pyyaml==5.3.1             # via -r requirements/_base.in, fastapi
 requests==2.24.0          # via fastapi

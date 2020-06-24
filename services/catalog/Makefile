@@ -4,10 +4,11 @@
 include ../../scripts/common.Makefile
 
 # Custom variables
-APP_NAME     := $(notdir $(CURDIR))
-APP_CLI_NAME := simcore-service-catalog
-APP_VERSION  := $(shell cat VERSION)
-SRC_DIR      := $(abspath $(CURDIR)/src/$(subst -,_,$(APP_CLI_NAME)))
+APP_NAME         := $(notdir $(CURDIR))
+APP_CLI_NAME     := simcore-service-catalog
+APP_PACKAGE_NAME := $(subst -,_,$(APP_CLI_NAME))
+APP_VERSION      := $(shell cat VERSION)
+SRC_DIR          := $(abspath $(CURDIR)/src/$(APP_PACKAGE_NAME))
 
 export APP_VERSION
 
@@ -80,6 +81,8 @@ build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## docker 
 	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
 
-.PHONY: openapi-specs
-openapi-specs: install-dev ## TODO: implementing a way to serialize openapi
-	python3 -c "from simcore_service_catalog.main import *; dump_openapi()"
+.PHONY: openapi-specs openapi.json
+openapi-specs: openapi.json
+openapi.json:
+	# generating openapi specs file
+	python3 -c "import json; from $(APP_PACKAGE_NAME).__main__ import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@

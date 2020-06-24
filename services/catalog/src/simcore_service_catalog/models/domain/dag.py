@@ -16,18 +16,6 @@ class DAGBase(BaseModel):
     contact: Optional[EmailStr]
 
 
-class DAGIn(DAGBase):
-    workbench: Optional[Dict[str, project.Node]]
-
-
-class DAGInPath(DAGBase):
-    version: str
-    name: str
-    description: Optional[str]
-    contact: Optional[str]
-    workbench: Optional[Dict[str, project.Node]]
-
-
 class DAGAtDB(DAGBase):
     id: int
     workbench: Json[Dict[str, project.Node]]  # pylint: disable=unsubscriptable-object
@@ -36,5 +24,5 @@ class DAGAtDB(DAGBase):
         orm_mode = True
 
 
-class DAGOut(DAGAtDB):
+class DAG(DAGAtDB):
     workbench: Optional[Dict[str, project.Node]]

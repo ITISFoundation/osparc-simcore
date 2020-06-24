@@ -48,7 +48,7 @@ promise==2.3              # via -r requirements/_base.txt, graphql-core, graphql
 psycopg2-binary==2.8.5    # via -r requirements/_base.txt, aiopg, sqlalchemy
 ptvsd==4.3.2              # via -r requirements/_test.in
 py==1.8.2                 # via pytest
-pydantic==1.5.1           # via -r requirements/_base.txt, fastapi
+pydantic[dotenv]==1.5.1   # via -r requirements/_base.txt, fastapi
 pylint==2.5.3             # via -r requirements/_test.in
 pyparsing==2.4.7          # via packaging
 pytest-aiohttp==0.3.0     # via -r requirements/_test.in
@@ -58,6 +58,7 @@ pytest-mock==3.1.1        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest==5.4.3             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-mock
 python-dateutil==2.8.1    # via faker
+python-dotenv==0.13.0     # via -r requirements/_base.txt, pydantic
 python-multipart==0.0.5   # via -r requirements/_base.txt, fastapi
 pyyaml==5.3.1             # via -r requirements/_base.txt, fastapi
 requests==2.24.0          # via -r requirements/_base.txt, codecov, coveralls, fastapi

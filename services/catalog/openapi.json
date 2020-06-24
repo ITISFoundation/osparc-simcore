@@ -1,0 +1,715 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "Components Catalog Service",
+    "description": "Manages and maintains a **catalog** of all published components (e.g. macro-algorithms, scripts, etc)",
+    "version": "0.3.2"
+  },
+  "paths": {
+    "/v0/meta": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Get Service Metadata",
+        "operationId": "get_service_metadata_v0_meta_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dags": {
+      "get": {
+        "tags": [
+          "DAG"
+        ],
+        "summary": "List Dags",
+        "operationId": "list_dags_v0_dags_get",
+        "parameters": [
+          {
+            "description": "Requests a specific page of the list results",
+            "required": false,
+            "schema": {
+              "title": "Page Token",
+              "type": "string",
+              "description": "Requests a specific page of the list results"
+            },
+            "name": "page_token",
+            "in": "query"
+          },
+          {
+            "description": "Maximum number of results to be returned by the server",
+            "required": false,
+            "schema": {
+              "title": "Page Size",
+              "minimum": 0.0,
+              "type": "integer",
+              "description": "Maximum number of results to be returned by the server",
+              "default": 0
+            },
+            "name": "page_size",
+            "in": "query"
+          },
+          {
+            "description": "Sorts in ascending order comma-separated fields",
+            "required": false,
+            "schema": {
+              "title": "Order By",
+              "type": "string",
+              "description": "Sorts in ascending order comma-separated fields"
+            },
+            "name": "order_by",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Dags V0 Dags Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DAGOut"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "DAG"
+        ],
+        "summary": "Create Dag",
+        "operationId": "create_dag_v0_dags_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DAGIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successfully created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Create Dag V0 Dags Post",
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dags:batchGet": {
+      "get": {
+        "tags": [
+          "DAG"
+        ],
+        "summary": "Batch Get Dags",
+        "operationId": "batch_get_dags_v0_dags_batchGet_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dags:search": {
+      "get": {
+        "tags": [
+          "DAG"
+        ],
+        "summary": "Search Dags",
+        "operationId": "search_dags_v0_dags_search_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dags/{dag_id}": {
+      "get": {
+        "tags": [
+          "DAG"
+        ],
+        "summary": "Get Dag",
+        "operationId": "get_dag_v0_dags__dag_id__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Dag Id",
+              "type": "integer"
+            },
+            "name": "dag_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DAGOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "DAG"
+        ],
+        "summary": "Replace Dag",
+        "operationId": "replace_dag_v0_dags__dag_id__put",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Dag Id",
+              "type": "integer"
+            },
+            "name": "dag_id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DAGIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DAGOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "DAG"
+        ],
+        "summary": "Delete Dag",
+        "operationId": "delete_dag_v0_dags__dag_id__delete",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Dag Id",
+              "type": "integer"
+            },
+            "name": "dag_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successfully deleted"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "DAG"
+        ],
+        "summary": "Udpate Dag",
+        "operationId": "udpate_dag_v0_dags__dag_id__patch",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Dag Id",
+              "type": "integer"
+            },
+            "name": "dag_id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DAGIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DAGOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Connection": {
+        "title": "Connection",
+        "type": "object",
+        "properties": {
+          "nodeUuid": {
+            "title": "Nodeuuid",
+            "type": "string"
+          },
+          "output": {
+            "title": "Output",
+            "type": "string"
+          }
+        }
+      },
+      "DAGIn": {
+        "title": "DAGIn",
+        "required": [
+          "key",
+          "version",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "pattern": "^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\\s]+)+$",
+            "type": "string",
+            "example": "simcore/services/frontend/nodes-group/macros/1"
+          },
+          "version": {
+            "title": "Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string",
+            "example": "1.0.0"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "contact": {
+            "title": "Contact",
+            "type": "string",
+            "format": "email"
+          },
+          "workbench": {
+            "title": "Workbench",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Node"
+            }
+          }
+        }
+      },
+      "DAGOut": {
+        "title": "DAGOut",
+        "required": [
+          "key",
+          "version",
+          "name",
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "pattern": "^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\\s]+)+$",
+            "type": "string",
+            "example": "simcore/services/frontend/nodes-group/macros/1"
+          },
+          "version": {
+            "title": "Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string",
+            "example": "1.0.0"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "contact": {
+            "title": "Contact",
+            "type": "string",
+            "format": "email"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "workbench": {
+            "title": "Workbench",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Node"
+            }
+          }
+        }
+      },
+      "FilePickerOutput": {
+        "title": "FilePickerOutput",
+        "required": [
+          "store",
+          "path",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "store": {
+            "title": "Store",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "dataset": {
+            "title": "Dataset",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        }
+      },
+      "HTTPValidationError": {
+        "title": "HTTPValidationError",
+        "type": "object",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "Meta": {
+        "title": "Meta",
+        "required": [
+          "name",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string"
+          },
+          "released": {
+            "title": "Released",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+            },
+            "description": "Maps every route's path tag with a released version"
+          }
+        },
+        "example": {
+          "name": "simcore_service_foo",
+          "version": "2.4.45",
+          "released": {
+            "v1": "1.3.4",
+            "v2": "2.4.45"
+          }
+        }
+      },
+      "Node": {
+        "title": "Node",
+        "required": [
+          "key",
+          "version",
+          "label",
+          "position"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "pattern": "^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\\s]+)+$",
+            "type": "string",
+            "example": "simcore/services/comp/sleeper"
+          },
+          "version": {
+            "title": "Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string",
+            "example": "6.2.0"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "progress": {
+            "title": "Progress",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "type": "number",
+            "default": 0
+          },
+          "thumbnail": {
+            "title": "Thumbnail",
+            "type": "string"
+          },
+          "inputs": {
+            "title": "Inputs",
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/components/schemas/Connection"
+                },
+                {
+                  "$ref": "#/components/schemas/FilePickerOutput"
+                }
+              ]
+            }
+          },
+          "inputAccess": {
+            "title": "Inputaccess",
+            "type": "object",
+            "additionalProperties": {
+              "enum": [
+                "ReadAndWrite",
+                "Invisible",
+                "ReadOnly"
+              ],
+              "type": "string"
+            }
+          },
+          "inputNodes": {
+            "title": "Inputnodes",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "outputs": {
+            "title": "Outputs",
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/components/schemas/FilePickerOutput"
+                }
+              ]
+            }
+          },
+          "outputNode": {
+            "title": "Outputnode",
+            "type": "boolean",
+            "deprecated": true
+          },
+          "outputNodes": {
+            "title": "Outputnodes",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "parent": {
+            "title": "Parent",
+            "type": "string",
+            "description": "Parent's (group-nodes') node ID s.",
+            "example": "nodeUUid1"
+          },
+          "position": {
+            "$ref": "#/components/schemas/Position"
+          }
+        }
+      },
+      "Position": {
+        "title": "Position",
+        "required": [
+          "x",
+          "y"
+        ],
+        "type": "object",
+        "properties": {
+          "x": {
+            "title": "X",
+            "type": "integer"
+          },
+          "y": {
+            "title": "Y",
+            "type": "integer"
+          }
+        }
+      },
+      "ValidationError": {
+        "title": "ValidationError",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "loc": {
+            "title": "Location",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
