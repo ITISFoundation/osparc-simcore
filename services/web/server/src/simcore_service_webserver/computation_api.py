@@ -20,6 +20,9 @@ from simcore_postgres_database.models.comp_pipeline import UNKNOWN
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
 
+# TODO: move this to computation_models
+from simcore_service_webserver.computation_models import to_node_class
+
 from .director import director_api
 
 log = logging.getLogger(__file__)
@@ -65,11 +68,35 @@ async def _get_node_details(
         app, node_key, node_version
     )
     if not node_details:
-        log.error("Error could not find service %s:%s", node_key, node_version)
+        log.error(
+            "Error (while getting node details) could not find service %s:%s",
+            node_key,
+            node_version,
+        )
         raise web_exceptions.HTTPNotFound(
             reason=f"details of service {node_key}:{node_version} could not be found"
         )
     return node_details
+
+
+async def _get_node_extras(
+    node_key: str, node_version: str, app: web.Application
+) -> Dict:
+    """Returns the service_extras if possible otherwise None"""
+    if to_node_class(node_key) == NodeClass.FRONTEND:
+        return None
+
+    node_extras = await director_api.get_services_extras(app, node_key, node_version)
+    if not node_extras:
+        log.error(
+            "Error (while getting node extras) could not find service %s:%s",
+            node_key,
+            node_version,
+        )
+        raise web_exceptions.HTTPNotFound(
+            reason=f"details of service {node_key}:{node_version} could not be found"
+        )
+    return node_extras
 
 
 async def _build_adjacency_list(
@@ -118,9 +145,6 @@ async def _build_adjacency_list(
 
 
 async def _parse_project_data(pipeline_data: Dict, app: web.Application):
-    # TODO: move this to computation_models
-    from .computation_models import to_node_class
-
     dag_adjacency_list = dict()
     tasks = dict()
 
@@ -148,6 +172,8 @@ async def _parse_project_data(pipeline_data: Dict, app: web.Application):
         )
 
         node_details = await _get_node_details(node_key, node_version, app)
+        node_extras = await _get_node_extras(node_key, node_version, app)
+
         log.debug(
             "node %s:%s has schema:\n %s", node_key, node_version, pformat(node_details)
         )
@@ -167,11 +193,23 @@ async def _parse_project_data(pipeline_data: Dict, app: web.Application):
                 "inputs": node_details["inputs"],
                 "outputs": node_details["outputs"],
             }
+
+        # _get_node_extras returns None ins ome situation, the below check is required
+        requires_gpu = (
+            "GPU" in node_extras.get("node_requirements", [])
+            if node_extras is not None
+            else False
+        )
+
         task = {
             "schema": node_schema,
             "inputs": node_inputs,
             "outputs": node_outputs,
-            "image": {"name": node_key, "tag": node_version},
+            "image": {
+                "name": node_key,
+                "tag": node_version,
+                "requires_gpu": requires_gpu,
+            },
             "node_class": to_node_class(node_key),
         }
 

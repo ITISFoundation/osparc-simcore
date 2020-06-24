@@ -13,6 +13,7 @@ pytest-cov
 pytest-instafail
 pytest-mock
 pytest-sugar
+pytest-lazy-fixture
 
 # fixtures
 aiopg

@@ -21,10 +21,29 @@ from . import config, exceptions
 from .executor import Executor
 from .rabbitmq import RabbitMQ
 from .utils import execution_graph, find_entry_point, is_node_ready
+from .db import DBContextManager
 
 log = get_task_logger(__name__)
 log.setLevel(config.SIDECAR_LOGLEVEL)
 node_port_log.setLevel(config.SIDECAR_LOGLEVEL)
+
+
+async def does_task_require_gpu(node_id: str) -> bool:
+    """Checks if the comp_task's image field if it requires to use the GPU"""
+    async with DBContextManager() as db_engine:
+        async with db_engine.acquire() as db_connection:
+            result = await db_connection.execute(
+                query=comp_tasks.select().where(comp_tasks.c.node_id == node_id)
+            )
+            task = await result.fetchone()
+
+            if not task:
+                log.warning("Task for node_id %s was not found", node_id)
+                raise exceptions.TaskNotFound("Could not find a relative task")
+
+            # Image has to following format
+            # {"name": "simcore/services/comp/itis/sleeper", "tag": "1.0.0", "requires_gpu": false}
+            return task["image"]["requires_gpu"]
 
 
 async def _try_get_task_from_db(
