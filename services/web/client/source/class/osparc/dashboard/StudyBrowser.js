@@ -420,7 +420,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__userStudyContainer.removeAll();
       this.self().sortStudyList(userStudyList);
       for (let i=0; i<userStudyList.length; i++) {
-        this.__userStudyContainer.add(this.__createStudyItem(userStudyList[i], false));
+        const studyCard = this.__createStudyItem(userStudyList[i], false);
+        this.__userStudyContainer.add(studyCard);
       }
       osparc.component.filter.UIFilterController.dispatch("studyBrowser");
     },
@@ -473,7 +474,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       item.subscribeToFilterGroup("studyBrowser");
 
       item.addListener("execute", () => {
-        this.__itemClicked(item, isTemplate);
+        if (!item.getLocked()) {
+          this.__itemClicked(item, isTemplate);
+        }
       }, this);
 
       return item;

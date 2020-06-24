@@ -102,6 +102,13 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     tags: {
       check: "Array",
       apply: "_applyTags"
+    },
+
+    locked: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      apply: "_applyLocked"
     }
   },
 
@@ -142,7 +149,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           break;
         case "tick-unselected":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16").set({
-            zIndex: this.self().MENU_BTN_Z -1
+            zIndex: this.self().MENU_BTN_Z-1
           });
           this._add(control, {
             top: 4,
@@ -151,7 +158,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           break;
         case "tick-selected":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/check-circle/16").set({
-            zIndex: this.self().MENU_BTN_Z -1
+            zIndex: this.self().MENU_BTN_Z-1
           });
           this._add(control, {
             top: 4,
@@ -309,6 +316,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           tagsContainer.add(tagUI);
         });
       }
+    },
+
+    _applyLocked: function(locked) {
     },
 
     _shouldApplyFilter: function(data) {
