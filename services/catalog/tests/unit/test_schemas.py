@@ -7,8 +7,9 @@ import json
 
 import pytest
 
-from simcore_service_catalog.orm import DAG
-from simcore_service_catalog.schemas import schemas_dags
+from simcore_service_catalog.db import tables
+from simcore_service_catalog.models.domain.dag import DAG, DAGAtDB
+from simcore_service_catalog.models.schemas.dag import DAGIn, DAGOut
 
 # from typing import Optional, TypeVar, Generic
 # from pydantic import GenericModel, BaseModel
@@ -19,7 +20,6 @@ from simcore_service_catalog.schemas import schemas_dags
 #     code: int
 #     message: str
 
-
 # class Envelope(GenericModel, Generic[DataT]):
 #     data: Optional[DataT]
 #     error: Optional[Error]
@@ -28,7 +28,7 @@ from simcore_service_catalog.schemas import schemas_dags
 @pytest.mark.skip(reason="DEV")
 def test_dev():
 
-    dag_in = schemas_dags.DAGIn(
+    dag_in = DAGIn(
         key="simcore/services/frontend/nodes-group/macros/", version="1.0.0", name="foo"
     )
     assert "key" in dag_in.__fields_set__
@@ -46,11 +46,11 @@ def test_dev():
 
 def test_api_in_2_orm(fake_data_dag_in):
     # dag in to db
-    dag_in = schemas_dags.DAGIn(**fake_data_dag_in)
+    dag_in = DAGIn(**fake_data_dag_in)
 
     # TODO: create DAG.from_api( :DAGIn)
     # SEE crud_dags.create_dag
-    selection = set(DAG.__table__.columns.keys()).remove("workbench")
+    selection = set(tables.dags.columns.keys()).remove("workbench")
     dag_orm = DAG(
         id=1,
         workbench=json.dumps(fake_data_dag_in["workbench"]),
@@ -69,8 +69,8 @@ def test_orm_2_api_out(fake_data_dag_in):
         workbench=json.dumps(fake_data_dag_in["workbench"]),
     )
 
-    dag_db = schemas_dags.DAGAtDB.from_orm(dag_orm)
+    dag_db = DAGAtDB.from_orm(dag_orm)
     assert type(dag_db.workbench) == dict
 
-    dag_out = schemas_dags.DAGOut(**dag_db.dict())
+    dag_out = DAGOut(**dag_db.dict())
     assert dag_out.id == 1

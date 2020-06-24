@@ -7,12 +7,15 @@ from typing import List
 import pytest
 from starlette.testclient import TestClient
 
+from simcore_service_catalog.__version__ import api_version
+
 # TODO: app is init globally ... which is bad!
-from simcore_service_catalog.main import api_version, app
+from simcore_service_catalog.core.application import init_app
 
 
 @pytest.fixture
 def client(environ_context, postgres_service):
+    app = init_app()
     # TODO: create new web-app everyt
     with TestClient(app) as cli:
         yield cli

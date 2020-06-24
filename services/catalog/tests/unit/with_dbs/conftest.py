@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 import sqlalchemy as sa
 
-import simcore_service_catalog.config
+import simcore_service_catalog.settings
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
