@@ -165,6 +165,15 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             right: 4
           });
           break;
+        case "lock":
+          control = new osparc.component.widget.Thumbnail("@FontAwesome5Solid/lock/70");
+          this._add(control, {
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0
+          });
+          break;
       }
 
       return control || this.base(arguments, id);
@@ -319,6 +328,15 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyLocked: function(locked) {
+      this.setCursor(locked ? "not-allowed" : "pointer");
+
+      this._getChildren().forEach(item => {
+        item.setOpacity(locked ? 0.4 : 1.0);
+      });
+
+      const lock = this.getChildControl("lock");
+      lock.setOpacity(1.0);
+      lock.setVisibility(locked ? "visible" : "excluded");
     },
 
     _shouldApplyFilter: function(data) {
