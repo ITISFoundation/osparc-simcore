@@ -69,11 +69,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     _applyStudy: function(study) {
       osparc.store.Store.getInstance().setCurrentStudy(study);
       study.buildWorkbench();
-      study.openStudy();
+      study.openStudy()
+        .then(() => {
+          study.getWorkbench().initWorkbench();
+        })
+        .catch(err => {
+            console.error(err);
+        });
       this.__initViews();
       this.__connectEvents();
       this.__startAutoSaveTimer();
-
       this.__openOneNode();
     },
 

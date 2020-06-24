@@ -166,9 +166,7 @@ qx.Class.define("osparc.data.model.Study", {
         },
         data: osparc.utils.Utils.getClientSessionID()
       };
-      osparc.data.Resources.fetch("studies", "open", params)
-        .then(data => this.getWorkbench().initWorkbench())
-        .catch(err => console.error(err));
+      return osparc.data.Resources.fetch("studies", "open", params);
     },
 
     closeStudy: function() {
