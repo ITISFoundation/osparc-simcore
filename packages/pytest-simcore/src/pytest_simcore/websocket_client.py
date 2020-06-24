@@ -32,17 +32,23 @@ async def socketio_url(loop, client) -> str:
 
 
 @pytest.fixture()
-async def socketio_client(socketio_url: str, security_cookie: str):
+async def socketio_client(
+    socketio_url: str, security_cookie: str
+) -> socketio.AsyncClient:
     clients = []
 
     async def connect(client_session_id) -> socketio.AsyncClient:
-        sio = socketio.AsyncClient(ssl_verify=False)    # enginio 3.10.0 introduced ssl verification
-        url = str(URL(socketio_url).with_query({'client_session_id': client_session_id}))
+        sio = socketio.AsyncClient(
+            ssl_verify=False
+        )  # enginio 3.10.0 introduced ssl verification
+        url = str(
+            URL(socketio_url).with_query({"client_session_id": client_session_id})
+        )
 
         headers = {}
         if security_cookie:
             # WARNING: engineio fails with empty cookies. Expects "key=value"
-            headers.update({'Cookie': security_cookie})
+            headers.update({"Cookie": security_cookie})
 
         await sio.connect(url, headers=headers)
         assert sio.sid

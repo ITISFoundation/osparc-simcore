@@ -89,22 +89,6 @@ async def logged_user(client, user_role: UserRole):
         print("<----- logged out user", user_role)
 
 
-@pytest.fixture()
-async def logged_user2(client, user_role: UserRole):
-    """ adds a user in db and logs in with client
-
-    NOTE: `user_role` fixture is defined as a parametrization below!!!
-    """
-    async with LoggedUser(
-        client,
-        {"role": user_role.name},
-        check_if_succeeds=user_role != UserRole.ANONYMOUS,
-    ) as user:
-        print("-----> logged in user", user_role)
-        yield user
-        print("<----- logged out user", user_role)
-
-
 @pytest.fixture
 async def empty_user_project(client, empty_project, logged_user):
     project = empty_project()
