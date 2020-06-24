@@ -93,6 +93,11 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/projects/{projectId}:close"
           },
+          state: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{projectId}/state"
+          },
           post: {
             method: "POST",
             url: statics.API + "/projects"
