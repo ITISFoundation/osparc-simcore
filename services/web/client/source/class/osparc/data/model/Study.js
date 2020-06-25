@@ -141,6 +141,7 @@ qx.Class.define("osparc.data.model.Study", {
         tags: []
       };
     },
+
     updateStudy: function(params) {
       return osparc.data.Resources.fetch("studies", "put", {
         url: {
@@ -151,6 +152,10 @@ qx.Class.define("osparc.data.model.Study", {
         qx.event.message.Bus.getInstance().dispatchByName("updateStudy", data);
         return data;
       });
+    },
+
+    getProperties: function() {
+      return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Study));
     }
   },
 
@@ -188,14 +193,14 @@ qx.Class.define("osparc.data.model.Study", {
 
     serializeStudy: function() {
       let jsonObject = {};
-      const properties = this.constructor.$$properties;
-      for (let key in properties) {
+      const propertyKeys = this.self().getProperties();
+      propertyKeys.forEach(key => {
         const value = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
         if (value !== null) {
           // only put the value in the payload if there is a value
           jsonObject[key] = value;
         }
-      }
+      });
       return jsonObject;
     },
 
