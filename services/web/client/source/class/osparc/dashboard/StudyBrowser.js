@@ -286,8 +286,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       studiesTitleContainer.add(studiesDeleteButton);
       userStudyContainer.addListener("changeSelection", e => {
         const nSelected = e.getData().length;
+        this.__newStudyBtn.setEnabled(!nSelected);
         this.__userStudyContainer.getChildren().forEach(userStudyItem => {
-          userStudyItem.multiSelection(nSelected);
+          if (userStudyItem instanceof osparc.dashboard.StudyBrowserButtonItem) {
+            userStudyItem.multiSelection(nSelected);
+          }
         });
         this.__updateDeleteStudiesButton(studiesDeleteButton);
       }, this);
@@ -308,11 +311,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       templatesTitleContainer.add(templateDeleteButton);
       templateStudyContainer.addListener("changeSelection", e => {
         const nSelected = e.getData().length;
-        this.__newStudyBtn.setEnabled(!nSelected);
         this.__templateStudyContainer.getChildren().forEach(templateStudyItem => {
-          if (templateStudyItem instanceof osparc.dashboard.StudyBrowserButtonItem) {
-            templateStudyItem.multiSelection(nSelected);
-          }
+          templateStudyItem.multiSelection(nSelected);
         });
         this.__updateDeleteTemplatesButton(templateDeleteButton);
       }, this);
