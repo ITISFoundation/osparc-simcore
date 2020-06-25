@@ -189,7 +189,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       textfield.addListener("appear", () => {
         textfield.focus();
       }, this);
-      osparc.store.Store.getInstance().addListener("changeTags", () => this.__resetStudyList(osparc.store.Store.getInstance().getStudies()), this);
     },
 
     __createStudyFromServiceBtnClkd: function(serviceKey) {
