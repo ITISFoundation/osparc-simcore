@@ -24,5 +24,5 @@ class DAGAtDB(DAGBase):
         orm_mode = True
 
 
-class DAG(DAGAtDB):
+class DAGData(DAGAtDB):
     workbench: Optional[Dict[str, project.Node]]

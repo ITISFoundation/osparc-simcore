@@ -1,3 +1,3 @@
-from simcore_postgres_database.models.direct_acyclic_graphs import DAG, dags
+from simcore_postgres_database.models.direct_acyclic_graphs import dags
 
-__all__ = ["dags", "DAG"]
+__all__ = ["dags"]

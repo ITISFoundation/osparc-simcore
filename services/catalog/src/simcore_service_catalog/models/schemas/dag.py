@@ -1,7 +1,7 @@
 from typing import Dict, Optional
 
 from ..domain import project
-from ..domain.dag import DAG, DAGBase
+from ..domain.dag import DAGBase, DAGData
 
 
 class DAGIn(DAGBase):
@@ -16,5 +16,5 @@ class DAGInPath(DAGBase):
     workbench: Optional[Dict[str, project.Node]]
 
 
-class DAGOut(DAG):
+class DAGOut(DAGData):
     pass
