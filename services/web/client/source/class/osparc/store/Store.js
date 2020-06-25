@@ -197,6 +197,42 @@ qx.Class.define("osparc.store.Store", {
       }
     },
 
+    getStudyWState: function(studyId, reload = false) {
+      return new Promise((resolve, reject) => {
+        const studiesWStateCache = this.getStudies();
+        const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
+        if (!reload && idx !== -1) {
+          resolve(studiesWStateCache[idx]);
+        }
+        const params = {
+          url: {
+            "projectId": studyId
+          }
+        };
+        osparc.data.Resources.getOne("studies", params)
+          .then(study => {
+            osparc.data.Resources.fetch("studies", "state", params)
+              .then(state => {
+                study["locked"] = state["locked"];
+                if (idx === -1) {
+                  studiesWStateCache.push(study);
+                } else {
+                  studiesWStateCache[idx] = study;
+                }
+                resolve(study);
+              })
+              .catch(er => {
+                console.error(er);
+                reject();
+              });
+          })
+          .catch(err => {
+            console.error(err);
+            reject();
+          });
+      });
+    },
+
     /**
      * This function provides the list of studies with their state
      * @param {Boolean} reload ?

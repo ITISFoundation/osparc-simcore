@@ -91,13 +91,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__itemSelected(null);
     },
 
-    __reloadUserStudy: function(studyId) {
-      const params = {
-        url: {
-          projectId: studyId
-        }
-      };
-      osparc.data.Resources.getOne("studies", params)
+    __reloadUserStudy: function(studyId, reload) {
+      osparc.store.Store.getInstance().getStudyWState(studyId, reload)
         .then(studyData => {
           this.__resetStudyItem(studyData);
         })
@@ -279,12 +274,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getStudyAndStart: function(loadStudyId) {
-      const params = {
-        url: {
-          projectId: loadStudyId
-        }
-      };
-      osparc.data.Resources.getOne("studies", params)
+      osparc.store.Store.getStudyWState(loadStudyId, true)
         .then(studyData => {
           this.__startStudy(studyData);
         })
@@ -542,7 +532,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const permissionsView = new osparc.component.export.Permissions(studyData);
         permissionsView.addListener("updateStudy", e => {
           const studyId = e.getData();
-          this.__reloadUserStudy(studyId);
+          this.__reloadUserStudy(studyId, true);
         }, this);
         const window = permissionsView.createWindow();
         permissionsView.addListener("finished", e => {
