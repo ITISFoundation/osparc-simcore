@@ -411,10 +411,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __resetStudyItem: function(studyData) {
       const userStudyList = this.__userStudies;
       const index = userStudyList.findIndex(userStudy => userStudy["uuid"] === studyData["uuid"]);
-      if (index !== -1) {
-        this.__userStudies[index] = studyData;
-        this.__resetStudyList(userStudyList);
+      if (index === -1) {
+        userStudyList.push(studyData);
+      } else {
+        userStudyList[index] = studyData;
       }
+      this.__resetStudyList(userStudyList);
     },
 
     __resetStudyList: function(userStudyList) {
