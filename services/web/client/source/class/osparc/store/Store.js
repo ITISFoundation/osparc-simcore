@@ -198,6 +198,49 @@ qx.Class.define("osparc.store.Store", {
     },
 
     /**
+     * This function provides the list of studies with their state
+     * @param {Boolean} reload ?
+     */
+    getStudiesWState: function(reload = false) {
+      return new Promise((resolve, reject) => {
+        const studiesWStateCache = this.getStudies();
+        if (!reload && studiesWStateCache.length !== 0) {
+          resolve(studiesWStateCache);
+        }
+        studiesWStateCache.length = 0;
+        osparc.data.Resources.get("studies")
+          .then(studies => {
+            const studiesWStatePromises = [];
+            studies.forEach(study => {
+              const params = {
+                url: {
+                  "projectId": study.uuid
+                }
+              };
+              studiesWStatePromises.push(osparc.data.Resources.fetch("studies", "state", params));
+            });
+            Promise.all(studiesWStatePromises)
+              .then(studyStates => {
+                studyStates.forEach((studyState, idx) => {
+                  const study = studies[idx];
+                  study["locked"] = studyState["locked"];
+                  studiesWStateCache.push(study);
+                });
+                resolve(studiesWStateCache);
+              })
+              .catch(er => {
+                console.error(er);
+                reject();
+              });
+          })
+          .catch(err => {
+            console.error(err);
+            reject();
+          });
+      });
+    },
+
+    /**
      * This functions does the needed processing in order to have a working list of services and DAGs.
      * @param {Boolean} reload ?
      */

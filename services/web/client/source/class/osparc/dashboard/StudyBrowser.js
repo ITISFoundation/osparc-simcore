@@ -112,7 +112,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
      */
     reloadUserStudies: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
-        osparc.data.Resources.get("studies")
+        osparc.store.Store.getInstance().getStudiesWState()
           .then(studies => {
             this.__resetStudyList(studies);
             this.__itemSelected(null);
@@ -469,6 +469,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         accessRights: study.accessRights ? study.accessRights : null,
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
         icon: study.thumbnail || (isTemplate ? "@FontAwesome5Solid/copy/50" : "@FontAwesome5Solid/file-alt/50"),
+        locked: study.locked ? study.locked : false,
         tags
       });
       const menu = this.__getStudyItemMenu(item, study, isTemplate);
