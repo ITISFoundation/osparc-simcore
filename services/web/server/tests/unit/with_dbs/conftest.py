@@ -246,15 +246,14 @@ def socketio_url(client) -> Callable:
 
     yield create_url
 
-
+from pytest_simcore.helpers.utils_assert import assert_status
+from aiohttp import web
 @pytest.fixture()
 async def security_cookie(client) -> Callable:
     async def creator(client_override: Optional = None) -> str:
         # get the cookie by calling the root entrypoint
         resp = await (client_override or client).get("/v0/")
-        payload = await resp.json()
-        assert resp.status == 200, str(payload)
-        data, error = unwrap_envelope(payload)
+        data, error = await assert_status(resp, web.HTTPOk)
         assert data
         assert not error
 
