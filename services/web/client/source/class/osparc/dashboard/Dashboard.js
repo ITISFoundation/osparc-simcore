@@ -56,10 +56,15 @@ qx.Class.define("osparc.dashboard.Dashboard", {
   },
 
   members: {
-    __prjBrowser: null,
+    __studyBrowser: null,
+    __exploreBrowser: null,
 
     getStudyBrowser: function() {
-      return this.__prjBrowser;
+      return this.__studyBrowser;
+    },
+
+    getExploreBrowser: function() {
+      return this.__exploreBrowser;
     },
 
     __createMainViewLayout: function() {
@@ -93,7 +98,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     },
 
     __createStudyBrowser: function() {
-      const studiesView = this.__prjBrowser = new osparc.dashboard.StudyBrowser();
+      const studiesView = this.__studyBrowser = new osparc.dashboard.StudyBrowser();
       return studiesView;
     },
 
@@ -103,7 +108,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     },
 
     __createExploreBrowser: function() {
-      const exploreView = new osparc.dashboard.ExploreBrowser();
+      const exploreView = this.__exploreBrowser = new osparc.dashboard.ExploreBrowser();
       return exploreView;
     }
   }

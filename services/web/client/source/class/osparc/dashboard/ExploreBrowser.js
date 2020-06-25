@@ -72,7 +72,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     /**
      *  Function that asks the backend for the list of template studies and sets it
      */
-    reloadTemplateStudies: function() {
+    __reloadTemplateStudies: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.templates.read")) {
         osparc.data.Resources.get("templates")
           .then(templates => {
@@ -89,7 +89,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     /**
      *  Function that asks the backend for the list of services and sets it
      */
-    reloadServices: function() {
+    __reloadServices: function() {
       const store = osparc.store.Store.getInstance();
       store.getServicesDAGs()
         .then(services => {
@@ -125,8 +125,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __reloadResources: function() {
-      this.reloadTemplateStudies();
-      this.reloadServices();
+      this.__reloadTemplateStudies();
+      this.__reloadServices();
     },
 
     __getTags: function() {
@@ -175,23 +175,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __createTemplateStudiesLayout: function() {
       const templateStudyContainer = this.__templateStudyContainer = this.__createTemplateStudyList();
       const tempStudyLayout = this.__createButtonsLayout(this.tr("Templates"), templateStudyContainer);
-
-      const templatesTitleContainer = tempStudyLayout.getTitleBar();
-
-      // Delete Templates Button
-      const templateDeleteButton = this.__createDeleteButton(true);
-      templatesTitleContainer.add(new qx.ui.core.Spacer(20, null));
-      templatesTitleContainer.add(templateDeleteButton);
-      templateStudyContainer.addListener("changeSelection", e => {
-        const nSelected = e.getData().length;
-        this.__templateStudyContainer.getChildren().forEach(templateStudyItem => {
-          if (templateStudyItem instanceof osparc.dashboard.StudyBrowserButtonItem) {
-            templateStudyItem.multiSelection(nSelected);
-          }
-        });
-        this.__updateDeleteTemplatesButton(templateDeleteButton);
-      }, this);
-
       return tempStudyLayout;
     },
 
@@ -199,25 +182,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const servicesContainer = this.__servicesContainer = this.__createServicesList();
       const servicesLayout = this.__createButtonsLayout(this.tr("Apps"), servicesContainer);
       return servicesLayout;
-    },
-
-    __createDeleteButton: function(areTemplates) {
-      const deleteButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14").set({
-        visibility: "excluded"
-      });
-      osparc.utils.Utils.setIdToWidget(deleteButton, "deleteStudiesBtn");
-      deleteButton.addListener("execute", () => {
-        const selection = this.__templateStudyContainer.getSelection();
-        const win = this.__createConfirmWindow(selection.length > 1);
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            this.__deleteStudies(selection.map(button => this.__getStudyData(button.getUuid(), areTemplates)), areTemplates);
-          }
-        }, this);
-      }, this);
-      return deleteButton;
     },
 
     __attachEventHandlers: function() {
@@ -270,32 +234,20 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
     __createStudy: function(minStudyData, templateId) {
       this.__showLoadingPage(this.tr("Creating ") + (minStudyData.name || this.tr("Study")));
-      if (templateId) {
-        const params = {
-          url: {
-            templateId: templateId
-          },
-          data: minStudyData
-        };
-        osparc.data.Resources.fetch("studies", "postFromTemplate", params)
-          .then(studyData => {
-            this.__startStudy(studyData);
-          })
-          .catch(err => {
-            console.error(err);
-          });
-      } else {
-        const params = {
-          data: minStudyData
-        };
-        osparc.data.Resources.fetch("studies", "post", params)
-          .then(studyData => {
-            this.__startStudy(studyData);
-          })
-          .catch(err => {
-            console.error(err);
-          });
-      }
+
+      const params = {
+        url: {
+          templateId: templateId
+        },
+        data: minStudyData
+      };
+      osparc.data.Resources.fetch("studies", "postFromTemplate", params)
+        .then(studyData => {
+          this.__startStudy(studyData);
+        })
+        .catch(err => {
+          console.error(err);
+        });
     },
 
     __startStudy: function(studyData) {
@@ -377,9 +329,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         case "service":
           defaultThumbnail = "@FontAwesome5Solid/paw/50";
           break;
-        case "study":
-          defaultThumbnail = "@FontAwesome5Solid/file-alt/50";
-          break;
       }
       const tags = study.tags ? osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id)) : [];
 
@@ -409,11 +358,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         position: "bottom-right"
       });
 
-      const selectButton = this.__getSelectMenuButton(item, studyData, true);
-      if (selectButton) {
-        menu.add(selectButton);
-      }
-
       const moreInfoButton = this.__getMoreInfoMenuButton(studyData, true);
       if (moreInfoButton) {
         menu.add(moreInfoButton);
@@ -428,18 +372,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       return menu;
     },
 
-    __getSelectMenuButton: function(item, studyData, isTemplate) {
-      if (studyData["resourceType"] === "service") {
-        return null;
-      }
-      const selectButton = new qx.ui.menu.Button(this.tr("Select"));
-      selectButton.addListener("execute", () => {
-        item.setValue(true);
-        this.__itemMultiSelected(item, isTemplate);
-      }, this);
-      return selectButton;
-    },
-
     __getMoreInfoMenuButton: function(studyData, isTemplate) {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
@@ -449,7 +381,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
           win.center();
         } else {
           const winWidth = 400;
-          this.__createStudyDetailsEditor(studyData, isTemplate, winWidth);
+          this.__createStudyDetailsEditor(studyData, winWidth);
         }
       }, this);
       return moreInfoButton;
@@ -476,9 +408,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       return deleteButton;
     },
 
-    __getStudyData: function(id, isTemplate) {
-      const matchesId = study => study.uuid === id;
-      return isTemplate ? this.__templateStudies.find(matchesId) : this.__userStudies.find(matchesId);
+    __getTemplateData: function(id) {
+      return ;
     },
 
     __itemClicked: function(item) {
@@ -486,16 +417,15 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         const serviceKey = item.getUuid();
         this.__createStudyFromServiceBtnClkd(serviceKey);
       } else {
-        const isTemplate = item.isResourceType("template");
-        const studyData = this.__getStudyData(item.getUuid(), isTemplate);
+        const matchesId = study => study.uuid === item.getUuid();
+        const studyData = this.__templateStudies.find(matchesId);
         this.__startStudy(studyData);
       }
     },
 
     __createStudyDetailsEditor: function(studyData, winWidth) {
       const studyDetails = new osparc.component.metadata.StudyDetailsEditor(studyData, true, winWidth);
-      studyDetails.addListener("updateStudy", () => this.reloadUserStudies(), this);
-      studyDetails.addListener("updateTemplate", () => this.reloadTemplateStudies(), this);
+      studyDetails.addListener("updateTemplate", () => this.__reloadTemplateStudies(), this);
       studyDetails.addListener("openStudy", () => {
         this.__createStudyBtnClkd(studyData);
       }, this);
@@ -507,6 +437,13 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const title = this.tr("Study Details Editor");
       const win = osparc.component.metadata.StudyDetailsEditor.popUpInWindow(title, studyDetails, winWidth, height);
       studyDetails.addListener("updateTemplate", () => win.close());
+    },
+
+    __createStudyBtnClkd: function(templateData) {
+      const minStudyData = osparc.data.model.Study.createMinimumStudyObject();
+      minStudyData["name"] = templateData.name;
+      minStudyData["description"] = templateData.description;
+      this.__createStudy(minStudyData, templateData.uuid);
     },
 
     __updateDeleteTemplatesButton: function(templateDeleteButton) {
@@ -557,12 +494,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
           console.error(err);
           osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");
         });
-    },
-
-    __deleteStudies: function(studiesData, areTemplates = false) {
-      studiesData.forEach(studyData => {
-        this.__deleteStudy(studyData, areTemplates);
-      });
     },
 
     __createConfirmWindow: function(isMulti) {

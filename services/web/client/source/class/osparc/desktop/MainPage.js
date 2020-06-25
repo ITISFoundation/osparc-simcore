@@ -91,10 +91,15 @@ qx.Class.define("osparc.desktop.MainPage", {
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard().set({
         width: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) + 10 // padding + scrollbar
       });
-      dashboard.getStudyBrowser().addListener("startStudy", e => {
-        const studyEditor = e.getData();
-        this.__startStudyEditor(studyEditor);
-      }, this);
+      [
+        dashboard.getStudyBrowser(),
+        dashboard.getExploreBrowser()
+      ].forEach(studyStarter => {
+        studyStarter.addListener("startStudy", e => {
+          const studyEditor = e.getData();
+          this.__startStudyEditor(studyEditor);
+        }, this);
+      });
 
       const dashboardLayout = this.__dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       dashboardLayout.add(new qx.ui.core.Widget(), {
