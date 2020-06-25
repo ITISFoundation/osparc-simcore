@@ -11,9 +11,9 @@ import pytest
 
 import simcore_service_catalog
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
 pytest_plugins = ["pytest_simcore.postgres_service2"]
+
+current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 ## FOLDER LAYOUT ------
