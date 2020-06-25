@@ -38,15 +38,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       qx.locale.Date.getTimeFormat("short")
     );
 
-    this.addListener("changeValue", e => {
-      const val = this.getValue();
-
-      const tick = this.getChildControl("tick-selected");
-      tick.setVisibility(val ? "visible" : "excluded");
-
-      const untick = this.getChildControl("tick-unselected");
-      untick.setVisibility(val ? "excluded" : "visible");
-    });
+    this.addListener("changeValue", this.__itemSelected, this);
   },
 
   properties: {
@@ -113,7 +105,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
   },
 
   statics: {
-    MENU_BTN_Z: 20,
     MENU_BTN_WIDTH: 25,
     SHARED_USER: "@FontAwesome5Solid/user/14",
     SHARED_ORGS: "@FontAwesome5Solid/users/14",
@@ -126,7 +117,30 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     multiSelection: function(on) {
       const menuButton = this.getChildControl("menu-button");
-      menuButton.setVisibility(on ? "excluded" : "visible");
+      if (on) {
+        menuButton.setVisibility("excluded");
+        this.__itemSelected();
+      } else {
+        menuButton.setVisibility("visible");
+        const tick = this.getChildControl("tick-selected");
+        tick.setVisibility("excluded");
+        const untick = this.getChildControl("tick-unselected");
+        untick.setVisibility("excluded");
+      }
+    },
+
+    __itemSelected: function() {
+      const selected = this.getValue();
+
+      if (this.getLocked() && selected) {
+        this.setValue(false);
+      }
+
+      const tick = this.getChildControl("tick-selected");
+      tick.setVisibility(selected ? "visible" : "excluded");
+
+      const untick = this.getChildControl("tick-unselected");
+      untick.setVisibility(selected ? "excluded" : "visible");
     },
 
     // overridden
@@ -138,7 +152,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             width: this.self().MENU_BTN_WIDTH,
             height: this.self().MENU_BTN_WIDTH,
             icon: "@FontAwesome5Solid/ellipsis-v/14",
-            zIndex: this.self().MENU_BTN_Z,
             focusable: false
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
@@ -148,18 +161,14 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           });
           break;
         case "tick-unselected":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16").set({
-            zIndex: this.self().MENU_BTN_Z-1
-          });
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16");
           this._add(control, {
             top: 4,
             right: 4
           });
           break;
         case "tick-selected":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/check-circle/16").set({
-            zIndex: this.self().MENU_BTN_Z-1
-          });
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/check-circle/16");
           this._add(control, {
             top: 4,
             right: 4
@@ -330,7 +339,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyLocked: function(locked) {
-      this.setCursor(locked ? "not-allowed" : "pointer");
+      this.set({
+        cursor: locked ? "not-allowed" : "pointer"
+      });
 
       this._getChildren().forEach(item => {
         item.setOpacity(locked ? 0.4 : 1.0);
@@ -339,6 +350,17 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       const lock = this.getChildControl("lock");
       lock.setOpacity(1.0);
       lock.setVisibility(locked ? "visible" : "excluded");
+
+      [
+        "menu-button",
+        "tick-unselected",
+        "tick-selected"
+      ].forEach(childName => {
+        const child = this.getChildControl(childName);
+        child.set({
+          enabled: !locked
+        });
+      });
     },
 
     _shouldApplyFilter: function(data) {
