@@ -77,9 +77,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       },
       "services": {
         "label": "Apps"
-      },
-      "studies": {
-        "label": "Recent studies"
       }
     }
   },
@@ -178,7 +175,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __initResources: function() {
-      this.__showLoadingPage(this.tr("Loading Studies and Apps"));
+      this.__showLoadingPage(this.tr("Loading Studies"));
 
       const servicesTags = this.__getTags();
       const store = osparc.store.Store.getInstance();
@@ -278,9 +275,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createUserStudiesLayout: function() {
-      const resource = this.self().resources["studies"];
       const userStudyContainer = this.__userStudyContainer = this.__createUserStudyList();
-      const userStudyLayout = this.__createButtonsLayout(resource["label"], userStudyContainer);
+      const userStudyLayout = this.__createButtonsLayout(this.tr("Recent studies"), userStudyContainer);
 
       const studiesTitleContainer = userStudyLayout.getTitleBar();
 
@@ -519,6 +515,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __resetStudyList: function(userStudyList) {
       this.__userStudies = userStudyList;
       this.__userStudyContainer.removeAll();
+      this.__userStudyContainer.add(this.__createNewStudyButton());
       this.self().sortStudyList(userStudyList);
       userStudyList.forEach(userStudy => {
         userStudy["resourceType"] = "study";
@@ -530,7 +527,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __resetTemplateList: function(tempStudyList) {
       this.__templateStudies = tempStudyList;
       this.__templateStudyContainer.removeAll();
-      this.__templateStudyContainer.add(this.__createNewStudyButton());
       this.self().sortStudyList(tempStudyList);
       tempStudyList.forEach(tempStudy => {
         tempStudy["resourceType"] = "template";
