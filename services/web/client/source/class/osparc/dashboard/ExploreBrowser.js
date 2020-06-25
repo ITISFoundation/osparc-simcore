@@ -408,10 +408,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       return deleteButton;
     },
 
-    __getTemplateData: function(id) {
-      return ;
-    },
-
     __itemClicked: function(item) {
       if (item.isResourceType("service")) {
         const serviceKey = item.getUuid();
@@ -421,6 +417,14 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         const studyData = this.__templateStudies.find(matchesId);
         this.__startStudy(studyData);
       }
+
+      if (this.__templateStudyContainer) {
+        this.__templateStudyContainer.resetSelection();
+      }
+      if (this.__servicesContainer) {
+        this.__servicesContainer.resetSelection();
+      }
+
     },
 
     __createStudyDetailsEditor: function(studyData, winWidth) {
