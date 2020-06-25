@@ -258,10 +258,10 @@ qx.Class.define("osparc.store.Store", {
               studiesWStatePromises.push(osparc.data.Resources.fetch("studies", "state", params));
             });
             Promise.all(studiesWStatePromises)
-              .then(studyStates => {
-                studyStates.forEach((studyState, idx) => {
+              .then(states => {
+                states.forEach((state, idx) => {
                   const study = studies[idx];
-                  study["locked"] = studyState["locked"];
+                  study["locked"] = state["locked"];
                   studiesWStateCache.push(study);
                 });
                 resolve(studiesWStateCache);
