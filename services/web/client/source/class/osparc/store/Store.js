@@ -240,7 +240,7 @@ qx.Class.define("osparc.store.Store", {
     getStudiesWState: function(reload = false) {
       return new Promise((resolve, reject) => {
         const studiesWStateCache = this.getStudies();
-        if (!reload && studiesWStateCache.length !== 0) {
+        if (!reload && studiesWStateCache.length) {
           resolve(studiesWStateCache);
         }
         studiesWStateCache.length = 0;
