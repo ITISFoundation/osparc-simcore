@@ -350,9 +350,13 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getVisibleMembers: function() {
-      const reachableMembers = this.getReachableMembers();
+    getVisibleMembers: function(reload = false) {
       return new Promise((resolve, reject) => {
+        const reachableMembers = this.getReachableMembers();
+        if (!reload && Object.keys(reachableMembers).length) {
+          resolve(reachableMembers);
+          return;
+        }
         osparc.data.Resources.get("organizations")
           .then(resp => {
             const orgMembersPromises = [];
