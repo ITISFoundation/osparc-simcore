@@ -66,7 +66,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       [
         [this.tr("Studies"), this.__createStudyBrowser],
         // [this.tr("Services"), this.__createServiceBrowser],
-        [this.tr("Data"), this.__createDataBrowser]
+        [this.tr("Data"), this.__createDataBrowser],
+        [this.tr("Discover"), this.__createExploreBrowser]
       ].forEach(tuple => {
         const tabPage = new qx.ui.tabview.Page(tuple[0]).set({
           appearance: "dashboard-page"
