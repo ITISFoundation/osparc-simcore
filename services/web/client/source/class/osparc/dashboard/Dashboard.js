@@ -57,19 +57,9 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
   members: {
     __prjBrowser: null,
-    __serviceBrowser: null,
-    __dataManager: null,
 
     getStudyBrowser: function() {
       return this.__prjBrowser;
-    },
-
-    getServiceBrowser: function() {
-      return this.__serviceBrowser;
-    },
-
-    getDataManager: function() {
-      return this.__dataManager;
     },
 
     __createMainViewLayout: function() {
@@ -106,14 +96,14 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       return studiesView;
     },
 
-    __createServiceBrowser: function() {
-      const servicesView = this.__serviceBrowser = new osparc.dashboard.ServiceBrowser();
-      return servicesView;
+    __createDataBrowser: function() {
+      const dataManagerView = new osparc.dashboard.DataBrowser();
+      return dataManagerView;
     },
 
-    __createDataBrowser: function() {
-      const dataManagerView = this.__dataManager = new osparc.dashboard.DataBrowser();
-      return dataManagerView;
+    __createExploreBrowser: function() {
+      const exploreView = new osparc.dashboard.ExploreBrowser();
+      return exploreView;
     }
   }
 });
