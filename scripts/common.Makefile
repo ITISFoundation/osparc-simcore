@@ -109,6 +109,18 @@ autoformat: ## runs black python formatter on this service's code. Use AFTER mak
 mypy: $(REPO_BASE_DIR)/scripts/mypy.bash $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type checker on this services's code. Use AFTER make install-*
 	@$(REPO_BASE_DIR)/scripts/mypy.bash src
 
+.PHONY: code-analysis
+code-analysis: $(REPO_BASE_DIR)/.codeclimate.yml ## runs code-climate analysis
+	# Copying config
+	cp $(REPO_BASE_DIR)/.codeclimate.yml $(CURDIR)/.codeclimate.yml
+	# Validates $< at ${PWD}
+	$(REPO_BASE_DIR)/scripts/code-climate.bash validate-config
+	# Running analysis
+	$(REPO_BASE_DIR)/scripts/code-climate.bash analyze
+	# Removing tmp config
+	@-rm $(CURDIR)/.codeclimate.yml
+
+
 .PHONY: version-patch version-minor version-major
 version-patch: ## commits version with bug fixes not affecting the cookiecuter config
 	$(_bumpversion)

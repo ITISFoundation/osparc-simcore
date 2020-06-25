@@ -151,3 +151,7 @@ prof/
 
 # outputs from make
 .stack-*.yml
+
+
+# Copies
+services/**/.codeclimate.yml
