@@ -143,7 +143,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this.__userStudies = [];
       this.__templateStudies = [];
-      this.__getTags()
+      const resourcePromises = [];
+      const store = osparc.store.Store.getInstance();
+      resourcePromises.push(store.getVisibleMembers());
+      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
+        resourcePromises.push(osparc.data.Resources.get("tags"));
+      }
+      Promise.all(resourcePromises)
         .then(() => {
           this.__hideLoadingPage();
           this.__createStudiesLayout();
@@ -153,7 +159,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (loadStudyId) {
             this.__getStudyAndStart(loadStudyId);
           }
-        });
+        })
+        .catch(console.error);
     },
 
     __reloadStudies: function() {
@@ -179,18 +186,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => {
           console.error(err);
         });
-    },
-
-    __getTags: function() {
-      return new Promise((resolve, reject) => {
-        if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
-          osparc.data.Resources.get("tags")
-            .catch(console.error)
-            .finally(() => resolve());
-        } else {
-          resolve();
-        }
-      });
     },
 
     __createStudiesLayout: function() {

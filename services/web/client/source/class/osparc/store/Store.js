@@ -362,19 +362,12 @@ qx.Class.define("osparc.store.Store", {
             const orgMembersPromises = [];
             const orgs = resp["organizations"];
             orgs.forEach(org => {
-              orgMembersPromises.push(
-                new Promise((resolve2, reject2) => {
-                  const params = {
-                    url: {
-                      "gid": org["gid"]
-                    }
-                  };
-                  osparc.data.Resources.get("organizationMembers", params)
-                    .then(orgMembers => {
-                      resolve2(orgMembers);
-                    });
-                })
-              );
+              const params = {
+                url: {
+                  "gid": org["gid"]
+                }
+              };
+              orgMembersPromises.push(osparc.data.Resources.get("organizationMembers", params));
             });
             Promise.all(orgMembersPromises)
               .then(orgMemberss => {
