@@ -673,29 +673,28 @@ class DataStorageManager:
 
             # Step 2: List all references in outputs that point to datcore and copy over
             for node_id, node in destination_project["workbench"].items():
-                outputs = node.get("outputs")
-                if outputs is not None:
-                    for _output_key, output in outputs.items():
-                        if "store" in output and output["store"] == DATCORE_ID:
-                            src = output["path"]
-                            dest = str(Path(dest_folder) / node_id)
-                            logger.info("Need to copy %s to %s", src, dest)
-                            dest = await self.copy_file_datcore_s3(
-                                user_id=user_id,
-                                dest_uuid=dest,
-                                source_uuid=src,
-                                filename_missing=True,
-                            )
-                            # and change the dest project accordingly
-                            output["store"] = SIMCORE_S3_ID
-                            output["path"] = dest
-                        elif "store" in output and output["store"] == SIMCORE_S3_ID:
-                            source = output["path"]
-                            dest = dest = str(
-                                Path(dest_folder) / node_id / Path(source).name
-                            )
-                            output["store"] = SIMCORE_S3_ID
-                            output["path"] = dest
+                outputs = node.get("outputs", [])
+                for _output_key, output in outputs.items():
+                    if "store" in output and output["store"] == DATCORE_ID:
+                        src = output["path"]
+                        dest = str(Path(dest_folder) / node_id)
+                        logger.info("Need to copy %s to %s", src, dest)
+                        dest = await self.copy_file_datcore_s3(
+                            user_id=user_id,
+                            dest_uuid=dest,
+                            source_uuid=src,
+                            filename_missing=True,
+                        )
+                        # and change the dest project accordingly
+                        output["store"] = SIMCORE_S3_ID
+                        output["path"] = dest
+                    elif "store" in output and output["store"] == SIMCORE_S3_ID:
+                        source = output["path"]
+                        dest = dest = str(
+                            Path(dest_folder) / node_id / Path(source).name
+                        )
+                        output["store"] = SIMCORE_S3_ID
+                        output["path"] = dest
 
         # step 3: list files first to create fmds
         session = aiobotocore.get_session()
