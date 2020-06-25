@@ -6,7 +6,7 @@ import shutil
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
 
 import aiobotocore
 import aiofiles
@@ -43,7 +43,6 @@ from .settings import (
     SIMCORE_S3_ID,
     SIMCORE_S3_STR,
 )
-
 
 # pylint: disable=no-value-for-parameter
 # FIXME: E1120:No value for argument 'dml' in method call

@@ -9,12 +9,12 @@ import attr
 
 from simcore_postgres_database.storage_models import (
     file_meta_data,
+    groups,
     metadata,
     projects,
     tokens,
-    users,
-    groups,
     user_to_groups,
+    users,
 )
 from simcore_service_storage.settings import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 

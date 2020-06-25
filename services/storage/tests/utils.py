@@ -11,10 +11,10 @@ import sqlalchemy as sa
 from simcore_service_storage.models import (
     FileMetaData,
     file_meta_data,
-    projects,
-    users,
     groups,
+    projects,
     user_to_groups,
+    users,
 )
 
 log = logging.getLogger(__name__)

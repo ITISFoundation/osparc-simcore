@@ -74,9 +74,7 @@ class DatcoreWrapper:
             )
         except Exception:
             self.d_client = None  # Disabled: any call will raise AttributeError
-            logger.warning(
-                "Failed to setup datcore. Disabling client.", exc_info=True
-            )
+            logger.warning("Failed to setup datcore. Disabling client.", exc_info=True)
 
     @property
     def is_communication_enabled(self) -> bool:

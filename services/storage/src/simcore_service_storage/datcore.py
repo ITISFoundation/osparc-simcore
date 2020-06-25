@@ -14,6 +14,7 @@ from typing import List
 
 from blackfynn import Blackfynn
 from blackfynn.models import BaseCollection, Collection, DataPackage
+
 from simcore_service_storage.models import DatasetMetaData, FileMetaData, FileMetaDataEx
 from simcore_service_storage.settings import DATCORE_ID, DATCORE_STR
 
@@ -345,7 +346,7 @@ class DatcoreClient(object):
 
         url = self.download_link(source, filename)
         if url:
-            _file = urllib.URLopener() # nosec
+            _file = urllib.URLopener()  # nosec
             _file.retrieve(url, destination_path)
             return True
         return False
