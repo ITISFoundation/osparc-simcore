@@ -279,9 +279,8 @@ class DataStorageManager:
 
                 # same as above, make sure file is physically present on s3
                 clean_data = []
-                # MaG: This is inefficient: Do this automatically when file is modified
-                _loop = asyncio.get_event_loop()
-                session = aiobotocore.get_session(loop=_loop)
+                # TODO: MaG: This is inefficient: Do this automatically when file is modified
+                session = aiobotocore.get_session()
                 async with session.create_client(
                     "s3",
                     endpoint_url=self.s3_client.endpoint_url,
@@ -636,8 +635,7 @@ class DataStorageManager:
                 uuid_name_dict[new_node_id] = src_node["label"]
 
         # Step 1: List all objects for this project replace them with the destination object name and do a copy at the same time collect some names
-        _loop = asyncio.get_event_loop()
-        session = aiobotocore.get_session(loop=_loop)
+        session = aiobotocore.get_session()
         async with session.create_client(
             "s3",
             endpoint_url=self.s3_client.endpoint_url,
@@ -701,7 +699,7 @@ class DataStorageManager:
                             output["path"] = dest
 
         # step 3: list files first to create fmds
-        session = aiobotocore.get_session(loop=_loop)
+        session = aiobotocore.get_session()
         fmds = []
         async with session.create_client(
             "s3",
@@ -762,8 +760,7 @@ class DataStorageManager:
                 delete_me = delete_me.where(file_meta_data.c.node_id == node_id)
             await conn.execute(delete_me)
 
-        _loop = asyncio.get_event_loop()
-        session = aiobotocore.get_session(loop=_loop)
+        session = aiobotocore.get_session()
         async with session.create_client(
             "s3",
             endpoint_url=self.s3_client.endpoint_url,
