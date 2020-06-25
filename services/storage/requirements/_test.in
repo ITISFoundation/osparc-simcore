@@ -15,9 +15,14 @@ pytest-mock
 pytest-runner
 pytest-sugar
 pylint
+
 # test coverage
 coverage
 coveralls
 codecov
+
 # remote debugging
 ptvsd
+
+# utils
+pandas
