@@ -203,6 +203,7 @@ qx.Class.define("osparc.store.Store", {
         const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
         if (!reload && idx !== -1) {
           resolve(studiesWStateCache[idx]);
+          return;
         }
         const params = {
           url: {
@@ -242,6 +243,7 @@ qx.Class.define("osparc.store.Store", {
         const studiesWStateCache = this.getStudies();
         if (!reload && studiesWStateCache.length) {
           resolve(studiesWStateCache);
+          return;
         }
         studiesWStateCache.length = 0;
         osparc.data.Resources.get("studies")
