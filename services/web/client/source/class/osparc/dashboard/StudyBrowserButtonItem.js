@@ -243,20 +243,18 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         const store = osparc.store.Store.getInstance();
         Promise.all([
           store.getGroupsAll(),
-          store.getGroupsMe(),
           store.getVisibleMembers(),
           store.getGroupsOrganizations()
         ])
           .then(values => {
             const all = values[0];
-            const me = values[1];
             const orgMembs = [];
-            const orgMembers = values[2];
+            const orgMembers = values[1];
             for (const gid of Object.keys(orgMembers)) {
               orgMembs.push(orgMembers[gid]);
             }
-            const orgs = values.length === 4 ? values[3] : [];
-            const groups = [[me], orgMembs, orgs, [all]];
+            const orgs = values.length === 3 ? values[2] : [];
+            const groups = [orgMembs, orgs, [all]];
             this.__setSharedIcon(image, value, groups);
           });
       }
@@ -285,13 +283,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         }
         switch (i) {
           case 0:
-          case 1:
             image.setSource(this.self().SHARED_USER);
             break;
-          case 2:
+          case 1:
             image.setSource(this.self().SHARED_ORGS);
             break;
-          case 3:
+          case 2:
             image.setSource(this.self().SHARED_ALL);
             break;
         }
@@ -302,14 +299,19 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         return;
       }
 
-      let hintText = "";
+      const sharedGrpLabels = [];
+      const maxItems = 6;
       for (let i=0; i<sharedGrps.length; i++) {
-        if (i > 6) {
-          hintText += "...";
+        if (i > maxItems) {
+          sharedGrpLabels.push("...");
           break;
         }
-        hintText += (sharedGrps[i]["label"] + "<br>");
+        const sharedGrpLabel = sharedGrps[i]["label"];
+        if (!sharedGrpLabels.includes(sharedGrpLabel)) {
+          sharedGrpLabels.push(sharedGrpLabel);
+        }
       }
+      const hintText = sharedGrpLabels.join("<br>");
       const hint = new osparc.ui.hint.Hint(image, hintText);
       image.addListener("mouseover", () => hint.show(), this);
       image.addListener("mouseout", () => hint.exclude(), this);
