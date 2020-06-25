@@ -24,7 +24,7 @@ def setup_remote_debugging(force_enabled=False, *, boot_mode=None):
             import ptvsd
 
             ptvsd.enable_attach(
-                address=("0.0.0.0", REMOTE_DEBUG_PORT), redirect_output=True  # nosec
+                address=("0.0.0.0", REMOTE_DEBUG_PORT),  # nosec
             )  # nosec
         except ImportError:
             raise ValueError(

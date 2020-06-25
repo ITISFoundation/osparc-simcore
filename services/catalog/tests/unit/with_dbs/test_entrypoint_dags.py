@@ -4,28 +4,22 @@
 
 from typing import List
 
-import pytest
-from starlette.testclient import TestClient
-
 from simcore_service_catalog.__version__ import api_version
-
-# TODO: app is init globally ... which is bad!
-from simcore_service_catalog.core.application import init_app
-
-
-@pytest.fixture
-def client(environ_context, postgres_service):
-    app = init_app()
-    # TODO: create new web-app everyt
-    with TestClient(app) as cli:
-        yield cli
+from simcore_service_catalog.models.schemas.meta import Meta
 
 
 def test_read_healthcheck(client):
     response = client.get("/")
     assert response.status_code == 200
-    assert "api_version" in response.json()
-    assert response.json()["api_version"] == api_version
+    assert response.text == '":-)"'
+
+
+def test_read_meta(client):
+    response = client.get("/v0/meta")
+    assert response.status_code == 200
+    meta = Meta(**response.json())
+    assert meta.version == api_version
+    assert meta.name == "simcore_service_catalog"
 
 
 def test_list_dags(client):

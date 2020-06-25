@@ -20,14 +20,14 @@ def pylintrc(project_slug_dir, osparc_simcore_root_dir):
     return pylintrc
 
 
-def test_run_pylint(pylintrc, package_dir):
-    assert_pylint_is_passing(pylintrc=pylintrc, package_dir=package_dir)
+def test_run_pylint(pylintrc, installed_package_dir):
+    assert_pylint_is_passing(pylintrc=pylintrc, package_dir=installed_package_dir)
 
 
-def test_no_pdbs_in_place(package_dir):
+def test_no_pdbs_in_place(installed_package_dir):
     MATCH = re.compile(r"pdb.set_trace()")
     EXCLUDE = ["__pycache__", ".git"]
-    for root, dirs, files in os.walk(package_dir):
+    for root, dirs, files in os.walk(installed_package_dir):
         for name in files:
             if name.endswith(".py"):
                 pypth = Path(root) / name
