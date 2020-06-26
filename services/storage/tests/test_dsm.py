@@ -1,9 +1,10 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=unused-variable
+# pylint: disable=unused-argument
+# pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
-# pylint:disable=no-name-in-module
-# pylint:disable=no-member
+# pylint: disable=no-name-in-module
+# pylint: disable=no-member
+# pylint: disable=too-many-branches
 
 import copy
 import datetime
@@ -28,8 +29,6 @@ def test_mockup(dsm_mockup_db):
     assert len(dsm_mockup_db) == 100
 
 
-# Too many branches (13/12) (too-many-branches)
-# pylint: disable=R0912
 async def test_dsm_s3(dsm_mockup_db, dsm_fixture):
     id_name_map = {}
     id_file_count = {}
