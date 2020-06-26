@@ -50,8 +50,6 @@ qx.Class.define("osparc.desktop.MainPage", {
     });
   },
 
-  events: {},
-
   members: {
     __navBar: null,
     __prjStack: null,
