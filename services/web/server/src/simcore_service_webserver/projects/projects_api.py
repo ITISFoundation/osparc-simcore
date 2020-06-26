@@ -334,14 +334,16 @@ class ProjectState(BaseModel):
     locked: bool
 
 
-async def notify_project_state_update(app: web.Application, project: Dict) -> None:
+async def notify_project_state_update(
+    app: web.Application, project: Dict, opened: bool
+) -> None:
     rooms_to_notify = [
         f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
     ]
     messages = {
         SOCKET_IO_PROJECT_UPDATED_EVENT: {
             "project_uuid": project["uuid"],
-            "data": ProjectState(locked=True).dict(),
+            "data": ProjectState(locked=opened).dict(),
         }
     }
 

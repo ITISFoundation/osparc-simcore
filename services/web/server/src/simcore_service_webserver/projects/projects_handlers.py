@@ -3,6 +3,7 @@
 """
 import json
 import logging
+from typing import Dict
 
 from aiohttp import web
 from jsonschema import ValidationError
@@ -307,7 +308,9 @@ async def open_project(request: web.Request) -> web.Response:
         # user id opened project uuid
         await projects_api.start_project_interactive_services(request, project, user_id)
         # notify users that project is now locked
-        await projects_api.notify_project_state_update(request.app, project)
+        await projects_api.notify_project_state_update(
+            request.app, project, opened=True
+        )
 
         return {"data": project}
     except ProjectNotFoundError:
@@ -327,21 +330,27 @@ async def close_project(request: web.Request) -> web.Response:
         from .projects_api import get_project_for_user
 
         with managed_resource(user_id, client_session_id, request.app) as rt:
-            await get_project_for_user(
+            project: Dict = await get_project_for_user(
                 request.app,
                 project_uuid=project_uuid,
                 user_id=user_id,
                 include_templates=True,
             )
             await rt.remove("project_id")
+
             other_users = await rt.find_users_of_resource("project_id", project_uuid)
             if not other_users:
                 # only remove the services if no one else is using them now
-                fire_and_forget_task(
-                    projects_api.remove_project_interactive_services(
+                async def close_project_task():
+                    await projects_api.remove_project_interactive_services(
                         user_id, project_uuid, request.app
                     )
-                )
+
+                    await projects_api.notify_project_state_update(
+                        request.app, project, opened=False
+                    )
+
+                fire_and_forget_task(close_project_task())
 
         raise web.HTTPNoContent(content_type="application/json")
     except ProjectNotFoundError:
@@ -363,6 +372,7 @@ async def state_project(request: web.Request) -> web.Response:
             user_id=user_id,
             include_templates=True,
         )
+
         users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
         return {"data": {"locked": len(users_of_project) > 0}}
 
