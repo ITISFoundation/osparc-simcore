@@ -31,6 +31,10 @@ qx.Class.define("osparc.component.metadata.ServiceStarterWindow", {
     this.addAt(toolboxContainer, 0);
   },
 
+  events: {
+    "startService": "qx.event.type.Data"
+  },
+
   members: {
     __serviceKey: null,
     __versionsUIBox: null,
@@ -47,6 +51,13 @@ qx.Class.define("osparc.component.metadata.ServiceStarterWindow", {
 
       const openButton = new qx.ui.form.Button(this.tr("Open")).set({
         appearance: "md-button"
+      });
+      openButton.addListener("execute", () => {
+        const data = {
+          "serviceKey": this.__service.key,
+          "serviceVersion": this.__getSelectedVersion()
+        };
+        this.fireDataEvent("startService", data);
       });
       toolboxContainer.add(openButton);
 
@@ -77,12 +88,21 @@ qx.Class.define("osparc.component.metadata.ServiceStarterWindow", {
           }
         });
       versionsList.addListener("changeSelection", e => {
-        if (e.getData() && e.getData().length) {
-          this.__versionSelected(e.getData()[0].getLabel());
+        const serviceVersion = this.__getSelectedVersion();
+        if (serviceVersion) {
+          this.__versionSelected(serviceVersion);
         }
       }, this);
 
       return versionsList;
+    },
+
+    __getSelectedVersion: function() {
+      const selection = this.__versionsUIBox.getSelection();
+      if (selection && selection.length) {
+        return selection[0].getLabel();
+      }
+      return null;
     },
 
     __versionSelected: function(serviceVersion) {
