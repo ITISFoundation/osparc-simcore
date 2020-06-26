@@ -459,14 +459,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getMoreInfoMenuButton: function(studyData) {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
-        if (studyData["resourceType"] === "service") {
-          const win = new osparc.component.metadata.ServiceInfoWindow(studyData);
-          win.open();
-          win.center();
-        } else {
-          const winWidth = 400;
-          this.__createStudyDetailsEditor(studyData, winWidth);
-        }
+        const winWidth = 400;
+        this.__createStudyDetailsEditor(studyData, winWidth);
       }, this);
       return moreInfoButton;
     },
