@@ -14,6 +14,7 @@ from typing import Any, Dict, Optional, Set
 from uuid import uuid4
 
 from aiohttp import web
+from pydantic import BaseModel
 
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
@@ -326,3 +327,7 @@ async def is_node_id_present_in_any_project_workbench(
     """If the node_id is presnet in one of the projects' workbenche returns True"""
     db = app[APP_PROJECT_DBAPI]
     return node_id in await db.get_all_node_ids_from_workbenches()
+
+
+class ProjectState(BaseModel):
+    locked: bool
