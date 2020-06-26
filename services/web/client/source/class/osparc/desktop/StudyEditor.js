@@ -36,9 +36,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     this.add(scroll, 0); // flex 0
     this.add(mainPanel, 1); // flex 1
-
-    this.__attachEventHandlers();
-    this.__attachSocketEventHandlers();
   },
 
   properties: {
@@ -73,6 +70,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       study.openStudy();
       this.__initViews();
       this.__connectEvents();
+      this.__attachEventHandlers();
+      this.__attachSocketEventHandlers();
       this.__startAutoSaveTimer();
 
       this.__openOneNode();
