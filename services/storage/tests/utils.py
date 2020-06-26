@@ -40,8 +40,8 @@ def data_dir():
 
 
 def has_datcore_tokens() -> bool:
-    token = os.environ.get("BF_API_KEY", "none")
-    if token == "none":
+    token = os.environ.get("BF_API_KEY")
+    if not token:
         pytest.skip("Datcore access tokens not available, skipping test")
         return False
     return True
