@@ -20,8 +20,8 @@
  *
  * It offers a:
  * - NavigationBar
- * - Main View (Stack).
- *   - Dashboard (Stack):
+ * - Main Stack.
+ *   - Dashboard Stack:
  *     - StudyBrowser
  *     - ServiceBrowser
  *     - DataManager
