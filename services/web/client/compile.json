@@ -33,6 +33,18 @@
       "bootPath": "source/boot"
     },
     {
+      "class": "explorer.Application",
+      "theme": "osparc.theme.Theme",
+      "name": "explorer",
+      "title": "oSPARC Explorer",
+      "include": [
+        "iconfont.material.Load",
+        "iconfont.fontawesome5.Load",
+        "osparc.theme.OSparcLight"
+      ],
+      "bootPath": "source/boot"
+    },
+    {
       "class": "qxl.apiviewer.Application",
       "theme": "qxl.apiviewer.Theme",
       "name": "apiviewer",
