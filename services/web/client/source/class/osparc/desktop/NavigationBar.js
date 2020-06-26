@@ -52,30 +52,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       maxHeight: 50,
       backgroundColor: "background-main-lighter"
     });
-
-    this.getChildControl("logo");
-    this.getChildControl("platform");
-
-    this._add(new qx.ui.core.Spacer(20));
-
-    this.__dashboardBtn = this.getChildControl("dashboard-button");
-    this.__dashboardLabel = this.getChildControl("dashboard-label");
-    this.__dashboardContext();
-
-    this._add(new qx.ui.core.Spacer(20));
-
-    const studyTitle = this.__studyTitle = this.__createStudyTitle();
-    this._add(studyTitle);
-    this.__mainViewCaptionLayout = this.getChildControl("study-path-container");
-
-    this._add(new qx.ui.core.Spacer(), {
-      flex: 1
-    });
-
-    this.getChildControl("user-manual");
-    this.getChildControl("feedback");
-    this.getChildControl("theme-switch");
-    this.getChildControl("user-menu");
   },
 
   events: {
@@ -106,6 +82,32 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     __dashboardLabel: null,
     __studyTitle: null,
     __mainViewCaptionLayout: null,
+
+    buildLayout: function() {
+      this.getChildControl("logo");
+      this.getChildControl("platform");
+
+      this._add(new qx.ui.core.Spacer(20));
+
+      this.__dashboardBtn = this.getChildControl("dashboard-button");
+      this.__dashboardLabel = this.getChildControl("dashboard-label");
+      this.__dashboardContext();
+
+      this._add(new qx.ui.core.Spacer(20));
+
+      const studyTitle = this.__studyTitle = this.__createStudyTitle();
+      this._add(studyTitle);
+      this.__mainViewCaptionLayout = this.getChildControl("study-path-container");
+
+      this._add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      this.getChildControl("user-manual");
+      this.getChildControl("feedback");
+      this.getChildControl("theme-switch");
+      this.getChildControl("user-menu");
+    },
 
     _createChildControlImpl: function(id) {
       let control;
