@@ -81,12 +81,14 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __createMainView: function() {
-      const prjStack = new qx.ui.container.Stack();
+      const prjStack = new qx.ui.container.Stack().set({
+        alignX: "center"
+      });
 
       const nStudyItemsPerRow = 5;
       const studyButtons = osparc.dashboard.StudyBrowserButtonBase;
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard().set({
-        width: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) + 10 // padding + scrollbar
+        maxWidth: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) + 10 // padding + scrollbar
       });
       [
         dashboard.getStudyBrowser(),
