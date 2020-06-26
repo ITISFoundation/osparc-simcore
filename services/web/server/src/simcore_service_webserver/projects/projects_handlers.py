@@ -300,11 +300,14 @@ async def open_project(request: web.Request) -> web.Response:
             # let's check if that project is already opened by someone
             other_users = await rt.find_users_of_resource("project_id", project_uuid)
             if other_users:
+                # project is already locked
                 raise HTTPLocked(reason="Project is already opened by another user")
             await rt.add("project_id", project_uuid)
 
         # user id opened project uuid
         await projects_api.start_project_interactive_services(request, project, user_id)
+        # notify users that project is now locked
+        await projects_api.notify_project_state_update(request.app, project)
 
         return {"data": project}
     except ProjectNotFoundError:

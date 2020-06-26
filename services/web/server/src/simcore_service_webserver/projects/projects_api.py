@@ -23,6 +23,7 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 
 from ..computation_api import delete_pipeline_db
 from ..director import director_api
+from ..socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT, post_group_messages
 from ..storage_api import copy_data_folders_from_project  # mocked in unit-tests
 from ..storage_api import (
     delete_data_folders_of_project,
@@ -50,7 +51,7 @@ async def get_project_for_user(
     project_uuid: str,
     user_id: int,
     *,
-    include_templates: bool = False
+    include_templates: bool = False,
 ) -> Dict:
     """ Returns a project accessible to user
 
@@ -331,3 +332,18 @@ async def is_node_id_present_in_any_project_workbench(
 
 class ProjectState(BaseModel):
     locked: bool
+
+
+async def notify_project_state_update(app: web.Application, project: Dict) -> None:
+    rooms_to_notify = [
+        f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
+    ]
+    messages = {
+        SOCKET_IO_PROJECT_UPDATED_EVENT: {
+            "project_uuid": project["uuid"],
+            "data": ProjectState(locked=True).dict(),
+        }
+    }
+
+    for room in rooms_to_notify:
+        await post_group_messages(app, room, messages)
