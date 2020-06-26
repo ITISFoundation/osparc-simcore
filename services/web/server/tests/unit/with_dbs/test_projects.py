@@ -2,6 +2,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
+import json
 import uuid as uuidlib
 from asyncio import Future, sleep
 from copy import deepcopy
@@ -28,6 +30,7 @@ from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
+from simcore_service_webserver.projects.projects_api import ProjectState
 from simcore_service_webserver.projects.projects_handlers import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
@@ -36,6 +39,7 @@ from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_sockets
+from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.tags import setup_tags
 from simcore_service_webserver.utils import now_str, to_datetime
 
@@ -1223,16 +1227,17 @@ async def _close_project(
 
 
 async def _state_project(
-    client, project: Dict, expected: web.HTTPException, params: Dict
+    client,
+    project: Dict,
+    expected: web.HTTPException,
+    expected_project_state: ProjectState,
 ) -> Dict[str, str]:
     url = client.app.router["state_project"].url_for(project_id=project["uuid"])
     resp = await client.get(url)
     data, error = await assert_status(resp, expected)
     if not error:
         # the project is locked
-        for k, v in params.items():
-            assert k in data
-            assert data[k] == v
+        assert data == expected_project_state
 
 
 @pytest.mark.parametrize(*standard_role_response())
@@ -1250,7 +1255,7 @@ async def test_open_shared_project_2_users_locked(
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
     mock_project_state_updated_handler = mocker.Mock()
-    project_state_updated_event = "projectUpdated"
+
     client_1 = client
     client_id1 = client_session_id()
     client_2 = await aiohttp_client(client.app)
@@ -1261,13 +1266,14 @@ async def test_open_shared_project_2_users_locked(
         socketio_client,
         user_role != UserRole.ANONYMOUS,
         client_id1,
-        {project_state_updated_event: mock_project_state_updated_handler},
+        {SOCKET_IO_PROJECT_UPDATED_EVENT: mock_project_state_updated_handler},
     )
+    expected_project_state = ProjectState(locked=False)
     await _state_project(
         client_1,
         shared_project,
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
-        params={"locked": False},
+        expected_project_state,
     )
     await _open_project(
         client_1,
@@ -1275,11 +1281,30 @@ async def test_open_shared_project_2_users_locked(
         shared_project,
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
     )
+    expected_project_state.locked = True
+    if user_role != UserRole.ANONYMOUS:
+        await asyncio.sleep(3)
+        # NOTE: there are 2 calls since we are part of the primary group and the all group
+        calls = [
+            call(
+                json.dumps(
+                    {
+                        "project_uuid": shared_project["uuid"],
+                        "data": expected_project_state.dict(),
+                    }
+                )
+            )
+        ] * 2
+        mock_project_state_updated_handler.assert_has_calls(calls)
+        mock_project_state_updated_handler.reset_mock()
+    else:
+        mock_project_state_updated_handler.assert_not_called()
+
     await _state_project(
         client_1,
         shared_project,
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
-        params={"locked": True},
+        expected_project_state,
     )
 
     # 2. create a separate client now and log in user2, try to open the same shared project
@@ -1290,7 +1315,7 @@ async def test_open_shared_project_2_users_locked(
         socketio_client,
         user_role != UserRole.ANONYMOUS,
         client_id2,
-        {project_state_updated_event: mock_project_state_updated_handler},
+        {SOCKET_IO_PROJECT_UPDATED_EVENT: mock_project_state_updated_handler},
     )
     await _open_project(
         client_2,
@@ -1302,19 +1327,39 @@ async def test_open_shared_project_2_users_locked(
         client_2,
         shared_project,
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
-        params={"locked": True},
+        expected_project_state,
     )
 
     # 3. user 1 closes the project
     await _close_project(client_1, client_id1, shared_project, expected.no_content)
+    expected_project_state.locked = (
+        True if user_role == UserRole.GUEST else False
+    )  # Guests cannot close projects
     await _state_project(
         client_1,
         shared_project,
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
-        params={"locked": user_role == UserRole.GUEST},  # Guests cannot close projects
+        expected_project_state,
     )
 
     # we should receive an event that the project lock state changed
+    await asyncio.sleep(3)
+    if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
+        mock_project_state_updated_handler.assert_not_called()
+    else:
+        # NOTE: there are 4 calls since both users are registered now we are part of the primary group and the all group
+        calls = [
+            call(
+                json.dumps(
+                    {
+                        "project_uuid": shared_project["uuid"],
+                        "data": expected_project_state.dict(),
+                    }
+                )
+            )
+        ] * 4
+        mock_project_state_updated_handler.assert_has_calls(calls)
+        mock_project_state_updated_handler.reset_mock()
 
     # 4. user 2 now should be able to open the project
     await _open_project(
@@ -1322,4 +1367,28 @@ async def test_open_shared_project_2_users_locked(
         client_id2,
         shared_project,
         expected.ok if user_role != UserRole.GUEST else HTTPLocked,
+    )
+    expected_project_state.locked = True
+    await asyncio.sleep(3)
+    if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
+        mock_project_state_updated_handler.assert_not_called()
+    else:
+        # NOTE: there are 4 calls since both users are registered now we are part of the primary group and the all group
+        calls = [
+            call(
+                json.dumps(
+                    {
+                        "project_uuid": shared_project["uuid"],
+                        "data": expected_project_state.dict(),
+                    }
+                )
+            )
+        ] * 4
+        mock_project_state_updated_handler.assert_has_calls(calls)
+        mock_project_state_updated_handler.reset_mock()
+    await _state_project(
+        client_1,
+        shared_project,
+        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected_project_state,
     )
