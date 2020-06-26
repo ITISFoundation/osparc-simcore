@@ -49,6 +49,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     this.set({
       paddingLeft: 10,
       paddingRight: 10,
+      height: 50,
       maxHeight: 50,
       backgroundColor: "background-main-lighter"
     });
