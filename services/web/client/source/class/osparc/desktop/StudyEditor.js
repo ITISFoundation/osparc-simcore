@@ -38,6 +38,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     this.add(mainPanel, 1); // flex 1
 
     this.__attachEventHandlers();
+    this.__attachSocketEventHandlers();
   },
 
   properties: {
@@ -635,9 +636,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       controlsBar.addListener("ungroupSelection", this.__ungroupSelection, this);
       controlsBar.addListener("startPipeline", this.__startPipeline, this);
       controlsBar.addListener("stopPipeline", this.__stopPipeline, this);
+    },
 
+    __attachSocketEventHandlers: function() {
       // Listen to socket
       const socket = osparc.wrapper.WebSocket.getInstance();
+
       // callback for incoming logs
       const slotName = "logger";
       socket.removeSlot(slotName);
