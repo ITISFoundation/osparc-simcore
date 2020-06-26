@@ -3,10 +3,6 @@ from datetime import datetime
 from typing import Dict
 
 
-def to_bool(s: str) -> bool:
-    return s.lower() in ["true", "1", "yes"]
-
-
 def _jsoncoverter(obj):
     if isinstance(obj, datetime):
         return obj.__str__()
