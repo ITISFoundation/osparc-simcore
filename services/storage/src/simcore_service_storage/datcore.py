@@ -46,7 +46,8 @@ def _get_collection_id(
 
 class DatcoreClient(object):
     def __init__(self, api_token=None, api_secret=None, host=None, streaming_host=None):
-        # WARNING: contruction raise exception if service is not available. Use datacore_wrapper for safe calls
+        # WARNING: contruction raise exception if service is not available.
+        # Use datacore_wrapper for safe calls
         self.client = Blackfynn(
             profile=None,
             api_token=api_token,

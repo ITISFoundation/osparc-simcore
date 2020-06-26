@@ -156,6 +156,7 @@ FROM build as development
 ENV SC_BUILD_TARGET=development \
   SC_DEVEL_MOUNT=/devel/services/storage/
 
+WORKDIR /devel
 
 RUN chown -R scu:scu ${VIRTUAL_ENV}
 
