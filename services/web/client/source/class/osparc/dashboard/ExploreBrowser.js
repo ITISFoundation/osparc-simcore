@@ -15,6 +15,11 @@
 
 ************************************************************************ */
 
+/**
+ * @ignore(Headers)
+ * @ignore(fetch)
+ */
+
 qx.Class.define("osparc.dashboard.ExploreBrowser", {
   extend: qx.ui.core.Widget,
 
@@ -377,7 +382,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
         if (studyData["resourceType"] === "service") {
-          const win = new osparc.component.metadata.ServiceInfoWindow(studyData);
+          const win = new osparc.component.metadata.ServiceStarterWindow(studyData);
           win.open();
           win.center();
         } else {

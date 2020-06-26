@@ -42,6 +42,14 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
   members: {
     __metadata: null,
 
+    setService: function(metadata) {
+      this._removeAll();
+      if (metadata) {
+        this.__metadata = metadata;
+        this.__createServiceInfoView();
+      }
+    },
+
     __createServiceInfoView: function() {
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(8).set({
         alignY: "middle"

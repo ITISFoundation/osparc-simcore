@@ -149,7 +149,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         flex: 1
       });
 
-      const openButton = this.__openButton = new qx.ui.form.Button("Open").set({
+      const openButton = this.__openButton = new qx.ui.form.Button(this.tr("Open")).set({
         appearance: "md-button"
       });
       osparc.utils.Utils.setIdToWidget(openButton, "openStudyBtn");
