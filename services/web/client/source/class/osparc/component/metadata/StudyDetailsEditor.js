@@ -115,24 +115,13 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         marginTop: 10
       });
 
-      const openButton = this.__openButton = new qx.ui.form.Button("Open").set({
-        appearance: "md-button"
-      });
-      osparc.utils.Utils.setIdToWidget(openButton, "openStudyBtn");
-      openButton.addListener("execute", () => this.fireEvent("openStudy"), this);
-      buttonsLayout.add(openButton);
-
-      const modeButton = new qx.ui.form.Button("Edit", "@FontAwesome5Solid/edit/16").set({
+      const modeButton = new qx.ui.form.Button(this.tr("Edit")).set({
         appearance: "md-button",
         visibility: isCurrentUserOwner && (!isTemplate || canUpdateTemplate) ? "visible" : "excluded"
       });
       osparc.utils.Utils.setIdToWidget(modeButton, "editStudyBtn");
       modeButton.addListener("execute", () => this.setMode("edit"), this);
       buttonsLayout.add(modeButton);
-
-      buttonsLayout.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
 
       if (!isTemplate) {
         const permissionsButton = new qx.ui.form.Button(this.tr("Permissions")).set({
@@ -155,6 +144,17 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
           buttonsLayout.add(saveAsTemplateButton);
         }
       }
+
+      buttonsLayout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      const openButton = this.__openButton = new qx.ui.form.Button("Open").set({
+        appearance: "md-button"
+      });
+      osparc.utils.Utils.setIdToWidget(openButton, "openStudyBtn");
+      openButton.addListener("execute", () => this.fireEvent("openStudy"), this);
+      buttonsLayout.add(openButton);
 
       return buttonsLayout;
     },
