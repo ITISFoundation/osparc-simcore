@@ -260,9 +260,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
     __loadStudy: function(studyData) {
       const study = new osparc.data.model.Study(studyData);
-      this.__studyEditor = this.__studyEditor || new osparc.desktop.StudyEditor();
-      this.__studyEditor.setStudy(study);
-      this.fireDataEvent("startStudy", this.__studyEditor);
+      this.fireDataEvent("startStudy", study);
     },
 
     __showResourcesLayout: function(show) {

@@ -20,11 +20,11 @@
  *
  * It offers a:
  * - NavigationBar
- * - Main Stack.
- *   - Dashboard Stack:
+ * - Main Stack
+ *   - Dashboard Stack
  *     - StudyBrowser
- *     - ServiceBrowser
  *     - DataManager
+ *     - ExploreBrowser
  *   - StudyEditor
  *
  * <pre class='javascript'>
@@ -48,6 +48,8 @@ qx.Class.define("osparc.desktop.MainPage", {
     this._add(mainStack, {
       flex: 1
     });
+
+    this.__attachHandlers();
   },
 
   members: {
@@ -77,6 +79,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           this.__studyEditor.nodeSelected(nodeId);
         }
       }, this);
+
       return navBar;
     },
 
@@ -85,19 +88,20 @@ qx.Class.define("osparc.desktop.MainPage", {
         alignX: "center"
       });
 
+      const dashboardLayout = this.__createDashboardStack();
+      mainStack.add(dashboardLayout);
+
+      const studyEditor = this.__studyEditor = new osparc.desktop.StudyEditor();
+      mainStack.add(studyEditor);
+
+      return mainStack;
+    },
+
+    __createDashboardStack: function() {
       const nStudyItemsPerRow = 5;
       const studyButtons = osparc.dashboard.StudyBrowserButtonBase;
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard().set({
-        maxWidth: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) + 10 // padding + scrollbar
-      });
-      [
-        dashboard.getStudyBrowser(),
-        dashboard.getExploreBrowser()
-      ].forEach(studyStarter => {
-        studyStarter.addListener("startStudy", e => {
-          const studyEditor = e.getData();
-          this.__startStudyEditor(studyEditor);
-        }, this);
+        width: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) + 10 // padding + scrollbar
       });
 
       const dashboardLayout = this.__dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -108,10 +112,21 @@ qx.Class.define("osparc.desktop.MainPage", {
       dashboardLayout.add(new qx.ui.core.Widget(), {
         flex: 1
       });
+      return dashboardLayout;
+    },
 
-      prjStack.add(dashboardLayout);
-
-      return prjStack;
+    __attachHandlers: function() {
+      [
+        this.__dashboard.getStudyBrowser(),
+        this.__dashboard.getExploreBrowser()
+      ].forEach(studyStarter => {
+        studyStarter.addListener("startStudy", e => {
+          this.__studyEditor = this.__studyEditor || new osparc.desktop.StudyEditor();
+          const study = e.getData();
+          this.__studyEditor.setStudy(study);
+          this.__startStudyEditor(this.__studyEditor);
+        }, this);
+      });
     },
 
     __showDashboard: function() {
