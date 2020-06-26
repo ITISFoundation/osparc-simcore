@@ -16,7 +16,7 @@
 
 import logging
 from contextlib import contextmanager
-from typing import Dict, Iterator, List, Optional
+from typing import Dict, Iterator, List, Optional, Union
 
 import attr
 from aiohttp import web
@@ -150,9 +150,9 @@ class WebsocketRegistry:
 
 @contextmanager
 def managed_resource(
-    user_id: str, client_session_id: Optional[str], app: web.Application
+    user_id: Union[str, int], client_session_id: Optional[str], app: web.Application
 ) -> Iterator[WebsocketRegistry]:
-    registry = WebsocketRegistry(user_id, client_session_id, app)
+    registry = WebsocketRegistry(str(user_id), client_session_id, app)
     try:
         yield registry
     except Exception:

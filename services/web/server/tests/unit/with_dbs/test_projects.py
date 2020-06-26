@@ -1367,13 +1367,6 @@ async def test_open_shared_project_2_users_locked(
     expected_project_state.locked = (
         True if user_role == UserRole.GUEST else False
     )  # Guests cannot close projects
-    await _state_project(
-        client_1,
-        shared_project,
-        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
-        expected_project_state,
-    )
-
     # we should receive an event that the project lock state changed
     # NOTE: there are 3 calls since we are part of the primary group and the all group and user 2 is part of the all group
     await _assert_project_state_updated(
@@ -1383,6 +1376,12 @@ async def test_open_shared_project_2_users_locked(
         0
         if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
         else 3,
+    )
+    await _state_project(
+        client_1,
+        shared_project,
+        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected_project_state,
     )
 
     # 4. user 2 now should be able to open the project

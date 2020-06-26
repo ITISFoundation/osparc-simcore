@@ -329,28 +329,33 @@ async def close_project(request: web.Request) -> web.Response:
         # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
         from .projects_api import get_project_for_user
 
+        project = await get_project_for_user(
+            request.app,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            include_templates=True,
+        )
+        project_opened_by_others: bool = False
         with managed_resource(user_id, client_session_id, request.app) as rt:
-            project: Dict = await get_project_for_user(
-                request.app,
-                project_uuid=project_uuid,
-                user_id=user_id,
-                include_templates=True,
-            )
             await rt.remove("project_id")
-
-            other_users = await rt.find_users_of_resource("project_id", project_uuid)
-            if not other_users:
-                # only remove the services if no one else is using them now
-                async def close_project_task():
+            project_opened_by_others = (
+                len(await rt.find_users_of_resource("project_id", project_uuid)) > 0
+            )
+        # if we are the only user left we can safely remove the services
+        async def close_project_task():
+            try:
+                if not project_opened_by_others:
+                    # only remove the services if no one else is using them now
                     await projects_api.remove_project_interactive_services(
                         user_id, project_uuid, request.app
                     )
+            finally:
+                # ensure we notify the user whatever happens, the GC should take care of dangling services in case of issue
+                await projects_api.notify_project_state_update(
+                    request.app, project, opened=False
+                )
 
-                    await projects_api.notify_project_state_update(
-                        request.app, project, opened=False
-                    )
-
-                fire_and_forget_task(close_project_task())
+        fire_and_forget_task(close_project_task())
 
         raise web.HTTPNoContent(content_type="application/json")
     except ProjectNotFoundError:
