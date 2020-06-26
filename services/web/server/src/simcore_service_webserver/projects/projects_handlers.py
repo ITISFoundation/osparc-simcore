@@ -3,7 +3,6 @@
 """
 import json
 import logging
-from typing import Dict
 
 from aiohttp import web
 from jsonschema import ValidationError
