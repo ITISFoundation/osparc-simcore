@@ -31,7 +31,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
   },
 
   statics: {
-    sortStudyList: function(studyList) {
+    sortTemplateList: function(studyList) {
       let sortByProperty = function(prop) {
         return function(a, b) {
           if (prop === "lastChangeDate") {
@@ -265,7 +265,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this.fireDataEvent("startStudy", this.__studyEditor);
     },
 
-    __showStudiesLayout: function(show) {
+    __showResourcesLayout: function(show) {
       this._getChildren().forEach(children => {
         children.setVisibility(show ? "visible" : "excluded");
       });
@@ -286,7 +286,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __resetTemplateList: function(tempStudyList) {
       this.__templateStudies = tempStudyList;
       this.__templateStudyContainer.removeAll();
-      this.self().sortStudyList(tempStudyList);
+      this.self().sortTemplateList(tempStudyList);
       tempStudyList.forEach(tempStudy => {
         tempStudy["resourceType"] = "template";
         this.__templateStudyContainer.add(this.__createStudyItem(tempStudy));
@@ -507,7 +507,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __showLoadingPage: function(label) {
       this.__hideLoadingPage();
 
-      this.__showStudiesLayout(false);
+      this.__showResourcesLayout(false);
 
       if (this.__loadingIFrame === null) {
         this.__loadingIFrame = new osparc.ui.message.Loading(label);
@@ -527,7 +527,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         }
       }
 
-      this.__showStudiesLayout(true);
+      this.__showResourcesLayout(true);
     },
 
     __isUserOwner: function(studyData) {
