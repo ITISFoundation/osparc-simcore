@@ -65,6 +65,15 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __templateStudies: null,
     __services: null,
 
+    __checkLoggedIn: function() {
+      let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
+      if (!isLogged) {
+        const msg = this.tr("You need to be logged in to create a study");
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg);
+      }
+      return isLogged;
+    },
+
     /**
      * Function that resets the selected item
      */
@@ -201,6 +210,10 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __createStudyFromService: function(serviceKey, serviceVersion) {
+      if (!this.__checkLoggedIn()) {
+        return;
+      }
+
       this.__showLoadingPage(this.tr("Creating Study"));
       const store = osparc.store.Store.getInstance();
       store.getServicesDAGs()
@@ -246,6 +259,10 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __createStudy: function(minStudyData, templateId) {
+      if (!this.__checkLoggedIn()) {
+        return;
+      }
+
       this.__showLoadingPage(this.tr("Creating ") + (minStudyData.name || this.tr("Study")));
 
       const params = {
@@ -264,6 +281,10 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __startStudy: function(studyData) {
+      if (!this.__checkLoggedIn()) {
+        return;
+      }
+
       this.__showLoadingPage(this.tr("Starting ") + (studyData.name || this.tr("Study")));
       osparc.store.Store.getInstance().getServicesDAGs()
         .then(() => {
