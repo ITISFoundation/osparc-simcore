@@ -7,41 +7,32 @@
 
 Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)
 
+## Development
+
 Typical development workflow:
 
 ```cmd
+make devenv
+source .venv/bin/activate
 
-$ cd services/catalog
-$ make help
-Recipes for 'catalog':
-
-devenv               build development environment (using main services/docker-compose-build.yml)
-requirements         compiles pip requirements (.in -> .txt)
-install-dev install-prod install-ci install app in development/production or CI mode
-tests-unit           runs unit tests
-tests-integration    runs integration tests against local+production images
-run-devel            runs app with pg fixture for development
-down                 stops pg fixture
-build                builds docker image (using main services/docker-compose-build.yml)
-autoformat           runs black python formatter on this service's code [https://black.readthedocs.io/en/stable/]
-version-patch        commits version with bug fixes not affecting the cookiecuter config
-version-minor        commits version with backwards-compatible API addition or changes (i.e. can replay)
-version-major        commits version with backwards-INcompatible addition or changes
-replay               re-applies cookiecutter
-info                 displays information
-clean                cleans all unversioned files in project and temp files create by this makefile
-help                 this colorful help
-
-
-$ make devenv
-$ make install-dev
-$ make run-devel
-
-
-$ make tests
-$ make build
+cd services/api-service
+make install-dev
 ```
 
+Then
+```cmd
+make run-devel
+```
+will start the service in development-mode together with a postgres db initialized with test data.  The API can be query using
+- http://127.0.0.1:8000/dev/docs: swagger-UI API doc
+
+
+Finally
+```cmd
+make tests
+make build-devel
+make build
+```
 
 
 

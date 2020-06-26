@@ -4,13 +4,16 @@
 include ../../scripts/common.Makefile
 
 # Custom variables
-APP_NAME     := $(notdir $(CURDIR))
-APP_CLI_NAME := simcore-service-catalog
-export APP_VERSION = $(shell cat VERSION)
+APP_NAME         := $(notdir $(CURDIR))
+APP_CLI_NAME     := simcore-service-catalog
+APP_PACKAGE_NAME := $(subst -,_,$(APP_CLI_NAME))
+APP_VERSION      := $(shell cat VERSION)
+SRC_DIR          := $(abspath $(CURDIR)/src/$(APP_PACKAGE_NAME))
 
+export APP_VERSION
 
-.PHONY: requirements
-requirements: ## compiles pip requirements (.in -> .txt)
+.PHONY: requirements reqs
+requirements reqs: ## (or reqs) compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
 
 
@@ -34,12 +37,35 @@ tests-integration: ## runs integration tests against local+production images
 	pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/integration
 
 
-.PHONY: run-devel down-pg up-pg
-run-devel run-prod: up-pg ## runs app with pg service
+# DEVELOPMENT ########
+
+
+.env:
+	cp .env-devel $@
+
+docker-compose.yml:
+	cp $(CURDIR)/tests/unit/with_dbs/docker-compose.yml $@
+
+
+.PHONY: run-devel down up-pg
+
+up-pg: docker-compose.yml down-pg
+	# starting pg database ...
+	docker-compose -f $< up --detach
+
+down-pg: docker-compose.yml ## stops pg fixture
+	# stopping extra services
+	-@docker-compose -f $< down
+
+
+run-devel run-prod: .env up-pg ## runs app with pg service
 	# starting service ...
 ifeq ($(subst run-,,$@),devel)
 	# development mode (with reload upon change)
-	uvicorn simcore_service_catalog.main:app --reload
+	# start app (under $<)
+	uvicorn simcore_service_catalog.__main__:the_app \
+		--reload --reload-dir $(SRC_DIR) \
+		--port=8000 --host=0.0.0.0
 else
 	# production mode
 	simcore-service-catalog
@@ -47,13 +73,7 @@ endif
 	# stop
 
 
-up-pg: down-pg
-	# starting pg database ...
-	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml up --detach
-
-down-pg: ## stops pg fixture
-	docker-compose -f $(CURDIR)/tests/unit/with_dbs/docker-compose.yml down
-
+# BUILD #####################
 
 .PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
 build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## docker image build in many flavours
@@ -61,15 +81,8 @@ build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## docker 
 	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
 
-.PHONY: openapi-specs
-openapi-specs: install-dev ## TODO: implementing a way to serialize openapi
-	python3 -c "from simcore_service_catalog.main import *; dump_openapi()"
-
-
-.PHONY: replay
-replay: .cookiecutterrc ## re-applies cookiecutter
-	# Replaying ../cookiecutter-simcore-py-fastapi/ ...
-	@cookiecutter --no-input --overwrite-if-exists \
-		--config-file=$< \
-		--output-dir="$(abspath $(CURDIR)/..)" \
-		"../cookiecutter-simcore-py-fastapi/"
+.PHONY: openapi-specs openapi.json
+openapi-specs: openapi.json
+openapi.json:
+	# generating openapi specs file
+	python3 -c "import json; from $(APP_PACKAGE_NAME).__main__ import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
