@@ -298,9 +298,9 @@ async def open_project(request: web.Request) -> web.Response:
                 include_templates=True,
             )
 
-            # let's check if that project is already opened by someone
+            # let's check if that project is already opened by someone else
             other_users = await rt.find_users_of_resource("project_id", project_uuid)
-            if other_users:
+            if other_users and any(f"{user_id}" != user for user in other_users):
                 # project is already locked
                 raise HTTPLocked(reason="Project is already opened by another user")
             await rt.add("project_id", project_uuid)
