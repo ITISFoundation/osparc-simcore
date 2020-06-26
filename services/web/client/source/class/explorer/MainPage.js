@@ -23,13 +23,33 @@ qx.Class.define("explorer.MainPage", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    const navBar = this.__navBar = new explorer.NavigationBar();
-    navBar.buildLayout();
+    const navBar = this.__navBar = this.__createNavigationBar();
     this._add(navBar);
 
-    const exploreBrowser = this.__exploreBrowser = new osparc.dashboard.ExploreBrowser();
+    const exploreBrowser = this.__exploreBrowser = this.__createMainView();
     this._add(exploreBrowser, {
       flex: 1
     });
+  },
+
+  members: {
+    __navBar: null,
+    __exploreBrowser: null,
+
+    __createNavigationBar: function() {
+      const navBar = new explorer.NavigationBar();
+      navBar.buildLayout();
+      return navBar;
+    },
+
+    __createMainView: function() {
+      const nStudyItemsPerRow = 5;
+      const studyButtons = osparc.dashboard.StudyBrowserButtonBase;
+      const exploreBrowser = new osparc.dashboard.ExploreBrowser().set({
+        alignX: "center",
+        maxWidth: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) + 10 // padding + scrollbar
+      });
+      return exploreBrowser;
+    }
   }
 });
