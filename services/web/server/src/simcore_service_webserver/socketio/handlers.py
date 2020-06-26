@@ -16,6 +16,7 @@ from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionErro
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
+from ..groups_api import list_user_groups
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.config import get_service_deletion_timeout
 from ..resource_manager.websocket_manager import managed_resource
@@ -45,6 +46,7 @@ async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
     request = environ[_SOCKET_IO_AIOHTTP_REQUEST_KEY]
     try:
         await authenticate_user(sid, app, request)
+        await set_user_in_rooms(sid, app, request)
     except web.HTTPUnauthorized:
         raise SocketIOConnectionError("authentification failed")
     except Exception as exc:  # pylint: disable=broad-except
@@ -84,6 +86,18 @@ async def authenticate_user(
             socketio_session["request"] = request
         log.info("socketio connection from user %s", user_id)
         await rt.set_socket_id(sid)
+
+
+async def set_user_in_rooms(
+    sid: str, app: web.Application, request: web.Request
+) -> None:
+    user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
+    primary_group, user_groups, all_group = await list_user_groups(app, user_id)
+    groups = [primary_group] + user_groups + [all_group]
+    sio = get_socket_server(app)
+    # TODO: check if it is necessary to leave_room when socket disconnects
+    for group in groups:
+        sio.enter_room(sid, f"{group['gid']}")
 
 
 async def disconnect_other_sockets(sio, sockets: List[str]) -> None:
