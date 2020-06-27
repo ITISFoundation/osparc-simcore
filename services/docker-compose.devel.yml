@@ -9,7 +9,8 @@ services:
   api-server:
     environment:
       - SC_BOOT_MODE=debug-ptvsd
-      - LOGLEVEL=debug
+      - LOG_LEVEL=debug
+      - DEBUG=true
     volumes:
       - ./api-server:/devel/services/api-server
       - ../packages:/devel/packages
@@ -17,8 +18,8 @@ services:
   catalog:
     environment:
       - SC_BOOT_MODE=debug-ptvsd
-      - TESTING=true
-      - LOGLEVEL=debug
+      - LOG_LEVEL=debug
+      - DEBUG=true
     volumes:
       - ./catalog:/devel/services/catalog
       - ../packages:/devel/packages

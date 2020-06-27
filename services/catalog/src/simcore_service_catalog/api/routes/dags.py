@@ -9,15 +9,15 @@ from starlette.status import (
     HTTP_501_NOT_IMPLEMENTED,
 )
 
-from .. import db
-from ..schemas import schemas_dags as schemas
-from ..store import crud_dags as crud
+from ...db.repositories.dags import DAGsRepository
+from ...models.schemas.dag import DAGIn, DAGOut
+from ..dependencies.database import get_repository
 
 router = APIRouter()
 log = logging.getLogger(__name__)
 
 
-@router.get("/dags", response_model=List[schemas.DAGOut])
+@router.get("", response_model=List[DAGOut])
 async def list_dags(
     page_token: Optional[str] = Query(
         None, description="Requests a specific page of the list results"
@@ -28,7 +28,7 @@ async def list_dags(
     order_by: Optional[str] = Query(
         None, description="Sorts in ascending order comma-separated fields"
     ),
-    conn: db.SAConnection = Depends(db.get_cnx),
+    dags_repo: DAGsRepository = Depends(get_repository(DAGsRepository)),
 ):
 
     # List is suited to data from a single collection that is bounded in size and not cached
@@ -41,18 +41,18 @@ async def list_dags(
     # TODO: filter: https://cloud.google.com/apis/design/naming_convention#list_filter_field
     # SEE response: https://cloud.google.com/apis/design/naming_convention#list_response
     log.debug("%s %s %s", page_token, page_size, order_by)
-    dags = await crud.list_dags(conn)
+    dags = await dags_repo.list_dags()
     return dags
 
 
-@router.get("/dags:batchGet")
+@router.get(":batchGet")
 async def batch_get_dags():
     raise HTTPException(
         status_code=HTTP_501_NOT_IMPLEMENTED, detail="Still not implemented"
     )
 
 
-@router.get("/dags:search")
+@router.get(":search")
 async def search_dags():
     # A method that takes multiple resource IDs and returns an object for each of those IDs
     # Alternative to List for fetching data that does not adhere to List semantics, such as services.search.
@@ -62,20 +62,23 @@ async def search_dags():
     )
 
 
-@router.get("/dags/{dag_id}", response_model=schemas.DAGOut)
-async def get_dag(dag_id: int, conn: db.SAConnection = Depends(db.get_cnx)):
-    dag = await crud.get_dag(conn, dag_id)
+@router.get("/{dag_id}", response_model=DAGOut)
+async def get_dag(
+    dag_id: int, dags_repo: DAGsRepository = Depends(get_repository(DAGsRepository)),
+):
+    dag = await dags_repo.get_dag(dag_id)
     return dag
 
 
 @router.post(
-    "/dags",
+    "",
     response_model=int,
     status_code=HTTP_201_CREATED,
     response_description="Successfully created",
 )
 async def create_dag(
-    dag: schemas.DAGIn = Body(...), conn: db.SAConnection = Depends(db.get_cnx)
+    dag: DAGIn = Body(...),
+    dags_repo: DAGsRepository = Depends(get_repository(DAGsRepository)),
 ):
     assert dag  # nosec
 
@@ -87,40 +90,42 @@ async def create_dag(
         )
 
     # FIXME: conversion DAG (issue with workbench being json in orm and dict in schema)
-    dag_id = await crud.create_dag(conn, dag)
+    dag_id = await dags_repo.create_dag(dag)
     # TODO: no need to return since there is not extra info?, perhaps return
     return dag_id
 
 
-@router.patch("/dags/{dag_id}", response_model=schemas.DAGOut)
+@router.patch("/{dag_id}", response_model=DAGOut)
 async def udpate_dag(
     dag_id: int,
-    dag: schemas.DAGIn = Body(None),
-    conn: db.SAConnection = Depends(db.get_cnx),
+    dag: DAGIn = Body(None),
+    dags_repo: DAGsRepository = Depends(get_repository(DAGsRepository)),
 ):
-    async with conn.begin():
-        await crud.update_dag(conn, dag_id, dag)
-        updated_dag = await crud.get_dag(conn, dag_id)
+    async with dags_repo.connection.begin():
+        await dags_repo.update_dag(dag_id, dag)
+        updated_dag = await dags_repo.get_dag(dag_id)
 
     return updated_dag
 
 
-@router.put("/dags/{dag_id}", response_model=Optional[schemas.DAGOut])
+@router.put("/{dag_id}", response_model=Optional[DAGOut])
 async def replace_dag(
     dag_id: int,
-    dag: schemas.DAGIn = Body(...),
-    conn: db.SAConnection = Depends(db.get_cnx),
+    dag: DAGIn = Body(...),
+    dags_repo: DAGsRepository = Depends(get_repository(DAGsRepository)),
 ):
-    await crud.replace_dag(conn, dag_id, dag)
+    await dags_repo.replace_dag(dag_id, dag)
 
 
 @router.delete(
-    "/dags/{dag_id}",
+    "/{dag_id}",
     status_code=HTTP_204_NO_CONTENT,
     response_description="Successfully deleted",
 )
-async def delete_dag(dag_id: int, conn: db.SAConnection = Depends(db.get_cnx)):
+async def delete_dag(
+    dag_id: int, dags_repo: DAGsRepository = Depends(get_repository(DAGsRepository)),
+):
     # If the Delete method immediately removes the resource, it should return an empty response.
     # If the Delete method initiates a long-running operation, it should return the long-running operation.
     # If the Delete method only marks the resource as being deleted, it should return the updated resource.
-    await crud.delete_dag(conn, dag_id)
+    await dags_repo.delete_dag(dag_id)

@@ -2,7 +2,7 @@
   "openapi": "3.0.2",
   "info": {
     "title": "Public API Server",
-    "description": "**osparc-simcore Public RESTful API Specifications**\n## Python Client\n- Github [repo](https://github.com/ITISFoundation/osparc-simcore-python-client)\n- Quick install: ``pip install git+https://github.com/ITISFoundation/osparc-simcore-python-client.git``\n",
+    "description": "**osparc-simcore Public RESTful API Specifications**\n## Python Library\n- Check the [documentation](https://itisfoundation.github.io/osparc-simcore-python-client)\n- Quick install: ``pip install git+https://github.com/ITISFoundation/osparc-simcore-python-client.git``\n",
     "version": "0.3.0",
     "x-logo": {
       "url": "https://raw.githubusercontent.com/ITISFoundation/osparc-manual/b809d93619512eb60c827b7e769c6145758378d0/_media/osparc-logo.svg",

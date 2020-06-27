@@ -1,5 +1,5 @@
 ARG PYTHON_VERSION="3.6.10"
-FROM python:${PYTHON_VERSION}-slim as base
+FROM python:${PYTHON_VERSION}-slim-buster as base
 #
 #  USAGE:
 #     cd sercices/api-server
@@ -43,7 +43,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
-EXPOSE 8001
+EXPOSE 8000
 EXPOSE 3000
 
 # -------------------------- Build stage -------------------
@@ -64,7 +64,7 @@ RUN apt-get update &&\
 RUN python -m venv ${VIRTUAL_ENV}
 
 RUN pip install --upgrade --no-cache-dir \
-    pip~=20.0.2  \
+    pip~=20.1.1  \
     wheel \
     setuptools
 
@@ -111,7 +111,10 @@ ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
+# Starting from clean base image, copies pre-installed virtualenv from cache
 COPY --chown=scu:scu --from=cache  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+
+# Copies booting scripts
 COPY --chown=scu:scu services/api-server/docker services/api-server/docker
 RUN chmod +x services/api-server/docker/*.sh
 
