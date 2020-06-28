@@ -34,7 +34,7 @@ script() {
     then
         pytest --cov=simcore_service_catalog --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml \
-          -v -m "not travis" services/catalog/tests
+          -v -m "not travis" services/catalog/tests/unit
     else
         echo "No changes detected. Skipping unit-testing of catalog."
     fi

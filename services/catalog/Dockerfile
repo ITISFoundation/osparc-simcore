@@ -1,4 +1,6 @@
-FROM python:3.6.10-alpine3.11 as base
+ARG PYTHON_VERSION="3.6.10"
+FROM python:${PYTHON_VERSION}-slim-buster as base
+#
 #
 #  USAGE:
 #     cd sercices/catalog
@@ -9,19 +11,41 @@ FROM python:3.6.10-alpine3.11 as base
 
 LABEL maintainer=pcrespov
 
-RUN adduser -D -u 8004 -s /bin/sh -h /home/scu scu
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y gosu; \
+	rm -rf /var/lib/apt/lists/*; \
+# verify that the binary works
+	gosu nobody true
 
-RUN apk add --no-cache \
-      su-exec
+# simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
+ENV SC_USER_ID=8004 \
+    SC_USER_NAME=scu \
+    SC_BUILD_TARGET=base \
+    SC_BOOT_MODE=default
 
-ENV PATH "/home/scu/.local/bin:$PATH"
+RUN adduser \
+    --uid ${SC_USER_ID} \
+    --disabled-password \
+    --gecos "" \
+    --shell /bin/sh \
+    --home /home/${SC_USER_NAME} \
+    ${SC_USER_NAME}
 
-# NOTE: All SC_ variables are customized
-ENV SC_BUILD_TARGET base
+
+# Sets utf-8 encoding for Python et al
+ENV LANG=C.UTF-8
+
+# Turns off writing .pyc files; superfluous on an ephemeral container.
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    VIRTUAL_ENV=/home/scu/.venv
+
+# Ensures that the python and pip executables used in the image will be
+# those from our virtualenv.
+ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
 EXPOSE 8000
 EXPOSE 3000
-
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
@@ -30,36 +54,27 @@ EXPOSE 3000
 #
 FROM base as build
 
-ENV SC_BUILD_TARGET build
+ENV SC_BUILD_TARGET=build
 
-# Installing client libraries and any other package you need
-#
-#  libpq: client library for PostgreSQL https://www.postgresql.org/docs/9.5/libpq.html
-#  libstdc++: needed in ujson https://github.com/kohlschutter/junixsocket/issues/33
-#
-RUN apk update && \
-    apk add --no-cache \
-      libpq \
-      libstdc++
+RUN apt-get update &&\
+    apt-get install -y --no-install-recommends \
+    build-essential
 
-RUN apk add --no-cache \
-      alpine-sdk \
-      python3-dev \
-      musl-dev \
-      postgresql-dev
+# NOTE: python virtualenv is used here such that installed
+# packages may be moved to production image easily by copying the venv
+RUN python -m venv ${VIRTUAL_ENV}
 
-RUN pip3 --no-cache-dir install --upgrade \
-      pip~=20.0.2 \
-      wheel \
-      setuptools
+RUN pip install --upgrade --no-cache-dir \
+    pip~=20.1.1  \
+    wheel \
+    setuptools
 
 WORKDIR /build
 
 # install base 3rd party dependencies
-COPY  services/catalog/requirements/*.txt \
-      services/catalog/requirements/
-
-RUN pip3 --no-cache-dir install -r services/catalog/requirements/_base.txt
+# NOTE: copies to /build to avoid overwriting later which would invalidate this layer
+COPY  --chown=scu:scu services/catalog/requirements/_base.txt .
+RUN pip --no-cache-dir install -r _base.txt
 
 
 # --------------------------Cache stage -------------------
@@ -88,28 +103,28 @@ RUN pip3 --no-cache-dir install -r requirements/prod.txt &&\
 #  + /home/scu     $HOME = WORKDIR
 #    + services/catalog [scu:scu]
 #
-FROM cache as production
+FROM base as production
 
-ENV SC_BUILD_TARGET production
-ENV SC_BOOT_MODE production
+ENV SC_BUILD_TARGET=production \
+    SC_BOOT_MODE=production
+
+ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
-RUN mkdir -p services/catalog &&\
-    chown scu:scu services/catalog &&\
-    mv /build/services/catalog/docker services/catalog/docker &&\
-    rm -rf /build
+# Starting from clean base image, copies pre-installed virtualenv from cache
+COPY --chown=scu:scu --from=cache  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
-RUN apk del --no-cache\
-      alpine-sdk \
-      python3-dev \
-      musl-dev
+# Copies booting scripts
+COPY --chown=scu:scu services/catalog/docker services/catalog/docker
+RUN chmod +x services/catalog/docker/*.sh
+
 
 HEALTHCHECK --interval=30s \
-            --timeout=20s \
-            --start-period=30s \
-            --retries=3 \
-            CMD ["python3", "services/catalog/docker/healthcheck.py", "http://localhost:8000/"]
+    --timeout=20s \
+    --start-period=30s \
+    --retries=3 \
+    CMD ["python3", "services/catalog/docker/healthcheck.py", "http://localhost:8000/"]
 
 ENTRYPOINT [ "/bin/sh", "services/catalog/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/catalog/docker/boot.sh"]
@@ -125,12 +140,11 @@ CMD ["/bin/sh", "services/catalog/docker/boot.sh"]
 #
 FROM build as development
 
-ENV SC_BUILD_TARGET development
-ENV SC_BOOT_MODE development
+ENV SC_BUILD_TARGET=development
 
 WORKDIR /devel
-VOLUME  /devel/packages
-VOLUME  /devel/services/catalog/
+
+RUN chown -R scu:scu ${VIRTUAL_ENV}
 
 ENTRYPOINT ["/bin/sh", "services/catalog/docker/entrypoint.sh"]
 CMD ["/bin/sh", "services/catalog/docker/boot.sh"]

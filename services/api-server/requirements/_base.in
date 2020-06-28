@@ -5,18 +5,21 @@
 
 -r ../../../packages/postgres-database/requirements/_base.in
 
+# fastapi and extensions
 fastapi[all]
-aiopg[sa]
-tenacity
-passlib[bcrypt]
-loguru
-pydantic[dotenv]
-cryptography
-httpx
-
-# TODO: check alternative https://github.com/latchset/jwcrypto/
-pyjwt>=1.7.1  # Vulnerable SEE https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries/?_ga=2.21160507.1609921856.1592236287-1918774871.1591379535
-
-
 async-exit-stack  # not needed when python>=3.7
 async-generator   # not needed when python>=3.7
+
+# data models
+pydantic[dotenv]
+
+# database
+aiopg[sa]
+
+# web client
+httpx
+
+#
+attrs
+tenacity
+cryptography
