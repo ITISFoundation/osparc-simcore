@@ -3,7 +3,6 @@
 """
 import json
 import logging
-import pdb
 
 from aiohttp import web
 from jsonschema import ValidationError

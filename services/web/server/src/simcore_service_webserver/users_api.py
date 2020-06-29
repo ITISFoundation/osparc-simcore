@@ -4,7 +4,6 @@ from typing import Any, Dict, List
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
-from pydantic import BaseModel
 from sqlalchemy import and_, literal_column
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
