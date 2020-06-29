@@ -8674,8 +8674,22 @@ paths:
                       - locked
                     properties:
                       locked:
-                        type: boolean
-                        description: true if project currently locked
+                        type: object
+                        description: describes the project lock state
+                        properties:
+                          value:
+                            type: boolean
+                            description: true if the project is locked
+                          owner:
+                            type: object
+                            properties:
+                              firstName:
+                                type: string
+                              lastName:
+                                type: string
+                            required:
+                              - firstName
+                              - lastName
                   error:
                     nullable: true
                     default: null
