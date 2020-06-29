@@ -3,6 +3,7 @@
     requires Blackfynn, check Makefile env2
 
 """
+# FIXME: refactor!!!
 # pylint: skip-file
 
 import logging
@@ -48,7 +49,8 @@ class DatcoreClient(object):
     def __init__(self, api_token=None, api_secret=None, host=None, streaming_host=None):
         # WARNING: contruction raise exception if service is not available.
         # Use datacore_wrapper for safe calls
-        self.client = Blackfynn(
+        # TODO: can use https://developer.blackfynn.io/python/latest/configuration.html#environment-variables
+        self._bf = Blackfynn(
             profile=None,
             api_token=api_token,
             api_secret=api_secret,
@@ -60,7 +62,7 @@ class DatcoreClient(object):
         """
         Returns profile of current User
         """
-        return self.client.profile
+        return self._bf.profile
 
     def _collection_from_destination(self, destination: str):
         destination_path = Path(destination)
@@ -79,21 +81,21 @@ class DatcoreClient(object):
             collections = list(object_path.parts)
             collection_id = ""
             collection_id = _get_collection_id(dataset, collections, collection_id)
-            collection = self.client.get(collection_id)
+            collection = self._bf.get(collection_id)
 
         return collection, collection_id
 
     def _destination_from_id(self, destination_id: str):
-        destination = self.client.get(destination_id)
+        destination = self._bf.get(destination_id)
         if destination is None:
-            destination = self.client.get_dataset(destination_id)
+            destination = self._bf.get_dataset(destination_id)
 
         return destination
 
     def list_files_recursively(self, dataset_filter: str = ""):
         files = []
 
-        for dataset in self.client.datasets():
+        for dataset in self._bf.datasets():
             if not dataset_filter or dataset_filter in dataset.name:
                 self.list_dataset_files_recursively(files, dataset, Path(dataset.name))
 
@@ -106,9 +108,9 @@ class DatcoreClient(object):
 
         cursor = ""
         page_size = 1000
-        api = self.client._api.datasets
+        api = self._bf._api.datasets
 
-        dataset = self.client.get_dataset(dataset_id)
+        dataset = self._bf.get_dataset(dataset_id)
         if dataset is not None:
             while True:
                 resp = api._get(
@@ -174,7 +176,7 @@ class DatcoreClient(object):
     def list_files_raw(self, dataset_filter: str = "") -> List[FileMetaDataEx]:
         _files = []
 
-        for dataset in self.client.datasets():
+        for dataset in self._bf.datasets():
             _files = _files + self.list_files_raw_dataset(dataset.id)
 
         return _files
@@ -221,7 +223,7 @@ class DatcoreClient(object):
                 )
                 files.append(fmd)
 
-    def create_dataset(self, ds_name, force_delete=False):
+    def create_dataset(self, ds_name,*, force_delete=False):
         """
         Creates a new dataset for the current user and returns it. Returns existing one
         if there is already a dataset with the given name.
@@ -230,16 +232,15 @@ class DatcoreClient(object):
             ds_name (str): Name for the dataset (_,-,' ' and capitalization are ignored)
             force_delete (bool, optional): Delete first if dataset already exists
         """
-
         ds = None
         with suppress(Exception):
-            ds = self.client.get_dataset(ds_name)
+            ds = self._bf.get_dataset(ds_name)
             if force_delete:
                 ds.delete()
                 ds = None
 
         if ds is None:
-            ds = self.client.create_dataset(ds_name)
+            ds = self._bf.create_dataset(ds_name)
 
         return ds
 
@@ -254,10 +255,10 @@ class DatcoreClient(object):
 
         ds = None
         with suppress(Exception):
-            ds = self.client.get_dataset(ds_name)
+            ds = self._bf.get_dataset(ds_name)
 
         if ds is None and create_if_not_exists:
-            ds = self.client.create_dataset(ds_name)
+            ds = self._bf.create_dataset(ds_name)
 
         return ds
 
@@ -272,7 +273,7 @@ class DatcoreClient(object):
         # this is not supported
         ds = self.get_dataset(ds_name)
         if ds is not None:
-            self.client.delete(ds.id)
+            self._bf.delete(ds.id)
 
     def exists_dataset(self, ds_name):
         """
@@ -285,7 +286,7 @@ class DatcoreClient(object):
         ds = self.get_dataset(ds_name)
         return ds is not None
 
-    def upload_file(self, destination: str, filepath: str, meta_data=None):
+    def upload_file(self, destination: str, filepath: str, meta_data=None) -> bool:
         """
         Uploads a file to a given dataset/collection given its filepath on the host. Optionally
         adds some meta data
@@ -308,7 +309,7 @@ class DatcoreClient(object):
         files = [
             filepath,
         ]
-        self.client._api.io.upload_files(collection, files, display_progress=True)
+        self._bf._api.io.upload_files(collection, files, display_progress=True, use_agent=False)
         collection.update()
 
         if meta_data is not None:
@@ -361,8 +362,8 @@ class DatcoreClient(object):
         for item in collection:
             if isinstance(item, DataPackage):
                 if Path(item.files[0].as_dict()["content"]["s3key"]).name == filename:
-                    file_desc = self.client._api.packages.get_sources(item.id)[0]
-                    url = self.client._api.packages.get_presigned_url_for_file(
+                    file_desc = self._bf._api.packages.get_sources(item.id)[0]
+                    url = self._bf._api.packages.get_presigned_url_for_file(
                         item.id, file_desc.id
                     )
                     return url
@@ -375,12 +376,12 @@ class DatcoreClient(object):
         """
         url = ""
         filename = ""
-        package = self.client.get(file_id)
+        package = self._bf.get(file_id)
         if package is not None:
             filename = Path(package.files[0].as_dict()["content"]["s3key"]).name
 
-        file_desc = self.client._api.packages.get_sources(file_id)[0]
-        url = self.client._api.packages.get_presigned_url_for_file(
+        file_desc = self._bf._api.packages.get_sources(file_id)[0]
+        url = self._bf._api.packages.get_presigned_url_for_file(
             file_id, file_desc.id
         )
 
@@ -419,20 +420,21 @@ class DatcoreClient(object):
         for item in collection:
             if isinstance(item, DataPackage):
                 if Path(item.files[0].as_dict()["content"]["s3key"]).name == filename:
-                    self.client.delete(item)
+                    self._bf.delete(item)
                     return True
 
         return False
 
-    def delete_file_by_id(self, id: str):
+    def delete_file_by_id(self, id: str) -> bool:
         """
         Deletes file by id
 
         Args:
             datcore id for the file
         """
-        package = self.client.get(id)
+        package: DataPackage = self._bf.get(id)
         package.delete()
+        return not package.exists
 
     def delete_files(self, destination):
         """
@@ -449,7 +451,7 @@ class DatcoreClient(object):
 
         collection.update()
         for item in collection:
-            self.client.delete(item)
+            self._bf.delete(item)
 
     def update_meta_data(self, dataset, filename, meta_data):
         """
@@ -514,7 +516,7 @@ class DatcoreClient(object):
             what (str): query
             max_count (int): Max number of results to return
         """
-        return self.client.search(what, max_count)
+        return self._bf.search(what, max_count)
 
     def upload_file_to_id(self, destination_id: str, filepath: str):
         """
@@ -534,16 +536,18 @@ class DatcoreClient(object):
         if destination is None:
             return _id
 
-        files = [filepath]
+        files = [filepath, ]
 
         try:
-            result = self.client._api.io.upload_files(
-                destination, files, display_progress=True
+            # TODO: PC->MAG: should protected API
+            # TODO: add new agent SEE https://developer.blackfynn.io/python/latest/CHANGELOG.html#id31
+            result = self._bf._api.io.upload_files(
+                destination, files, display_progress=True, use_agent=False
             )
             if result and result[0] and "package" in result[0][0]:
                 _id = result[0][0]["package"]["content"]["id"]
 
-        except Exception:
+        except Exception: # pylint: disable=
             logger.exception("Error uploading file to datcore")
 
         return _id
@@ -571,7 +575,7 @@ class DatcoreClient(object):
 
     def list_datasets(self) -> DatasetMetaDataVec:
         data = []
-        for dataset in self.client.datasets():
+        for dataset in self._bf.datasets():
             dmd = DatasetMetaData(dataset_id=dataset.id, display_name=dataset.name)
             data.append(dmd)
 

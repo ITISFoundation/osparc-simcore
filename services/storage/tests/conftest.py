@@ -350,21 +350,28 @@ async def datcore_structured_testbucket(loop, mock_files_factory):
     dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
 
     dataset_id = await dcw.create_test_dataset(BUCKET_NAME)
+    assert dataset_id, f"Could not create dataset {BUCKET_NAME}"
+
     tmp_files = mock_files_factory(3)
+
     # first file to the root
-    file_id1 = await dcw.upload_file_to_id(dataset_id, os.path.normpath(tmp_files[0]))
+    filename1 = os.path.normpath(tmp_files[0])
+    file_id1 = await dcw.upload_file_to_id(dataset_id, filename1)
+    assert file_id1, f"Could not upload {filename1} to the root of {BUCKET_NAME}"
+
     # create first level folder
     collection_id1 = await dcw.create_collection(dataset_id, "level1")
+
     # upload second file
-    file_id2 = await dcw.upload_file_to_id(
-        collection_id1, os.path.normpath(tmp_files[1])
-    )
+    filename2 = os.path.normpath(tmp_files[1])
+    file_id2 = await dcw.upload_file_to_id(collection_id1, filename2)
+    assert file_id2, f"Could not upload {filename2} to the {BUCKET_NAME}/level1"
 
     # create 3rd level folder
+    filename3 = os.path.normpath(tmp_files[2])
     collection_id2 = await dcw.create_collection(collection_id1, "level2")
-    file_id3 = await dcw.upload_file_to_id(
-        collection_id2, os.path.normpath(tmp_files[2])
-    )
+    file_id3 = await dcw.upload_file_to_id(collection_id2, filename3)
+    assert file_id3, f"Could not upload {filename3} to the {BUCKET_NAME}/level1/level2"
 
     yield {
         "dataset_id": dataset_id,

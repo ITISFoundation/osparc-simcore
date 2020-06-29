@@ -27,7 +27,7 @@ PASS = "admin"
 ACCESS_KEY = "12345678"
 SECRET_KEY = "12345678"
 
-BUCKET_NAME = "simcore-testing"
+BUCKET_NAME = "simcore-testing-bucket"
 USER_ID = "0"
 
 

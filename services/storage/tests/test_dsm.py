@@ -230,18 +230,20 @@ async def test_dsm_datcore(
         return
 
     utils.create_tables(url=postgres_service_url)
+
     dsm = dsm_fixture
     user_id = "0"
     data = await dsm.list_files(
         user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME
     )
-    # the fixture creates two files
+    # the fixture creates 3 files
     assert len(data) == 3
 
     # delete the first one
     fmd_to_delete = data[0].fmd
     print("Deleting", fmd_to_delete.bucket_name, fmd_to_delete.object_name)
-    await dsm.delete_file(user_id, DATCORE_STR, fmd_to_delete.file_id)
+    is_deleted = await dsm.delete_file(user_id, DATCORE_STR, fmd_to_delete.file_id)
+    assert is_deleted
 
     data = await dsm.list_files(
         user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME
