@@ -11,10 +11,10 @@ import os
 import urllib
 from contextlib import suppress
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 from blackfynn import Blackfynn
-from blackfynn.models import BaseCollection, Collection, DataPackage
+from blackfynn.models import BaseCollection, Collection, DataPackage, Dataset
 
 from simcore_service_storage.models import DatasetMetaData, FileMetaData, FileMetaDataEx
 from simcore_service_storage.settings import DATCORE_ID, DATCORE_STR
@@ -86,9 +86,13 @@ class DatcoreClient(object):
         return collection, collection_id
 
     def _destination_from_id(self, destination_id: str):
-        destination = self._bf.get(destination_id)
+        # NOTE: .get(*) logs
+        #  INFO:blackfynn.client.Blackfynn:Unable to retrieve object
+        # if destination_id refers to a Dataset
+
+        destination: Union[DataPackage, Collection] = self._bf.get(destination_id)
         if destination is None:
-            destination = self._bf.get_dataset(destination_id)
+            destination: Dataset = self._bf.get_dataset(destination_id)
 
         return destination
 
@@ -223,7 +227,7 @@ class DatcoreClient(object):
                 )
                 files.append(fmd)
 
-    def create_dataset(self, ds_name,*, force_delete=False):
+    def create_dataset(self, ds_name, *, force_delete=False):
         """
         Creates a new dataset for the current user and returns it. Returns existing one
         if there is already a dataset with the given name.
@@ -309,7 +313,9 @@ class DatcoreClient(object):
         files = [
             filepath,
         ]
-        self._bf._api.io.upload_files(collection, files, display_progress=True, use_agent=False)
+        self._bf._api.io.upload_files(
+            collection, files, display_progress=True, use_agent=False
+        )
         collection.update()
 
         if meta_data is not None:
@@ -381,9 +387,7 @@ class DatcoreClient(object):
             filename = Path(package.files[0].as_dict()["content"]["s3key"]).name
 
         file_desc = self._bf._api.packages.get_sources(file_id)[0]
-        url = self._bf._api.packages.get_presigned_url_for_file(
-            file_id, file_desc.id
-        )
+        url = self._bf._api.packages.get_presigned_url_for_file(file_id, file_desc.id)
 
         return url, filename
 
@@ -536,7 +540,9 @@ class DatcoreClient(object):
         if destination is None:
             return _id
 
-        files = [filepath, ]
+        files = [
+            filepath,
+        ]
 
         try:
             # TODO: PC->MAG: should protected API
@@ -547,7 +553,7 @@ class DatcoreClient(object):
             if result and result[0] and "package" in result[0][0]:
                 _id = result[0][0]["package"]["content"]["id"]
 
-        except Exception: # pylint: disable=
+        except Exception:
             logger.exception("Error uploading file to datcore")
 
         return _id

@@ -278,7 +278,7 @@ class DataStorageManager:
 
                 # same as above, make sure file is physically present on s3
                 clean_data = []
-                # TODO: MaG: This is inefficient: Do this automatically when file is modified
+                # FIXME: MaG: This is inefficient: Do this automatically when file is modified
                 session = aiobotocore.get_session()
                 async with session.create_client(
                     "s3",
@@ -551,6 +551,7 @@ class DataStorageManager:
 
         s3_upload_link = await self.upload_link(user_id, dest_uuid)
 
+        # FIXME: user of mkdtemp is RESPONSIBLE to deleting it https://docs.python.org/3/library/tempfile.html#tempfile.mkdtemp
         tmp_dirpath = tempfile.mkdtemp()
         local_file_path = os.path.join(tmp_dirpath, filename)
         session = get_client_session(self.app)
@@ -741,7 +742,7 @@ class DataStorageManager:
                 await conn.execute(ins)
 
     async def delete_project_simcore_s3(
-        self, user_id: str, project_id: str, node_id: Optional[str]
+        self, user_id: str, project_id: str, node_id: Optional[str]=None
     ) -> web.Response:
         """ Deletes all files from a given node in a project in simcore.s3 and updated db accordingly.
             If node_id is not given, then all the project files db entries are deleted.
