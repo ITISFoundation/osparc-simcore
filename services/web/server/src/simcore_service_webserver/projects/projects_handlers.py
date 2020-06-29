@@ -377,6 +377,7 @@ async def state_project(request: web.Request) -> web.Response:
         # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
         from .projects_api import get_project_for_user
 
+        # check that project exists
         await get_project_for_user(
             request.app,
             project_uuid=project_uuid,
