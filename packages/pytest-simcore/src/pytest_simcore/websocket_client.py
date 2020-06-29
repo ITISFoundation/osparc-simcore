@@ -10,7 +10,7 @@ from servicelib.rest_responses import unwrap_envelope
 
 
 @pytest.fixture()
-async def security_cookie(loop, client) -> str:
+async def security_cookie_factory(loop, client) -> str:
     # get the cookie by calling the root entrypoint
     resp = await client.get("/v0/")
     payload = await resp.json()
@@ -33,7 +33,7 @@ async def socketio_url(loop, client) -> str:
 
 @pytest.fixture()
 async def socketio_client(
-    socketio_url: str, security_cookie: str
+    socketio_url: str, security_cookie_factory: str
 ) -> socketio.AsyncClient:
     clients = []
 
@@ -46,9 +46,9 @@ async def socketio_client(
         )
 
         headers = {}
-        if security_cookie:
+        if security_cookie_factory:
             # WARNING: engineio fails with empty cookies. Expects "key=value"
-            headers.update({"Cookie": security_cookie})
+            headers.update({"Cookie": security_cookie_factory})
 
         await sio.connect(url, headers=headers)
         assert sio.sid

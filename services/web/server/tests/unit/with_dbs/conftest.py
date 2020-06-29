@@ -249,7 +249,7 @@ def socketio_url(client) -> Callable:
 from pytest_simcore.helpers.utils_assert import assert_status
 from aiohttp import web
 @pytest.fixture()
-async def security_cookie(client) -> Callable:
+async def security_cookie_factory(client) -> Callable:
     async def creator(client_override: Optional = None) -> str:
         # get the cookie by calling the root entrypoint
         resp = await (client_override or client).get("/v0/")
@@ -269,7 +269,7 @@ async def security_cookie(client) -> Callable:
 
 @pytest.fixture()
 async def socketio_client(
-    socketio_url: Callable, security_cookie: Callable
+    socketio_url: Callable, security_cookie_factory: Callable
 ) -> Callable:
     clients = []
 
@@ -284,7 +284,7 @@ async def socketio_client(
             )
         )
         headers = {}
-        cookie = await security_cookie(client)
+        cookie = await security_cookie_factory(client)
         if cookie:
             # WARNING: engineio fails with empty cookies. Expects "key=value"
             headers.update({"Cookie": cookie})
