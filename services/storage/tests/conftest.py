@@ -16,15 +16,18 @@ from random import randrange
 from typing import Tuple
 
 import pytest
+from aiohttp import web
 from aiopg.sa import create_engine
 
 import simcore_service_storage
 import utils
+from servicelib.application import create_safe_application
 from simcore_service_storage.datcore_wrapper import DatcoreWrapper
 from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.settings import SIMCORE_S3_STR
-from utils import ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER, USER_ID
+from utils import (ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER,
+                   USER_ID)
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 sys.path.append(str(current_dir / "helpers"))
@@ -324,17 +327,33 @@ async def datcore_testbucket(loop, mock_files_factory):
 
 
 @pytest.fixture(scope="function")
-def dsm_fixture(s3_client, postgres_engine, loop):
+def moduleless_app(loop, aiohttp_server) -> web.Application:
+    app: web.Application = create_safe_application()
+    # creates a dummy server
+    server = loop.run_until_complete(aiohttp_server(app))
+    # server is destroyed on exit https://docs.aiohttp.org/en/stable/testing.html#pytest_aiohttp.aiohttp_server
+    return app
+
+
+@pytest.fixture(scope="function")
+def dsm_fixture(s3_client, postgres_engine, loop, moduleless_app):
     pool = ThreadPoolExecutor(3)
+
     dsm_fixture = DataStorageManager(
-        s3_client, postgres_engine, loop, pool, BUCKET_NAME, False
+        s3_client=s3_client,
+        engine=postgres_engine,
+        loop=loop,
+        pool=pool,
+        simcore_bucket_name=BUCKET_NAME,
+        has_project_db=False,
+        app=moduleless_app,
     )
 
     api_token = os.environ.get("BF_API_KEY", "none")
     api_secret = os.environ.get("BF_API_SECRET", "none")
     dsm_fixture.datcore_tokens[USER_ID] = DatCoreApiToken(api_token, api_secret)
 
-    return dsm_fixture
+    yield dsm_fixture
 
 
 @pytest.fixture(scope="function")
