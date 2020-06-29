@@ -245,6 +245,8 @@ async def test_dsm_datcore(
     is_deleted = await dsm.delete_file(user_id, DATCORE_STR, fmd_to_delete.file_id)
     assert is_deleted
 
+    import time; time.sleep(1) # FIXME: takes some time to delete!!
+
     data = await dsm.list_files(
         user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME
     )
@@ -292,6 +294,9 @@ async def test_dsm_s3_to_datcore(
         local_file_path=tmp_file2,
         destination_id=datcore_structured_testbucket["coll2_id"],
     )
+
+    #FIXME: upload takes some time
+    import time; time.sleep(1)
 
     data = await dsm.list_files(
         user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME
