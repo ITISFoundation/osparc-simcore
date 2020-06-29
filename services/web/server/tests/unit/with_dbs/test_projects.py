@@ -4,18 +4,18 @@
 
 import asyncio
 import json
+import pdb
+import time
 import uuid as uuidlib
 from asyncio import Future, sleep
 from copy import deepcopy
 from typing import Callable, Dict, List, Optional
 
+import mock
 import pytest
 import socketio
 from aiohttp import web
 from mock import call
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
-from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from socketio.exceptions import ConnectionError
 
 from _helpers import (
@@ -24,15 +24,22 @@ from _helpers import (
     future_with_result,
     standard_role_response,
 )
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
+from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
-from simcore_service_webserver.projects.projects_api import ProjectState
 from simcore_service_webserver.projects.projects_handlers import (
     OVERRIDABLE_DOCUMENT_KEYS,
+)
+from simcore_service_webserver.projects.projects_models import (
+    Owner,
+    ProjectLocked,
+    ProjectState,
 )
 from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
@@ -1232,17 +1239,13 @@ async def _state_project(
     project: Dict,
     expected: web.HTTPException,
     expected_project_state: ProjectState,
-) -> Dict[str, str]:
+):
     url = client.app.router["state_project"].url_for(project_id=project["uuid"])
     resp = await client.get(url)
     data, error = await assert_status(resp, expected)
     if not error:
         # the project is locked
-        assert data == expected_project_state
-
-
-import mock
-import time
+        assert data == expected_project_state.dict()
 
 
 async def _assert_project_state_updated(
@@ -1287,7 +1290,7 @@ async def test_open_shared_project_2_users_locked(
     shared_project: Dict,
     socketio_client: Callable,
     # mocked_director_subsystem,
-    client_session_id: str,
+    client_session_id: Callable,
     user_role: UserRole,
     expected: ExpectedResponse,
     aiohttp_client,
@@ -1309,7 +1312,7 @@ async def test_open_shared_project_2_users_locked(
         client_id1,
         {SOCKET_IO_PROJECT_UPDATED_EVENT: mock_project_state_updated_handler},
     )
-    expected_project_state = ProjectState(locked=False)
+    expected_project_state = ProjectState(locked={"value": False})
     await _state_project(
         client_1,
         shared_project,
@@ -1322,7 +1325,11 @@ async def test_open_shared_project_2_users_locked(
         shared_project,
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
     )
-    expected_project_state.locked = True
+    expected_project_state.locked.value = True
+    expected_project_state.locked.owner = Owner(
+        first_name=(logged_user["name"].split(".") + [""])[0],
+        last_name=(logged_user["name"].split(".") + [""])[1],
+    )
     # NOTE: there are 2 calls since we are part of the primary group and the all group
     await _assert_project_state_updated(
         mock_project_state_updated_handler,
@@ -1364,9 +1371,10 @@ async def test_open_shared_project_2_users_locked(
 
     # 3. user 1 closes the project
     await _close_project(client_1, client_id1, shared_project, expected.no_content)
-    expected_project_state.locked = (
-        True if user_role == UserRole.GUEST else False
-    )  # Guests cannot close projects
+    if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
+        # Guests cannot close projects
+        expected_project_state = ProjectState(locked=ProjectLocked(value=False))
+
     # we should receive an event that the project lock state changed
     # NOTE: there are 3 calls since we are part of the primary group and the all group and user 2 is part of the all group
     await _assert_project_state_updated(
@@ -1391,7 +1399,12 @@ async def test_open_shared_project_2_users_locked(
         shared_project,
         expected.ok if user_role != UserRole.GUEST else HTTPLocked,
     )
-    expected_project_state.locked = True
+    if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
+        expected_project_state.locked.value = True
+        expected_project_state.locked.owner = Owner(
+            first_name=(user_2["name"].split(".") + [""])[0],
+            last_name=(user_2["name"].split(".") + [""])[1],
+        )
     # NOTE: there are 3 calls since we are part of the primary group and the all group
     await _assert_project_state_updated(
         mock_project_state_updated_handler,

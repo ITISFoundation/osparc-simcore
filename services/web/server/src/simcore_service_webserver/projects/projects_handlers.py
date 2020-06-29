@@ -3,6 +3,7 @@
 """
 import json
 import logging
+import pdb
 
 from aiohttp import web
 from jsonschema import ValidationError
@@ -14,9 +15,11 @@ from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from ..security_api import check_permission
 from ..security_decorators import permission_required
+from ..users_api import get_user_name
 from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from .projects_models import Owner, ProjectLocked, ProjectState
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",
@@ -307,8 +310,13 @@ async def open_project(request: web.Request) -> web.Response:
         # user id opened project uuid
         await projects_api.start_project_interactive_services(request, project, user_id)
         # notify users that project is now locked
+        project_state = ProjectState(
+            locked=ProjectLocked(
+                value=True, owner=Owner(**await get_user_name(request.app, user_id))
+            )
+        )
         await projects_api.notify_project_state_update(
-            request.app, project, opened=True
+            request.app, project, project_state
         )
 
         return {"data": project}
@@ -341,7 +349,7 @@ async def close_project(request: web.Request) -> web.Response:
                 len(await rt.find_users_of_resource("project_id", project_uuid)) > 0
             )
         # if we are the only user left we can safely remove the services
-        async def close_project_task():
+        async def close_project_task() -> None:
             try:
                 if not project_opened_by_others:
                     # only remove the services if no one else is using them now
@@ -351,7 +359,7 @@ async def close_project(request: web.Request) -> web.Response:
             finally:
                 # ensure we notify the user whatever happens, the GC should take care of dangling services in case of issue
                 await projects_api.notify_project_state_update(
-                    request.app, project, opened=False
+                    request.app, project, ProjectState(locked={"value": False})
                 )
 
         fire_and_forget_task(close_project_task())
@@ -378,7 +386,18 @@ async def state_project(request: web.Request) -> web.Response:
         )
 
         users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
-        return {"data": {"locked": len(users_of_project) > 0}}
+        usernames = [
+            await get_user_name(request.app, uid) for uid in set(users_of_project)
+        ]
+        assert len(usernames) <= 1  # currently not possible to have more than 1
+        project_state = ProjectState(
+            locked={
+                "value": len(usernames) > 0,
+                "owner": Owner(**usernames[0]) if len(usernames) > 0 else None,
+            }
+        )
+
+        return {"data": project_state.dict()}
 
 
 @login_required

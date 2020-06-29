@@ -4,6 +4,7 @@ from typing import Any, Dict, List
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
+from pydantic import BaseModel
 from sqlalchemy import and_, literal_column
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
@@ -207,3 +208,13 @@ async def delete_token(app: web.Application, user_id: int, service_id: str) -> N
                 and_(tokens.c.user_id == user_id, tokens.c.token_service == service_id)
             )
         )
+
+
+async def get_user_name(app: web.Application, user_id: int) -> Dict[str, str]:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        user_name = await conn.scalar(
+            sa.select([users.c.name]).where(users.c.id == user_id)
+        )
+        parts = user_name.split(".") + [""]
+        return dict(first_name=parts[0], last_name=parts[1])

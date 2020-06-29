@@ -34,6 +34,8 @@ components:
         locked:
           type: object
           description: describes the project lock state
+          required:
+            - value
           properties:
             value:
               type: boolean
