@@ -88,6 +88,9 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           if (viewLayout.resetSelection) {
             viewLayout.resetSelection();
           }
+          if (viewLayout.resetFilter) {
+            viewLayout.resetFilter();
+          }
         }, this);
         const scrollerMainView = new qx.ui.container.Scroll();
         scrollerMainView.add(viewLayout);

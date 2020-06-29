@@ -65,6 +65,23 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __templateStudies: null,
     __services: null,
 
+    /**
+     * Function that resets the selected item
+     */
+    resetSelection: function() {
+      if (this.__templateStudyContainer) {
+        this.__templateStudyContainer.resetSelection();
+      }
+      if (this.__servicesContainer) {
+        this.__servicesContainer.resetSelection();
+      }
+    },
+    resetFilter: function() {
+      if (this.__exploreFilters) {
+        this.__exploreFilters.reset();
+      }
+    },
+
     __checkLoggedIn: function() {
       let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
       if (!isLogged) {
@@ -72,15 +89,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         osparc.component.message.FlashMessenger.getInstance().logAs(msg);
       }
       return isLogged;
-    },
-
-    /**
-     * Function that resets the selected item
-     */
-    resetSelection: function() {
-      if (this.__exploreFilters) {
-        this.__exploreFilters.reset();
-      }
     },
 
     /**
@@ -457,13 +465,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         const studyData = this.__templateStudies.find(matchesId);
         this.__startStudy(studyData);
       }
-
-      if (this.__templateStudyContainer) {
-        this.__templateStudyContainer.resetSelection();
-      }
-      if (this.__servicesContainer) {
-        this.__servicesContainer.resetSelection();
-      }
+      this.resetSelection();
     },
 
     __createStudyDetailsEditor: function(studyData, winWidth) {

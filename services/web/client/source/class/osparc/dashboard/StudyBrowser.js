@@ -80,10 +80,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
      * Function that resets the selected item
      */
     resetSelection: function() {
+      if (this.__userStudyContainer) {
+        this.__userStudyContainer.resetSelection();
+      }
+    },
+    resetFilter: function() {
       if (this.__studyFilters) {
         this.__studyFilters.reset();
       }
-      this.__itemSelected(null);
     },
 
     __reloadUserStudy: function(studyId) {
@@ -110,7 +114,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         osparc.data.Resources.get("studies")
           .then(studies => {
             this.__resetStudyList(studies);
-            this.__itemSelected(null);
+            this.resetSelection();
           })
           .catch(err => {
             console.error(err);
@@ -283,7 +287,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }, this);
       const commandEsc = new qx.ui.command.Command("Esc");
       commandEsc.addListener("execute", e => {
-        this.__itemSelected(null);
+        this.resetSelection();
       });
       osparc.store.Store.getInstance().addListener("changeTags", () => this.__resetStudyList(osparc.store.Store.getInstance().getStudies()), this);
     },
@@ -451,7 +455,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const selectButton = new qx.ui.menu.Button(this.tr("Select"));
       selectButton.addListener("execute", () => {
         item.setValue(true);
-        this.__itemMultiSelected(item);
       }, this);
       return selectButton;
     },
@@ -524,34 +527,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __itemClicked: function(item) {
       const selected = item.getValue();
-      const studyData = this.__getStudyData(item.getUuid(), false);
       const selection = this.__userStudyContainer.getSelection();
-      if (selection.length > 1) {
-        this.__itemMultiSelected(item);
-      } else if (selected) {
+      if (selected && selection.length === 1) {
+        const studyData = this.__getStudyData(item.getUuid(), false);
         this.__startStudy(studyData);
-      }
-    },
-
-    __itemMultiSelected: function(item) {
-      // Selection logic
-      if (item.getValue()) {
-        this.__itemSelected(item.getUuid());
-      } else {
-        const selection = this.__userStudyContainer.getSelection();
-        if (selection.length) {
-          this.__itemSelected(selection[0].getUuid());
-        } else {
-          this.__itemSelected(null);
-        }
-      }
-    },
-
-    __itemSelected: function(studyId) {
-      if (studyId === null) {
-        if (this.__userStudyContainer) {
-          this.__userStudyContainer.resetSelection();
-        }
       }
     },
 
@@ -611,7 +590,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           console.error(err);
           osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");
         })
-        .finally(this.__itemSelected(null));
+        .finally(this.resetSelection());
     },
 
     __deleteStudies: function(studiesData) {
