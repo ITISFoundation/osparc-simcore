@@ -3,6 +3,7 @@
 """
 import json
 import logging
+from typing import Set
 
 from aiohttp import web
 from jsonschema import ValidationError
@@ -300,7 +301,7 @@ async def open_project(request: web.Request) -> web.Response:
             )
 
             # let's check if that project is already opened by someone else
-            other_users = {
+            other_users: Set[int] = {
                 x
                 for x in await rt.find_users_of_resource("project_id", project_uuid)
                 if x != f"{user_id}"
@@ -325,8 +326,7 @@ async def open_project(request: web.Request) -> web.Response:
         await projects_api.notify_project_state_update(
             request.app, project, project_state
         )
-
-        return {"data": project}
+        return web.json_response({"data": project})
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
 
@@ -405,7 +405,7 @@ async def state_project(request: web.Request) -> web.Response:
             }
         )
 
-        return {"data": project_state.dict()}
+        return web.json_response({"data": project_state.dict()})
 
 
 @login_required
@@ -430,7 +430,7 @@ async def get_active_project(request: web.Request) -> web.Response:
                     include_templates=True,
                 )
 
-        return {"data": project}
+        return web.json_response({"data": project})
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason="Project not found")
 
@@ -489,7 +489,7 @@ async def get_node(request: web.Request) -> web.Response:
         node_details = await projects_api.get_project_node(
             request, project_uuid, user_id, node_uuid
         )
-        return {"data": node_details}
+        return web.json_response({"data": node_details})
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
 
