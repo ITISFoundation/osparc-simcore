@@ -12,8 +12,9 @@ from simcore_service_webserver.login.cfg import get_storage
 
 from .db_models import GroupType, groups, tokens, user_to_groups, users
 from .groups_api import convert_groups_db_to_schema
-from .users_utils import convert_user_db_to_schema
+from .security_api import clean_auth_policy_cache
 from .users_exceptions import UserNotFoundError
+from .users_utils import convert_user_db_to_schema
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ async def get_user_profile(app: web.Application, user_id: int) -> Dict[str, Any]
     user_profile: Dict[str, Any] = {}
     user_primary_group = all_group = {}
     user_standard_groups = []
+
     async with engine.acquire() as conn:
         async for row in conn.execute(
             sa.select(
@@ -92,6 +94,7 @@ async def update_user_profile(
         assert resp.rowcount == 1  # nosec
 
 
+
 async def is_user_guest(app: web.Application, user_id: int) -> bool:
     """Returns True if the user exists and is a GUEST"""
     db = get_storage(app)
@@ -105,6 +108,11 @@ async def is_user_guest(app: web.Application, user_id: int) -> bool:
 
 async def delete_user(app: web.Application, user_id: int) -> None:
     """Deletes a user from the database if the user exists"""
+    # FIXME: user cannot be deleted without deleting first all ist project
+    # otherwise this function will raise asyncpg.exceptions.ForeignKeyViolationError
+    # Consider "marking" users as deleted and havning a background job that
+    # cleans it up
+
     db = get_storage(app)
     user = await db.get_user({"id": user_id})
     if not user:
@@ -114,6 +122,10 @@ async def delete_user(app: web.Application, user_id: int) -> None:
         return
 
     await db.delete_user(user)
+
+    # This user might be cached in the auth. If so, any request
+    # with this user-id will get thru producing unexpected side-effects
+    clean_auth_policy_cache(app)
 
 
 # TOKEN -------------------------------------------

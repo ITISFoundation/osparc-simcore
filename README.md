@@ -1,23 +1,23 @@
 # osparc-simcore platform
 
 <p align="center">
-<img src="https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png" width="700">
+<img src="https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png" width="500">
 </p>
 
+
 <!-- NOTE: when branched replace `master` in urls -->
-[`master`](https://github.com/itisfoundation/osparc-simcore/tree/master)
 [![Code style: black]](https://github.com/psf/black)
 [![Requires.io]](https://requires.io/github/ITISFoundation/osparc-simcore/requirements/?branch=master "State of third party python dependencies")
 [![travis-ci]](https://travis-ci.org/ITISFoundation/osparc-simcore "State of CI: build, test and pushing images")
-![Github-CI Push/PR](https://github.com/ITISFoundation/osparc-simcore/workflows/Github-CI%20Push/PR/badge.svg)
+[![Github-CI Push/PR]](https://github.com/ITISFoundation/osparc-simcore/actions?query=workflow%3A%22Github-CI+Push%2FPR%22+branch%3Amaster)
 [![coveralls.io]](https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master)
 [![codecov.io]](https://codecov.io/gh/ITISFoundation/osparc-simcore)
 [![github.io]](https://itisfoundation.github.io/)
 [![itis.dockerhub]](https://hub.docker.com/u/itisfoundation)
+[![license]](./LICENSE)
 
 
-
-<!-- ADD HERE ALL BADGE URLS -->
+<!-- ADD HERE ALL BADGE URLS. Use https://shields.io/ -->
 [Code style: black]:https://img.shields.io/badge/code%20style-black-000000.svg
 [Requires.io]:https://img.shields.io/requires/github/ITISFoundation/osparc-simcore.svg
 [travis-ci]:https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master
@@ -25,8 +25,9 @@
 [itis.dockerhub]:https://img.shields.io/website/https/hub.docker.com/u/itisfoundation.svg?down_color=red&label=dockerhub%20repos&up_color=green
 [coveralls.io]:https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master
 [codecov.io]:https://codecov.io/gh/ITISFoundation/osparc-simcore/branch/master/graph/badge.svg
-
-<!---------------------------->
+[license]:https://img.shields.io/github/license/ITISFoundation/osparc-simcore
+[Github-CI Push/PR]:https://github.com/ITISFoundation/osparc-simcore/workflows/Github-CI%20Push/PR/badge.svg
+<!------------------------------------------------------>
 
 
 The SIM-CORE, named **o<sup>2</sup>S<sup>2</sup>PARC** – **O**pen **O**nline **S**imulations for **S**timulating **P**eripheral **A**ctivity to **R**elieve **C**onditions – is one of the three integrative cores of the SPARC program’s Data Resource Center (DRC).

@@ -1,9 +1,10 @@
 import logging
 
 from aiohttp import web
+from yarl import URL
+
 from servicelib import observer
 from servicelib.rest_utils import extract_and_validate
-from yarl import URL
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..security_api import check_password, encrypt_password, forget, remember

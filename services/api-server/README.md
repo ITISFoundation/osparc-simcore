@@ -1,7 +1,6 @@
 # api-server
 
 [![image-size]](https://microbadger.com/images/itisfoundation/api-server. "More on itisfoundation/api-server.:staging-latest image")
-
 [![image-badge]](https://microbadger.com/images/itisfoundation/api-server "More on Public API Server image in registry")
 [![image-version]](https://microbadger.com/images/itisfoundation/api-server "More on Public API Server image in registry")
 [![image-commit]](https://microbadger.com/images/itisfoundation/api-server "More on Public API Server image in registry")
@@ -14,6 +13,27 @@ Platform's public API server
 [image-version]https://images.microbadger.com/badges/version/itisfoundation/api-server.svg
 [image-commit]:https://images.microbadger.com/badges/commit/itisfoundation/api-server.svg
 <!------------------------->
+
+
+## Development
+
+Setup environment
+```cmd
+make devenv
+source .venv/bin/activate
+cd services/api-service
+make install-dev
+```
+Then
+```cmd
+make run-devel
+```
+
+will start the api-server in development-mode together with a postgres db initialized with test data. Open the following sites and use the test credentials ``user=key, password=secret`` to manually test the API:
+
+- http://127.0.0.1:8000/docs: redoc documentation
+- http://127.0.0.1:8000/dev/docs: swagger type of documentation
+
 
 
 

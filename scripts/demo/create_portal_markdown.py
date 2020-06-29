@@ -121,7 +121,7 @@ def main(mock_codes):
 
         print("", file=fh)
 
-    today = datetime.today()
+    today: datetime = datetime.today()
     file_path = current_path.parent / CONFIRMATIONS_FILENAME
     with _open(file_path) as fh:
         print("code,user_id,action,data,created_at", file=fh)

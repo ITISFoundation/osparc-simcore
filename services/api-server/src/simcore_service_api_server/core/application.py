@@ -1,9 +1,8 @@
-import sys
+import logging
 from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
-from loguru import logger
 from starlette.exceptions import HTTPException
 
 from ..__version__ import api_version, api_vtag
@@ -16,12 +15,15 @@ from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .redoc import create_redoc_handler
 from .settings import AppSettings
 
+logger = logging.getLogger(__name__)
+
 
 def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings is None:
         settings = AppSettings.create_default()
 
-    logger.add(sys.stderr, level=settings.loglevel)
+    logging.basicConfig(level=settings.loglevel)
+    logging.root.setLevel(settings.loglevel)
 
     app = FastAPI(
         debug=settings.debug,

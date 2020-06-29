@@ -1,4 +1,5 @@
 import json
+import logging
 import types
 from pathlib import Path
 from typing import Dict
@@ -7,9 +8,10 @@ import yaml
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.routing import APIRoute
-from loguru import logger
 
 from .redoc import add_vendor_extensions, compose_long_description
+
+logger = logging.getLogger(__name__)
 
 
 def override_openapi_method(app: FastAPI):
@@ -55,7 +57,7 @@ def use_route_names_as_operation_ids(app: FastAPI) -> None:
 
 
 def dump_openapi(app: FastAPI, filepath: Path):
-    logger.info("Dumping openapi specs as {}", filepath)
+    logger.info("Dumping openapi specs as %s", filepath)
     with open(filepath, "wt") as fh:
         if filepath.suffix == ".json":
             json.dump(app.openapi(), fh, indent=2)

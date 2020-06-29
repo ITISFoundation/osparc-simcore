@@ -2,8 +2,9 @@ import logging
 
 import aioredis
 from aiohttp import web
+from tenacity import Retrying, before_log, stop_after_attempt, wait_random
+
 from servicelib.application_keys import APP_CONFIG_KEY
-from tenacity import Retrying, stop_after_attempt, wait_random, before_log
 
 from .config import APP_CLIENT_REDIS_CLIENT_KEY, CONFIG_SECTION_NAME
 

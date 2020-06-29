@@ -8,6 +8,7 @@
 
 # 'services/catalog/tests/unit' dependencies
 
+
 # testing
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
@@ -18,6 +19,10 @@ pytest-docker
 
 # fixtures
 Faker
+
+# migration due to pytest_simcore.postgres_service2
+alembic
+docker
 
 # tools
 pylint

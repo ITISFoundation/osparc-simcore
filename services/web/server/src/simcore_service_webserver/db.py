@@ -5,6 +5,8 @@
 import logging
 
 from aiohttp import web
+from tenacity import Retrying
+
 from servicelib.aiopg_utils import (
     DataSourceName,
     PostgresRetryPolicyUponInitialization,
@@ -15,7 +17,6 @@ from servicelib.aiopg_utils import (
 )
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
-from tenacity import Retrying
 
 from .db_config import CONFIG_SECTION_NAME
 from .db_models import metadata

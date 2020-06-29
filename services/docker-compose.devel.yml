@@ -9,7 +9,8 @@ services:
   api-server:
     environment:
       - SC_BOOT_MODE=debug-ptvsd
-      - LOGLEVEL=debug
+      - LOG_LEVEL=debug
+      - DEBUG=true
     volumes:
       - ./api-server:/devel/services/api-server
       - ../packages:/devel/packages
@@ -17,8 +18,8 @@ services:
   catalog:
     environment:
       - SC_BOOT_MODE=debug-ptvsd
-      - TESTING=true
-      - LOGLEVEL=debug
+      - LOG_LEVEL=debug
+      - DEBUG=true
     volumes:
       - ./catalog:/devel/services/catalog
       - ../packages:/devel/packages
@@ -48,14 +49,69 @@ services:
       - ./storage/client-sdk:/devel/services/storage/client-sdk
       - ../packages:/devel/packages
     environment:
+      # force to start as cpu mode otherwise it will boot in gpu mode in development
+      - START_AS_MODE_CPU=1
       - SC_BOOT_MODE=debug-ptvsd
-      - SIDECAR_LOGLEVEL=DEBUG
     ports:
       - "3002:3000"
     deploy:
       # NOTE: Allows 3002 to be exposed for ptvsd
       endpoint_mode: vip
       replicas: 1
+
+  # adding a separate worker to handling GPU mode for development
+  # in production the sidecar autodetects its hardware and start either in CPU or GPU mode
+  sidecar_gpu:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    deploy:
+      mode: replicated
+      replicas: 1
+      # NOTE: Allows 3007 to be exposed for ptvsd
+      endpoint_mode: vip
+      resources:
+        reservations:
+          cpus: "0.1"
+          memory: "100M"
+    volumes:
+      - input:/home/scu/input
+      - output:/home/scu/output
+      - log:/home/scu/log
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./sidecar:/devel/services/sidecar
+      - ./storage/client-sdk:/devel/services/storage/client-sdk
+      - ../packages:/devel/packages
+    ports:
+      - "3007:3000"
+    environment:
+      - SC_BOOT_MODE=debug-ptvsd
+      - SIDECAR_LOGLEVEL=DEBUG
+      - START_AS_MODE_GPU=1
+      - RABBIT_HOST=${RABBIT_HOST}
+      - RABBIT_PORT=${RABBIT_PORT}
+      - RABBIT_USER=${RABBIT_USER}
+      - RABBIT_PASSWORD=${RABBIT_PASSWORD}
+      - RABBIT_CHANNELS=${RABBIT_CHANNELS}
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
+      - REGISTRY_URL=${REGISTRY_URL}
+      - REGISTRY_USER=${REGISTRY_USER}
+      - REGISTRY_PW=${REGISTRY_PW}
+      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
+    depends_on:
+      - rabbit
+      - postgres
+    networks:
+      - computational_services_subnet
 
   storage:
     volumes:

@@ -5,8 +5,9 @@ import logging
 from pprint import pformat
 
 from aiohttp import web
-from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
+
+from servicelib.rest_responses import unwrap_envelope
 
 from .storage_config import get_client_session, get_config
 
