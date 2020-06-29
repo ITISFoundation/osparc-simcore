@@ -1,7 +1,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
-# from fastapi.testclient import TestClient
 
 from httpx import AsyncClient
 

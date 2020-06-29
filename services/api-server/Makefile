@@ -4,10 +4,13 @@
 include ../../scripts/common.Makefile
 
 # Custom variables
-APP_NAME     := $(notdir $(CURDIR))
-APP_CLI_NAME := simcore-service-$(APP_NAME)
-export APP_VERSION = $(shell cat VERSION)
-SRC_DIR      := $(abspath $(CURDIR)/src/$(subst -,_,$(APP_CLI_NAME)))
+APP_NAME         := $(notdir $(CURDIR))
+APP_CLI_NAME     := simcore-service-$(APP_NAME)
+APP_PACKAGE_NAME := $(subst -,_,$(APP_CLI_NAME))
+APP_VERSION      := $(shell cat VERSION)
+SRC_DIR          := $(abspath $(CURDIR)/src/$(APP_PACKAGE_NAME))
+
+export APP_VERSION
 
 .PHONY: reqs
 reqs: ## compiles pip requirements (.in -> .txt)
@@ -46,19 +49,21 @@ docker-compose.yml:
 run-devel: .env docker-compose.yml down ## runs app on host with pg fixture for development [for development]
 	# Starting db (under $<)
 	docker-compose up --detach
+	# Creating db-tables: user=key, password=secret
+	@$(MAKE) db-tables
 	# start app (under $<)
 	uvicorn simcore_service_api_server.__main__:the_app \
 		--reload --reload-dir $(SRC_DIR) \
 		--port=8000 --host=0.0.0.0
 
 .PHONY: db-tables
-db-tables: .env-devel ## upgrades and create tables [for development]
+db-tables: .env ## upgrades and create tables [for development]
 	# Upgrading and creating tables
 	export $(shell grep -v '^#' $< | xargs  -d '\n'); \
 	python3 tests/utils/init-pg.py
 
 .PHONY: db-migration
-db-migration: .env-devel ## runs discover and upgrade on running pg-db [for development]
+db-migration: .env ## runs discover and upgrade on running pg-db [for development]
 	# Creating tables
 	export $(shell grep -v '^#' $< | xargs  -d '\n'); \
 	sc-pg discover && sc-pg upgrade
@@ -69,18 +74,32 @@ down: docker-compose.yml ## stops pg fixture
 	# killing any process using port 8000
 	-@fuser --kill --verbose --namespace tcp 8000
 
-######################
 
 
-.PHONY: build
-build: ## builds docker image (using main services/docker-compose-build.yml)
-	@$(MAKE_C) ${REPO_BASE_DIR} target=${APP_NAME} $@
+# BUILD ########
 
 
-# GENERATION python client -------------------------------------------------
+.PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
+build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## builds docker image (using main services/docker-compose-build.yml)
+	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
+
+
+.PHONY: openapi-specs openapi.json
+openapi-specs: openapi.json
+openapi.json: .env
+	# generating openapi specs file
+	python3 -c "import json; from $(APP_PACKAGE_NAME).__main__ import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
+
+
+# GENERATION python client ########
 .PHONY: python-client generator-help
+
 # SEE https://openapi-generator.tech/docs/usage#generate
 # SEE https://openapi-generator.tech/docs/generators/python
+#
+# TODO: put instead to additional-props.yaml and --config=openapi-generator/python-config.yaml
+# TODO: copy this code to https://github.com/ITISFoundation/osparc-simcore-python-client/blob/master/Makefile
+#
 
 # NOTE: assumes this repo exists
 GIT_USER_ID := ITISFoundation
@@ -89,7 +108,6 @@ GIT_REPO_ID := osparc-simcore-python-client
 SCRIPTS_DIR := $(abspath $(CURDIR)/../../scripts)
 GENERATOR_NAME := python
 
-# TODO: put instead to additional-props.yaml and --config=openapi-generator/python-config.yaml
 ADDITIONAL_PROPS := \
 	generateSourceCodeOnly=false\
 	hideGenerationTimestamp=true\
@@ -104,21 +122,13 @@ null  :=
 space := $(null) #
 comma := ,
 
-# TODO: fix this, shall be generated upon start when flag is provided
-
-
-
-# TODO: code_samples still added by hand!
 client:
 	# cloning $(GIT_USER_ID)/$(GIT_REPO_ID) -> $@
 	git clone git@github.com:$(GIT_USER_ID)/$(GIT_REPO_ID).git $@
 	cd client; git checkout -b "upgrade-${APP_VERSION}"
 
 
-python-client: client ## runs python client generator
-	# download openapi.json
-	curl -O http://localhost:8000/api/v0/openapi.json
-
+python-client: client openapi.json ## runs python client generator
 	cd $(CURDIR); \
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash generate \
 		--generator-name=$(GENERATOR_NAME) \
@@ -130,8 +140,6 @@ python-client: client ## runs python client generator
 		--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS)))\
 		--package-name=osparc\
 		--release-note="Updated to $(APP_VERSION)"
-
-
 
 
 generator-help: ## help on client-api generator

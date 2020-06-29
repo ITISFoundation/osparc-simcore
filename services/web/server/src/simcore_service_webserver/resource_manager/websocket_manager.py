@@ -16,7 +16,7 @@
 
 import logging
 from contextlib import contextmanager
-from typing import Dict, List
+from typing import Dict, Iterator, List, Optional, Union
 
 import attr
 from aiohttp import web
@@ -32,7 +32,7 @@ SOCKET_ID_KEY = "socket_id"
 @attr.s(auto_attribs=True)
 class WebsocketRegistry:
     user_id: str
-    client_session_id: str
+    client_session_id: Optional[str]
     app: web.Application
 
     def _resource_key(self) -> Dict[str, str]:
@@ -150,9 +150,9 @@ class WebsocketRegistry:
 
 @contextmanager
 def managed_resource(
-    user_id: str, client_session_id: str, app: web.Application
-) -> WebsocketRegistry:
-    registry = WebsocketRegistry(user_id, client_session_id, app)
+    user_id: Union[str, int], client_session_id: Optional[str], app: web.Application
+) -> Iterator[WebsocketRegistry]:
+    registry = WebsocketRegistry(str(user_id), client_session_id, app)
     try:
         yield registry
     except Exception:

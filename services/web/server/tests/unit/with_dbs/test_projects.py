@@ -2,12 +2,15 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
+import json
 import uuid as uuidlib
 from asyncio import Future, sleep
 from copy import deepcopy
 from typing import Callable, Dict, List, Optional
 
 import pytest
+import socketio
 from aiohttp import web
 from mock import call
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -15,13 +18,19 @@ from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_clie
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from socketio.exceptions import ConnectionError
 
-from _helpers import ExpectedResponse, future_with_result, standard_role_response
+from _helpers import (
+    ExpectedResponse,
+    HTTPLocked,
+    future_with_result,
+    standard_role_response,
+)
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
+from simcore_service_webserver.projects.projects_api import ProjectState
 from simcore_service_webserver.projects.projects_handlers import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
@@ -30,6 +39,7 @@ from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_sockets
+from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.tags import setup_tags
 from simcore_service_webserver.utils import now_str, to_datetime
 
@@ -968,12 +978,12 @@ async def test_get_active_project(
 
 
 @pytest.mark.parametrize(
-    "user_role, expected",
+    "user_role, expected_ok, expected_forbidden",
     [
-        # (UserRole.ANONYMOUS),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPForbidden),
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPOk, web.HTTPForbidden),
+        (UserRole.TESTER, web.HTTPOk, web.HTTPForbidden),
     ],
 )
 async def test_delete_multiple_opened_project_forbidden(
@@ -984,21 +994,31 @@ async def test_delete_multiple_opened_project_forbidden(
     mocked_dynamic_service,
     socketio_client,
     client_session_id,
-    expected,
+    user_role,
+    expected_ok,
+    expected_forbidden,
     mocked_director_subsystem,
 ):
     # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
     service = await mocked_dynamic_service(logged_user["id"], user_project["uuid"])
     # open project in tab1
     client_session_id1 = client_session_id()
-    sio1 = await socketio_client(client_session_id1)
+    try:
+        sio1 = await socketio_client(client_session_id1)
+    except ConnectionError:
+        if user_role != UserRole.ANONYMOUS:
+            pytest.fail("socket io connection should not fail")
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_session_id1)
-    await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, expected_ok)
     # delete project in tab2
     client_session_id2 = client_session_id()
-    sio2 = await socketio_client(client_session_id2)
-    await _delete_project(client, user_project, expected)
+    try:
+        sio2 = await socketio_client(client_session_id2)
+    except ConnectionError:
+        if user_role != UserRole.ANONYMOUS:
+            pytest.fail("socket io connection should not fail")
+    await _delete_project(client, user_project, expected_forbidden)
 
 
 @pytest.mark.parametrize(
@@ -1172,6 +1192,94 @@ async def test_tags_to_studies(
     await assert_status(resp, web.HTTPNoContent)
 
 
+async def _connect_websocket(
+    socketio_client: Callable,
+    check_connection: bool,
+    client,
+    client_id: str,
+    events: Optional[Dict[str, Callable]] = None,
+) -> socketio.AsyncClient:
+    try:
+        sio = await socketio_client(client_id, client)
+        assert sio.sid
+        if events:
+            for event, handler in events.items():
+                sio.on(event, handler=handler)
+        return sio
+    except ConnectionError:
+        if check_connection:
+            pytest.fail("socket io connection should not fail")
+
+
+async def _open_project(
+    client, client_id: str, project: Dict, expected: web.HTTPException
+):
+    url = client.app.router["open_project"].url_for(project_id=project["uuid"])
+    resp = await client.post(url, json=client_id)
+    await assert_status(resp, expected)
+
+
+async def _close_project(
+    client, client_id: str, project: Dict, expected: web.HTTPException
+):
+    url = client.app.router["close_project"].url_for(project_id=project["uuid"])
+    resp = await client.post(url, json=client_id)
+    data, error = await assert_status(resp, expected)
+
+
+async def _state_project(
+    client,
+    project: Dict,
+    expected: web.HTTPException,
+    expected_project_state: ProjectState,
+) -> Dict[str, str]:
+    url = client.app.router["state_project"].url_for(project_id=project["uuid"])
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
+    if not error:
+        # the project is locked
+        assert data == expected_project_state
+
+
+import mock
+import time
+
+
+async def _assert_project_state_updated(
+    handler: mock.Mock,
+    shared_project: Dict,
+    expected_project_state: ProjectState,
+    num_calls: int,
+) -> None:
+    if num_calls == 0:
+        handler.assert_not_called()
+    else:
+        # wait for the calls
+        now = time.monotonic()
+        MAX_WAITING_TIME = 15
+        while time.monotonic() - now < MAX_WAITING_TIME:
+            await asyncio.sleep(1)
+            if handler.call_count == num_calls:
+                break
+        if time.monotonic() - now > MAX_WAITING_TIME:
+            pytest.fail(
+                f"waited more than {MAX_WAITING_TIME}s and got only {handler.call_count}/{num_calls} calls"
+            )
+
+        calls = [
+            call(
+                json.dumps(
+                    {
+                        "project_uuid": shared_project["uuid"],
+                        "data": expected_project_state.dict(),
+                    }
+                )
+            )
+        ] * num_calls
+        handler.assert_has_calls(calls)
+        handler.reset_mock()
+
+
 @pytest.mark.parametrize(*standard_role_response())
 async def test_open_shared_project_2_users_locked(
     client,
@@ -1183,76 +1291,119 @@ async def test_open_shared_project_2_users_locked(
     user_role: UserRole,
     expected: ExpectedResponse,
     aiohttp_client,
+    mocker,
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
-    # 1. log as user 1 and open the project
-    # import pdb
+    mock_project_state_updated_handler = mocker.Mock()
 
-    # pdb.set_trace()
-    # login with socket using client session id
+    client_1 = client
     client_id1 = client_session_id()
-    try:
-        sio = await socketio_client(client_id1)
-        assert sio.sid
-    except ConnectionError:
-        if user_role != UserRole.ANONYMOUS:
-            pytest.fail("socket io connection should not fail")
-    url = client.app.router["open_project"].url_for(project_id=shared_project["uuid"])
-    resp = await client.post(url, json=client_id1)
-    await assert_status(
-        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
-    )
-
-    # test state
-    url = client.app.router["state_project"].url_for(project_id=shared_project["uuid"])
-    resp = await client.get(url)
-    data, error = await assert_status(
-        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
-    )
-    if not error:
-        assert "locked" in data
-        assert data["locked"] == True
-
-    # create a separate client now
     client_2 = await aiohttp_client(client.app)
+    client_id2 = client_session_id()
+
+    # 1. user 1 opens project
+    sio_1 = await _connect_websocket(
+        socketio_client,
+        user_role != UserRole.ANONYMOUS,
+        client_1,
+        client_id1,
+        {SOCKET_IO_PROJECT_UPDATED_EVENT: mock_project_state_updated_handler},
+    )
+    expected_project_state = ProjectState(locked=False)
+    await _state_project(
+        client_1,
+        shared_project,
+        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected_project_state,
+    )
+    await _open_project(
+        client_1,
+        client_id1,
+        shared_project,
+        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+    )
+    expected_project_state.locked = True
+    # NOTE: there are 2 calls since we are part of the primary group and the all group
+    await _assert_project_state_updated(
+        mock_project_state_updated_handler,
+        shared_project,
+        expected_project_state,
+        0 if user_role == UserRole.ANONYMOUS else 2,
+    )
+
+    await _state_project(
+        client_1,
+        shared_project,
+        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected_project_state,
+    )
+
+    # 2. create a separate client now and log in user2, try to open the same shared project
     user_2 = await log_client_in(
         client_2, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
     )
-    client_id2 = client_session_id()
-    try:
-        sio2 = await socketio_client(client_id2, client_2)
-        assert sio2.sid
-    except ConnectionError:
-        if user_role != UserRole.ANONYMOUS:
-            pytest.fail("socket io connection should not fail")
-    url = client.app.router["open_project"].url_for(project_id=shared_project["uuid"])
-    resp = await client.post(url, json=client_id2)
-    assert (
-        resp.status == 423 if user_role != UserRole.ANONYMOUS else web.HTTPUnauthorized
-    )  # the locked HTTP code does not exist in aiohttp...
+    sio_2 = await _connect_websocket(
+        socketio_client,
+        user_role != UserRole.ANONYMOUS,
+        client_2,
+        client_id2,
+        {SOCKET_IO_PROJECT_UPDATED_EVENT: mock_project_state_updated_handler},
+    )
+    await _open_project(
+        client_2,
+        client_id2,
+        shared_project,
+        expected.locked if user_role != UserRole.GUEST else HTTPLocked,
+    )
+    await _state_project(
+        client_2,
+        shared_project,
+        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected_project_state,
+    )
 
-    # user 1 closes the project
-    url = client.app.router["close_project"].url_for(project_id=shared_project["uuid"])
-    resp = await client.post(url, json=client_id1)
-    data, error = await assert_status(resp, expected.no_content)
+    # 3. user 1 closes the project
+    await _close_project(client_1, client_id1, shared_project, expected.no_content)
+    expected_project_state.locked = (
+        True if user_role == UserRole.GUEST else False
+    )  # Guests cannot close projects
+    # we should receive an event that the project lock state changed
+    # NOTE: there are 3 calls since we are part of the primary group and the all group and user 2 is part of the all group
+    await _assert_project_state_updated(
+        mock_project_state_updated_handler,
+        shared_project,
+        expected_project_state,
+        0
+        if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
+        else 3,
+    )
+    await _state_project(
+        client_1,
+        shared_project,
+        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected_project_state,
+    )
 
-    if not error:
-        # test state
-        url = client.app.router["state_project"].url_for(
-            project_id=shared_project["uuid"]
-        )
-        resp = await client.get(url)
-        data, error = await assert_status(
-            resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
-        )
-        if not error:
-            assert "locked" in data
-            assert data["locked"] == False
-        # user 2 now should be able to open the project
-        url = client.app.router["open_project"].url_for(
-            project_id=shared_project["uuid"]
-        )
-        resp = await client.post(url, json=client_id2)
-        await assert_status(
-            resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
-        )
+    # 4. user 2 now should be able to open the project
+    await _open_project(
+        client_2,
+        client_id2,
+        shared_project,
+        expected.ok if user_role != UserRole.GUEST else HTTPLocked,
+    )
+    expected_project_state.locked = True
+    # NOTE: there are 3 calls since we are part of the primary group and the all group
+    await _assert_project_state_updated(
+        mock_project_state_updated_handler,
+        shared_project,
+        expected_project_state,
+        0
+        if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
+        else 3,
+    )
+    await _state_project(
+        client_1,
+        shared_project,
+        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected_project_state,
+    )
