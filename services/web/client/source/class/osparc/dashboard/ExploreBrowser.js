@@ -195,13 +195,15 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __createTemplateStudiesLayout: function() {
-      const templateStudyContainer = this.__templateStudyContainer = this.__createTemplateStudyList();
+      const templateStudyContainer = this.__templateStudyContainer = this.__createResourceListLayout();
+      osparc.utils.Utils.setIdToWidget(templateStudyContainer, "templateStudiesList");
       const tempStudyLayout = this.__createButtonsLayout(this.tr("Templates"), templateStudyContainer);
       return tempStudyLayout;
     },
 
     __createServicesLayout: function() {
-      const servicesContainer = this.__servicesContainer = this.__createServicesList();
+      const servicesContainer = this.__servicesContainer = this.__createResourceListLayout();
+      osparc.utils.Utils.setIdToWidget(servicesContainer, "servicesList");
       const servicesLayout = this.__createButtonsLayout(this.tr("Apps"), servicesContainer);
 
       const servicesTitleContainer = servicesLayout.getTitleBar();
@@ -310,18 +312,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this._getChildren().forEach(children => {
         children.setVisibility(show ? "visible" : "excluded");
       });
-    },
-
-    __createTemplateStudyList: function() {
-      const tempList = this.__templateStudyContainer = this.__createResourceListLayout();
-      osparc.utils.Utils.setIdToWidget(tempList, "templateStudiesList");
-      return tempList;
-    },
-
-    __createServicesList: function() {
-      const servicesList = this.__servicesContainer = this.__createResourceListLayout();
-      osparc.utils.Utils.setIdToWidget(servicesList, "servicesList");
-      return servicesList;
     },
 
     __resetTemplateList: function(tempStudyList) {

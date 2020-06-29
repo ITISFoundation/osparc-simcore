@@ -219,7 +219,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createUserStudiesLayout: function() {
-      const userStudyContainer = this.__userStudyContainer = this.__createUserStudyList();
+      const userStudyContainer = this.__userStudyContainer = this.__createStudyListLayout();
+      osparc.utils.Utils.setIdToWidget(userStudyContainer, "userStudiesList");
       const userStudyLayout = this.__createButtonsLayout(this.tr("Recent studies"), userStudyContainer);
 
       const studiesTitleContainer = userStudyLayout.getTitleBar();
@@ -341,12 +342,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._getChildren().forEach(children => {
         children.setVisibility(show ? "visible" : "excluded");
       });
-    },
-
-    __createUserStudyList: function() {
-      const usrLst = this.__userStudyContainer = this.__createStudyListLayout();
-      osparc.utils.Utils.setIdToWidget(usrLst, "userStudiesList");
-      return usrLst;
     },
 
     __resetStudyItem: function(studyData) {
