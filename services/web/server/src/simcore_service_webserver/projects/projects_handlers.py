@@ -356,7 +356,7 @@ async def close_project(request: web.Request) -> web.Response:
                 len(await rt.find_users_of_resource("project_id", project_uuid)) > 0
             )
         # if we are the only user left we can safely remove the services
-        async def close_project_task() -> None:
+        async def _close_project_task() -> None:
             try:
                 if not project_opened_by_others:
                     # only remove the services if no one else is using them now
@@ -369,7 +369,7 @@ async def close_project(request: web.Request) -> web.Response:
                     request.app, project, ProjectState(locked={"value": False})
                 )
 
-        fire_and_forget_task(close_project_task())
+        fire_and_forget_task(_close_project_task())
 
         raise web.HTTPNoContent(content_type="application/json")
     except ProjectNotFoundError:
