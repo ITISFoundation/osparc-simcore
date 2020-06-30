@@ -104,8 +104,6 @@ def _assert_incoming_data_logs(
         assert len(instrumentation_messages[task]) == 2, f"{instrumentation_messages}"
         assert instrumentation_messages[task][0]["metrics"] == "service_started"
         assert instrumentation_messages[task][0]["user_id"] == user_id
-        assert instrumentation_messages[task][0]["project_id"] == project_id
-        assert instrumentation_messages[task][0]["service_uuid"] == task
         assert instrumentation_messages[task][0]["service_type"] == "COMPUTATIONAL"
         # the key is of type simcore/services/comp|dynamic/service_name
         assert (
@@ -116,8 +114,6 @@ def _assert_incoming_data_logs(
 
         assert instrumentation_messages[task][1]["metrics"] == "service_stopped"
         assert instrumentation_messages[task][1]["user_id"] == user_id
-        assert instrumentation_messages[task][1]["project_id"] == project_id
-        assert instrumentation_messages[task][1]["service_uuid"] == task
         assert instrumentation_messages[task][1]["service_type"] == "COMPUTATIONAL"
         # the key is of type simcore/services/comp|dynamic/service_name
         assert (
