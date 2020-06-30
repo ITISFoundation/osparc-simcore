@@ -82,7 +82,7 @@ build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## docker 
 
 
 .PHONY: openapi-specs openapi.json
-openapi-specs: openapi.json
+openapi-specs: openapi.json .env
 openapi.json:
 	# generating openapi specs file
 	python3 -c "import json; from $(APP_PACKAGE_NAME).__main__ import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
