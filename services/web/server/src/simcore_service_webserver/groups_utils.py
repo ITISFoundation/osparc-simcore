@@ -13,7 +13,7 @@ GROUPS_SCHEMA_TO_DB = {
     "label": "name",
     "description": "description",
     "thumbnail": "thumbnail",
-    "access_rights": "access_rights",
+    "accessRights": "access_rights",
 }
 
 
@@ -49,6 +49,6 @@ def convert_groups_schema_to_db(schema: Dict) -> Dict:
 def convert_user_in_group_to_schema(row: Union[RowProxy, Dict]) -> Dict[str, str]:
     group_user = convert_user_db_to_schema(row)
     group_user.pop("role")
-    group_user["access_rights"] = row["access_rights"]
+    group_user["accessRights"] = row["access_rights"]
     group_user["gid"] = row["primary_gid"]
     return group_user

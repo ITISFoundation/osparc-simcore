@@ -100,6 +100,9 @@ autoformat: ## runs black python formatter on this service's code. Use AFTER mak
 		--exclude "/(\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist|migration|client-sdk|generated_code)/" \
 		$(CURDIR)
 
+.PHONY: mypy
+mypy: $(REPO_BASE_DIR)/scripts/mypy.bash $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type checker on this services's code. Use AFTER make install-*
+	@$(REPO_BASE_DIR)/scripts/mypy.bash src
 
 .PHONY: version-patch version-minor version-major
 version-patch: ## commits version with bug fixes not affecting the cookiecuter config

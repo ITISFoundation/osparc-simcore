@@ -89,22 +89,6 @@ async def logged_user(client, user_role: UserRole):
         print("<----- logged out user", user_role)
 
 
-@pytest.fixture()
-async def logged_user2(client, user_role: UserRole):
-    """ adds a user in db and logs in with client
-
-    NOTE: `user_role` fixture is defined as a parametrization below!!!
-    """
-    async with LoggedUser(
-        client,
-        {"role": user_role.name},
-        check_if_succeeds=user_role != UserRole.ANONYMOUS,
-    ) as user:
-        print("-----> logged in user", user_role)
-        yield user
-        print("<----- logged out user", user_role)
-
-
 @pytest.fixture
 async def empty_user_project(client, empty_project, logged_user):
     project = empty_project()
@@ -143,19 +127,28 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
 
 
 # ------------------------ TESTS -------------------------------
+from typing import Callable
+
+
 async def test_anonymous_websocket_connection(
-    client_session_id, socketio_url: str, security_cookie, mocker,
+    client_session_id: str,
+    socketio_url: Callable,
+    security_cookie_factory: Callable,
+    mocker,
 ):
     from yarl import URL
 
     sio = socketio.AsyncClient(
         ssl_verify=False
     )  # enginio 3.10.0 introduced ssl verification
-    url = str(URL(socketio_url).with_query({"client_session_id": client_session_id()}))
+    url = str(
+        URL(socketio_url()).with_query({"client_session_id": client_session_id()})
+    )
     headers = {}
-    if security_cookie:
+    cookie = await security_cookie_factory()
+    if cookie:
         # WARNING: engineio fails with empty cookies. Expects "key=value"
-        headers.update({"Cookie": security_cookie})
+        headers.update({"Cookie": cookie})
 
     socket_connect_error = mocker.Mock()
     sio.on("connect_error", handler=socket_connect_error)

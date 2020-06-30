@@ -2,18 +2,31 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
+import json
+import pdb
+import time
 import uuid as uuidlib
 from asyncio import Future, sleep
 from copy import deepcopy
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
+import mock
 import pytest
+import socketio
 from aiohttp import web
 from mock import call
-
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
+from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
+from socketio.exceptions import ConnectionError
+
+from _helpers import (
+    ExpectedResponse,
+    HTTPLocked,
+    future_with_result,
+    standard_role_response,
+)
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
@@ -23,23 +36,23 @@ from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.projects.projects_handlers import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
+from simcore_service_webserver.projects.projects_models import (
+    Owner,
+    ProjectLocked,
+    ProjectState,
+)
 from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_sockets
+from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.tags import setup_tags
 from simcore_service_webserver.utils import now_str, to_datetime
 
 API_VERSION = "v0"
 RESOURCE_NAME = "projects"
 API_PREFIX = "/" + API_VERSION
-
-
-def future_with_result(result) -> Future:
-    f = Future()
-    f.set_result(result)
-    return f
 
 
 @pytest.fixture
@@ -61,6 +74,15 @@ def mocked_director_subsystem(mocker):
     return mock_director_api
 
 
+DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS: int = 3
+DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
+
+
+@pytest.fixture
+def gc_long_deletion_timeout():
+    DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS = 900
+
+
 @pytest.fixture
 def client(
     loop,
@@ -80,10 +102,10 @@ def client(
     cfg["director"]["enabled"] = True
     cfg["resource_manager"][
         "garbage_collection_interval_seconds"
-    ] = 3  # increase speed of garbage collection
+    ] = DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS  # increase speed of garbage collection
     cfg["resource_manager"][
         "resource_deletion_timeout_seconds"
-    ] = 3  # reduce deletion delay
+    ] = DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS  # reduce deletion delay
     app = create_safe_application(cfg)
 
     # setup app
@@ -122,26 +144,27 @@ async def logged_user(client, user_role: UserRole):
         print("<----- logged out user", user_role)
 
 
-@pytest.fixture()
-async def logged_user2(client, user_role: UserRole):
-    """ adds a user in db and logs in with client
-
-    NOTE: `user_role` fixture is defined as a parametrization below!!!
-    """
-    async with LoggedUser(
-        client,
-        {"role": user_role.name},
-        check_if_succeeds=user_role != UserRole.ANONYMOUS,
-    ) as user:
-        print("-----> logged in user", user_role)
-        yield user
-        print("<----- logged out user", user_role)
-
-
 @pytest.fixture
 async def user_project(client, fake_project, logged_user):
     async with NewProject(
         fake_project, client.app, user_id=logged_user["id"]
+    ) as project:
+        print("-----> added project", project["name"])
+        yield project
+        print("<----- removed project", project["name"])
+
+
+@pytest.fixture
+async def shared_project(client, fake_project, logged_user, all_group):
+    fake_project.update(
+        {
+            "accessRights": {
+                f"{all_group['gid']}": {"read": True, "write": False, "delete": False}
+            },
+        },
+    )
+    async with NewProject(
+        fake_project, client.app, user_id=logged_user["id"],
     ) as project:
         print("-----> added project", project["name"])
         yield project
@@ -372,15 +395,7 @@ async def _new_project(
 
 
 # POST --------
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPCreated),
-        (UserRole.TESTER, web.HTTPCreated),
-    ],
-)
+@pytest.mark.parametrize(*standard_role_response())
 async def test_new_project(
     client,
     logged_user,
@@ -390,18 +405,12 @@ async def test_new_project(
     storage_subsystem_mock,
     project_db_cleaner,
 ):
-    new_project = await _new_project(client, expected, logged_user, primary_group)
+    new_project = await _new_project(
+        client, expected.created, logged_user, primary_group
+    )
 
 
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPCreated),
-        (UserRole.TESTER, web.HTTPCreated),
-    ],
-)
+@pytest.mark.parametrize(*standard_role_response())
 async def test_new_project_from_template(
     client,
     logged_user,
@@ -413,7 +422,11 @@ async def test_new_project_from_template(
     project_db_cleaner,
 ):
     new_project = await _new_project(
-        client, expected, logged_user, primary_group, from_template=template_project
+        client,
+        expected.created,
+        logged_user,
+        primary_group,
+        from_template=template_project,
     )
 
     if new_project:
@@ -425,15 +438,7 @@ async def test_new_project_from_template(
                 pytest.fail("Invalid uuid in workbench node {}".format(node_name))
 
 
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPCreated),
-        (UserRole.TESTER, web.HTTPCreated),
-    ],
-)
+@pytest.mark.parametrize(*standard_role_response())
 async def test_new_project_from_template_with_body(
     client,
     logged_user,
@@ -465,7 +470,7 @@ async def test_new_project_from_template_with_body(
     }
     project = await _new_project(
         client,
-        expected,
+        expected.created,
         logged_user,
         primary_group,
         project=predefined,
@@ -603,43 +608,7 @@ async def test_new_template_from_project(
                 pytest.fail("Invalid uuid in workbench node {}".format(node_name))
 
 
-@pytest.mark.parametrize(
-    "user_role,expected_created,expected_ok,expected_notfound,expected_nocontents,expected_forbidden",
-    [
-        (
-            UserRole.ANONYMOUS,
-            web.HTTPUnauthorized,
-            web.HTTPUnauthorized,
-            web.HTTPUnauthorized,
-            web.HTTPUnauthorized,
-            web.HTTPUnauthorized,
-        ),
-        (
-            UserRole.GUEST,
-            web.HTTPForbidden,
-            web.HTTPForbidden,
-            web.HTTPNotFound,
-            web.HTTPForbidden,
-            web.HTTPForbidden,
-        ),
-        (
-            UserRole.USER,
-            web.HTTPCreated,
-            web.HTTPOk,
-            web.HTTPNotFound,
-            web.HTTPNoContent,
-            web.HTTPForbidden,
-        ),
-        (
-            UserRole.TESTER,
-            web.HTTPCreated,
-            web.HTTPOk,
-            web.HTTPNotFound,
-            web.HTTPNoContent,
-            web.HTTPForbidden,
-        ),
-    ],
-)
+@pytest.mark.parametrize(*standard_role_response())
 @pytest.mark.parametrize(
     "share_rights",
     [
@@ -651,20 +620,16 @@ async def test_new_template_from_project(
 )
 async def test_share_project(
     client,
-    logged_user,
+    logged_user: Dict,
     primary_group: Dict[str, str],
     standard_groups: List[Dict[str, str]],
     all_group: Dict[str, str],
-    user_role,
-    expected_created,
-    expected_ok,
-    expected_notfound,
-    expected_nocontents,
-    expected_forbidden,
+    user_role: UserRole,
+    expected: ExpectedResponse,
     storage_subsystem_mock,
     mocked_director_subsystem,
     computational_system_mock,
-    share_rights,
+    share_rights: Dict,
     project_db_cleaner,
 ):
     # Use-case: the user shares some projects with a group
@@ -672,7 +637,7 @@ async def test_share_project(
     # create a few projects
     new_project = await _new_project(
         client,
-        expected_created,
+        expected.created,
         logged_user,
         primary_group,
         project={"accessRights": {str(all_group["gid"]): share_rights}},
@@ -684,7 +649,7 @@ async def test_share_project(
         }
 
         # user 1 can always get to his project
-        await _get_project(client, new_project, expected_ok)
+        await _get_project(client, new_project, expected.ok)
 
     # get another user logged in now
     user_2 = await log_client_in(
@@ -695,10 +660,10 @@ async def test_share_project(
         await _get_project(
             client,
             new_project,
-            expected_ok if share_rights["read"] else expected_forbidden,
+            expected.ok if share_rights["read"] else expected.forbidden,
         )
         # user 2 can only list projects if user 2 has read access
-        list_projects = await _list_projects(client, expected_ok)
+        list_projects = await _list_projects(client, expected.ok)
         assert len(list_projects) == (1 if share_rights["read"] else 0)
         # user 2 can only update the project is user 2 has write access
         project_update = deepcopy(new_project)
@@ -706,13 +671,13 @@ async def test_share_project(
         await _replace_project(
             client,
             project_update,
-            expected_ok if share_rights["write"] else expected_forbidden,
+            expected.ok if share_rights["write"] else expected.forbidden,
         )
         # user 2 can only delete projects if user 2 has delete access
         await _delete_project(
             client,
             new_project,
-            expected_nocontents if share_rights["delete"] else expected_forbidden,
+            expected.no_content if share_rights["delete"] else expected.forbidden,
         )
 
 
@@ -903,15 +868,7 @@ async def test_open_project(
         mocked_director_subsystem["start_service"].assert_has_calls(calls)
 
 
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
-    ],
-)
+@pytest.mark.parametrize(*standard_role_response())
 async def test_close_project(
     client,
     logged_user,
@@ -943,7 +900,7 @@ async def test_close_project(
     # close project
     url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
-    await assert_status(resp, expected)
+    await assert_status(resp, expected.no_content)
     if resp.status == web.HTTPNoContent.status_code:
         calls = [
             call(client.server.app, user_project["uuid"], None),
@@ -957,7 +914,7 @@ async def test_close_project(
 @pytest.mark.parametrize(
     "user_role, expected",
     [
-        # (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPOk),
         (UserRole.USER, web.HTTPOk),
         (UserRole.TESTER, web.HTTPOk),
@@ -974,8 +931,14 @@ async def test_get_active_project(
 ):
     # login with socket using client session id
     client_id1 = client_session_id()
-    sio = await socketio_client(client_id1)
-    assert sio.sid
+    sio = None
+    try:
+        sio = await socketio_client(client_id1)
+        assert sio.sid
+    except ConnectionError:
+        if expected == web.HTTPOk:
+            pytest.fail("socket io connection should not fail")
+
     # get active projects -> empty
     get_active_projects_url = (
         client.app.router["get_active_project"]
@@ -1002,8 +965,12 @@ async def test_get_active_project(
 
     # login with socket using client session id2
     client_id2 = client_session_id()
-    sio = await socketio_client(client_id2)
-    assert sio.sid
+    try:
+        sio = await socketio_client(client_id2)
+        assert sio.sid
+    except ConnectionError:
+        if expected == web.HTTPOk:
+            pytest.fail("socket io connection should not fail")
     # get active projects -> empty
     get_active_projects_url = (
         client.app.router["get_active_project"]
@@ -1018,15 +985,15 @@ async def test_get_active_project(
 
 
 @pytest.mark.parametrize(
-    "user_role, expected",
+    "user_role, expected_ok, expected_forbidden",
     [
-        # (UserRole.ANONYMOUS),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPForbidden),
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPOk, web.HTTPForbidden),
+        (UserRole.TESTER, web.HTTPOk, web.HTTPForbidden),
     ],
 )
-async def test_delete_shared_project_forbidden(
+async def test_delete_multiple_opened_project_forbidden(
     client,
     logged_user,
     user_project,
@@ -1034,21 +1001,31 @@ async def test_delete_shared_project_forbidden(
     mocked_dynamic_service,
     socketio_client,
     client_session_id,
-    expected,
+    user_role,
+    expected_ok,
+    expected_forbidden,
     mocked_director_subsystem,
 ):
     # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
     service = await mocked_dynamic_service(logged_user["id"], user_project["uuid"])
     # open project in tab1
     client_session_id1 = client_session_id()
-    sio1 = await socketio_client(client_session_id1)
+    try:
+        sio1 = await socketio_client(client_session_id1)
+    except ConnectionError:
+        if user_role != UserRole.ANONYMOUS:
+            pytest.fail("socket io connection should not fail")
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_session_id1)
-    await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, expected_ok)
     # delete project in tab2
     client_session_id2 = client_session_id()
-    sio2 = await socketio_client(client_session_id2)
-    await _delete_project(client, user_project, expected)
+    try:
+        sio2 = await socketio_client(client_session_id2)
+    except ConnectionError:
+        if user_role != UserRole.ANONYMOUS:
+            pytest.fail("socket io connection should not fail")
+    await _delete_project(client, user_project, expected_forbidden)
 
 
 @pytest.mark.parametrize(
@@ -1220,3 +1197,226 @@ async def test_tags_to_studies(
     url = client.app.router["delete_tag"].url_for(tag_id=str(added_tags[1].get("id")))
     resp = await client.delete(url)
     await assert_status(resp, web.HTTPNoContent)
+
+
+async def _connect_websocket(
+    socketio_client: Callable,
+    check_connection: bool,
+    client,
+    client_id: str,
+    events: Optional[Dict[str, Callable]] = None,
+) -> socketio.AsyncClient:
+    try:
+        sio = await socketio_client(client_id, client)
+        assert sio.sid
+        if events:
+            for event, handler in events.items():
+                sio.on(event, handler=handler)
+        return sio
+    except ConnectionError:
+        if check_connection:
+            pytest.fail("socket io connection should not fail")
+
+
+async def _open_project(
+    client, client_id: str, project: Dict, expected: web.HTTPException
+):
+    url = client.app.router["open_project"].url_for(project_id=project["uuid"])
+    resp = await client.post(url, json=client_id)
+    await assert_status(resp, expected)
+
+
+async def _close_project(
+    client, client_id: str, project: Dict, expected: web.HTTPException
+):
+    url = client.app.router["close_project"].url_for(project_id=project["uuid"])
+    resp = await client.post(url, json=client_id)
+    data, error = await assert_status(resp, expected)
+
+
+async def _state_project(
+    client,
+    project: Dict,
+    expected: web.HTTPException,
+    expected_project_state: ProjectState,
+):
+    url = client.app.router["state_project"].url_for(project_id=project["uuid"])
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
+    if not error:
+        # the project is locked
+        assert data == expected_project_state.dict()
+
+
+async def _assert_project_state_updated(
+    handler: mock.Mock,
+    shared_project: Dict,
+    expected_project_state: ProjectState,
+    num_calls: int,
+) -> None:
+    if num_calls == 0:
+        handler.assert_not_called()
+    else:
+        # wait for the calls
+        now = time.monotonic()
+        MAX_WAITING_TIME = 15
+        while time.monotonic() - now < MAX_WAITING_TIME:
+            await asyncio.sleep(1)
+            if handler.call_count == num_calls:
+                break
+        if time.monotonic() - now > MAX_WAITING_TIME:
+            pytest.fail(
+                f"waited more than {MAX_WAITING_TIME}s and got only {handler.call_count}/{num_calls} calls"
+            )
+
+        calls = [
+            call(
+                json.dumps(
+                    {
+                        "project_uuid": shared_project["uuid"],
+                        "data": expected_project_state.dict(),
+                    }
+                )
+            )
+        ] * num_calls
+        handler.assert_has_calls(calls)
+        handler.reset_mock()
+
+
+@pytest.mark.parametrize(*standard_role_response())
+async def test_open_shared_project_2_users_locked(
+    client,
+    logged_user: Dict,
+    shared_project: Dict,
+    socketio_client: Callable,
+    # mocked_director_subsystem,
+    client_session_id: Callable,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    aiohttp_client,
+    mocker,
+):
+    # Use-case: user 1 opens a shared project, user 2 tries to open it as well
+    mock_project_state_updated_handler = mocker.Mock()
+
+    client_1 = client
+    client_id1 = client_session_id()
+    client_2 = await aiohttp_client(client.app)
+    client_id2 = client_session_id()
+
+    # 1. user 1 opens project
+    sio_1 = await _connect_websocket(
+        socketio_client,
+        user_role != UserRole.ANONYMOUS,
+        client_1,
+        client_id1,
+        {SOCKET_IO_PROJECT_UPDATED_EVENT: mock_project_state_updated_handler},
+    )
+    expected_project_state = ProjectState(locked={"value": False})
+    await _state_project(
+        client_1,
+        shared_project,
+        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected_project_state,
+    )
+    await _open_project(
+        client_1,
+        client_id1,
+        shared_project,
+        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+    )
+    expected_project_state.locked.value = True
+    expected_project_state.locked.owner = Owner(
+        first_name=(logged_user["name"].split(".") + [""])[0],
+        last_name=(logged_user["name"].split(".") + [""])[1],
+    )
+    # NOTE: there are 2 calls since we are part of the primary group and the all group
+    await _assert_project_state_updated(
+        mock_project_state_updated_handler,
+        shared_project,
+        expected_project_state,
+        0 if user_role == UserRole.ANONYMOUS else 2,
+    )
+
+    await _state_project(
+        client_1,
+        shared_project,
+        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected_project_state,
+    )
+
+    # 2. create a separate client now and log in user2, try to open the same shared project
+    user_2 = await log_client_in(
+        client_2, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
+    )
+    sio_2 = await _connect_websocket(
+        socketio_client,
+        user_role != UserRole.ANONYMOUS,
+        client_2,
+        client_id2,
+        {SOCKET_IO_PROJECT_UPDATED_EVENT: mock_project_state_updated_handler},
+    )
+    await _open_project(
+        client_2,
+        client_id2,
+        shared_project,
+        expected.locked if user_role != UserRole.GUEST else HTTPLocked,
+    )
+    await _state_project(
+        client_2,
+        shared_project,
+        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected_project_state,
+    )
+
+    # 3. user 1 closes the project
+    await _close_project(client_1, client_id1, shared_project, expected.no_content)
+    if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
+        # Guests cannot close projects
+        expected_project_state = ProjectState(locked=ProjectLocked(value=False))
+
+    # we should receive an event that the project lock state changed
+    # NOTE: there are 3 calls since we are part of the primary group and the all group and user 2 is part of the all group
+    await _assert_project_state_updated(
+        mock_project_state_updated_handler,
+        shared_project,
+        expected_project_state,
+        0
+        if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
+        else 3,
+    )
+    await _state_project(
+        client_1,
+        shared_project,
+        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected_project_state,
+    )
+
+    # 4. user 2 now should be able to open the project
+    await _open_project(
+        client_2,
+        client_id2,
+        shared_project,
+        expected.ok if user_role != UserRole.GUEST else HTTPLocked,
+    )
+    if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
+        expected_project_state.locked.value = True
+        expected_project_state.locked.owner = Owner(
+            first_name=(user_2["name"].split(".") + [""])[0],
+            last_name=(user_2["name"].split(".") + [""])[1],
+        )
+    # NOTE: there are 3 calls since we are part of the primary group and the all group
+    await _assert_project_state_updated(
+        mock_project_state_updated_handler,
+        shared_project,
+        expected_project_state,
+        0
+        if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
+        else 3,
+    )
+    await _state_project(
+        client_1,
+        shared_project,
+        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected_project_state,
+    )

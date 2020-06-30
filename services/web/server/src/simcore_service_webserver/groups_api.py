@@ -120,7 +120,7 @@ async def create_user_group(
             )
         )
     return convert_groups_db_to_schema(
-        group, access_rights=DEFAULT_GROUP_OWNER_ACCESS_RIGHTS
+        group, accessRights=DEFAULT_GROUP_OWNER_ACCESS_RIGHTS
     )
 
 
@@ -145,7 +145,7 @@ async def update_user_group(
         )
         updated_group = await result.fetchone()
         return convert_groups_db_to_schema(
-            updated_group, access_rights=group.access_rights
+            updated_group, accessRights=group.access_rights
         )
 
 
@@ -271,10 +271,11 @@ async def update_user_in_group(
             conn, gid, the_user_id_in_group
         )
         # modify the user access rights
+        new_db_values = {"access_rights": new_values_for_user_in_group["accessRights"]}
         await conn.execute(
             # pylint: disable=no-value-for-parameter
             user_to_groups.update()
-            .values(**new_values_for_user_in_group)
+            .values(**new_db_values)
             .where(
                 and_(
                     user_to_groups.c.uid == the_user_id_in_group,
@@ -283,7 +284,7 @@ async def update_user_in_group(
             )
         )
         the_user = dict(the_user)
-        the_user.update(**new_values_for_user_in_group)
+        the_user.update(**new_db_values)
         return convert_user_in_group_to_schema(the_user)
 
 
