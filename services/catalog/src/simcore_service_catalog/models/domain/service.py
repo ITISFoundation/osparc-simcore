@@ -201,7 +201,7 @@ class ServiceInput(ServiceProperty):
     )
 
 
-class Service(BaseModel):
+class ServiceData(BaseModel):
     key: constr(regex=KEY_RE) = Field(
         ...,
         title="",
@@ -274,4 +274,4 @@ class Service(BaseModel):
 if __name__ == "__main__":
 
     with open(current_file.with_suffix(".json"), "wt") as fh:
-        print(Service.schema_json(indent=2), file=fh)
+        print(ServiceData.schema_json(indent=2), file=fh)
