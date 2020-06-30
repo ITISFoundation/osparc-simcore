@@ -61,7 +61,7 @@ transfer-images-to-registry: ## transfer images to registry
 	# completed transfer of images
 	curl registry:5000/v2/_catalog
 
-PUBLISHED_PORT = $(shell docker inspect simcore_postgres --format "{{(index .Endpoint.Ports 0).PublishedPort}}")
+PUBLISHED_PORT = $(shell docker inspect $(shell docker service ls --format "{{ .Name }}" | grep postgres) --format "{{(index .Endpoint.Ports 0).PublishedPort}}")
 .PHONY: inject-templates-in-db
 inject-templates-in-db: ## inject project templates
 	@PGPASSWORD=adminadmin psql --host localhost \
