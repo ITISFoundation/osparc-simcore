@@ -54,7 +54,8 @@ export WEBSERVER_API_VERSION  := $(shell cat $(CURDIR)/services/web/server/VERSI
 
 
 # swarm stacks
-export SWARM_STACK_NAME ?= simcore
+export SWARM_STACK_NAME ?= master-simcore
+export SWARM_STACK_NAME_NO_HYPHEN = $(subst -,_,$(SWARM_STACK_NAME))
 
 # version tags
 export DOCKER_IMAGE_TAG ?= latest
