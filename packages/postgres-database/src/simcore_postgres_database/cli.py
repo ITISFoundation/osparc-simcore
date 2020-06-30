@@ -11,14 +11,14 @@ import sys
 from copy import deepcopy
 from logging.config import fileConfig
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
+
+import click
 
 import alembic.command
-import click
 import docker
 from alembic import __version__ as __alembic_version__
 from alembic.config import Config as AlembicConfig
-
 from simcore_postgres_database.models import *
 from simcore_postgres_database.utils import build_url, raise_if_not_responsive
 
@@ -110,14 +110,13 @@ DEFAULT_DB = "simcoredb"
 def main():
     """ Simplified CLI for database migration with alembic """
 
-
 @main.command()
 @click.option("--user", "-u")
 @click.option("--password", "-p")
 @click.option("--host")
 @click.option("--port", type=int)
 @click.option("--database", "-d")
-def discover(**cli_inputs) -> Dict:
+def discover(**cli_inputs) -> Optional[Dict]:
     """ Discovers databases and caches configs in ~/.simcore_postgres_database.json (except if --no-cache)"""
     # NOTE: Do not add defaults to user, password so we get a chance to ping urls
     # TODO: if multiple candidates online, then query user to select
@@ -125,14 +124,14 @@ def discover(**cli_inputs) -> Dict:
     click.echo("Discovering database ...")
     cli_cfg = {key: value for key, value in cli_inputs.items() if value is not None}
 
-    def _test_cached():
+    def _test_cached() -> Dict:
         """Tests cached configuration """
         cfg = _load_cache() or {}
         if cfg:
             cfg.update(cli_cfg)  # overrides
         return cfg
 
-    def _test_env():
+    def _test_env() -> Dict:
         """Tests environ variables """
         cfg = {
             "user": os.getenv("POSTGRES_USER"),
@@ -144,7 +143,7 @@ def discover(**cli_inputs) -> Dict:
         cfg.update(cli_cfg)
         return cfg
 
-    def _test_swarm():
+    def _test_swarm() -> Dict:
         """Tests published port in swarm from host """
         cfg = _test_env()
         cfg["host"] = "127.0.0.1"
@@ -182,6 +181,7 @@ def discover(**cli_inputs) -> Dict:
 
     _reset_cache()
     click.secho("Sorry, database not found !!", blink=False, bold=True, fg="red")
+    return None
 
 
 @main.command()

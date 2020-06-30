@@ -171,6 +171,29 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
+  /projects/{project_id}/state:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - project
+      summary: returns the state of a project
+      operationId: state_project
+      responses:
+        "200":
+          description: returns the project current state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectStateEnveloped"
+
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
   /projects/{project_id}/close:
     parameters:
       - name: project_id
@@ -361,6 +384,9 @@ components:
 
     ProjectArrayEnveloped:
       $ref: "../common/schemas/project.yaml#/components/schemas/ProjectArrayEnveloped"
+
+    ProjectStateEnveloped:
+      $ref: "../common/schemas/project.yaml#/components/schemas/ProjectStateEnveloped"
 
     RunningServiceEnveloped:
       $ref: "../common/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped"

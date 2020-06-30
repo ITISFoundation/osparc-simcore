@@ -8,15 +8,15 @@ import asyncio
 import logging
 import os
 from pathlib import Path
-from typing import Any, Coroutine, List, Optional, Union
+from typing import Any, Awaitable, Coroutine, List, Optional, Union
 
 logger = logging.getLogger(__name__)
 
 
 def is_production_environ() -> bool:
-    """ 
-        If True, this code most probably 
-        runs in a production container of one of the 
+    """
+        If True, this code most probably
+        runs in a production container of one of the
         osparc-simcore services.
     """
     # WARNING: based on a convention that is not constantly verified
@@ -46,7 +46,9 @@ def search_osparc_repo_dir(start: Union[str, Path], max_iterations=8) -> Optiona
 
 
 # FUTURES
-def fire_and_forget_task(obj: Union[Coroutine, asyncio.Future]) -> asyncio.Future:
+def fire_and_forget_task(
+    obj: Union[Coroutine, asyncio.Future, Awaitable]
+) -> asyncio.Future:
     future = asyncio.ensure_future(obj)
 
     def log_exception_callback(fut: asyncio.Future):
@@ -63,7 +65,7 @@ def fire_and_forget_task(obj: Union[Coroutine, asyncio.Future]) -> asyncio.Futur
 async def logged_gather(
     *tasks, reraise: bool = True, log: logging.Logger = logger
 ) -> List[Any]:
-    """ 
+    """
         *all* coroutine passed are executed concurrently and once they are all
         completed, the first error (if any) is reraised or all returned
 

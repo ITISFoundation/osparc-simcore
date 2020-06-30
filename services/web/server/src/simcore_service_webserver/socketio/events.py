@@ -15,6 +15,8 @@ from .config import AsyncServer, get_socket_server
 
 log = logging.getLogger(__name__)
 
+SOCKET_IO_PROJECT_UPDATED_EVENT: str = "projectStateUpdated"
+
 
 async def post_messages(
     app: Application, user_id: str, messages: Dict[str, Any]
@@ -28,3 +30,11 @@ async def post_messages(
             # Notice that there might be several tabs open
             for event_name, data in messages.items():
                 fire_and_forget_task(sio.emit(event_name, json.dumps(data), room=sid))
+
+
+async def post_group_messages(
+    app: Application, room: str, messages: Dict[str, Any]
+) -> None:
+    sio: AsyncServer = get_socket_server(app)
+    for event_name, data in messages.items():
+        fire_and_forget_task(sio.emit(event_name, json.dumps(data), room=room))

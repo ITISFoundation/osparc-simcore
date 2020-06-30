@@ -88,7 +88,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           ctrl.bindProperty("label", "title", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
           ctrl.bindProperty("nMembers", "contact", null, item, id);
-          ctrl.bindProperty("access_rights", "accessRights", null, item, id);
+          ctrl.bindProperty("accessRights", "accessRights", null, item, id);
         },
         configureItem: item => {
           const thumbanil = item.getChildControl("thumbnail");
@@ -159,7 +159,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           ctrl.bindProperty("id", "key", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
-          ctrl.bindProperty("access_rights", "accessRights", null, item, id);
+          ctrl.bindProperty("accessRights", "accessRights", null, item, id);
           ctrl.bindProperty("login", "subtitle", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
@@ -365,7 +365,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           "uid": orgMember["key"]
         },
         data: {
-          "access_rights": {
+          "accessRights": {
             "read": true,
             "write": true,
             "delete": false

@@ -181,7 +181,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./components/schemas/group.yaml#/GroupAccessRights"
+              type: object
+              properties:
+                accessRights:
+                  $ref: "./components/schemas/group.yaml#/GroupAccessRights"
+              required:
+                - accessRights
+
+
+
       responses:
         "200":
           description: modified user
