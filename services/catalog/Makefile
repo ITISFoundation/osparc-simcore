@@ -60,17 +60,15 @@ down-pg: docker-compose.yml ## stops pg fixture
 
 run-devel run-prod: .env up-pg ## runs app with pg service
 	# starting service ...
-ifeq ($(subst run-,,$@),devel)
-	# development mode (with reload upon change)
-	# start app (under $<)
-	uvicorn simcore_service_catalog.__main__:the_app \
-		--reload --reload-dir $(SRC_DIR) \
-		--port=8000 --host=0.0.0.0
-else
-	# production mode
-	simcore-service-catalog
-endif
-	# stop
+	@$(if $(findstring -devel,$@),\
+		echo "development mode (with reload upon change)"; \
+		echo "start app (under $<)..."; \
+		uvicorn simcore_service_catalog.__main__:the_app \
+			--reload --reload-dir $(SRC_DIR) \
+			--port=8000 --host=0.0.0.0;,\
+		echo "production mode"; \
+		simcore-service-catalog; \
+	)
 
 
 # BUILD #####################
