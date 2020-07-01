@@ -302,6 +302,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __attachEventHandlers: function() {
+      // Listen to socket
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      // callback for incoming logs
+      const slotName = "projectStateUpdated";
+      socket.removeSlot(slotName);
+      socket.on(slotName, function(jsonString) {
+        const data = JSON.parse(jsonString);
+        if (data) {
+          const studyId = data["project_uuid"];
+          const locked = (data["data"] && "locked" in data["data"]) ? data["data"]["locked"] : false;
+          console.log(studyId, locked);
+        }
+      }, this);
+
       const textfield = this.__studyFilters.getTextFilter().getChildControl("textfield");
       textfield.addListener("appear", () => {
         textfield.focus();
