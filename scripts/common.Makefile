@@ -101,8 +101,8 @@ autoformat: ## runs black python formatter on this service's code. Use AFTER mak
 		$(CURDIR)
 
 .PHONY: mypy
-mypy: $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type checker on this services's code. Use AFTER make install-*
-	docker run -ti -v $(REPO_BASE_DIR)/mypy.ini:/config/mypy.ini -v $(CURDIR):/src --workdir=/src kiwicom/mypy mypy --config-file /config/mypy.ini src
+mypy: $(REPO_BASE_DIR)/scripts/mypy.bash $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type checker on this services's code. Use AFTER make install-*
+	@$(REPO_BASE_DIR)/scripts/mypy.bash src
 
 .PHONY: version-patch version-minor version-major
 version-patch: ## commits version with bug fixes not affecting the cookiecuter config

@@ -23,11 +23,13 @@ import redis
 import socketio
 import sqlalchemy as sa
 import trafaret_config
+from aiohttp import web
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import NewUser
 from yarl import URL
 
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
-from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiopg_utils import DSN
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.application import create_application
@@ -223,7 +225,7 @@ def redis_service(docker_services, docker_ip):
     return url
 
 
-def is_redis_responsive(host: str, port: str) -> bool:
+def is_redis_responsive(host: str, port: int) -> bool:
     r = redis.Redis(host=host, port=port)
     return r.ping() == True
 
@@ -248,13 +250,11 @@ def socketio_url(client) -> Callable:
 
 
 @pytest.fixture()
-async def security_cookie(client) -> Callable:
+async def security_cookie_factory(client) -> Callable:
     async def creator(client_override: Optional = None) -> str:
         # get the cookie by calling the root entrypoint
         resp = await (client_override or client).get("/v0/")
-        payload = await resp.json()
-        assert resp.status == 200, str(payload)
-        data, error = unwrap_envelope(payload)
+        data, error = await assert_status(resp, web.HTTPOk)
         assert data
         assert not error
 
@@ -270,7 +270,7 @@ async def security_cookie(client) -> Callable:
 
 @pytest.fixture()
 async def socketio_client(
-    socketio_url: Callable, security_cookie: Callable
+    socketio_url: Callable, security_cookie_factory: Callable
 ) -> Callable:
     clients = []
 
@@ -285,7 +285,7 @@ async def socketio_client(
             )
         )
         headers = {}
-        cookie = await security_cookie(client)
+        cookie = await security_cookie_factory(client)
         if cookie:
             # WARNING: engineio fails with empty cookies. Expects "key=value"
             headers.update({"Cookie": cookie})

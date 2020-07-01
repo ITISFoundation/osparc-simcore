@@ -32,6 +32,7 @@ from ..storage_api import (
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import NodeNotFoundError
+from .projects_models import ProjectState
 from .projects_utils import clone_project_document
 
 log = logging.getLogger(__name__)
@@ -330,20 +331,17 @@ async def is_node_id_present_in_any_project_workbench(
     return node_id in await db.get_all_node_ids_from_workbenches()
 
 
-class ProjectState(BaseModel):
-    locked: bool
-
-
 async def notify_project_state_update(
-    app: web.Application, project: Dict, opened: bool
+    app: web.Application, project: Dict, state: ProjectState
 ) -> None:
     rooms_to_notify = [
         f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
     ]
+
     messages = {
         SOCKET_IO_PROJECT_UPDATED_EVENT: {
             "project_uuid": project["uuid"],
-            "data": ProjectState(locked=opened).dict(),
+            "data": state.dict(),
         }
     }
 

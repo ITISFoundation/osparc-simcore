@@ -3,6 +3,7 @@
 """
 import json
 import logging
+from typing import Set
 
 from aiohttp import web
 from jsonschema import ValidationError
@@ -14,9 +15,11 @@ from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from ..security_api import check_permission
 from ..security_decorators import permission_required
+from ..users_api import get_user_name
 from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from .projects_models import Owner, ProjectLocked, ProjectState
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",
@@ -298,20 +301,32 @@ async def open_project(request: web.Request) -> web.Response:
             )
 
             # let's check if that project is already opened by someone else
-            other_users = await rt.find_users_of_resource("project_id", project_uuid)
-            if other_users and any(f"{user_id}" != user for user in other_users):
+            other_users: Set[int] = {
+                x
+                for x in await rt.find_users_of_resource("project_id", project_uuid)
+                if x != f"{user_id}"
+            }
+
+            if other_users:
                 # project is already locked
-                raise HTTPLocked(reason="Project is already opened by another user")
+                usernames = [
+                    await get_user_name(request.app, uid) for uid in other_users
+                ]
+                raise HTTPLocked(reason=f"Project is already opened by {usernames}")
             await rt.add("project_id", project_uuid)
 
         # user id opened project uuid
         await projects_api.start_project_interactive_services(request, project, user_id)
         # notify users that project is now locked
-        await projects_api.notify_project_state_update(
-            request.app, project, opened=True
+        project_state = ProjectState(
+            locked=ProjectLocked(
+                value=True, owner=Owner(**await get_user_name(request.app, user_id))
+            )
         )
-
-        return {"data": project}
+        await projects_api.notify_project_state_update(
+            request.app, project, project_state
+        )
+        return web.json_response({"data": project})
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
 
@@ -341,7 +356,7 @@ async def close_project(request: web.Request) -> web.Response:
                 len(await rt.find_users_of_resource("project_id", project_uuid)) > 0
             )
         # if we are the only user left we can safely remove the services
-        async def close_project_task():
+        async def _close_project_task() -> None:
             try:
                 if not project_opened_by_others:
                     # only remove the services if no one else is using them now
@@ -351,10 +366,10 @@ async def close_project(request: web.Request) -> web.Response:
             finally:
                 # ensure we notify the user whatever happens, the GC should take care of dangling services in case of issue
                 await projects_api.notify_project_state_update(
-                    request.app, project, opened=False
+                    request.app, project, ProjectState(locked={"value": False})
                 )
 
-        fire_and_forget_task(close_project_task())
+        fire_and_forget_task(_close_project_task())
 
         raise web.HTTPNoContent(content_type="application/json")
     except ProjectNotFoundError:
@@ -370,6 +385,7 @@ async def state_project(request: web.Request) -> web.Response:
         # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
         from .projects_api import get_project_for_user
 
+        # check that project exists
         await get_project_for_user(
             request.app,
             project_uuid=project_uuid,
@@ -378,7 +394,18 @@ async def state_project(request: web.Request) -> web.Response:
         )
 
         users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
-        return {"data": {"locked": len(users_of_project) > 0}}
+        usernames = [
+            await get_user_name(request.app, uid) for uid in set(users_of_project)
+        ]
+        assert len(usernames) <= 1  # currently not possible to have more than 1
+        project_state = ProjectState(
+            locked={
+                "value": len(usernames) > 0,
+                "owner": Owner(**usernames[0]) if len(usernames) > 0 else None,
+            }
+        )
+
+        return web.json_response({"data": project_state.dict()})
 
 
 @login_required
@@ -403,7 +430,7 @@ async def get_active_project(request: web.Request) -> web.Response:
                     include_templates=True,
                 )
 
-        return {"data": project}
+        return web.json_response({"data": project})
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason="Project not found")
 
@@ -462,7 +489,7 @@ async def get_node(request: web.Request) -> web.Response:
         node_details = await projects_api.get_project_node(
             request, project_uuid, user_id, node_uuid
         )
-        return {"data": node_details}
+        return web.json_response({"data": node_details})
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
 

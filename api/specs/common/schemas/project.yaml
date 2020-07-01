@@ -12,6 +12,7 @@ components:
         error:
           nullable: true
           default: null
+
     ProjectArrayEnveloped:
       type: object
       required:
@@ -24,14 +25,31 @@ components:
         error:
           nullable: true
           default: null
+
     ProjectState:
       type: object
       required:
         - locked
       properties:
         locked:
-          type: boolean
-          description: true if project currently locked
+          type: object
+          description: describes the project lock state
+          required:
+            - value
+          properties:
+            value:
+              type: boolean
+              description: true if the project is locked
+            owner:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+              required:
+                - firstName
+                - lastName
 
     ProjectStateEnveloped:
       type: object

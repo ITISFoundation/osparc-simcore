@@ -131,7 +131,10 @@ from typing import Callable
 
 
 async def test_anonymous_websocket_connection(
-    client_session_id: str, socketio_url: Callable, security_cookie: Callable, mocker,
+    client_session_id: str,
+    socketio_url: Callable,
+    security_cookie_factory: Callable,
+    mocker,
 ):
     from yarl import URL
 
@@ -142,7 +145,7 @@ async def test_anonymous_websocket_connection(
         URL(socketio_url()).with_query({"client_session_id": client_session_id()})
     )
     headers = {}
-    cookie = await security_cookie()
+    cookie = await security_cookie_factory()
     if cookie:
         # WARNING: engineio fails with empty cookies. Expects "key=value"
         headers.update({"Cookie": cookie})
