@@ -17,5 +17,8 @@ pydantic[dotenv]
 # database
 aiopg[sa]
 
+# web client
+httpx
+
 # other
 tenacity
