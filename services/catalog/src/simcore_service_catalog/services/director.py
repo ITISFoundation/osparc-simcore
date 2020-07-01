@@ -66,7 +66,10 @@ class AuthSession:
         data, error = None, None
         try:
             body = resp.json()
-            data, error = body["data"], body["error"]
+            if "data" in body:
+                data = body["data"]
+            if "error" in body:
+                error = body["error"]
         except (json.JSONDecodeError, KeyError):
             logger.warning("Failed to unenvelop director response", exc_info=True)
 

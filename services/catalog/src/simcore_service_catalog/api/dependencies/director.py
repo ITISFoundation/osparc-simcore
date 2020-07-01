@@ -21,7 +21,4 @@ def get_director_session(app: FastAPI = Depends(_get_app),) -> AuthSession:
         Lifetime of AuthSession wrapper is one request because it needs different session cookies
         Lifetime of embedded client is attached to the app lifetime
     """
-    import pdb
-
-    pdb.set_trace()
     return AuthSession.create(app)

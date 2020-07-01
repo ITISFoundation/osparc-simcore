@@ -147,6 +147,7 @@ class Widget(BaseModel):
 class ServiceProperty(BaseModel):
     display_order: float = Field(
         ...,
+        alias="displayOrder",
         description="use this to numerically sort the properties for display",
         example=[1, -0.2],
     )
@@ -220,6 +221,7 @@ class ServiceData(BaseModel):
     )
     integration_version: Optional[constr(regex=VERSION_RE)] = Field(
         None,
+        alias="integration-version",
         description="service oSparc integration version number",
         # regex=VERSION_RE,
         example="1.0.0",

@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from pydantic import ValidationError
+from pydantic.tools import parse_obj_as
 from starlette import status
 
 from simcore_service_catalog.api.dependencies.director import get_director_session
@@ -28,11 +29,17 @@ async def list_services(
     ),
 ):
     data = await client.get("/services")
-
-    try:
-        services = [ServiceOut.parse_obj(x) for x in data]
-    except ValidationError:
-        logger.exception("director invalid response")
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
+    services: List[ServiceOut] = []
+    for x in data:
+        try:
+            services.append(ServiceOut.parse_obj(x))
+        # services = parse_obj_as(List[ServiceOut], data)
+        except ValidationError as exc:
+            logger.warning(
+                "skip service %s:%s that has invalid fields\n%s",
+                x["key"],
+                x["version"],
+                exc,
+            )
 
     return services
