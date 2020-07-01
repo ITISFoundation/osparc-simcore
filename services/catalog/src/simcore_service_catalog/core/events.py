@@ -4,6 +4,7 @@ from typing import Callable
 from fastapi import FastAPI
 
 from ..db.events import close_db_connection, connect_to_db
+from ..services.director import close_director, setup_director
 from ..services.remote_debug import setup_remote_debugging
 from .settings import BootModeEnum
 
@@ -23,6 +24,10 @@ def create_start_app_handler(app: FastAPI) -> Callable:
         if app.state.settings.postgres.enabled:
             await connect_to_db(app)
 
+        # setup connection to director
+        if app.state.settings.director.enabled:
+            setup_director(app)
+
     return start_app
 
 
@@ -32,6 +37,8 @@ def create_stop_app_handler(app: FastAPI) -> Callable:
             logger.info("Application stopping")
             if app.state.settings.postgres.enabled:
                 await close_db_connection(app)
+            if app.state.settings.director.enabled:
+                await close_director(app)
         except Exception:  # pylint: disable=broad-except
             logger.exception("Stopping application")
 
