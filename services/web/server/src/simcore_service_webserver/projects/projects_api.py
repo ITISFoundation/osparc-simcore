@@ -14,7 +14,6 @@ from typing import Any, Dict, Optional, Set
 from uuid import uuid4
 
 from aiohttp import web
-from pydantic import BaseModel
 
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
