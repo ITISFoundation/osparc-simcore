@@ -33,7 +33,7 @@ qx.Class.define("osparc.component.export.Permissions", {
   construct: function(studyData) {
     this.base(arguments);
 
-    this.__studyData = osparc.utils.Utils.deepCloneObject(studyData);
+    this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
     this._setLayout(new qx.ui.layout.VBox(15));
 

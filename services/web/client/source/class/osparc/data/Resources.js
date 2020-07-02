@@ -93,6 +93,11 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/projects/{projectId}:close"
           },
+          state: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{projectId}/state"
+          },
           post: {
             method: "POST",
             url: statics.API + "/projects"
@@ -546,14 +551,20 @@ qx.Class.define("osparc.data.Resources", {
 
         res.addListenerOnce(endpoint + "Error", e => {
           let message = null;
+          let status = null;
           if (e.getData().error) {
             const logs = e.getData().error.logs || null;
             if (logs && logs.length) {
               message = logs[0].message;
             }
+            status = e.getData().error.status;
           }
           res.dispose();
-          reject(Error(message ? message : `Error while fetching ${resource}`));
+          const err = Error(message ? message : `Error while fetching ${resource}`);
+          if (status) {
+            err.status = status;
+          }
+          reject(err);
         });
 
         res[endpoint](params.url || null, params.data || null);
