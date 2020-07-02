@@ -49,6 +49,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
   events: {
     "changeMainViewCaption": "qx.event.type.Data",
+    "studyIsLocked": "qx.event.type.Event",
     "studySaved": "qx.event.type.Data"
   },
 
@@ -69,12 +70,23 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     _applyStudy: function(study) {
       osparc.store.Store.getInstance().setCurrentStudy(study);
       study.buildWorkbench();
-      study.openStudy();
+      study.openStudy()
+        .then(() => {
+          study.getWorkbench().initWorkbench();
+        })
+        .catch(err => {
+          if ("status" in err && err["status"] == 423) { // Locked
+            const msg = study.getName() + this.tr(" is already opened");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            this.fireEvent("studyIsLocked");
+          } else {
+            console.error(err);
+          }
+        });
       this.__initViews();
       this.__connectEvents();
       this.__attachSocketEventHandlers();
       this.__startAutoSaveTimer();
-
       this.__openOneNode();
     },
 

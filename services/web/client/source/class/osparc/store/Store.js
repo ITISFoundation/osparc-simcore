@@ -197,6 +197,87 @@ qx.Class.define("osparc.store.Store", {
       }
     },
 
+    getStudyWState: function(studyId, reload = false) {
+      return new Promise((resolve, reject) => {
+        const studiesWStateCache = this.getStudies();
+        const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
+        if (!reload && idx !== -1) {
+          resolve(studiesWStateCache[idx]);
+          return;
+        }
+        const params = {
+          url: {
+            "projectId": studyId
+          }
+        };
+        osparc.data.Resources.getOne("studies", params)
+          .then(study => {
+            osparc.data.Resources.fetch("studies", "state", params)
+              .then(state => {
+                study["locked"] = state["locked"];
+                if (idx === -1) {
+                  studiesWStateCache.push(study);
+                } else {
+                  studiesWStateCache[idx] = study;
+                }
+                resolve(study);
+              })
+              .catch(er => {
+                console.error(er);
+                reject();
+              });
+          })
+          .catch(err => {
+            console.error(err);
+            reject();
+          });
+      });
+    },
+
+    /**
+     * This function provides the list of studies with their state
+     * @param {Boolean} reload ?
+     */
+    getStudiesWState: function(reload = false) {
+      return new Promise((resolve, reject) => {
+        const studiesWStateCache = this.getStudies();
+        if (!reload && studiesWStateCache.length) {
+          resolve(studiesWStateCache);
+          return;
+        }
+        studiesWStateCache.length = 0;
+        osparc.data.Resources.get("studies")
+          .then(studies => {
+            const studiesWStatePromises = [];
+            studies.forEach(study => {
+              const params = {
+                url: {
+                  "projectId": study.uuid
+                }
+              };
+              studiesWStatePromises.push(osparc.data.Resources.fetch("studies", "state", params));
+            });
+            Promise.all(studiesWStatePromises)
+              .then(states => {
+                states.forEach((state, idx) => {
+                  const study = studies[idx];
+                  study["locked"] = state["locked"];
+                  studiesWStateCache.push(study);
+                });
+                resolve(studiesWStateCache);
+              })
+              .catch(er => {
+                console.error(er);
+                reject();
+              });
+          })
+          .catch(err => {
+            console.error(err);
+            reject();
+          });
+      });
+    },
+
     /**
      * This functions does the needed processing in order to have a working list of services and DAGs.
      * @param {Boolean} reload ?
@@ -269,27 +350,24 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getVisibleMembers: function() {
-      const reachableMembers = this.getReachableMembers();
+    getVisibleMembers: function(reload = false) {
       return new Promise((resolve, reject) => {
+        const reachableMembers = this.getReachableMembers();
+        if (!reload && Object.keys(reachableMembers).length) {
+          resolve(reachableMembers);
+          return;
+        }
         osparc.data.Resources.get("organizations")
           .then(resp => {
             const orgMembersPromises = [];
             const orgs = resp["organizations"];
             orgs.forEach(org => {
-              orgMembersPromises.push(
-                new Promise((resolve2, reject2) => {
-                  const params = {
-                    url: {
-                      "gid": org["gid"]
-                    }
-                  };
-                  osparc.data.Resources.get("organizationMembers", params)
-                    .then(orgMembers => {
-                      resolve2(orgMembers);
-                    });
-                })
-              );
+              const params = {
+                url: {
+                  "gid": org["gid"]
+                }
+              };
+              orgMembersPromises.push(osparc.data.Resources.get("organizationMembers", params));
             });
             Promise.all(orgMembersPromises)
               .then(orgMemberss => {

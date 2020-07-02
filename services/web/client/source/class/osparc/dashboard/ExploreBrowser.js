@@ -130,6 +130,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __initResources: function() {
       this.__showLoadingPage(this.tr("Discovering Templates and Apps"));
 
+      this.__templateStudies = [];
+      this.__services = [];
       const servicesTags = this.__getTags();
       const store = osparc.store.Store.getInstance();
       const servicesPromise = store.getServicesDAGs(true);
