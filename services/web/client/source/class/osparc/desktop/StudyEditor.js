@@ -85,6 +85,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
       this.__initViews();
       this.__connectEvents();
+      this.__attachSocketEventHandlers();
       this.__startAutoSaveTimer();
       this.__openOneNode();
     },
@@ -616,7 +617,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__scrollContainer.setVisibility("visible");
       this.__nodeView._maximizeIFrame(false); // eslint-disable-line no-underscore-dangle
       const node = this.getStudy().getWorkbench().getNode(this.__currentNodeId);
-      if (node && node.getIFrame() && !this.__nodeView.isSettingsGroupShowable()) {
+      if (node && node.getIFrame() && (node.getInputNodes().length === 0)) {
         node.getLoadingPage().maximizeIFrame(true);
         node.getIFrame().maximizeIFrame(true);
       }
@@ -647,53 +648,59 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       controlsBar.addListener("ungroupSelection", this.__ungroupSelection, this);
       controlsBar.addListener("startPipeline", this.__startPipeline, this);
       controlsBar.addListener("stopPipeline", this.__stopPipeline, this);
+    },
 
+    __attachSocketEventHandlers: function() {
       // Listen to socket
       const socket = osparc.wrapper.WebSocket.getInstance();
+
       // callback for incoming logs
       const slotName = "logger";
-      socket.removeSlot(slotName);
-      socket.on(slotName, function(jsonString) {
-        const data = JSON.parse(jsonString);
-        if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
-          // Filtering out logs from other studies
-          return;
-        }
-        this.getLogger().infos(data["Node"], data["Messages"]);
-      }, this);
+      if (!socket.slotExists(slotName)) {
+        socket.on(slotName, function(jsonString) {
+          const data = JSON.parse(jsonString);
+          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
+            // Filtering out logs from other studies
+            return;
+          }
+          this.getLogger().infos(data["Node"], data["Messages"]);
+        }, this);
+      }
       socket.emit(slotName);
 
       // callback for incoming progress
       const slotName2 = "progress";
-      socket.removeSlot(slotName2);
-      socket.on(slotName2, function(data) {
-        const d = JSON.parse(data);
-        const nodeId = d["Node"];
-        const progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
-        const workbench = this.getStudy().getWorkbench();
-        const node = workbench.getNode(nodeId);
-        if (node) {
-          node.setProgress(progress);
-        }
-      }, this);
+      if (!socket.slotExists(slotName2)) {
+        socket.on(slotName2, function(data) {
+          const d = JSON.parse(data);
+          const nodeId = d["Node"];
+          const progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
+          const workbench = this.getStudy().getWorkbench();
+          const node = workbench.getNode(nodeId);
+          if (node) {
+            node.setProgress(progress);
+          }
+        }, this);
+      }
 
       // callback for node updates
       const slotName3 = "nodeUpdated";
-      socket.removeSlot(slotName3);
-      socket.on(slotName3, data => {
-        const d = JSON.parse(data);
-        const nodeId = d["Node"];
-        const nodeData = d["Data"];
-        const workbench = this.getStudy().getWorkbench();
-        const node = workbench.getNode(nodeId);
-        if (node) {
-          node.setOutputData(nodeData.outputs);
-          if (nodeData.progress) {
-            const progress = Number.parseInt(nodeData.progress);
-            node.setProgress(progress);
+      if (!socket.slotExists(slotName3)) {
+        socket.on(slotName3, data => {
+          const d = JSON.parse(data);
+          const nodeId = d["Node"];
+          const nodeData = d["Data"];
+          const workbench = this.getStudy().getWorkbench();
+          const node = workbench.getNode(nodeId);
+          if (node) {
+            node.setOutputData(nodeData.outputs);
+            if (nodeData.progress) {
+              const progress = Number.parseInt(nodeData.progress);
+              node.setProgress(progress);
+            }
           }
-        }
-      }, this);
+        }, this);
+      }
     }
   }
 });

@@ -42,11 +42,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
   },
 
   properties: {
-    isTemplate: {
-      check: "Boolean",
+    resourceType: {
+      check: ["study", "template", "service"],
       nullable: false,
-      init: false,
-      event: "changeIsTemplate"
+      event: "changeResourceType"
     },
 
     menu: {
@@ -126,6 +125,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
   members: {
     __dateFormat: null,
     __timeFormat: null,
+
+    isResourceType: function(resourceType) {
+      return this.getResourceType() === resourceType;
+    },
 
     multiSelection: function(on) {
       const menuButton = this.getChildControl("menu-button");
@@ -227,7 +230,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyStudyDescription: function(value, old) {
       /*
-      if (value !== "" && this.getIsTemplate()) {
+      if (value !== "" && this.isResourceType("template")) {
         const label = this.getChildControl("description");
         label.setValue(value);
       }
@@ -235,7 +238,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyLastChangeDate: function(value, old) {
-      if (value && !this.getIsTemplate()) {
+      if (value && this.isResourceType("study")) {
         const label = this.getChildControl("description2");
         let dateStr = null;
         if (value.getDate() === (new Date()).getDate()) {
@@ -251,7 +254,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyCreator: function(value, old) {
-      if (this.getIsTemplate()) {
+      if (this.isResourceType("service") || this.isResourceType("template")) {
         const label = this.getChildControl("description2");
         label.setValue(value);
       }
@@ -289,7 +292,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         const gids = Object.keys(value);
         for (let j=0; j<gids.length; j++) {
           const gid = parseInt(gids[j]);
-          if (!this.getIsTemplate() && (gid === myGroupId)) {
+          if (this.isResourceType("study") && (gid === myGroupId)) {
             continue;
           }
           const grp = groups[i].find(group => group["gid"] === gid);

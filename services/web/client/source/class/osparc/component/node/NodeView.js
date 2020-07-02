@@ -75,9 +75,8 @@ qx.Class.define("osparc.component.node.NodeView", {
 
     isSettingsGroupShowable: function() {
       const node = this.getNode();
-      const propsWidget = node.getPropsWidget();
-      if (propsWidget) {
-        return propsWidget.hasVisibleInputs();
+      if (node && ("getPropsWidget" in node) && node.getPropsWidget()) {
+        return node.getPropsWidget().hasVisibleInputs();
       }
       return false;
     },
