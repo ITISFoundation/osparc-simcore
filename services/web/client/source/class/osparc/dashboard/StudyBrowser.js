@@ -123,7 +123,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__showLoadingPage(this.tr("Loading Studies"));
 
       this.__userStudies = [];
-      this.__templateStudies = [];
       const resourcePromises = [];
       const store = osparc.store.Store.getInstance();
       resourcePromises.push(store.getVisibleMembers());
