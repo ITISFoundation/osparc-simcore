@@ -376,9 +376,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       lock.setVisibility(locked ? "visible" : "excluded");
 
       [
-        "menu-button",
+        "tick-selected",
         "tick-unselected",
-        "tick-selected"
+        "menu-button"
       ].forEach(childName => {
         const child = this.getChildControl(childName);
         child.set({
