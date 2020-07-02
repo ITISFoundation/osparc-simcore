@@ -389,7 +389,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyLockedBy: function(lockedBy) {
       this.set({
-        toolTipText: lockedBy + this.tr(" is using it")
+        toolTipText: lockedBy ? (lockedBy + this.tr(" is using it")) : null
       });
     },
 
