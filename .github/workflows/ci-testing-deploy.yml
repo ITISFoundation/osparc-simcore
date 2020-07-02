@@ -748,7 +748,7 @@ jobs:
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
 
   system-test-e2e:
-    # skip the job until make it faster and more reliable
+    # FIXME: skip the job until make it faster and more reliable
     # https://github.com/ITISFoundation/osparc-simcore/issues/1594
     if: "false"
     name: System-testing e2e
