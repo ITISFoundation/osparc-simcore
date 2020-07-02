@@ -311,8 +311,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const data = JSON.parse(jsonString);
         if (data) {
           const studyId = data["project_uuid"];
-          const locked = (data["data"] && "locked" in data["data"]) ? data["data"]["locked"] : false;
-          console.log(studyId, locked);
+          const state = ("data" in data) ? data["data"] : {};
+          const studyItem = this.__userStudyContainer.getChildren().find(card => card.getUuid() === studyId);
+          if (studyItem) {
+            studyItem.setState(state);
+          }
         }
       }, this);
 
@@ -470,7 +473,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         accessRights: study.accessRights ? study.accessRights : null,
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
         icon: study.thumbnail || (isTemplate ? "@FontAwesome5Solid/copy/50" : "@FontAwesome5Solid/file-alt/50"),
-        locked: study.locked ? study.locked : false,
+        state: study.state ? study.state : {},
         tags
       });
       const menu = this.__getStudyItemMenu(item, study, isTemplate);
@@ -478,7 +481,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       item.subscribeToFilterGroup("studyBrowser");
 
       item.addListener("execute", () => {
-        if (!item.getLocked()) {
+        if (!item.isLocked()) {
           this.__itemClicked(item, isTemplate);
         }
       }, this);

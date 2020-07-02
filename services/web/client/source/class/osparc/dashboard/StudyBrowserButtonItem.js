@@ -96,11 +96,23 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       apply: "_applyTags"
     },
 
+    state: {
+      check: "Object",
+      nullable: false,
+      apply: "_applyState"
+    },
+
     locked: {
       check: "Boolean",
       init: false,
       nullable: false,
       apply: "_applyLocked"
+    },
+
+    lockedBy: {
+      check: "String",
+      nullable: true,
+      apply: "_applyLockedBy"
     }
   },
 
@@ -132,7 +144,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     __itemSelected: function() {
       const selected = this.getValue();
 
-      if (this.getLocked() && selected) {
+      if (this.isLocked() && selected) {
         this.setValue(false);
       }
 
@@ -338,6 +350,18 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       }
     },
 
+    _applyState: function(state) {
+      const locked = ("locked" in state) ? state["locked"]["value"] : false;
+      if (locked) {
+        this.setLocked(state["locked"]["value"]);
+        const owner = state["locked"]["owner"];
+        this.setLockedBy(osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]));
+      } else {
+        this.setLocked(false);
+        this.setLockedBy(null);
+      }
+    },
+
     _applyLocked: function(locked) {
       this.set({
         cursor: locked ? "not-allowed" : "pointer"
@@ -360,6 +384,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         child.set({
           enabled: !locked
         });
+      });
+    },
+
+    _applyLockedBy: function(lockedBy) {
+      this.set({
+        toolTipText: lockedBy + this.tr(" is using it")
       });
     },
 
