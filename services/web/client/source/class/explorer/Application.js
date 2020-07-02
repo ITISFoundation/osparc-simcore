@@ -34,7 +34,6 @@ qx.Class.define("explorer.Application", {
      * during startup of the application
      */
     main: function() {
-      // Call super class
       this.base();
 
       // Enable logging in debug variant
