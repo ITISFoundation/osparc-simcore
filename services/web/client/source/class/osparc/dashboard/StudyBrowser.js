@@ -272,7 +272,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (data) {
           const studyId = data["project_uuid"];
           const state = ("data" in data) ? data["data"] : {};
-          const studyItem = this.__userStudyContainer.getChildren().find(card => card.getUuid() === studyId);
+          const studyItem = this.__userStudyContainer.getChildren().find(card => (card instanceof osparc.dashboard.StudyBrowserButtonItem) && (card.getUuid() === studyId));
           if (studyItem) {
             studyItem.setState(state);
           }

@@ -131,31 +131,40 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     multiSelection: function(on) {
-      const menuButton = this.getChildControl("menu-button");
       if (on) {
+        const menuButton = this.getChildControl("menu-button");
         menuButton.setVisibility("excluded");
         this.__itemSelected();
       } else {
-        menuButton.setVisibility("visible");
-        const tick = this.getChildControl("tick-selected");
-        tick.setVisibility("excluded");
-        const untick = this.getChildControl("tick-unselected");
-        untick.setVisibility("excluded");
+        this.__showMenuOnly();
       }
     },
 
     __itemSelected: function() {
-      const selected = this.getValue();
+      if (this.isResourceType("study")) {
+        const selected = this.getValue();
 
-      if (this.isLocked() && selected) {
-        this.setValue(false);
+        if (this.isLocked() && selected) {
+          this.setValue(false);
+        }
+
+        const tick = this.getChildControl("tick-selected");
+        tick.setVisibility(selected ? "visible" : "excluded");
+
+        const untick = this.getChildControl("tick-unselected");
+        untick.setVisibility(selected ? "excluded" : "visible");
+      } else {
+        this.__showMenuOnly();
       }
+    },
 
+    __showMenuOnly: function() {
+      const menuButton = this.getChildControl("menu-button");
+      menuButton.setVisibility("visible");
       const tick = this.getChildControl("tick-selected");
-      tick.setVisibility(selected ? "visible" : "excluded");
-
+      tick.setVisibility("excluded");
       const untick = this.getChildControl("tick-unselected");
-      untick.setVisibility(selected ? "excluded" : "visible");
+      untick.setVisibility("excluded");
     },
 
     // overridden
