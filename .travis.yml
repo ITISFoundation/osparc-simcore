@@ -387,7 +387,9 @@ jobs:
 
     # system testing e2e testing -----------------------------------------------------------------
     # https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
-    - stage: integration-testing / system-testing
+    # FIXME: skip the job until make it faster and more reliable https://github.com/ITISFoundation/osparc-simcore/issues/1594
+    - if: false
+      stage: integration-testing / system-testing
       name: e2e testing
       language: node_js
       node_js:
