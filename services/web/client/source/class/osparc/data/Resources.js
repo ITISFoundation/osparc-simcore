@@ -68,7 +68,7 @@ qx.Class.define("osparc.data.Resources", {
        * STUDIES
        */
       "studies": {
-        useCache: true,
+        useCache: false,
         endpoints: {
           get: {
             method: "GET",
