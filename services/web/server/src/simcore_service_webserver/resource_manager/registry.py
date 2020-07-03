@@ -18,7 +18,7 @@ from typing import Dict, List, Tuple
 
 import attr
 from aiohttp import web
-
+from asyncio import Lock
 from .config import APP_CLIENT_SOCKET_REGISTRY_KEY
 from .redis import get_redis_client
 
@@ -37,6 +37,7 @@ class RedisResourceRegistry:
     """
 
     app: web.Application
+    lock: Lock = Lock()
 
     @classmethod
     def _hash_key(cls, key: Dict[str, str]) -> str:

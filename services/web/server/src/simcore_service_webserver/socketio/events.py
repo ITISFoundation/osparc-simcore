@@ -23,13 +23,14 @@ async def post_messages(
 ) -> None:
     sio: AsyncServer = get_socket_server(app)
 
+    socket_ids: List[str] = []
     with managed_resource(user_id, None, app) as rt:
-        socket_ids: List[str] = await rt.find_socket_ids()
-        for sid in socket_ids:
-            # We only send the data to the right sockets
-            # Notice that there might be several tabs open
-            for event_name, data in messages.items():
-                fire_and_forget_task(sio.emit(event_name, json.dumps(data), room=sid))
+        socket_ids = await rt.find_socket_ids()
+    for sid in socket_ids:
+        # We only send the data to the right sockets
+        # Notice that there might be several tabs open
+        for event_name, data in messages.items():
+            fire_and_forget_task(sio.emit(event_name, json.dumps(data), room=sid))
 
 
 async def post_group_messages(

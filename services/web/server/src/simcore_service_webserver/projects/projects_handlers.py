@@ -256,14 +256,19 @@ async def delete_project(request: web.Request):
             user_id=user_id,
             include_templates=True,
         )
+        project_users: Set[int] = []
         with managed_resource(user_id, None, request.app) as rt:
-            other_users = await rt.find_users_of_resource("project_id", project_uuid)
-            if other_users:
-                message = "Project is opened by another user. It cannot be deleted."
-                if user_id in other_users:
-                    message = "Project is still open. It cannot be deleted until it is closed."
-                # we cannot delete that project
-                raise web.HTTPForbidden(reason=message)
+            project_users = await rt.find_users_of_resource("project_id", project_uuid)
+        if project_users:
+            # that project is still in use
+            if user_id in project_users:
+                message = "Project is still open in another tab/browser. It cannot be deleted until it is closed."
+            else:
+                other_users = set(project_users)
+                message = f"Project is open by {await get_user_name(x) for x in other_users}. It cannot be deleted until the project is closed."
+
+            # we cannot delete that project
+            raise web.HTTPForbidden(reason=message)
 
         await projects_api.delete_project(request, project_uuid, user_id)
     except ProjectInvalidRightsError:
@@ -299,20 +304,21 @@ async def open_project(request: web.Request) -> web.Response:
             include_templates=True,
         )
         with managed_resource(user_id, client_session_id, request.app) as rt:
-            # let's check if that project is already opened by someone else
-            other_users: Set[int] = {
-                x
-                for x in await rt.find_users_of_resource("project_id", project_uuid)
-                if x != f"{user_id}"
-            }
+            with rt.get_registry_lock() as lock:
+                # let's check if that project is already opened by someone else
+                other_users: Set[int] = {
+                    x
+                    for x in await rt.find_users_of_resource("project_id", project_uuid)
+                    if x != f"{user_id}"
+                }
 
-            if other_users:
-                # project is already locked
-                usernames = [
-                    await get_user_name(request.app, uid) for uid in other_users
-                ]
-                raise HTTPLocked(reason=f"Project is already opened by {usernames}")
-            await rt.add("project_id", project_uuid)
+                if other_users:
+                    # project is already locked
+                    usernames = [
+                        await get_user_name(request.app, uid) for uid in other_users
+                    ]
+                    raise HTTPLocked(reason=f"Project is already opened by {usernames}")
+                await rt.add("project_id", project_uuid)
 
         # user id opened project uuid
         await projects_api.start_project_interactive_services(request, project, user_id)

@@ -147,6 +147,16 @@ class WebsocketRegistry:
         users = list({x["user_id"] for x in registry_keys})
         return users
 
+    def get_registry_lock(self) -> asyncio.Lock:
+        log.debug(
+            "user %s/tab %s getting registry lock...",
+            self.user_id,
+            self.client_session_id,
+        )
+        registry = get_registry(self.app)
+        return registry.lock
+
+
 
 @contextmanager
 def managed_resource(
