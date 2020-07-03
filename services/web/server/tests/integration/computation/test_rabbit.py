@@ -125,6 +125,8 @@ async def _publish_messages(
     instrumentation_start_message = instrumentation_stop_message = {
         "metrics": "service_started",
         "user_id": user_id,
+        "project_id": project_id,
+        "service_uuid": node_uuid,
         "service_type": "COMPUTATIONAL",
         "service_key": "some/service/awesome/key",
         "service_tag": "some-awesome-tag",
