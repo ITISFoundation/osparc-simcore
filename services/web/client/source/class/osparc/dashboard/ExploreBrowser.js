@@ -456,7 +456,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       } else {
         const matchesId = study => study.uuid === item.getUuid();
         const studyData = this.__templates.find(matchesId);
-        this.__startStudy(studyData);
+        this.__createStudyBtnClkd(studyData);
       }
       this.resetSelection();
     },
