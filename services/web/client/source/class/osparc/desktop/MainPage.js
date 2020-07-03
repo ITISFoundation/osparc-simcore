@@ -131,7 +131,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       });
 
       studyBrowser.addListener("updateTemplates", () => {
-        exploreBrowser.reloadTemplateStudies();
+        exploreBrowser.reloadTemplates();
       }, this);
     },
 
