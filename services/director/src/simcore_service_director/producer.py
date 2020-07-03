@@ -756,13 +756,7 @@ async def start_service(
         node_details = containers_meta_data[0]
         if config.MONITORING_ENABLED:
             service_started(
-                app,
-                user_id,
-                project_id,
-                node_uuid,
-                service_key,
-                service_tag,
-                "DYNAMIC",
+                app, user_id, service_key, service_tag, "DYNAMIC",
             )
         # we return only the info of the main service
         return node_details
@@ -939,8 +933,6 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
             service_stopped(
                 app,
                 "undefined_user",
-                "undefined project",
-                node_uuid,
                 service_details["service_key"],
                 service_details["service_version"],
                 "DYNAMIC",

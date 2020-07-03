@@ -10,7 +10,7 @@ from aiohttp import web
 from tenacity import retry
 
 from servicelib.application_keys import APP_CONFIG_KEY
-from servicelib.monitor_services import service_started, service_stopped
+from servicelib.monitor_services import service_started, service_stopped, SERVICE_STARTED_LABELS, SERVICE_STOPPED_LABELS
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 
@@ -82,11 +82,11 @@ async def instrumentation_message_handler(
     data = json.loads(message.body)
     if data["metrics"] == "service_started":
         service_started(
-            app, **{key: value for key, value in data.items() if key != "metrics"}
+            app, **{key: data[key] for key in SERVICE_STARTED_LABELS}
         )
     elif data["metrics"] == "service_stopped":
         service_stopped(
-            app, **{key: value for key, value in data.items() if key != "metrics"}
+            app, **{key: data[key] for key in SERVICE_STOPPED_LABELS}
         )
     await message.ack()
 
