@@ -60,19 +60,9 @@ async function dashboardPreferences(page) {
   await utils.waitAndClick(page, '[osparc-test-id="preferencesWindowCloseBtn"]');
 }
 
-async function dashboardServiceBrowser(page) {
-  console.log("Navigating through Services");
-
-  await utils.waitAndClick('[osparc-test-id="servicesTabBtn"]')
-  await utils.waitAndClick(page, 'div > div > div > .qx-no-radius-button:nth-child(1) > div:nth-child(1)')
-  await utils.waitAndClick(page, 'div > div > div > div > .qx-no-radius-button:nth-child(3)')
-  await utils.waitAndClick(page, 'div > div > div > div > .qx-no-radius-button:nth-child(6)')
-  await utils.waitAndClick(page, '[osparc-test-id="serviceBrowserVersionsDrpDwn"]')
-  await utils.waitAndClick(page, '.qx-popup > div > div > div > div:nth-child(1)')
-  await utils.waitAndClick(page, '[osparc-test-id="serviceBrowserVersionsDrpDwn"]')
-  await utils.waitAndClick(page, '.qx-popup > div > div > div > div:nth-child(2)')
-  await utils.waitAndClick(page, 'div > .qx-panelview > div:nth-child(1) > div > div')
-  await utils.waitAndClick(page, 'div > .qx-panelview > div:nth-child(1) > div > div')
+async function dashboardDiscoverBrowser(page) {
+  console.log("Navigating through Templates and Services");
+  await utils.waitAndClick('[osparc-test-id="discoverTabBtn"]');
 }
 
 async function dashboardDataBrowser(page) {
@@ -317,7 +307,7 @@ module.exports = {
   logOut,
   dashboardAbout,
   dashboardPreferences,
-  dashboardServiceBrowser,
+  dashboardDiscoverBrowser,
   dashboardDataBrowser,
   dashboardStudyBrowser,
   dashboardEditFristStudyThumbnail,
