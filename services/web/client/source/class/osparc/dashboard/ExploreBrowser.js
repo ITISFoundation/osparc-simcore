@@ -169,6 +169,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const exploreFilters = this.__exploreFilters = new osparc.component.filter.group.StudyFilterGroup("exploreBrowser").set({
         paddingTop: 5
       });
+      osparc.utils.Utils.setIdToWidget(exploreFilters.getTextFilter(), "exploreFiltersTextFld");
       this._add(exploreFilters);
 
       const exploreBrowserLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
