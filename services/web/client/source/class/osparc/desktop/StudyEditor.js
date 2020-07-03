@@ -27,7 +27,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       minWidth: 0,
       width: 400
     });
-    // osparc.utils.Utils.addBorder(sidePanel, 2, "right");
+    osparc.utils.Utils.addBorder(sidePanel, 2, "right");
     const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
       minWidth: 0
     });
