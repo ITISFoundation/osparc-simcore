@@ -60,19 +60,9 @@ async function dashboardPreferences(page) {
   await utils.waitAndClick(page, '[osparc-test-id="preferencesWindowCloseBtn"]');
 }
 
-async function dashboardServiceBrowser(page) {
-  console.log("Navigating through Services");
-
-  await utils.waitAndClick('[osparc-test-id="servicesTabBtn"]')
-  await utils.waitAndClick(page, 'div > div > div > .qx-no-radius-button:nth-child(1) > div:nth-child(1)')
-  await utils.waitAndClick(page, 'div > div > div > div > .qx-no-radius-button:nth-child(3)')
-  await utils.waitAndClick(page, 'div > div > div > div > .qx-no-radius-button:nth-child(6)')
-  await utils.waitAndClick(page, '[osparc-test-id="serviceBrowserVersionsDrpDwn"]')
-  await utils.waitAndClick(page, '.qx-popup > div > div > div > div:nth-child(1)')
-  await utils.waitAndClick(page, '[osparc-test-id="serviceBrowserVersionsDrpDwn"]')
-  await utils.waitAndClick(page, '.qx-popup > div > div > div > div:nth-child(2)')
-  await utils.waitAndClick(page, 'div > .qx-panelview > div:nth-child(1) > div > div')
-  await utils.waitAndClick(page, 'div > .qx-panelview > div:nth-child(1) > div > div')
+async function dashboardDiscoverBrowser(page) {
+  console.log("Navigating through Templates and Services");
+  await utils.waitAndClick('[osparc-test-id="discoverTabBtn"]');
 }
 
 async function dashboardDataBrowser(page) {
@@ -145,10 +135,10 @@ async function toDashboard(page) {
 async function dashboardOpenFirstTemplate(page, templateName) {
   console.log("Creating New Study from template");
 
-  await utils.waitAndClick(page, '[osparc-test-id="studiesTabBtn"]')
+  await utils.waitAndClick(page, '[osparc-test-id="discoverTabBtn"]')
 
   if (templateName) {
-    await __dashboardFilterStudiesByText(page, templateName);
+    await __filterTemplatesByText(page, templateName);
   }
 
   await page.waitForSelector('[osparc-test-id="templateStudiesList"]')
@@ -161,11 +151,11 @@ async function dashboardOpenFirstTemplate(page, templateName) {
   await utils.waitAndClick(page, firstChildId);
 }
 
-async function __dashboardFilterStudiesByText(page, templateName) {
+async function __filterTemplatesByText(page, templateName) {
   console.log("Filtering by", templateName);
 
-  await utils.waitAndClick(page, '[osparc-test-id="studyFiltersTextFld"]')
-  await page.type('[osparc-test-id="studyFiltersTextFld"]', templateName)
+  await utils.waitAndClick(page, '[osparc-test-id="exploreFiltersTextFld"]')
+  await page.type('[osparc-test-id="exploreFiltersTextFld"]', templateName)
   await page.keyboard.press('Enter')
 }
 
@@ -317,7 +307,7 @@ module.exports = {
   logOut,
   dashboardAbout,
   dashboardPreferences,
-  dashboardServiceBrowser,
+  dashboardDiscoverBrowser,
   dashboardDataBrowser,
   dashboardStudyBrowser,
   dashboardEditFristStudyThumbnail,
