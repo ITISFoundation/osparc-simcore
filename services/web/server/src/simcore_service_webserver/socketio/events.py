@@ -23,8 +23,8 @@ async def post_messages(
 ) -> None:
     sio: AsyncServer = get_socket_server(app)
 
-    with managed_resource(user_id, None, app) as registry:
-        socket_ids: List[str] = await registry.find_socket_ids()
+    with managed_resource(user_id, None, app) as rt:
+        socket_ids: List[str] = await rt.find_socket_ids()
         for sid in socket_ids:
             # We only send the data to the right sockets
             # Notice that there might be several tabs open
