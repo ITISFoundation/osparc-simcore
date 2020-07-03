@@ -319,6 +319,8 @@ class Executor:
                 {
                     "metrics": "service_stopped",
                     "user_id": self.user_id,
+                    "project_id": self.task.project_id,
+                    "service_uuid": self.task.node_id,
                     "service_type": "COMPUTATIONAL",
                     "service_key": self.task.image["name"],
                     "service_tag": self.task.image["tag"],
