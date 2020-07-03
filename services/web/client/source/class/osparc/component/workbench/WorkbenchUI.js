@@ -265,8 +265,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         position.x = 50 + farthestRight;
         position.y = 200;
       }
-      nodeUI.getNode().setPosition(position.x, position.y);
-      nodeUI.moveTo(position.x, position.y);
+      const node = nodeUI.getNode();
+      node.setPosition(position.x, position.y);
+      nodeUI.moveTo(node.getPosition().x, node.getPosition().y);
       this.__addWindowToDesktop(nodeUI);
       this.__nodesUI.push(nodeUI);
 

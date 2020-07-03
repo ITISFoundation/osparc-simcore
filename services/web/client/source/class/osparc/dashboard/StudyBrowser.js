@@ -324,9 +324,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __startStudy: function(studyData) {
       this.__showLoadingPage(this.tr("Starting ") + (studyData.name || this.tr("Study")));
-      osparc.store.Store.getInstance().getServicesDAGs()
-        .then(() => {
+
+      // Before starting a study, make sure the latest version is fetched
+      const promises = [
+        osparc.store.Store.getInstance().getStudyWState(studyData.uuid, true),
+        osparc.store.Store.getInstance().getServicesDAGs()
+      ];
+      Promise.all(promises)
+        .then(values => {
           this.__hideLoadingPage();
+          studyData = values[0];
           this.__loadStudy(studyData);
         });
     },

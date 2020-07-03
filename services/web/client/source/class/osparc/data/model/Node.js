@@ -1116,8 +1116,9 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     setPosition: function(x, y) {
-      this.__posX = parseInt(x);
-      this.__posY = parseInt(y);
+      // keep positions positive
+      this.__posX = parseInt(x) < 0 ? 0 : parseInt(x);
+      this.__posY = parseInt(y) < 0 ? 0 : parseInt(y);
     },
 
     getPosition: function() {
