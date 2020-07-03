@@ -44,7 +44,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   events: {
-    "startStudy": "qx.event.type.Data"
+    "startStudy": "qx.event.type.Data",
+    "updateTemplates": "qx.event.type.Event"
   },
 
   statics: {
@@ -492,7 +493,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         saveAsTemplateView.addListener("finished", e => {
           const template = e.getData();
           if (template) {
-            console.log("templates should be reloaded");
+            this.fireEvent("updateTemplates");
             window.close();
           }
         }, this);
