@@ -94,7 +94,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     /**
      *  Function that asks the backend for the list of template studies and sets it
      */
-    __reloadTemplateStudies: function() {
+    reloadTemplateStudies: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.templates.read")) {
         osparc.data.Resources.get("templates")
           .then(templates => {
@@ -149,7 +149,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __reloadResources: function() {
-      this.__reloadTemplateStudies();
+      this.reloadTemplateStudies();
       this.__reloadServices();
     },
 
@@ -462,7 +462,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
     __createStudyDetailsEditor: function(studyData, winWidth) {
       const studyDetails = new osparc.component.metadata.StudyDetailsEditor(studyData, true, winWidth);
-      studyDetails.addListener("updateTemplate", () => this.__reloadTemplateStudies(), this);
+      studyDetails.addListener("updateTemplate", () => this.reloadTemplateStudies(), this);
       studyDetails.addListener("openStudy", () => {
         this.__createStudyBtnClkd(studyData);
       }, this);
