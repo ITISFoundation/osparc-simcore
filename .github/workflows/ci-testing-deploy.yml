@@ -917,7 +917,7 @@ jobs:
         integration-test-sidecar,
         integration-test-simcore-sdk,
         system-test-swarm-deploy,
-        system-test-e2e,
+        #system-test-e2e,
       ]
     runs-on: ubuntu-latest
     steps:
