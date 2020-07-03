@@ -77,13 +77,13 @@ async def authenticate_user(
         log.error("Tab ID is not available!")
         raise web.HTTPUnauthorized(reason="missing tab id")
 
+    sio = get_socket_server(app)
+    # here we keep the original HTTP request in the socket session storage
+    async with sio.session(sid) as socketio_session:
+        socketio_session["user_id"] = user_id
+        socketio_session["client_session_id"] = client_session_id
+        socketio_session["request"] = request
     with managed_resource(user_id, client_session_id, app) as rt:
-        sio = get_socket_server(app)
-        # here we keep the original HTTP request in the socket session storage
-        async with sio.session(sid) as socketio_session:
-            socketio_session["user_id"] = user_id
-            socketio_session["client_session_id"] = client_session_id
-            socketio_session["request"] = request
         log.info("socketio connection from user %s", user_id)
         await rt.set_socket_id(sid)
 
