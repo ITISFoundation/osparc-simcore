@@ -38,23 +38,14 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       qx.locale.Date.getTimeFormat("short")
     );
 
-    this.addListener("changeValue", e => {
-      const val = this.getValue();
-
-      const tick = this.getChildControl("tick-selected");
-      tick.setVisibility(val ? "visible" : "excluded");
-
-      const untick = this.getChildControl("tick-unselected");
-      untick.setVisibility(val ? "excluded" : "visible");
-    });
+    this.addListener("changeValue", this.__itemSelected, this);
   },
 
   properties: {
-    isTemplate: {
-      check: "Boolean",
+    resourceType: {
+      check: ["study", "template", "service"],
       nullable: false,
-      init: false,
-      event: "changeIsTemplate"
+      event: "changeResourceType"
     },
 
     menu: {
@@ -102,11 +93,29 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     tags: {
       check: "Array",
       apply: "_applyTags"
+    },
+
+    state: {
+      check: "Object",
+      nullable: false,
+      apply: "_applyState"
+    },
+
+    locked: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      apply: "_applyLocked"
+    },
+
+    lockedBy: {
+      check: "String",
+      nullable: true,
+      apply: "_applyLockedBy"
     }
   },
 
   statics: {
-    MENU_BTN_Z: 20,
     MENU_BTN_WIDTH: 25,
     SHARED_USER: "@FontAwesome5Solid/user/14",
     SHARED_ORGS: "@FontAwesome5Solid/users/14",
@@ -117,9 +126,45 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     __dateFormat: null,
     __timeFormat: null,
 
+    isResourceType: function(resourceType) {
+      return this.getResourceType() === resourceType;
+    },
+
     multiSelection: function(on) {
+      if (on) {
+        const menuButton = this.getChildControl("menu-button");
+        menuButton.setVisibility("excluded");
+        this.__itemSelected();
+      } else {
+        this.__showMenuOnly();
+      }
+    },
+
+    __itemSelected: function() {
+      if (this.isResourceType("study")) {
+        const selected = this.getValue();
+
+        if (this.isLocked() && selected) {
+          this.setValue(false);
+        }
+
+        const tick = this.getChildControl("tick-selected");
+        tick.setVisibility(selected ? "visible" : "excluded");
+
+        const untick = this.getChildControl("tick-unselected");
+        untick.setVisibility(selected ? "excluded" : "visible");
+      } else {
+        this.__showMenuOnly();
+      }
+    },
+
+    __showMenuOnly: function() {
       const menuButton = this.getChildControl("menu-button");
-      menuButton.setVisibility(on ? "excluded" : "visible");
+      menuButton.setVisibility("visible");
+      const tick = this.getChildControl("tick-selected");
+      tick.setVisibility("excluded");
+      const untick = this.getChildControl("tick-unselected");
+      untick.setVisibility("excluded");
     },
 
     // overridden
@@ -131,7 +176,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             width: this.self().MENU_BTN_WIDTH,
             height: this.self().MENU_BTN_WIDTH,
             icon: "@FontAwesome5Solid/ellipsis-v/14",
-            zIndex: this.self().MENU_BTN_Z,
             focusable: false
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
@@ -141,21 +185,26 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           });
           break;
         case "tick-unselected":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16").set({
-            zIndex: this.self().MENU_BTN_Z -1
-          });
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16");
           this._add(control, {
             top: 4,
             right: 4
           });
           break;
         case "tick-selected":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/check-circle/16").set({
-            zIndex: this.self().MENU_BTN_Z -1
-          });
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/check-circle/16");
           this._add(control, {
             top: 4,
             right: 4
+          });
+          break;
+        case "lock":
+          control = new osparc.component.widget.Thumbnail("@FontAwesome5Solid/lock/70");
+          this._add(control, {
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0
           });
           break;
       }
@@ -190,7 +239,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyStudyDescription: function(value, old) {
       /*
-      if (value !== "" && this.getIsTemplate()) {
+      if (value !== "" && this.isResourceType("template")) {
         const label = this.getChildControl("description");
         label.setValue(value);
       }
@@ -198,7 +247,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyLastChangeDate: function(value, old) {
-      if (value && !this.getIsTemplate()) {
+      if (value && this.isResourceType("study")) {
         const label = this.getChildControl("description2");
         let dateStr = null;
         if (value.getDate() === (new Date()).getDate()) {
@@ -214,7 +263,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyCreator: function(value, old) {
-      if (this.getIsTemplate()) {
+      if (this.isResourceType("service") || this.isResourceType("template")) {
         const label = this.getChildControl("description2");
         label.setValue(value);
       }
@@ -227,20 +276,18 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         const store = osparc.store.Store.getInstance();
         Promise.all([
           store.getGroupsAll(),
-          store.getGroupsMe(),
           store.getVisibleMembers(),
           store.getGroupsOrganizations()
         ])
           .then(values => {
             const all = values[0];
-            const me = values[1];
             const orgMembs = [];
-            const orgMembers = values[2];
+            const orgMembers = values[1];
             for (const gid of Object.keys(orgMembers)) {
               orgMembs.push(orgMembers[gid]);
             }
-            const orgs = values.length === 4 ? values[3] : [];
-            const groups = [[me], orgMembs, orgs, [all]];
+            const orgs = values.length === 3 ? values[2] : [];
+            const groups = [orgMembs, orgs, [all]];
             this.__setSharedIcon(image, value, groups);
           });
       }
@@ -254,7 +301,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         const gids = Object.keys(value);
         for (let j=0; j<gids.length; j++) {
           const gid = parseInt(gids[j]);
-          if (!this.getIsTemplate() && (gid === myGroupId)) {
+          if (this.isResourceType("study") && (gid === myGroupId)) {
             continue;
           }
           const grp = groups[i].find(group => group["gid"] === gid);
@@ -269,13 +316,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         }
         switch (i) {
           case 0:
-          case 1:
             image.setSource(this.self().SHARED_USER);
             break;
-          case 2:
+          case 1:
             image.setSource(this.self().SHARED_ORGS);
             break;
-          case 3:
+          case 2:
             image.setSource(this.self().SHARED_ALL);
             break;
         }
@@ -286,14 +332,19 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         return;
       }
 
-      let hintText = "";
+      const sharedGrpLabels = [];
+      const maxItems = 6;
       for (let i=0; i<sharedGrps.length; i++) {
-        if (i > 6) {
-          hintText += "...";
+        if (i > maxItems) {
+          sharedGrpLabels.push("...");
           break;
         }
-        hintText += (sharedGrps[i]["label"] + "<br>");
+        const sharedGrpLabel = sharedGrps[i]["label"];
+        if (!sharedGrpLabels.includes(sharedGrpLabel)) {
+          sharedGrpLabels.push(sharedGrpLabel);
+        }
       }
+      const hintText = sharedGrpLabels.join("<br>");
       const hint = new osparc.ui.hint.Hint(image, hintText);
       image.addListener("mouseover", () => hint.show(), this);
       image.addListener("mouseout", () => hint.exclude(), this);
@@ -309,6 +360,49 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           tagsContainer.add(tagUI);
         });
       }
+    },
+
+    _applyState: function(state) {
+      const locked = ("locked" in state) ? state["locked"]["value"] : false;
+      if (locked) {
+        this.setLocked(state["locked"]["value"]);
+        const owner = state["locked"]["owner"];
+        this.setLockedBy(osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]));
+      } else {
+        this.setLocked(false);
+        this.setLockedBy(null);
+      }
+    },
+
+    _applyLocked: function(locked) {
+      this.set({
+        cursor: locked ? "not-allowed" : "pointer"
+      });
+
+      this._getChildren().forEach(item => {
+        item.setOpacity(locked ? 0.4 : 1.0);
+      });
+
+      const lock = this.getChildControl("lock");
+      lock.setOpacity(1.0);
+      lock.setVisibility(locked ? "visible" : "excluded");
+
+      [
+        "tick-selected",
+        "tick-unselected",
+        "menu-button"
+      ].forEach(childName => {
+        const child = this.getChildControl(childName);
+        child.set({
+          enabled: !locked
+        });
+      });
+    },
+
+    _applyLockedBy: function(lockedBy) {
+      this.set({
+        toolTipText: lockedBy ? (lockedBy + this.tr(" is using it")) : null
+      });
     },
 
     _shouldApplyFilter: function(data) {

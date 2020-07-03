@@ -56,27 +56,23 @@ qx.Class.define("osparc.dashboard.Dashboard", {
   },
 
   members: {
-    __prjBrowser: null,
-    __serviceBrowser: null,
-    __dataManager: null,
+    __studyBrowser: null,
+    __exploreBrowser: null,
 
     getStudyBrowser: function() {
-      return this.__prjBrowser;
+      return this.__studyBrowser;
     },
 
-    getServiceBrowser: function() {
-      return this.__serviceBrowser;
-    },
-
-    getDataManager: function() {
-      return this.__dataManager;
+    getExploreBrowser: function() {
+      return this.__exploreBrowser;
     },
 
     __createMainViewLayout: function() {
       [
         [this.tr("Studies"), this.__createStudyBrowser],
-        [this.tr("Services"), this.__createServiceBrowser],
-        [this.tr("Data"), this.__createDataBrowser]
+        // [this.tr("Services"), this.__createServiceBrowser],
+        [this.tr("Data"), this.__createDataBrowser],
+        [this.tr("Discover"), this.__createExploreBrowser]
       ].forEach(tuple => {
         const tabPage = new qx.ui.tabview.Page(tuple[0]).set({
           appearance: "dashboard-page"
@@ -92,6 +88,9 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           if (viewLayout.resetSelection) {
             viewLayout.resetSelection();
           }
+          if (viewLayout.resetFilter) {
+            viewLayout.resetFilter();
+          }
         }, this);
         const scrollerMainView = new qx.ui.container.Scroll();
         scrollerMainView.add(viewLayout);
@@ -102,18 +101,18 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     },
 
     __createStudyBrowser: function() {
-      const studiesView = this.__prjBrowser = new osparc.dashboard.StudyBrowser();
+      const studiesView = this.__studyBrowser = new osparc.dashboard.StudyBrowser();
       return studiesView;
     },
 
-    __createServiceBrowser: function() {
-      const servicesView = this.__serviceBrowser = new osparc.dashboard.ServiceBrowser();
-      return servicesView;
+    __createDataBrowser: function() {
+      const dataManagerView = new osparc.dashboard.DataBrowser();
+      return dataManagerView;
     },
 
-    __createDataBrowser: function() {
-      const dataManagerView = this.__dataManager = new osparc.dashboard.DataBrowser();
-      return dataManagerView;
+    __createExploreBrowser: function() {
+      const exploreView = this.__exploreBrowser = new osparc.dashboard.ExploreBrowser();
+      return exploreView;
     }
   }
 });
