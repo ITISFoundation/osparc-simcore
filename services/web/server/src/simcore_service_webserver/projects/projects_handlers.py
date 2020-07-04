@@ -307,7 +307,7 @@ async def open_project(request: web.Request) -> web.Response:
             include_templates=True,
         )
         with managed_resource(user_id, client_session_id, request.app) as rt:
-            with rt.get_registry_lock() as lock:
+            with rt.get_registry_lock():
                 # let's check if that project is already opened by someone else
                 other_users: Set[int] = {
                     x

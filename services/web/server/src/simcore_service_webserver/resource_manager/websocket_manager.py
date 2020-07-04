@@ -32,13 +32,13 @@ SOCKET_ID_KEY = "socket_id"
 
 @attr.s(auto_attribs=True)
 class WebsocketRegistry:
-    user_id: str
+    user_id: int
     client_session_id: Optional[str]
     app: web.Application
 
     def _resource_key(self) -> Dict[str, str]:
         return {
-            "user_id": self.user_id,
+            "user_id": f"{self.user_id}",
             "client_session_id": self.client_session_id
             if self.client_session_id
             else "*",
@@ -55,7 +55,7 @@ class WebsocketRegistry:
         await registry.set_resource(self._resource_key(), (SOCKET_ID_KEY, socket_id))
         await registry.set_key_alive(self._resource_key(), True)
 
-    async def get_socket_id(self) -> str:
+    async def get_socket_id(self) -> Optional[str]:
         log.debug(
             "user %s/tab %s removing socket from registry...",
             self.user_id,
@@ -99,7 +99,7 @@ class WebsocketRegistry:
         )
         registry = get_registry(self.app)
         user_sockets = await registry.find_resources(
-            {"user_id": self.user_id, "client_session_id": "*"}, SOCKET_ID_KEY
+            {"user_id": f"{self.user_id}", "client_session_id": "*"}, SOCKET_ID_KEY
         )
         return user_sockets
 
@@ -135,7 +135,7 @@ class WebsocketRegistry:
         registry = get_registry(self.app)
         await registry.remove_resource(self._resource_key(), key)
 
-    async def find_users_of_resource(self, key: str, value: str) -> List[str]:
+    async def find_users_of_resource(self, key: str, value: str) -> List[int]:
         log.debug(
             "user %s/tab %s finding %s:%s in registry...",
             self.user_id,
@@ -145,7 +145,7 @@ class WebsocketRegistry:
         )
         registry = get_registry(self.app)
         registry_keys = await registry.find_keys((key, value))
-        users = list({x["user_id"] for x in registry_keys})
+        users = list({int(x["user_id"]) for x in registry_keys})
         return users
 
     def get_registry_lock(self) -> asyncio.Lock:
@@ -162,7 +162,7 @@ class WebsocketRegistry:
 def managed_resource(
     user_id: Union[str, int], client_session_id: Optional[str], app: web.Application
 ) -> Iterator[WebsocketRegistry]:
-    registry = WebsocketRegistry(str(user_id), client_session_id, app)
+    registry = WebsocketRegistry(int(user_id), client_session_id, app)
     try:
         yield registry
     except Exception:
