@@ -14,6 +14,7 @@
 
 """
 
+import asyncio
 import logging
 from contextlib import contextmanager
 from typing import Dict, Iterator, List, Optional, Union
@@ -155,7 +156,6 @@ class WebsocketRegistry:
         )
         registry = get_registry(self.app)
         return registry.lock
-
 
 
 @contextmanager

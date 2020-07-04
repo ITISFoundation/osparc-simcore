@@ -3,7 +3,7 @@
 """
 import json
 import logging
-from typing import Set
+from typing import List, Set
 
 from aiohttp import web
 from jsonschema import ValidationError
@@ -256,7 +256,7 @@ async def delete_project(request: web.Request):
             user_id=user_id,
             include_templates=True,
         )
-        project_users: Set[int] = []
+        project_users: List[int] = []
         with managed_resource(user_id, None, request.app) as rt:
             project_users = await rt.find_users_of_resource("project_id", project_uuid)
         if project_users:
@@ -265,7 +265,10 @@ async def delete_project(request: web.Request):
                 message = "Project is still open in another tab/browser. It cannot be deleted until it is closed."
             else:
                 other_users = set(project_users)
-                message = f"Project is open by {await get_user_name(x) for x in other_users}. It cannot be deleted until the project is closed."
+                other_user_names = {
+                    await get_user_name(request.app, x) for x in other_users
+                }
+                message = f"Project is open by {other_user_names}. It cannot be deleted until the project is closed."
 
             # we cannot delete that project
             raise web.HTTPForbidden(reason=message)
@@ -391,10 +394,7 @@ async def state_project(request: web.Request) -> web.Response:
 
     # check that project exists
     await get_project_for_user(
-        request.app,
-        project_uuid=project_uuid,
-        user_id=user_id,
-        include_templates=True,
+        request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True,
     )
     with managed_resource(user_id, None, request.app) as rt:
         users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
