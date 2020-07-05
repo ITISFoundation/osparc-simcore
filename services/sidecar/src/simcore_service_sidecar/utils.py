@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-import re
 from typing import Awaitable, List
 
 import aiodocker
@@ -12,8 +11,6 @@ from sqlalchemy import and_
 from celery import Celery
 from simcore_postgres_database.sidecar_models import SUCCESS, comp_pipeline, comp_tasks
 from simcore_sdk.config.rabbit import Config as RabbitConfig
-
-from .exceptions import MoreThenOneItemDetected
 
 logger = logging.getLogger(__name__)
 
@@ -78,26 +75,6 @@ def execution_graph(pipeline: comp_pipeline) -> nx.DiGraph:
 def is_gpu_node() -> bool:
     """Returns True if this node has support to GPU,
     meaning that the `VRAM` label was added to it."""
-
-    def get_container_id_from_cgroup(cat_cgroup_content) -> str:
-        """Parses the result of cat cat /proc/self/cgroup and returns a container_id or
-        raises an error in case only one unique id was not found."""
-        possible_candidates = {x for x in cat_cgroup_content.split() if len(x) >= 64}
-        result_set = {x.split("/")[-1] for x in possible_candidates}
-        if len(result_set) != 1:
-            # pylint: disable=raising-format-tuple
-            raise MoreThenOneItemDetected(
-                "There should only be one entry in this set of possible container_ids"
-                ", have a look at %s" % possible_candidates
-            )
-        return_value = result_set.pop()
-        # check if length is 64 and all char match this regex [A-Fa-f0-9]
-        if len(return_value) != 64 and re.findall("[A-Fa-f0-9]{64}", return_value):
-            # pylint: disable=raising-format-tuple
-            raise ValueError(
-                "Found container ID is not a valid sha256 string %s", return_value
-            )
-        return return_value
 
     async def async_is_gpu_node() -> bool:
         docker = aiodocker.Docker()
