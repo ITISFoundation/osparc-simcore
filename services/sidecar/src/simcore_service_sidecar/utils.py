@@ -1,13 +1,14 @@
 import asyncio
 import logging
+import os
 import re
 from typing import Awaitable, List
 
+import aiodocker
 import aiopg
 import networkx as nx
 from sqlalchemy import and_
 
-import aiodocker
 from celery import Celery
 from simcore_postgres_database.sidecar_models import SUCCESS, comp_pipeline, comp_tasks
 from simcore_sdk.config.rabbit import Config as RabbitConfig
