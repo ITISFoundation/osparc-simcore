@@ -1,21 +1,23 @@
 import asyncio
 import logging
-import aiodocker
 import re
-from typing import List
+from typing import Awaitable, List
 
 import aiopg
 import networkx as nx
-from simcore_postgres_database.sidecar_models import SUCCESS, comp_pipeline, comp_tasks
 from sqlalchemy import and_
-from simcore_sdk.config.rabbit import Config as RabbitConfig
+
+import aiodocker
 from celery import Celery
+from simcore_postgres_database.sidecar_models import SUCCESS, comp_pipeline, comp_tasks
+from simcore_sdk.config.rabbit import Config as RabbitConfig
+
 from .exceptions import MoreThenOneItemDetected
 
 logger = logging.getLogger(__name__)
 
 
-def wrap_async_call(fct: asyncio.coroutine):
+def wrap_async_call(fct: Awaitable):
     return asyncio.get_event_loop().run_until_complete(fct)
 
 
@@ -97,37 +99,21 @@ def is_gpu_node() -> bool:
         return return_value
 
     async def async_is_gpu_node() -> bool:
-        cmd = "cat /proc/self/cgroup"
-        proc = await asyncio.create_subprocess_shell(
-            cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
-        )
-
-        stdout, _ = await proc.communicate()
-        container_id = get_container_id_from_cgroup(stdout.decode("utf-8").strip())
-
         docker = aiodocker.Docker()
 
-        container = await docker.containers.get(container_id)
-        container_info = await container.show()
-        node_id = container_info["Config"]["Labels"]["com.docker.swarm.node.id"]
-        node_info = await docker.nodes.inspect(node_id=node_id)
-
-        generic_resources = (
-            node_info.get("Description", {})
-            .get("Resources", {})
-            .get("GenericResources", [])
-        )
-
-        has_gpu_support = False
-        for entry in generic_resources:
-            if entry.get("DiscreteResourceSpec", {}).get("Kind") == "VRAM":
-                has_gpu_support = True
-                break
-
-        await docker.close()
-
-        logger.info("Node GPU support: %s", has_gpu_support)
-        return has_gpu_support
+        config = {
+            "Image": "nvidia/cuda:10.0-base",
+            "AttachStdin": False,
+            "AttachStdout": False,
+            "AttachStderr": False,
+            "Tty": False,
+            "OpenStdin": False,
+        }
+        try:
+            docker.containers.run(config=config, name=f"sidecar_{id}_test_gpu")
+        except aiodocker.exceptions.DockerError:
+            return False
+        return True
 
     return wrap_async_call(async_is_gpu_node())
 
