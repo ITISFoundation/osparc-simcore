@@ -1420,3 +1420,19 @@ async def test_open_shared_project_2_users_locked(
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
         expected_project_state,
     )
+
+import asyncio
+@pytest.mark.parametrize(*standard_role_response())
+async def test_open_shared_project_at_same_time(client,
+    logged_user: Dict,
+    shared_project: Dict,
+    socketio_client: Callable,client_session_id: Callable,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    aiohttp_client,):
+    client_1 = client
+    client_id1 = client_session_id()
+    client_2 = await aiohttp_client(client.app)
+    client_id2 = client_session_id()
+
+    results = await asyncio.gather(_open_project(client_1, client_id1, shared_project, expected.ok || expected.locked),_open_project(client_2, client_id2, shared_project, expected.ok || expected.locked), return_exceptions=True)
