@@ -71,7 +71,7 @@ async def service_submission(request: web.Request):
                 "data": json2html.convert(
                     json=json.dumps(data), table_attributes='class="pure-table"'
                 ),
-                "subject": "TEST: " * is_real_usage + "New service submission",
+                "subject": "TEST: " * (not is_real_usage) + "New service submission",
             },
             attachments=[
                 (filename, filedata),
