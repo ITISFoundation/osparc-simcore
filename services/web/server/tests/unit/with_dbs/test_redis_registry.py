@@ -44,7 +44,7 @@ def redis_registry(redis_enabled_app) -> RedisResourceRegistry:
 @pytest.fixture
 def user_ids():
     def create_user_id(number: int) -> List[str]:
-        return [f"user id {i}" for i in range(number)]
+        return [i for i in range(number)]
 
     return create_user_id
 
@@ -149,15 +149,16 @@ async def test_websocket_manager(loop, redis_enabled_app, redis_registry, user_i
 
     # add sockets
     tabs = {}
-    for user in list_user_ids:
+    for user_id in list_user_ids:
+        user = f"user id {user_id}"
         for socket in range(NUM_SOCKET_IDS):
             socket_id = f"{user}_{socket}"
             client_session_id = str(uuid4())
             assert socket_id not in tabs
             tabs[socket_id] = client_session_id
-            with managed_resource(user, client_session_id, redis_enabled_app) as rt:
+            with managed_resource(user_id, client_session_id, redis_enabled_app) as rt:
                 # pylint: disable=protected-access
-                resource_key = {"user_id": user, "client_session_id": client_session_id}
+                resource_key = {"user_id": f"{user_id}", "client_session_id": client_session_id}
                 assert rt._resource_key() == resource_key
 
                 # set the socket id and check it is rightfully there
@@ -181,16 +182,17 @@ async def test_websocket_manager(loop, redis_enabled_app, redis_registry, user_i
                 list_of_same_resource_users = await rt.find_users_of_resource(
                     res_key, res_value
                 )
-                assert list_user_ids[: (list_user_ids.index(user) + 1)] == sorted(
+                assert list_user_ids[: (list_user_ids.index(user_id) + 1)] == sorted(
                     list_of_same_resource_users
                 )
 
     # remove sockets
-    for user in list_user_ids:
+    for user_id in list_user_ids:
+        user = f"user id {user_id}"
         for socket in range(NUM_SOCKET_IDS):
             socket_id = f"{user}_{socket}"
             client_session_id = tabs[socket_id]
-            with managed_resource(user, client_session_id, redis_enabled_app) as rt:
+            with managed_resource(user_id, client_session_id, redis_enabled_app) as rt:
                 await rt.remove_socket_id()
 
                 num_sockets_for_user = len(await rt.find_socket_ids())
