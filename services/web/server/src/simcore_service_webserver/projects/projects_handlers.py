@@ -312,7 +312,7 @@ async def open_project(request: web.Request) -> web.Response:
                 other_users: Set[int] = {
                     x
                     for x in await rt.find_users_of_resource("project_id", project_uuid)
-                    if x != f"{user_id}"
+                    if x != user_id
                 }
 
                 if other_users:
