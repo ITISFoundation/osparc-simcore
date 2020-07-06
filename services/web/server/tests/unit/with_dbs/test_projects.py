@@ -9,16 +9,13 @@ import time
 import uuid as uuidlib
 from asyncio import Future, sleep
 from copy import deepcopy
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import mock
 import pytest
 import socketio
 from aiohttp import web
 from mock import call
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
-from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from socketio.exceptions import ConnectionError
 
 from _helpers import (
@@ -27,6 +24,9 @@ from _helpers import (
     future_with_result,
     standard_role_response,
 )
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
+from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
@@ -1219,11 +1219,25 @@ async def _connect_websocket(
 
 
 async def _open_project(
-    client, client_id: str, project: Dict, expected: web.HTTPException
-):
+    client,
+    client_id: str,
+    project: Dict,
+    expected: Union[web.HTTPException, List[web.HTTPException]],
+) -> Optional[Tuple[Dict, Dict]]:
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
     resp = await client.post(url, json=client_id)
-    await assert_status(resp, expected)
+    if isinstance(expected, web.HTTPException):
+        return await assert_status(resp, expected)
+    else:
+        for e in expected:
+            try:
+                data, error = await assert_status(resp, e)
+                return data, error
+            except AssertionError:
+                # re-raies if last item
+                if e == expected[-1]:
+                    raise
+                continue
 
 
 async def _close_project(
@@ -1231,7 +1245,7 @@ async def _close_project(
 ):
     url = client.app.router["close_project"].url_for(project_id=project["uuid"])
     resp = await client.post(url, json=client_id)
-    data, error = await assert_status(resp, expected)
+    await assert_status(resp, expected)
 
 
 async def _state_project(
@@ -1421,18 +1435,55 @@ async def test_open_shared_project_2_users_locked(
         expected_project_state,
     )
 
-import asyncio
+
 @pytest.mark.parametrize(*standard_role_response())
-async def test_open_shared_project_at_same_time(client,
+async def test_open_shared_project_at_same_time(
+    loop,
+    client,
     logged_user: Dict,
     shared_project: Dict,
-    socketio_client: Callable,client_session_id: Callable,
+    socketio_client: Callable,
+    client_session_id: Callable,
     user_role: UserRole,
     expected: ExpectedResponse,
-    aiohttp_client,):
+    aiohttp_client,
+):
+    # log client 1
     client_1 = client
     client_id1 = client_session_id()
-    client_2 = await aiohttp_client(client.app)
-    client_id2 = client_session_id()
+    sio_1 = await _connect_websocket(
+        socketio_client, user_role != UserRole.ANONYMOUS, client_1, client_id1,
+    )
 
-    results = await asyncio.gather(_open_project(client_1, client_id1, shared_project, expected.ok || expected.locked),_open_project(client_2, client_id2, shared_project, expected.ok || expected.locked), return_exceptions=True)
+    # log client 2
+    client_2 = await aiohttp_client(client.app)
+    user_2 = await log_client_in(
+        client_2, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
+    )
+    client_id2 = client_session_id()
+    sio_2 = await _connect_websocket(
+        socketio_client, user_role != UserRole.ANONYMOUS, client_2, client_id2,
+    )
+
+    # try opening projects at same time (more or less)
+    results = await asyncio.gather(
+        _open_project(
+            client_1,
+            client_id1,
+            shared_project,
+            [
+                expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+                expected.locked,
+            ],
+        ),
+        _open_project(
+            client_2,
+            client_id2,
+            shared_project,
+            [
+                expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+                expected.locked,
+            ],
+        ),
+        return_exceptions=True,
+    )
