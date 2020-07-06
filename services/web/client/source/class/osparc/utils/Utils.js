@@ -368,6 +368,10 @@ qx.Class.define("osparc.utils.Utils", {
       const labels = [];
       args.forEach(arg => labels.push(qx.lang.String.firstUp(arg)));
       return labels.join(" ");
+    },
+
+    isObject: function(v) {
+      return typeof v === 'object' && v !== null;
     }
   }
 });
