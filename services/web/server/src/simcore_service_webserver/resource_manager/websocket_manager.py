@@ -14,7 +14,6 @@
 
 """
 
-import asyncio
 import logging
 from contextlib import contextmanager
 from typing import Dict, Iterator, List, Optional, Union
@@ -22,7 +21,10 @@ from typing import Dict, Iterator, List, Optional, Union
 import attr
 from aiohttp import web
 
+import aioredlock
+
 from .config import get_service_deletion_timeout
+from .redis import get_redis_lock
 from .registry import get_registry
 
 log = logging.getLogger(__file__)
@@ -148,14 +150,13 @@ class WebsocketRegistry:
         users = list({int(x["user_id"]) for x in registry_keys})
         return users
 
-    def get_registry_lock(self) -> asyncio.Lock:
+    async def get_registry_lock(self) -> aioredlock.Lock:
         log.debug(
             "user %s/tab %s getting registry lock...",
             self.user_id,
             self.client_session_id,
         )
-        registry = get_registry(self.app)
-        return registry.lock
+        return await get_redis_lock(self.app).lock(__name__, lock_timeout=10)
 
 
 @contextmanager

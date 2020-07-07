@@ -4,7 +4,6 @@
 
 import asyncio
 import json
-import pdb
 import time
 import uuid as uuidlib
 from asyncio import Future, sleep
@@ -1226,9 +1225,8 @@ async def _open_project(
 ) -> Optional[Tuple[Dict, Dict]]:
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
     resp = await client.post(url, json=client_id)
-    if isinstance(expected, web.HTTPException):
-        return await assert_status(resp, expected)
-    else:
+
+    if isinstance(expected, list):
         for e in expected:
             try:
                 data, error = await assert_status(resp, e)
@@ -1238,6 +1236,8 @@ async def _open_project(
                 if e == expected[-1]:
                     raise
                 continue
+    else:
+        return await assert_status(resp, expected)
 
 
 async def _close_project(
@@ -1473,7 +1473,7 @@ async def test_open_shared_project_at_same_time(
             shared_project,
             [
                 expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
-                expected.locked,
+                expected.locked if user_role != UserRole.GUEST else HTTPLocked,
             ],
         ),
         _open_project(
@@ -1482,8 +1482,20 @@ async def test_open_shared_project_at_same_time(
             shared_project,
             [
                 expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
-                expected.locked,
+                expected.locked if user_role != UserRole.GUEST else HTTPLocked,
             ],
         ),
         return_exceptions=True,
     )
+
+    # one should be opened, the other locked
+    if user_role != UserRole.ANONYMOUS:
+        num_assertions = 0
+        for data, error in results:
+            assert data or error
+            if error:
+                num_assertions += 1
+            elif data:
+                assert data == shared_project
+
+        assert num_assertions == 1
