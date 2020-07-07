@@ -1,68 +1,27 @@
 # pylint: disable=unused-argument,redefined-outer-name,no-member
-import pytest
 import asyncio
 
+import aiodocker
+import pytest
+from celery import Celery
+
+from simcore_sdk.config.rabbit import Config as RabbitConfig
+from simcore_service_sidecar import config
 from simcore_service_sidecar.celery_configurator import (
     get_rabbitmq_config_and_celery_app,
 )
 from simcore_service_sidecar.utils import is_gpu_node
-from simcore_service_sidecar import config
-
-from celery import Celery
-from simcore_sdk.config.rabbit import Config as RabbitConfig
 
 
 def _toggle_gpu_mock(mocker, has_gpu: bool) -> None:
-    # mock ouput of cat /proc/self/cgroup
-    CAT_DATA = b"""
-    12:hugetlb:/docker/2c52ab5a825dea0b074741fb1521c972866af7997a761eb312405b50ad289263
-    11:freezer:/docker/2c52ab5a825dea0b074741fb1521c972866af7997a761eb312405b50ad289263
-    10:blkio:/docker/2c52ab5a825dea0b074741fb1521c972866af7997a761eb312405b50ad289263
-    9:devices:/docker/2c52ab5a825dea0b074741fb1521c972866af7997a761eb312405b50ad289263
-    8:net_cls,net_prio:/docker/2c52ab5a825dea0b074741fb1521c972866af7997a761eb312405b50ad289263
-    7:cpuset:/docker/2c52ab5a825dea0b074741fb1521c972866af7997a761eb312405b50ad289263
-    6:perf_event:/docker/2c52ab5a825dea0b074741fb1521c972866af7997a761eb312405b50ad289263
-    5:memory:/docker/2c52ab5a825dea0b074741fb1521c972866af7997a761eb312405b50ad289263
-    4:rdma:/
-    3:cpu,cpuacct:/docker/2c52ab5a825dea0b074741fb1521c972866af7997a761eb312405b50ad289263
-    2:pids:/docker/2c52ab5a825dea0b074741fb1521c972866af7997a761eb312405b50ad289263
-    1:name=systemd:/docker/2c52ab5a825dea0b074741fb1521c972866af7997a761eb312405b50ad289263
-    0::/system.slice/containerd.service
-    """
-
-    future = asyncio.Future()
-    future.set_result((CAT_DATA, None))
-    comunicate = mocker.patch("asyncio.subprocess.Process.communicate")
-    comunicate.return_value = future
-
-    class MockContainer:
-        async def show(self):
-            data = {"Config": {"Labels": {"com.docker.swarm.node.id": "node_id"}}}
-            return data
-
-    future = asyncio.Future()
-    future.set_result(MockContainer())
-    containers_get = mocker.patch("aiodocker.containers.DockerContainers.get")
-    containers_get.return_value = future
-
-    def gpu_support_key():
-        """if GPU support is enabled this Kind key must be present"""
-        return "Kind" if has_gpu else "_"
-
-    payload = {
-        "Description": {
-            "Resources": {
-                "GenericResources": [
-                    {"DiscreteResourceSpec": {gpu_support_key(): "VRAM"}}
-                ]
-            }
-        }
-    }
-
-    future = asyncio.Future()
-    future.set_result(payload)
-    containers_get = mocker.patch("aiodocker.nodes.DockerSwarmNodes.inspect")
-    containers_get.return_value = future
+    containers_get = mocker.patch(
+        "aiodocker.containers.DockerContainers.run", return_value=asyncio.Future()
+    )
+    containers_get.return_value.set_result("")
+    if not has_gpu:
+        containers_get.side_effect = aiodocker.exceptions.DockerError(
+            "MOCK Error", {"message": "this is a mocked exception"}
+        )
 
 
 @pytest.fixture()
