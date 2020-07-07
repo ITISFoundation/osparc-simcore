@@ -29,19 +29,19 @@ qx.Class.define("osparc.utils.Utils", {
   type: "static",
 
   statics: {
-    uuidv4: function() {
-      return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+    uuidv4: function () {
+      return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
         (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
     },
 
-    getLogoPath: function() {
+    getLogoPath: function () {
       const colorManager = qx.theme.manager.Color.getInstance();
       const textColor = colorManager.resolve("text");
       const luminance = this.getColorLuminance(textColor);
       return luminance > 0.3 ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
     },
 
-    getLoaderUri: function(arg) {
+    getLoaderUri: function (arg) {
       let loadingUri = qx.util.ResourceManager.getInstance().toUri("osparc/loading/loader.html");
       if (arg) {
         loadingUri += "?loading=- ";
@@ -50,11 +50,11 @@ qx.Class.define("osparc.utils.Utils", {
       return loadingUri;
     },
 
-    addBorder: function(sidePanel, width = 1, where = "right") {
-      sidePanel.getContentElement().setStyle("border-"+where, width+"px solid " + qx.theme.manager.Color.getInstance().resolve("material-button-background"));
+    addBorder: function (sidePanel, width = 1, where = "right") {
+      sidePanel.getContentElement().setStyle("border-" + where, width + "px solid " + qx.theme.manager.Color.getInstance().resolve("material-button-background"));
     },
 
-    __setStyleToIFrame: function(domEl) {
+    __setStyleToIFrame: function (domEl) {
       if (domEl && domEl.contentDocument && domEl.contentDocument.documentElement) {
         const iframeDocument = domEl.contentDocument.documentElement;
         const colorManager = qx.theme.manager.Color.getInstance();
@@ -67,7 +67,7 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
-    createLoadingIFrame: function(text) {
+    createLoadingIFrame: function (text) {
       const loadingUri = osparc.utils.Utils.getLoaderUri(text);
       const iframe = new qx.ui.embed.Iframe(loadingUri);
 
@@ -88,7 +88,7 @@ qx.Class.define("osparc.utils.Utils", {
       return iframe;
     },
 
-    compareVersionNumbers: function(v1, v2) {
+    compareVersionNumbers: function (v1, v2) {
       // https://stackoverflow.com/questions/6832596/how-to-compare-software-version-number-using-js-only-number/47500834
       // - a number < 0 if a < b
       // - a number > 0 if a > b
@@ -108,11 +108,11 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     // deep clone of nested objects
-    deepCloneObject: function(src) {
+    deepCloneObject: function (src) {
       return JSON.parse(JSON.stringify(src));
     },
 
-    getRandomColor: function() {
+    getRandomColor: function () {
       let letters = "0123456789ABCDEF";
       let color = "#";
       for (let i = 0; i < 6; i++) {
@@ -121,18 +121,18 @@ qx.Class.define("osparc.utils.Utils", {
       return color;
     },
 
-    getColorLuminance: function(hexColor) {
+    getColorLuminance: function (hexColor) {
       const rgb = qx.util.ColorUtil.hexStringToRgb(hexColor);
-      const luminance = 0.2126*(rgb[0]/255) + 0.7152*(rgb[1]/255) + 0.0722*(rgb[2]/255);
+      const luminance = 0.2126 * (rgb[0] / 255) + 0.7152 * (rgb[1] / 255) + 0.0722 * (rgb[2] / 255);
       return luminance;
     },
 
-    getContrastedTextColor: function(hexColor) {
+    getContrastedTextColor: function (hexColor) {
       const L = this.getColorLuminance(hexColor);
       return L > 0.35 ? "contrasted-text-dark" : "contrasted-text-light";
     },
 
-    bytesToSize: function(bytes) {
+    bytesToSize: function (bytes) {
       const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
       if (bytes == 0) {
         return "0 Bytes";
@@ -141,7 +141,7 @@ qx.Class.define("osparc.utils.Utils", {
       return Math.round(bytes / Math.pow(1024, i), 2) + " " + sizes[i];
     },
 
-    downloadLink: function(url, fileName) {
+    downloadLink: function (url, fileName) {
       let xhr = new XMLHttpRequest();
       xhr.open("GET", url, true);
       xhr.responseType = "blob";
@@ -160,7 +160,7 @@ qx.Class.define("osparc.utils.Utils", {
       xhr.send();
     },
 
-    fileNameFromPresignedLink: function(link) {
+    fileNameFromPresignedLink: function (link) {
       // regex match /([^/]+)\?
       const fileNames = new URL(link).pathname.split("/");
       if (fileNames.length) {
@@ -172,9 +172,9 @@ qx.Class.define("osparc.utils.Utils", {
     /**
      * Function that takes an indefinite number of strings as separated parameters, and concatenates them capitalizing the first letter.
      */
-    capitalize: function() {
+    capitalize: function () {
       let res = "";
-      for (let i=0; i<arguments.length; i++) {
+      for (let i = 0; i < arguments.length; i++) {
         if (typeof arguments[i] !== "string" && arguments[i] instanceof String === false) {
           continue;
         }
@@ -190,7 +190,7 @@ qx.Class.define("osparc.utils.Utils", {
      * @param text {String} Text to be copied
      * @return {Boolean} True if it was successful
      */
-    copyTextToClipboard: function(text) {
+    copyTextToClipboard: function (text) {
       // from https://stackoverflow.com/questions/400212/how-do-i-copy-to-the-clipboard-in-javascript
       const textArea = document.createElement("textarea");
 
@@ -250,7 +250,7 @@ qx.Class.define("osparc.utils.Utils", {
       setCookie: (cname, cvalue, exdays) => {
         var d = new Date();
         d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
-        var expires = "expires="+d.toUTCString();
+        var expires = "expires=" + d.toUTCString();
         document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
       },
 
@@ -290,7 +290,7 @@ qx.Class.define("osparc.utils.Utils", {
           if (urlHash.length === 2) {
             // Params
             parsedFragment.params = parsedFragment.params || {};
-            urlHash[1].replace(/([^=&]+)=([^&]*)/g, function(m, key, value) {
+            urlHash[1].replace(/([^=&]+)=([^&]*)/g, function (m, key, value) {
               parsedFragment.params[decodeURIComponent(key)] = decodeURIComponent(value);
             });
           }
@@ -303,13 +303,13 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     getThumbnailFromUuid: uuid => {
-      const lastCharacters = uuid.substr(uuid.length-10);
+      const lastCharacters = uuid.substr(uuid.length - 10);
       const aNumber = parseInt(lastCharacters, 16);
-      const thumbnailId = aNumber%25;
-      return "osparc/img"+ thumbnailId +".jpg";
+      const thumbnailId = aNumber % 25;
+      return "osparc/img" + thumbnailId + ".jpg";
     },
 
-    getThumbnailFromString: str => "osparc/img" + Math.abs(this.self().stringHash(str)%25) + ".jpg",
+    getThumbnailFromString: str => "osparc/img" + Math.abs(this.self().stringHash(str) % 25) + ".jpg",
 
     stringHash: str => {
       // Based on https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
@@ -319,7 +319,7 @@ qx.Class.define("osparc.utils.Utils", {
       if (str.length === 0) {
         return hash;
       }
-      for (i=0; i<str.length; i++) {
+      for (i = 0; i < str.length; i++) {
         chr = str.charCodeAt(i);
         hash = ((hash << 5) - hash) + chr;
         hash |= 0; // Convert to 32bit integer
@@ -335,18 +335,18 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
-    getClientSessionID: function() {
+    getClientSessionID: function () {
       // https://stackoverflow.com/questions/11896160/any-way-to-identify-browser-tab-in-javascript
       const clientSessionID = sessionStorage.getItem("clientsessionid") ? sessionStorage.getItem("clientsessionid") : osparc.utils.Utils.uuidv4();
       sessionStorage.setItem("clientsessionid", clientSessionID);
       return clientSessionID;
     },
 
-    getFont: function(size=14, bold=false) {
+    getFont: function (size = 14, bold = false) {
       return qx.bom.Font.fromConfig(osparc.theme.Font.fonts[`${bold ? "title" : "text"}-${size}`]);
     },
 
-    getFreeDistanceToWindowEdges: function(layoutItem) {
+    getFreeDistanceToWindowEdges: function (layoutItem) {
       const domElement = layoutItem.getContentElement().getDomElement();
       if (domElement === null) {
         return null;
@@ -360,18 +360,18 @@ qx.Class.define("osparc.utils.Utils", {
       };
     },
 
-    fetchJSON: function() {
+    fetchJSON: function () {
       return fetch.apply(null, arguments).then(response => response.json());
     },
 
-    firstsUp: function(...args) {
+    firstsUp: function (...args) {
       const labels = [];
       args.forEach(arg => labels.push(qx.lang.String.firstUp(arg)));
       return labels.join(" ");
     },
 
-    isObject: function(v) {
-      return typeof v === 'object' && v !== null;
+    isObject: function (v) {
+      return typeof v === "object" && v !== null;
     }
   }
 });
