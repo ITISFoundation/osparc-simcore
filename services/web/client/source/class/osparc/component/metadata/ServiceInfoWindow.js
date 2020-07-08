@@ -21,7 +21,7 @@
  */
 
 qx.Class.define("osparc.component.metadata.ServiceInfoWindow", {
-  extend: qx.ui.window.Window,
+  extend: osparc.ui.window.Window,
 
   /**
     * @param metadata {Object} Service metadata
@@ -43,6 +43,7 @@ qx.Class.define("osparc.component.metadata.ServiceInfoWindow", {
     });
 
     const serviceInfo = this._serviceInfo = new osparc.component.metadata.ServiceInfo(metadata);
+    serviceInfo.setBackgroundColor("material-button-background");
     const scroll = new qx.ui.container.Scroll();
     scroll.add(serviceInfo);
     this.add(scroll, {
