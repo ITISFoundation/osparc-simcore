@@ -141,7 +141,8 @@ qx.Class.define("osparc.component.export.Permissions", {
       const collaboratorsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
-        width: 150
+        width: 150,
+        padding: 0
       });
 
       const collaboratorsModel = this.__collaboratorsModel = new qx.data.Array();
