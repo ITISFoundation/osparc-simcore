@@ -170,7 +170,7 @@ async def get_project(request: web.Request):
         return {"data": project}
     except ProjectInvalidRightsError:
         raise web.HTTPForbidden(
-            reason=f"User {user_id} has no right to read {project_uuid}"
+            reason=f"You do not have sufficient rights to read project {project_uuid}"
         )
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
@@ -235,7 +235,7 @@ async def replace_project(request: web.Request):
 
     except ProjectInvalidRightsError:
         raise web.HTTPForbidden(
-            reason=f"User {user_id} has no rights to write to project {project_uuid}"
+            reason="You do not have sufficient rights to save the project"
         )
     except ProjectNotFoundError:
         raise web.HTTPNotFound
@@ -276,7 +276,7 @@ async def delete_project(request: web.Request):
         await projects_api.delete_project(request, project_uuid, user_id)
     except ProjectInvalidRightsError:
         raise web.HTTPForbidden(
-            reason=f"User {user_id} has no rights to delete project"
+            reason="You do not have sufficient rights to delete this project"
         )
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
