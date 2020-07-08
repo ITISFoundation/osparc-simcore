@@ -59,7 +59,7 @@ qx.Class.define("osparc.data.Resources", {
 
   type: "singleton",
 
-  defer: function(statics) {
+  defer: function (statics) {
     /*
      * Define here all resources and their endpoints.
      */
@@ -172,7 +172,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           get: {
             method: "GET",
-            url: statics.API + "/services"
+            url: statics.API + "/catalog/services"
           }
         }
       },
@@ -420,7 +420,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           delete: {
             method: "DELETE",
-            url:  statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
+            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
           }
         }
       },
@@ -521,7 +521,7 @@ qx.Class.define("osparc.data.Resources", {
      * @param {Object} params Object containing the parameters for the url and for the body of the request, under the properties 'url' and 'data', respectively.
      * @param {String} deleteId When deleting, id of the element that needs to be deleted from the cache.
      */
-    fetch: function(resource, endpoint, params = {}, deleteId) {
+    fetch: function (resource, endpoint, params = {}, deleteId) {
       return new Promise((resolve, reject) => {
         if (this.self().resources[resource] == null) {
           reject(Error(`Error while fetching ${resource}: the resource is not defined`));
@@ -579,7 +579,7 @@ qx.Class.define("osparc.data.Resources", {
      * @param {String} id Id of the element to get, if it is a collection of elements.
      * @param {Boolean} useCache Whether the cache has to be used. If false, an API call will be issued.
      */
-    getOne: function(resource, params, id, useCache = true) {
+    getOne: function (resource, params, id, useCache = true) {
       if (useCache) {
         const stored = this.__getCached(resource);
         if (stored) {
@@ -599,7 +599,7 @@ qx.Class.define("osparc.data.Resources", {
      * @param {Object} params Object containing the parameters for the url and for the body of the request, under the properties 'url' and 'data', respectively.
      * @param {Boolean} useCache Whether the cache has to be used. If false, an API call will be issued.
      */
-    get: function(resource, params, useCache = true) {
+    get: function (resource, params, useCache = true) {
       if (useCache) {
         const stored = this.__getCached(resource);
         if (stored) {
@@ -613,7 +613,7 @@ qx.Class.define("osparc.data.Resources", {
      * Returns the cached version of the resource or null if empty.
      * @param {String} resource Resource name
      */
-    __getCached: function(resource) {
+    __getCached: function (resource) {
       let stored;
       try {
         stored = osparc.store.Store.getInstance().get(resource);
@@ -634,7 +634,7 @@ qx.Class.define("osparc.data.Resources", {
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
      * @param {*} data Resource or collection of resources to be cached.
      */
-    __setCached: function(resource, data) {
+    __setCached: function (resource, data) {
       const store = osparc.store.Store.getInstance();
       switch (resource) {
         default:
@@ -647,20 +647,20 @@ qx.Class.define("osparc.data.Resources", {
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
      * @param {String} deleteId Id of the item to remove from cache.
      */
-    __removeCached: function(resource, deleteId) {
+    __removeCached: function (resource, deleteId) {
       osparc.store.Store.getInstance().remove(resource, this.self().resources[resource].idField || "uuid", deleteId);
     }
   },
 
   statics: {
     API: "/v0",
-    fetch: function(resource, endpoint, params, deleteId) {
+    fetch: function (resource, endpoint, params, deleteId) {
       return this.getInstance().fetch(resource, endpoint, params, deleteId);
     },
-    getOne: function(resource, params, id, useCache) {
+    getOne: function (resource, params, id, useCache) {
       return this.getInstance().getOne(resource, params, id, useCache);
     },
-    get: function(resource, params, useCache) {
+    get: function (resource, params, useCache) {
       return this.getInstance().get(resource, params, useCache);
     }
   }

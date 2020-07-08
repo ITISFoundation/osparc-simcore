@@ -44,11 +44,9 @@ def setup(app: web.Application, *, disable_login=False):
 
     def include_path(tup_object):
         _method, path, _operation_id, _tags = tup_object
-        return any(
-            tail in path for tail in ["/running_interactive_services", "/services"]
-        )
+        return any(tail in path for tail in ["/running_interactive_services"])
 
-    handlers_dict = {"services_get": handlers.services_get}
+    handlers_dict = {}
 
     # Disables login_required decorator for testing purposes
     if disable_login:
