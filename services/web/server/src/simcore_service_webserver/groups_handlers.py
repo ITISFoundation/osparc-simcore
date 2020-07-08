@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 # groups/ ------------------------------------------------------
 @login_required
-@permission_required("groups.*")
+@permission_required("groups.read")
 async def list_groups(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     primary_group, user_groups, all_group = await groups_api.list_user_groups(
@@ -30,7 +30,7 @@ async def list_groups(request: web.Request):
 
 
 @login_required
-@permission_required("groups.*")
+@permission_required("groups.read")
 async def get_group(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     gid = request.match_info["gid"]

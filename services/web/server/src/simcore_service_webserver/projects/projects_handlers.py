@@ -3,8 +3,9 @@
 """
 import json
 import logging
-from typing import Set
+from typing import List, Optional, Set
 
+import aioredlock
 from aiohttp import web
 from jsonschema import ValidationError
 
@@ -163,14 +164,14 @@ async def get_project(request: web.Request):
         project = await get_project_for_user(
             request.app,
             project_uuid=project_uuid,
-            user_id=request[RQT_USERID_KEY],
+            user_id=user_id,
             include_templates=True,
         )
 
         return {"data": project}
     except ProjectInvalidRightsError:
         raise web.HTTPForbidden(
-            reason=f"User {user_id} has no right to read {project_uuid}"
+            reason=f"You do not have sufficient rights to read project {project_uuid}"
         )
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
@@ -235,7 +236,7 @@ async def replace_project(request: web.Request):
 
     except ProjectInvalidRightsError:
         raise web.HTTPForbidden(
-            reason=f"User {user_id} has no rights to write to project {project_uuid}"
+            reason="You do not have sufficient rights to save the project"
         )
     except ProjectNotFoundError:
         raise web.HTTPNotFound
@@ -256,19 +257,27 @@ async def delete_project(request: web.Request):
             user_id=user_id,
             include_templates=True,
         )
+        project_users: List[int] = []
         with managed_resource(user_id, None, request.app) as rt:
-            other_users = await rt.find_users_of_resource("project_id", project_uuid)
-            if other_users:
-                message = "Project is opened by another user. It cannot be deleted."
-                if user_id in other_users:
-                    message = "Project is still open. It cannot be deleted until it is closed."
-                # we cannot delete that project
-                raise web.HTTPForbidden(reason=message)
+            project_users = await rt.find_users_of_resource("project_id", project_uuid)
+        if project_users:
+            # that project is still in use
+            if user_id in project_users:
+                message = "Project is still open in another tab/browser. It cannot be deleted until it is closed."
+            else:
+                other_users = set(project_users)
+                other_user_names = {
+                    await get_user_name(request.app, x) for x in other_users
+                }
+                message = f"Project is open by {other_user_names}. It cannot be deleted until the project is closed."
+
+            # we cannot delete that project
+            raise web.HTTPForbidden(reason=message)
 
         await projects_api.delete_project(request, project_uuid, user_id)
     except ProjectInvalidRightsError:
         raise web.HTTPForbidden(
-            reason=f"User {user_id} has no rights to delete project"
+            reason="You do not have sufficient rights to delete this project"
         )
     except ProjectNotFoundError:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
@@ -289,31 +298,41 @@ async def open_project(request: web.Request) -> web.Response:
     project_uuid = request.match_info.get("project_id")
     client_session_id = await request.json()
     try:
-        with managed_resource(user_id, client_session_id, request.app) as rt:
-            # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-            from .projects_api import get_project_for_user
+        # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+        from .projects_api import get_project_for_user
 
-            project = await get_project_for_user(
-                request.app,
-                project_uuid=project_uuid,
-                user_id=user_id,
-                include_templates=True,
-            )
+        project = await get_project_for_user(
+            request.app,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            include_templates=True,
+        )
 
-            # let's check if that project is already opened by someone else
-            other_users: Set[int] = {
-                x
-                for x in await rt.find_users_of_resource("project_id", project_uuid)
-                if x != f"{user_id}"
-            }
+        async def try_add_project() -> Optional[Set[int]]:
+            with managed_resource(user_id, client_session_id, request.app) as rt:
+                try:
+                    async with await rt.get_registry_lock():
+                        other_users: Set[int] = {
+                            x
+                            for x in await rt.find_users_of_resource(
+                                "project_id", project_uuid
+                            )
+                            if x != user_id
+                        }
 
-            if other_users:
-                # project is already locked
-                usernames = [
-                    await get_user_name(request.app, uid) for uid in other_users
-                ]
-                raise HTTPLocked(reason=f"Project is already opened by {usernames}")
-            await rt.add("project_id", project_uuid)
+                        if other_users:
+                            return other_users
+                        await rt.add("project_id", project_uuid)
+                except aioredlock.LockError:
+                    # TODO: this lock is not a good solution for long term
+                    # maybe a project key in redis might improve spped of checking
+                    raise HTTPLocked(reason="Project is locked")
+
+        other_users = await try_add_project()
+        if other_users:
+            # project is already locked
+            usernames = [await get_user_name(request.app, uid) for uid in other_users]
+            raise HTTPLocked(reason=f"Project is already opened by {usernames}")
 
         # user id opened project uuid
         await projects_api.start_project_interactive_services(request, project, user_id)
@@ -381,18 +400,14 @@ async def close_project(request: web.Request) -> web.Response:
 async def state_project(request: web.Request) -> web.Response:
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
+    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+    from .projects_api import get_project_for_user
+
+    # check that project exists
+    await get_project_for_user(
+        request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True,
+    )
     with managed_resource(user_id, None, request.app) as rt:
-        # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-        from .projects_api import get_project_for_user
-
-        # check that project exists
-        await get_project_for_user(
-            request.app,
-            project_uuid=project_uuid,
-            user_id=user_id,
-            include_templates=True,
-        )
-
         users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
         usernames = [
             await get_user_name(request.app, uid) for uid in set(users_of_project)
@@ -416,19 +431,20 @@ async def get_active_project(request: web.Request) -> web.Response:
 
     try:
         project = None
+        user_active_projects = []
         with managed_resource(user_id, client_session_id, request.app) as rt:
             # get user's projects
-            list_project_ids = await rt.find("project_id")
-            if list_project_ids:
-                # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-                from .projects_api import get_project_for_user
+            user_active_projects = await rt.find("project_id")
+        if user_active_projects:
+            # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
+            from .projects_api import get_project_for_user
 
-                project = await get_project_for_user(
-                    request.app,
-                    project_uuid=list_project_ids[0],
-                    user_id=user_id,
-                    include_templates=True,
-                )
+            project = await get_project_for_user(
+                request.app,
+                project_uuid=user_active_projects[0],
+                user_id=user_id,
+                include_templates=True,
+            )
 
         return web.json_response({"data": project})
     except ProjectNotFoundError:

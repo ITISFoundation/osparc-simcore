@@ -27,6 +27,7 @@ ROLES_PERMISSIONS = {
             "project.update",
             "storage.locations.*",  # "storage.datcore.read"
             "storage.files.*",
+            "groups.read",
             "project.open",
             "project.read",  # "studies.user.read",
             # "studies.templates.read"

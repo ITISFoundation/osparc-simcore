@@ -119,7 +119,9 @@ async def test_list_groups(
     assert str(url) == f"{PREFIX}"
 
     resp = await client.get(url)
-    data, error = await assert_status(resp, expected.ok)
+    data, error = await assert_status(
+        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
+    )
 
     if not error:
         assert isinstance(data, dict)
@@ -198,8 +200,10 @@ async def test_group_creation_workflow(client, logged_user, user_role, expected)
     assert str(url) == f"{PREFIX}"
 
     resp = await client.get(url)
-    data, error = await assert_status(resp, expected.ok)
-    if not error:
+    data, error = await assert_status(
+        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
+    )
+    if not error and user_role != UserRole.GUEST:
         assert len(data["organizations"]) == 1
         assert data["organizations"][0] == assigned_group
 
@@ -207,7 +211,9 @@ async def test_group_creation_workflow(client, logged_user, user_role, expected)
     url = client.app.router["get_group"].url_for(gid=str(assigned_group["gid"]))
     assert str(url) == f"{PREFIX}/{assigned_group['gid']}"
     resp = await client.get(url)
-    data, error = await assert_status(resp, expected.ok)
+    data, error = await assert_status(
+        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPNotFound
+    )
     if not error:
         assert data == assigned_group
 
@@ -226,7 +232,9 @@ async def test_group_creation_workflow(client, logged_user, user_role, expected)
     url = client.app.router["get_group"].url_for(gid=str(assigned_group["gid"]))
     assert str(url) == f"{PREFIX}/{assigned_group['gid']}"
     resp = await client.get(url)
-    data, error = await assert_status(resp, expected.ok)
+    data, error = await assert_status(
+        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPNotFound
+    )
     if not error:
         _assert_group(data)
         assert data == assigned_group
@@ -249,7 +257,9 @@ async def test_group_creation_workflow(client, logged_user, user_role, expected)
     url = client.app.router["get_group"].url_for(gid=str(assigned_group["gid"]))
     assert str(url) == f"{PREFIX}/{assigned_group['gid']}"
     resp = await client.get(url)
-    data, error = await assert_status(resp, expected.not_found)
+    data, error = await assert_status(
+        resp, expected.not_found if user_role != UserRole.GUEST else web.HTTPNotFound
+    )
 
 
 @pytest.mark.parametrize(*standard_role_response())
