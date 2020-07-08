@@ -33,6 +33,10 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
 
     // spacer
     this.add(new qx.ui.core.Spacer(null, 10)); // TODO add decorator?
+    this.set({
+      backgroundColor: "material-button-background",
+      paddingLeft: 10
+    });
   },
 
   members: {
@@ -43,7 +47,6 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
     _createSectionBox: function(sectionName) {
       let box = new qx.ui.groupbox.GroupBox(sectionName);
       box.setLayout(new qx.ui.layout.VBox(10));
-
       return box;
     },
 

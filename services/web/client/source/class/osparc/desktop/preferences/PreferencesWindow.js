@@ -41,7 +41,8 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     osparc.utils.Utils.setIdToWidget(closeBtn, "preferencesWindowCloseBtn");
 
     const tabView = new qx.ui.tabview.TabView().set({
-      barPosition: "left"
+      barPosition: "left",
+      contentPadding: 0
     });
 
     const profPage = new osparc.desktop.preferences.pages.ProfilePage();
