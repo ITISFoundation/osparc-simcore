@@ -14,6 +14,7 @@ aiohttp_security
 aiohttp-swagger[performance]
 aiopg[sa]
 aioredis
+aioredlock
 aiosmtplib
 asyncpg
 celery

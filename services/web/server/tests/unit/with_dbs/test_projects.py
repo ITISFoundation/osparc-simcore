@@ -4,21 +4,17 @@
 
 import asyncio
 import json
-import pdb
 import time
 import uuid as uuidlib
 from asyncio import Future, sleep
 from copy import deepcopy
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import mock
 import pytest
 import socketio
 from aiohttp import web
 from mock import call
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
-from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from socketio.exceptions import ConnectionError
 
 from _helpers import (
@@ -27,6 +23,9 @@ from _helpers import (
     future_with_result,
     standard_role_response,
 )
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
+from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
@@ -1219,11 +1218,26 @@ async def _connect_websocket(
 
 
 async def _open_project(
-    client, client_id: str, project: Dict, expected: web.HTTPException
-):
+    client,
+    client_id: str,
+    project: Dict,
+    expected: Union[web.HTTPException, List[web.HTTPException]],
+) -> Optional[Tuple[Dict, Dict]]:
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
     resp = await client.post(url, json=client_id)
-    await assert_status(resp, expected)
+
+    if isinstance(expected, list):
+        for e in expected:
+            try:
+                data, error = await assert_status(resp, e)
+                return data, error
+            except AssertionError:
+                # re-raies if last item
+                if e == expected[-1]:
+                    raise
+                continue
+    else:
+        return await assert_status(resp, expected)
 
 
 async def _close_project(
@@ -1231,7 +1245,7 @@ async def _close_project(
 ):
     url = client.app.router["close_project"].url_for(project_id=project["uuid"])
     resp = await client.post(url, json=client_id)
-    data, error = await assert_status(resp, expected)
+    await assert_status(resp, expected)
 
 
 async def _state_project(
@@ -1420,3 +1434,69 @@ async def test_open_shared_project_2_users_locked(
         expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
         expected_project_state,
     )
+
+
+@pytest.mark.parametrize(*standard_role_response())
+async def test_open_shared_project_at_same_time(
+    loop,
+    client,
+    logged_user: Dict,
+    shared_project: Dict,
+    socketio_client: Callable,
+    client_session_id: Callable,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    aiohttp_client,
+):
+    NUMBER_OF_ADDITIONAL_CLIENTS = 20
+    # log client 1
+    client_1 = client
+    client_id1 = client_session_id()
+    sio_1 = await _connect_websocket(
+        socketio_client, user_role != UserRole.ANONYMOUS, client_1, client_id1,
+    )
+    clients = [
+        {"client": client_1, "user": logged_user, "client_id": client_id1, "sio": sio_1}
+    ]
+    # create other clients
+    for i in range(NUMBER_OF_ADDITIONAL_CLIENTS):
+        client = await aiohttp_client(client.app)
+        user = await log_client_in(
+            client,
+            {"role": user_role.name},
+            enable_check=user_role != UserRole.ANONYMOUS,
+        )
+        client_id = client_session_id()
+        sio = await _connect_websocket(
+            socketio_client, user_role != UserRole.ANONYMOUS, client, client_id,
+        )
+        clients.append(
+            {"client": client, "user": user, "client_id": client_id, "sio": sio}
+        )
+
+    # try opening projects at same time (more or less)
+    open_project_tasks = [
+        _open_project(
+            c["client"],
+            c["client_id"],
+            shared_project,
+            [
+                expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+                expected.locked if user_role != UserRole.GUEST else HTTPLocked,
+            ],
+        )
+        for c in clients
+    ]
+    results = await asyncio.gather(*open_project_tasks, return_exceptions=True,)
+
+    # one should be opened, the other locked
+    if user_role != UserRole.ANONYMOUS:
+        num_assertions = 0
+        for data, error in results:
+            assert data or error
+            if error:
+                num_assertions += 1
+            elif data:
+                assert data == shared_project
+
+        assert num_assertions == NUMBER_OF_ADDITIONAL_CLIENTS
