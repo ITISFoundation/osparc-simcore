@@ -28,6 +28,8 @@ qx.Class.define("osparc.ui.window.Window", {
             this.close();
           }
         });
+        modalFrame.style.backgroundColor = 'black';
+        modalFrame.style.opacity = 0.4;
       }
     });
   },
