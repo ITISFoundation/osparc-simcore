@@ -3,8 +3,9 @@
 """
 import json
 import logging
-from typing import List, Set
+from typing import List, Optional, Set
 
+import aioredlock
 from aiohttp import web
 from jsonschema import ValidationError
 
@@ -306,22 +307,32 @@ async def open_project(request: web.Request) -> web.Response:
             user_id=user_id,
             include_templates=True,
         )
-        with managed_resource(user_id, client_session_id, request.app) as rt:
-            async with await rt.get_registry_lock():
-                # let's check if that project is already opened by someone else
-                other_users: Set[int] = {
-                    x
-                    for x in await rt.find_users_of_resource("project_id", project_uuid)
-                    if x != user_id
-                }
 
-                if other_users:
-                    # project is already locked
-                    usernames = [
-                        await get_user_name(request.app, uid) for uid in other_users
-                    ]
-                    raise HTTPLocked(reason=f"Project is already opened by {usernames}")
-                await rt.add("project_id", project_uuid)
+        async def try_add_project() -> Optional[Set[int]]:
+            with managed_resource(user_id, client_session_id, request.app) as rt:
+                try:
+                    async with await rt.get_registry_lock():
+                        other_users: Set[int] = {
+                            x
+                            for x in await rt.find_users_of_resource(
+                                "project_id", project_uuid
+                            )
+                            if x != user_id
+                        }
+
+                        if other_users:
+                            return other_users
+                        await rt.add("project_id", project_uuid)
+                except aioredlock.LockError:
+                    # TODO: this lock is not a good solution for long term
+                    # maybe a project key in redis might improve spped of checking
+                    raise HTTPLocked(reason=f"Project is locked")
+
+        other_users = await try_add_project()
+        if other_users:
+            # project is already locked
+            usernames = [await get_user_name(request.app, uid) for uid in other_users]
+            raise HTTPLocked(reason=f"Project is already opened by {usernames}")
 
         # user id opened project uuid
         await projects_api.start_project_interactive_services(request, project, user_id)
