@@ -9,7 +9,7 @@ from pydantic.types import ConstrainedInt, ConstrainedStr, PositiveInt, StrictBo
 
 current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 
-KEY_RE = r"^(simcore)/(services)/(comp|dynamic)(/[^\s]+)+$"
+KEY_RE = r"^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$"
 VERSION_RE = r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
 PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
 
@@ -222,7 +222,7 @@ class ServiceData(BaseModel):
     integration_version: Optional[constr(regex=VERSION_RE)] = Field(
         None,
         alias="integration-version",
-        description="service oSparc integration version number",
+        description="integration version number",
         # regex=VERSION_RE,
         example="1.0.0",
     )
@@ -255,10 +255,10 @@ class ServiceData(BaseModel):
         example=["lab@net.flix"],
     )
     inputs: Optional[Dict[PropertyName, ServiceInput]] = Field(
-        ..., description="all the input configurable for this service"
+        ..., description="definition of the inputs of this node"
     )
     outputs: Optional[Dict[PropertyName, ServiceProperty]] = Field(
-        ..., description="all the output configurable for this service"
+        ..., description="definition of the outputs of this node"
     )
 
     class Config:
