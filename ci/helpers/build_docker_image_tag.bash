@@ -11,7 +11,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-
+default_image_tag = "github"
 if [ -v TRAVIS ] && [ "$TRAVIS" = "true" ]; then
     # travis here
     if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
@@ -25,9 +25,9 @@ elif [ -v GITHUB_ACTIONS ] && [ "$GITHUB_ACTIONS" = "true" ]; then
     image_tag="${GITHUB_REF##*/}-github"
 else
     # no CI here so let's use the git name directly
-    image_tag=$(git rev-parse --abbrev-ref HEAD)
+    image_tag="$(git rev-parse --abbrev-ref HEAD)-$default_image_tag"
 fi
 
-slugified_name=$(exec ci/helpers/slugify_name.bash "$image_tag")
+slugified_name="$(exec ci/helpers/slugify_name.bash "$image_tag")"
 
 echo "$slugified_name-testbuild-latest"
