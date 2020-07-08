@@ -17,7 +17,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.About", {
-  extend: qx.ui.window.Window,
+  extend: osparc.ui.window.Window,
   type: "singleton",
 
   construct: function() {
@@ -29,7 +29,8 @@ qx.Class.define("osparc.About", {
       showMinimize: false,
       resizable: false,
       centerOnAppear: true,
-      appearance: "service-window"
+      clickAwayClose: true,
+      modal: true
     });
     const closeBtn = this.getChildControl("close-button");
     osparc.utils.Utils.setIdToWidget(closeBtn, "aboutWindowCloseBtn");
