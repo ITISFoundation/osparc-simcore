@@ -1448,45 +1448,46 @@ async def test_open_shared_project_at_same_time(
     expected: ExpectedResponse,
     aiohttp_client,
 ):
+    NUMBER_OF_ADDITIONAL_CLIENTS = 20
     # log client 1
     client_1 = client
     client_id1 = client_session_id()
     sio_1 = await _connect_websocket(
         socketio_client, user_role != UserRole.ANONYMOUS, client_1, client_id1,
     )
-
-    # log client 2
-    client_2 = await aiohttp_client(client.app)
-    user_2 = await log_client_in(
-        client_2, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
-    )
-    client_id2 = client_session_id()
-    sio_2 = await _connect_websocket(
-        socketio_client, user_role != UserRole.ANONYMOUS, client_2, client_id2,
-    )
+    clients = [
+        {"client": client_1, "user": logged_user, "client_id": client_id1, "sio": sio_1}
+    ]
+    # create other clients
+    for i in range(NUMBER_OF_ADDITIONAL_CLIENTS):
+        client = await aiohttp_client(client.app)
+        user = await log_client_in(
+            client,
+            {"role": user_role.name},
+            enable_check=user_role != UserRole.ANONYMOUS,
+        )
+        client_id = client_session_id()
+        sio = await _connect_websocket(
+            socketio_client, user_role != UserRole.ANONYMOUS, client, client_id,
+        )
+        clients.append(
+            {"client": client, "user": user, "client_id": client_id, "sio": sio}
+        )
 
     # try opening projects at same time (more or less)
-    results = await asyncio.gather(
+    open_project_tasks = [
         _open_project(
-            client_1,
-            client_id1,
+            c["client"],
+            c["client_id"],
             shared_project,
             [
                 expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
                 expected.locked if user_role != UserRole.GUEST else HTTPLocked,
             ],
-        ),
-        _open_project(
-            client_2,
-            client_id2,
-            shared_project,
-            [
-                expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
-                expected.locked if user_role != UserRole.GUEST else HTTPLocked,
-            ],
-        ),
-        return_exceptions=True,
-    )
+        )
+        for c in clients
+    ]
+    results = await asyncio.gather(*open_project_tasks, return_exceptions=True,)
 
     # one should be opened, the other locked
     if user_role != UserRole.ANONYMOUS:
@@ -1498,4 +1499,4 @@ async def test_open_shared_project_at_same_time(
             elif data:
                 assert data == shared_project
 
-        assert num_assertions == 1
+        assert num_assertions == NUMBER_OF_ADDITIONAL_CLIENTS
