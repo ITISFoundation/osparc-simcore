@@ -11,7 +11,11 @@ import pytest
 
 import simcore_service_catalog
 
-pytest_plugins = ["pytest_simcore.postgres_service2"]
+pytest_plugins = [
+    "pytest_simcore.postgres_service2",
+    "pytest_simcore.schemas",
+    "pytest_simcore.environs",
+]
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -28,14 +32,14 @@ def project_slug_dir() -> Path:
 
 
 @pytest.fixture(scope="session")
-def installed_package_dir():
+def installed_package_dir() -> Path:
     dirpath = Path(simcore_service_catalog.__file__).resolve().parent
     assert dirpath.exists()
     return dirpath
 
 
 @pytest.fixture(scope="session")
-def osparc_simcore_root_dir():
+def osparc_simcore_root_dir() -> Path:
     root_dir = current_dir
     while root_dir != root_dir.parent and not any(root_dir.glob("services/catalog")):
         root_dir = root_dir.parent
@@ -48,7 +52,7 @@ def osparc_simcore_root_dir():
 
 
 @pytest.fixture(scope="session")
-def api_specs_dir(osparc_simcore_root_dir):
+def api_specs_dir(osparc_simcore_root_dir: Path) -> Path:
     specs_dir = osparc_simcore_root_dir / "api" / "specs" / "catalog"
     assert specs_dir.exists()
     return specs_dir

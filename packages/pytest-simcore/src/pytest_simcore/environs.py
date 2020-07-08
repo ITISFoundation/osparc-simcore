@@ -14,14 +14,14 @@ def osparc_simcore_root_dir(request) -> Path:
     WILDCARD = "packages/pytest-simcore/src/pytest_simcore/environs.py"
     ROOT = Path("/")
 
-    test_dir = Path(request.session.fspath) # expected test dir in simcore
+    test_dir = Path(request.session.fspath)  # expected test dir in simcore
 
     for start_dir in (current_dir, test_dir):
         root_dir = start_dir
         while not any(root_dir.glob(WILDCARD)) and root_dir != ROOT:
             root_dir = root_dir.parent
 
-        if root_dir!=ROOT:
+        if root_dir != ROOT:
             break
 
     msg = f"'{root_dir}' does not look like the git root directory of osparc-simcore"
@@ -35,7 +35,7 @@ def osparc_simcore_root_dir(request) -> Path:
 
 
 @pytest.fixture(scope="session")
-def env_devel_file(osparc_simcore_root_dir) -> Path:
+def env_devel_file(osparc_simcore_root_dir: Path) -> Path:
     env_devel_fpath = osparc_simcore_root_dir / ".env-devel"
     assert env_devel_fpath.exists()
     return env_devel_fpath
@@ -45,3 +45,10 @@ def env_devel_file(osparc_simcore_root_dir) -> Path:
 def temp_folder(request, tmpdir_factory) -> Path:
     tmp = Path(tmpdir_factory.mktemp(f"tmp_module_{request.module.__name__}"))
     yield tmp
+
+
+@pytest.fixture(scope="session")
+def script_dir(osparc_simcore_root_dir: Path) -> Path:
+    script_dir = osparc_simcore_root_dir / "scripts"
+    assert script_dir.exists()
+    return script_dir
