@@ -10,7 +10,7 @@
  * extends
  */
 qx.Class.define("osparc.ui.window.Dialog", {
-  extend: qx.ui.window.Window,
+  extend: osparc.ui.window.Window,
   /**
    * Constructor takes the same parameters as the Qooxdoo window widget, only adding a message that will
    * be displayed to the user.
@@ -22,7 +22,6 @@ qx.Class.define("osparc.ui.window.Dialog", {
     this.set({
       autoDestroy: true,
       layout: new qx.ui.layout.VBox(),
-      appearance: "service-window",
       showMinimize: false,
       showMaximize: false,
       contentPadding: 0,
@@ -51,7 +50,6 @@ qx.Class.define("osparc.ui.window.Dialog", {
     __buildLayout: function() {
       this.__messageLabel = new qx.ui.basic.Label().set({
         rich: true,
-        appearance: "dialog-window-content",
         padding: 10
       });
       this.add(this.__messageLabel, {
