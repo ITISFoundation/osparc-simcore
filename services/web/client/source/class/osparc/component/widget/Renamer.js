@@ -35,7 +35,7 @@
  */
 
 qx.Class.define("osparc.component.widget.Renamer", {
-  extend: qx.ui.window.Window,
+  extend: osparc.ui.window.Window,
 
   construct: function(oldLabel) {
     this.base(arguments, "Rename");
@@ -51,7 +51,8 @@ qx.Class.define("osparc.component.widget.Renamer", {
       modal: true,
       showMaximize: false,
       showMinimize: false,
-      width: labelWidth
+      width: labelWidth,
+      clickAwayClose: true
     });
     this.__populateNodeLabelEditor(oldLabel, labelWidth);
   },
