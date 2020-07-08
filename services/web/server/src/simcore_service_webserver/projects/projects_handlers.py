@@ -164,7 +164,7 @@ async def get_project(request: web.Request):
         project = await get_project_for_user(
             request.app,
             project_uuid=project_uuid,
-            user_id=request[RQT_USERID_KEY],
+            user_id=user_id,
             include_templates=True,
         )
 
@@ -326,7 +326,7 @@ async def open_project(request: web.Request) -> web.Response:
                 except aioredlock.LockError:
                     # TODO: this lock is not a good solution for long term
                     # maybe a project key in redis might improve spped of checking
-                    raise HTTPLocked(reason=f"Project is locked")
+                    raise HTTPLocked(reason="Project is locked")
 
         other_users = await try_add_project()
         if other_users:
