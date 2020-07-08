@@ -14,7 +14,7 @@
  */
 
 qx.Class.define("osparc.desktop.preferences.window.APIKeyBase", {
-  extend: qx.ui.window.Window,
+  extend: osparc.ui.window.Window,
   type: "abstract",
 
   construct: function(caption, infoText) {
@@ -26,7 +26,8 @@ qx.Class.define("osparc.desktop.preferences.window.APIKeyBase", {
       modal: true,
       showMaximize: false,
       showMinimize: false,
-      width: 350
+      width: 350,
+      clickAwayClose: true
     });
 
     this.__addInfoText(infoText);

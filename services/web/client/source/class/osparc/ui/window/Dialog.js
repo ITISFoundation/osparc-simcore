@@ -14,7 +14,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
   /**
    * Constructor takes the same parameters as the Qooxdoo window widget, only adding a message that will
    * be displayed to the user.
-   * @extends qx.ui.window.Window
+   * @extends osparc.ui.window.Window
    * @param {String} message Message that will be displayed to the user.
    */
   construct: function(caption, icon, message) {
