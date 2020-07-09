@@ -1,11 +1,10 @@
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Dict, List, Optional, Union
 
-from pydantic import BaseModel, EmailStr, Extra, Field, FilePath, HttpUrl, constr
-from pydantic.schema import schema
-from pydantic.types import ConstrainedInt, ConstrainedStr, PositiveInt, StrictBool
+from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr
+from pydantic.types import PositiveInt
 
 current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 
@@ -53,12 +52,6 @@ class Badge(BaseModel):
     class Config:
         extra = Extra.forbid
 
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], model: Type) -> None:
-            # remove the title of properties
-            for prop in schema.get("properties", {}).values():
-                prop.pop("title", None)
-
 
 class Author(BaseModel):
     name: str = Field(..., description="Name of the author", example="Jim Knopf")
@@ -74,12 +67,6 @@ class Author(BaseModel):
     class Config:
         extra = Extra.forbid
 
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], model: Type) -> None:
-            # remove the title of properties
-            for prop in schema.get("properties", {}).values():
-                prop.pop("title", None)
-
 
 class WidgetType(str, Enum):
     TextArea = "TextArea"
@@ -94,12 +81,6 @@ class TextArea(BaseModel):
     class Config:
         extra = Extra.forbid
 
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], model: Type) -> None:
-            # remove the title of properties
-            for prop in schema.get("properties", {}).values():
-                prop.pop("title", None)
-
 
 class Structure(BaseModel):
     key: Union[str, bool, float]
@@ -108,24 +89,12 @@ class Structure(BaseModel):
     class Config:
         extra = Extra.forbid
 
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], model: Type) -> None:
-            # remove the title of properties
-            for prop in schema.get("properties", {}).values():
-                prop.pop("title", None)
-
 
 class SelectBox(BaseModel):
     structure: List[Structure] = Field(..., min_items=1)
 
     class Config:
         extra = Extra.forbid
-
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], model: Type) -> None:
-            # remove the title of properties
-            for prop in schema.get("properties", {}).values():
-                prop.pop("title", None)
 
 
 class Widget(BaseModel):
@@ -136,12 +105,6 @@ class Widget(BaseModel):
 
     class Config:
         extra = Extra.forbid
-
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], model: Type) -> None:
-            # remove the title of properties
-            for prop in schema.get("properties", {}).values():
-                prop.pop("title", None)
 
 
 class ServiceProperty(BaseModel):
@@ -187,12 +150,6 @@ class ServiceProperty(BaseModel):
 
     class Config:
         extra = Extra.forbid
-
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], model: Type) -> None:
-            # remove the title of properties
-            for prop in schema.get("properties", {}).values():
-                prop.pop("title", None)
 
 
 class ServiceInput(ServiceProperty):
@@ -265,12 +222,6 @@ class ServiceData(BaseModel):
         description = "Description of a simcore node 'class' with input and output"
         title = "simcore node"
         extra = Extra.forbid
-
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], model: Type) -> None:
-            # remove the title of properties
-            for prop in schema.get("properties", {}).values():
-                prop.pop("title", None)
 
 
 if __name__ == "__main__":
