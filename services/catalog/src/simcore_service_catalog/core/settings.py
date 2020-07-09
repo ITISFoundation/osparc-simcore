@@ -72,7 +72,7 @@ class AppSettings(BaseSettings):
     # pylint: disable=no-self-argument
 
     # DOCKER
-    boot_mode: Optional[BootModeEnum] = Field(..., env="SC_BOOT_MODE")
+    boot_mode: Optional[BootModeEnum] = Field("production", env="SC_BOOT_MODE")
 
     # LOGGING
     log_level_name: str = Field("DEBUG", env="LOG_LEVEL")
