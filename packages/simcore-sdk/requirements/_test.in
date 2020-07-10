@@ -17,6 +17,7 @@ pytest-runner
 pytest-sugar
 
 # mockups/fixtures
+alembic
 mock
 requests
 docker

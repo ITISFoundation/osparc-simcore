@@ -17,6 +17,7 @@ pytest-runner
 pytest-sugar
 
 # fixtures
+alembic
 openapi-spec-validator~=0.2  # TODO: this library is limiting jsonschema<3
 docker
 

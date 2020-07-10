@@ -22,6 +22,7 @@ pytest-sugar
 websockets
 
 # fixtures
+alembic
 Faker
 openapi-spec-validator
 python-dotenv

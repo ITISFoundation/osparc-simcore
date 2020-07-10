@@ -1,4 +1,5 @@
 aio-pika
+alembic
 coverage
 pytest
 pytest-aiohttp

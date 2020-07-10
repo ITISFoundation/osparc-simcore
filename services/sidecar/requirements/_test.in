@@ -18,6 +18,7 @@ pytest-lazy-fixture
 
 # fixtures
 aiopg
+alembic
 docker
 
 # tools for CI
