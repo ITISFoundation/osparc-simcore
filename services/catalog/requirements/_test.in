@@ -7,7 +7,7 @@
 -r _base.txt
 
 # 'services/catalog/tests/unit' dependencies
-
+jsonschema
 
 # testing
 pytest
