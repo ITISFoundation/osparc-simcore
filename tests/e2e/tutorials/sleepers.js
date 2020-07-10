@@ -10,6 +10,7 @@ if (args.length < 1) {
   process.exit(1);
 }
 const url = args[0];
+const enableDemoMode = args.length > 1 ? args[1] === "--demo" : false;
 const {
   user,
   pass,
@@ -18,7 +19,7 @@ const {
 const templateName = "Sleepers";
 
 async function runTutorial() {
-  const tutorial = new tutorialBase.TutorialBase(url, user, pass, newUser, templateName);
+  const tutorial = new tutorialBase.TutorialBase(url, user, pass, newUser, templateName, enableDemoMode);
 
   tutorial.init();
   await tutorial.beforeScript();

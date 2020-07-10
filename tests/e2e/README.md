@@ -3,6 +3,8 @@
 cd tests/e2e
 npm install
 npm test
+# or
+npm run tutorials http://127.0.0.1:9081 --demo
 ```
 ## To debug the tests locally with VSCode
 Add the following configuration to your local ``launch.json``:
