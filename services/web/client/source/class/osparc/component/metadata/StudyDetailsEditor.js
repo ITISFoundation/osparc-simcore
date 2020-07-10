@@ -271,11 +271,14 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __saveStudy: function(isTemplate, btn) {
+      const data = this.__serializeForm();
+      delete data.locked;
+      delete data.resourceType;
       const params = {
         url: {
           projectId: this.__studyModel.getUuid()
         },
-        data: this.__serializeForm()
+        data
       };
       osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "put", params)
         .then(data => {
