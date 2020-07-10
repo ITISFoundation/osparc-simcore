@@ -10,9 +10,6 @@ import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI
 from starlette.testclient import TestClient
-
-from pytest_simcore.docker_compose import devel_environ
-from pytest_simcore.postgres_service import postgres_db
 from simcore_service_catalog.core.application import init_app
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
