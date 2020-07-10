@@ -14,13 +14,6 @@ from simcore_service_catalog.core.application import init_app
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-pytest_plugins = (
-    "pytest_simcore.docker_registry",
-    "pytest_simcore.docker_compose",
-    "pytest_simcore.docker_swarm",
-    "pytest_simcore.postgres_service",
-)
-
 
 @pytest.fixture
 def app(

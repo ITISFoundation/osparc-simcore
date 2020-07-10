@@ -15,6 +15,10 @@ pytest_plugins = [
     "pytest_simcore.environs",
     "pytest_simcore.service_environs",
     "pytest_simcore.schemas",
+    "pytest_simcore.docker_registry",
+    "pytest_simcore.docker_compose",
+    "pytest_simcore.docker_swarm",
+    "pytest_simcore.postgres_service",
 ]
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
