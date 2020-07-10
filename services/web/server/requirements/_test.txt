@@ -78,6 +78,7 @@ pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.4       # via -r requirements/_test.in
 pytest==5.4.3             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-mock, pytest-sugar
 python-dateutil==2.8.1    # via faker
+python-dotenv==0.14.0     # via -r requirements/_test.in
 python-engineio==3.13.0   # via -r requirements/_base.txt, python-socketio
 python-socketio==4.6.0    # via -r requirements/_base.txt
 pytz==2020.1              # via -r requirements/_base.txt, celery

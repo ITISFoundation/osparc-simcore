@@ -20,6 +20,7 @@ pytest-sugar
 mock
 requests
 docker
+python-dotenv
 
 # tools for CI
 pylint

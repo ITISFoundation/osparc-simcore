@@ -3,6 +3,7 @@ coverage
 pytest
 pytest-aiohttp
 pytest-cov
+python-dotenv
 pytest-instafail
 pytest-mock
 pytest-runner

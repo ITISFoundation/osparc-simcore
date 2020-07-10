@@ -24,6 +24,7 @@ websockets
 # fixtures
 Faker
 openapi-spec-validator
+python-dotenv
 jsonschema
 tenacity
 docker

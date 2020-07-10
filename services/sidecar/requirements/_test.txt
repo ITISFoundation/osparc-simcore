@@ -51,6 +51,7 @@ pytest-lazy-fixture==0.6.3  # via -r requirements/_test.in
 pytest-mock==3.2.0        # via -r requirements/_test.in
 pytest-sugar==0.9.4       # via -r requirements/_test.in
 pytest==5.4.3             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-lazy-fixture, pytest-mock, pytest-sugar
+python-dotenv==0.14.0     # via -r requirements/_test.in
 pytz==2019.3              # via -r requirements/_base.txt, celery
 requests==2.24.0          # via coveralls, docker
 six==1.14.0               # via -r requirements/_base.txt, astroid, docker, packaging, tenacity, websocket-client

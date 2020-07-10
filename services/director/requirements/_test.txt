@@ -42,6 +42,7 @@ pytest-mock==3.2.0        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.4       # via -r requirements/_test.in
 pytest==5.4.3             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-mock, pytest-sugar
+python-dotenv==0.14.0     # via -r requirements/_test.in
 pyyaml==5.3               # via -r requirements/_base.txt, aiohttp-apiset, openapi-spec-validator
 requests==2.22.0          # via -r requirements/_base.txt, codecov, coveralls, docker
 six==1.12.0               # via -r requirements/_base.txt, astroid, docker, openapi-spec-validator, packaging, tenacity, websocket-client
