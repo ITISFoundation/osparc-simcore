@@ -28,15 +28,19 @@ async function logIn(page, user, pass) {
   await page.waitForSelector('[osparc-test-id="loginPasswordFld"]');
   await page.type('[osparc-test-id="loginPasswordFld"]', pass);
   await utils.waitAndClick(page, '[osparc-test-id="loginSubmitBtn"]');
+
+  // NOTE: since environ WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0, the
+  // backend automatically creates session after registration is submitted
 }
 
 async function logOut(page) {
+  console.log("Logging out");
+
+
   await page.waitForSelector('[osparc-test-id="userMenuMainBtn"]', {
     visible: true,
     timeout: 1000
   });
-
-  console.log("Logging out");
   await utils.waitAndClick(page, '[osparc-test-id="userMenuMainBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuLogoutBtn"]');
 }
