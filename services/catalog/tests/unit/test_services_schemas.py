@@ -45,6 +45,8 @@ def diff_json_schemas(json_diff_script: Path, tmp_path_factory: Path) -> Callabl
     yield diff
 
 
-def test_generated_schema_correct(diff_json_schemas: Callable, node_meta_schema: Dict):
+def test_generated_schema_same_as_original(
+    diff_json_schemas: Callable, node_meta_schema: Dict
+):
     generated_schema = json.loads(ServiceData.schema_json(indent=2))
     assert diff_json_schemas(node_meta_schema, generated_schema)

@@ -50,7 +50,9 @@ def test_docker_compose_file(pytestconfig) -> Path:
 
 
 @pytest.fixture(scope="session")
-def docker_compose_file(test_environment: Dict[str, str], tmpdir_factory, test_docker_compose_file) -> Path:
+def docker_compose_file(
+    test_environment: Dict[str, str], tmpdir_factory, test_docker_compose_file
+) -> Path:
     # Overrides fixture in https://github.com/avast/pytest-docker
 
     environ = dict(

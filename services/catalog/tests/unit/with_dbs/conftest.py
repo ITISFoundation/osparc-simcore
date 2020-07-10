@@ -27,7 +27,6 @@ def app(
     test_environment: Dict[str, str],  # pytest_simcore.postgres_service2
     apply_migration,  # pytest_simcore.postgres_service2
 ) -> FastAPI:
-
     # Emulates environ so settings can get config
     for key, value in test_environment.items():
         monkeypatch.setenv(key, value)
