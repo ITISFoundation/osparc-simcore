@@ -65,11 +65,11 @@ def _print_services(docker_client: docker.client.DockerClient, msg: str) -> None
 def docker_stack(
     docker_swarm,
     docker_client: docker.client.DockerClient,
-    core_services_config_file: Path,
-    ops_services_config_file: Path,
+    core_docker_compose_file: Path,
+    ops_docker_compose_file: Path,
     keep_docker_up: bool,
 ) -> Dict:
-    stacks = {"simcore": core_services_config_file, "ops": ops_services_config_file}
+    stacks = {"simcore": core_docker_compose_file, "ops": ops_docker_compose_file}
 
     # make up-version
     stacks_up = []

@@ -13,6 +13,8 @@ import jsonschema
 import pytest
 import tenacity
 
+from .helpers.utils_docker import get_ip
+
 log = logging.getLogger(__name__)
 
 
@@ -59,7 +61,11 @@ def docker_registry(keep_docker_up: bool) -> str:
     docker_client.images.remove(image=private_image.id)
 
     # necessary for old school configs
-    os.environ["REGISTRY_URL"] = url
+    os.environ["REGISTRY_SSL"] = "False"
+    os.environ["REGISTRY_AUTH"] = "False"
+    os.environ[
+        "REGISTRY_URL"
+    ] = f"{get_ip()}:5000"  # this needs to be set like this to access from docker containers
     os.environ["REGISTRY_USER"] = "simcore"
     os.environ["REGISTRY_PW"] = ""
 
