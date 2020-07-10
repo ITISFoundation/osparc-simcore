@@ -28,7 +28,7 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 
 @pytest.fixture(scope="session")
-def env_devel_file(project_slug_dir: Path) -> Path:
+def env_devel_file2(project_slug_dir: Path) -> Path:
     # takes as a bas
     env_devel_path = project_slug_dir / ".env-devel"
     assert env_devel_path.exists()
@@ -36,8 +36,8 @@ def env_devel_file(project_slug_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def test_environment(env_devel_file: Path) -> Dict[str, str]:
-    env = dotenv_values(env_devel_file, verbose=True, interpolate=True)
+def test_environment(env_devel_file2: Path) -> Dict[str, str]:
+    env = dotenv_values(env_devel_file2, verbose=True, interpolate=True)
     return env
 
 
