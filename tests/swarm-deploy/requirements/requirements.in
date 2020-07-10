@@ -1,5 +1,6 @@
 aio-pika
 alembic
+click
 coverage
 pytest
 pytest-aiohttp

@@ -29,6 +29,7 @@ certifi==2020.6.20        # via requests
 cffi==1.14.0              # via -r requirements/_base.txt, cryptography
 change-case==0.5.2        # via -r requirements/_base.txt
 chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, requests
+click==7.1.2              # via -r requirements/_test.in
 codecov==2.1.7            # via -r requirements/_test.in
 coverage==5.2             # via -r requirements/_test.in, codecov, coveralls, pytest-cov
 coveralls==2.1.1          # via -r requirements/_test.in

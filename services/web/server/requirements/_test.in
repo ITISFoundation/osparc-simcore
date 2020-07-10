@@ -23,6 +23,7 @@ websockets
 
 # fixtures
 alembic
+click
 Faker
 openapi-spec-validator
 python-dotenv

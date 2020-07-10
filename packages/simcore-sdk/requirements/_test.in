@@ -18,6 +18,7 @@ pytest-sugar
 
 # mockups/fixtures
 alembic
+click
 mock
 requests
 docker
