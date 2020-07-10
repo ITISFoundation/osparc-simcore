@@ -10,6 +10,7 @@ import sqlalchemy as sa
 import tenacity
 from sqlalchemy.orm import sessionmaker
 
+import simcore_postgres_database.cli as pg_cli
 from servicelib.aiopg_utils import DSN, PostgresRetryPolicyUponInitialization
 from simcore_postgres_database.models.base import metadata
 
@@ -36,18 +37,35 @@ def postgres_dsn(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
 
 
 @pytest.fixture(scope="module")
-def postgres_db(postgres_dsn: Dict[str, str], docker_stack: Dict) -> sa.engine.Engine:
+def postgres_engine(
+    postgres_dsn: Dict[str, str], docker_stack: Dict
+) -> sa.engine.Engine:
     url = DSN.format(**postgres_dsn)
     # Attempts until responsive
     wait_till_postgres_is_responsive(url)
     # Configures db and initializes tables
     engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
-    metadata.create_all(bind=engine, checkfirst=True)
 
     yield engine
 
-    metadata.drop_all(engine)
     engine.dispose()
+
+
+@pytest.fixture(scope="module")
+def postgres_db(
+    postgres_dsn: Dict, postgres_engine: sa.engine.Engine
+) -> sa.engine.Engine:
+    # migrate the database
+    kwargs = postgres_dsn.copy()
+    pg_cli.discover.callback(**kwargs)
+    pg_cli.upgrade.callback("head")
+    yield postgres_engine
+
+    pg_cli.downgrade.callback("base")
+    pg_cli.clean.callback()
+
+    # FIXME: deletes all because downgrade is not reliable!
+    metadata.drop_all(postgres_engine)
 
 
 @pytest.fixture(scope="module")

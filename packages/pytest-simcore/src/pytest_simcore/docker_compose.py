@@ -7,6 +7,7 @@
 # pylint:disable=redefined-outer-name
 
 import os
+import pdb
 import re
 import shutil
 import socket
@@ -17,6 +18,7 @@ from typing import Dict, List
 
 import pytest
 import yaml
+from dotenv import dotenv_values
 
 from .helpers.utils_docker import run_docker_compose_config
 
@@ -26,15 +28,14 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
     """ Loads and extends .env-devel returning
         all environment variables key=value
     """
-    key_eq_value_pattern = re.compile(r"^(\w+)=(.*)$")
-    env_devel = {}
-    with env_devel_file.open() as fh:
-        for line in fh:
-            match = key_eq_value_pattern.match(line)
-            if match:
-                key, value = match.groups()
-                env_devel[key] = str(value)
 
+    env_devel_unresolved = dotenv_values(env_devel_file, verbose=True, interpolate=True)
+    # get from environ if applicable
+    env_devel = {
+        key: os.environ.get(key, value) for key, value in env_devel_unresolved.items()
+    }
+
+    # TODO: SAN this could be made better.. by using the docker bridge maybe but for sure the variables shall be set in the environ by the docker registry
     # Customized EXTENSION: overrides some of the environ to accomodate the test case ----
     if "REGISTRY_SSL" in env_devel:
         env_devel["REGISTRY_SSL"] = "False"

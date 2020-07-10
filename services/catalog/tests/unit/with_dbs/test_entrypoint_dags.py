@@ -8,6 +8,10 @@ from simcore_service_catalog.__version__ import api_version
 from simcore_service_catalog.models.schemas.meta import Meta
 
 
+core_services = ["postgres"]
+ops_services = ["adminer"]
+
+
 def test_read_healthcheck(client):
     response = client.get("/")
     assert response.status_code == 200

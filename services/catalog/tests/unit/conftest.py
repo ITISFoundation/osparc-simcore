@@ -12,8 +12,11 @@ import pytest
 import simcore_service_catalog
 
 pytest_plugins = [
-    "pytest_simcore.environs",  # NOTE: environs shall come before postgres_service2
-    "pytest_simcore.postgres_service2",
+    "pytest_simcore.environs",
+    "pytest_simcore.service_environs",
+    "pytest_simcore.docker_compose",
+    "pytest_simcore.docker_swarm",
+    "pytest_simcore.postgres_service",
     "pytest_simcore.schemas",
 ]
 

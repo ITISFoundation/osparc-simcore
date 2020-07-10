@@ -7,28 +7,23 @@ from pathlib import Path
 from typing import Dict
 
 import pytest
+import sqlalchemy as sa
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
+from pytest_simcore.docker_compose import devel_environ
+from pytest_simcore.postgres_service import postgres_db
 from simcore_service_catalog.core.application import init_app
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
-@pytest.fixture(scope="session")
-def test_docker_compose_file() -> Path:
-    # OVERRIDES pytest_simcore.postgres_service2.test_docker_compose_file
-    return current_dir / "docker-compose.yml"
-
-
 @pytest.fixture
 def app(
-    monkeypatch,
-    test_environment: Dict[str, str],  # pytest_simcore.postgres_service2
-    apply_migration,  # pytest_simcore.postgres_service2
+    monkeypatch, devel_environ: Dict[str, str], postgres_db: sa.engine.Engine
 ) -> FastAPI:
     # Emulates environ so settings can get config
-    for key, value in test_environment.items():
+    for key, value in devel_environ.items():
         monkeypatch.setenv(key, value)
 
     app = init_app()
