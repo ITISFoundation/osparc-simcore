@@ -796,8 +796,14 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-      - name: install
-        run: ./ci/github/system-testing/e2e.bash install
+      #- name: install
+      #  run: ./ci/github/system-testing/e2e.bash install
+      - name: setup_images
+        run: ./ci/github/system-testing/e2e.bash setup_images
+      - name: setup_environment
+        run: ./ci/github/system-testing/e2e.bash setup_environment
+      - name: setup_testing
+        run: ./ci/github/system-testing/e2e.bash setup_testing
       - name: test
         run: ./ci/github/system-testing/e2e.bash test
       - name: recover docker logs
