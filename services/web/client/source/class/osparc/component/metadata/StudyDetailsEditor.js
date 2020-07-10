@@ -282,11 +282,11 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         data
       };
       osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "put", params)
-        .then(data => {
+        .then(studyData => {
           btn.resetIcon();
           btn.getChildControl("icon").getContentElement()
             .removeClass("rotate");
-          this.__studyModel.set(data);
+          this.__studyModel.set(studyData);
           this.setMode("display");
           this.fireEvent(isTemplate ? "updateTemplate" : "updateStudy");
         })

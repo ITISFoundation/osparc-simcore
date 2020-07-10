@@ -23,12 +23,12 @@ qx.Class.define("osparc.ui.window.Window", {
       );
       if (modalFrame) {
         modalFrame.addEventListener("click", () => {
-          if (this.isModal() && this.isClickAwayClose()
-            && parseInt(modalFrame.style.zIndex) === parseInt(thisDom.style.zIndex) - 1) {
+          if (this.isModal() && this.isClickAwayClose() &&
+            parseInt(modalFrame.style.zIndex) === parseInt(thisDom.style.zIndex) - 1) {
             this.close();
           }
         });
-        modalFrame.style.backgroundColor = 'black';
+        modalFrame.style.backgroundColor = "black";
         modalFrame.style.opacity = 0.4;
       }
     });
