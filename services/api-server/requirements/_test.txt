@@ -23,12 +23,12 @@ chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, httpx, reque
 click==7.1.2              # via -r requirements/_base.txt, uvicorn
 codecov==2.1.7            # via -r requirements/_test.in
 contextvars==2.4          # via -r requirements/_base.txt, sniffio
-coverage==5.1             # via codecov, coveralls, pytest-cov
-coveralls==2.0.0          # via -r requirements/_test.in
+coverage==5.2             # via codecov, coveralls, pytest-cov
+coveralls==2.1.1          # via -r requirements/_test.in
 cryptography==2.9.2       # via -r requirements/_base.txt
 dataclasses==0.7          # via -r requirements/_base.txt, pydantic
 dnspython==1.16.0         # via -r requirements/_base.txt, email-validator
-docker==4.2.1             # via -r requirements/_test.in
+docker==4.2.2             # via -r requirements/_test.in
 docopt==0.6.2             # via coveralls
 email-validator==1.1.1    # via -r requirements/_base.txt, fastapi
 faker==4.1.1              # via -r requirements/_test.in
@@ -47,7 +47,7 @@ hyperframe==5.2.0         # via -r requirements/_base.txt, h2
 idna-ssl==1.1.0           # via aiohttp
 idna==2.9                 # via -r requirements/_base.txt, email-validator, httpx, requests, yarl
 immutables==0.14          # via -r requirements/_base.txt, contextvars
-importlib-metadata==1.6.1  # via pluggy, pytest
+importlib-metadata==1.7.0  # via pluggy, pytest
 isort==4.3.21             # via pylint
 itsdangerous==1.1.0       # via -r requirements/_base.txt, fastapi
 jinja2==2.11.2            # via -r requirements/_base.txt, -r requirements/_test.in, fastapi
@@ -64,7 +64,7 @@ pluggy==0.13.1            # via pytest
 promise==2.3              # via -r requirements/_base.txt, graphql-core, graphql-relay
 psycopg2-binary==2.8.5    # via -r requirements/_base.txt, aiopg, sqlalchemy
 ptvsd==4.3.2              # via -r requirements/_test.in
-py==1.8.2                 # via pytest
+py==1.9.0                 # via pytest
 pycparser==2.20           # via -r requirements/_base.txt, cffi
 pydantic[dotenv]==1.5.1   # via -r requirements/_base.txt, fastapi
 pylint==2.5.3             # via -r requirements/_test.in
@@ -72,7 +72,7 @@ pyparsing==2.4.7          # via packaging
 pytest-aiohttp==0.3.0     # via -r requirements/_test.in
 pytest-cov==2.10.0        # via -r requirements/_test.in
 pytest-docker==0.7.2      # via -r requirements/_test.in
-pytest-mock==3.1.1        # via -r requirements/_test.in
+pytest-mock==3.2.0        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest==5.4.3             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-mock
 python-dateutil==2.8.1    # via alembic, faker
