@@ -273,10 +273,6 @@ jobs:
             ${{ runner.os }}-pip-
       - name: install
         run: ./ci/github/unit-testing/frontend.bash install
-      - name: debug
-        run: |
-          cat /home/runner/work/osparc-simcore/osparc-simcore/services/web/client/source/class/osparc/component/metadata/StudyDetailsEditor.js
-          cat /home/runner/work/osparc-simcore/osparc-simcore/services/web/client/source/class/osparc/ui/window/Window.js
       - name: test
         run: ./ci/github/unit-testing/frontend.bash test
     # no coverage here??
