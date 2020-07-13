@@ -28,10 +28,10 @@ def create_tables(dsn: URL):
         engine.dispose()
 
 
-def raise_if_not_responsive(dsn: URL):
+def raise_if_not_responsive(dsn: URL, *, verbose=False):
     """ checks whether database is responsive, otherwise it throws exception"""
     try:
-        engine: Engine = sa.create_engine(str(dsn))
+        engine: Engine = sa.create_engine(str(dsn), echo=verbose, echo_pool=verbose)
         conn = engine.connect()
         conn.close()
     finally:

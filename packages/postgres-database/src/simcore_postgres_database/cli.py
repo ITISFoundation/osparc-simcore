@@ -161,7 +161,7 @@ def discover(**cli_inputs) -> Optional[Dict]:
 
             click.echo(" ping {0.__name__}: {1} ...".format(test, url))
 
-            raise_if_not_responsive(url)
+            raise_if_not_responsive(url, verbose=True)
             with open(discovered_cache, "w") as fh:
                 json.dump(cfg, fh, sort_keys=True, indent=4)
 
