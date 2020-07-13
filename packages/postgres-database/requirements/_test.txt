@@ -13,7 +13,7 @@ attrs==19.3.0             # via aiohttp, pytest, pytest-docker
 certifi==2020.6.20        # via -r requirements/_migration.txt, requests
 chardet==3.0.4            # via -r requirements/_migration.txt, aiohttp, requests
 click==7.1.2              # via -r requirements/_migration.txt
-coverage==5.1             # via -r requirements/_test.in, coveralls, pytest-cov
+coverage==5.2             # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==2.0.0          # via -r requirements/_test.in
 docker==4.2.2             # via -r requirements/_migration.txt
 docopt==0.6.2             # via coveralls
