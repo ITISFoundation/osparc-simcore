@@ -195,7 +195,7 @@ class TutorialBase {
     await auto.toDashboard(this.__page);
     await utils.takeScreenshot(this.__page, this.__templateName + "_dashboardDeleteFirstStudy_before");
     this.__responsesQueue.addResponseListener("projects/");
-    await auto.dashboardDeleteFirstStudy(this.__page);
+    await auto.dashboardDeleteFirstStudy(this.__page, this.__templateName);
     try {
       await this.__responsesQueue.waitUntilResponse("projects/");
     }

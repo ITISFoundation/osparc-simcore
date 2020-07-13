@@ -151,6 +151,14 @@ async function dashboardOpenFirstTemplate(page, templateName) {
   await utils.waitAndClick(page, firstChildId);
 }
 
+async function __filterStudiesByText(page, studyName) {
+  console.log("Filtering by", studyName);
+
+  await utils.waitAndClick(page, '[osparc-test-id="studyFiltersTextFld"]')
+  await page.type('[osparc-test-id="studyFiltersTextFld"]', studyName)
+  await page.keyboard.press('Enter')
+}
+
 async function __filterTemplatesByText(page, templateName) {
   console.log("Filtering by", templateName);
 
@@ -191,10 +199,15 @@ async function runStudy(page, waitFor = 0) {
   await page.waitFor(waitFor);
 }
 
-async function dashboardDeleteFirstStudy(page) {
+async function dashboardDeleteFirstStudy(page, studyName) {
   console.log("Deleting first study")
 
   await utils.waitAndClick(page, '[osparc-test-id="studiesTabBtn"]')
+
+  if (studyName) {
+    await __filterStudiesByText(page, studyName);
+  }
+
   await utils.waitAndClick(page, '[osparc-test-id="userStudiesList"] > .qx-pb-listitem:nth-child(1) > [osparc-test-id="studyItemMenuButton"]')
   await utils.waitAndClick(page, '[osparc-test-id="studyItemMenuDelete"]')
   await utils.waitAndClick(page, '[osparc-test-id="confirmDeleteStudyBtn"]')
