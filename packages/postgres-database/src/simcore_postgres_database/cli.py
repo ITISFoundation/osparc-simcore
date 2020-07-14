@@ -160,7 +160,7 @@ def discover(**cli_inputs) -> Optional[Dict]:
             url = build_url(**cfg)
 
             print("ping", test, url)
-            click.echo(" ping {0.__name__}: {1} ...".format(test, url))
+            ## click.echo(" ping {0.__name__}: {1} ...".format(test, url))
 
             print("raise_if_not_responsive", url)
             raise_if_not_responsive(url, verbose=True)
