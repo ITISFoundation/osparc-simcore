@@ -162,10 +162,11 @@ def discover(**cli_inputs) -> Optional[Dict]:
             click.echo(" ping {0.__name__}: {1} ...".format(test, url))
 
             raise_if_not_responsive(url, verbose=True)
-            with open(discovered_cache, "w") as fh:
+
+            click.echo(f"Saving config at {discovered_cache}: {cfg}")
+            with open(discovered_cache, "wt") as fh:
                 json.dump(cfg, fh, sort_keys=True, indent=4)
 
-            click.echo(f"Saved config at{discovered_cache}: {cfg}")
             click.secho(
                 f"{test.__name__} succeeded: {url} is online",
                 blink=False,
