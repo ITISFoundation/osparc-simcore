@@ -153,9 +153,11 @@ def discover(**cli_inputs) -> Optional[Dict]:
 
     for test in [_test_cached, _test_env, _test_swarm]:
         try:
-            click.echo("-> {0.__name__}: {0.__doc__}".format(test))
-
+            # click.echo("-> {0.__name__}: {0.__doc__}".format(test))
+            print("-> {0.__name__}: {0.__doc__}".format(test))
+            print("before test")
             cfg: Dict = test()
+            print("after test")
             cfg.update(cli_cfg)  # CLI always overrides
             url = build_url(**cfg)
 
@@ -170,6 +172,7 @@ def discover(**cli_inputs) -> Optional[Dict]:
             with open(discovered_cache, "wt") as fh:
                 json.dump(cfg, fh, sort_keys=True, indent=4)
 
+            print("Saving config at ")
             click.secho(
                 f"{test.__name__} succeeded: {url} is online",
                 blink=False,
@@ -181,7 +184,10 @@ def discover(**cli_inputs) -> Optional[Dict]:
 
         except Exception as err:
             inline_msg = str(err).replace("\n", ". ")
+            print("<- {0.__name__} failed : {1}".format(test, inline_msg))
             click.echo("<- {0.__name__} failed : {1}".format(test, inline_msg))
+        except: #pytest: disable=bare-except
+            print("---------->>>>")
 
     _reset_cache()
     click.secho("Sorry, database not found !!", blink=False, bold=True, fg="red")
