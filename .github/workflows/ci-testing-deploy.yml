@@ -803,7 +803,7 @@ jobs:
       - name: setup registry
         run: ./ci/github/system-testing/e2e.bash setup_registry
       - name: setup database
-        timeout-minutes: 10
+        timeout-minutes: 5
         run: ./ci/github/system-testing/e2e.bash setup_database
       - name: test
         run: ./ci/github/system-testing/e2e.bash test
