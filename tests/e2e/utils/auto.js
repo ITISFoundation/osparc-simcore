@@ -208,9 +208,16 @@ async function dashboardDeleteFirstStudy(page, studyName) {
     await __filterStudiesByText(page, studyName);
   }
 
-  await utils.waitAndClick(page, '[osparc-test-id="userStudiesList"] > .qx-pb-listitem:nth-child(1) > [osparc-test-id="studyItemMenuButton"]')
-  await utils.waitAndClick(page, '[osparc-test-id="studyItemMenuDelete"]')
-  await utils.waitAndClick(page, '[osparc-test-id="confirmDeleteStudyBtn"]')
+  await page.waitForSelector('[osparc-test-id="userStudiesList"]')
+  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="userStudiesList"]');
+  if (children.length === 0) {
+    console.log("Deleting first Study: no study found");
+    return;
+  }
+  const firstChildId = '[osparc-test-id="' + children[0] + '"]';
+  await utils.waitAndClick(page, firstChildId + ' > [osparc-test-id="studyItemMenuButton"]');
+  await utils.waitAndClick(page, '[osparc-test-id="studyItemMenuDelete"]');
+  await utils.waitAndClick(page, '[osparc-test-id="confirmDeleteStudyBtn"]');
 }
 
 async function openNode(page, pos) {
