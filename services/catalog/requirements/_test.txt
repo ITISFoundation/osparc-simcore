@@ -18,11 +18,11 @@ certifi==2020.6.20        # via -r requirements/_base.txt, requests
 chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, requests
 click==7.1.2              # via -r requirements/_base.txt, uvicorn
 codecov==2.1.7            # via -r requirements/_test.in
-coverage==5.1             # via codecov, coveralls, pytest-cov
-coveralls==2.0.0          # via -r requirements/_test.in
+coverage==5.2             # via codecov, coveralls, pytest-cov
+coveralls==2.1.1          # via -r requirements/_test.in
 dataclasses==0.7          # via -r requirements/_base.txt, pydantic
 dnspython==1.16.0         # via -r requirements/_base.txt, email-validator
-docker==4.2.1             # via -r requirements/_test.in
+docker==4.2.2             # via -r requirements/_test.in
 docopt==0.6.2             # via coveralls
 email-validator==1.1.1    # via -r requirements/_base.txt, fastapi
 faker==4.1.1              # via -r requirements/_test.in
@@ -34,7 +34,7 @@ h11==0.9.0                # via -r requirements/_base.txt, uvicorn
 httptools==0.1.1          # via -r requirements/_base.txt, uvicorn
 idna-ssl==1.1.0           # via aiohttp
 idna==2.9                 # via -r requirements/_base.txt, email-validator, requests, yarl
-importlib-metadata==1.6.1  # via pluggy, pytest
+importlib-metadata==1.7.0  # via pluggy, pytest
 isort==4.3.21             # via pylint
 itsdangerous==1.1.0       # via -r requirements/_base.txt, fastapi
 jinja2==2.11.2            # via -r requirements/_base.txt, fastapi
@@ -57,7 +57,7 @@ pyparsing==2.4.7          # via packaging
 pytest-aiohttp==0.3.0     # via -r requirements/_test.in
 pytest-cov==2.10.0        # via -r requirements/_test.in
 pytest-docker==0.7.2      # via -r requirements/_test.in
-pytest-mock==3.1.1        # via -r requirements/_test.in
+pytest-mock==3.2.0        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest==5.4.3             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-mock
 python-dateutil==2.8.1    # via alembic, faker
