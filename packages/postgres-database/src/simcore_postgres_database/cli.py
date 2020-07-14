@@ -155,7 +155,7 @@ def discover(**cli_inputs) -> Optional[Dict]:
         try:
             click.echo("-> {0.__name__}: {0.__doc__}".format(test))
 
-            cfg = test()
+            cfg: Dict = test()
             cfg.update(cli_cfg)  # CLI always overrides
             url = build_url(**cfg)
 

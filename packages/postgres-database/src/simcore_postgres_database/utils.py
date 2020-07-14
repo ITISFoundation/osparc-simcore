@@ -33,7 +33,7 @@ def raise_if_not_responsive(dsn: URL, *, verbose=False):
     """ checks whether database is responsive, otherwise it throws exception"""
     try:
         print("DEBUG: < --- Creating engine")
-        engine: Engine = sa.create_engine(str(dsn), echo=verbose, echo_pool=verbose)
+        engine: Engine = sa.create_engine(str(dsn), echo=verbose, echo_pool=verbose, pool_timeout=5)
         print("DEBUG: engine", engine)
         conn = engine.connect()
         print("DEBUG: conn", conn)
@@ -43,4 +43,5 @@ def raise_if_not_responsive(dsn: URL, *, verbose=False):
         print("ERROR")
         logging.exception("DB Not responsive")
     finally:
+        print("Finally, let's dispose")
         engine.dispose()
