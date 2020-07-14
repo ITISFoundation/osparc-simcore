@@ -153,21 +153,21 @@ def discover(**cli_inputs) -> Optional[Dict]:
 
     for test in [_test_cached, _test_env, _test_swarm]:
         try:
-            # click.echo("-> {0.__name__}: {0.__doc__}".format(test))
-            print("-> {0.__name__}: {0.__doc__}".format(test))
-            print("before test")
+            click.echo("-> {0.__name__}: {0.__doc__}".format(test))
+            click.echo("before test")
             cfg: Dict = test()
-            print("after test")
+            click.echo("after test")
             cfg.update(cli_cfg)  # CLI always overrides
             url = build_url(**cfg)
 
-            print("ping", test, url)
+            click.echo(f"ping {test} {url}")
+            print(f"ping {test} {url}")
             ## click.echo(" ping {0.__name__}: {1} ...".format(test, url))
 
-            print("raise_if_not_responsive", url)
+            click.echo("raise_if_not_responsive", url)
             raise_if_not_responsive(url, verbose=True)
 
-            print("Saving config at ")
+            print("Saving config ")
             click.echo(f"Saving config at {discovered_cache}: {cfg}")
             with open(discovered_cache, "wt") as fh:
                 json.dump(cfg, fh, sort_keys=True, indent=4)
