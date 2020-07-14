@@ -796,8 +796,6 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-      #- name: install
-      #  run: ./ci/github/system-testing/e2e.bash install
       - name: setup images
         run: ./ci/github/system-testing/e2e.bash setup_images
       - name: setup environment
