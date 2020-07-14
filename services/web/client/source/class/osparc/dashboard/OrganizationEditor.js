@@ -34,10 +34,9 @@ qx.Class.define("osparc.dashboard.OrganizationEditor", {
 
   statics: {
     popUpInWindow: function(title, organizationEditor, width = 300, height = 200) {
-      const win = new qx.ui.window.Window(title).set({
+      const win = new osparc.ui.window.Window(title).set({
         autoDestroy: true,
         layout: new qx.ui.layout.VBox(),
-        appearance: "service-window",
         showMinimize: false,
         showMaximize: false,
         resizable: true,

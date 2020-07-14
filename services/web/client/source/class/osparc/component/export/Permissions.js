@@ -68,8 +68,7 @@ qx.Class.define("osparc.component.export.Permissions", {
     },
 
     createWindow: function(winText, shareResourceWidget) {
-      const window = new qx.ui.window.Window(winText).set({
-        appearance: "service-window",
+      const window = new osparc.ui.window.Window(winText).set({
         layout: new qx.ui.layout.Grow(),
         autoDestroy: true,
         contentPadding: 10,
@@ -77,7 +76,8 @@ qx.Class.define("osparc.component.export.Permissions", {
         height: 300,
         showMaximize: false,
         showMinimize: false,
-        modal: true
+        modal: true,
+        clickAwayClose: true
       });
       window.add(shareResourceWidget);
       window.center();
@@ -141,7 +141,9 @@ qx.Class.define("osparc.component.export.Permissions", {
       const collaboratorsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
-        width: 150
+        width: 150,
+        padding: 0,
+        backgroundColor: "material-button-background"
       });
 
       const collaboratorsModel = this.__collaboratorsModel = new qx.data.Array();

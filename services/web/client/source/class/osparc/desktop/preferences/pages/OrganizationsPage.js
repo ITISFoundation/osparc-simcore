@@ -63,6 +63,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
     __getOrganizationsSection: function() {
       const box = this._createSectionBox(this.tr("Organizations"));
       box.add(this.__getOrganizationsList());
+      box.setContentPadding(0);
       return box;
     },
 
@@ -71,7 +72,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         decorator: "no-border",
         spacing: 3,
         height: 150,
-        width: 150
+        width: 150,
+        backgroundColor: "material-button-background"
       });
       orgsUIList.addListener("changeSelection", e => {
         this.__organizationSelected(e.getData());
@@ -112,6 +114,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       box.add(this.__getMembersList(), {
         flex: 1
       });
+      box.setContentPadding(0);
       return box;
     },
 
@@ -147,7 +150,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const memebersUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
-        width: 150
+        width: 150,
+        backgroundColor: "material-button-background"
       });
 
       const membersModel = this.__membersModel = new qx.data.Array();

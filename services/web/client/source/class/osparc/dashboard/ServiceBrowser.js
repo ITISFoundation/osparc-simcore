@@ -274,8 +274,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __displayServiceSubmissionForm: function(formData) {
-      const addServiceWindow = new qx.ui.window.Window(this.tr("Submit a new service")).set({
-        appearance: "service-window",
+      const addServiceWindow = new osparc.ui.window.Window(this.tr("Submit a new service")).set({
         modal: true,
         autoDestroy: true,
         showMinimize: false,
