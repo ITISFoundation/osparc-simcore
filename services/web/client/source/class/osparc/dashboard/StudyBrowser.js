@@ -230,7 +230,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getStudyAndStart: function(loadStudyId) {
-      osparc.store.Store.getStudyWState(loadStudyId, true)
+      osparc.store.Store.getInstance().getStudyWState(loadStudyId, true)
         .then(studyData => {
           this.__startStudy(studyData);
         })
