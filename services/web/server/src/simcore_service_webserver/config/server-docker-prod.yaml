@@ -31,7 +31,7 @@ db:
     password: ${POSTGRES_PASSWORD}
     host: ${POSTGRES_HOST}
     port: ${POSTGRES_PORT}
-    minsize: 4
+    minsize: 10
     maxsize: 15
 resource_manager:
   enabled: True
