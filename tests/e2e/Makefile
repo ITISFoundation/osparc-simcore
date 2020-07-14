@@ -34,6 +34,7 @@ install: ## install testing framework
 pg-db-tables: ## inits pg database tables
 	# Cleaning up tables
 	sc-pg clean
+	-sc-pg info
 	# Discovering database
 	sc-pg discover -u scu -p adminadmin -d simcoredb
 	# Upgrading database
