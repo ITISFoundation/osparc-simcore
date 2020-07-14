@@ -41,8 +41,7 @@ setup_environment() {
   popd
 }
 
-setup_testing() {
-  make .venv
+setup_registry() {
   # shellcheck disable=SC1091
   source .venv/bin/activate
   pushd tests/e2e
@@ -52,17 +51,24 @@ setup_testing() {
   make wait-for-services
   echo "--------------- transfering the images to the local registry..."
   make transfer-images-to-registry
+  popd
+}
+
+setup_database() {
+  # shellcheck disable=SC1091
+  source .venv/bin/activate
+  pushd tests/e2e
   echo "--------------- injecting templates in postgres db..."
   make pg-db-tables
   make inject-templates-in-db
   popd
 }
 
-
 install() {
   setup_images
   setup_environment
-  setup_testing
+  setup_registry
+  setup_database
 }
 
 test() {

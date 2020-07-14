@@ -32,9 +32,13 @@ install: ## install testing framework
 
 .PHONY: pg-db-tables
 pg-db-tables: ## inits pg database tables
-	# Initializing tables
+	# Cleaning up tables
+	sc-pg clean
+	# Discovering database
 	sc-pg discover -u scu -p adminadmin -d simcoredb
+	# Upgrading database
 	sc-pg upgrade
+	sc-pg info
 	sc-pg clean
 
 
@@ -64,6 +68,7 @@ transfer-images-to-registry: ## transfer images to registry
 PUBLISHED_PORT = $(shell docker inspect $(shell docker service ls --format "{{ .Name }}" | grep postgres) --format "{{(index .Endpoint.Ports 0).PublishedPort}}")
 .PHONY: inject-templates-in-db
 inject-templates-in-db: ## inject project templates
+	# Injecting fixture tables in database
 	@PGPASSWORD=adminadmin psql --host localhost \
 								--port $(PUBLISHED_PORT) \
 								--user scu \

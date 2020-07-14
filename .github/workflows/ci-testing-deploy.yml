@@ -798,12 +798,14 @@ jobs:
             ${{ runner.os }}-node-
       #- name: install
       #  run: ./ci/github/system-testing/e2e.bash install
-      - name: setup_images
+      - name: setup images
         run: ./ci/github/system-testing/e2e.bash setup_images
-      - name: setup_environment
+      - name: setup environment
         run: ./ci/github/system-testing/e2e.bash setup_environment
-      - name: setup_testing
-        run: ./ci/github/system-testing/e2e.bash setup_testing
+      - name: setup registry
+        run: ./ci/github/system-testing/e2e.bash setup_registry
+      - name: setup database
+        run: ./ci/github/system-testing/e2e.bash setup_database
       - name: test
         run: ./ci/github/system-testing/e2e.bash test
       - name: recover docker logs
