@@ -81,6 +81,7 @@ async def listen(app: web.Application):
             task_output = node_data["outputs"]
             node_id = node_data["node_id"]
             project_id = node_data["project_id"]
+
             # FIXME: we do not know who triggered these changes. we assume the user had the rights to do so
             # therefore we'll use the prj_owner user id. This should be fixed when the new sidecar comes in
             # and comp_tasks/comp_pipeline get deprecated.
@@ -89,7 +90,7 @@ async def listen(app: web.Application):
             result = await conn.execute(
                 select([projects]).where(projects.c.uuid == project_id)
             )
-            the_project: RowProxy = result.fetchone()
+            the_project: RowProxy = await result.fetchone()
             if not the_project:
                 log.warning(
                     "Project %s was not found and cannot be updated", project_id

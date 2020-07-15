@@ -439,31 +439,34 @@ async def _get_service_state(
         tasks = await client.tasks.list(filters={"service": service_name})
         # only keep the ones with the right service ID (we're being a bit picky maybe)
         tasks = [x for x in tasks if x["ServiceID"] == service["ID"]]
+
         # we are only interested in the last task which has index 0
         if tasks:
             last_task = tasks[0]
             task_state = last_task["Status"]["State"]
             log.debug("%s %s", service["ID"], task_state)
-            simcore_state = ServiceState.STARTING
-            simcore_message = (
+
+            last_task_state = ServiceState.STARTING # default
+            last_task_error_msg = (
                 last_task["Status"]["Err"] if "Err" in last_task["Status"] else ""
             )
             if task_state in ("failed", "rejected"):
                 log.error(
                     "service %s failed with %s", service_name, last_task["Status"]
                 )
-                simcore_state = ServiceState.FAILED
+                last_task_state = ServiceState.FAILED
             elif task_state in ("pending"):
-                simcore_state = ServiceState.PENDING
+                last_task_state = ServiceState.PENDING
             elif task_state in ("assigned", "accepted", "preparing"):
-                simcore_state = ServiceState.PULLING
+                last_task_state = ServiceState.PULLING
             elif task_state in ("ready", "starting"):
-                simcore_state = ServiceState.STARTING
+                last_task_state = ServiceState.STARTING
             elif task_state in ("running"):
-                simcore_state = ServiceState.RUNNING
+                last_task_state = ServiceState.RUNNING
             elif task_state in ("complete", "shutdown"):
-                simcore_state = ServiceState.COMPLETE
-            return (simcore_state, simcore_message)
+                last_task_state = ServiceState.COMPLETE
+            return (last_task_state, last_task_error_msg)
+
         # allows dealing with other events instead of wasting time here
         await asyncio.sleep(1)  # 1s
     log.debug("Waited for service %s to start", service_name)
@@ -600,6 +603,7 @@ async def _start_docker_service(
         service = await client.services.inspect(service["ID"])
         service_name = service["Spec"]["Name"]
         service_state, service_msg = await _get_service_state(client, service)
+
         # wait for service to start
         # await _wait_until_service_running_or_failed(client, service, node_uuid)
         log.debug("Service %s successfully started", service_name)
