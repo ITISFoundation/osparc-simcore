@@ -138,7 +138,8 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     __createFilterToolbar: function() {
       const toolbar = new qx.ui.toolbar.ToolBar();
 
-      const currentNodeButton = this.__currentNodeButton = new qx.ui.form.ToggleButton(this.tr("This node")).set({
+      const currentNodeButton = this.__currentNodeButton = new qx.ui.form.ToggleButton().set({
+        icon: "@FontAwesome5Solid/thumbtack/14",
         appearance: "toolbar-button"
       });
       currentNodeButton.addListener("changeValue", e => {

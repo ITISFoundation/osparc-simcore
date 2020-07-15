@@ -144,10 +144,9 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       toolBarBtns.forEach(toolBarBtn => {
         const pad = 5;
         const spa = 10;
-        const w = toolBarBtn.getSizeHint().width + pad + spa;
-        btnsWidth += w;
+        const width = toolBarBtn.getSizeHint().width + pad + spa;
+        btnsWidth += width;
       });
-      console.log("total", btnsWidth);
       this.__toolbarInitMinWidth = btnsWidth;
 
       return toolbar;
