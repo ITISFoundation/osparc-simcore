@@ -888,6 +888,18 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "excluded");
       });
 
+      let scale = 1;
+      this.addListener("mousewheel", mouseevent => {
+        scale += mouseevent.getWheelDelta() * -0.05;
+        scale = parseFloat(scale.toFixed(2));
+        const lowerLimit = 0.1;
+        const upperLimit = 3;
+        scale = Math.min(Math.max(lowerLimit, scale), upperLimit);
+
+        const domEl = this.getContentElement().getDomElement();
+        domEl.style.transform = `scale(${scale})`;
+      }, this);
+
       this.addListener("dbltap", e => {
         const [x, y] = this.__getPointEventPosition(e);
         const pos = {
