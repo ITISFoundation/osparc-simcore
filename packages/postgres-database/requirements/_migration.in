@@ -6,7 +6,7 @@
 
 urllib3>=1.25.8    # Vulnerability
 
-alembic==1.0.8
+alembic
 click
 docker # TODO: aiodocker
 tenacity
