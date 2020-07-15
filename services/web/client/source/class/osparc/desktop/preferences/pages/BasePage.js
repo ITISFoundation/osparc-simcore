@@ -46,6 +46,9 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
      */
     _createSectionBox: function(sectionName) {
       let box = new qx.ui.groupbox.GroupBox(sectionName);
+      box.getChildControl("frame").set({
+        backgroundColor: "transparent"
+      });
       box.setLayout(new qx.ui.layout.VBox(10));
       return box;
     },
