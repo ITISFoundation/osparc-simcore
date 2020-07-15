@@ -158,8 +158,10 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
         flex: 1
       });
 
-      const part = new qx.ui.toolbar.Part();
-      const group = new qx.ui.form.RadioGroup();
+      const logLevelSelectBox = new qx.ui.form.SelectBox().set({
+        appearance: "toolbar-selectbox",
+        maxWidth: 80
+      });
       let logLevelSet = false;
       for (let i=0; i<LOG_LEVEL.length; i++) {
         const level = Object.keys(LOG_LEVEL[i])[0];
@@ -167,22 +169,19 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
         if (level === "debug" && !osparc.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
           continue;
         }
-        const label = level.charAt(0).toUpperCase() + level.slice(1);
-        const button = new qx.ui.form.ToggleButton(label).set({
-          appearance: "toolbar-button"
-        });
-        button.logLevel = logLevel;
-        group.add(button);
-        part.add(button);
+        const label = qx.lang.String.firstUp(level);
+        const listItem = new qx.ui.form.ListItem(label);
+        logLevelSelectBox.add(listItem);
+        listItem.logLevel = logLevel;
         if (!logLevelSet) {
           this.setLogLevel(logLevel);
           logLevelSet = true;
         }
       }
-      group.addListener("changeValue", e => {
+      logLevelSelectBox.addListener("changeValue", e => {
         this.setLogLevel(e.getData().logLevel);
       }, this);
-      toolbar.add(part);
+      toolbar.add(logLevelSelectBox);
 
       return toolbar;
     },
