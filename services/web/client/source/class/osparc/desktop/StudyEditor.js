@@ -626,10 +626,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __attachEventHandlers: function() {
-      this.__blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
+      const blocker = this.getBlocker();
+      blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
 
       const maximizeIframeCb = msg => {
-        this.__blocker.setStyles({
+        blocker.setStyles({
           display: msg.getData() ? "none" : "block"
         });
         this.__scrollContainer.setVisibility(msg.getData() ? "excluded" : "visible");
