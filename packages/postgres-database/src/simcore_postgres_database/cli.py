@@ -40,9 +40,9 @@ def safe(if_fails_return=False):
                 res = func(*args, **kargs)
                 return res
             except RuntimeError as err:
-                log.info("%s failed:  %s", func.__name__, str(err))
+                log.info("%s failed:  %s", func.__name__, str(err), exc_info=True, stack_info=True)
             except Exception:
-                log.info("%s failed unexpectedly", func.__name__, exc_info=True)
+                log.info("%s failed unexpectedly", func.__name__, exc_info=True, stack_info=True)
             return deepcopy(if_fails_return)  # avoid issues with default mutables
 
         return safe_func
@@ -154,15 +154,12 @@ def discover(**cli_inputs) -> Optional[Dict]:
     for test in [_test_cached, _test_env, _test_swarm]:
         try:
             click.echo("-> {0.__name__}: {0.__doc__}".format(test))
-            click.echo("before test")
+
             cfg: Dict = test()
-            click.echo("after test")
             cfg.update(cli_cfg)  # CLI always overrides
             url = build_url(**cfg)
 
-            click.echo(f"ping {test} {url}")
-            print(f"ping {test} {url}")
-            ## click.echo(" ping {0.__name__}: {1} ...".format(test, url))
+            click.echo(f"ping {test.__name__}: {url} ...")
 
             click.echo("raise_if_not_responsive", url)
             raise_if_not_responsive(url, verbose=True)
@@ -184,10 +181,7 @@ def discover(**cli_inputs) -> Optional[Dict]:
 
         except Exception as err:
             inline_msg = str(err).replace("\n", ". ")
-            print("<- {0.__name__} failed : {1}".format(test, inline_msg))
-            click.echo("<- {0.__name__} failed : {1}".format(test, inline_msg))
-        except: #pytest: disable=bare-except
-            print("---------->>>>")
+            click.echo(f"<- {test.__name__} failed : {inline_msg}")
 
     _reset_cache()
     click.secho("Sorry, database not found !!", blink=False, bold=True, fg="red")
