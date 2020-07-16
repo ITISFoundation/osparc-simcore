@@ -1047,8 +1047,7 @@ qx.Class.define("osparc.data.model.Node", {
     __waitForServiceReady: function(srvUrl) {
       // ping for some time until it is really ready
       const pingRequest = new qx.io.request.Xhr(srvUrl);
-      pingRequest.addListenerOnce("success", function(e) {
-        console.log("service ready now");
+      pingRequest.addListenerOnce("success", () => {
         this.__serviceReadyIn(srvUrl);
       }, this);
       pingRequest.addListenerOnce("fail", e => {
