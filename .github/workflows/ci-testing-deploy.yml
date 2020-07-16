@@ -103,6 +103,52 @@ jobs:
           name: unit_api_server_coverage
           path: codeclimate.unit_api_server_coverage.json
 
+  unit-test-scheduler:
+    name: Unit-testing scheduler
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-18.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
+      - name: setup python environment
+        uses: actions/setup-python@v1.1.1
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: setup requirements
+        run: |
+          export VIRTUAL_ENV=1
+          make -C services/scheduler ci-install-requirements
+      - name: pylint via tox
+        run: |
+          export VIRTUAL_ENV=1
+          make -C services/scheduler tox-ci-pylint
+      - name: mypy via tox
+        run: |
+          export VIRTUAL_ENV=1
+          make -C services/scheduler tox-ci-mypy
+      - name: tests via tox
+        run: |
+          export VIRTUAL_ENV=1
+          make -C services/scheduler tox-ci-tests
+
   unit-test-catalog:
     name: Unit-testing catalog
     runs-on: ${{ matrix.os }}
@@ -917,8 +963,8 @@ jobs:
         integration-test-sidecar,
         integration-test-simcore-sdk,
         system-test-swarm-deploy,
-        #system-test-e2e,
       ]
+    #system-test-e2e,
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

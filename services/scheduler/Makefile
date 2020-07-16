@@ -44,3 +44,7 @@ tox-ci-mypy: _ensure-in-venv ## runs mypy in a new enviornment
 .PHONY: tox-ci-tests
 tox-ci-tests: _ensure-in-venv ## runs tests with coverage in a new enviornment
 	@tox -r -e py38,report
+
+.PHONY: ci-install-requirements
+ci-install-requirements: _ensure-in-venv ## runs tests with coverage in a new enviornment
+	@pip install -r requirements/dev.txt
