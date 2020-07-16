@@ -51,6 +51,7 @@ export CATALOG_API_VERSION    := $(shell cat $(CURDIR)/services/catalog/VERSION)
 export DIRECTOR_API_VERSION   := $(shell cat $(CURDIR)/services/director/VERSION)
 export STORAGE_API_VERSION    := $(shell cat $(CURDIR)/services/storage/VERSION)
 export WEBSERVER_API_VERSION  := $(shell cat $(CURDIR)/services/web/server/VERSION)
+export SCHEDULER_API_VERSION 	:= $(shell cat $(CURDIR)/services/scheduler/VERSION)
 
 
 # swarm stacks
