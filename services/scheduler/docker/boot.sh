@@ -30,7 +30,7 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]
 then
   # NOTE: ptvsd is programmatically enabled inside of the service
   # this way we can have reload in place as well
-  exec uvicorn scheduler:main:app --reload --host 0.0.0.0
+  exec uvicorn scheduler.app:app --reload --host 0.0.0.0
 else
   exec scheduler-startup
 fi
