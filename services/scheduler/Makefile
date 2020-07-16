@@ -16,14 +16,6 @@ _ensure-in-venv:
 reqs: _ensure-in-venv ## compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
 
-.PHONY: install-dev-dependencies
-install-dev-dependencies: _ensure-in-venv ## install dev tools
-	@pip install \
-		pip-tools \
-		black \
-		rope \
-		tox
-
 .PHONY: compile-dependencies
 compile-dependencies: _ensure-in-venv ## snapshot test & package dependencies
 	@pip-compile --build-isolation requirements/base.in --output-file requirements/base.txt
