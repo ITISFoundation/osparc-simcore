@@ -625,15 +625,19 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
+    __maximizeIframe: function(maximize) {
+      this.getBlocker().setStyles({
+        display: maximize ? "none" : "block"
+      });
+      this.__scrollContainer.setVisibility(maximize ? "excluded" : "visible");
+    },
+
     __attachEventHandlers: function() {
       const blocker = this.getBlocker();
       blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
 
       const maximizeIframeCb = msg => {
-        blocker.setStyles({
-          display: msg.getData() ? "none" : "block"
-        });
-        this.__scrollContainer.setVisibility(msg.getData() ? "excluded" : "visible");
+        this.__maximizeIframe(msg.getData());
       };
 
       this.addListener("appear", () => {
