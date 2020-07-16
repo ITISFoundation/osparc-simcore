@@ -134,6 +134,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     workbench: {
       check: "osparc.data.model.Workbench",
       nullable: false
+    },
+
+    scale: {
+      check: "Number",
+      init: 1,
+      nullable: false,
+      event: "changeScale",
+      apply: "__applyScale"
     }
   },
 
@@ -863,6 +871,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return Boolean(this.__getEdgeUI(this.__selectedItemId));
     },
 
+    __applyScale: function(scale) {
+      const domEl = this.getContentElement().getDomElement();
+      if (domEl) {
+        domEl.style.transform = `scale(${scale})`;
+      }
+    },
+
     __addEventListeners: function() {
       this.addListener("appear", () => {
         // Reset filters and sidebars
@@ -888,16 +903,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "excluded");
       });
 
-      let scale = 1;
       this.addListener("mousewheel", mouseevent => {
+        let scale = this.getScale();
         scale += mouseevent.getWheelDelta() * -0.05;
         scale = parseFloat(scale.toFixed(2));
         const lowerLimit = 0.1;
         const upperLimit = 3;
         scale = Math.min(Math.max(lowerLimit, scale), upperLimit);
-
-        const domEl = this.getContentElement().getDomElement();
-        domEl.style.transform = `scale(${scale})`;
+        this.setScale(scale);
       }, this);
 
       this.addListener("dbltap", e => {

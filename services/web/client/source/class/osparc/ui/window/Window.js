@@ -40,6 +40,7 @@ qx.Class.define("osparc.ui.window.Window", {
       this.close();
     });
   },
+
   properties: {
     clickAwayClose: {
       check: "Boolean",
