@@ -38,10 +38,17 @@ tox-full: _ensure-in-venv ## runs all tools in tox in cached environment
 	@tox
 
 .PHONY: tox-tests
-tox-tests: _ensure-in-venv ## run only tests from tox
+tox-tests: _ensure-in-venv ## run only tests from tox cached environment
 	@tox -e py38
 
+.PHONY: tox-ci-pylint
+tox-ci-pylint: _ensure-in-venv ## runs pylint in a new enviornment
+	@tox -r -e pylint
 
-.PHONY: dev-up
-dev-up: _ensure-in-venv ## run only tests from tox
-	@make --no-print-directory build-super
+.PHONY: tox-ci-mypy
+tox-ci-mypy: _ensure-in-venv ## runs mypy in a new enviornment
+	@tox -r -e mypy
+
+.PHONY: tox-ci-tests
+tox-ci-tests: _ensure-in-venv ## runs tests with coverage in a new enviornment
+	@tox -r -e py38,report
