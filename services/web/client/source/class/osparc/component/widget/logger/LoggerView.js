@@ -140,6 +140,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
 
       const currentNodeButton = this.__currentNodeButton = new qx.ui.form.ToggleButton().set({
         icon: "@FontAwesome5Solid/thumbtack/14",
+        toolTipText: this.tr("Show logs only from current node"),
         appearance: "toolbar-button"
       });
       currentNodeButton.addListener("changeValue", e => {
