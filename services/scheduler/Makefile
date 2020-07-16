@@ -1,3 +1,7 @@
+include ../../scripts/common.Makefile
+
+APP_NAME := $(notdir $(CURDIR))
+
 .DEFAULT_GOAL := help
 
 .PHONY: help
@@ -7,6 +11,10 @@ help: ## display this message
 .PHONY: _ensure-in-venv
 _ensure-in-venv:
 	@python3 -c "import os; os.environ['VIRTUAL_ENV']" || (echo "\n>>>> You are not in a virtualenv. Activate one <<<<\n"; exit 1)
+
+.PHONY: reqs
+reqs: _ensure-in-venv ## compiles pip requirements (.in -> .txt)
+	@$(MAKE_C) requirements reqs
 
 .PHONY: install-dev-dependencies
 install-dev-dependencies: _ensure-in-venv ## install dev tools
@@ -32,3 +40,8 @@ tox-full: _ensure-in-venv ## runs all tools in tox in cached environment
 .PHONY: tox-tests
 tox-tests: _ensure-in-venv ## run only tests from tox
 	@tox -e py38
+
+
+.PHONY: dev-up
+dev-up: _ensure-in-venv ## run only tests from tox
+	@make --no-print-directory build-super

@@ -13,14 +13,14 @@ def read_reqs(reqs_path: Path):
 
 # -----------------------------------------------------------------
 # Hard requirements on third-parties and latest for in-repo packages
-install_requires = read_reqs(current_dir / "requirements" / "base.txt")
-tests_require = read_reqs(current_dir / "requirements" / "test.txt")
+install_requires = read_reqs(current_dir / "requirements" / "_base.txt")
+tests_require = read_reqs(current_dir / "requirements" / "_test.txt")
 
-print(find_packages(where="src"))
+current_version = (current_dir / "VERSION").read_text().strip()
 
 setup(
     name="scheduler",
-    version="0.0.1",
+    version=current_version,
     packages=find_packages(where="src"),
     package_dir={"": "src",},
     include_package_data=True,
@@ -28,4 +28,9 @@ setup(
     install_requires=install_requires,
     tests_require=tests_require,
     setup_requires=["setuptools_scm"],
+    entry_points={
+        "console_scripts": [
+            "scheduler-startup = scheduler.main:main",
+        ],
+    },
 )

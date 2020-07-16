@@ -1,0 +1,12 @@
+#
+# Specifies dependencies required to run 'services/api-server/test'
+#  both for unit and integration tests!!
+#
+
+# 'services/api-server/tests/unit' dependencies
+
+# testing
+requests
+pytest
+pytest-cov
+pytest-mock

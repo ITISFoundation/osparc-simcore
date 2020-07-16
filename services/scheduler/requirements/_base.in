@@ -1,0 +1,8 @@
+#
+# Specifies third-party dependencies for 'services/api-server/src'
+#
+# NOTE: ALL version constraints MUST be commented
+
+fastapi
+dataclasses==0.6  # version 0.7 is not found
+uvicorn
