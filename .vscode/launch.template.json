@@ -57,6 +57,19 @@
       ]
     },
     {
+      "name": "Python: Remote Attach scheduler",
+      "type": "python",
+      "request": "attach",
+      "port": 3008,
+      "host": "127.0.0.1",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/devel"
+        }
+      ]
+    },
+    {
       "name": "Python: Remote Attach storage",
       "type": "python",
       "request": "attach",
