@@ -85,6 +85,22 @@ services:
       - default
       - interactive_services_subnet
 
+  scheduler:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/scheduler:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    environment:
+      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+          - node.role == manager
+    #networks:
+    #  - default
+    #  - interactive_services_subnet
+
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true

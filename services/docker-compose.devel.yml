@@ -33,6 +33,14 @@ services:
       - ../packages:/devel/packages
       - ../api:/devel/services/api
 
+  scheduler:
+    environment:
+      - SC_BOOT_MODE=debug-ptvsd
+      - LOGLEVEL=debug
+    volumes:
+      - ./scheduler:/devel/services/scheduler
+      - ../packages:/devel/packages
+
   webserver:
     volumes:
       - ./web/server:/devel/services/web/server
