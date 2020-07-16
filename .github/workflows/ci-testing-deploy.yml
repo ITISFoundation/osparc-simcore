@@ -139,15 +139,15 @@ jobs:
       - name: pylint via tox
         run: |
           export VIRTUAL_ENV=1
-          make -C services/scheduler tox-ci-pylint
+          make -C services/scheduler ci-tox-pylint
       - name: mypy via tox
         run: |
           export VIRTUAL_ENV=1
-          make -C services/scheduler tox-ci-mypy
+          make -C services/scheduler ci-tox-mypy
       - name: tests via tox
         run: |
           export VIRTUAL_ENV=1
-          make -C services/scheduler tox-ci-tests
+          make -C services/scheduler ci-tox-tests
 
   unit-test-catalog:
     name: Unit-testing catalog
