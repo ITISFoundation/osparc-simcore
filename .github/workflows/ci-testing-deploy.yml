@@ -133,21 +133,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: setup requirements
-        run: |
-          export VIRTUAL_ENV=1
-          make -C services/scheduler ci-install-requirements
+        run: make -C services/scheduler ci-install-requirements
       - name: pylint via tox
-        run: |
-          export VIRTUAL_ENV=1
-          make -C services/scheduler ci-tox-pylint
+        run: make -C services/scheduler ci-tox-pylint
       - name: mypy via tox
-        run: |
-          export VIRTUAL_ENV=1
-          make -C services/scheduler ci-tox-mypy
+        run: make -C services/scheduler ci-tox-mypy
       - name: tests via tox
-        run: |
-          export VIRTUAL_ENV=1
-          make -C services/scheduler ci-tox-tests
+        run: make -C services/scheduler ci-tox-tests
 
   unit-test-catalog:
     name: Unit-testing catalog
