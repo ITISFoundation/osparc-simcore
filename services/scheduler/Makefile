@@ -23,11 +23,11 @@ compile-dependencies: _ensure-in-venv ## snapshot test & package dependencies
 
 .PHONY: tox-full-recreate
 tox-full-recreate: _ensure-in-venv ## runs all tools in tox in a new environment
-	@tox -r
+	@tox -r -p
 
 .PHONY: tox-full
 tox-full: _ensure-in-venv ## runs all tools in tox in cached environment
-	@tox
+	@tox -p
 
 .PHONY: tox-tests
 tox-tests: _ensure-in-venv ## run only tests from tox cached environment
