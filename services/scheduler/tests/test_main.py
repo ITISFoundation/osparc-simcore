@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from director.main import app
+from scheduler.main import app
 
 client = TestClient(app)
 

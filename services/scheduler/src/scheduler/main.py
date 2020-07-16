@@ -2,7 +2,6 @@ from typing import Dict
 from uuid import UUID
 
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 
 app = FastAPI()
 

@@ -22,7 +22,7 @@ compile-dependencies: _ensure-in-venv ## snapshot test & package dependencies
 	@pip-compile --build-isolation requirements/test.in --output-file requirements/test.txt
 
 .PHONY: tox-full-recreate
-tox-full-recreate: _ensure-in-venv ## runs all tools in tox in a new environemtn
+tox-full-recreate: _ensure-in-venv ## runs all tools in tox in a new environment
 	@tox -r
 
 .PHONY: tox-full
