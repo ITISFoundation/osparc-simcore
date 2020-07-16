@@ -13,17 +13,22 @@ install-dev-dependencies: _ensure-in-venv ## install dev tools
 	@pip install \
 		pip-tools \
 		black \
-		rope
+		rope \
+		tox
 
 .PHONY: compile-dependencies
 compile-dependencies: _ensure-in-venv ## snapshot test & package dependencies
-	@pip-compile --build-isolation director/requirements/base.in --output-file director/requirements/base.txt 
-	@pip-compile --build-isolation director/requirements/test.in --output-file director/requirements/test.txt 
+	@pip-compile --build-isolation requirements/base.in --output-file requirements/base.txt
+	@pip-compile --build-isolation requirements/test.in --output-file requirements/test.txt
 
-.PHONY: install-test-dependencies
-install-test-dependencies: _ensure-in-venv ## install package test dependencies
-	@cd director/requirements; pip-sync test.txt 
+.PHONY: tox-full-recreate
+tox-full-recreate: _ensure-in-venv ## runs all tools in tox in a new environemtn
+	@tox -r
 
-.PHONY: tests
-tests: _ensure-in-venv ## run the test suite
-	@tox -r -c director/tox.ini
+.PHONY: tox-full
+tox-full: _ensure-in-venv ## runs all tools in tox in cached environment
+	@tox
+
+.PHONY: tox-tests
+tox-tests: _ensure-in-venv ## run only tests from tox
+	@tox -e py38
