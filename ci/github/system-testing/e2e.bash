@@ -59,9 +59,19 @@ setup_database() {
   source .venv/bin/activate
   pushd tests/e2e
   echo "--------------- injecting templates in postgres db..."
-  docker ps --filter "ancestor=postgres:10.11"
-  docker inspect "$(docker ps --filter "ancestor=postgres:10.11" -q)"
+
+  # Checks that pg is up and running
+  IMAGE_NAME="$(docker image ls --filter 'reference=postgres*' --format "{{.Repository}}:{{.Tag}}" | tail -1)"
+  docker ps --filter "ancestor=$IMAGE_NAME"
+  docker inspect "$(docker ps --filter "ancestor=$IMAGE_NAME" -q)"
+
+  # Cleaning up volumes
+  docker volume prune --force
+
+  # migrates tables
   make pg-db-tables
+
+  # Injects project template
   make inject-templates-in-db
   popd
 }

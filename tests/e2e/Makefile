@@ -69,7 +69,7 @@ transfer-images-to-registry: ## transfer images to registry
 PUBLISHED_PORT = $(shell docker inspect $(shell docker service ls --format "{{ .Name }}" | grep postgres) --format "{{(index .Endpoint.Ports 0).PublishedPort}}")
 .PHONY: inject-templates-in-db
 inject-templates-in-db: ## inject project templates
-	# Injecting fixture tables in database
+	# Injecting fixture tables in database via port $(PUBLISHED_PORT)
 	@PGPASSWORD=adminadmin psql --host localhost \
 								--port $(PUBLISHED_PORT) \
 								--user scu \
