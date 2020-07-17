@@ -177,7 +177,12 @@ qx.Class.define("osparc.data.model.Study", {
     __secondaryStudies: null,
 
     addSecondaryStudy: function(secondaryStudy) {
-      this.__secondaryStudies[secondaryStudy.uuid] = secondaryStudy;
+      const index = this.__secondaryStudies.findIndex(secStudy => secStudy.uuid === secondaryStudy.uuid);
+      if (index === -1) {
+        this.__secondaryStudies.push(secondaryStudy);
+      } else {
+        this.__secondaryStudies[index] = secondaryStudy;
+      }
     },
 
     addSecondaryStudies: function(secondaryStudies) {
@@ -190,7 +195,7 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     hasSecondaryStudies: function() {
-      return Boolean(this.__secondaryStudies.length);
+      return Boolean(Object.keys(this.__secondaryStudies).length);
     },
 
     getSecondaryStudy: function(secondaryStudyId) {

@@ -419,7 +419,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __showIterations: function() {
       const primaryStudy = this.getStudy();
       if (primaryStudy.hasSecondaryStudies()) {
-        const iterationSelector = new osparc.component.iteration.Selector();
+        const iterationSelector = new osparc.component.iteration.Selector(primaryStudy);
         const win = osparc.component.iteration.Selector.popUpInWindow(iterationSelector);
         iterationSelector.addListener("openIteration", e => {
           const iterationStudyId = e.getData();

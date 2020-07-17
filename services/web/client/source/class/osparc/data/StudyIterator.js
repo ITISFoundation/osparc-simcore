@@ -71,7 +71,7 @@ qx.Class.define("osparc.data.StudyIterator", {
         // give new study id
         secondaryStudyData["uuid"] = osparc.utils.Utils.uuidv4();
         // give a different name
-        secondaryStudyData["name"] = secondaryStudyData["name"] + " it-" + (idx+1);
+        secondaryStudyData["name"] = secondaryStudyData["name"] + " (it-" + (idx+1) + ")";
         // replace orignal uuids
         secondaryStudyData["workbench"] = osparc.data.Converters.replaceUuids(secondaryStudyData["workbench"]);
         // make them read only

@@ -28,10 +28,10 @@ qx.Class.define("osparc.component.iteration.Selector", {
   construct: function(primaryStudy) {
     this.__model = new qx.ui.table.model.Simple();
     this.__model.setColumns([
-      this.tr("SutdyId"),
-      this.tr("Iteration"),
-      this.tr("Variables"),
-      this.tr("Show")
+      this.__cols["id"].label,
+      this.__cols["name"].label,
+      this.__cols["variables"].label,
+      this.__cols["show"].label
     ]);
 
     this.base(arguments, this.__model, {
@@ -39,14 +39,8 @@ qx.Class.define("osparc.component.iteration.Selector", {
       initiallyHiddenColumns: [0]
     });
 
-    const columnModel = this.getTableColumnModel();
-    columnModel.getBehavior().setMinWidth(1, 80);
-    columnModel.getBehavior().setMinWidth(2, 80);
-    columnModel.getBehavior().setMinWidth(3, 50);
-
-    this.getSelectionModel().setSelectionMode(qx.ui.table.selection.Model.SINGLE_SELECTION);
-
-    this.__attachEventHandlers();
+    this.__initTable();
+    this.__populateSelector(primaryStudy);
   },
 
   statics: {
@@ -72,10 +66,55 @@ qx.Class.define("osparc.component.iteration.Selector", {
     "openIteration": "qx.event.type.Data"
   },
 
-  members: {
+  members: {// eslint-disable-line qx-rules/no-refs-in-members
     __model: null,
 
-    __attachEventHandlers: function() {
+    __cols: {
+      "id": {
+        col: 0,
+        label: qx.locale.Manager.tr("StudyId")
+      },
+      "name": {
+        col: 1,
+        label: qx.locale.Manager.tr("Iteration")
+      },
+      "variables": {
+        col: 2,
+        label: qx.locale.Manager.tr("Variables")
+      },
+      "show": {
+        col: 3,
+        label: qx.locale.Manager.tr("Show")
+      }
+    },
+
+    __initTable: function() {
+      const columnModel = this.getTableColumnModel();
+      columnModel.getBehavior().setMinWidth(this.__cols["name"].col, 120);
+      columnModel.getBehavior().setMinWidth(this.__cols["variables"].col, 120);
+      columnModel.getBehavior().setMinWidth(this.__cols["show"].col, 50);
+
+      this.getSelectionModel().setSelectionMode(qx.ui.table.selection.Model.SINGLE_SELECTION);
+    },
+
+    __populateSelector: function(primaryStudy) {
+      const secStudies = primaryStudy.getSecondaryStudies();
+      const rows = [];
+      Object.keys(secStudies).forEach(secStudyId => {
+        const secStudy = secStudies[secStudyId];
+        const row = [];
+        row[this.__cols["id"].col] = secStudy["uuid"];
+        row[this.__cols["name"].col] = secStudy["name"];
+        row[this.__cols["variables"].col] = "";
+        const loadStudyBtn = new qx.ui.form.Button(this.tr("Load Study"));
+        loadStudyBtn.addListener("execute", () => {
+          this.fireDataEvent("openIteration", secStudy["uuid"]);
+        }, this);
+        row[this.__cols["show"].col] = loadStudyBtn;
+        rows.push(row);
+      });
+      // this.getTableModel().setData(rows);
+      this.getTableModel().setData(rows, false);
     }
   }
 });
