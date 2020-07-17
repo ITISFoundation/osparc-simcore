@@ -16,7 +16,8 @@
 ************************************************************************ */
 
 /**
- * Class that stores Node's Status.
+ *  In order to keep Node's Status separated from its more static data,
+ * this class stores it.
  */
 
 qx.Class.define("osparc.data.model.NodeStatus", {
