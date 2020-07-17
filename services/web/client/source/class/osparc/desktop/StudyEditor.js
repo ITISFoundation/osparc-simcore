@@ -406,6 +406,19 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
+    __iterateStudy: function() {
+      const studyData = this.getStudy().serializeStudy();
+
+      const secondaryStudiesData = osparc.data.StudyIterator.createStudyIterations(studyData);
+      this.getStudy().addSecondaryStudies(secondaryStudiesData);
+
+      const msg = secondaryStudiesData.length + this.tr(" iterations created");
+      osparc.component.message.FlashMessenger.getInstance().logAs(msg);
+    },
+
+    __showIterations: function() {
+    },
+
     __showWorkbenchUI: function() {
       const workbench = this.getStudy().getWorkbench();
       const currentNode = workbench.getNode(this.__currentNodeId);
@@ -652,6 +665,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
 
       const controlsBar = this.__mainPanel.getControls();
+      controlsBar.addListener("iterateStudy", this.__iterateStudy, this);
+      controlsBar.addListener("showIterations", this.__showIterations, this);
       controlsBar.addListener("showWorkbench", this.__showWorkbenchUI, this);
       controlsBar.addListener("showSettings", this.__showSettings, this);
       controlsBar.addListener("groupSelection", this.__groupSelection, this);
