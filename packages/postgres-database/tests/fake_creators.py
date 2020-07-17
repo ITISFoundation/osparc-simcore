@@ -1,3 +1,4 @@
+import itertools
 import json
 import random
 from datetime import datetime, timedelta
@@ -18,6 +19,7 @@ from simcore_postgres_database.webserver_models import ProjectType, UserStatus
 STATES = [UNKNOWN, PENDING, RUNNING, SUCCESS, FAILED]
 
 
+_index_in_sequence = itertools.count(start=1)
 fake = faker.Faker()
 
 
@@ -48,7 +50,9 @@ def random_project(**overrides):
 
 
 def random_group(**overrides):
-    data = dict(name=fake.company(), description=fake.text(), type="STANDARD")
+    data = dict(
+        name=fake.company(), description=fake.text(), type=ProjectType.STANDARD.name
+    )
     data.update(overrides)
     return data
 
@@ -60,21 +64,21 @@ def fake_pipeline(**overrides) -> Dict:
 
 
 def fake_task(**overrides) -> Dict:
+    t0 = datetime.utcnow()
     data = dict(
         project_id=uuid4(),
         node_id=uuid4(),
         job_id=uuid4(),
-        internal_id=1,  # TODO: incremental
+        internal_id=next(_index_in_sequence),
         schema=json.dumps({}),
         inputs=json.dumps({}),
         outputs=json.dumps({}),
         image=json.dumps({}),
         state=random.choice(STATES),
-        submit=datetime.utcnow(),
-        start=datetime.utcnow(),
-        end=datetime.utcnow(),
+        submit=t0,
+        start=t0 + timedelta(seconds=1),
+        end=t0 + timedelta(minutes=5),
     )
-    # TODO: state and times must be logic submit < start and end
+
     data.update(overrides)
     return data
-
