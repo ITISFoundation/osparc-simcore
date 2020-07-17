@@ -70,7 +70,7 @@ PUBLISHED_PORT = $(shell docker inspect $(shell docker service ls --format "{{ .
 .PHONY: inject-templates-in-db
 inject-templates-in-db: ## inject project templates
 	# Injecting fixture tables in database via port $(PUBLISHED_PORT)
-	@PGPASSWORD=adminadmin psql --host localhost \
+	PGPASSWORD=adminadmin psql --host localhost \
 								--port $(PUBLISHED_PORT) \
 								--user scu \
 								--dbname simcoredb \
