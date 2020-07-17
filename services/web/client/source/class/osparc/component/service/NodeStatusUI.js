@@ -53,7 +53,7 @@ qx.Class.define("osparc.component.service.NodeStatusUI", {
     },
 
     __setupInteractive: function() {
-      this.__node.bind("interactiveStatus", this.__label, "value", {
+      this.__node.getStatus().bind("interactiveStatus", this.__label, "value", {
         converter: status => {
           if (status === "ready") {
             return this.tr("Ready");
@@ -72,7 +72,7 @@ qx.Class.define("osparc.component.service.NodeStatusUI", {
         }
       });
 
-      this.__node.bind("interactiveStatus", this.__icon, "source", {
+      this.__node.getStatus().bind("interactiveStatus", this.__icon, "source", {
         converter: status => {
           if (status === "ready") {
             return "@FontAwesome5Solid/check/12";
@@ -108,7 +108,7 @@ qx.Class.define("osparc.component.service.NodeStatusUI", {
 
     __setupFilepicker: function() {
       const node = this.__node;
-      this.__node.bind("progress", this.__icon, "source", {
+      this.__node.getStatus().bind("progress", this.__icon, "source", {
         converter: progress => {
           if (progress === 100) {
             return "@FontAwesome5Solid/check/12";
@@ -124,7 +124,7 @@ qx.Class.define("osparc.component.service.NodeStatusUI", {
         }
       });
 
-      this.__node.bind("progress", this.__label, "value", {
+      this.__node.getStatus().bind("progress", this.__label, "value", {
         converter: progress => {
           if (progress === 100) {
             const outInfo = node.getOutputValues().outFile;
