@@ -11,10 +11,10 @@ import sqlalchemy as sa
 from simcore_service_storage.models import (
     FileMetaData,
     file_meta_data,
-    projects,
-    users,
     groups,
+    projects,
     user_to_groups,
+    users,
 )
 
 log = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ PASS = "admin"
 ACCESS_KEY = "12345678"
 SECRET_KEY = "12345678"
 
-BUCKET_NAME = "simcore-testing"
+BUCKET_NAME = "simcore-testing-bucket"
 USER_ID = "0"
 
 
@@ -40,9 +40,12 @@ def data_dir():
 
 
 def has_datcore_tokens() -> bool:
-    token = os.environ.get("BF_API_KEY", "none")
-    if token == "none":
-        pytest.skip("Datcore access tokens not available, skipping test")
+    # TODO: activate tests against BF services in the CI.
+    #
+    # CI shall add BF_API_KEY, BF_API_SECRET environs as secrets
+    #
+    if not os.environ.get("BF_API_KEY") or not os.environ.get("BF_API_SECRET"):
+        pytest.skip("Datcore access API tokens not available, skipping test")
         return False
     return True
 

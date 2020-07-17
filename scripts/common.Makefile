@@ -94,7 +94,12 @@ info: ## displays basic info
 .PHONY: autoformat
 autoformat: ## runs black python formatter on this service's code. Use AFTER make install-*
 	# sort imports
-	@python3 -m isort --atomic -rc $(CURDIR)
+	@python3 -m isort --verbose \
+		--atomic \
+		--recursive \
+		--skip-glob */client-sdk/* \
+		--skip-glob */migration/* \
+		$(CURDIR)
 	# auto formatting with black
 	@python3 -m black --verbose \
 		--exclude "/(\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist|migration|client-sdk|generated_code)/" \
@@ -103,6 +108,18 @@ autoformat: ## runs black python formatter on this service's code. Use AFTER mak
 .PHONY: mypy
 mypy: $(REPO_BASE_DIR)/scripts/mypy.bash $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type checker on this services's code. Use AFTER make install-*
 	@$(REPO_BASE_DIR)/scripts/mypy.bash src
+
+.PHONY: code-analysis
+code-analysis: $(REPO_BASE_DIR)/.codeclimate.yml ## runs code-climate analysis
+	# Copying config
+	cp $(REPO_BASE_DIR)/.codeclimate.yml $(CURDIR)/.codeclimate.yml
+	# Validates $< at ${PWD}
+	$(REPO_BASE_DIR)/scripts/code-climate.bash validate-config
+	# Running analysis
+	$(REPO_BASE_DIR)/scripts/code-climate.bash analyze
+	# Removing tmp config
+	@-rm $(CURDIR)/.codeclimate.yml
+
 
 .PHONY: version-patch version-minor version-major
 version-patch: ## commits version with bug fixes not affecting the cookiecuter config

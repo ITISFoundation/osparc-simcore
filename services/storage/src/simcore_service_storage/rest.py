@@ -14,7 +14,6 @@ from . import rest_routes
 from .resources import resources
 from .settings import APP_OPENAPI_SPECS_KEY
 
-
 log = logging.getLogger(__name__)
 
 
