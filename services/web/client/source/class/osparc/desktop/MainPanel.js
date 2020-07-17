@@ -40,14 +40,14 @@ qx.Class.define("osparc.desktop.MainPanel", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    let hBox = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+    const hBox = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
       allowGrowY: true
     });
     this._add(hBox, {
       flex: 1
     });
 
-    let controlsBar = this.__controlsBar = new osparc.desktop.ControlsBar();
+    const controlsBar = this.__controlsBar = new osparc.desktop.ControlsBar();
     this._add(controlsBar);
   },
 

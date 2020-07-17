@@ -46,7 +46,8 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       minWidth: 400,
       minHeight: 400,
       modal: true,
-      contentPadding: 0
+      contentPadding: 0,
+      clickAwayClose: true
     });
 
     let catalogLayout = new qx.ui.layout.VBox();
