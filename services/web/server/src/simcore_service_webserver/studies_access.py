@@ -138,6 +138,7 @@ async def copy_study_to_account(
             request, template_project, user["id"], forced_copy_project_id=project_uuid
         )
         # remove template access rights
+        # FIXME: temporary fix until. Unify access management while cloning a project. Right not, at least two workflows have different implementations
         project["accessRights"] = {}
 
         # check project inputs and substitute template_parameters
