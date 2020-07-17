@@ -42,6 +42,8 @@ qx.Class.define("osparc.desktop.ControlsBar", {
   },
 
   events: {
+    "iterateStudy": "qx.event.type.Event",
+    "showIterations": "qx.event.type.Event",
     "showWorkbench": "qx.event.type.Event",
     "showSettings": "qx.event.type.Event",
     "groupSelection": "qx.event.type.Event",
@@ -51,8 +53,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
   },
 
   members: {
-    __startButton: null,
-    __stopButton: null,
     __serviceFilters: null,
     __viewCtrls: null,
     __workbenchViewButton: null,
@@ -60,6 +60,9 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     __groupCtrls: null,
     __groupButton: null,
     __ungroupButton: null,
+    __iterationCtrls: null,
+    __iterateButton: null,
+    __showIterationsButton: null,
     __startButton: null,
     __stopButton: null,
 
@@ -99,12 +102,34 @@ qx.Class.define("osparc.desktop.ControlsBar", {
         this.add(groupCtrls);
       }
 
+      const iterationCtrls = this.__iterationCtrls = new qx.ui.toolbar.Part();
+      const iterateButton = this.__iterateButton = this.__createIterateButton();
+      const showIterationsButton = this.__showIterationsButton = this.__createShowIterationsButton();
+      iterationCtrls.add(iterateButton);
+      iterationCtrls.add(showIterationsButton);
+      osparc.utils.LibVersions.getPlatformName()
+        .then(platformName => {
+          if (["dev", "master"].includes(platformName)) {
+            this.add(iterationCtrls);
+          }
+        });
+
       const simCtrls = new qx.ui.toolbar.Part();
       const startButton = this.__startButton = this.__createStartButton();
       simCtrls.add(startButton);
       const stopButton = this.__stopButton = this.__createStopButton();
       simCtrls.add(stopButton);
       this.add(simCtrls);
+    },
+
+    __createIterateButton: function() {
+      const iterateButton = this.__createButton(this.tr("Iterate Study"), null, "iterateButton", "iterateStudy");
+      return iterateButton;
+    },
+
+    __createShowIterationsButton: function() {
+      const showIterationsButton = this.__createButton(this.tr("Show Iterations"), null, "showIterationsButton", "showIterations");
+      return showIterationsButton;
     },
 
     __createWorkbenchButton: function() {
@@ -160,8 +185,9 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     },
 
     __createButton: function(label, icon, widgetId, signalName, visibility="visible") {
-      const button = new qx.ui.toolbar.Button(label, "@FontAwesome5Solid/"+icon+"/14").set({
-        visibility
+      const button = new qx.ui.toolbar.Button(label).set({
+        visibility,
+        icon: icon ? "@FontAwesome5Solid/"+icon+"/14" : null
       });
       osparc.utils.Utils.setIdToWidget(button, widgetId);
       button.addListener("execute", () => {
