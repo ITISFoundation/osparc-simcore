@@ -417,6 +417,19 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __showIterations: function() {
+      const primaryStudy = this.getStudy();
+      if (primaryStudy.hasSecondaryStudies()) {
+        const iterationSelector = new osparc.component.iteration.Selector();
+        const win = osparc.component.iteration.Selector.popUpInWindow(iterationSelector);
+        iterationSelector.addListener("openIteration", e => {
+          const iterationStudyId = e.getData();
+          console.log(iterationStudyId);
+          win.close();
+        });
+      } else {
+        const msg = this.tr("There are no iterations to show");
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+      }
     },
 
     __showWorkbenchUI: function() {
