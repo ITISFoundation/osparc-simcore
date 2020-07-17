@@ -14,7 +14,7 @@ export SWARM_STACK_NAME
 install_insecure_registry() {
   # Create .env and append extra variables
   if [[ -f .env ]]; then
-    cp .env .env-bk
+    cp .env .env.bak
   fi
 
   make .env
@@ -35,13 +35,13 @@ install_insecure_registry() {
   # prepare insecure registry access for docker engine
   echo "------------------- adding host name to the insecure registry "
   if [[ -f /etc/hosts ]]; then
-    cp /etc/hosts .hosts-bk
+    cp /etc/hosts .hosts.bak
   fi
   sudo bash -c "echo '127.0.0.1 registry' >> /etc/hosts"
 
   echo "------------------- adding insecure registry into docker daemon "
   if [[ -f /etc/docker/daemon.json ]]; then
-    cp /etc/docker/daemon.json .daemon-bk
+    cp /etc/docker/daemon.json .daemon.bak
   fi
   sudo bash -c "echo '{\"insecure-registries\": [\"registry:5000\"]}' >> /etc/docker/daemon.json"
 
@@ -51,18 +51,18 @@ install_insecure_registry() {
 
 uninstall_insecure_registry() {
   echo "------------------ reverting .env"
-  if [[ -f .env-bk ]]; then
-    mv .env-bk .env
+  if [[ -f .env.bak ]]; then
+    mv .env.bak .env
   fi
 
   echo "------------------ reverting /etc/hosts"
-  if [[ -f .hosts-bk ]]; then
-    sudo mv .hosts-bk /etc/hosts
+  if [[ -f .hosts.bak ]]; then
+    sudo mv .hosts.bak /etc/hosts
   fi
 
-  if [[ -f .daemon-bk ]]; then
+  if [[ -f .daemon.bak ]]; then
     echo "------------------ reverting /etc/docker/daemon.json"
-    sudo mv .daemon-bk /etc/docker/daemon.json
+    sudo mv .daemon.bak /etc/docker/daemon.json
     echo "------------------ restarting daemon [takes some time]"
     sudo service docker restart
   fi
