@@ -57,7 +57,7 @@ qx.Class.define("osparc.data.model.Study", {
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
     this.setWorkbench(new osparc.data.model.Workbench(wbData));
 
-    this.__secondaryStudies = [];
+    this.__secondaryStudies = {};
   },
 
   properties: {
@@ -182,7 +182,7 @@ qx.Class.define("osparc.data.model.Study", {
 
     addSecondaryStudies: function(secondaryStudies) {
       // delete old studies from backend?
-      this.__secondaryStudies = [];
+      this.__secondaryStudies = {};
 
       secondaryStudies.forEach(secondaryStudy => {
         this.addSecondaryStudy(secondaryStudy);
@@ -190,7 +190,7 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     hasSecondaryStudies: function() {
-      return Boolean(this.__secondaryStudies.length);
+      return Boolean(Object.keys(this.__secondaryStudies).length);
     },
 
     getSecondaryStudy: function(secondaryStudyId) {
