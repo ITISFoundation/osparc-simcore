@@ -63,6 +63,7 @@ qx.Class.define("osparc.component.iteration.Selector", {
       });
       window.add(selectorWidget);
       window.center();
+      window.open();
       return window;
     }
   },
