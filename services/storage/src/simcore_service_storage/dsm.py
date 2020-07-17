@@ -674,7 +674,7 @@ class DataStorageManager:
 
             # Step 2: List all references in outputs that point to datcore and copy over
             for node_id, node in destination_project["workbench"].items():
-                outputs = node.get("outputs", [])
+                outputs: Dict = node.get("outputs", {})
                 for _output_key, output in outputs.items():
                     if "store" in output and output["store"] == DATCORE_ID:
                         src = output["path"]
