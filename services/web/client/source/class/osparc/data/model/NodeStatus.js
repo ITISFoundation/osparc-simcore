@@ -35,7 +35,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     },
 
     interactiveStatus: {
-      check: "String",
+      check: ["idle", "starting", "pulling", "pending", "connecting", "ready", "failed"],
       nullable: true,
       event: "changeInteractiveStatus"
     }
