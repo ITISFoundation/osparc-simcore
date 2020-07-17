@@ -5,6 +5,7 @@
 # pylint: disable=wildcard-import,unused-wildcard-import
 
 import json
+import json.decoder
 import logging
 import os
 import sys
@@ -13,12 +14,12 @@ from logging.config import fileConfig
 from pathlib import Path
 from typing import Dict, Optional
 
-import click
-
 import alembic.command
+import click
 import docker
 from alembic import __version__ as __alembic_version__
 from alembic.config import Config as AlembicConfig
+
 from simcore_postgres_database.models import *
 from simcore_postgres_database.utils import build_url, raise_if_not_responsive
 
@@ -71,26 +72,42 @@ def _get_service_published_port(service_name: str) -> int:
     return int(published_port)
 
 
-def _get_alembic_config(cfg=None):
+def _get_alembic_config_from_cache(force_cfg: Optional[Dict]=None) -> Optional[AlembicConfig]:
+    """
+        Creates alembic config from cfg or cache
+
+        Returns None if cannot build url (e.g. if user requires a cache that does not exists)
+    """
+
+    # build url
     try:
-        if not cfg:
-            cfg = _load_cache() or {}
+        if force_cfg:
+            cfg = force_cfg
+        else:
+            cfg = _load_cache(raise_if_error=True)
+
         url = build_url(**cfg)
     except Exception:
-        click.echo("Invalid database config, please run discover", err=True)
+        log.debug("Cannot open cache or cannot build URL", exc_info=True, stack_info=True)
+        click.echo("Invalid database config, please run discover first", err=True)
         _reset_cache()
-        return {}
+        return None
 
+    # build config
     config = AlembicConfig(default_ini)
     config.set_main_option("script_location", str(migration_dir))
     config.set_main_option("sqlalchemy.url", str(url))
     return config
 
 
-@safe(if_fails_return={})
-def _load_cache():
-    with open(discovered_cache) as fh:
-        cfg = json.load(fh)
+def _load_cache(*, raise_if_error=False) -> Dict:
+    try:
+        with open(discovered_cache) as fh:
+            cfg = json.load(fh)
+    except (FileNotFoundError, json.decoder.JSONDecodeError):
+        if raise_if_error:
+            raise
+        return {}
     return cfg
 
 
@@ -124,11 +141,12 @@ def discover(**cli_inputs) -> Optional[Dict]:
     click.echo("Discovering database ...")
     cli_cfg = {key: value for key, value in cli_inputs.items() if value is not None}
 
+    # tests different urls
+
     def _test_cached() -> Dict:
         """Tests cached configuration """
-        cfg = _load_cache() or {}
-        if cfg:
-            cfg.update(cli_cfg)  # overrides
+        cfg = _load_cache(raise_if_error=True)
+        cfg.update(cli_cfg)  # overrides
         return cfg
 
     def _test_env() -> Dict:
@@ -160,8 +178,6 @@ def discover(**cli_inputs) -> Optional[Dict]:
             url = build_url(**cfg)
 
             click.echo(f"ping {test.__name__}: {url} ...")
-
-            click.echo("raise_if_not_responsive", url)
             raise_if_not_responsive(url, verbose=True)
 
             print("Saving config ")
@@ -195,7 +211,7 @@ def info():
 
     cfg = _load_cache()
     click.echo(f"Saved config: {cfg} @ {discovered_cache}")
-    config = _get_alembic_config(cfg)
+    config = _get_alembic_config_from_cache(cfg)
     if config:
         click.echo("Revisions history ------------")
         alembic.command.history(config)
@@ -219,18 +235,21 @@ def review(message):
     """
     click.echo("Auto-generates revision based on changes ")
 
-    config = _get_alembic_config()
-    alembic.command.revision(
-        config,
-        message,
-        autogenerate=True,
-        sql=False,
-        head="head",
-        splice=False,
-        branch_label=None,
-        version_path=None,
-        rev_id=None,
-    )
+    config = _get_alembic_config_from_cache()
+    if config:
+        alembic.command.revision(
+            config,
+            message,
+            autogenerate=True,
+            sql=False,
+            head="head",
+            splice=False,
+            branch_label=None,
+            version_path=None,
+            rev_id=None,
+        )
+    else:
+        raise ValueError("Missing config")
 
 
 @main.command()
@@ -250,8 +269,12 @@ def upgrade(revision):
 
     """
     click.echo(f"Upgrading database to {revision} ...")
-    config = _get_alembic_config()
-    alembic.command.upgrade(config, revision, sql=False, tag=None)
+    config = _get_alembic_config_from_cache()
+    if config:
+        alembic.command.upgrade(config, revision, sql=False, tag=None)
+    else:
+        raise ValueError("Missing config")
+
 
 
 @main.command()
@@ -271,8 +294,12 @@ def downgrade(revision):
     """
     # https://click.palletsprojects.com/en/3.x/arguments/#argument-like-options
     click.echo(f"Downgrading database to current-{revision} ...")
-    config = _get_alembic_config()
-    alembic.command.downgrade(config, str(revision), sql=False, tag=None)
+    config = _get_alembic_config_from_cache()
+    if config:
+        alembic.command.downgrade(config, str(revision), sql=False, tag=None)
+    else:
+        raise ValueError("Missing config")
+
 
 
 @main.command()
@@ -280,5 +307,8 @@ def downgrade(revision):
 def stamp(revision):
     """Stamps the database with a given revision; does not run any migration"""
     click.echo(f"Stamps db to {revision} ...")
-    config = _get_alembic_config()
-    alembic.command.stamp(config, revision, sql=False, tag=None)
+    config = _get_alembic_config_from_cache()
+    if config:
+        alembic.command.stamp(config, revision, sql=False, tag=None)
+    else:
+        raise ValueError("Missing config")
