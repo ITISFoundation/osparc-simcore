@@ -11,13 +11,70 @@ export DOCKER_IMAGE_TAG
 SWARM_STACK_NAME=e2e_test_stack
 export SWARM_STACK_NAME
 
+install_insecure_registry() {
+  # Create .env and append extra variables
+  if [[ -f .env ]]; then
+    cp .env .env-bk
+  fi
+
+  make .env
+  {
+    # disable email verification
+    echo WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED=0
+    echo WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0
+    # set max number of CPUs sidecar
+    echo SERVICES_MAX_NANO_CPUS=2000000000
+    # set up insecure internal registry
+    echo REGISTRY_AUTH=False
+    echo REGISTRY_SSL=False
+    echo REGISTRY_URL=registry:5000
+    # disable registry caching to ensure services are fetched
+    echo DIRECTOR_REGISTRY_CACHING=False
+  } >>.env
+
+  # prepare insecure registry access for docker engine
+  echo "------------------- adding host name to the insecure registry "
+  if [[ -f /etc/hosts ]]; then
+    cp /etc/hosts .hosts-bk
+  fi
+  sudo bash -c "echo '127.0.0.1 registry' >> /etc/hosts"
+
+  echo "------------------- adding insecure registry into docker daemon "
+  if [[ -f /etc/docker/daemon.json ]]; then
+    cp /etc/docker/daemon.json .daemon-bk
+  fi
+  sudo bash -c "echo '{\"insecure-registries\": [\"registry:5000\"]}' >> /etc/docker/daemon.json"
+
+  echo "------------------ restarting daemon [takes some time]"
+  sudo service docker restart
+}
+
+uninstall_insecure_registry() {
+  echo "------------------ reverting .env"
+  if [[ -f .env-bk ]]; then
+    mv .env-bk .env
+  fi
+
+  echo "------------------ reverting /etc/hosts"
+  if [[ -f .hosts-bk ]]; then
+    sudo mv .hosts-bk /etc/hosts
+  fi
+
+  if [[ -f .daemon-bk ]]; then
+    echo "------------------ reverting /etc/docker/daemon.json"
+    sudo mv .daemon-bk /etc/docker/daemon.json
+    echo "------------------ restarting daemon [takes some time]"
+    sudo service docker restart
+  fi
+}
+
 setup_images() {
   echo "--------------- getting simcore docker images..."
   make pull-version || ( (make pull-cache || true) && make build-x tag-version)
   make info-images
 
   # configure simcore for testing with a private registry
-  bash tests/e2e/scripts/setup_env_insecure_registry.bash
+  install_insecure_registry
 
   # start simcore and set log-level
   export LOG_LEVEL=WARNING
@@ -76,8 +133,8 @@ setup_database() {
   popd
 }
 
-
 install() {
+  ## shortcut
   setup_images
   setup_environment
   setup_registry
@@ -111,6 +168,8 @@ clean_up() {
   docker images
   echo "--------------- switching off..."
   make leave
+  echo "--------------- uninstalling insecure registry"
+  uninstall_insecure_registry
 }
 
 # Check if the function exists (bash specific)
