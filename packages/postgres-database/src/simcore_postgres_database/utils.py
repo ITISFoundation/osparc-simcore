@@ -7,12 +7,12 @@ from .models.base import metadata
 
 def build_url(
     *,
-    database: str="",
-    user: str="",
-    password: str="",
+    database: str = "",
+    user: str = "",
+    password: str = "",
     host: str = "localhost",
     port: int = 5432,
-    **_kwargs
+    **_kwargs,
 ) -> URL:
     """
        Safe build pg url as 'postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}'

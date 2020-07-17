@@ -16,10 +16,10 @@ from typing import Dict, Optional
 
 import alembic.command
 import click
-import docker
 from alembic import __version__ as __alembic_version__
 from alembic.config import Config as AlembicConfig
 
+import docker
 from simcore_postgres_database.models import *
 from simcore_postgres_database.utils import build_url, raise_if_not_responsive
 
@@ -41,9 +41,20 @@ def safe(if_fails_return=False):
                 res = func(*args, **kargs)
                 return res
             except RuntimeError as err:
-                log.info("%s failed:  %s", func.__name__, str(err), exc_info=True, stack_info=True)
+                log.info(
+                    "%s failed:  %s",
+                    func.__name__,
+                    str(err),
+                    exc_info=True,
+                    stack_info=True,
+                )
             except Exception:
-                log.info("%s failed unexpectedly", func.__name__, exc_info=True, stack_info=True)
+                log.info(
+                    "%s failed unexpectedly",
+                    func.__name__,
+                    exc_info=True,
+                    stack_info=True,
+                )
             return deepcopy(if_fails_return)  # avoid issues with default mutables
 
         return safe_func
@@ -72,7 +83,9 @@ def _get_service_published_port(service_name: str) -> int:
     return int(published_port)
 
 
-def _get_alembic_config_from_cache(force_cfg: Optional[Dict]=None) -> Optional[AlembicConfig]:
+def _get_alembic_config_from_cache(
+    force_cfg: Optional[Dict] = None,
+) -> Optional[AlembicConfig]:
     """
         Creates alembic config from cfg or cache
 
@@ -88,7 +101,9 @@ def _get_alembic_config_from_cache(force_cfg: Optional[Dict]=None) -> Optional[A
 
         url = build_url(**cfg)
     except Exception:
-        log.debug("Cannot open cache or cannot build URL", exc_info=True, stack_info=True)
+        log.debug(
+            "Cannot open cache or cannot build URL", exc_info=True, stack_info=True
+        )
         click.echo("Invalid database config, please run discover first", err=True)
         _reset_cache()
         return None
@@ -126,6 +141,7 @@ DEFAULT_DB = "simcoredb"
 @click.group()
 def main():
     """ Simplified CLI for database migration with alembic """
+
 
 @main.command()
 @click.option("--user", "-u")
@@ -178,7 +194,7 @@ def discover(**cli_inputs) -> Optional[Dict]:
             url = build_url(**cfg)
 
             click.echo(f"ping {test.__name__}: {url} ...")
-            raise_if_not_responsive(url, verbose=True)
+            raise_if_not_responsive(url, verbose=False)
 
             print("Saving config ")
             click.echo(f"Saving config at {discovered_cache}: {cfg}")
@@ -276,7 +292,6 @@ def upgrade(revision):
         raise ValueError("Missing config")
 
 
-
 @main.command()
 @click.argument("revision", default="-1")
 def downgrade(revision):
@@ -299,7 +314,6 @@ def downgrade(revision):
         alembic.command.downgrade(config, str(revision), sql=False, tag=None)
     else:
         raise ValueError("Missing config")
-
 
 
 @main.command()
