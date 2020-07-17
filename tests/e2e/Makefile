@@ -70,11 +70,12 @@ PUBLISHED_PORT = $(shell docker inspect $(shell docker service ls --format "{{ .
 .PHONY: inject-templates-in-db
 inject-templates-in-db: ## inject project templates
 	# Injecting fixture tables in database via port $(PUBLISHED_PORT)
-	PGPASSWORD=adminadmin psql --host localhost \
-								--port $(PUBLISHED_PORT) \
-								--user scu \
-								--dbname simcoredb \
-								--command "\copy projects from 'tutorials/sleepers_project_template_sql.csv' csv header;";
+	PGPASSWORD=adminadmin psql \
+		--host 127.0.0.1 \
+		--port $(PUBLISHED_PORT) \
+		--user scu \
+		--dbname simcoredb \
+		--command "\copy projects from 'tutorials/sleepers_project_template_sql.csv' csv header;";
 
 .PHONY: test
 test: ## test the platform
