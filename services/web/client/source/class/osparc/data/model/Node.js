@@ -997,7 +997,12 @@ qx.Class.define("osparc.data.model.Node", {
     },
     __nodeState: function() {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
+      // Check if study is still there
       if (study === null) {
+        return;
+      }
+      // Check if node is still there
+      if (study.getWorkbench().getNode(this.getNodeId()) === null) {
         return;
       }
 
@@ -1048,6 +1053,11 @@ qx.Class.define("osparc.data.model.Node", {
         const error = e.getTarget().getResponse();
         this.getStatus().setInteractiveStatus("connecting");
         console.log("service not ready yet, waiting... " + error);
+        // Check if node is still there
+        const study = osparc.store.Store.getInstance().getCurrentStudy();
+        if (study.getWorkbench().getNode(this.getNodeId()) === null) {
+          return;
+        }
         const interval = 1000;
         qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
       });
