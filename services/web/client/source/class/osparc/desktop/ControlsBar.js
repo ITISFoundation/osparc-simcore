@@ -53,8 +53,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
   members: {
     __startButton: null,
     __stopButton: null,
-    __groupButton: null,
-    __ungroupButton: null,
     __serviceFilters: null,
     __viewCtrls: null,
     __workbenchViewButton: null,
