@@ -5,7 +5,7 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
-qx.Class.define("osparc.component.service.NodeStatus", {
+qx.Class.define("osparc.component.service.NodeStatusUI", {
   extend: qx.ui.basic.Atom,
 
   construct: function(node) {

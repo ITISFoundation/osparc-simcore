@@ -121,22 +121,10 @@ qx.Class.define("osparc.data.model.Node", {
       event: "changeServiceUrl"
     },
 
-    progress: {
-      check: "Number",
-      init: 0,
-      event: "changeProgress"
-    },
-
     thumbnail: {
       check: "String",
       nullable: true,
       init: ""
-    },
-
-    interactiveStatus: {
-      check: "String",
-      nullable: true,
-      event: "changeInteractiveStatus"
     },
 
     propsWidget: {
@@ -172,6 +160,18 @@ qx.Class.define("osparc.data.model.Node", {
     retrieveIFrameButton: {
       check: "qx.ui.form.Button",
       init: null
+    },
+
+    progress: {
+      check: "Number",
+      init: 0,
+      event: "changeProgress"
+    },
+
+    interactiveStatus: {
+      check: "String",
+      nullable: true,
+      event: "changeInteractiveStatus"
     }
   },
 
