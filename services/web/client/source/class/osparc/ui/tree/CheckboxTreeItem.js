@@ -5,7 +5,7 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
-qx.Class.define("osparc.component.filter.TreeFilterItem", {
+qx.Class.define("osparc.ui.tree.CheckboxTreeItem", {
   extend: qx.ui.tree.VirtualTreeItem,
   properties: {
     checked: {
