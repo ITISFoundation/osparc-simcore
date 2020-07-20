@@ -19,6 +19,8 @@ async function logIn(page, user, pass) {
     return;
   }
 
+  // NOTE: since environ WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0, the
+  // backend automatically creates session after registration is submitted
   console.log("Logging in:", user);
   await page.waitForSelector('[osparc-test-id="loginUserEmailFld"]', {
     visible: true,
@@ -28,9 +30,6 @@ async function logIn(page, user, pass) {
   await page.waitForSelector('[osparc-test-id="loginPasswordFld"]');
   await page.type('[osparc-test-id="loginPasswordFld"]', pass);
   await utils.waitAndClick(page, '[osparc-test-id="loginSubmitBtn"]');
-
-  // NOTE: since environ WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0, the
-  // backend automatically creates session after registration is submitted
 }
 
 async function logOut(page) {
@@ -132,7 +131,6 @@ async function dashboardNewStudy(page) {
 
 async function toDashboard(page) {
   console.log("To Dashboard");
-
   await utils.waitAndClick(page, '[osparc-test-id="dashboardBtn"]')
 }
 
@@ -287,16 +285,6 @@ async function checkDataProducedByNode(page, nFiles = 1) {
 
   const lastChildId = '[osparc-test-id="' + children.pop() + '"]';
   await utils.waitAndClick(page, lastChildId);
-
-  /*
-  try {
-    await downloadSelectedFile(page);
-  }
-  catch(err) {
-    throw(err);
-  }
-  */
-
   await utils.waitAndClick(page, '[osparc-test-id="nodeDataManagerCloseBtn"]');
 }
 
