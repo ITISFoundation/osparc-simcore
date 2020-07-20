@@ -1,21 +1,11 @@
-// node sleepers.js [url] [user] [password]
+// node sleepers.js [url] [user] [password] [--demo]
 
 const utils = require('../utils/utils');
-
 const tutorialBase = require('./tutorialBase');
 
 const args = process.argv.slice(2);
-if (args.length < 1) {
-  console.log('More arguments expected');
-  process.exit(1);
-}
-const url = args[0];
-const enableDemoMode = args.length > 1 ? args[1] === "--demo" : false;
-const {
-  user,
-  pass,
-  newUser
-} = utils.getUserAndPass(args);
+const { url, user, pass, newUser, enableDemoMode } = utils.parseCommandLineArguments(args)
+
 const templateName = "Sleepers";
 
 async function runTutorial() {
