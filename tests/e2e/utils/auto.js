@@ -232,11 +232,15 @@ async function openNode(page, pos) {
   console.log("children", children);
   if (children.length < pos + 1) {
     console.log("Node tree items not found");
-    return;
+    return null;
   }
-  const childId = '[osparc-test-id="' + children[pos] + '"]';
+  const nodeWidgetId = children[pos];
+  const childId = '[osparc-test-id="' + nodeWidgetId + '"]';
   await utils.waitAndClick(page, childId);
   await utils.waitAndClick(page, '[osparc-test-id="openServiceBtn"]');
+
+  const nodeId = nodeWidgetId.replace("nodeTreeItem_", "");
+  return nodeId;
 }
 
 async function openLastNode(page) {
