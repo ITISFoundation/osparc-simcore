@@ -73,7 +73,7 @@ user_to_groups = sa.Table(
         JSONB,
         nullable=False,
         server_default=sa.text(
-            "'{\"read\": true, \"write\": false, \"delete\": false}'::jsonb"
+            '\'{"read": true, "write": false, "delete": false}\'::jsonb'
         ),
     ),
     sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
