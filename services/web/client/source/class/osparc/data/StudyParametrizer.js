@@ -16,14 +16,14 @@
 ************************************************************************ */
 
 /**
- *   Collection of static methods for handling study iterations
+ *   Collection of static methods for handling parametrized studies
  */
 
-qx.Class.define("osparc.data.StudyIterator", {
+qx.Class.define("osparc.data.StudyParametrizer", {
   type: "static",
 
   statics: {
-    createStudyIterations: function(primaryStudyData) {
+    createStudyParameterizations: function(primaryStudyData) {
       const secondaryStudiesData = [];
       const newVals = [3, 4, 5];
       newVals.forEach((newVal, idx) => {
@@ -34,7 +34,7 @@ qx.Class.define("osparc.data.StudyIterator", {
             "in_2": newVal
           }
         };
-        const secondaryStudyData = osparc.data.StudyIterator.createStudyIteration(primaryStudyData, delta, idx);
+        const secondaryStudyData = osparc.data.StudyParametrizer.createStudyParameterization(primaryStudyData, delta, idx);
         if (secondaryStudyData) {
           console.log(secondaryStudyData);
           secondaryStudiesData.push(secondaryStudyData);
@@ -65,9 +65,9 @@ qx.Class.define("osparc.data.StudyIterator", {
       return false;
     },
 
-    createStudyIteration: function(primaryStudyData, delta, idx) {
+    createStudyParameterization: function(primaryStudyData, delta, idx) {
       const secondaryStudyData = osparc.data.model.Study.deepCloneStudyObject(primaryStudyData);
-      if (osparc.data.StudyIterator.__applyDelta(secondaryStudyData, delta)) { // eslint-disable-line no-underscore-dangle
+      if (osparc.data.StudyParametrizer.__applyDelta(secondaryStudyData, delta)) { // eslint-disable-line no-underscore-dangle
         // give new study id
         secondaryStudyData["uuid"] = osparc.utils.Utils.uuidv4();
         // give a different name
