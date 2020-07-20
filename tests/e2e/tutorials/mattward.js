@@ -4,7 +4,13 @@ const utils = require('../utils/utils');
 const tutorialBase = require('./tutorialBase');
 
 const args = process.argv.slice(2);
-const { url, user, pass, newUser, enableDemoMode } = utils.parseCommandLineArguments(args)
+const {
+  url,
+  user,
+  pass,
+  newUser,
+  enableDemoMode
+} = utils.parseCommandLineArguments(args)
 
 const templateName = "Mattward";
 

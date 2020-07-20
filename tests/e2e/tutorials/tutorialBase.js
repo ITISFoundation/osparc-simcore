@@ -162,11 +162,11 @@ class TutorialBase {
   }
 
   async openNodeFiles(nodePosInTree = 0) {
-    await auto.openNode(this.__page, nodePosInTree);
-    this.__responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=");
+    const nodeId = await auto.openNode(this.__page, nodePosInTree);
+    this.__responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
     await auto.openNodeFiles(this.__page);
     try {
-      await this.__responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=");
+      await this.__responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
     }
     catch(err) {
       console.error(err);
