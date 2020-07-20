@@ -25,7 +25,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     const sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
       minWidth: 0,
-      width: 400
+      width: Math.min(parseInt(window.innerWidth*0.25), 400)
     });
     osparc.utils.Utils.addBorder(sidePanel, 2, "right");
     const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
@@ -625,14 +625,22 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
+    __maximizeIframe: function(maximize) {
+      this.getBlocker().setStyles({
+        display: maximize ? "none" : "block"
+      });
+      this.__scrollContainer.setVisibility(maximize ? "excluded" : "visible");
+    },
+
     __attachEventHandlers: function() {
-      this.__blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
+      const blocker = this.getBlocker();
+      blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
+
+      const splitter = this.getChildControl("splitter");
+      splitter.setWidth(1);
 
       const maximizeIframeCb = msg => {
-        this.__blocker.setStyles({
-          display: msg.getData() ? "none" : "block"
-        });
-        this.__scrollContainer.setVisibility(msg.getData() ? "excluded" : "visible");
+        this.__maximizeIframe(msg.getData());
       };
 
       this.addListener("appear", () => {
@@ -680,7 +688,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           const workbench = this.getStudy().getWorkbench();
           const node = workbench.getNode(nodeId);
           if (node) {
-            node.setProgress(progress);
+            node.getStatus().setProgress(progress);
           }
         }, this);
       }
@@ -698,7 +706,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             node.setOutputData(nodeData.outputs);
             if (nodeData.progress) {
               const progress = Number.parseInt(nodeData.progress);
-              node.setProgress(progress);
+              node.getStatus().setProgress(progress);
             }
           }
         }, this);

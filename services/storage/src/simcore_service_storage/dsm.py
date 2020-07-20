@@ -6,7 +6,7 @@ import shutil
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
 
 import aiobotocore
 import aiofiles
@@ -43,7 +43,6 @@ from .settings import (
     SIMCORE_S3_ID,
     SIMCORE_S3_STR,
 )
-
 
 # pylint: disable=no-value-for-parameter
 # FIXME: E1120:No value for argument 'dml' in method call
@@ -279,9 +278,8 @@ class DataStorageManager:
 
                 # same as above, make sure file is physically present on s3
                 clean_data = []
-                # MaG: This is inefficient: Do this automatically when file is modified
-                _loop = asyncio.get_event_loop()
-                session = aiobotocore.get_session(loop=_loop)
+                # FIXME: MaG: This is inefficient: Do this automatically when file is modified
+                session = aiobotocore.get_session()
                 async with session.create_client(
                     "s3",
                     endpoint_url=self.s3_client.endpoint_url,
@@ -553,6 +551,7 @@ class DataStorageManager:
 
         s3_upload_link = await self.upload_link(user_id, dest_uuid)
 
+        # FIXME: user of mkdtemp is RESPONSIBLE to deleting it https://docs.python.org/3/library/tempfile.html#tempfile.mkdtemp
         tmp_dirpath = tempfile.mkdtemp()
         local_file_path = os.path.join(tmp_dirpath, filename)
         session = get_client_session(self.app)
@@ -636,8 +635,7 @@ class DataStorageManager:
                 uuid_name_dict[new_node_id] = src_node["label"]
 
         # Step 1: List all objects for this project replace them with the destination object name and do a copy at the same time collect some names
-        _loop = asyncio.get_event_loop()
-        session = aiobotocore.get_session(loop=_loop)
+        session = aiobotocore.get_session()
         async with session.create_client(
             "s3",
             endpoint_url=self.s3_client.endpoint_url,
@@ -676,32 +674,31 @@ class DataStorageManager:
 
             # Step 2: List all references in outputs that point to datcore and copy over
             for node_id, node in destination_project["workbench"].items():
-                outputs = node.get("outputs")
-                if outputs is not None:
-                    for _output_key, output in outputs.items():
-                        if "store" in output and output["store"] == DATCORE_ID:
-                            src = output["path"]
-                            dest = str(Path(dest_folder) / node_id)
-                            logger.info("Need to copy %s to %s", src, dest)
-                            dest = await self.copy_file_datcore_s3(
-                                user_id=user_id,
-                                dest_uuid=dest,
-                                source_uuid=src,
-                                filename_missing=True,
-                            )
-                            # and change the dest project accordingly
-                            output["store"] = SIMCORE_S3_ID
-                            output["path"] = dest
-                        elif "store" in output and output["store"] == SIMCORE_S3_ID:
-                            source = output["path"]
-                            dest = dest = str(
-                                Path(dest_folder) / node_id / Path(source).name
-                            )
-                            output["store"] = SIMCORE_S3_ID
-                            output["path"] = dest
+                outputs: Dict = node.get("outputs", {})
+                for _output_key, output in outputs.items():
+                    if "store" in output and output["store"] == DATCORE_ID:
+                        src = output["path"]
+                        dest = str(Path(dest_folder) / node_id)
+                        logger.info("Need to copy %s to %s", src, dest)
+                        dest = await self.copy_file_datcore_s3(
+                            user_id=user_id,
+                            dest_uuid=dest,
+                            source_uuid=src,
+                            filename_missing=True,
+                        )
+                        # and change the dest project accordingly
+                        output["store"] = SIMCORE_S3_ID
+                        output["path"] = dest
+                    elif "store" in output and output["store"] == SIMCORE_S3_ID:
+                        source = output["path"]
+                        dest = dest = str(
+                            Path(dest_folder) / node_id / Path(source).name
+                        )
+                        output["store"] = SIMCORE_S3_ID
+                        output["path"] = dest
 
         # step 3: list files first to create fmds
-        session = aiobotocore.get_session(loop=_loop)
+        session = aiobotocore.get_session()
         fmds = []
         async with session.create_client(
             "s3",
@@ -745,7 +742,7 @@ class DataStorageManager:
                 await conn.execute(ins)
 
     async def delete_project_simcore_s3(
-        self, user_id: str, project_id: str, node_id: Optional[str]
+        self, user_id: str, project_id: str, node_id: Optional[str]=None
     ) -> web.Response:
         """ Deletes all files from a given node in a project in simcore.s3 and updated db accordingly.
             If node_id is not given, then all the project files db entries are deleted.
@@ -762,8 +759,7 @@ class DataStorageManager:
                 delete_me = delete_me.where(file_meta_data.c.node_id == node_id)
             await conn.execute(delete_me)
 
-        _loop = asyncio.get_event_loop()
-        session = aiobotocore.get_session(loop=_loop)
+        session = aiobotocore.get_session()
         async with session.create_client(
             "s3",
             endpoint_url=self.s3_client.endpoint_url,

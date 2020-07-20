@@ -4,48 +4,15 @@
 # pylint:disable=redefined-outer-name
 
 from typing import List
-from uuid import uuid4
 
-import faker
 import pytest
 import sqlalchemy as sa
 from aiopg.sa.result import ResultProxy, RowProxy
-
-from simcore_postgres_database.models.base import metadata
 from psycopg2.errors import ForeignKeyViolation  # pylint: disable=no-name-in-module
-from simcore_postgres_database.webserver_models import (
-    UserStatus,
-    projects,
-    users,
-)
 
-fake = faker.Faker()
-
-
-def random_user(**overrides):
-    data = dict(
-        name=fake.name(),
-        email=fake.email(),
-        password_hash=fake.numerify(text="#" * 5),
-        status=UserStatus.ACTIVE,
-        created_ip=fake.ipv4(),
-    )
-    data.update(overrides)
-    return data
-
-
-def random_project(**overrides):
-    data = dict(
-        uuid=uuid4(),
-        name=fake.word(),
-        description=fake.sentence(),
-        prj_owner=fake.pyint(),
-        access_rights={},
-        workbench={},
-        published=False,
-    )
-    data.update(overrides)
-    return data
+from fake_creators import random_project, random_user
+from simcore_postgres_database.models.base import metadata
+from simcore_postgres_database.webserver_models import projects, users
 
 
 @pytest.fixture
@@ -123,7 +90,6 @@ async def test_insert_user(engine):
         # If no more rows, the cursor is automatically closed and None is returned
         assert user2b is None
         assert res.closed
-
 
 
 async def test_count_users(engine):

@@ -16,15 +16,18 @@ from random import randrange
 from typing import Tuple
 
 import pytest
+from aiohttp import web
 from aiopg.sa import create_engine
 
 import simcore_service_storage
 import utils
+from servicelib.application import create_safe_application
 from simcore_service_storage.datcore_wrapper import DatcoreWrapper
 from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.settings import SIMCORE_S3_STR
-from utils import ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER, USER_ID
+from utils import (ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER,
+                   USER_ID)
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 sys.path.append(str(current_dir / "helpers"))
@@ -324,17 +327,33 @@ async def datcore_testbucket(loop, mock_files_factory):
 
 
 @pytest.fixture(scope="function")
-def dsm_fixture(s3_client, postgres_engine, loop):
+def moduleless_app(loop, aiohttp_server) -> web.Application:
+    app: web.Application = create_safe_application()
+    # creates a dummy server
+    server = loop.run_until_complete(aiohttp_server(app))
+    # server is destroyed on exit https://docs.aiohttp.org/en/stable/testing.html#pytest_aiohttp.aiohttp_server
+    return app
+
+
+@pytest.fixture(scope="function")
+def dsm_fixture(s3_client, postgres_engine, loop, moduleless_app):
     pool = ThreadPoolExecutor(3)
+
     dsm_fixture = DataStorageManager(
-        s3_client, postgres_engine, loop, pool, BUCKET_NAME, False
+        s3_client=s3_client,
+        engine=postgres_engine,
+        loop=loop,
+        pool=pool,
+        simcore_bucket_name=BUCKET_NAME,
+        has_project_db=False,
+        app=moduleless_app,
     )
 
     api_token = os.environ.get("BF_API_KEY", "none")
     api_secret = os.environ.get("BF_API_SECRET", "none")
     dsm_fixture.datcore_tokens[USER_ID] = DatCoreApiToken(api_token, api_secret)
 
-    return dsm_fixture
+    yield dsm_fixture
 
 
 @pytest.fixture(scope="function")
@@ -350,21 +369,28 @@ async def datcore_structured_testbucket(loop, mock_files_factory):
     dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
 
     dataset_id = await dcw.create_test_dataset(BUCKET_NAME)
+    assert dataset_id, f"Could not create dataset {BUCKET_NAME}"
+
     tmp_files = mock_files_factory(3)
+
     # first file to the root
-    file_id1 = await dcw.upload_file_to_id(dataset_id, os.path.normpath(tmp_files[0]))
+    filename1 = os.path.normpath(tmp_files[0])
+    file_id1 = await dcw.upload_file_to_id(dataset_id, filename1)
+    assert file_id1, f"Could not upload {filename1} to the root of {BUCKET_NAME}"
+
     # create first level folder
     collection_id1 = await dcw.create_collection(dataset_id, "level1")
+
     # upload second file
-    file_id2 = await dcw.upload_file_to_id(
-        collection_id1, os.path.normpath(tmp_files[1])
-    )
+    filename2 = os.path.normpath(tmp_files[1])
+    file_id2 = await dcw.upload_file_to_id(collection_id1, filename2)
+    assert file_id2, f"Could not upload {filename2} to the {BUCKET_NAME}/level1"
 
     # create 3rd level folder
+    filename3 = os.path.normpath(tmp_files[2])
     collection_id2 = await dcw.create_collection(collection_id1, "level2")
-    file_id3 = await dcw.upload_file_to_id(
-        collection_id2, os.path.normpath(tmp_files[2])
-    )
+    file_id3 = await dcw.upload_file_to_id(collection_id2, filename3)
+    assert file_id3, f"Could not upload {filename3} to the {BUCKET_NAME}/level1/level2"
 
     yield {
         "dataset_id": dataset_id,

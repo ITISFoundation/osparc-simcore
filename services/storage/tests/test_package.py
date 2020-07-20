@@ -1,14 +1,11 @@
-# TODO: W0611:Unused import ...
-# pylint: disable=W0611
-# TODO: W0613:Unused argument ...
-# pylint: disable=W0613
-# W0621: Redefining name ... from outer scope
-# pylint: disable=W0621
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
 
-from pytest_simcore.helpers.utils_pylint import assert_pylint_is_passing
 
 import pytest
 
+from pytest_simcore.helpers.utils_pylint import assert_pylint_is_passing
 from simcore_service_storage.cli import main
 
 

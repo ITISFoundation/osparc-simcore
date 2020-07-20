@@ -3,7 +3,7 @@
 #
 include ../../scripts/common.Makefile
 
-APP_NAME     := $(notdir $(CURDIR))
+APP_NAME := $(notdir $(CURDIR))
 
 .PHONY: openapi-specs
 openapi-specs: ## updates and validates openapi specifications
@@ -22,6 +22,6 @@ tests: ## runs unit tests
 	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests
 
 
-.PHONY: build
-build: openapi-specs ## builds docker image (using main services/docker-compose-build.yml)
+.PHONY: build build-devel
+build build-devel: openapi-specs ## builds docker image (using main services/docker-compose-build.yml)
 	@$(MAKE) -C ${REPO_BASE_DIR} $@ target=${APP_NAME}
