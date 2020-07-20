@@ -155,7 +155,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         if (layoutProps.column === this._gridPos.ctrlField) {
           this._remove(child);
           const item = this._form.getControl(portId);
-          const field = new osparc.component.form.FieldWHint(null, item.description, item);
+          const field = this._createFieldWithHint(item);
           this._addAt(field, idx, {
             row: layoutProps.row,
             column: this._gridPos.ctrlField

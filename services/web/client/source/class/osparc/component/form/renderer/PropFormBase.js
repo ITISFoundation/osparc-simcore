@@ -85,7 +85,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         });
         label.setBuddy(item);
 
-        const field = new osparc.component.form.FieldWHint(null, item.description, item);
+        const field = this._createFieldWithHint(item);
         field.key = item.key;
         this._add(field, {
           row: this._row,
@@ -130,6 +130,11 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       */
     setAccessLevel: function() {
       throw new Error("Abstract method called!");
+    },
+
+    _createFieldWithHint: function(item) {
+      const field = new osparc.component.form.FieldWHint(null, item.description, item);
+      return field;
     },
 
     _getLayoutChild: function(portId, column) {
