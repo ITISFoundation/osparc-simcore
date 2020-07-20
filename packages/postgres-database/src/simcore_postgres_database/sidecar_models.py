@@ -5,15 +5,14 @@
 
 """
 from .models.comp_pipeline import (
-    comp_pipeline,
-    UNKNOWN,
     FAILED,
     PENDING,
     RUNNING,
     SUCCESS,
+    UNKNOWN,
+    comp_pipeline,
 )
 from .models.comp_tasks import comp_tasks
-
 
 __all__ = [
     "comp_tasks",

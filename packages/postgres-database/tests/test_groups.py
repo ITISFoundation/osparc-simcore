@@ -1,40 +1,19 @@
 # pylint: disable=no-name-in-module
 # pylint: disable=no-value-for-parameter
 
-import faker
 import pytest
 from aiopg.sa.result import RowProxy
 from psycopg2.errors import ForeignKeyViolation, RaiseException, UniqueViolation
 from sqlalchemy import literal_column
 
+from fake_creators import random_group, random_user
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import (
     GroupType,
-    UserStatus,
     groups,
     user_to_groups,
     users,
 )
-
-fake = faker.Faker()
-
-
-def random_user(**overrides):
-    data = dict(
-        name=fake.name(),
-        email=fake.email(),
-        password_hash=fake.numerify(text="#" * 5),
-        status=UserStatus.ACTIVE,
-        created_ip=fake.ipv4(),
-    )
-    data.update(overrides)
-    return data
-
-
-def random_group(**overrides):
-    data = dict(name=fake.company(), description=fake.text(), type="STANDARD")
-    data.update(overrides)
-    return data
 
 
 async def _create_group(conn, **overrides) -> RowProxy:

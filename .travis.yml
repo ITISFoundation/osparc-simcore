@@ -385,43 +385,7 @@ jobs:
       after_failure:
         - unbuffer bash ci/travis/system-testing/swarm-deploy.bash after_failure
 
-    # system testing e2e testing -----------------------------------------------------------------
-    # https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
-    # FIXME: skip the job until make it faster and more reliable https://github.com/ITISFoundation/osparc-simcore/issues/1594
-    - if: false
-      stage: integration-testing / system-testing
-      name: e2e testing
-      language: node_js
-      node_js:
-        - "10"
-      sudo: required
-      services:
-        - xvfb
-      addons:
-        apt:
-          packages:
-            - libnss3 # This is required to run new chrome on old trusty
-            - expect-dev # for unbuffer: brings color back into travis logs
-            - docker-ce
-            - python3-venv
-      notifications:
-        email: false
-      cache:
-        directories:
-          - node_modules
-      before_install:
-        - sudo bash ci/travis/system-testing/e2e.bash before_install
-      install:
-        - unbuffer bash ci/travis/system-testing/e2e.bash install
-      before_script:
-        - unbuffer bash ci/travis/system-testing/e2e.bash before_script
-      script:
-        - unbuffer bash ci/travis/system-testing/e2e.bash script
-      after_success:
-        - unbuffer bash ci/travis/system-testing/e2e.bash after_success
-      after_failure:
-        - unbuffer bash ci/travis/system-testing/e2e.bash after_failure
-
+    # deployment in master environ ----------------------------------------------------------------
     - stage: deployment
       name: master
       if: branch = master
@@ -436,6 +400,8 @@ jobs:
           script: unbuffer bash ci/deploy/dockerhub-deploy.bash
           on:
             branch: master
+
+    # deployment to staging environ ----------------------------------------------------------------
     - stage: deployment
       name: staging
       if: branch = staging
@@ -450,6 +416,8 @@ jobs:
           script: unbuffer bash ci/deploy/dockerhub-deploy.bash
           on:
             branch: staging
+
+    # deployment to production environ ----------------------------------------------------------------
     - stage: deployment
       name: production/release
       env:
@@ -466,6 +434,7 @@ jobs:
             all_branches: true
             tags: true
             condition: $TRAVIS_TAG =~ ^v[0-9]+.[0-9]+.[0-9]+$
+
 notifications:
   email:
     on_success: never
