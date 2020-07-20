@@ -4,55 +4,14 @@
 # pylint:disable=redefined-outer-name
 
 import json
-import random
-from datetime import datetime
-from typing import Dict
-from uuid import uuid4
 
-import faker
 import pytest
 import sqlalchemy as sa
 from psycopg2.errors import UniqueViolation  # pylint: disable=no-name-in-module
 
+from fake_creators import fake_pipeline, fake_task
 from simcore_postgres_database.models.base import metadata
-from simcore_postgres_database.models.comp_pipeline import (
-    FAILED,
-    PENDING,
-    RUNNING,
-    SUCCESS,
-    UNKNOWN,
-)
 from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
-
-fake = faker.Faker()
-
-STATES = [UNKNOWN, PENDING, RUNNING, SUCCESS, FAILED]
-
-
-def fake_pipeline(**overrides) -> Dict:
-    data = dict(dag_adjacency_list=json.dumps({}), state=random.choice(STATES),)
-    data.update(overrides)
-    return data
-
-
-def fake_task(**overrides) -> Dict:
-    data = dict(
-        project_id=uuid4(),
-        node_id=uuid4(),
-        job_id=uuid4(),
-        internal_id=1,  # TODO: incremental
-        schema=json.dumps({}),
-        inputs=json.dumps({}),
-        outputs=json.dumps({}),
-        image=json.dumps({}),
-        state=random.choice(STATES),
-        submit=datetime.utcnow(),
-        start=datetime.utcnow(),
-        end=datetime.utcnow(),
-    )
-    # TODO: state and times must be logic submit < start and end
-    data.update(overrides)
-    return data
 
 
 @pytest.fixture
