@@ -53,7 +53,7 @@ qx.Class.define("osparc.component.iteration.Selector", {
     "openIteration": "qx.event.type.Data"
   },
 
-  members: {// eslint-disable-line qx-rules/no-refs-in-members
+  members: { // eslint-disable-line qx-rules/no-refs-in-members
     __model: null,
 
     __cols: {
