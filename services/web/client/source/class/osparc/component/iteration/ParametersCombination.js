@@ -74,20 +74,43 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
         }
         arrs.push(arr);
       });
-      console.log(arrs);
 
-      const getLinearCombination = (arr, pre) => {
-        pre = pre || "";
-        if (!arr.length) {
-          return pre;
-        }
-        const ans = arr[0].reduce((ans2, value) => {
-          return ans2.concat(getLinearCombination(arr.slice(1), pre + value));
-        }, []);
-        return ans;
+      // https://stackoverflow.com/questions/15298912/javascript-generating-combinations-from-n-arrays-with-m-elements
+      const cartesian = args => {
+      // const cartesian = (...args) => {
+        const r = [];
+        const max = args.length-1;
+        const helper = (arr, i) => {
+          for (let j=0, l=args[i].length; j<l; j++) {
+            const a = arr.slice(0); // clone arr
+            a.push(args[i][j]);
+            if (i === max) {
+              r.push(a);
+            } else {
+              helper(a, i+1);
+            }
+          }
+        };
+        helper([], 0);
+        return r;
       };
 
-      console.log(getLinearCombination(arrs));
+      const rows = [];
+      if (arrs.length) {
+        const combs = cartesian(arrs);
+        let combId = 0;
+        for (let i=0; i<combs.length; i++) {
+          const comb = combs[i];
+          const row = [];
+          row[this.__cols["id"].col] = combId++;
+          row[this.__cols["name"].col] = "Iteration " + combId;
+          for (let j=0; j<comb.length; j++) {
+            row[this.__cols["name"].col+1+j] = comb[j];
+          }
+          rows.push(row);
+        }
+      }
+      this.getTableModel().setData(rows, false);
     }
   }
 });
