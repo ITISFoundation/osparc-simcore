@@ -348,10 +348,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       });
     },
 
-    getControlLinks: function() {
-      return this.__ctrlLinkMap;
-    },
-
     getControlLink: function(key) {
       return this.__ctrlLinkMap[key];
     },
