@@ -129,7 +129,8 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       this.__allServicesObj = {};
 
       const services = this.__serviceBrowser = new osparc.component.service.ServiceList("serviceCatalog").set({
-        width: 568
+        width: 568,
+        backgroundColor: "background-main"
       });
       const scrolledServices = new qx.ui.container.Scroll().set({
         height: 260

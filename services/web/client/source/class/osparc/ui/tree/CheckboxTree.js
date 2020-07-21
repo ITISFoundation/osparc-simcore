@@ -5,6 +5,9 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
+/**
+ * A tree that makes its items selectable with a checkbox.
+ */
 qx.Class.define("osparc.ui.tree.CheckboxTree", {
   extend: qx.ui.tree.VirtualTree,
   construct: function(data) {
@@ -13,9 +16,7 @@ qx.Class.define("osparc.ui.tree.CheckboxTree", {
     this.set({
       delegate: {
         createItem: function() {
-          return new osparc.ui.tree.CheckboxTreeItem().set({
-            open: true
-          });
+          return new osparc.ui.tree.CheckboxTreeItem();
         },
         bindItem: function(controller, item, id) {
           controller.bindDefaultProperties(item, id);
@@ -24,10 +25,12 @@ qx.Class.define("osparc.ui.tree.CheckboxTree", {
         },
         configureItem: function(item) {
           item.addListener("checkboxClicked", () => tree.fireDataEvent("checkedChanged", tree.getChecked()));
+          item.setSelectable(false);
         }
       },
       hideRoot: true,
-      decorator: "no-border"
+      decorator: "no-border",
+      selectionMode: "multi"
     });
   },
   events: {
@@ -74,6 +77,10 @@ qx.Class.define("osparc.ui.tree.CheckboxTree", {
       data.children = data.children || [];
       data.children.forEach(child => this.__extendData(child));
     },
+    /**
+     * Method returning an array of checked elements (model elements).
+     * @param {Array?} model Tree model to check. Used for recursion, the method should be called without parameters.
+     */
     getChecked: function(model) {
       const nodes = model == null ? this.getModel().getChildren().toArray() : model.getChildren().toArray();
       let checked = [];
