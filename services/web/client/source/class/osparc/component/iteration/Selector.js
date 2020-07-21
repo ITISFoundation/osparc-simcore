@@ -15,31 +15,19 @@
 
 ************************************************************************ */
 
-/**
- *
- */
-
 qx.Class.define("osparc.component.iteration.Selector", {
   extend: qx.ui.table.Table,
 
-  /**
-   * Constructor sets the model and general look.
-   */
   construct: function(primaryStudy) {
-    this.__model = new qx.ui.table.model.Simple();
-    const cols = [];
-    Object.keys(this.__cols).forEach(colKey => {
-      cols.push(this.__cols[colKey].label);
-    });
-    this.__model.setColumns(cols);
+    const model = this.__model = this.__initModel();
 
-    this.base(arguments, this.__model, {
+    this.base(arguments, model, {
       tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj),
       initiallyHiddenColumns: [0]
     });
 
     this.__initTable();
-    this.__populateSelector(primaryStudy);
+    this.__populateTable(primaryStudy);
   },
 
   statics: {
@@ -87,6 +75,16 @@ qx.Class.define("osparc.component.iteration.Selector", {
       }
     },
 
+    __initModel: function() {
+      const model = new qx.ui.table.model.Simple();
+      const cols = [];
+      Object.keys(this.__cols).forEach(colKey => {
+        cols.push(this.__cols[colKey].label);
+      });
+      model.setColumns(cols);
+      return model;
+    },
+
     __initTable: function() {
       const columnModel = this.getTableColumnModel();
       columnModel.getBehavior().setMinWidth(this.__cols["name"].col, 120);
@@ -96,7 +94,7 @@ qx.Class.define("osparc.component.iteration.Selector", {
       this.getSelectionModel().setSelectionMode(qx.ui.table.selection.Model.SINGLE_SELECTION);
     },
 
-    __populateSelector: function(primaryStudy) {
+    __populateTable: function(primaryStudy) {
       const secStudies = primaryStudy.getSecondaryStudies();
       const rows = [];
       Object.keys(secStudies).forEach(secStudyId => {
