@@ -77,15 +77,18 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
 
       // add the items
       for (let i = 0; i < items.length; i++) {
-        let item = items[i];
-        let label = this._createLabel(names[i], item);
+        const item = items[i];
+
+        const label = this._createLabel(names[i], item);
+        label.setBuddy(item);
         this._add(label, {
           row: this._row,
           column: this._gridPos.label
         });
-        label.setBuddy(item);
 
-        const field = this._createFieldWithHint(item, item.description);
+        const fieldWMenu = this._createFieldWithMenu(item);
+
+        const field = this._createFieldWithHint(fieldWMenu, item.description);
         field.key = item.key;
         this._add(field, {
           row: this._row,
@@ -125,11 +128,42 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       return filteredData;
     },
 
+    __getMenuButton: function() {
+      const menu = new qx.ui.menu.Menu().set({
+        position: "bottom-right"
+      });
+
+      const newParamBtn = new qx.ui.menu.Button(this.tr("Add new parameter"));
+      menu.add(newParamBtn);
+
+      const existingParamBtn = new qx.ui.menu.Button(this.tr("Add existing parameter"));
+      menu.add(existingParamBtn);
+
+      const menuBtn = new qx.ui.form.MenuButton().set({
+        menu: menu,
+        icon: "@FontAwesome5Solid/ellipsis-v/14",
+        focusable: false
+      });
+      return menuBtn;
+    },
+
     /**
       * @abstract
       */
     setAccessLevel: function() {
       throw new Error("Abstract method called!");
+    },
+
+    _createFieldWithMenu: function(field) {
+      const fieldWMenu = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      fieldWMenu.add(field, {
+        flex: 1
+      });
+
+      const menuBtn = this.__getMenuButton();
+      fieldWMenu.add(menuBtn);
+
+      return fieldWMenu;
     },
 
     _createFieldWithHint: function(field, hint) {

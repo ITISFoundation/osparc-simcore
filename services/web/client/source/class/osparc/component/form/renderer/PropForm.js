@@ -3,6 +3,7 @@
               2018 ITIS Foundation
    License:   MIT
    Authors:   Tobi Oetiker <tobi@oetiker.ch>
+              Odei Maiz <odeimaiz>
    Utf8Check: äöü
 ************************************************************************ */
 
@@ -154,7 +155,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         if (layoutProps.column === this._gridPos.ctrlField) {
           this._remove(child);
           const item = this._form.getControl(portId);
-          const field = this._createFieldWithHint(item, item.description);
+
+          const fieldWMenu = this._createFieldWithMenu(item);
+
+          const field = this._createFieldWithHint(fieldWMenu, item.description);
           this._addAt(field, idx, {
             row: layoutProps.row,
             column: this._gridPos.ctrlField
