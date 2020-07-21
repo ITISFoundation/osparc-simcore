@@ -27,12 +27,11 @@ qx.Class.define("osparc.component.iteration.Selector", {
    */
   construct: function(primaryStudy) {
     this.__model = new qx.ui.table.model.Simple();
-    this.__model.setColumns([
-      this.__cols["id"].label,
-      this.__cols["name"].label,
-      this.__cols["variables"].label,
-      this.__cols["show"].label
-    ]);
+    const cols = [];
+    Object.keys(this.__cols).forEach(colKey => {
+      cols.push(this.__cols[colKey].label);
+    });
+    this.__model.setColumns(cols);
 
     this.base(arguments, this.__model, {
       tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj),
