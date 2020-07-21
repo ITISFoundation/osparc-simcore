@@ -66,6 +66,14 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     __startButton: null,
     __stopButton: null,
 
+    getStartButton: function() {
+      return this.__startButton;
+    },
+
+    getStopButton: function() {
+      return this.__stopButton;
+    },
+
     setWorkbenchVisibility: function(isWorkbenchContext) {
       this.__serviceFilters.setVisibility(isWorkbenchContext ? "visible" : "excluded");
       this.__groupCtrls.setVisibility(isWorkbenchContext ? "visible" : "excluded");
@@ -117,9 +125,9 @@ qx.Class.define("osparc.desktop.ControlsBar", {
         });
 
       const simCtrls = new qx.ui.toolbar.Part();
-      const startButton = this.__startButton = this.__createStartButton();
+      const startButton = this.__createStartButton();
       simCtrls.add(startButton);
-      const stopButton = this.__stopButton = this.__createStopButton();
+      const stopButton = this.__createStopButton();
       simCtrls.add(stopButton);
       this.add(simCtrls);
     },
@@ -170,12 +178,12 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     },
 
     __createStartButton: function() {
-      const startButton = this.__createButton(this.tr("Run"), "play", "runStudyBtn", "startPipeline");
+      const startButton = this.__startButton = this.__createButton(this.tr("Run"), "play", "runStudyBtn", "startPipeline");
       return startButton;
     },
 
     __createStopButton: function() {
-      const stopButton = this.__createButton(this.tr("Stop"), "stop-circle", "stopStudyBtn", "stopPipeline");
+      const stopButton = this.__stopButton = this.__createButton(this.tr("Stop"), "stop-circle", "stopStudyBtn", "stopPipeline");
       // do not show until it Stops the pipeline
       stopButton.setVisibility("excluded");
       return stopButton;
