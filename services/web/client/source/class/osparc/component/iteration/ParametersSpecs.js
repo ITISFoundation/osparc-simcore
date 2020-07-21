@@ -68,6 +68,14 @@ qx.Class.define("osparc.component.iteration.ParametersSpecs", {
     __initModel: function() {
       const model = this.__model = new qx.ui.table.model.Simple();
 
+      model.addListener("dataChanged", e => {
+        const data = e.getData();
+        if (data.firstColumn === data.lastColumn && data.firstRow === data.lastRow) {
+          const rowData = model.getRowData(data.firstRow);
+          this.__dataChanged(rowData);
+        }
+      });
+
       const cols = [];
       Object.keys(this.__cols).forEach(colKey => {
         cols.push(this.__cols[colKey].label);
@@ -78,6 +86,15 @@ qx.Class.define("osparc.component.iteration.ParametersSpecs", {
     },
 
     __initTable: function() {
+      const model = this.__model;
+      const cols = this.__cols;
+      model.setColumnEditable(cols["id"].col, false);
+      model.setColumnEditable(cols["label"].col, true);
+      model.setColumnEditable(cols["low"].col, true);
+      model.setColumnEditable(cols["high"].col, true);
+      model.setColumnEditable(cols["steps"].col, true);
+      model.setColumnEditable(cols["distribution"].col, false);
+
       this.getSelectionModel().setSelectionMode(qx.ui.table.selection.Model.SINGLE_SELECTION);
     },
 
@@ -96,6 +113,19 @@ qx.Class.define("osparc.component.iteration.ParametersSpecs", {
         rows.push(row);
       });
       this.getTableModel().setData(rows, false);
+    },
+
+    __dataChanged: function(rowData) {
+      const cols = this.__cols;
+      const parameters = this.__primaryStudy.getParameters();
+      const idx = parameters.findIndex(existingParam => existingParam.id === rowData[cols["id"].col]);
+      if (idx !== -1) {
+        const parameter = parameters[idx];
+        parameter.label = rowData[cols["label"].col];
+        parameter.low = rowData[cols["low"].col];
+        parameter.high = rowData[cols["high"].col];
+        parameter.steps = rowData[cols["steps"].col];
+      }
     }
   }
 });
