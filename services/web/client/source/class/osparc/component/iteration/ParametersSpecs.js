@@ -75,13 +75,6 @@ qx.Class.define("osparc.component.iteration.ParametersSpecs", {
     },
 
     __initTable: function() {
-      const columnModel = this.getTableColumnModel();
-      columnModel.getBehavior().setMinWidth(this.__cols["name"].col, 120);
-      columnModel.getBehavior().setMinWidth(this.__cols["low"].col, 50);
-      columnModel.getBehavior().setMinWidth(this.__cols["high"].col, 50);
-      columnModel.getBehavior().setMinWidth(this.__cols["steps"].col, 50);
-      columnModel.getBehavior().setMinWidth(this.__cols["distribution"].col, 50);
-
       this.getSelectionModel().setSelectionMode(qx.ui.table.selection.Model.SINGLE_SELECTION);
     },
 

@@ -41,6 +41,10 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
       }
     },
 
+    updateTable: function(primaryStudy) {
+
+    },
+
     __initModel: function(primaryStudy) {
       const model = new qx.ui.table.model.Simple();
       const cols = [];

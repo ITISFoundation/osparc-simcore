@@ -21,7 +21,7 @@ qx.Class.define("osparc.component.iteration.Parameters", {
   construct: function(primaryStudy) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.Grow());
+    this._setLayout(new qx.ui.layout.VBox(5));
 
     this.__buildLayout(primaryStudy);
   },
@@ -49,17 +49,20 @@ qx.Class.define("osparc.component.iteration.Parameters", {
     __buildLayout: function(primaryStudy) {
       const newParamBtn = this.__createNewParamBtn();
       this._add(newParamBtn);
-
       const paramSpecs = this.__createParamSpecs(primaryStudy);
       this._add(paramSpecs);
 
+      this._add(new qx.ui.core.Spacer(null, 10));
+
+      const updateParamParamBtn = this.__updateParamParamBtn();
+      this._add(updateParamParamBtn);
       const paramCombinations = this.__createParamCombinations(primaryStudy);
       this._add(paramCombinations);
     },
 
     __createNewParamBtn: function() {
       const newParamBtn = new qx.ui.form.Button(this.tr("Create new parameter")).set({
-        allowGrowY: false
+        allowGrowX: false
       });
       newParamBtn.addListener("execute", () => {
       }, this);
@@ -69,6 +72,15 @@ qx.Class.define("osparc.component.iteration.Parameters", {
     __createParamSpecs: function(primaryStudy) {
       const paramSpecs = new osparc.component.iteration.ParametersSpecs(primaryStudy);
       return paramSpecs;
+    },
+
+    __updateParamParamBtn: function() {
+      const updateParamParamBtn = new qx.ui.form.Button(this.tr("Recalculate Combinations")).set({
+        allowGrowX: false
+      });
+      updateParamParamBtn.addListener("execute", () => {
+      }, this);
+      return updateParamParamBtn;
     },
 
     __createParamCombinations: function(primaryStudy) {
