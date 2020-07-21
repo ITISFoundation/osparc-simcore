@@ -15,6 +15,9 @@ qx.Class.define("osparc.ui.tree.CheckboxTreeItem", {
       nullable: true
     }
   },
+  events: {
+    checkboxClicked: "qx.event.type.Event"
+  },
   members: {
     _addWidgets: function() {
       this.addSpacer();
@@ -30,6 +33,7 @@ qx.Class.define("osparc.ui.tree.CheckboxTreeItem", {
           control.setTriState(true);
           control.bind("value", this, "checked");
           this.bind("checked", control, "value");
+          control.addListener("tap", () => this.fireEvent("checkboxClicked"));
       }
       return control || this.base(arguments, id);
     }

@@ -8,20 +8,30 @@
 qx.Class.define("osparc.ui.tree.CheckboxTree", {
   extend: qx.ui.tree.VirtualTree,
   construct: function(data) {
-    this.base(arguments, null, "label", "children");
-    const model = this.__createModel(data);
-    this.setModel(model);
-    this.setDelegate({
-      createItem: function() {
-        return new osparc.ui.tree.CheckboxTreeItem();
+    this.base(arguments, this.__createModel(data), "label", "children", "open");
+    const tree = this;
+    this.set({
+      delegate: {
+        createItem: function() {
+          return new osparc.ui.tree.CheckboxTreeItem().set({
+            open: true
+          });
+        },
+        bindItem: function(controller, item, id) {
+          controller.bindDefaultProperties(item, id);
+          controller.bindProperty("checked", "checked", null, item, id);
+          controller.bindPropertyReverse("checked", "checked", null, item, id);
+        },
+        configureItem: function(item) {
+          item.addListener("checkboxClicked", () => tree.fireDataEvent("checkedChanged", tree.getChecked()));
+        }
       },
-      bindItem: function(controller, item, id) {
-        controller.bindDefaultProperties(item, id);
-        controller.bindProperty("checked", "checked", null, item, id);
-        controller.bindPropertyReverse("checked", "checked", null, item, id);
-      }
+      hideRoot: true,
+      decorator: "no-border"
     });
-    this.setHideRoot(true);
+  },
+  events: {
+    checkedChanged: "qx.event.type.Data"
   },
   members: {
     __createModel: function(data) {
@@ -59,9 +69,22 @@ qx.Class.define("osparc.ui.tree.CheckboxTree", {
       return model;
     },
     __extendData: function(data) {
+      data.open = true;
       data.checked = data.checked || false;
       data.children = data.children || [];
       data.children.forEach(child => this.__extendData(child));
+    },
+    getChecked: function(model) {
+      const nodes = model == null ? this.getModel().getChildren().toArray() : model.getChildren().toArray();
+      let checked = [];
+      nodes.forEach(node => {
+        if (node.getChecked()) {
+          checked.push(node);
+        } else {
+          checked = [...checked, ...this.getChecked(node)];
+        }
+      });
+      return checked;
     }
   }
 });

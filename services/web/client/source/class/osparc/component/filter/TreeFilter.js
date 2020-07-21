@@ -18,6 +18,7 @@ qx.Class.define("osparc.component.filter.TreeFilter", {
     __model: null,
     __createTree: function() {
       const tree = new osparc.ui.tree.CheckboxTree(classifiers);
+      tree.addListener("checkedChanged", e => console.log(e.getData()));
       return tree;
     }
   }
