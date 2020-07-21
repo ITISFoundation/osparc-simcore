@@ -40,6 +40,7 @@ qx.Class.define("osparc.ui.tree.CheckboxTree", {
               return value;
             }
           });
+          // Binding child -> parent
           child.bind("checked", node, "checked", {
             converter: function() {
               const children = node.getChildren().toArray();

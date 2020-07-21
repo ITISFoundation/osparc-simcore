@@ -28,8 +28,8 @@ qx.Class.define("osparc.ui.tree.CheckboxTreeItem", {
         case "checkbox":
           control = new qx.ui.form.CheckBox();
           control.setTriState(true);
-          this.bind("checked", control, "value");
           control.bind("value", this, "checked");
+          this.bind("checked", control, "value");
       }
       return control || this.base(arguments, id);
     }
