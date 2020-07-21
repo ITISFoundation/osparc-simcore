@@ -37,8 +37,8 @@
 qx.Class.define("osparc.component.widget.Renamer", {
   extend: osparc.ui.window.Window,
 
-  construct: function(oldLabel) {
-    this.base(arguments, "Rename");
+  construct: function(oldLabel, winTitle) {
+    this.base(arguments, winTitle || this.tr("Rename"));
 
     const maxWidth = 350;
     const minWidth = 100;
@@ -64,7 +64,7 @@ qx.Class.define("osparc.component.widget.Renamer", {
   members: {
     __populateNodeLabelEditor: function(oldLabel, labelWidth) {
       // Create a text field in which to edit the data
-      let labelEditor = new qx.ui.form.TextField(oldLabel).set({
+      const labelEditor = new qx.ui.form.TextField(oldLabel).set({
         allowGrowX: true,
         minWidth: labelWidth
       });
@@ -78,14 +78,13 @@ qx.Class.define("osparc.component.widget.Renamer", {
       }, this);
 
       // Create the "Save" button to close the cell editor
-      let save = new qx.ui.form.Button("Save");
+      const save = new qx.ui.form.Button(this.tr("Save"));
       save.addListener("execute", e => {
         const newLabel = labelEditor.getValue();
         const data = {
           newLabel
         };
         this.fireDataEvent("labelChanged", data);
-        this.close();
       }, this);
       this.add(save);
 

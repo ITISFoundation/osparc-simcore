@@ -299,6 +299,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               node.renameNode(newLabel);
             }
           }
+          treeItemRenamer.close();
         }, this);
         const bounds = this.getLayoutParent().getContentLocation();
         treeItemRenamer.moveTo(bounds.left + 100, bounds.top + 150);
