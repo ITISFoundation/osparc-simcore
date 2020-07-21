@@ -105,7 +105,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       });
 
       const dashboardLayout = this.__dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      dashboardLayout.add(new osparc.component.filter.TreeFilter("classifiers", "dashboardClassifiers"), {
+      dashboardLayout.add(new osparc.dashboard.SideSearch(), {
         flex: 1
       });
       dashboardLayout.add(dashboard);
