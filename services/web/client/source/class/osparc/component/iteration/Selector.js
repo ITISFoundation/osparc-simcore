@@ -19,6 +19,8 @@ qx.Class.define("osparc.component.iteration.Selector", {
   extend: qx.ui.table.Table,
 
   construct: function(primaryStudy) {
+    this.__primaryStudy = primaryStudy;
+
     const model = this.__model = this.__initModel();
 
     this.base(arguments, model, {
@@ -27,7 +29,7 @@ qx.Class.define("osparc.component.iteration.Selector", {
     });
 
     this.__initTable();
-    this.__populateTable(primaryStudy);
+    this.__populateTable();
   },
 
   statics: {
@@ -54,6 +56,7 @@ qx.Class.define("osparc.component.iteration.Selector", {
   },
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members
+    __primaryStudy: null,
     __model: null,
 
     __cols: {
@@ -94,8 +97,8 @@ qx.Class.define("osparc.component.iteration.Selector", {
       this.getSelectionModel().setSelectionMode(qx.ui.table.selection.Model.SINGLE_SELECTION);
     },
 
-    __populateTable: function(primaryStudy) {
-      const secStudies = primaryStudy.getSecondaryStudies();
+    __populateTable: function() {
+      const secStudies = this.__primaryStudy.getSecondaryStudies();
       const rows = [];
       Object.keys(secStudies).forEach(secStudyId => {
         const secStudy = secStudies[secStudyId];

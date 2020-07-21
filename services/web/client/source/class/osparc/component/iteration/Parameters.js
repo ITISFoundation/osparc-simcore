@@ -21,9 +21,11 @@ qx.Class.define("osparc.component.iteration.Parameters", {
   construct: function(primaryStudy) {
     this.base(arguments);
 
+    this.__primaryStudy = primaryStudy;
+
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    this.__buildLayout(primaryStudy);
+    this.__buildLayout();
   },
 
   statics: {
@@ -36,8 +38,7 @@ qx.Class.define("osparc.component.iteration.Parameters", {
         resizable: true,
         width: 500,
         height: 600,
-        modal: true,
-        clickAwayClose: true
+        modal: true
       });
       window.add(parametersWidget);
       window.center();
@@ -47,13 +48,14 @@ qx.Class.define("osparc.component.iteration.Parameters", {
   },
 
   members: {
+    __primaryStudy: null,
     __paramSpecs: null,
     __paramCombinations: null,
 
-    __buildLayout: function(primaryStudy) {
-      const newParamBtn = this.__createNewParamBtn(primaryStudy);
+    __buildLayout: function() {
+      const newParamBtn = this.__createNewParamBtn();
       this._add(newParamBtn);
-      const paramSpecs = this.__paramSpecs = this.__createParamSpecs(primaryStudy).set({
+      const paramSpecs = this.__paramSpecs = this.__createParamSpecs().set({
         maxHeight: 200
       });
       this._add(paramSpecs);
@@ -62,19 +64,20 @@ qx.Class.define("osparc.component.iteration.Parameters", {
 
       const updateParamParamBtn = this.__updateParamParamBtn();
       this._add(updateParamParamBtn);
-      const paramCombinations = this.__paramCombinations = this.__createParamCombinations(primaryStudy).set({
+      const paramCombinations = this.__paramCombinations = this.__createParamCombinations().set({
         maxHeight: 400
       });
       this._add(paramCombinations);
     },
 
-    __createNewParamBtn: function(primaryStudy) {
+    __createNewParamBtn: function() {
       const newParamBtn = new qx.ui.form.Button(this.tr("Create new parameter")).set({
         allowGrowX: false
       });
       newParamBtn.addListener("execute", () => {
         const newParamName = new osparc.component.widget.Renamer();
         newParamName.addListener("labelChanged", e => {
+          const primaryStudy = this.__primaryStudy;
           const newLabel = e.getData()["newLabel"];
           if (primaryStudy.parameterExists(newLabel)) {
             const msg = this.tr("Parameter name already exists");
@@ -91,8 +94,8 @@ qx.Class.define("osparc.component.iteration.Parameters", {
       return newParamBtn;
     },
 
-    __createParamSpecs: function(primaryStudy) {
-      const paramSpecs = new osparc.component.iteration.ParametersSpecs(primaryStudy);
+    __createParamSpecs: function() {
+      const paramSpecs = new osparc.component.iteration.ParametersSpecs(this.__primaryStudy);
       return paramSpecs;
     },
 
@@ -101,12 +104,20 @@ qx.Class.define("osparc.component.iteration.Parameters", {
         allowGrowX: false
       });
       updateParamParamBtn.addListener("execute", () => {
+        // recreate table
+        if (this.__paramCombinations) {
+          this._remove(this.__paramCombinations);
+        }
+        const paramCombinations = this.__paramCombinations = this.__createParamCombinations().set({
+          maxHeight: 400
+        });
+        this._add(paramCombinations);
       }, this);
       return updateParamParamBtn;
     },
 
-    __createParamCombinations: function(primaryStudy) {
-      const paramCombinations = new osparc.component.iteration.ParametersCombination(primaryStudy);
+    __createParamCombinations: function() {
+      const paramCombinations = new osparc.component.iteration.ParametersCombination(this.__primaryStudy);
       return paramCombinations;
     }
   }

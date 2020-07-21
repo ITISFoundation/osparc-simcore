@@ -185,8 +185,8 @@ qx.Class.define("osparc.data.model.Study", {
           id: this.__parameters.length,
           label: parameterLabel,
           low: 1,
-          high: 1,
-          steps: 1,
+          high: 2,
+          steps: 2,
           distribution: "linear"
         };
         this.__parameters.push(parameter);

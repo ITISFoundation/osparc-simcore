@@ -24,7 +24,7 @@ qx.Class.define("osparc.component.iteration.ParametersSpecs", {
 
   construct: function(primaryStudy) {
     this.__primaryStudy = primaryStudy;
-    const model = this.__model = this.__initModel();
+    const model = this.__initModel();
 
     this.base(arguments, model, {
       tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj),
@@ -66,12 +66,14 @@ qx.Class.define("osparc.component.iteration.ParametersSpecs", {
     },
 
     __initModel: function() {
-      const model = new qx.ui.table.model.Simple();
+      const model = this.__model = new qx.ui.table.model.Simple();
+
       const cols = [];
       Object.keys(this.__cols).forEach(colKey => {
         cols.push(this.__cols[colKey].label);
       });
       model.setColumns(cols);
+
       return model;
     },
 
