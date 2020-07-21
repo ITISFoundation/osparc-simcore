@@ -57,6 +57,7 @@ qx.Class.define("osparc.data.model.Study", {
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
     this.setWorkbench(new osparc.data.model.Workbench(wbData));
 
+    this.__parameters = [];
     this.__secondaryStudies = [];
   },
 
@@ -174,7 +175,37 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
+    __parameters: null,
     __secondaryStudies: null,
+
+    /* PARAMETERS */
+    addParameter: function(parameterLabel) {
+      if (!this.parameterExists(parameterLabel)) {
+        const parameter = {
+          id: this.__parameters.length,
+          label: parameterLabel,
+          low: 1,
+          high: 1,
+          steps: 1,
+          distribution: "linear"
+        };
+        this.__parameters.push(parameter);
+      }
+    },
+
+    getParameters: function() {
+      return this.__parameters;
+    },
+
+    parameterExists: function(parameterLabel) {
+      const existingParams = this.getParameters();
+      const idx = existingParams.findIndex(existingParam => existingParam.label === parameterLabel);
+      if (idx === -1) {
+        return false;
+      }
+      return true;
+    },
+    /* /PARAMETERS */
 
     /* SECONDARY STUDIES */
     addSecondaryStudy: function(secondaryStudy) {
