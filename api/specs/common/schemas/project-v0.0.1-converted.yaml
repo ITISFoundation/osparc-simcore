@@ -235,3 +235,6 @@ properties:
     type: array
     items:
       type: integer
+  dev:
+    type: object
+    description: Object used for development purposes only
