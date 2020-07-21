@@ -117,7 +117,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       let data = this._getCtrlFieldChild(portId);
       if (data) {
         let child = data.child;
-        let idx = data.idx;
+        const hint = "getField" in child ? child.getField().description : "";
+        const idx = data.idx;
         const layoutProps = child.getLayoutProperties();
         this._remove(child);
 
@@ -132,8 +133,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         }, this);
         hBox.add(unlinkBtn);
 
-        hBox.key = portId;
-        this._addAt(hBox, idx, {
+        const field = this._createFieldWithHint(hBox, hint);
+        field.key = portId;
+
+        this._addAt(field, idx, {
           row: layoutProps.row,
           column: this._gridPos.ctrlField
         });
