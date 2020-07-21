@@ -23,6 +23,7 @@ qx.Class.define("osparc.component.iteration.ParametersSpecs", {
   extend: osparc.ui.table.Table,
 
   construct: function(primaryStudy) {
+    this.__primaryStudy = primaryStudy;
     const model = this.__model = this.__initModel();
 
     this.base(arguments, model, {
@@ -31,7 +32,7 @@ qx.Class.define("osparc.component.iteration.ParametersSpecs", {
     });
 
     this.__initTable();
-    this.__populateTable(primaryStudy);
+    this.updateTable();
   },
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members
@@ -40,9 +41,9 @@ qx.Class.define("osparc.component.iteration.ParametersSpecs", {
     __cols: {
       "id": {
         col: 0,
-        label: qx.locale.Manager.tr("ParameterId")
+        label: qx.locale.Manager.tr("Id")
       },
-      "name": {
+      "label": {
         col: 1,
         label: qx.locale.Manager.tr("Name")
       },
@@ -55,11 +56,11 @@ qx.Class.define("osparc.component.iteration.ParametersSpecs", {
         label: qx.locale.Manager.tr("High")
       },
       "steps": {
-        col: 3,
+        col: 4,
         label: qx.locale.Manager.tr("Steps")
       },
       "distribution": {
-        col: 3,
+        col: 5,
         label: qx.locale.Manager.tr("Distribution")
       }
     },
@@ -78,7 +79,21 @@ qx.Class.define("osparc.component.iteration.ParametersSpecs", {
       this.getSelectionModel().setSelectionMode(qx.ui.table.selection.Model.SINGLE_SELECTION);
     },
 
-    __populateTable: function(primaryStudy) {
+    updateTable: function() {
+      const parameters = this.__primaryStudy.getParameters();
+
+      const rows = [];
+      parameters.forEach(parameter => {
+        const row = [];
+        row[this.__cols["id"].col] = parameter["id"];
+        row[this.__cols["label"].col] = parameter["label"];
+        row[this.__cols["low"].col] = parameter["low"];
+        row[this.__cols["high"].col] = parameter["high"];
+        row[this.__cols["steps"].col] = parameter["steps"];
+        row[this.__cols["distribution"].col] = parameter["distribution"];
+        rows.push(row);
+      });
+      this.getTableModel().setData(rows, false);
     }
   }
 });

@@ -36,6 +36,7 @@ qx.Class.define("osparc.component.iteration.Parameters", {
         resizable: true,
         width: 500,
         height: 600,
+        modal: true,
         clickAwayClose: true
       });
       window.add(parametersWidget);
@@ -46,25 +47,46 @@ qx.Class.define("osparc.component.iteration.Parameters", {
   },
 
   members: {
+    __paramSpecs: null,
+    __paramCombinations: null,
+
     __buildLayout: function(primaryStudy) {
-      const newParamBtn = this.__createNewParamBtn();
+      const newParamBtn = this.__createNewParamBtn(primaryStudy);
       this._add(newParamBtn);
-      const paramSpecs = this.__createParamSpecs(primaryStudy);
+      const paramSpecs = this.__paramSpecs = this.__createParamSpecs(primaryStudy).set({
+        maxHeight: 200
+      });
       this._add(paramSpecs);
 
       this._add(new qx.ui.core.Spacer(null, 10));
 
       const updateParamParamBtn = this.__updateParamParamBtn();
       this._add(updateParamParamBtn);
-      const paramCombinations = this.__createParamCombinations(primaryStudy);
+      const paramCombinations = this.__paramCombinations = this.__createParamCombinations(primaryStudy).set({
+        maxHeight: 400
+      });
       this._add(paramCombinations);
     },
 
-    __createNewParamBtn: function() {
+    __createNewParamBtn: function(primaryStudy) {
       const newParamBtn = new qx.ui.form.Button(this.tr("Create new parameter")).set({
         allowGrowX: false
       });
       newParamBtn.addListener("execute", () => {
+        const newParamName = new osparc.component.widget.Renamer();
+        newParamName.addListener("labelChanged", e => {
+          const newLabel = e.getData()["newLabel"];
+          if (primaryStudy.parameterExists(newLabel)) {
+            const msg = this.tr("Parameter name already exists");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          } else {
+            primaryStudy.addParameter(newLabel);
+            this.__paramSpecs.updateTable();
+            newParamName.close();
+          }
+        }, this);
+        newParamName.center();
+        newParamName.open();
       }, this);
       return newParamBtn;
     },

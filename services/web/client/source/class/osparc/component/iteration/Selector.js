@@ -110,7 +110,6 @@ qx.Class.define("osparc.component.iteration.Selector", {
         row[this.__cols["show"].col] = loadStudyBtn;
         rows.push(row);
       });
-      // this.getTableModel().setData(rows);
       this.getTableModel().setData(rows, false);
     }
   }
