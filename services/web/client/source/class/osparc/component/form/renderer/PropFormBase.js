@@ -133,10 +133,27 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         position: "bottom-right"
       });
 
-      const newParamBtn = new qx.ui.menu.Button(this.tr("Add new parameter"));
+      const newParamBtn = new qx.ui.menu.Button(this.tr("Set new parameter"));
+      newParamBtn.addListener("execute", () => {
+        const newParamName = new osparc.component.widget.Renamer();
+        newParamName.addListener("labelChanged", e => {
+          const study = osparc.store.Store.getInstance().getCurrentStudy();
+          const newLabel = e.getData()["newLabel"];
+          if (study.parameterExists(newLabel)) {
+            const msg = this.tr("Parameter name already exists");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          } else {
+            const parameter = study.addParameter(newLabel);
+            console.log(parameter);
+            newParamName.close();
+          }
+        }, this);
+        newParamName.center();
+        newParamName.open();
+      }, this);
       menu.add(newParamBtn);
 
-      const existingParamBtn = new qx.ui.menu.Button(this.tr("Add existing parameter"));
+      const existingParamBtn = new qx.ui.menu.Button(this.tr("Set existing parameter"));
       menu.add(existingParamBtn);
 
       const menuBtn = new qx.ui.form.MenuButton().set({

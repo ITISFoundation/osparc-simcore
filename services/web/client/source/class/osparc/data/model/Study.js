@@ -190,7 +190,10 @@ qx.Class.define("osparc.data.model.Study", {
           distribution: "linear"
         };
         this.__parameters.push(parameter);
+
+        return parameter;
       }
+      return null;
     },
 
     getParameters: function() {
