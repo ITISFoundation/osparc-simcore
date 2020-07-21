@@ -176,6 +176,7 @@ qx.Class.define("osparc.data.model.Study", {
   members: {
     __secondaryStudies: null,
 
+    /* SECONDARY STUDIES */
     addSecondaryStudy: function(secondaryStudy) {
       const index = this.__secondaryStudies.findIndex(secStudy => secStudy.uuid === secondaryStudy.uuid);
       if (index === -1) {
@@ -186,7 +187,7 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     addSecondaryStudies: function(secondaryStudies) {
-      // delete old studies from backend?
+      // delete old secondary studies from backend?
       this.__secondaryStudies = [];
 
       secondaryStudies.forEach(secondaryStudy => {
@@ -199,12 +200,17 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     getSecondaryStudy: function(secondaryStudyId) {
-      return this.__secondaryStudies[secondaryStudyId];
+      const index = this.__secondaryStudies.findIndex(secStudy => secStudy.uuid === secondaryStudyId);
+      if (index !== -1) {
+        return this.__secondaryStudies[index];
+      }
+      return null;
     },
 
     getSecondaryStudies: function() {
       return this.__secondaryStudies;
     },
+    /* /SECONDARY STUDIES */
 
 
     buildWorkbench: function() {
