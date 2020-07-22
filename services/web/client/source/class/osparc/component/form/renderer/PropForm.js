@@ -303,6 +303,29 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return controlParam;
     },
 
+    __resetCtrlField: function(portId) {
+      let data = this._getCtrlFieldChild(portId);
+      if (data) {
+        let child = data.child;
+        let idx = data.idx;
+        const layoutProps = child.getLayoutProperties();
+        if (layoutProps.column === this._gridPos.ctrlField) {
+          this._remove(child);
+          const item = this._form.getControl(portId);
+
+          const fieldWMenu = this._createFieldWithMenu(item);
+
+          const field = this._createFieldWithHint(fieldWMenu, item.description);
+          this._addAt(field, idx, {
+            row: layoutProps.row,
+            column: this._gridPos.ctrlField
+          });
+          return true;
+        }
+      }
+      return false;
+    },
+
     /* LINKS */
     getControlLink: function(key) {
       return this.__ctrlLinkMap[key];
@@ -319,7 +342,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       });
     },
 
-    linkAdded: function(portId) {
+    __linkAdded: function(portId) {
       let data = this._getCtrlFieldChild(portId);
       if (data) {
         let child = data.child;
@@ -355,30 +378,13 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
     },
 
-    linkRemoved: function(portId) {
-      let data = this._getCtrlFieldChild(portId);
-      if (data) {
-        let child = data.child;
-        let idx = data.idx;
-        const layoutProps = child.getLayoutProperties();
-        if (layoutProps.column === this._gridPos.ctrlField) {
-          this._remove(child);
-          const item = this._form.getControl(portId);
-
-          const fieldWMenu = this._createFieldWithMenu(item);
-
-          const field = this._createFieldWithHint(fieldWMenu, item.description);
-          this._addAt(field, idx, {
-            row: layoutProps.row,
-            column: this._gridPos.ctrlField
-          });
-
-          const linkModified = {
-            portId,
-            added: false
-          };
-          this.fireDataEvent("linkFieldModified", linkModified);
-        }
+    __linkRemoved: function(portId) {
+      if (this.__resetCtrlField(portId)) {
+        const linkModified = {
+          portId,
+          added: false
+        };
+        this.fireDataEvent("linkFieldModified", linkModified);
       }
     },
 
@@ -401,7 +407,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         converter: label => label + ": " + fromPortLabel
       });
 
-      this.linkAdded(toPortId);
+      this.__linkAdded(toPortId);
 
       return true;
     },
@@ -420,7 +426,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         delete this._form.getControl(toPortId).link;
       }
 
-      this.linkRemoved(toPortId);
+      this.__linkRemoved(toPortId);
     },
     /* /LINKS */
 
