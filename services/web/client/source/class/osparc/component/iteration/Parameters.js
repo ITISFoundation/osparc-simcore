@@ -79,7 +79,7 @@ qx.Class.define("osparc.component.iteration.Parameters", {
         newParamName.addListener("labelChanged", e => {
           const primaryStudy = this.__primaryStudy;
           const newLabel = e.getData()["newLabel"];
-          if (primaryStudy.parameterExists(newLabel)) {
+          if (primaryStudy.parameterLabelExists(newLabel)) {
             const msg = this.tr("Parameter name already exists");
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
           } else {

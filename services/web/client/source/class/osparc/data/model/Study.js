@@ -180,7 +180,7 @@ qx.Class.define("osparc.data.model.Study", {
 
     /* PARAMETERS */
     addParameter: function(parameterLabel) {
-      if (!this.parameterExists(parameterLabel)) {
+      if (!this.parameterLabelExists(parameterLabel)) {
         const parameter = {
           id: this.__parameters.length,
           label: parameterLabel,
@@ -196,17 +196,20 @@ qx.Class.define("osparc.data.model.Study", {
       return null;
     },
 
+    getParameter: function(parameterId) {
+      const params = this.getParameters();
+      const idx = params.findIndex(param => param.id === parameterId);
+      return (idx === -1) ? null : params[idx];
+    },
+
     getParameters: function() {
       return this.__parameters;
     },
 
-    parameterExists: function(parameterLabel) {
-      const existingParams = this.getParameters();
-      const idx = existingParams.findIndex(existingParam => existingParam.label === parameterLabel);
-      if (idx === -1) {
-        return false;
-      }
-      return true;
+    parameterLabelExists: function(parameterLabel) {
+      const params = this.getParameters();
+      const idx = params.findIndex(param => param.label === parameterLabel);
+      return (idx !== -1);
     },
     /* /PARAMETERS */
 
