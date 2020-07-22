@@ -69,14 +69,6 @@ qx.Class.define("osparc.data.model.Parameters", {
       const params = this.getParameters();
       const idx = params.findIndex(param => param.label === parameterLabel);
       return (idx !== -1);
-    },
-
-    serializeParameters: function() {
-      const obj = {};
-      this.getParameters().forEach(param => {
-        obj[param.id] = param;
-      });
-      return obj;
     }
   }
 });
