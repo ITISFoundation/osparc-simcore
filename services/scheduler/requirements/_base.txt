@@ -4,13 +4,28 @@
 #
 #    pip-compile --output-file=requirements/_base.txt requirements/_base.in
 #
+aioredis==1.3.1           # via -r requirements/_base.in, aioredlock
+aioredlock==0.5.2         # via -r requirements/_base.in
+async-timeout==3.0.1      # via -r requirements/_base.in, aioredis
+attrs==19.3.0             # via aioredlock
 click==7.1.2              # via uvicorn
 dataclasses==0.6          # via -r requirements/_base.in, pydantic
+environs==8.0.0           # via -r requirements/_base.in
 fastapi==0.59.0           # via -r requirements/_base.in
 h11==0.9.0                # via uvicorn
+hiredis==1.1.0            # via aioredis
 httptools==0.1.1          # via uvicorn
+marshmallow==2.21.0       # via environs, umongo
+motor==2.1.0              # via -r requirements/_base.in, umongo
 pydantic==1.6.1           # via fastapi
+pymongo==3.10.1           # via motor, umongo
+python-dateutil==2.8.1    # via umongo
+python-dotenv==0.14.0     # via environs
+six==1.15.0               # via python-dateutil, tenacity
 starlette==0.13.4         # via fastapi
+tenacity==6.2.0           # via -r requirements/_base.in
+u-msgpack-python==2.6.0   # via -r requirements/_base.in
+umongo[motor]==2.2.0      # via -r requirements/_base.in
 uvicorn==0.11.5           # via -r requirements/_base.in
 uvloop==0.14.0            # via uvicorn
 websockets==8.1           # via uvicorn

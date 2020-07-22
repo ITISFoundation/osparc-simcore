@@ -6,3 +6,13 @@
 fastapi
 dataclasses==0.6  # version 0.7 is not found
 uvicorn
+
+environs
+aioredis
+aioredlock
+u-msgpack-python
+tenacity
+umongo
+motor
+umongo[motor]
+async-timeout

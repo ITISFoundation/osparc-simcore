@@ -8,5 +8,11 @@
 # testing
 requests
 pytest
+pytest-asyncio
 pytest-cov
 pytest-mock
+pytest-ordering
+async-asgi-testclient
+nest_asyncio
+pymongo-inmemory  # test against a real instance
+redislite         # test against a real instance
