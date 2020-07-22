@@ -399,7 +399,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     addLinks: function(data) {
       for (let key in data) {
-        if (data[key] !== null && typeof data[key] === "object" && data[key].nodeUuid) {
+        if (osparc.utils.Ports.isDataALink(data[key])) {
           this.addLink(key, data[key].nodeUuid, data[key].output);
         }
       }

@@ -40,6 +40,14 @@ qx.Class.define("osparc.utils.Ports", {
 
     arePortsCompatible: function(port1, port2) {
       return port1.type && port2.type && this.__matchPortType(port1.type, port2.type);
+    },
+
+    isDataALink: function(data) {
+      return (data !== null && typeof data === "object" && data.nodeUuid);
+    },
+
+    isDataAParameter: function(data) {
+      return (data !== null && data.startsWith("{{") && data.startsWith("}}"));
     }
   }
 });

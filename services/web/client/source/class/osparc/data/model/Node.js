@@ -581,20 +581,13 @@ qx.Class.define("osparc.data.model.Node", {
       this.__addOutputWidget();
     },
 
-    __isInputDataALink: function(data) {
-      if (data !== null && typeof data === "object" && data.nodeUuid) {
-        return true;
-      }
-      return false;
-    },
-
     setInputData: function(inputs) {
       if (this.__settingsForm && inputs) {
         const inputData = {};
         const inputLinks = {};
         const inputsCopy = osparc.utils.Utils.deepCloneObject(inputs);
         for (let key in inputsCopy) {
-          if (this.__isInputDataALink(inputsCopy[key])) {
+          if (osparc.utils.Ports.isDataALink(inputsCopy[key])) {
             inputLinks[key] = inputsCopy[key];
           } else {
             inputData[key] = inputsCopy[key];
