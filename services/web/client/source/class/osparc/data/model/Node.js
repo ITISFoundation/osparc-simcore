@@ -493,13 +493,12 @@ qx.Class.define("osparc.data.model.Node", {
 
     /**
      * Add settings widget with those inputs that can be represented in a form
-     *
      */
     __addSettings: function(inputs) {
       const form = this.__settingsForm = new osparc.component.form.Auto(inputs);
       const propsWidget = new osparc.component.form.renderer.PropForm(form, this);
       this.setPropsWidget(propsWidget);
-      propsWidget.addListener("linkModified", e => {
+      propsWidget.addListener("linkFieldModified", e => {
         const linkModified = e.getData();
         const portId = linkModified.portId;
         this.__retrieveInputs(portId);
@@ -516,7 +515,7 @@ qx.Class.define("osparc.data.model.Node", {
         const data = this.__settingsForm.getData();
         form.setData(data);
       }, this);
-      propsWidget.addListener("linkModified", e => {
+      propsWidget.addListener("linkFieldModified", e => {
         const linkModified = e.getData();
         const portId = linkModified.portId;
         const added = linkModified.added;

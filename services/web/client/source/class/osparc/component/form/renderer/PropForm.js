@@ -29,7 +29,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
   },
 
   events: {
-    "linkModified": "qx.event.type.Data",
+    "linkFieldModified": "qx.event.type.Data",
     "changeChildVisibility": "qx.event.type.Event"
   },
 
@@ -351,7 +351,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           portId,
           added: true
         };
-        this.fireDataEvent("linkModified", linkModified);
+        this.fireDataEvent("linkFieldModified", linkModified);
       }
     },
 
@@ -377,7 +377,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             portId,
             added: false
           };
-          this.fireDataEvent("linkModified", linkModified);
+          this.fireDataEvent("linkFieldModified", linkModified);
         }
       }
     },
