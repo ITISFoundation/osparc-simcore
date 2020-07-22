@@ -8,8 +8,7 @@
 ************************************************************************ */
 
 /**
- * A special renderer for AutoForms which includes notes below the section header
- * widget and next to the individual form widgets.
+ * An extension of the PropFormBase that is able to handle port-links.
  */
 
 qx.Class.define("osparc.component.form.renderer.PropForm", {
@@ -413,18 +412,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
 
       this.linkRemoved(toPortId);
-    },
-
-    hasVisibleInputs: function() {
-      const children = this._getChildren();
-      for (let i=0; i<children.length; i++) {
-        const child = children[i];
-        const layoutProps = child.getLayoutProperties();
-        if (layoutProps.column === this._gridPos.label && child.getBuddy().isVisible()) {
-          return true;
-        }
-      }
-      return false;
     },
 
     __changeControlVisibility: function(control, visibility) {

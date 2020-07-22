@@ -15,14 +15,17 @@
 
 ************************************************************************ */
 
+/**
+ * A special renderer for AutoForms which includes notes below the section header
+ * widget and next to the individual form widgets.
+ */
+
 
 qx.Class.define("osparc.component.form.renderer.PropFormBase", {
   extend: qx.ui.form.renderer.Single,
   type: "abstract",
 
   /**
-   * create a page for the View Tab with the given title
-   *
    * @param form {osparc.component.form.Auto} form widget to embedd
    * @param node {osparc.data.model.Node} Node owning the widget
    */
@@ -162,6 +165,18 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         focusable: false
       });
       return menuBtn;
+    },
+
+    hasVisibleInputs: function() {
+      const children = this._getChildren();
+      for (let i=0; i<children.length; i++) {
+        const child = children[i];
+        const layoutProps = child.getLayoutProperties();
+        if (layoutProps.column === this._gridPos.label && child.getBuddy().isVisible()) {
+          return true;
+        }
+      }
+      return false;
     },
 
     /**
