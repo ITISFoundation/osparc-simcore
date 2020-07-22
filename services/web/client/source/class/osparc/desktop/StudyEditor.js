@@ -413,10 +413,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       osparc.component.iteration.Parameters.popUpInWindow(parameters);
     },
 
-    __parametrizeStudy: function() {
+    __recreateIterations: function() {
       const studyData = this.getStudy().serializeStudy();
 
-      const secondaryStudiesData = osparc.data.StudyParametrizer.createStudyParameterizations(studyData);
+      const secondaryStudiesData = osparc.data.StudyParametrizer.recreateIterations(studyData);
       this.getStudy().addSecondaryStudies(secondaryStudiesData);
 
       const msg = secondaryStudiesData.length + this.tr(" iterations created");
@@ -686,7 +686,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       const controlsBar = this.__mainPanel.getControls();
       controlsBar.addListener("showParameters", this.__showParameters, this);
-      controlsBar.addListener("parametrizeStudy", this.__parametrizeStudy, this);
+      controlsBar.addListener("recreateIterations", this.__recreateIterations, this);
       controlsBar.addListener("showIterations", this.__showIterations, this);
       controlsBar.addListener("showWorkbench", this.__showWorkbenchUI, this);
       controlsBar.addListener("showSettings", this.__showSettings, this);

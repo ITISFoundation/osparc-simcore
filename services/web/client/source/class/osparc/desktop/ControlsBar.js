@@ -43,7 +43,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
 
   events: {
     "showParameters": "qx.event.type.Event",
-    "parametrizeStudy": "qx.event.type.Event",
+    "recreateIterations": "qx.event.type.Event",
     "showIterations": "qx.event.type.Event",
     "showWorkbench": "qx.event.type.Event",
     "showSettings": "qx.event.type.Event",
@@ -112,10 +112,10 @@ qx.Class.define("osparc.desktop.ControlsBar", {
 
       const iterationCtrls = new qx.ui.toolbar.Part();
       const parametersButton = this.__createShowParameterButton();
-      const parametrizeButton = this.__createParametrizeButton();
+      const recreateIterationsButton = this.__recreateIterationsButton();
       const showIterationsButton = this.__createShowIterationsButton();
       iterationCtrls.add(parametersButton);
-      iterationCtrls.add(parametrizeButton);
+      iterationCtrls.add(recreateIterationsButton);
       iterationCtrls.add(showIterationsButton);
       osparc.utils.LibVersions.getPlatformName()
         .then(platformName => {
@@ -137,9 +137,9 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       return parametersButton;
     },
 
-    __createParametrizeButton: function() {
-      const parametrizeButton = this.__createButton(this.tr("Parametrize Study"), null, "parametrizeButton", "parametrizeStudy");
-      return parametrizeButton;
+    __recreateIterationsButton: function() {
+      const recreateIterationsButton = this.__createButton(this.tr("Recreate Iterations"), null, "recreateIterationsButton", "recreateIterations");
+      return recreateIterationsButton;
     },
 
     __createShowIterationsButton: function() {

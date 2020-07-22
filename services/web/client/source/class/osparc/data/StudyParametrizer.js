@@ -23,8 +23,10 @@ qx.Class.define("osparc.data.StudyParametrizer", {
   type: "static",
 
   statics: {
-    createStudyParameterizations: function(primaryStudyData) {
+    recreateIterations: function(primaryStudyData) {
       const secondaryStudiesData = [];
+
+      // OM: mustache
       const newVals = [3, 4, 5];
       newVals.forEach((newVal, idx) => {
         const delta = {};
@@ -40,6 +42,7 @@ qx.Class.define("osparc.data.StudyParametrizer", {
           secondaryStudiesData.push(secondaryStudyData);
         }
       });
+
       return secondaryStudiesData;
     },
 
