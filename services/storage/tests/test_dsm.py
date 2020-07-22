@@ -1,9 +1,10 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=unused-variable
+# pylint: disable=unused-argument
+# pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
-# pylint:disable=no-name-in-module
-# pylint:disable=no-member
+# pylint: disable=no-name-in-module
+# pylint: disable=no-member
+# pylint: disable=too-many-branches
 
 import copy
 import datetime
@@ -28,8 +29,6 @@ def test_mockup(dsm_mockup_db):
     assert len(dsm_mockup_db) == 100
 
 
-# Too many branches (13/12) (too-many-branches)
-# pylint: disable=R0912
 async def test_dsm_s3(dsm_mockup_db, dsm_fixture):
     id_name_map = {}
     id_file_count = {}
@@ -231,18 +230,22 @@ async def test_dsm_datcore(
         return
 
     utils.create_tables(url=postgres_service_url)
+
     dsm = dsm_fixture
     user_id = "0"
     data = await dsm.list_files(
         user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME
     )
-    # the fixture creates two files
+    # the fixture creates 3 files
     assert len(data) == 3
 
     # delete the first one
     fmd_to_delete = data[0].fmd
     print("Deleting", fmd_to_delete.bucket_name, fmd_to_delete.object_name)
-    await dsm.delete_file(user_id, DATCORE_STR, fmd_to_delete.file_id)
+    is_deleted = await dsm.delete_file(user_id, DATCORE_STR, fmd_to_delete.file_id)
+    assert is_deleted
+
+    import time; time.sleep(1) # FIXME: takes some time to delete!!
 
     data = await dsm.list_files(
         user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME
@@ -291,6 +294,9 @@ async def test_dsm_s3_to_datcore(
         local_file_path=tmp_file2,
         destination_id=datcore_structured_testbucket["coll2_id"],
     )
+
+    #FIXME: upload takes some time
+    import time; time.sleep(1)
 
     data = await dsm.list_files(
         user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME

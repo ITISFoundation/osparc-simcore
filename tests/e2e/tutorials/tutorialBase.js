@@ -1,4 +1,5 @@
 const fs = require('fs');
+const assert = require('assert');
 
 const startPuppe = require('../utils/startPuppe');
 const auto = require('../utils/auto');
@@ -6,8 +7,8 @@ const utils = require('../utils/utils');
 const responses = require('../utils/responsesQueue');
 
 class TutorialBase {
-  constructor(url, user, pass, newUser, templateName) {
-    this.__demo = false;
+  constructor(url, user, pass, newUser, templateName, enableDemoMode=false) {
+    this.__demo = enableDemoMode;
     this.__templateName = templateName;
 
     this.__url = url;
@@ -125,12 +126,13 @@ class TutorialBase {
     this.__responsesQueue.addResponseListener("open");
     let resp = null;
     try {
-      await auto.dashboardOpenFirstTemplate(this.__page, this.__templateName);
+      const templateFound = await auto.dashboardOpenFirstTemplate(this.__page, this.__templateName);
+      assert(templateFound, "Expected template, got nothing. TIP: did you inject templates in database??")
       await this.__responsesQueue.waitUntilResponse("projects?from_template=");
       resp = await this.__responsesQueue.waitUntilResponse("open");
     }
     catch(err) {
-      console.error(this.__templateName, "could not be started", err);
+      console.error(`"${this.__templateName}" template could not be started:\n`, err);
     }
     await this.__page.waitFor(waitFor);
     await utils.takeScreenshot(this.__page, this.__templateName + "_dashboardOpenFirstTemplate_after");
@@ -160,11 +162,11 @@ class TutorialBase {
   }
 
   async openNodeFiles(nodePosInTree = 0) {
-    await auto.openNode(this.__page, nodePosInTree);
-    this.__responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=");
+    const nodeId = await auto.openNode(this.__page, nodePosInTree);
+    this.__responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
     await auto.openNodeFiles(this.__page);
     try {
-      await this.__responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=");
+      await this.__responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
     }
     catch(err) {
       console.error(err);

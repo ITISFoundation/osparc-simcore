@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from functools import wraps
 from pathlib import Path
-from typing import List
+from typing import List, Optional, Tuple
 
 import attr
 
@@ -74,9 +74,7 @@ class DatcoreWrapper:
             )
         except Exception:
             self.d_client = None  # Disabled: any call will raise AttributeError
-            logger.warning(
-                "Failed to setup datcore. Disabling client.", exc_info=True
-            )
+            logger.warning("Failed to setup datcore. Disabling client.", exc_info=True)
 
     @property
     def is_communication_enabled(self) -> bool:
@@ -118,19 +116,22 @@ class DatcoreWrapper:
         return files
 
     @make_async
-    def delete_file(self, destination: str, filename: str):
+    def delete_file(self, destination: str, filename: str) -> bool:
         # the object can be found in dataset/filename <-> bucket_name/object_name
+        ok = False
         with safe_call(error_msg="Error deleting datcore file"):
-            self.d_client.delete_file(destination, filename)
+            ok = self.d_client.delete_file(destination, filename)
+        return ok
 
     @make_async
-    def delete_file_by_id(self, file_id: str):
-
+    def delete_file_by_id(self, file_id: str) -> bool:
+        ok = False
         with safe_call(error_msg="Error deleting datcore file"):
-            self.d_client.delete_file_by_id(file_id)
+            ok = self.d_client.delete_file_by_id(file_id)
+        return ok
 
     @make_async
-    def download_link(self, destination: str, filename: str):
+    def download_link(self, destination: str, filename: str) -> str:
         url = ""
         with safe_call(error_msg="Error getting datcore download link"):
             url = self.d_client.download_link(destination, filename)
@@ -138,7 +139,7 @@ class DatcoreWrapper:
         return url
 
     @make_async
-    def download_link_by_id(self, file_id: str):
+    def download_link_by_id(self, file_id: str) -> Tuple[str, str]:
         url = ""
         filename = ""
         with safe_call(error_msg="Error getting datcore download link"):
@@ -147,20 +148,18 @@ class DatcoreWrapper:
         return url, filename
 
     @make_async
-    def create_test_dataset(self, dataset):
-
+    def create_test_dataset(self, dataset_name: str) -> Optional[str]:
         with safe_call(error_msg="Error creating test dataset"):
-            ds = self.d_client.get_dataset(dataset)
+            ds = self.d_client.get_dataset(dataset_name)
             if ds is not None:
-                self.d_client.delete_files(dataset)
+                self.d_client.delete_files(dataset_name)
             else:
-                ds = self.d_client.create_dataset(dataset)
+                ds = self.d_client.create_dataset(dataset_name)
             return ds.id
-        return ""
+        return None
 
     @make_async
-    def delete_test_dataset(self, dataset):
-
+    def delete_test_dataset(self, dataset) -> None:
         with safe_call(error_msg="Error deleting test dataset"):
             ds = self.d_client.get_dataset(dataset)
             if ds is not None:
@@ -169,43 +168,43 @@ class DatcoreWrapper:
     @make_async
     def upload_file(
         self, destination: str, local_path: str, meta_data: FileMetaData = None
-    ):
-        result = False
+    ) -> bool:
+        ok = False
         str_meta = json.dumps(attr.asdict(meta_data)) if meta_data else ""
 
         with safe_call(error_msg="Error uploading file to datcore"):
             if str_meta:
                 meta_data = json.loads(str_meta)
-                result = self.d_client.upload_file(destination, local_path, meta_data)
+                ok = self.d_client.upload_file(destination, local_path, meta_data)
             else:
-                result = self.d_client.upload_file(destination, local_path)
-        return result
+                ok = self.d_client.upload_file(destination, local_path)
+        return ok
 
     @make_async
-    def upload_file_to_id(self, destination_id: str, local_path: str):
-        _id = ""
-
+    def upload_file_to_id(self, destination_id: str, local_path: str) -> Optional[str]:
+        _id = None
         with safe_call(error_msg="Error uploading file to datcore"):
             _id = self.d_client.upload_file_to_id(destination_id, local_path)
-
         return _id
 
     @make_async
-    def create_collection(self, destination_id: str, collection_name: str):
-        _id = ""
+    def create_collection(
+        self, destination_id: str, collection_name: str
+    ) -> Optional[str]:
+        _id = None
         with safe_call(error_msg="Error creating collection in datcore"):
             _id = self.d_client.create_collection(destination_id, collection_name)
         return _id
 
     @make_async
-    def list_datasets(self):
+    def list_datasets(self) -> List:
         data = []
         with safe_call(error_msg="Error creating collection in datcore"):
             data = self.d_client.list_datasets()
         return data
 
     @make_async
-    def ping(self):
+    def ping(self) -> bool:
         ok = False
         with safe_call(skip_logs=True):
             profile = self.d_client.profile()

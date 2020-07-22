@@ -62,7 +62,8 @@ qx.Class.define("osparc.data.model.Node", {
     this.set({
       key,
       version,
-      nodeId: uuid || osparc.utils.Utils.uuidv4()
+      nodeId: uuid || osparc.utils.Utils.uuidv4(),
+      status: new osparc.data.model.NodeStatus()
     });
 
     const metaData = this.__metaData = osparc.utils.Services.getNodeMetaData(key, version);
@@ -121,22 +122,10 @@ qx.Class.define("osparc.data.model.Node", {
       event: "changeServiceUrl"
     },
 
-    progress: {
-      check: "Number",
-      init: 0,
-      event: "changeProgress"
-    },
-
     thumbnail: {
       check: "String",
       nullable: true,
       init: ""
-    },
-
-    interactiveStatus: {
-      check: "String",
-      nullable: true,
-      event: "changeInteractiveStatus"
     },
 
     propsWidget: {
@@ -172,6 +161,11 @@ qx.Class.define("osparc.data.model.Node", {
     retrieveIFrameButton: {
       check: "qx.ui.form.Button",
       init: null
+    },
+
+    status: {
+      check: "osparc.data.model.NodeStatus",
+      nullable: false
     }
   },
 
@@ -358,7 +352,7 @@ qx.Class.define("osparc.data.model.Node", {
         }
 
         if (nodeData.progress) {
-          this.setProgress(nodeData.progress);
+          this.getStatus().setProgress(nodeData.progress);
         }
 
         if (nodeData.thumbnail) {
@@ -433,7 +427,7 @@ qx.Class.define("osparc.data.model.Node", {
             msg: errorMsg
           };
           this.fireDataEvent("showInLogger", errorMsgData);
-          this.setInteractiveStatus("failed");
+          this.getStatus().setInteractiveStatus("failed");
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
         });
     },
@@ -764,7 +758,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __getLoadingPageHeader: function() {
-      const status = this.getInteractiveStatus();
+      const status = this.getStatus().getInteractiveStatus();
       const label = this.getLabel();
       if (status) {
         const sta = status.charAt(0).toUpperCase() + status.slice(1);
@@ -776,14 +770,12 @@ qx.Class.define("osparc.data.model.Node", {
 
     __initLoadingIPage: function() {
       const loadingPage = new osparc.ui.message.Loading(this.__getLoadingPageHeader(), [], true);
-      [
-        "changeLabel",
-        "changeInteractiveStatus"
-      ].forEach(event => {
-        this.addListener(event, e => {
-          loadingPage.setHeader(this.__getLoadingPageHeader());
-        }, this);
-      });
+      this.addListener("changeLabel", e => {
+        loadingPage.setHeader(this.__getLoadingPageHeader());
+      }, this);
+      this.getStatus().addListener("changeInteractiveStatus", e => {
+        loadingPage.setHeader(this.__getLoadingPageHeader());
+      }, this);
       this.setLoadingPage(loadingPage);
     },
 
@@ -941,30 +933,32 @@ qx.Class.define("osparc.data.model.Node", {
         };
         this.fireDataEvent("showInLogger", msgData);
 
-        this.setProgress(0);
-        this.setInteractiveStatus("starting");
+        const status = this.getStatus();
+        status.setProgress(0);
+        status.setInteractiveStatus("starting");
 
         this.__nodeState();
       }
     },
     __onNodeState: function(data) {
       const serviceState = data["service_state"];
+      const status = this.getStatus();
       switch (serviceState) {
         case "idle": {
-          this.setInteractiveStatus("idle");
+          status.setInteractiveStatus("idle");
           const interval = 1000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
           break;
         }
         case "starting":
         case "pulling": {
-          this.setInteractiveStatus(serviceState);
+          status.setInteractiveStatus(serviceState);
           const interval = 5000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
           break;
         }
         case "pending": {
-          this.setInteractiveStatus("pending");
+          status.setInteractiveStatus("pending");
           const interval = 10000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
           break;
@@ -986,7 +980,7 @@ qx.Class.define("osparc.data.model.Node", {
         case "complete":
           break;
         case "failed": {
-          this.setInteractiveStatus("failed");
+          status.setInteractiveStatus("failed");
           const msg = "Service failed: " + data["service_message"];
           const msgData = {
             nodeId: this.getNodeId(),
@@ -1022,7 +1016,7 @@ qx.Class.define("osparc.data.model.Node", {
             msg: errorMsg
           };
           this.fireDataEvent("showInLogger", errorMsgData);
-          this.setInteractiveStatus("failed");
+          this.getStatus().setInteractiveStatus("failed");
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
         });
     },
@@ -1047,13 +1041,12 @@ qx.Class.define("osparc.data.model.Node", {
     __waitForServiceReady: function(srvUrl) {
       // ping for some time until it is really ready
       const pingRequest = new qx.io.request.Xhr(srvUrl);
-      pingRequest.addListenerOnce("success", function(e) {
-        console.log("service ready now");
+      pingRequest.addListenerOnce("success", () => {
         this.__serviceReadyIn(srvUrl);
       }, this);
       pingRequest.addListenerOnce("fail", e => {
         const error = e.getTarget().getResponse();
-        this.setInteractiveStatus("connecting");
+        this.getStatus().setInteractiveStatus("connecting");
         console.log("service not ready yet, waiting... " + error);
         const interval = 1000;
         qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
@@ -1062,7 +1055,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
     __serviceReadyIn: function(srvUrl) {
       this.setServiceUrl(srvUrl);
-      this.setInteractiveStatus("ready");
+      this.getStatus().setInteractiveStatus("ready");
       const msg = "Service ready on " + srvUrl;
       const msgData = {
         nodeId: this.getNodeId(),
@@ -1071,7 +1064,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.fireDataEvent("showInLogger", msgData);
 
       this.getRetrieveIFrameButton().setEnabled(true);
-      this.setProgress(100);
+      this.getStatus().setProgress(100);
 
       // FIXME: Apparently no all services are inmediately ready when they publish the port
       // ping the service until it is accessible through the platform
@@ -1151,7 +1144,7 @@ qx.Class.define("osparc.data.model.Node", {
 
       if (this.isFilePicker()) {
         nodeEntry.outputs = this.getOutputValues();
-        nodeEntry.progress = this.getProgress();
+        nodeEntry.progress = this.getStatus().getProgress();
       }
 
       if (savePosition) {

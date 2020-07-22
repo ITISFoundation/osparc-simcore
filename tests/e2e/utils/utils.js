@@ -1,3 +1,29 @@
+
+
+function parseCommandLineArguments(args) {
+  //
+  // node $tutorial.js [url] [user] [password] [--demo]
+  //
+  //
+
+  if (args.length < 1) {
+    console.log('More arguments expected:  $tutorial.js [url] [user] [password] [--demo]');
+    process.exit(1);
+  }
+
+  const url = args[0];
+  const enableDemoMode = args.length > 1 ? args[1] === "--demo" : false;
+  const {
+    user,
+    pass,
+    newUser
+  } = getUserAndPass(args);
+
+  return {
+    url, user, pass, newUser, enableDemoMode
+  }
+}
+
 function getUserAndPass(args) {
   const userPass = {
     user: null,
@@ -30,7 +56,7 @@ function  __getRandUserAndPass() {
 function getDomain(url) {
   url = url.replace("http://", "");
   url = url.replace("https://", "");
-  url = url.substr(0, url.indexOf("/")); 
+  url = url.substr(0, url.indexOf("/"));
   return url;
 }
 
@@ -195,4 +221,5 @@ module.exports = {
   sleep,
   takeScreenshot,
   extractWorkbenchData,
+  parseCommandLineArguments
 }
