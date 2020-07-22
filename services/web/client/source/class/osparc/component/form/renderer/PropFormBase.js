@@ -131,7 +131,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       return filteredData;
     },
 
-    __getMenuButton: function() {
+    __getMenuButton: function(field) {
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
@@ -147,7 +147,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
           } else {
             const parameter = study.addParameter(newLabel);
-            console.log(parameter);
+            this.addParameter(field.key, parameter);
             newParamName.close();
           }
         }, this);
@@ -186,13 +186,20 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       throw new Error("Abstract method called!");
     },
 
+    /**
+      * @abstract
+      */
+    addParameter: function() {
+      throw new Error("Abstract method called!");
+    },
+
     _createFieldWithMenu: function(field) {
       const fieldWMenu = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       fieldWMenu.add(field, {
         flex: 1
       });
 
-      const menuBtn = this.__getMenuButton();
+      const menuBtn = this.__getMenuButton(field);
       fieldWMenu.add(menuBtn);
 
       return fieldWMenu;

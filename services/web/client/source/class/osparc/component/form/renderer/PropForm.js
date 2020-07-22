@@ -24,6 +24,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     this.__ctrlLinkMap = {};
     this.__addLinkCtrls();
 
+    this.__ctrlParamMap = {};
+    this.__addParamCtrls();
+
     this.setDroppable(true);
     this.__attachDragoverHighlighter();
   },
@@ -429,6 +432,90 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       this.__linkRemoved(toPortId);
     },
     /* /LINKS */
+
+    /* PARAMETERS */
+    getControlParam: function(key) {
+      return this.__ctrlParamMap[key];
+    },
+
+    __addParamCtrl: function(portId) {
+      const controlParam = this.__createFieldCtrl(portId);
+      this.__ctrlParamMap[portId] = controlParam;
+    },
+
+    __addParamCtrls: function() {
+      Object.keys(this._form.getControls()).forEach(portId => {
+        this.__addParamCtrl(portId);
+      });
+    },
+
+    __parameterAdded: function(portId) {
+      let data = this._getCtrlFieldChild(portId);
+      if (data) {
+        let child = data.child;
+        const hint = "getField" in child ? child.getField().description : "";
+        const idx = data.idx;
+        const layoutProps = child.getLayoutProperties();
+        this._remove(child);
+
+        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+        hBox.add(this.getControlParam(portId), {
+          flex: 1
+        });
+
+        const unparamBtn = new qx.ui.form.Button(this.tr("Remove parameter"), "@FontAwesome5Solid/unlink/14");
+        unparamBtn.addListener("execute", function() {
+          this.removeParameter(portId);
+        }, this);
+        hBox.add(unparamBtn);
+
+        const field = this._createFieldWithHint(hBox, hint);
+        field.key = portId;
+
+        this._addAt(field, idx, {
+          row: layoutProps.row,
+          column: this._gridPos.ctrlField
+        });
+      }
+    },
+
+    __parameterRemoved: function(portId) {
+      this.__resetCtrlField(portId);
+    },
+
+    addParameter: function(portId, parameter) {
+      if (!this.__isPortAvailable(portId)) {
+        return false;
+      }
+      if (!parameter) {
+        return false;
+      }
+
+      this.getControlParam(portId).setEnabled(false);
+      this._form.getControl(portId).parameter = parameter;
+      // ToDo: Binding missing
+      this.getControlParam(portId).setValue(this.tr("Parameter: ") + parameter.label);
+      this.__parameterAdded(portId);
+      return true;
+    },
+
+    addParameters: function(data) {
+      for (let key in data) {
+        if (osparc.utils.Ports.isDataAParamter(data[key])) {
+          this.addParameter(key, data[key]);
+        }
+      }
+    },
+
+    removeParameter: function(portId) {
+      this.getControlParam(portId).setEnabled(false);
+      if ("parameter" in this._form.getControl(portId)) {
+        delete this._form.getControl(portId).parameter;
+      }
+
+      this.__parameterRemoved(portId);
+    },
+    /* /PARAMETERS */
 
     __changeControlVisibility: function(control, visibility) {
       if (control === null) {

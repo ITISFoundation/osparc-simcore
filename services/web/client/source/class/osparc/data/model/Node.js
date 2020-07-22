@@ -584,15 +584,19 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.__settingsForm && inputs) {
         const inputData = {};
         const inputLinks = {};
+        const inputParameters = {};
         const inputsCopy = osparc.utils.Utils.deepCloneObject(inputs);
         for (let key in inputsCopy) {
           if (osparc.utils.Ports.isDataALink(inputsCopy[key])) {
             inputLinks[key] = inputsCopy[key];
+          } else if (osparc.utils.Ports.isDataAParameter(inputsCopy[key])) {
+            inputParameters[key] = inputsCopy[key];
           } else {
             inputData[key] = inputsCopy[key];
           }
         }
         this.getPropsWidget().addLinks(inputLinks);
+        this.getPropsWidget().addParameters(inputParameters);
         this.__settingsForm.setData(inputData);
       }
     },
