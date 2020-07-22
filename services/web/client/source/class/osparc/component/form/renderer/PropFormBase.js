@@ -157,11 +157,22 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       menu.add(newParamBtn);
 
       const existingParamMenu = new qx.ui.menu.Menu();
+      const repopulateMenu = () => {
+        existingParamMenu.removeAll();
+        const study = osparc.store.Store.getInstance().getCurrentStudy();
+        study.getParameters().forEach(param => {
+          const paramButton = new qx.ui.menu.Button(param.label);
+          paramButton.addListener("execute", () => {
+            this.addParameter(field.key, param);
+          }, this);
+          existingParamMenu.add(paramButton);
+        });
+      };
+      repopulateMenu();
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      study.getParameters().forEach(param => {
-        const paramButton = new qx.ui.menu.Button(param.label);
-        existingParamMenu.add(paramButton);
-      });
+      study.getParams().addListener("changeParameters", () => {
+        repopulateMenu();
+      }, this);
 
       const existingParamBtn = new qx.ui.menu.Button(this.tr("Set existing parameter"), null, null, existingParamMenu);
       menu.add(existingParamBtn);

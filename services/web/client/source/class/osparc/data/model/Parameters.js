@@ -33,6 +33,10 @@ qx.Class.define("osparc.data.model.Parameters", {
     this.__parameters = [];
   },
 
+  events: {
+    "changeParameters": "qx.event.type.Data"
+  },
+
   members: {
     __parameters: null,
 
@@ -49,6 +53,8 @@ qx.Class.define("osparc.data.model.Parameters", {
           distribution: "linear"
         };
         this.__parameters.push(parameter);
+
+        this.fireDataEvent("changeParameters", this.__parameters);
 
         return parameter;
       }
