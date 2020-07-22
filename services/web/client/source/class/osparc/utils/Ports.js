@@ -47,7 +47,7 @@ qx.Class.define("osparc.utils.Ports", {
     },
 
     isDataAParameter: function(data) {
-      return (data !== null && data.startsWith("{{") && data.startsWith("}}"));
+      return (data !== null && typeof data === "string" && data.startsWith("{{") && data.startsWith("}}"));
     }
   }
 });
