@@ -79,7 +79,7 @@ qx.Class.define("osparc.ui.tree.CheckboxTree", {
     },
     /**
      * Method returning an array of checked elements (model elements).
-     * @param {Array?} model Tree model to check. Used for recursion, the method should be called without parameters.
+     * @param {Array?} model Tree model to check. Used for recursion, the method should be called without any parameters.
      */
     getChecked: function(model) {
       const nodes = model == null ? this.getModel().getChildren().toArray() : model.getChildren().toArray();
