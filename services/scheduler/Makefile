@@ -18,8 +18,12 @@ reqs: _ensure-in-venv ## compiles pip requirements (.in -> .txt)
 
 .PHONY: compile-dependencies
 compile-dependencies: _ensure-in-venv ## snapshot test & package dependencies
-	@pip-compile --build-isolation requirements/base.in --output-file requirements/base.txt
-	@pip-compile --build-isolation requirements/test.in --output-file requirements/test.txt
+	@pip-compile --build-isolation requirements/_base.in --output-file requirements/_base.txt
+	@pip-compile --build-isolation requirements/_test.in --output-file requirements/_test.txt
+
+.PHONY: install-dev-dependencies
+install-dev-dependencies: _ensure-in-venv ## snapshot test & package dependencies
+	@pip install -r requirements/_base.txt
 
 .PHONY: tox-full-recreate
 tox-full-recreate: _ensure-in-venv ## runs all tools in tox in a new environment
@@ -32,6 +36,10 @@ tox-full: _ensure-in-venv ## runs all tools in tox in cached environment
 .PHONY: tox-tests
 tox-tests: _ensure-in-venv ## run only tests from tox cached environment
 	@tox -e py38
+
+.PHONY: tox-tests-recreate
+tox-tests-recreate: _ensure-in-venv ## run only tests from tox in a new environment
+	@tox -r -e py38
 
 .PHONY: ci-tox-pylint
 ci-tox-pylint: ## runs pylint in a new enviornment
