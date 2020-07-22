@@ -57,7 +57,7 @@ qx.Class.define("osparc.data.model.Study", {
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
     this.setWorkbench(new osparc.data.model.Workbench(wbData));
 
-    this.__parameters = [];
+    this.setParams(new osparc.data.model.Parameters());
     this.__secondaryStudies = [];
   },
 
@@ -125,6 +125,12 @@ qx.Class.define("osparc.data.model.Study", {
     tags: {
       check: "Array",
       init: []
+    },
+
+    params: {
+      check: "osparc.data.model.Parameters",
+      nullable: false,
+      event: "changeParameters"
     }
   },
 
@@ -141,7 +147,8 @@ qx.Class.define("osparc.data.model.Study", {
         creationDate: new Date(),
         lastChangeDate: new Date(),
         workbench: {},
-        tags: []
+        tags: [],
+        parameters: {}
       };
     },
 
@@ -175,41 +182,23 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
-    __parameters: null,
     __secondaryStudies: null,
 
     /* PARAMETERS */
     addParameter: function(parameterLabel) {
-      if (!this.parameterLabelExists(parameterLabel)) {
-        const parameter = {
-          id: this.__parameters.length,
-          label: parameterLabel,
-          low: 1,
-          high: 2,
-          steps: 2,
-          distribution: "linear"
-        };
-        this.__parameters.push(parameter);
-
-        return parameter;
-      }
-      return null;
+      return this.getParams().addParameter(parameterLabel);
     },
 
     getParameter: function(parameterId) {
-      const params = this.getParameters();
-      const idx = params.findIndex(param => param.id === parameterId);
-      return (idx === -1) ? null : params[idx];
+      return this.getParams().getParameter(parameterId);
     },
 
     getParameters: function() {
-      return this.__parameters;
+      return this.getParams().getParameters();
     },
 
     parameterLabelExists: function(parameterLabel) {
-      const params = this.getParameters();
-      const idx = params.findIndex(param => param.label === parameterLabel);
-      return (idx !== -1);
+      return this.getParams().parameterLabelExists(parameterLabel);
     },
     /* /PARAMETERS */
 
@@ -286,6 +275,12 @@ qx.Class.define("osparc.data.model.Study", {
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
         const value = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
+        if (key === "params") {
+          if (!("dev" in jsonObject)) {
+            jsonObject["dev"] = {};
+          }
+          jsonObject["dev"][key] = this.getParams().serializeParameters();
+        }
         if (value !== null) {
           // only put the value in the payload if there is a value
           jsonObject[key] = value;
