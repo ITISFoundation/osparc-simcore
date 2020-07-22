@@ -4,6 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
+async-asgi-testclient==1.4.4  # via -r requirements/_test.in
 attrs==19.3.0             # via pytest
 certifi==2020.6.20        # via requests
 chardet==3.0.4            # via requests
@@ -11,15 +12,27 @@ coverage==5.2             # via pytest-cov
 idna==2.10                # via requests
 importlib-metadata==1.7.0  # via pluggy, pytest
 more-itertools==8.4.0     # via pytest
+multidict==4.7.6          # via async-asgi-testclient
+nest-asyncio==1.4.0       # via -r requirements/_test.in
 packaging==20.4           # via pytest
 pluggy==0.13.1            # via pytest
+psutil==5.7.2             # via redislite
 py==1.9.0                 # via pytest
+pymongo-inmemory==0.1.4   # via -r requirements/_test.in
+pymongo==3.10.1           # via pymongo-inmemory
 pyparsing==2.4.7          # via packaging
+pytest-asyncio==0.14.0    # via -r requirements/_test.in
 pytest-cov==2.10.0        # via -r requirements/_test.in
 pytest-mock==3.2.0        # via -r requirements/_test.in
-pytest==5.4.3             # via -r requirements/_test.in, pytest-cov, pytest-mock
-requests==2.24.0          # via -r requirements/_test.in
+pytest-ordering==0.6      # via -r requirements/_test.in
+pytest==5.4.3             # via -r requirements/_test.in, pytest-asyncio, pytest-cov, pytest-mock, pytest-ordering
+redis==3.5.3              # via redislite
+redislite==5.0.165407     # via -r requirements/_test.in
+requests==2.24.0          # via -r requirements/_test.in, async-asgi-testclient
 six==1.15.0               # via packaging
 urllib3==1.25.9           # via requests
 wcwidth==0.2.5            # via pytest
 zipp==3.1.0               # via importlib-metadata
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools
