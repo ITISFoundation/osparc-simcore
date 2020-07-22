@@ -284,8 +284,33 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       });
     },
 
+    __isPortAvailable: function(portId) {
+      const port = this._form.getControl(portId);
+      if (!port ||
+        !port.getEnabled() ||
+        Object.prototype.hasOwnProperty.call(port, "link") ||
+        Object.prototype.hasOwnProperty.call(port, "parameter")) {
+        return false;
+      }
+      return true;
+    },
+
+    __createFieldCtrl: function(portId) {
+      const controlParam = new qx.ui.form.TextField().set({
+        enabled: false
+      });
+      controlParam.key = portId;
+      return controlParam;
+    },
+
+    /* LINKS */
     getControlLink: function(key) {
       return this.__ctrlLinkMap[key];
+    },
+
+    __addLinkCtrl: function(portId) {
+      const controlLink = this.__createFieldCtrl(portId);
+      this.__ctrlLinkMap[portId] = controlLink;
     },
 
     __addLinkCtrls: function() {
@@ -294,23 +319,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       });
     },
 
-    __addLinkCtrl: function(portId) {
-      const controlLink = new qx.ui.form.TextField().set({
-        enabled: false
-      });
-      controlLink.key = portId;
-      this.__ctrlLinkMap[portId] = controlLink;
-    },
-
-    __isPortAvailable: function(portId) {
-      const port = this._form.getControl(portId);
-      if (!port || !port.getEnabled() || Object.prototype.hasOwnProperty.call(port, "link")) {
-        return false;
-      }
-      return true;
-    },
-
-    /* LINKS */
     linkAdded: function(portId) {
       let data = this._getCtrlFieldChild(portId);
       if (data) {
