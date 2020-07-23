@@ -37,8 +37,8 @@ qx.Class.define("osparc.data.model.Study", {
   extend: qx.core.Object,
 
   /**
-    * @param studyData {Object} Object containing the serialized Study Data
-    */
+   * @param studyData {Object} Object containing the serialized Study Data
+   */
   construct: function(studyData) {
     this.base(arguments);
 

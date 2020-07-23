@@ -16,13 +16,39 @@
 ************************************************************************ */
 
 /**
- *   Collection of static methods for handling parametrized studies
+ * Collection of static methods for handling parametrized studies
  */
 
 qx.Class.define("osparc.data.StudyParametrizer", {
   type: "static",
 
   statics: {
+    /**
+     * It calculates all cartesian combinations for the given array of arrays.
+     * [[1, 2], [3, 4]]
+     * [[1, 3], [1, 4], [2, 3], [2, 4]]
+     * @param args {Array} Array of arrays
+     */
+
+    // https://stackoverflow.com/questions/15298912/javascript-generating-combinations-from-n-arrays-with-m-elements
+    calculateCombinations: function(args) {
+      const r = [];
+      const max = args.length-1;
+      const helper = (arr, i) => {
+        for (let j=0, l=args[i].length; j<l; j++) {
+          const a = arr.slice(0); // clone arr
+          a.push(args[i][j]);
+          if (i === max) {
+            r.push(a);
+          } else {
+            helper(a, i+1);
+          }
+        }
+      };
+      helper([], 0);
+      return r;
+    },
+
     recreateIterations: function(primaryStudyData) {
       const secondaryStudiesData = [];
 

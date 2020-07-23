@@ -75,29 +75,9 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
         arrs.push(arr);
       });
 
-      // https://stackoverflow.com/questions/15298912/javascript-generating-combinations-from-n-arrays-with-m-elements
-      const cartesian = args => {
-      // const cartesian = (...args) => {
-        const r = [];
-        const max = args.length-1;
-        const helper = (arr, i) => {
-          for (let j=0, l=args[i].length; j<l; j++) {
-            const a = arr.slice(0); // clone arr
-            a.push(args[i][j]);
-            if (i === max) {
-              r.push(a);
-            } else {
-              helper(a, i+1);
-            }
-          }
-        };
-        helper([], 0);
-        return r;
-      };
-
       const rows = [];
       if (arrs.length) {
-        const combs = cartesian(arrs);
+        const combs = osparc.data.StudyParametrizer.cartesian(arrs);
         let combId = 0;
         for (let i=0; i<combs.length; i++) {
           const comb = combs[i];
