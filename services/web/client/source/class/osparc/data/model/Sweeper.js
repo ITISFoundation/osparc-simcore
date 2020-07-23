@@ -46,7 +46,8 @@ qx.Class.define("osparc.data.model.Sweeper", {
   },
 
   events: {
-    "changeParameters": "qx.event.type.Data"
+    "changeParameters": "qx.event.type.Data",
+    "secondaryStudies": "qx.event.type.Data"
   },
 
   members: {
@@ -134,28 +135,52 @@ qx.Class.define("osparc.data.model.Sweeper", {
     },
 
     __addSecondaryStudy: function(secondaryStudy) {
-      const index = this.__secondaryStudies.findIndex(secStudy => secStudy.uuid === secondaryStudy.uuid);
-      if (index === -1) {
-        this.__secondaryStudies.push(secondaryStudy);
-      } else {
-        this.__secondaryStudies[index] = secondaryStudy;
-      }
+      this.__postSecondaryStudy(secondaryStudy)
+        .then(studyData => {
+          this.__secondaryStudies.push(studyData);
+        })
+        .catch(er => {
+          console.error(er);
+        });
+    },
+
+    __removeSecondaryStudy: function(secondaryStudy) {
+      this.__deleteSecondaryStudy(secondaryStudy)
+        .then(studyData => {
+          const idx = this.__secondaryStudies.findIndex(secStudy => secStudy.uuid === secondaryStudy.uuid);
+          if (idx > -1) {
+            this.__secondaryStudies.splice(idx, 1);
+          }
+        })
+        .catch(er => {
+          console.error(er);
+        });
     },
 
     __setSecondaryStudies: function(secondaryStudies) {
       this.__secondaryStudies.forEach(secondaryStudy => {
-        const params = {
-          url: {
-            projectId: secondaryStudy.uuid
-          }
-        };
-        osparc.data.Resources.fetch("studies", "delete", params, secondaryStudy.uuid);
+        this.__removeSecondaryStudy(secondaryStudy);
       });
-      this.__secondaryStudies = [];
 
       secondaryStudies.forEach(secondaryStudy => {
         this.__addSecondaryStudy(secondaryStudy);
       });
+    },
+
+    __postSecondaryStudy: function(secondaryStudy) {
+      const params = {
+        data: secondaryStudy
+      };
+      return osparc.data.Resources.fetch("studies", "post", params);
+    },
+
+    __deleteSecondaryStudy: function(secondaryStudy) {
+      const params = {
+        url: {
+          projectId: secondaryStudy.uuid
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "delete", params, secondaryStudy.uuid);
     }
     /* /SECONDARY STUDIES */
   }
