@@ -77,27 +77,34 @@ qx.Class.define("osparc.data.StudyParametrizer", {
       const secondaryStudiesData = [];
 
       combinations.forEach((combination, idx) => {
-        const delta = {};
+        // eslint-disable-next-line no-underscore-dangle
+        let secondaryStudyData = osparc.data.StudyParametrizer.__createSecondaryStudy(primaryStudyData, idx);
+        let secondaryStudyDataStr = JSON.stringify(secondaryStudyData);
         combination.forEach((varValue, idx2) => {
           const parameter = parameters[idx2];
-          console.log(parameter);
           // do the mustache thing
-          const nodeId = Object.keys(primaryStudyData["workbench"])[0];
-          delta[nodeId] = {
-            "inputs": {
-              "in_2": varValue
-            }
-          };
+          const mustachedStr = "{{" + parameter.id + "}}";
+          secondaryStudyDataStr = secondaryStudyDataStr.replace(mustachedStr, varValue);
         });
-        // eslint-disable-next-line no-underscore-dangle
-        const secondaryStudyData = osparc.data.StudyParametrizer.__createStudyParameterization(primaryStudyData, delta, idx);
-        if (secondaryStudyData) {
-          console.log(secondaryStudyData);
-          secondaryStudiesData.push(secondaryStudyData);
-        }
+        secondaryStudyData = JSON.parse(secondaryStudyDataStr);
+        secondaryStudiesData.push(secondaryStudyData);
       });
 
       return secondaryStudiesData;
+    },
+
+    __createSecondaryStudy: function(primaryStudyData, idx) {
+      const secondaryStudyData = osparc.data.model.Study.deepCloneStudyObject(primaryStudyData);
+
+      // give new study id
+      secondaryStudyData["uuid"] = osparc.utils.Utils.uuidv4();
+      // give a different name
+      secondaryStudyData["name"] = secondaryStudyData["name"] + " (it-" + (idx+1) + ")";
+      // replace orignal uuids
+      secondaryStudyData["workbench"] = osparc.data.Converters.replaceUuids(secondaryStudyData["workbench"]);
+      // make them read only
+
+      return secondaryStudyData;
     },
 
     __applyDelta: function(secondaryStudyData, delta) {
