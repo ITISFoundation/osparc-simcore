@@ -114,8 +114,11 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       let data = this._form.getData();
       for (const portId in data) {
         let ctrl = this._form.getControl(portId);
-        if (ctrl && ctrl.link) {
-          data[portId] = ctrl.link;
+        if (ctrl && ctrl["link"]) {
+          data[portId] = ctrl["link"];
+        }
+        if (ctrl && ctrl["parameter"]) {
+          data[portId] = "{{" + ctrl["parameter"].id + "}}";
         }
         // FIXME: "null" should be a valid input
         if (data[portId] === "null") {
