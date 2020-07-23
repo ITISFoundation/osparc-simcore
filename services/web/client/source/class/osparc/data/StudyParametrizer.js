@@ -24,13 +24,31 @@ qx.Class.define("osparc.data.StudyParametrizer", {
 
   statics: {
     /**
-     * It calculates all cartesian combinations for the given array of arrays.
-     * [[1, 2], [3, 4]]
-     * [[1, 3], [1, 4], [2, 3], [2, 4]]
+     * Calculate the steps for the given parameter specs.
+     * In: {low: 0, high: 3, steps: 4}
+     * Out:[0, 1, 2, 3]
      * @param args {Array} Array of arrays
      */
+    calculateSteps: function(params) {
+      const arrs = [];
+      params.forEach(param => {
+        const arr = [];
+        const step = param.steps > 1 ? ((param.high - param.low) / (param.steps-1)) : 0;
+        for (let i=0; i<param.steps; i++) {
+          arr.push(param.low + step*i);
+        }
+        arrs.push(arr);
+      });
+      return arrs;
+    },
 
-    // https://stackoverflow.com/questions/15298912/javascript-generating-combinations-from-n-arrays-with-m-elements
+    /**
+     * https://stackoverflow.com/questions/15298912/javascript-generating-combinations-from-n-arrays-with-m-elements
+     * Calculate all cartesian combinations for the given array of arrays.
+     * In: [[1, 2], [3, 4]]
+     * Out: [[1, 3], [1, 4], [2, 3], [2, 4]]
+     * @param args {Array} Array of arrays
+     */
     calculateCombinations: function(args) {
       const r = [];
       const max = args.length-1;

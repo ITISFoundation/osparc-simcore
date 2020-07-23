@@ -64,20 +64,12 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
     },
 
     __updateTable: function() {
-      const arrs = [];
       const params = this.__primaryStudy.getParameters();
-      params.forEach(param => {
-        const arr = [];
-        const step = param.steps > 1 ? ((param.high - param.low) / (param.steps-1)) : 0;
-        for (let i=0; i<param.steps; i++) {
-          arr.push(param.low + step*i);
-        }
-        arrs.push(arr);
-      });
+      const arrs = osparc.data.StudyParametrizer.calculateSteps(params);
 
       const rows = [];
       if (arrs.length) {
-        const combs = osparc.data.StudyParametrizer.cartesian(arrs);
+        const combs = osparc.data.StudyParametrizer.calculateCombinations(arrs);
         let combId = 0;
         for (let i=0; i<combs.length; i++) {
           const comb = combs[i];
