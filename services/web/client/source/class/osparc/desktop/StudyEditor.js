@@ -426,8 +426,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const iterationSelector = new osparc.component.iteration.Selector(primaryStudy);
         const win = osparc.component.iteration.Selector.popUpInWindow(iterationSelector);
         iterationSelector.addListener("openIteration", e => {
-          const iterationStudyId = e.getData();
-          console.log(iterationStudyId);
           win.close();
         });
       } else {

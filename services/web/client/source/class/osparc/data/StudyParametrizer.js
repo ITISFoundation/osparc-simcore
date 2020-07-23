@@ -70,10 +70,6 @@ qx.Class.define("osparc.data.StudyParametrizer", {
     },
 
     recreateIterations: function(primaryStudyData, parameters, combinations) {
-      console.log("primaryStudyData", primaryStudyData);
-      console.log("parameters", parameters);
-      console.log("combinations", combinations);
-
       const secondaryStudiesData = [];
 
       combinations.forEach((combination, idx) => {
