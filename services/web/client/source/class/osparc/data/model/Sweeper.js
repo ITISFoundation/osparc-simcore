@@ -115,6 +115,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
 
     getSecondaryStudies: function() {
       return this.__secondaryStudies;
-    },
+    }
+    /* /SECONDARY STUDIES */
   }
 });
