@@ -442,7 +442,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         win.open();
         win.addListener("close", () => {
           if (win.getConfirmed()) {
-            this.__deleteStudy(studyData, true);
+            this.__deleteStudy(studyData);
           }
         }, this);
       }, this);
@@ -521,13 +521,13 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         const permissions = osparc.component.export.Permissions;
         permissions.removeCollaborator(studyData, myGid);
         params["data"] = studyData;
-        operationPromise = osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "put", params);
+        operationPromise = osparc.data.Resources.fetch("templates", "put", params);
       } else {
         // delete study
-        operationPromise = osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "delete", params, studyData.uuid);
+        operationPromise = osparc.data.Resources.fetch("templates", "delete", params, studyData.uuid);
       }
       operationPromise
-        .then(() => this.__removeFromStudyList(studyData.uuid, isTemplate))
+        .then(() => this.__removeFromStudyList(studyData.uuid))
         .catch(err => {
           console.error(err);
           osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");
