@@ -103,9 +103,15 @@ qx.Class.define("osparc.desktop.MainPage", {
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard().set({
         width: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) + 10 // padding + scrollbar
       });
-
+      const sideSearch = new osparc.dashboard.SideSearch();
+      dashboard.bind("selection", sideSearch, "visibility", {
+        converter: value => {
+          const tabIndex = dashboard.getChildren().indexOf(value[0]);
+          return tabIndex && tabIndex === 2 ? "visible": "hidden";
+        }
+      });
       const dashboardLayout = this.__dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      dashboardLayout.add(new osparc.dashboard.SideSearch(), {
+      dashboardLayout.add(sideSearch, {
         flex: 1
       });
       dashboardLayout.add(dashboard);
