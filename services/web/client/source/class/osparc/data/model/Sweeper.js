@@ -74,10 +74,8 @@ qx.Class.define("osparc.data.model.Sweeper", {
 
     addParameter: function(parameterLabel) {
       if (!this.parameterLabelExists(parameterLabel)) {
-        const nParams = this.__parameters.length;
-        const newId = nParams ? this.__parameters[nParams-1].id + 1 : 0;
         const parameter = {
-          id: newId,
+          id: parameterLabel,
           label: parameterLabel,
           low: 1,
           high: 2,

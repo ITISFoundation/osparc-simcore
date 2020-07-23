@@ -80,12 +80,13 @@ qx.Class.define("osparc.component.iteration.Parameters", {
         const newParamName = new osparc.component.widget.Renamer(null, subtitle, label);
         newParamName.addListener("labelChanged", e => {
           const primaryStudy = this.__primaryStudy;
-          const newLabel = e.getData()["newLabel"];
-          if (primaryStudy.parameterLabelExists(newLabel)) {
+          let newParameterLabel = e.getData()["newLabel"];
+          newParameterLabel = newParameterLabel.replace(" ", "_");
+          if (primaryStudy.parameterLabelExists(newParameterLabel)) {
             const msg = this.tr("Parameter name already exists");
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
           } else {
-            primaryStudy.addParameter(newLabel);
+            primaryStudy.addParameter(newParameterLabel);
             this.__paramSpecs.updateTable();
             newParamName.close();
           }
