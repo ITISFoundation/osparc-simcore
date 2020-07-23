@@ -153,7 +153,14 @@ qx.Class.define("osparc.data.model.Sweeper", {
     },
 
     setSecondaryStudies: function(secondaryStudies) {
-      // delete old secondary studies from backend?
+      this.__secondaryStudies.forEach(secondaryStudy => {
+        const params = {
+          url: {
+            projectId: secondaryStudy.uuid
+          }
+        };
+        osparc.data.Resources.fetch("studies", "delete", params, secondaryStudy.uuid);
+      });
       this.__secondaryStudies = [];
 
       secondaryStudies.forEach(secondaryStudy => {
