@@ -72,7 +72,7 @@ qx.Class.define("osparc.ui.tree.CheckboxTree", {
       return model;
     },
     __extendData: function(data) {
-      data.open = true;
+      data.open = data.open || true;
       data.checked = data.checked || false;
       data.children = data.children || [];
       data.children.forEach(child => this.__extendData(child));
