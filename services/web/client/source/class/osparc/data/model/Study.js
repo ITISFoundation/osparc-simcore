@@ -180,47 +180,6 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
-    /* PARAMETERS */
-    getParameters: function() {
-      return this.getSweeper().getParameters();
-    },
-
-    parameterLabelExists: function(parameterLabel) {
-      return this.getSweeper().parameterLabelExists(parameterLabel);
-    },
-
-    addParameter: function(parameterLabel) {
-      return this.getSweeper().addParameter(parameterLabel);
-    },
-    /* /PARAMETERS */
-
-    /* STEPS */
-    setSteps: function(steps) {
-      return this.getSweeper().setSteps(steps);
-    },
-    /* /STEPS */
-
-    /* COMBINATIONS */
-    getCombinations: function() {
-      return this.getSweeper().getCombinations();
-    },
-    /* /COMBINATIONS */
-
-    /* SECONDARY STUDIES */
-    getSecondaryStudy: function(secondaryStudyId) {
-      return this.getSweeper().getSecondaryStudy(secondaryStudyId);
-    },
-
-    getSecondaryStudies: function() {
-      return this.getSweeper().getSecondaryStudies();
-    },
-
-    hasSecondaryStudies: function() {
-      return this.getSweeper().hasSecondaryStudies();
-    },
-    /* /SECONDARY STUDIES */
-
-
     buildWorkbench: function() {
       this.getWorkbench().buildWorkbench();
     },

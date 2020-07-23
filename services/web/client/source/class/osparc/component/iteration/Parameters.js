@@ -82,11 +82,11 @@ qx.Class.define("osparc.component.iteration.Parameters", {
           const primaryStudy = this.__primaryStudy;
           let newParameterLabel = e.getData()["newLabel"];
           newParameterLabel = newParameterLabel.replace(" ", "_");
-          if (primaryStudy.parameterLabelExists(newParameterLabel)) {
+          if (primaryStudy.getSweeper().parameterLabelExists(newParameterLabel)) {
             const msg = this.tr("Parameter name already exists");
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
           } else {
-            primaryStudy.addParameter(newParameterLabel);
+            primaryStudy.getSweeper().addParameter(newParameterLabel);
             this.__paramSpecs.updateTable();
             newParamName.close();
           }

@@ -148,11 +148,11 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
           const study = osparc.store.Store.getInstance().getCurrentStudy();
           let newParameterLabel = e.getData()["newLabel"];
           newParameterLabel = newParameterLabel.replace(" ", "_");
-          if (study.parameterLabelExists(newParameterLabel)) {
+          if (study.getSweeper().parameterLabelExists(newParameterLabel)) {
             const msg = this.tr("Parameter name already exists");
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
           } else {
-            const param = study.addParameter(newParameterLabel);
+            const param = study.getSweeper().addParameter(newParameterLabel);
             this.addParameter(field.key, param);
             newParamName.close();
           }
@@ -166,7 +166,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       const repopulateMenu = () => {
         existingParamMenu.removeAll();
         const study = osparc.store.Store.getInstance().getCurrentStudy();
-        study.getParameters().forEach(param => {
+        study.getSweeper().getParameters().forEach(param => {
           const paramButton = new qx.ui.menu.Button(param.label);
           paramButton.addListener("execute", () => {
             this.addParameter(field.key, param);

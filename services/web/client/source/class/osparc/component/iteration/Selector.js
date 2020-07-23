@@ -98,7 +98,7 @@ qx.Class.define("osparc.component.iteration.Selector", {
     },
 
     __populateTable: function() {
-      const secStudies = this.__primaryStudy.getSecondaryStudies();
+      const secStudies = this.__primaryStudy.getSweeper().getSecondaryStudies();
       const rows = [];
       Object.keys(secStudies).forEach(secStudyId => {
         const secStudy = secStudies[secStudyId];

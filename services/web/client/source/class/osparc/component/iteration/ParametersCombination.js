@@ -54,7 +54,7 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
         cols.push(this.__cols[colKey].label);
       });
       // add variables in columns
-      this.__primaryStudy.getParameters().forEach(parameter => {
+      this.__primaryStudy.getSweeper().getParameters().forEach(parameter => {
         cols.push(parameter.label);
       });
 
@@ -69,8 +69,8 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
       this.__primaryStudy.setSteps(steps);
 
       const rows = [];
-      const combinations = this.__primaryStudy.getCombinations();
-      const secondaryStudies = this.__primaryStudy.getSecondaryStudies();
+      const combinations = this.__primaryStudy.getSweeper().getCombinations();
+      const secondaryStudies = this.__primaryStudy.getSweeper().getSecondaryStudies();
       if (combinations.length === secondaryStudies.length) {
         for (let i=0; i<combinations.length; i++) {
           const comb = combinations[i];
