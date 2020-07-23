@@ -57,7 +57,7 @@ qx.Class.define("osparc.data.model.Study", {
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
     this.setWorkbench(new osparc.data.model.Workbench(wbData));
 
-    this.setParams(new osparc.data.model.Sweeper());
+    this.setSweeper(new osparc.data.model.Sweeper(this));
   },
 
   properties: {
@@ -180,12 +180,7 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
-
     /* PARAMETERS */
-    addParameter: function(parameterLabel) {
-      return this.getSweeper().addParameter(parameterLabel);
-    },
-
     getParameter: function(parameterId) {
       return this.getSweeper().getParameter(parameterId);
     },
@@ -197,27 +192,51 @@ qx.Class.define("osparc.data.model.Study", {
     parameterLabelExists: function(parameterLabel) {
       return this.getSweeper().parameterLabelExists(parameterLabel);
     },
+
+    addParameter: function(parameterLabel) {
+      return this.getSweeper().addParameter(parameterLabel);
+    },
     /* /PARAMETERS */
 
+    /* STEPS */
+    getSteps: function() {
+      return this.getSweeper().getSteps();
+    },
+
+    setSteps: function(steps) {
+      return this.getSweeper().setSteps(steps);
+    },
+    /* /STEPS */
+
+    /* COMBINATIONS */
+    getCombinations: function() {
+      return this.getSweeper().getCombinations();
+    },
+
+    setCombinations: function(combinations) {
+      return this.getSweeper().setCombinations(combinations);
+    },
+    /* /COMBINATIONS */
+
     /* SECONDARY STUDIES */
-    addSecondaryStudy: function(secondaryStudy) {
-      this.getSweeper().addSecondaryStudy(secondaryStudy);
-    },
-
-    setSecondaryStudies: function(secondaryStudies) {
-      this.getSweeper().setSecondaryStudies(secondaryStudies);
-    },
-
-    hasSecondaryStudies: function() {
-      return this.getSweeper().hasSecondaryStudies();
-    },
-
     getSecondaryStudy: function(secondaryStudyId) {
       return this.getSweeper().getSecondaryStudy(secondaryStudyId);
     },
 
     getSecondaryStudies: function() {
       return this.getSweeper().getSecondaryStudies();
+    },
+
+    hasSecondaryStudies: function() {
+      return this.getSweeper().hasSecondaryStudies();
+    },
+
+    addSecondaryStudy: function(secondaryStudy) {
+      this.getSweeper().addSecondaryStudy(secondaryStudy);
+    },
+
+    setSecondaryStudies: function(secondaryStudies) {
+      this.getSweeper().setSecondaryStudies(secondaryStudies);
     },
     /* /SECONDARY STUDIES */
 
@@ -258,7 +277,7 @@ qx.Class.define("osparc.data.model.Study", {
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
         let value = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
-        if (key === "params") {
+        if (key === "sweeper") {
           value = null;
         }
         if (value !== null) {

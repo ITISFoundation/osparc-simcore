@@ -108,12 +108,22 @@ qx.Class.define("osparc.component.iteration.Parameters", {
         if (this.__paramCombinations) {
           this._remove(this.__paramCombinations);
         }
+
+        this.__recreateIterations();
+
         const paramCombinations = this.__paramCombinations = this.__createParamCombinations().set({
           maxHeight: 400
         });
         this._add(paramCombinations);
       }, this);
       return updateParamParamBtn;
+    },
+
+    __recreateIterations: function() {
+      const secondaryStudiesData = this.getStudy().getSweeper().recreateIterations();
+
+      const msg = secondaryStudiesData.length + this.tr(" iterations created");
+      osparc.component.message.FlashMessenger.getInstance().logAs(msg);
     },
 
     __createParamCombinations: function() {

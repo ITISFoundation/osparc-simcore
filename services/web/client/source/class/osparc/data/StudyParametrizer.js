@@ -67,19 +67,26 @@ qx.Class.define("osparc.data.StudyParametrizer", {
       return r;
     },
 
-    recreateIterations: function(primaryStudyData) {
+    recreateIterations: function(primaryStudyData, parameters, combinations) {
+      console.log("primaryStudyData", primaryStudyData);
+      console.log("parameters", parameters);
+      console.log("combinations", combinations);
+
       const secondaryStudiesData = [];
 
-      // OM: mustache
-      const newVals = [3, 4, 5];
-      newVals.forEach((newVal, idx) => {
+      combinations.forEach((combination, idx) => {
         const delta = {};
-        const firstSleeperId = Object.keys(primaryStudyData["workbench"])[0];
-        delta[firstSleeperId] = {
-          "inputs": {
-            "in_2": newVal
-          }
-        };
+        combination.forEach((varValue, idx2) => {
+          const parameter = parameters[idx2];
+          console.log(parameter);
+          // do the mustache thing
+          const nodeId = Object.keys(primaryStudyData["workbench"])[0];
+          delta[nodeId] = {
+            "inputs": {
+              "in_2": varValue
+            }
+          };
+        });
         // eslint-disable-next-line no-underscore-dangle
         const secondaryStudyData = osparc.data.StudyParametrizer.__createStudyParameterization(primaryStudyData, delta, idx);
         if (secondaryStudyData) {

@@ -23,27 +23,55 @@ qx.Class.define("osparc.data.model.Sweeper", {
   extend: qx.core.Object,
 
   /**
-   * @param parametersData {Object} Object containing the parameters raw data
+   * @param study {osparc.data.model.Study} study model
    */
-  construct: function(parametersData) {
+  construct: function(study) {
     this.base(arguments);
 
-    console.log(parametersData);
+    this.set({
+      study
+    });
 
     this.__parameters = [];
+    this.__steps = [];
+    this.__combinations = [];
     this.__secondaryStudies = [];
   },
 
+  properties: {
+    study: {
+      check: "osparc.data.model.Study",
+      nullable: false
+    }
+  },
+
   events: {
-    "changeParameters": "qx.event.type.Data",
-    "changeSecondaryStudies": "qx.event.type.Data"
+    "changeParameters": "qx.event.type.Data"
   },
 
   members: {
     __parameters: null,
+    __steps: null,
+    __combinations: null,
     __secondaryStudies: null,
 
     /* PARAMETERS */
+    getParameter: function(parameterId) {
+      const params = this.getParameters();
+      const idx = params.findIndex(param => param.id === parameterId);
+      return (idx === -1) ? null : params[idx];
+    },
+
+    getParameters: function() {
+      return this.__parameters;
+    },
+
+    parameterLabelExists: function(parameterLabel) {
+      const params = this.getParameters();
+      const idx = params.findIndex(param => param.label === parameterLabel);
+      return (idx !== -1);
+    },
+
     addParameter: function(parameterLabel) {
       if (!this.parameterLabelExists(parameterLabel)) {
         const nParams = this.__parameters.length;
@@ -64,25 +92,60 @@ qx.Class.define("osparc.data.model.Sweeper", {
       }
       return null;
     },
-
-    getParameter: function(parameterId) {
-      const params = this.getParameters();
-      const idx = params.findIndex(param => param.id === parameterId);
-      return (idx === -1) ? null : params[idx];
-    },
-
-    getParameters: function() {
-      return this.__parameters;
-    },
-
-    parameterLabelExists: function(parameterLabel) {
-      const params = this.getParameters();
-      const idx = params.findIndex(param => param.label === parameterLabel);
-      return (idx !== -1);
-    },
     /* /PARAMETERS */
 
+    /* STEPS */
+    getSteps: function() {
+      return this.__steps;
+    },
+
+    setSteps: function(steps) {
+      if (steps.length !== this.__parameters.length) {
+        console.error("Number of elements in the array of steps must be the same as parameters");
+        return;
+      }
+      this.__steps = steps;
+
+      const combinations = osparc.data.StudyParametrizer.calculateCombinations(steps);
+      this.setCombinations(combinations);
+    },
+    /* /STEPS */
+
+    /* COMBINATIONS */
+    getCombinations: function() {
+      return this.__combinations;
+    },
+
+    setCombinations: function(combinations) {
+      this.__combinations = combinations;
+    },
+    /* /COMBINATIONS */
+
+    recreateIterations: function() {
+      const primaryStudyData = this.getStudy().serializeStudy();
+      const parameters = this.__parameters;
+      const secondaryStudiesData = osparc.data.StudyParametrizer.recreateIterations(primaryStudyData, parameters, combinations);
+      this.setsecondaryStudies(secondaryStudiesData);
+      return secondaryStudiesData;
+    },
+
     /* SECONDARY STUDIES */
+    hasSecondaryStudies: function() {
+      return Boolean(Object.keys(this.__secondaryStudies).length);
+    },
+
+    getSecondaryStudy: function(secondaryStudyId) {
+      const index = this.__secondaryStudies.findIndex(secStudy => secStudy.uuid === secondaryStudyId);
+      if (index !== -1) {
+        return this.__secondaryStudies[index];
+      }
+      return null;
+    },
+
+    getSecondaryStudies: function() {
+      return this.__secondaryStudies;
+    },
+
     addSecondaryStudy: function(secondaryStudy) {
       const index = this.__secondaryStudies.findIndex(secStudy => secStudy.uuid === secondaryStudy.uuid);
       if (index === -1) {
@@ -99,22 +162,6 @@ qx.Class.define("osparc.data.model.Sweeper", {
       secondaryStudies.forEach(secondaryStudy => {
         this.addSecondaryStudy(secondaryStudy);
       });
-    },
-
-    hasSecondaryStudies: function() {
-      return Boolean(Object.keys(this.__secondaryStudies).length);
-    },
-
-    getSecondaryStudy: function(secondaryStudyId) {
-      const index = this.__secondaryStudies.findIndex(secStudy => secStudy.uuid === secondaryStudyId);
-      if (index !== -1) {
-        return this.__secondaryStudies[index];
-      }
-      return null;
-    },
-
-    getSecondaryStudies: function() {
-      return this.__secondaryStudies;
     }
     /* /SECONDARY STUDIES */
   }

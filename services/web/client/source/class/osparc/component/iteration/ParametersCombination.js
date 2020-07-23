@@ -65,22 +65,23 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
 
     __updateTable: function() {
       const params = this.__primaryStudy.getParameters();
-      const arrs = osparc.data.StudyParametrizer.calculateSteps(params);
+      const steps = osparc.data.StudyParametrizer.calculateSteps(params);
+      this.__primaryStudy.setSteps(steps);
+
+      const combinations = this.__primaryStudy.getCombinations();
+      const secondaryStudies = this.__primaryStudy.getSecondaryStudies();
 
       const rows = [];
-      if (arrs.length) {
-        const combs = osparc.data.StudyParametrizer.calculateCombinations(arrs);
-        let combId = 0;
-        for (let i=0; i<combs.length; i++) {
-          const comb = combs[i];
-          const row = [];
-          row[this.__cols["id"].col] = combId++;
-          row[this.__cols["name"].col] = "Iteration " + combId;
-          for (let j=0; j<comb.length; j++) {
-            row[this.__cols["name"].col+1+j] = comb[j];
-          }
-          rows.push(row);
+      for (let i=0; i<combinations.length; i++) {
+        const comb = combinations[i];
+        const row = [];
+        row[this.__cols["id"].col] = secondaryStudies[i].id;
+        row[this.__cols["name"].col] = secondaryStudies[i].name;
+        const nextCol = this.__cols["name"].col + 1;
+        for (let j=0; j<comb.length; j++) {
+          row[nextCol+j] = comb[j];
         }
+        rows.push(row);
       }
       this.getTableModel().setData(rows, false);
     }
