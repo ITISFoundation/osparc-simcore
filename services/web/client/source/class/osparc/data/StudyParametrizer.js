@@ -80,7 +80,8 @@ qx.Class.define("osparc.data.StudyParametrizer", {
             "in_2": newVal
           }
         };
-        const secondaryStudyData = osparc.data.StudyParametrizer.createStudyParameterization(primaryStudyData, delta, idx);
+        // eslint-disable-next-line no-underscore-dangle
+        const secondaryStudyData = osparc.data.StudyParametrizer.__createStudyParameterization(primaryStudyData, delta, idx);
         if (secondaryStudyData) {
           console.log(secondaryStudyData);
           secondaryStudiesData.push(secondaryStudyData);
@@ -112,9 +113,10 @@ qx.Class.define("osparc.data.StudyParametrizer", {
       return false;
     },
 
-    createStudyParameterization: function(primaryStudyData, delta, idx) {
+    __createStudyParameterization: function(primaryStudyData, delta, idx) {
       const secondaryStudyData = osparc.data.model.Study.deepCloneStudyObject(primaryStudyData);
-      if (osparc.data.StudyParametrizer.__applyDelta(secondaryStudyData, delta)) { // eslint-disable-line no-underscore-dangle
+      // eslint-disable-next-line no-underscore-dangle
+      if (osparc.data.StudyParametrizer.__applyDelta(secondaryStudyData, delta)) {
         // give new study id
         secondaryStudyData["uuid"] = osparc.utils.Utils.uuidv4();
         // give a different name

@@ -170,7 +170,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       };
       repopulateMenu();
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      study.getParams().addListener("changeParameters", () => {
+      study.getSweeper().addListener("changeParameters", () => {
         repopulateMenu();
       }, this);
 

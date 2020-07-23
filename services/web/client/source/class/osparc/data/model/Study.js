@@ -57,7 +57,7 @@ qx.Class.define("osparc.data.model.Study", {
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
     this.setWorkbench(new osparc.data.model.Workbench(wbData));
 
-    this.setParams(new osparc.data.model.Parameters());
+    this.setParams(new osparc.data.model.Sweeper());
     this.__secondaryStudies = [];
   },
 
@@ -127,10 +127,9 @@ qx.Class.define("osparc.data.model.Study", {
       init: []
     },
 
-    params: {
-      check: "osparc.data.model.Parameters",
-      nullable: false,
-      event: "changeParameters"
+    sweeper: {
+      check: "osparc.data.model.Sweeper",
+      nullable: false
     }
   },
 
@@ -186,19 +185,19 @@ qx.Class.define("osparc.data.model.Study", {
 
     /* PARAMETERS */
     addParameter: function(parameterLabel) {
-      return this.getParams().addParameter(parameterLabel);
+      return this.getSweeper().addParameter(parameterLabel);
     },
 
     getParameter: function(parameterId) {
-      return this.getParams().getParameter(parameterId);
+      return this.getSweeper().getParameter(parameterId);
     },
 
     getParameters: function() {
-      return this.getParams().getParameters();
+      return this.getSweeper().getParameters();
     },
 
     parameterLabelExists: function(parameterLabel) {
-      return this.getParams().parameterLabelExists(parameterLabel);
+      return this.getSweeper().parameterLabelExists(parameterLabel);
     },
     /* /PARAMETERS */
 

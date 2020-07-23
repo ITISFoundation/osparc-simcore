@@ -16,15 +16,15 @@
 ************************************************************************ */
 
 /**
- * Class that stores Parameters data.
+ * Class that stores Sweeper related data.
  */
 
-qx.Class.define("osparc.data.model.Parameters", {
+qx.Class.define("osparc.data.model.Sweeper", {
   extend: qx.core.Object,
 
   /**
-    * @param parametersData {Object} Object containing the parameters raw data
-    */
+   * @param parametersData {Object} Object containing the parameters raw data
+   */
   construct: function(parametersData) {
     this.base(arguments);
 
