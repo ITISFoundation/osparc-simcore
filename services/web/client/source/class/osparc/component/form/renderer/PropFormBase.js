@@ -218,15 +218,18 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     },
 
     _createFieldWithMenu: function(field) {
-      const fieldWMenu = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      fieldWMenu.add(field, {
-        flex: 1
-      });
+      if (["Number", "Spinner"].includes(field.widgetType)) {
+        const fieldWMenu = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+        fieldWMenu.add(field, {
+          flex: 1
+        });
 
-      const menuBtn = this.__getMenuButton(field);
-      fieldWMenu.add(menuBtn);
+        const menuBtn = this.__getMenuButton(field);
+        fieldWMenu.add(menuBtn);
 
-      return fieldWMenu;
+        return fieldWMenu;
+      }
+      return field;
     },
 
     _createFieldWithHint: function(field, hint) {
