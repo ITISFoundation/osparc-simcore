@@ -123,9 +123,8 @@ qx.Class.define("osparc.data.model.Sweeper", {
 
     recreateIterations: function() {
       const primaryStudyData = this.getStudy().serializeStudy();
-      const parameters = this.__parameters;
-      const secondaryStudiesData = osparc.data.StudyParametrizer.recreateIterations(primaryStudyData, parameters, combinations);
-      this.setsecondaryStudies(secondaryStudiesData);
+      const secondaryStudiesData = osparc.data.StudyParametrizer.recreateIterations(primaryStudyData, this.__parameters, this.__combinations);
+      this.setSecondaryStudies(secondaryStudiesData);
       return secondaryStudiesData;
     },
 

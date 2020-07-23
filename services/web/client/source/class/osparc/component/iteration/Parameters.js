@@ -120,7 +120,7 @@ qx.Class.define("osparc.component.iteration.Parameters", {
     },
 
     __recreateIterations: function() {
-      const secondaryStudiesData = this.getStudy().getSweeper().recreateIterations();
+      const secondaryStudiesData = this.__primaryStudy.getSweeper().recreateIterations();
 
       const msg = secondaryStudiesData.length + this.tr(" iterations created");
       osparc.component.message.FlashMessenger.getInstance().logAs(msg);

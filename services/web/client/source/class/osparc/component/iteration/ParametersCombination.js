@@ -68,20 +68,21 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
       const steps = osparc.data.StudyParametrizer.calculateSteps(params);
       this.__primaryStudy.setSteps(steps);
 
+      const rows = [];
       const combinations = this.__primaryStudy.getCombinations();
       const secondaryStudies = this.__primaryStudy.getSecondaryStudies();
-
-      const rows = [];
-      for (let i=0; i<combinations.length; i++) {
-        const comb = combinations[i];
-        const row = [];
-        row[this.__cols["id"].col] = secondaryStudies[i].id;
-        row[this.__cols["name"].col] = secondaryStudies[i].name;
-        const nextCol = this.__cols["name"].col + 1;
-        for (let j=0; j<comb.length; j++) {
-          row[nextCol+j] = comb[j];
+      if (combinations.length === secondaryStudies.length) {
+        for (let i=0; i<combinations.length; i++) {
+          const comb = combinations[i];
+          const row = [];
+          row[this.__cols["id"].col] = secondaryStudies[i].id;
+          row[this.__cols["name"].col] = secondaryStudies[i].name;
+          const nextCol = this.__cols["name"].col + 1;
+          for (let j=0; j<comb.length; j++) {
+            row[nextCol+j] = comb[j];
+          }
+          rows.push(row);
         }
-        rows.push(row);
       }
       this.getTableModel().setData(rows, false);
     }

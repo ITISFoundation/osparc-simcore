@@ -51,19 +51,21 @@ qx.Class.define("osparc.data.StudyParametrizer", {
      */
     calculateCombinations: function(args) {
       const r = [];
-      const max = args.length-1;
-      const helper = (arr, i) => {
-        for (let j=0, l=args[i].length; j<l; j++) {
-          const a = arr.slice(0); // clone arr
-          a.push(args[i][j]);
-          if (i === max) {
-            r.push(a);
-          } else {
-            helper(a, i+1);
+      if (args.length) {
+        const max = args.length-1;
+        const helper = (arr, i) => {
+          for (let j=0, l=args[i].length; j<l; j++) {
+            const a = arr.slice(0);
+            a.push(args[i][j]);
+            if (i === max) {
+              r.push(a);
+            } else {
+              helper(a, i+1);
+            }
           }
-        }
-      };
-      helper([], 0);
+        };
+        helper([], 0);
+      }
       return r;
     },
 
