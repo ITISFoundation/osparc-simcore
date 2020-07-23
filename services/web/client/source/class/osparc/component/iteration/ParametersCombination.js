@@ -28,7 +28,9 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
       initiallyHiddenColumns: [0]
     });
 
-    this.__updateTable();
+    primaryStudy.getSweeper().addListener("changeSecondaryStudies", () => {
+      this.__updateTable();
+    });
   },
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members

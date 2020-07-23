@@ -47,7 +47,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
 
   events: {
     "changeParameters": "qx.event.type.Data",
-    "secondaryStudies": "qx.event.type.Data"
+    "changeSecondaryStudies": "qx.event.type.Data"
   },
 
   members: {
@@ -138,6 +138,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
       this.__postSecondaryStudy(secondaryStudy)
         .then(studyData => {
           this.__secondaryStudies.push(studyData);
+          this.fireDataEvent("changeSecondaryStudies", this.__secondaryStudies);
         })
         .catch(er => {
           console.error(er);
@@ -150,6 +151,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
           const idx = this.__secondaryStudies.findIndex(secStudy => secStudy.uuid === secondaryStudy.uuid);
           if (idx > -1) {
             this.__secondaryStudies.splice(idx, 1);
+            this.fireDataEvent("changeSecondaryStudies", this.__secondaryStudies);
           }
         })
         .catch(er => {
