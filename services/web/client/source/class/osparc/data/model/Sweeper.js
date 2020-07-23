@@ -31,15 +31,19 @@ qx.Class.define("osparc.data.model.Sweeper", {
     console.log(parametersData);
 
     this.__parameters = [];
+    this.__secondaryStudies = [];
   },
 
   events: {
-    "changeParameters": "qx.event.type.Data"
+    "changeParameters": "qx.event.type.Data",
+    "changeSecondaryStudies": "qx.event.type.Data"
   },
 
   members: {
     __parameters: null,
+    __secondaryStudies: null,
 
+    /* PARAMETERS */
     addParameter: function(parameterLabel) {
       if (!this.parameterLabelExists(parameterLabel)) {
         const nParams = this.__parameters.length;
@@ -75,6 +79,42 @@ qx.Class.define("osparc.data.model.Sweeper", {
       const params = this.getParameters();
       const idx = params.findIndex(param => param.label === parameterLabel);
       return (idx !== -1);
-    }
+    },
+    /* /PARAMETERS */
+
+    /* SECONDARY STUDIES */
+    addSecondaryStudy: function(secondaryStudy) {
+      const index = this.__secondaryStudies.findIndex(secStudy => secStudy.uuid === secondaryStudy.uuid);
+      if (index === -1) {
+        this.__secondaryStudies.push(secondaryStudy);
+      } else {
+        this.__secondaryStudies[index] = secondaryStudy;
+      }
+    },
+
+    addSecondaryStudies: function(secondaryStudies) {
+      // delete old secondary studies from backend?
+      this.__secondaryStudies = [];
+
+      secondaryStudies.forEach(secondaryStudy => {
+        this.addSecondaryStudy(secondaryStudy);
+      });
+    },
+
+    hasSecondaryStudies: function() {
+      return Boolean(Object.keys(this.__secondaryStudies).length);
+    },
+
+    getSecondaryStudy: function(secondaryStudyId) {
+      const index = this.__secondaryStudies.findIndex(secStudy => secStudy.uuid === secondaryStudyId);
+      if (index !== -1) {
+        return this.__secondaryStudies[index];
+      }
+      return null;
+    },
+
+    getSecondaryStudies: function() {
+      return this.__secondaryStudies;
+    },
   }
 });

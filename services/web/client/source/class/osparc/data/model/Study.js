@@ -58,7 +58,6 @@ qx.Class.define("osparc.data.model.Study", {
     this.setWorkbench(new osparc.data.model.Workbench(wbData));
 
     this.setParams(new osparc.data.model.Sweeper());
-    this.__secondaryStudies = [];
   },
 
   properties: {
@@ -181,7 +180,6 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
-    __secondaryStudies: null,
 
     /* PARAMETERS */
     addParameter: function(parameterLabel) {
@@ -203,37 +201,23 @@ qx.Class.define("osparc.data.model.Study", {
 
     /* SECONDARY STUDIES */
     addSecondaryStudy: function(secondaryStudy) {
-      const index = this.__secondaryStudies.findIndex(secStudy => secStudy.uuid === secondaryStudy.uuid);
-      if (index === -1) {
-        this.__secondaryStudies.push(secondaryStudy);
-      } else {
-        this.__secondaryStudies[index] = secondaryStudy;
-      }
+      this.getSweeper().addSecondaryStudy(secondaryStudy);
     },
 
     addSecondaryStudies: function(secondaryStudies) {
-      // delete old secondary studies from backend?
-      this.__secondaryStudies = [];
-
-      secondaryStudies.forEach(secondaryStudy => {
-        this.addSecondaryStudy(secondaryStudy);
-      });
+      this.getSweeper().addSecondaryStudies(secondaryStudies);
     },
 
     hasSecondaryStudies: function() {
-      return Boolean(Object.keys(this.__secondaryStudies).length);
+      return this.getSweeper().hasSecondaryStudies();
     },
 
     getSecondaryStudy: function(secondaryStudyId) {
-      const index = this.__secondaryStudies.findIndex(secStudy => secStudy.uuid === secondaryStudyId);
-      if (index !== -1) {
-        return this.__secondaryStudies[index];
-      }
-      return null;
+      return this.getSweeper().getSecondaryStudy(secondaryStudyId);
     },
 
     getSecondaryStudies: function() {
-      return this.__secondaryStudies;
+      return this.getSweeper().getSecondaryStudies();
     },
     /* /SECONDARY STUDIES */
 
