@@ -204,8 +204,8 @@ qx.Class.define("osparc.data.model.Study", {
       this.getSweeper().addSecondaryStudy(secondaryStudy);
     },
 
-    addSecondaryStudies: function(secondaryStudies) {
-      this.getSweeper().addSecondaryStudies(secondaryStudies);
+    setSecondaryStudies: function(secondaryStudies) {
+      this.getSweeper().setSecondaryStudies(secondaryStudies);
     },
 
     hasSecondaryStudies: function() {

@@ -92,7 +92,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
       }
     },
 
-    addSecondaryStudies: function(secondaryStudies) {
+    setSecondaryStudies: function(secondaryStudies) {
       // delete old secondary studies from backend?
       this.__secondaryStudies = [];
 

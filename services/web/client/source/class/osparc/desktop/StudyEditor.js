@@ -416,7 +416,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __recreateIterations: function() {
       const primaryStudyData = this.getStudy().serializeStudy();
       const secondaryStudiesData = osparc.data.StudyParametrizer.recreateIterations(primaryStudyData);
-      this.getStudy().addSecondaryStudies(secondaryStudiesData);
+      this.getStudy().setSecondaryStudies(secondaryStudiesData);
 
       const msg = secondaryStudiesData.length + this.tr(" iterations created");
       osparc.component.message.FlashMessenger.getInstance().logAs(msg);
