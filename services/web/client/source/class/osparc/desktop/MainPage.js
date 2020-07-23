@@ -107,7 +107,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       dashboard.bind("selection", sideSearch, "visibility", {
         converter: value => {
           const tabIndex = dashboard.getChildren().indexOf(value[0]);
-          return tabIndex && tabIndex === 2 ? "visible": "hidden";
+          return tabIndex && tabIndex === 2 ? "visible" : "hidden";
         }
       });
       const dashboardLayout = this.__dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
