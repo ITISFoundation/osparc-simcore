@@ -103,7 +103,7 @@ qx.Class.define("osparc.component.iteration.Parameters", {
     },
 
     __updateParamParamBtn: function() {
-      const updateParamParamBtn = new qx.ui.form.Button(this.tr("Recalculate Combinations")).set({
+      const updateParamParamBtn = new qx.ui.form.Button(this.tr("Recreate Iterations")).set({
         allowGrowX: false
       });
       updateParamParamBtn.addListener("execute", () => {
