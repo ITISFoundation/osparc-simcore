@@ -181,10 +181,6 @@ qx.Class.define("osparc.data.model.Study", {
 
   members: {
     /* PARAMETERS */
-    getParameter: function(parameterId) {
-      return this.getSweeper().getParameter(parameterId);
-    },
-
     getParameters: function() {
       return this.getSweeper().getParameters();
     },
@@ -199,10 +195,6 @@ qx.Class.define("osparc.data.model.Study", {
     /* /PARAMETERS */
 
     /* STEPS */
-    getSteps: function() {
-      return this.getSweeper().getSteps();
-    },
-
     setSteps: function(steps) {
       return this.getSweeper().setSteps(steps);
     },
@@ -211,10 +203,6 @@ qx.Class.define("osparc.data.model.Study", {
     /* COMBINATIONS */
     getCombinations: function() {
       return this.getSweeper().getCombinations();
-    },
-
-    setCombinations: function(combinations) {
-      return this.getSweeper().setCombinations(combinations);
     },
     /* /COMBINATIONS */
 
@@ -229,14 +217,6 @@ qx.Class.define("osparc.data.model.Study", {
 
     hasSecondaryStudies: function() {
       return this.getSweeper().hasSecondaryStudies();
-    },
-
-    addSecondaryStudy: function(secondaryStudy) {
-      this.getSweeper().addSecondaryStudy(secondaryStudy);
-    },
-
-    setSecondaryStudies: function(secondaryStudies) {
-      this.getSweeper().setSecondaryStudies(secondaryStudies);
     },
     /* /SECONDARY STUDIES */
 

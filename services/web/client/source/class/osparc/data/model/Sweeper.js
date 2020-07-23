@@ -56,12 +56,6 @@ qx.Class.define("osparc.data.model.Sweeper", {
     __secondaryStudies: null,
 
     /* PARAMETERS */
-    getParameter: function(parameterId) {
-      const params = this.getParameters();
-      const idx = params.findIndex(param => param.id === parameterId);
-      return (idx === -1) ? null : params[idx];
-    },
-
     getParameters: function() {
       return this.__parameters;
     },
@@ -93,10 +87,6 @@ qx.Class.define("osparc.data.model.Sweeper", {
     /* /PARAMETERS */
 
     /* STEPS */
-    getSteps: function() {
-      return this.__steps;
-    },
-
     setSteps: function(steps) {
       if (steps.length !== this.__parameters.length) {
         console.error("Number of elements in the array of steps must be the same as parameters");
@@ -105,7 +95,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
       this.__steps = steps;
 
       const combinations = osparc.data.StudyParametrizer.calculateCombinations(steps);
-      this.setCombinations(combinations);
+      this.__setCombinations(combinations);
     },
     /* /STEPS */
 
@@ -114,7 +104,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
       return this.__combinations;
     },
 
-    setCombinations: function(combinations) {
+    __setCombinations: function(combinations) {
       this.__combinations = combinations;
     },
     /* /COMBINATIONS */
@@ -122,7 +112,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
     recreateIterations: function() {
       const primaryStudyData = this.getStudy().serializeStudy();
       const secondaryStudiesData = osparc.data.StudyParametrizer.recreateIterations(primaryStudyData, this.__parameters, this.__combinations);
-      this.setSecondaryStudies(secondaryStudiesData);
+      this.__setSecondaryStudies(secondaryStudiesData);
       return secondaryStudiesData;
     },
 
@@ -143,7 +133,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
       return this.__secondaryStudies;
     },
 
-    addSecondaryStudy: function(secondaryStudy) {
+    __addSecondaryStudy: function(secondaryStudy) {
       const index = this.__secondaryStudies.findIndex(secStudy => secStudy.uuid === secondaryStudy.uuid);
       if (index === -1) {
         this.__secondaryStudies.push(secondaryStudy);
@@ -152,7 +142,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
       }
     },
 
-    setSecondaryStudies: function(secondaryStudies) {
+    __setSecondaryStudies: function(secondaryStudies) {
       this.__secondaryStudies.forEach(secondaryStudy => {
         const params = {
           url: {
@@ -164,7 +154,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
       this.__secondaryStudies = [];
 
       secondaryStudies.forEach(secondaryStudy => {
-        this.addSecondaryStudy(secondaryStudy);
+        this.__addSecondaryStudy(secondaryStudy);
       });
     }
     /* /SECONDARY STUDIES */
