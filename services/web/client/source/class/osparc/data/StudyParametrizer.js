@@ -83,7 +83,6 @@ qx.Class.define("osparc.data.StudyParametrizer", {
           secondaryStudyDataStr = secondaryStudyDataStr.replace(mustachedStr, varValue);
         });
         secondaryStudyData = JSON.parse(secondaryStudyDataStr);
-
         secondaryStudiesData.push(secondaryStudyData);
       });
 

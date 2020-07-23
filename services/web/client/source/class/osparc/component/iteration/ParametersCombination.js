@@ -66,10 +66,6 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
     },
 
     __updateTable: function() {
-      const params = this.__primaryStudy.getParameters();
-      const steps = osparc.data.StudyParametrizer.calculateSteps(params);
-      this.__primaryStudy.setSteps(steps);
-
       const rows = [];
       const combinations = this.__primaryStudy.getSweeper().getCombinations();
       const secondaryStudies = this.__primaryStudy.getSweeper().getSecondaryStudies();
@@ -77,7 +73,7 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
         for (let i=0; i<combinations.length; i++) {
           const comb = combinations[i];
           const row = [];
-          row[this.__cols["id"].col] = secondaryStudies[i].id;
+          row[this.__cols["id"].col] = secondaryStudies[i].uuid;
           row[this.__cols["name"].col] = secondaryStudies[i].name;
           const nextCol = this.__cols["name"].col + 1;
           for (let j=0; j<comb.length; j++) {
