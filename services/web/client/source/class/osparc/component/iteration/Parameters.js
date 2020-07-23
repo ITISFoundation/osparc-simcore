@@ -71,11 +71,13 @@ qx.Class.define("osparc.component.iteration.Parameters", {
     },
 
     __createNewParamBtn: function() {
-      const newParamBtn = new qx.ui.form.Button(this.tr("Create new parameter")).set({
+      const label = this.tr("Create new parameter");
+      const newParamBtn = new qx.ui.form.Button(label).set({
         allowGrowX: false
       });
       newParamBtn.addListener("execute", () => {
-        const newParamName = new osparc.component.widget.Renamer();
+        const subtitle = this.tr("Do not use whitespaces");
+        const newParamName = new osparc.component.widget.Renamer(null, subtitle, label);
         newParamName.addListener("labelChanged", e => {
           const primaryStudy = this.__primaryStudy;
           const newLabel = e.getData()["newLabel"];
