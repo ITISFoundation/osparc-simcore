@@ -70,7 +70,7 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
       const combinations = this.__primaryStudy.getSweeper().getCombinations();
       const secondaryStudies = this.__primaryStudy.getSweeper().getSecondaryStudies();
       if (combinations.length === secondaryStudies.length) {
-        for (let i=0; i<combinations.length; i++) {
+        for (let i=0; i<secondaryStudies.length; i++) {
           const comb = combinations[i];
           const row = [];
           row[this.__cols["id"].col] = secondaryStudies[i].uuid;

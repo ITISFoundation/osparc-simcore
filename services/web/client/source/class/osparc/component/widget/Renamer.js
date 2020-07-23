@@ -81,7 +81,9 @@ qx.Class.define("osparc.component.widget.Renamer", {
 
       this.addListener("appear", e => {
         labelEditor.focus();
-        labelEditor.setTextSelection(0, labelEditor.getValue().length);
+        if (labelEditor.getValue()) {
+          labelEditor.setTextSelection(0, labelEditor.getValue().length);
+        }
       }, this);
 
       // Create the "Save" button to close the cell editor
