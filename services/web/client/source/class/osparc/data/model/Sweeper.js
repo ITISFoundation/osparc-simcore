@@ -51,6 +51,10 @@ qx.Class.define("osparc.data.model.Sweeper", {
       return Boolean(Object.keys(this.__parameters).length);
     },
 
+    getParameter: function(parameterId) {
+      return this.__parameters.find(parameter => parameter.id === parameterId);
+    },
+
     getParameters: function() {
       return this.__parameters;
     },

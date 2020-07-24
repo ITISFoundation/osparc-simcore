@@ -501,8 +501,13 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     addParameters: function(data) {
       for (let key in data) {
-        if (osparc.utils.Ports.isDataAParamter(data[key])) {
-          this.addParameter(key, data[key]);
+        if (osparc.utils.Ports.isDataAParameter(data[key])) {
+          const parameterId = data[key].replace("{{", "").replace("}}", "");
+          const study = osparc.store.Store.getInstance().getCurrentStudy();
+          const parameter = study.getSweeper().getParameter(parameterId);
+          if (parameter) {
+            this.addParameter(key, parameter);
+          }
         }
       }
     },
