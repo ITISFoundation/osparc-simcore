@@ -50,6 +50,10 @@ qx.Class.define("osparc.data.model.Sweeper", {
     __primaryStudyId: null,
 
     /* PARAMETERS */
+    hasParameters: function() {
+      return Boolean(Object.keys(this.__parameters).length);
+    },
+
     getParameters: function() {
       return this.__parameters;
     },
@@ -58,6 +62,11 @@ qx.Class.define("osparc.data.model.Sweeper", {
       const params = this.getParameters();
       const idx = params.findIndex(param => param.label === parameterLabel);
       return (idx !== -1);
+    },
+
+    __setParameters: function(parameters) {
+      this.__parameters = parameters;
+      this.fireEvent("changeParameters");
     },
 
     addNewParameter: function(parameterLabel) {
@@ -105,7 +114,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
 
     /* SECONDARY STUDIES */
     hasSecondaryStudies: function() {
-      return Boolean(Object.keys(this.__secondaryStudyIds).length);
+      return this.__secondaryStudyIds.length;
     },
 
     getSecondaryStudyIds: function() {
@@ -189,6 +198,13 @@ qx.Class.define("osparc.data.model.Sweeper", {
     serializeSweeper: function() {
       const obj = {};
 
+      if (this.hasParameters()) {
+        obj["parameters"] = [];
+        this.getParameters().forEach(parameter => {
+          obj["parameters"].push(parameter);
+        });
+      }
+
       if (this.hasSecondaryStudies()) {
         obj["secondaryStudyIds"] = [];
         this.getSecondaryStudyIds().forEach(secondaryStudyId => {
@@ -205,6 +221,10 @@ qx.Class.define("osparc.data.model.Sweeper", {
     },
 
     deserializeSweeper: function(studyData) {
+      if ("parameters" in studyData) {
+        this.__setParameters(studyData["parameters"]);
+      }
+
       if ("secondaryStudyIds" in studyData) {
         this.__setSecondaryStudies(studyData["secondaryStudyIds"]);
       }

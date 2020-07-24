@@ -86,7 +86,7 @@ qx.Class.define("osparc.component.iteration.Parameters", {
             const msg = this.tr("Parameter name already exists");
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
           } else {
-            primaryStudy.getSweeper().addParameter(newParameterLabel);
+            primaryStudy.getSweeper().addNewParameter(newParameterLabel);
             this.__paramSpecs.updateTable();
             newParamName.close();
           }
