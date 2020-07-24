@@ -534,6 +534,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __doStartPipeline: function() {
       this.getStudy().getWorkbench().clearProgressData();
       this.__requestStartPipeline(this.getStudy().getUuid());
+
+      const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
+      secondaryStudyIds.forEach(secondaryStudyId => {
+        this.__requestStartPipeline(secondaryStudyId);
+      });
     },
 
     __requestStartPipeline: function(studyId) {
