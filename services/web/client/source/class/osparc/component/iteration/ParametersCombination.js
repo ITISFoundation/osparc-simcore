@@ -28,9 +28,9 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
       initiallyHiddenColumns: [0]
     });
 
-    primaryStudy.getSweeper().addListener("changeSecondaryStudies", () => {
-      this.__updateTable();
-    });
+    this.__updateTable();
+
+    this.__attachEventHandlers();
   },
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members
@@ -92,6 +92,12 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
             this.getTableModel().setData(rows, false);
           });
       }
+    },
+
+    __attachEventHandlers: function() {
+      this.__primaryStudy.getSweeper().addListener("changeSecondaryStudies", () => {
+        this.__updateTable();
+      });
     }
   }
 });

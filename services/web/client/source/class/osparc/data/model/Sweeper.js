@@ -88,6 +88,10 @@ qx.Class.define("osparc.data.model.Sweeper", {
     /* /PARAMETERS */
 
     /* COMBINATIONS */
+    hasCombinations: function() {
+      return this.__combinations.length;
+    },
+
     getCombinations: function() {
       return this.__combinations;
     },
@@ -156,7 +160,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
     /* /SECONDARY STUDIES */
 
     /* PRIMARY STUDY */
-    setPrimaryStudyId: function(primaryStudyId) {
+    __setPrimaryStudyId: function(primaryStudyId) {
       this.__primaryStudyId = primaryStudyId;
     },
 
@@ -197,6 +201,13 @@ qx.Class.define("osparc.data.model.Sweeper", {
         });
       }
 
+      if (this.hasCombinations()) {
+        obj["combinations"] = [];
+        this.getCombinations().forEach(combination => {
+          obj["combinations"].push(combination);
+        });
+      }
+
       if (this.hasSecondaryStudies()) {
         obj["secondaryStudyIds"] = [];
         this.getSecondaryStudyIds().forEach(secondaryStudyId => {
@@ -217,12 +228,16 @@ qx.Class.define("osparc.data.model.Sweeper", {
         this.__setParameters(studyData["parameters"]);
       }
 
+      if ("combinations" in studyData) {
+        this.__setCombinations(studyData["combinations"]);
+      }
+
       if ("secondaryStudyIds" in studyData) {
         this.__setSecondaryStudies(studyData["secondaryStudyIds"]);
       }
 
       if ("primaryStudyId" in studyData) {
-        this.setPrimaryStudyId(studyData["primaryStudyId"]);
+        this.__setPrimaryStudyId(studyData["primaryStudyId"]);
       }
     }
   }
