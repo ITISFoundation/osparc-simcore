@@ -61,5 +61,6 @@ projects = sa.Table(
         "access_rights", JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")
     ),
     sa.Column("workbench", sa.JSON, nullable=False),
+    sa.Column("dev", sa.JSON, nullable=True, default={}),
     sa.Column("published", sa.Boolean, nullable=False, default=False),
 )
