@@ -36,6 +36,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
     this.__steps = [];
     this.__combinations = [];
     this.__secondaryStudies = [];
+    this.__primaryStudyId = null;
   },
 
   properties: {
@@ -55,6 +56,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
     __steps: null,
     __combinations: null,
     __secondaryStudies: null,
+    __primaryStudyId: null,
 
     /* PARAMETERS */
     getParameters: function() {
@@ -186,7 +188,40 @@ qx.Class.define("osparc.data.model.Sweeper", {
         }
       };
       return osparc.data.Resources.fetch("studies", "delete", params, secondaryStudy.uuid);
-    }
+    },
     /* /SECONDARY STUDIES */
+
+    /* PRIMARY STUDY */
+    setPrimaryStudyId: function(primaryStudyId) {
+      this.__primaryStudyId = primaryStudyId;
+    },
+
+    getPrimaryStudyId: function() {
+      return this.__primaryStudyId;
+    },
+    /* /PRIMARY STUDY */
+
+    serializeSweeper: function() {
+      const obj = {};
+
+      if (this.hasSecondaryStudies()) {
+        obj["secondaryStudyIds"] = [];
+        this.getSecondaryStudies().forEach(secondaryStudy => {
+          obj["secondaryStudyIds"].push(secondaryStudy);
+        });
+      }
+      this.getSecondaryStudies().forEach;
+
+      const primaryStudyId = this.getPrimaryStudyId();
+      if (primaryStudyId) {
+        obj["primaryStudyId"] = primaryStudyId;
+      }
+
+      return obj;
+    },
+
+    deserializeSweeper: function() {
+
+    }
   }
 });
