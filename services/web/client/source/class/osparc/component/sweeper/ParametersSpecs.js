@@ -19,7 +19,7 @@
  *
  */
 
-qx.Class.define("osparc.component.iteration.ParametersSpecs", {
+qx.Class.define("osparc.component.sweeper.ParametersSpecs", {
   extend: osparc.ui.table.Table,
 
   construct: function(primaryStudy) {

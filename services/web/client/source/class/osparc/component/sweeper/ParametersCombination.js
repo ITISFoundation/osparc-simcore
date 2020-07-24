@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.iteration.ParametersCombination", {
+qx.Class.define("osparc.component.sweeper.ParametersCombination", {
   extend: osparc.ui.table.Table,
 
   construct: function(primaryStudy) {

@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.iteration.Sweeper", {
+qx.Class.define("osparc.component.sweeper.Sweeper", {
   extend: qx.ui.core.Widget,
 
   construct: function(primaryStudy) {
@@ -98,7 +98,7 @@ qx.Class.define("osparc.component.iteration.Sweeper", {
     },
 
     __createParamSpecs: function() {
-      const paramSpecs = new osparc.component.iteration.ParametersSpecs(this.__primaryStudy);
+      const paramSpecs = new osparc.component.sweeper.ParametersSpecs(this.__primaryStudy);
       return paramSpecs;
     },
 
@@ -138,7 +138,7 @@ qx.Class.define("osparc.component.iteration.Sweeper", {
     },
 
     __createParamCombinations: function() {
-      const paramCombinations = new osparc.component.iteration.ParametersCombination(this.__primaryStudy);
+      const paramCombinations = new osparc.component.sweeper.ParametersCombination(this.__primaryStudy);
       return paramCombinations;
     }
   }

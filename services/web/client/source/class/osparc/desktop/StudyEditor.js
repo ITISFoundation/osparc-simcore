@@ -409,8 +409,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __showSweeper: function() {
       const primaryStudy = this.getStudy();
 
-      const parameters = new osparc.component.iteration.Sweeper(primaryStudy);
-      osparc.component.iteration.Sweeper.popUpInWindow(parameters);
+      const parameters = new osparc.component.sweeper.Sweeper(primaryStudy);
+      osparc.component.sweeper.Sweeper.popUpInWindow(parameters);
     },
 
     __showWorkbenchUI: function() {
