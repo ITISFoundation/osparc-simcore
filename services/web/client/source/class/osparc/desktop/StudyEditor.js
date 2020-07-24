@@ -415,10 +415,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __recreateIterations: function() {
       const primaryStudyData = this.getStudy().serializeStudy();
-      const secondaryStudiesData = this.getStudy().getSweeper().recreateIterations(primaryStudyData);
-
-      const msg = secondaryStudiesData.length + this.tr(" iterations created");
-      osparc.component.message.FlashMessenger.getInstance().logAs(msg);
+      this.getStudy().getSweeper().recreateIterations(primaryStudyData)
+        .then(secondaryStudyIds => {
+          const msg = secondaryStudyIds.length + this.tr(" iterations created");
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg);
+        });
     },
 
     __showIterations: function() {

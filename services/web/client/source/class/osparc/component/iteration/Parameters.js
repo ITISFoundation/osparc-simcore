@@ -103,31 +103,38 @@ qx.Class.define("osparc.component.iteration.Parameters", {
     },
 
     __updateParamParamBtn: function() {
-      const updateParamParamBtn = new qx.ui.form.Button(this.tr("Recreate Iterations")).set({
+      const recreateIterationsBtn = new osparc.ui.form.FetchButton(this.tr("Recreate Iterations")).set({
         allowGrowX: false
       });
-      updateParamParamBtn.addListener("execute", () => {
+      recreateIterationsBtn.addListener("execute", () => {
         // recreate table
         if (this.__paramCombinations) {
           this._remove(this.__paramCombinations);
         }
 
-        this.__recreateIterations();
-
-        const paramCombinations = this.__paramCombinations = this.__createParamCombinations().set({
-          maxHeight: 400
-        });
-        this._add(paramCombinations);
+        this.__recreateIterations(recreateIterationsBtn)
+          .then(() => {
+            const paramCombinations = this.__paramCombinations = this.__createParamCombinations().set({
+              maxHeight: 400
+            });
+            this._add(paramCombinations);
+          });
       }, this);
-      return updateParamParamBtn;
+      return recreateIterationsBtn;
     },
 
-    __recreateIterations: function() {
-      const primaryStudyData = this.__primaryStudy.serializeStudy();
-      const secondaryStudiesData = this.__primaryStudy.getSweeper().recreateIterations(primaryStudyData);
-
-      const msg = secondaryStudiesData.length + this.tr(" iterations created");
-      osparc.component.message.FlashMessenger.getInstance().logAs(msg);
+    __recreateIterations: function(recreateIterationsBtn) {
+      return new Promise((resolve, reject) => {
+        recreateIterationsBtn.setFetching(true);
+        const primaryStudyData = this.__primaryStudy.serializeStudy();
+        this.__primaryStudy.getSweeper().recreateIterations(primaryStudyData)
+          .then(secondaryStudyIds => {
+            recreateIterationsBtn.setFetching(false);
+            const msg = secondaryStudyIds.length + this.tr(" iterations created");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg);
+            resolve();
+          });
+      });
     },
 
     __createParamCombinations: function() {

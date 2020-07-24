@@ -37,8 +37,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
   },
 
   events: {
-    "changeParameters": "qx.event.type.Event",
-    "changeSecondaryStudies": "qx.event.type.Event"
+    "changeParameters": "qx.event.type.Event"
   },
 
   members: {
@@ -111,34 +110,63 @@ qx.Class.define("osparc.data.model.Sweeper", {
     },
 
     __addSecondaryStudy: function(secondaryStudy) {
-      this.__postSecondaryStudy(secondaryStudy)
-        .then(studyData => {
-          this.__secondaryStudyIds.push(studyData.uuid);
-          this.fireEvent("changeSecondaryStudies");
-        })
-        .catch(er => {
-          console.error(er);
-        });
+      return new Promise((resolve, reject) => {
+        this.__postSecondaryStudy(secondaryStudy)
+          .then(studyData => {
+            this.__secondaryStudyIds.push(studyData.uuid);
+          })
+          .catch(er => {
+            console.error(er);
+          })
+          .finally(() => resolve());
+      });
+    },
+
+    __addSecondaryStudies: function(secondaryStudies) {
+      const addPromises = [];
+      secondaryStudies.forEach(secondaryStudy => {
+        addPromises.push(this.__addSecondaryStudy(secondaryStudy));
+      });
+      return new Promise((resolve, reject) => {
+        Promise.all(addPromises)
+          .then(() => {
+            resolve();
+          });
+      });
     },
 
     __removeSecondaryStudy: function(secondaryStudyId) {
-      this.__deleteSecondaryStudy(secondaryStudyId)
-        .then(() => {
-          const idx = this.__secondaryStudyIds.findIndex(secStudyId => secStudyId === secondaryStudyId);
-          if (idx > -1) {
-            this.__secondaryStudyIds.splice(idx, 1);
-            this.fireEvent("changeSecondaryStudies");
-          }
-        })
-        .catch(er => {
-          console.error(er);
-        });
+      return new Promise((resolve, reject) => {
+        this.__deleteSecondaryStudy(secondaryStudyId)
+          .then(() => {
+            const idx = this.__secondaryStudyIds.findIndex(secStudyId => secStudyId === secondaryStudyId);
+            if (idx > -1) {
+              this.__secondaryStudyIds.splice(idx, 1);
+            }
+          })
+          .catch(er => {
+            console.error(er);
+          })
+          .finally(() => resolve());
+      });
+    },
+
+    __removeSecondaryStudies: function() {
+      const deletePromises = [];
+      this.getSecondaryStudyIds().forEach(secondaryStudyId => {
+        deletePromises.push(this.__removeSecondaryStudy(secondaryStudyId));
+      });
+      return new Promise((resolve, reject) => {
+        Promise.all(deletePromises)
+          .then(() => {
+            resolve();
+          });
+      });
     },
 
     __setSecondaryStudies: function(secondaryStudyIds) {
       secondaryStudyIds.forEach(secondaryStudyId => {
         this.__secondaryStudyIds.push(secondaryStudyId);
-        this.fireEvent("changeSecondaryStudies");
       });
     },
 
@@ -170,25 +198,25 @@ qx.Class.define("osparc.data.model.Sweeper", {
     /* /PRIMARY STUDY */
 
     recreateIterations: function(primaryStudyData) {
-      this.getSecondaryStudyIds().forEach(secondaryStudyId => {
-        this.__removeSecondaryStudy(secondaryStudyId);
+      return new Promise((resolve, reject) => {
+        // delete previous iterations
+        this.__removeSecondaryStudies()
+          .then(() => {
+            const steps = osparc.data.StudyParametrizer.calculateSteps(this.__parameters);
+            if (steps.length !== this.__parameters.length) {
+              console.error("Number of elements in the array of steps must be the same as parameters");
+              return null;
+            }
+            const combinations = osparc.data.StudyParametrizer.calculateCombinations(steps);
+            this.__setCombinations(combinations);
+
+            const secondaryStudiesData = osparc.data.StudyParametrizer.recreateIterations(primaryStudyData, this.__parameters, this.__combinations);
+            this.__addSecondaryStudies(secondaryStudiesData)
+              .then(() => {
+                resolve(this.getSecondaryStudyIds());
+              });
+          });
       });
-
-      const steps = osparc.data.StudyParametrizer.calculateSteps(this.__parameters);
-
-      if (steps.length !== this.__parameters.length) {
-        console.error("Number of elements in the array of steps must be the same as parameters");
-        return null;
-      }
-      const combinations = osparc.data.StudyParametrizer.calculateCombinations(steps);
-      this.__setCombinations(combinations);
-
-      const secondaryStudiesData = osparc.data.StudyParametrizer.recreateIterations(primaryStudyData, this.__parameters, this.__combinations);
-      secondaryStudiesData.forEach(secondaryStudyData => {
-        this.__addSecondaryStudy(secondaryStudyData);
-      });
-
-      return secondaryStudiesData;
     },
 
     serializeSweeper: function() {

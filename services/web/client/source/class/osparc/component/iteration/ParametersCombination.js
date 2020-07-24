@@ -25,6 +25,7 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
 
     this.base(arguments, this.__model, {
       tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj),
+      statusBarVisible: false,
       initiallyHiddenColumns: [0]
     });
 
@@ -92,12 +93,6 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
             this.getTableModel().setData(rows, false);
           });
       }
-    },
-
-    __attachEventHandlers: function() {
-      this.__primaryStudy.getSweeper().addListener("changeSecondaryStudies", () => {
-        this.__updateTable();
-      });
     }
   }
 });

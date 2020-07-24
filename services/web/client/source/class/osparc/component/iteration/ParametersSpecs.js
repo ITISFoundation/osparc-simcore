@@ -28,6 +28,7 @@ qx.Class.define("osparc.component.iteration.ParametersSpecs", {
 
     this.base(arguments, model, {
       tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj),
+      statusBarVisible: false,
       initiallyHiddenColumns: [0]
     });
 
