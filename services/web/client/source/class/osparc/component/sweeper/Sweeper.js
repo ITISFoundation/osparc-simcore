@@ -98,7 +98,7 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
     },
 
     __createParamSpecs: function() {
-      const paramSpecs = new osparc.component.sweeper.ParametersSpecs(this.__primaryStudy);
+      const paramSpecs = new osparc.component.sweeper.Parameters(this.__primaryStudy);
       return paramSpecs;
     },
 
@@ -138,7 +138,7 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
     },
 
     __createParamCombinations: function() {
-      const paramCombinations = new osparc.component.sweeper.ParametersCombination(this.__primaryStudy);
+      const paramCombinations = new osparc.component.sweeper.Iterations(this.__primaryStudy);
       return paramCombinations;
     }
   }
