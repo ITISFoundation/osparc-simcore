@@ -49,25 +49,25 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
 
   members: {
     __primaryStudy: null,
-    __paramSpecs: null,
-    __paramCombinations: null,
+    __parametersTable: null,
+    __iterationsTable: null,
 
     __buildLayout: function() {
       const newParamBtn = this.__createNewParamBtn();
       this._add(newParamBtn);
-      const paramSpecs = this.__paramSpecs = this.__createParamSpecs().set({
+      const parametersTable = this.__parametersTable = this.__createParametersTable().set({
         maxHeight: 200
       });
-      this._add(paramSpecs);
+      this._add(parametersTable);
 
       this._add(new qx.ui.core.Spacer(null, 10));
 
       const updateParamParamBtn = this.__updateParamParamBtn();
       this._add(updateParamParamBtn);
-      const paramCombinations = this.__paramCombinations = this.__createParamCombinations().set({
+      const iterationsTable = this.__iterationsTable = this.__createIterationsTable().set({
         maxHeight: 400
       });
-      this._add(paramCombinations);
+      this._add(iterationsTable);
     },
 
     __createNewParamBtn: function() {
@@ -87,7 +87,7 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
           } else {
             primaryStudy.getSweeper().addNewParameter(newParameterLabel);
-            this.__paramSpecs.updateTable();
+            this.__parametersTable.updateTable();
             newParamName.close();
           }
         }, this);
@@ -97,9 +97,9 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
       return newParamBtn;
     },
 
-    __createParamSpecs: function() {
-      const paramSpecs = new osparc.component.sweeper.Parameters(this.__primaryStudy);
-      return paramSpecs;
+    __createParametersTable: function() {
+      const params = new osparc.component.sweeper.Parameters(this.__primaryStudy);
+      return params;
     },
 
     __updateParamParamBtn: function() {
@@ -108,13 +108,13 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
       });
       recreateIterationsBtn.addListener("execute", () => {
         // recreate table
-        if (this.__paramCombinations) {
-          this._remove(this.__paramCombinations);
+        if (this.__iterationsTable) {
+          this._remove(this.__iterationsTable);
         }
 
         this.__recreateIterations(recreateIterationsBtn)
           .then(() => {
-            const paramCombinations = this.__paramCombinations = this.__createParamCombinations().set({
+            const paramCombinations = this.__iterationsTable = this.__createIterationsTable().set({
               maxHeight: 400
             });
             this._add(paramCombinations);
@@ -137,9 +137,9 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
       });
     },
 
-    __createParamCombinations: function() {
-      const paramCombinations = new osparc.component.sweeper.Iterations(this.__primaryStudy);
-      return paramCombinations;
+    __createIterationsTable: function() {
+      const iterations = new osparc.component.sweeper.Iterations(this.__primaryStudy);
+      return iterations;
     }
   }
 });
