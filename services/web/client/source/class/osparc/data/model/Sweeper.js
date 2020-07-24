@@ -23,27 +23,18 @@ qx.Class.define("osparc.data.model.Sweeper", {
   extend: qx.core.Object,
 
   /**
-   * @param study {osparc.data.model.Study} study model
+    * @param studyData {Object} Object containing the serialized Study Data
    */
-  construct: function(study) {
+  construct: function(studyData) {
     this.base(arguments);
-
-    this.set({
-      study
-    });
 
     this.__parameters = [];
     this.__steps = [];
     this.__combinations = [];
     this.__secondaryStudies = [];
     this.__primaryStudyId = null;
-  },
 
-  properties: {
-    study: {
-      check: "osparc.data.model.Study",
-      nullable: false
-    }
+    this.deserializeSweeper(studyData);
   },
 
   events: {
@@ -112,11 +103,10 @@ qx.Class.define("osparc.data.model.Sweeper", {
     },
     /* /COMBINATIONS */
 
-    recreateIterations: function() {
+    recreateIterations: function(primaryStudyData) {
       const steps = osparc.data.StudyParametrizer.calculateSteps(this.__parameters);
       this.setSteps(steps);
 
-      const primaryStudyData = this.getStudy().serializeStudy();
       const secondaryStudiesData = osparc.data.StudyParametrizer.recreateIterations(primaryStudyData, this.__parameters, this.__combinations);
       this.__setSecondaryStudies(secondaryStudiesData);
       return secondaryStudiesData;
