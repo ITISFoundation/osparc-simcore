@@ -533,9 +533,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __doStartPipeline: function() {
       this.getStudy().getWorkbench().clearProgressData();
+      this.__requestStartPipeline(this.getStudy().getUuid());
+    },
 
-      // post pipeline
-      const url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid()) + "/start";
+    __requestStartPipeline: function(studyId) {
+      const url = "/computation/pipeline/" + encodeURIComponent(studyId) + "/start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
