@@ -42,7 +42,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
   },
 
   events: {
-    "showParameters": "qx.event.type.Event",
+    "showSweeper": "qx.event.type.Event",
     "showWorkbench": "qx.event.type.Event",
     "showSettings": "qx.event.type.Event",
     "groupSelection": "qx.event.type.Event",
@@ -109,8 +109,8 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       }
 
       const iterationCtrls = new qx.ui.toolbar.Part();
-      const parametersButton = this.__createShowParameterButton();
-      iterationCtrls.add(parametersButton);
+      const sweeperButton = this.__createShowSweeperButton();
+      iterationCtrls.add(sweeperButton);
       osparc.utils.LibVersions.getPlatformName()
         .then(platformName => {
           if (["dev", "master"].includes(platformName)) {
@@ -126,8 +126,8 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       this.add(simCtrls);
     },
 
-    __createShowParameterButton: function() {
-      const parametersButton = this.__createButton(this.tr("Show Parameters"), "broom", "showParametersButton", "showParameters");
+    __createShowSweeperButton: function() {
+      const parametersButton = this.__createButton(this.tr("Sweeper"), "broom", "showSweeperButton", "showSweeper");
       return parametersButton;
     },
 

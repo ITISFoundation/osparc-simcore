@@ -666,7 +666,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
 
       const controlsBar = this.__mainPanel.getControls();
-      controlsBar.addListener("showParameters", this.__showSweeper, this);
+      controlsBar.addListener("showSweeper", this.__showSweeper, this);
       controlsBar.addListener("showWorkbench", this.__showWorkbenchUI, this);
       controlsBar.addListener("showSettings", this.__showSettings, this);
       controlsBar.addListener("groupSelection", this.__groupSelection, this);
