@@ -406,36 +406,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    __showParameters: function() {
+    __showSweeper: function() {
       const primaryStudy = this.getStudy();
 
-      const parameters = new osparc.component.iteration.Parameters(primaryStudy);
-      osparc.component.iteration.Parameters.popUpInWindow(parameters);
-    },
-
-    __recreateIterations: function() {
-      const primaryStudyData = this.getStudy().serializeStudy();
-      this.getStudy().getSweeper().recreateIterations(primaryStudyData)
-        .then(secondaryStudyIds => {
-          const msg = secondaryStudyIds.length + this.tr(" iterations created");
-          osparc.component.message.FlashMessenger.getInstance().logAs(msg);
-        });
-    },
-
-    __showIterations: function() {
-      /*
-      const primaryStudy = this.getStudy();
-      if (primaryStudy.getSweeper().hasSecondaryStudies()) {
-        const iterationSelector = new osparc.component.iteration.Selector(primaryStudy);
-        const win = osparc.component.iteration.Selector.popUpInWindow(iterationSelector);
-        iterationSelector.addListener("openIteration", e => {
-          win.close();
-        });
-      } else {
-        const msg = this.tr("There are no iterations to show");
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-      }
-      */
+      const parameters = new osparc.component.iteration.Sweeper(primaryStudy);
+      osparc.component.iteration.Sweeper.popUpInWindow(parameters);
     },
 
     __showWorkbenchUI: function() {
@@ -691,9 +666,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
 
       const controlsBar = this.__mainPanel.getControls();
-      controlsBar.addListener("showParameters", this.__showParameters, this);
-      controlsBar.addListener("recreateIterations", this.__recreateIterations, this);
-      controlsBar.addListener("showIterations", this.__showIterations, this);
+      controlsBar.addListener("showParameters", this.__showSweeper, this);
       controlsBar.addListener("showWorkbench", this.__showWorkbenchUI, this);
       controlsBar.addListener("showSettings", this.__showSettings, this);
       controlsBar.addListener("groupSelection", this.__groupSelection, this);

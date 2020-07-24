@@ -30,8 +30,6 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
     });
 
     this.__updateTable();
-
-    this.__attachEventHandlers();
   },
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members

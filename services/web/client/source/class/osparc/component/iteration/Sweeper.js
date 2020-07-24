@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.iteration.Parameters", {
+qx.Class.define("osparc.component.iteration.Sweeper", {
   extend: qx.ui.core.Widget,
 
   construct: function(primaryStudy) {
