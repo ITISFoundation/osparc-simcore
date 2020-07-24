@@ -66,23 +66,32 @@ qx.Class.define("osparc.component.iteration.ParametersCombination", {
     },
 
     __updateTable: function() {
-      const rows = [];
       const combinations = this.__primaryStudy.getSweeper().getCombinations();
-      const secondaryStudies = this.__primaryStudy.getSweeper().getSecondaryStudies();
-      if (combinations.length === secondaryStudies.length) {
-        for (let i=0; i<secondaryStudies.length; i++) {
-          const comb = combinations[i];
-          const row = [];
-          row[this.__cols["id"].col] = secondaryStudies[i].uuid;
-          row[this.__cols["name"].col] = secondaryStudies[i].name;
-          const nextCol = this.__cols["name"].col + 1;
-          for (let j=0; j<comb.length; j++) {
-            row[nextCol+j] = comb[j];
-          }
-          rows.push(row);
-        }
+      const secondaryStudyIds = this.__primaryStudy.getSweeper().getSecondaryStudyIds();
+      if (combinations.length === secondaryStudyIds.length) {
+        osparc.store.Store.getInstance().getStudiesWState(true)
+          .then(studies => {
+            const rows = [];
+            for (let i=0; i<secondaryStudyIds.length; i++) {
+              const secondaryStudyId = secondaryStudyIds[i];
+              const secondaryStudy = studies.find(study => study.uuid === secondaryStudyId);
+              if (!secondaryStudy) {
+                console.error("Secondary study not found", secondaryStudyId);
+                continue;
+              }
+              const comb = combinations[i];
+              const row = [];
+              row[this.__cols["id"].col] = secondaryStudy.uuid;
+              row[this.__cols["name"].col] = secondaryStudy.name;
+              const nextCol = this.__cols["name"].col + 1;
+              for (let j=0; j<comb.length; j++) {
+                row[nextCol+j] = comb[j];
+              }
+              rows.push(row);
+            }
+            this.getTableModel().setData(rows, false);
+          });
       }
-      this.getTableModel().setData(rows, false);
     }
   }
 });
