@@ -210,7 +210,6 @@ qx.Class.define("osparc.data.model.Sweeper", {
           obj["secondaryStudyIds"].push(secondaryStudy);
         });
       }
-      this.getSecondaryStudies().forEach;
 
       const primaryStudyId = this.getPrimaryStudyId();
       if (primaryStudyId) {
@@ -220,8 +219,14 @@ qx.Class.define("osparc.data.model.Sweeper", {
       return obj;
     },
 
-    deserializeSweeper: function() {
+    deserializeSweeper: function(studyData) {
+      if ("secondaryStudyIds" in studyData) {
+        this.__setSecondaryStudies(studyData["secondaryStudyIds"]);
+      }
 
+      if ("primaryStudyId" in studyData) {
+        this.setPrimaryStudyId(studyData["primaryStudyId"]);
+      }
     }
   }
 });

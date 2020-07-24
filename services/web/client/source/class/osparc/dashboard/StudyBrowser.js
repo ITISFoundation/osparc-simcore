@@ -367,6 +367,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.self().sortStudyList(userStudyList);
       userStudyList.forEach(userStudy => {
         userStudy["resourceType"] = "study";
+        // do not add the secondary studies to the list
+        if (osparc.data.model.Study.isStudySecondary(userStudy)) {
+          return;
+        }
         this.__userStudyContainer.add(this.__createStudyItem(userStudy));
       });
       osparc.component.filter.UIFilterController.dispatch("studyBrowser");

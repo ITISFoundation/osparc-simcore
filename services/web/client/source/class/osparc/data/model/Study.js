@@ -176,6 +176,13 @@ qx.Class.define("osparc.data.model.Study", {
         }
       });
       return studyObject;
+    },
+
+    isStudySecondary: function(studyData) {
+      if ("dev" in studyData && "sweeper" in studyData["dev"] && "primaryStudyId" in studyData["dev"]["sweeper"]) {
+        return true;
+      }
+      return false;
     }
   },
 

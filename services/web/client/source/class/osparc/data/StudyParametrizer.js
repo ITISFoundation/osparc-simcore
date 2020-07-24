@@ -99,6 +99,11 @@ qx.Class.define("osparc.data.StudyParametrizer", {
       // replace orignal uuids
       secondaryStudyData["workbench"] = osparc.data.Converters.replaceUuids(secondaryStudyData["workbench"]);
 
+      // set primary study Id
+      secondaryStudyData["dev"] = {};
+      secondaryStudyData["dev"]["sweeper"] = {};
+      secondaryStudyData["dev"]["sweeper"]["primaryStudyId"] = primaryStudyData.uuid;
+
       return secondaryStudyData;
     }
   }
