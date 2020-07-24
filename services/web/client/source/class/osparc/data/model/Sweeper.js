@@ -29,7 +29,6 @@ qx.Class.define("osparc.data.model.Sweeper", {
     this.base(arguments);
 
     this.__parameters = [];
-    this.__steps = [];
     this.__combinations = [];
     this.__secondaryStudyIds = [];
     this.__primaryStudyId = null;
@@ -44,7 +43,6 @@ qx.Class.define("osparc.data.model.Sweeper", {
 
   members: {
     __parameters: null,
-    __steps: null,
     __combinations: null,
     __secondaryStudyIds: null,
     __primaryStudyId: null,
@@ -88,19 +86,6 @@ qx.Class.define("osparc.data.model.Sweeper", {
       return null;
     },
     /* /PARAMETERS */
-
-    /* STEPS */
-    setSteps: function(steps) {
-      if (steps.length !== this.__parameters.length) {
-        console.error("Number of elements in the array of steps must be the same as parameters");
-        return;
-      }
-      this.__steps = steps;
-
-      const combinations = osparc.data.StudyParametrizer.calculateCombinations(steps);
-      this.__setCombinations(combinations);
-    },
-    /* /STEPS */
 
     /* COMBINATIONS */
     getCombinations: function() {
@@ -186,12 +171,19 @@ qx.Class.define("osparc.data.model.Sweeper", {
       });
 
       const steps = osparc.data.StudyParametrizer.calculateSteps(this.__parameters);
-      this.setSteps(steps);
+
+      if (steps.length !== this.__parameters.length) {
+        console.error("Number of elements in the array of steps must be the same as parameters");
+        return null;
+      }
+      const combinations = osparc.data.StudyParametrizer.calculateCombinations(steps);
+      this.__setCombinations(combinations);
 
       const secondaryStudiesData = osparc.data.StudyParametrizer.recreateIterations(primaryStudyData, this.__parameters, this.__combinations);
       secondaryStudiesData.forEach(secondaryStudyData => {
         this.__addSecondaryStudy(secondaryStudyData);
       });
+
       return secondaryStudiesData;
     },
 
