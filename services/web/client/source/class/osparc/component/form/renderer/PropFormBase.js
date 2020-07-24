@@ -152,7 +152,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
             const msg = this.tr("Parameter name already exists");
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
           } else {
-            const param = study.getSweeper().addParameter(newParameterLabel);
+            const param = study.getSweeper().addNewParameter(newParameterLabel);
             this.addParameter(field.key, param);
             newParamName.close();
           }
