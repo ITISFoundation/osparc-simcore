@@ -28,7 +28,7 @@ services:
       - ADMINER_DESIGN=nette
       - ADMINER_PLUGINS=json-column
     ports:
-      - 18080:8080
+      - "18080:8080"
     networks:
       - simcore_default
 
