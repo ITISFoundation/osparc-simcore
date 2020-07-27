@@ -418,10 +418,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       GroupBox
     ---------------------------------------------------------------------------
     */
-    "settings-groupbox": {
-      include: "groupbox",
-      alias: "groupbox"
-    },
+    "settings-groupbox": "groupbox",
     "settings-groupbox/frame": {
       include: "groupbox/frame",
       style: state => ({
@@ -429,7 +426,6 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
     "settings-groupbox/legend": {
-      alias: "atom",
       include: "groupbox/legend",
       style: state => ({
         font: "title-16"
