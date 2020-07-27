@@ -62,11 +62,14 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
 
       this._add(new qx.ui.core.Spacer(null, 10));
 
-      const updateParamParamBtn = this.__updateParamParamBtn();
-      this._add(updateParamParamBtn);
+      const recreateIterationsBtn = this.__recreateIterationsBtn();
+      this._add(recreateIterationsBtn);
       const iterationsTable = this.__iterationsTable = this.__createIterationsTable().set({
         maxHeight: 400
       });
+      const openIterationsBtn = this.__createOpenIterationsBtn();
+      openIterationsBtn.setEnabled(false);
+      this._add(openIterationsBtn);
       this._add(iterationsTable);
     },
 
@@ -102,7 +105,7 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
       return params;
     },
 
-    __updateParamParamBtn: function() {
+    __recreateIterationsBtn: function() {
       const recreateIterationsBtn = new osparc.ui.form.FetchButton(this.tr("Recreate Iterations")).set({
         allowGrowX: false
       });
@@ -140,6 +143,12 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
     __createIterationsTable: function() {
       const iterations = new osparc.component.sweeper.Iterations(this.__primaryStudy);
       return iterations;
+    },
+
+    __createOpenIterationsBtn: function() {
+      const openIterationBtn = new qx.ui.form.Button(this.tr("Open iteration")).set({
+        allowGrowX: false
+      });
     }
   }
 });
