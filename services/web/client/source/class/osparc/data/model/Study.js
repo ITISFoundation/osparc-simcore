@@ -145,8 +145,7 @@ qx.Class.define("osparc.data.model.Study", {
         creationDate: new Date(),
         lastChangeDate: new Date(),
         workbench: {},
-        tags: [],
-        parameters: {}
+        tags: []
       };
     },
 

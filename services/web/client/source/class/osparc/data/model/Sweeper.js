@@ -258,21 +258,21 @@ qx.Class.define("osparc.data.model.Sweeper", {
       return obj;
     },
 
-    deserializeSweeper: function(studyData) {
-      if ("parameters" in studyData) {
-        this.__setParameters(studyData["parameters"]);
+    deserializeSweeper: function(sweeperData) {
+      if ("parameters" in sweeperData) {
+        this.__setParameters(sweeperData["parameters"]);
       }
 
-      if ("combinations" in studyData) {
-        this.__setCombinations(studyData["combinations"]);
+      if ("combinations" in sweeperData) {
+        this.__setCombinations(sweeperData["combinations"]);
       }
 
-      if ("secondaryStudyIds" in studyData) {
-        this.__setSecondaryStudies(studyData["secondaryStudyIds"]);
+      if ("secondaryStudyIds" in sweeperData) {
+        this.__setSecondaryStudies(sweeperData["secondaryStudyIds"]);
       }
 
-      if ("primaryStudyId" in studyData) {
-        this.__setPrimaryStudyId(studyData["primaryStudyId"]);
+      if ("primaryStudyId" in sweeperData) {
+        this.__setPrimaryStudyId(sweeperData["primaryStudyId"]);
       }
     }
   }

@@ -84,6 +84,7 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
       this._addAt(recreateIterationsBtn, 3);
       const iterationsTable = this.__iterationsTable = this.__createIterationsTable().set({
         minWidth: 400,
+        minHeight: 200,
         maxHeight: 400
       });
       this._addAt(iterationsTable, 4);
