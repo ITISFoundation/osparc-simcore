@@ -23,7 +23,7 @@ def director_mockup(mocker):
 
 
 def test_director_mockup(director_mockup, app):
-    from simcore_service_catalog.services import director
+    # from simcore_service_catalog.services import director
 
     pass
     # import pdb

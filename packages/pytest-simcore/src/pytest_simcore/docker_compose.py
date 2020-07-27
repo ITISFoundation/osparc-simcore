@@ -7,8 +7,6 @@
 # pylint:disable=redefined-outer-name
 
 import os
-import pdb
-import re
 import shutil
 import socket
 import sys
