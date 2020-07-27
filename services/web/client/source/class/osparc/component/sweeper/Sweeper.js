@@ -63,9 +63,8 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
         allowGrowX: false
       });
       newParamBtn.addListener("execute", () => {
-        const primaryStudyId = secondaryStudy.getSweeper().getPrimaryStudyId()
+        const primaryStudyId = secondaryStudy.getSweeper().getPrimaryStudyId();
         this.fireDataEvent("iterationSelected", primaryStudyId);
-
       });
       this._addAt(newParamBtn, 0);
     },
