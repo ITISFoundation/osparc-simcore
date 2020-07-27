@@ -28,7 +28,9 @@ install_requirements = read_reqs(current_dir / "requirements" / "_base.txt") + [
     "simcore-service-library",
 ]
 
-test_requirements = read_reqs(current_dir / "requirements" / "_test.txt")
+test_requirements = read_reqs(current_dir / "requirements" / "_test.txt") + [
+    "simcore-postgres-database[migration]"
+]
 
 
 setup(
