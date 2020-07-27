@@ -47,6 +47,10 @@ qx.Class.define("osparc.component.sweeper.Iterations", {
       }
     },
 
+    getRowData: function(rowIdx) {
+      return this.__model.getRowDataAsMap(rowIdx);
+    },
+
     __initModel: function() {
       const model = this.__model = new qx.ui.table.model.Simple();
 

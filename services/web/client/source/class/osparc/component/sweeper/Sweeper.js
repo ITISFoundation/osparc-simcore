@@ -47,10 +47,15 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
     }
   },
 
+  events: {
+    "iterationSelected": "qx.event.type.Data"
+  },
+
   members: {
     __primaryStudy: null,
     __parametersTable: null,
     __iterationsTable: null,
+    __selectedIteration: null,
 
     __buildLayout: function() {
       const newParamBtn = this.__createNewParamBtn();
@@ -67,10 +72,21 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
       const iterationsTable = this.__iterationsTable = this.__createIterationsTable().set({
         maxHeight: 400
       });
+      this._add(iterationsTable);
+
       const openIterationsBtn = this.__createOpenIterationsBtn();
       openIterationsBtn.setEnabled(false);
       this._add(openIterationsBtn);
-      this._add(iterationsTable);
+      iterationsTable.addListener("cellTap", e => {
+        const selectedRow = e.getRow();
+        openIterationsBtn.setEnabled(true);
+        this.__selectedIteration = this.__iterationsTable.getRowData(selectedRow)["StudyId"];
+      });
+      openIterationsBtn.addListener("execute", () => {
+        if (this.__selectedIteration) {
+          this.fireDataEvent("iterationSelected", this.__selectedIteration);
+        }
+      });
     },
 
     __createNewParamBtn: function() {
@@ -149,6 +165,7 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
       const openIterationBtn = new qx.ui.form.Button(this.tr("Open iteration")).set({
         allowGrowX: false
       });
+      return openIterationBtn;
     }
   }
 });
