@@ -27,7 +27,7 @@ def postgres_dsn(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
         "user": devel_environ["POSTGRES_USER"],
         "password": devel_environ["POSTGRES_PASSWORD"],
         "database": devel_environ["POSTGRES_DB"],
-        "host": "172.23.36.63",
+        "host": "127.0.0.1",
         "port": get_service_published_port("postgres", devel_environ["POSTGRES_PORT"]),
     }
     # nodeports takes its configuration from env variables
