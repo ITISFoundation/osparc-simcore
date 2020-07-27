@@ -56,7 +56,7 @@ qx.Class.define("osparc.component.sweeper.Parameters", {
         col: 3,
         label: qx.locale.Manager.tr("High")
       },
-      "steps": {
+      "nSteps": {
         col: 4,
         label: qx.locale.Manager.tr("Steps")
       },
@@ -93,7 +93,7 @@ qx.Class.define("osparc.component.sweeper.Parameters", {
       model.setColumnEditable(cols["label"].col, true);
       model.setColumnEditable(cols["low"].col, true);
       model.setColumnEditable(cols["high"].col, true);
-      model.setColumnEditable(cols["steps"].col, true);
+      model.setColumnEditable(cols["nSteps"].col, true);
       model.setColumnEditable(cols["distribution"].col, false);
 
       this.getSelectionModel().setSelectionMode(qx.ui.table.selection.Model.SINGLE_SELECTION);
@@ -109,7 +109,7 @@ qx.Class.define("osparc.component.sweeper.Parameters", {
         row[this.__cols["label"].col] = parameter["label"];
         row[this.__cols["low"].col] = parameter["low"];
         row[this.__cols["high"].col] = parameter["high"];
-        row[this.__cols["steps"].col] = parameter["steps"];
+        row[this.__cols["nSteps"].col] = parameter["nSteps"];
         row[this.__cols["distribution"].col] = parameter["distribution"];
         rows.push(row);
       });
@@ -125,7 +125,7 @@ qx.Class.define("osparc.component.sweeper.Parameters", {
         parameter.label = rowData[cols["label"].col];
         parameter.low = rowData[cols["low"].col];
         parameter.high = rowData[cols["high"].col];
-        parameter.steps = rowData[cols["steps"].col];
+        parameter.nSteps = rowData[cols["nSteps"].col];
       }
     }
   }

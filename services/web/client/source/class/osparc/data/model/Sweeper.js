@@ -77,7 +77,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
           label: parameterLabel,
           low: 1,
           high: 2,
-          steps: 2,
+          nSteps: 2,
           distribution: "linear"
         };
         this.__parameters.push(parameter);
