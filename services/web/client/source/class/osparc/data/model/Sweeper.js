@@ -209,8 +209,9 @@ qx.Class.define("osparc.data.model.Sweeper", {
             const steps = osparc.data.StudyParametrizer.calculateSteps(this.__parameters);
             if (steps.length !== this.__parameters.length) {
               console.error("Number of elements in the array of steps must be the same as parameters");
-              return null;
+              reject();
             }
+
             const combinations = osparc.data.StudyParametrizer.calculateCombinations(steps);
             this.__setCombinations(combinations);
 
