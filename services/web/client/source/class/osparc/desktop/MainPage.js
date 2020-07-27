@@ -91,7 +91,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const dashboardLayout = this.__createDashboardStack();
       mainStack.add(dashboardLayout);
 
-      const studyEditor = this.__studyEditor = new osparc.desktop.StudyEditor();
+      const studyEditor = this.__studyEditor = this.__getStudyEditor();
       mainStack.add(studyEditor);
 
       return mainStack;
@@ -123,10 +123,8 @@ qx.Class.define("osparc.desktop.MainPage", {
         exploreBrowser
       ].forEach(studyStarter => {
         studyStarter.addListener("startStudy", e => {
-          this.__studyEditor = this.__studyEditor || new osparc.desktop.StudyEditor();
-          const study = e.getData();
-          this.__studyEditor.setStudy(study);
-          this.__startStudyEditor(this.__studyEditor);
+          const studyData = e.getData();
+          this.__startStudy(studyData);
         }, this);
       });
 
@@ -142,6 +140,13 @@ qx.Class.define("osparc.desktop.MainPage", {
       if (this.__studyEditor) {
         this.__studyEditor.destruct();
       }
+    },
+
+    __startStudy: function(studyData) {
+      const study = new osparc.data.model.Study(studyData);
+      this.__studyEditor = this.__getStudyEditor();
+      this.__studyEditor.setStudy(study);
+      this.__startStudyEditor(this.__studyEditor);
     },
 
     __startStudyEditor: function(studyEditor) {
@@ -171,6 +176,15 @@ qx.Class.define("osparc.desktop.MainPage", {
           this.__navBar.studySaved();
         }
       }, this);
+    },
+
+    __getStudyEditor: function() {
+      const studyEditor = this.__studyEditor || new osparc.desktop.StudyEditor();
+      studyEditor.addListenerOnce("startStudy", e => {
+        const studyData = e.getData();
+        this.__startStudy(studyData);
+      }, this);
+      return studyEditor;
     }
   }
 });

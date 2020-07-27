@@ -33,7 +33,9 @@ qx.Class.define("osparc.data.model.Sweeper", {
     this.__secondaryStudyIds = [];
     this.__primaryStudyId = null;
 
-    this.deserializeSweeper(studyData);
+    if ("dev" in studyData && "sweeper" in studyData["dev"]) {
+      this.deserializeSweeper(studyData["dev"]["sweeper"]);
+    }
   },
 
   events: {

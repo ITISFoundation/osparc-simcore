@@ -302,13 +302,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       osparc.store.Store.getInstance().getServicesDAGs()
         .then(() => {
           this.__hideLoadingPage();
-          this.__loadStudy(studyData);
+          this.fireDataEvent("startStudy", studyData);
         });
-    },
-
-    __loadStudy: function(studyData) {
-      const study = new osparc.data.model.Study(studyData);
-      this.fireDataEvent("startStudy", study);
     },
 
     __showResourcesLayout: function(show) {

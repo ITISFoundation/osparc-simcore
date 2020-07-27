@@ -51,7 +51,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   events: {
     "changeMainViewCaption": "qx.event.type.Data",
     "studyIsLocked": "qx.event.type.Event",
-    "studySaved": "qx.event.type.Data"
+    "studySaved": "qx.event.type.Data",
+    "startStudy": "qx.event.type.Data"
   },
 
   members: {
@@ -410,6 +411,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const primaryStudy = this.getStudy();
 
       const parameters = new osparc.component.sweeper.Sweeper(primaryStudy);
+      parameters.addListener("iterationSelected", e => {
+        const iterationStudyId = e.getData();
+        osparc.store.Store.getInstance().getStudyWState(iterationStudyId)
+          .then(studyData => {
+            this.fireDataEvent("startStudy", studyData);
+          });
+      });
       osparc.component.sweeper.Sweeper.popUpInWindow(parameters);
     },
 

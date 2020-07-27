@@ -57,7 +57,7 @@ qx.Class.define("osparc.data.model.Study", {
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
     this.setWorkbench(new osparc.data.model.Workbench(wbData));
 
-    this.setSweeper(new osparc.data.model.Sweeper(studyData.dev.sweeper));
+    this.setSweeper(new osparc.data.model.Sweeper(studyData));
   },
 
   properties: {

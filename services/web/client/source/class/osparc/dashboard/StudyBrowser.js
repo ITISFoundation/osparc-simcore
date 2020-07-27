@@ -334,13 +334,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(values => {
           this.__hideLoadingPage();
           studyData = values[0];
-          this.__loadStudy(studyData);
+          this.fireDataEvent("startStudy", studyData);
         });
-    },
-
-    __loadStudy: function(studyData) {
-      const study = new osparc.data.model.Study(studyData);
-      this.fireDataEvent("startStudy", study);
     },
 
     __showStudiesLayout: function(show) {
