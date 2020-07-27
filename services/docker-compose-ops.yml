@@ -21,7 +21,7 @@ version: "3.7"
 
 services:
   adminer:
-    image: adminer
+    image: adminer:4.7.6
     init: true
     environment:
       - ADMINER_DEFAULT_SERVER=postgres
