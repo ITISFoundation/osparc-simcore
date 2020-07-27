@@ -21,7 +21,7 @@
  */
 
 qx.Class.define("osparc.dashboard.ExploreBrowser", {
-  extend: qx.ui.core.Widget,
+  extend: osparc.ui.basic.LoadingPageHandler,
 
   construct: function() {
     this.base(arguments);
@@ -58,7 +58,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
   },
 
   members: {
-    __loadingIFrame: null,
     __exploreFilters: null,
     __templatesContainer: null,
     __servicesContainer: null,
@@ -128,7 +127,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __initResources: function() {
-      this.__showLoadingPage(this.tr("Discovering Templates and Apps"));
+      this._showLoadingPage(this.tr("Discovering Templates and Apps"));
 
       this.__templates = [];
       this.__services = [];
@@ -141,7 +140,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         servicesPromise
       ])
         .then(() => {
-          this.__hideLoadingPage();
+          this._hideLoadingPage();
           this.__createResourcesLayout();
           this.__reloadResources();
           this.__attachEventHandlers();
@@ -227,7 +226,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         return;
       }
 
-      this.__showLoadingPage(this.tr("Creating Study"));
+      this._showLoadingPage(this.tr("Creating Study"));
       const store = osparc.store.Store.getInstance();
       store.getServicesDAGs()
         .then(services => {
@@ -276,7 +275,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         return;
       }
 
-      this.__showLoadingPage(this.tr("Creating ") + (minStudyData.name || this.tr("Study")));
+      this._showLoadingPage(this.tr("Creating ") + (minStudyData.name || this.tr("Study")));
 
       const params = {
         url: {
@@ -298,12 +297,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         return;
       }
 
-      this.__showLoadingPage(this.tr("Starting ") + (studyData.name || this.tr("Study")));
-      osparc.store.Store.getInstance().getServicesDAGs()
-        .then(() => {
-          this.__hideLoadingPage();
-          this.fireDataEvent("startStudy", studyData);
-        });
+      this.fireDataEvent("startStudy", studyData);
     },
 
     __resetTemplatesList: function(tempStudyList) {
@@ -526,38 +520,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __createConfirmWindow: function(isMulti) {
       const msg = isMulti ? this.tr("Are you sure you want to delete the studies?") : this.tr("Are you sure you want to delete the study?");
       return new osparc.ui.window.Confirmation(msg);
-    },
-
-    __showLoadingPage: function(label) {
-      this.__hideLoadingPage();
-
-      this.__showResourcesLayout(false);
-
-      if (this.__loadingIFrame === null) {
-        this.__loadingIFrame = new osparc.ui.message.Loading(label);
-      } else {
-        this.__loadingIFrame.setHeader(label);
-      }
-      this._add(this.__loadingIFrame, {
-        flex: 1
-      });
-    },
-
-    __hideLoadingPage: function() {
-      if (this.__loadingIFrame) {
-        const idx = this._indexOf(this.__loadingIFrame);
-        if (idx !== -1) {
-          this._remove(this.__loadingIFrame);
-        }
-      }
-
-      this.__showResourcesLayout(true);
-    },
-
-    __showResourcesLayout: function(show) {
-      this._getChildren().forEach(children => {
-        children.setVisibility(show ? "visible" : "excluded");
-      });
     },
 
     __isUserOwner: function(studyData) {

@@ -155,7 +155,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       }
 
       this.__studyEditor = studyEditor;
-      let study = studyEditor.getStudy();
+      const study = studyEditor.getStudy();
       this.__mainStack.add(this.__studyEditor);
       this.__mainStack.setSelection([this.__studyEditor]);
 
