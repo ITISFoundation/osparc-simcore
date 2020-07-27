@@ -21,4 +21,5 @@ aiopg[sa]
 httpx
 
 # other
+attrs
 tenacity

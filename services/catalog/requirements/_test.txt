@@ -13,7 +13,7 @@ astroid==2.4.2            # via pylint
 async-exit-stack==1.0.1   # via -r requirements/_base.txt, fastapi
 async-generator==1.10     # via -r requirements/_base.txt, fastapi
 async-timeout==3.0.1      # via aiohttp
-attrs==19.3.0             # via aiohttp, jsonschema, pytest, pytest-docker
+attrs==19.3.0             # via -r requirements/_base.txt, aiohttp, jsonschema, pytest, pytest-docker
 bcrypt==3.1.7             # via paramiko
 cached-property==1.5.1    # via docker-compose
 certifi==2020.6.20        # via -r requirements/_base.txt, httpx, requests
