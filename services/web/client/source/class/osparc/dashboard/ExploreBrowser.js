@@ -306,12 +306,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         });
     },
 
-    __showResourcesLayout: function(show) {
-      this._getChildren().forEach(children => {
-        children.setVisibility(show ? "visible" : "excluded");
-      });
-    },
-
     __resetTemplatesList: function(tempStudyList) {
       this.__templates = tempStudyList;
       this.__templatesContainer.removeAll();
@@ -558,6 +552,12 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       }
 
       this.__showResourcesLayout(true);
+    },
+
+    __showResourcesLayout: function(show) {
+      this._getChildren().forEach(children => {
+        children.setVisibility(show ? "visible" : "excluded");
+      });
     },
 
     __isUserOwner: function(studyData) {

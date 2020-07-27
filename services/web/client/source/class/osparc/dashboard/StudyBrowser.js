@@ -338,12 +338,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __showStudiesLayout: function(show) {
-      this._getChildren().forEach(children => {
-        children.setVisibility(show ? "visible" : "excluded");
-      });
-    },
-
     __resetStudyItem: function(studyData) {
       const userStudyList = this.__userStudies;
       const index = userStudyList.findIndex(userStudy => userStudy["uuid"] === studyData["uuid"]);
@@ -632,6 +626,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       this.__showStudiesLayout(true);
+    },
+
+    __showStudiesLayout: function(show) {
+      this._getChildren().forEach(children => {
+        children.setVisibility(show ? "visible" : "excluded");
+      });
     },
 
     __isUserOwner: function(studyData) {
