@@ -24,7 +24,7 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
       }
     }
     if (validThemes.length !== 2) {
-      this.setVisibility("exluded");
+      this.setVisibility("excluded");
       return;
     }
 
