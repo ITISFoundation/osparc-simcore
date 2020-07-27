@@ -18,14 +18,17 @@
 qx.Class.define("osparc.component.sweeper.Sweeper", {
   extend: qx.ui.core.Widget,
 
-  construct: function(primaryStudy) {
+  construct: function(study) {
     this.base(arguments);
-
-    this.__primaryStudy = primaryStudy;
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    this.__buildLayout();
+    if (study.getSweeper().getPrimaryStudyId()) {
+      this.__buildSecondaryLayout(study);
+    } else {
+      this.__primaryStudy = study;
+      this.__buildPrimaryLayout();
+    }
   },
 
   statics: {
@@ -36,8 +39,6 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
         showMinimize: false,
         showMaximize: false,
         resizable: true,
-        width: 500,
-        height: 600,
         modal: true
       });
       window.add(parametersWidget);
@@ -57,10 +58,23 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
     __iterationsTable: null,
     __selectedIteration: null,
 
-    __buildLayout: function() {
+    __buildSecondaryLayout: function(secondaryStudy) {
+      const newParamBtn = new qx.ui.form.Button(this.tr("Open primary study")).set({
+        allowGrowX: false
+      });
+      newParamBtn.addListener("execute", () => {
+        const primaryStudyId = secondaryStudy.getSweeper().getPrimaryStudyId()
+        this.fireDataEvent("iterationSelected", primaryStudyId);
+
+      });
+      this._addAt(newParamBtn, 0);
+    },
+
+    __buildPrimaryLayout: function() {
       const newParamBtn = this.__createNewParamBtn();
       this._addAt(newParamBtn, 0);
       const parametersTable = this.__parametersTable = this.__createParametersTable().set({
+        minWidth: 400,
         maxHeight: 200
       });
       this._addAt(parametersTable, 1);
@@ -70,6 +84,7 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
       const recreateIterationsBtn = this.__recreateIterationsBtn();
       this._addAt(recreateIterationsBtn, 3);
       const iterationsTable = this.__iterationsTable = this.__createIterationsTable().set({
+        minWidth: 400,
         maxHeight: 400
       });
       this._addAt(iterationsTable, 4);
