@@ -25,7 +25,7 @@ qx.Class.define("osparc.data.StudyParametrizer", {
   statics: {
     /**
      * Calculate the steps for the given parameter specs.
-     * In: {low: 0, high: 3, steps: 4}
+     * In: {low: 0, high: 3, nSteps: 4}
      * Out:[0, 1, 2, 3]
      * @param args {Array} Array of arrays
      */
@@ -33,8 +33,8 @@ qx.Class.define("osparc.data.StudyParametrizer", {
       const arrs = [];
       params.forEach(param => {
         const arr = [];
-        const step = param.steps > 1 ? ((param.high - param.low) / (param.steps-1)) : 0;
-        for (let i=0; i<param.steps; i++) {
+        const step = param.nSteps > 1 ? ((param.high - param.low) / (param.nSteps-1)) : 0;
+        for (let i=0; i<param.nSteps; i++) {
           arr.push(param.low + step*i);
         }
         arrs.push(arr);
