@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 import pytest
+import sqlalchemy as sa
 from yarl import URL
 
 import np_helpers
@@ -93,45 +94,37 @@ def file_uuid(project_id, node_uuid) -> str:
 
 
 @pytest.fixture
-def default_configuration_file():
+def default_configuration_file() -> Path:
     return current_dir / "mock" / "default_config.json"
 
 
 @pytest.fixture
-def empty_configuration_file():
+def empty_configuration_file() -> Path:
     return current_dir / "mock" / "empty_config.json"
-
-
-@pytest.fixture(scope="module")
-def postgres(postgres_db, postgres_session):
-    # prepare database with default configuration
-    Base.metadata.create_all(postgres_db)
-    yield postgres_session
-    Base.metadata.drop_all(postgres_db)
 
 
 @pytest.fixture()
 def default_configuration(
     nodeports_config,
     bucket,
-    postgres,
-    default_configuration_file,
+    postgres_session: sa.orm.session.Session,
+    default_configuration_file: Path,
     project_id,
     node_uuid,
 ):
     # prepare database with default configuration
     json_configuration = default_configuration_file.read_text()
 
-    _create_new_pipeline(postgres, project_id)
-    _set_configuration(postgres, project_id, node_uuid, json_configuration)
+    _create_new_pipeline(postgres_session, project_id)
+    _set_configuration(postgres_session, project_id, node_uuid, json_configuration)
     config_dict = json.loads(json_configuration)
     node_config.NODE_UUID = str(node_uuid)
     node_config.PROJECT_ID = str(project_id)
     yield config_dict
     # teardown
-    postgres.query(ComputationalTask).delete()
-    postgres.query(ComputationalPipeline).delete()
-    postgres.commit()
+    postgres_session.query(ComputationalTask).delete()
+    postgres_session.query(ComputationalPipeline).delete()
+    postgres_session.commit()
 
 
 @pytest.fixture()
@@ -161,7 +154,7 @@ def store_link(minio_service, bucket, file_uuid, s3_simcore_location):
 def special_configuration(
     nodeports_config,
     bucket,
-    postgres,
+    postgres_session: sa.orm.session.Session,
     empty_configuration_file: Path,
     project_id,
     node_uuid,
@@ -175,9 +168,9 @@ def special_configuration(
         config_dict = json.loads(empty_configuration_file.read_text())
         _assign_config(config_dict, "inputs", inputs)
         _assign_config(config_dict, "outputs", outputs)
-        project_id = _create_new_pipeline(postgres, project_id)
+        project_id = _create_new_pipeline(postgres_session, project_id)
         node_uuid = _set_configuration(
-            postgres, project_id, node_id, json.dumps(config_dict)
+            postgres_session, project_id, node_id, json.dumps(config_dict)
         )
         node_config.NODE_UUID = str(node_uuid)
         node_config.PROJECT_ID = str(project_id)
@@ -185,16 +178,16 @@ def special_configuration(
 
     yield create_config
     # teardown
-    postgres.query(ComputationalTask).delete()
-    postgres.query(ComputationalPipeline).delete()
-    postgres.commit()
+    postgres_session.query(ComputationalTask).delete()
+    postgres_session.query(ComputationalPipeline).delete()
+    postgres_session.commit()
 
 
 @pytest.fixture(scope="function")
 def special_2nodes_configuration(
     nodeports_config,
     bucket,
-    postgres,
+    postgres_session: sa.orm.session.Session,
     empty_configuration_file: Path,
     project_id,
     node_uuid,
@@ -208,14 +201,17 @@ def special_2nodes_configuration(
         previous_node_id: str = node_uuid,
         node_id: str = "asdasdadsa",
     ):
-        _create_new_pipeline(postgres, project_id)
+        _create_new_pipeline(postgres_session, project_id)
 
         # create previous node
         previous_config_dict = json.loads(empty_configuration_file.read_text())
         _assign_config(previous_config_dict, "inputs", prev_node_inputs)
         _assign_config(previous_config_dict, "outputs", prev_node_outputs)
         previous_node_uuid = _set_configuration(
-            postgres, project_id, previous_node_id, json.dumps(previous_config_dict)
+            postgres_session,
+            project_id,
+            previous_node_id,
+            json.dumps(previous_config_dict),
         )
 
         # create current node
@@ -226,16 +222,18 @@ def special_2nodes_configuration(
         str_config = json.dumps(config_dict)
         str_config = str_config.replace("TEST_NODE_UUID", str(previous_node_uuid))
         config_dict = json.loads(str_config)
-        node_uuid = _set_configuration(postgres, project_id, node_id, str_config)
+        node_uuid = _set_configuration(
+            postgres_session, project_id, node_id, str_config
+        )
         node_config.NODE_UUID = str(node_uuid)
         node_config.PROJECT_ID = str(project_id)
         return config_dict, project_id, node_uuid
 
     yield create_config
     # teardown
-    postgres.query(ComputationalTask).delete()
-    postgres.query(ComputationalPipeline).delete()
-    postgres.commit()
+    postgres_session.query(ComputationalTask).delete()
+    postgres_session.query(ComputationalPipeline).delete()
+    postgres_session.commit()
 
 
 def _create_new_pipeline(session, project: str) -> str:
