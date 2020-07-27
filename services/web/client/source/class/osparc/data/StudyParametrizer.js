@@ -79,7 +79,7 @@ qx.Class.define("osparc.data.StudyParametrizer", {
         combination.forEach((varValue, idx2) => {
           const parameter = parameters[idx2];
           // do the mustache thing
-          const mustachedStr = "{{" + parameter.id + "}}";
+          const mustachedStr = "\"{{" + parameter.id + "}}\"";
           secondaryStudyDataStr = secondaryStudyDataStr.replace(mustachedStr, varValue);
         });
         secondaryStudyData = JSON.parse(secondaryStudyDataStr);
