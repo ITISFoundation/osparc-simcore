@@ -14,6 +14,8 @@ from servicelib.minio_utils import MinioRetryPolicyUponInitialization
 
 from .helpers.utils_docker import get_service_published_port
 
+SERVICES_TO_SKIP = ["sidecar", "postgres", "redis", "rabbit"]
+
 
 @pytest.fixture(scope="module")
 def services_endpoint(
@@ -22,7 +24,7 @@ def services_endpoint(
     services_endpoint = {}
     for service in core_services:
         assert f"simcore_{service}" in docker_stack["services"]
-        if not service in ["postgres", "redis"]:
+        if not service in SERVICES_TO_SKIP:
             endpoint = URL(
                 f"http://127.0.0.1:{get_service_published_port(service, 8080)}"
             )
