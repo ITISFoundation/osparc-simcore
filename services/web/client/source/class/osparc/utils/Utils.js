@@ -342,10 +342,6 @@ qx.Class.define("osparc.utils.Utils", {
       return clientSessionID;
     },
 
-    getFont: function(size=14, bold=false) {
-      return qx.bom.Font.fromConfig(osparc.theme.Font.fonts[`${bold ? "title" : "text"}-${size}`]);
-    },
-
     getFreeDistanceToWindowEdges: function(layoutItem) {
       const domElement = layoutItem.getContentElement().getDomElement();
       if (domElement === null) {
