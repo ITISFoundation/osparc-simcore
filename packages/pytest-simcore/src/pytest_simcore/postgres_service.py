@@ -27,11 +27,11 @@ def postgres_dsn(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
         "user": devel_environ["POSTGRES_USER"],
         "password": devel_environ["POSTGRES_PASSWORD"],
         "database": devel_environ["POSTGRES_DB"],
-        "host": "127.0.0.1",
+        "host": "172.23.36.63",
         "port": get_service_published_port("postgres", devel_environ["POSTGRES_PORT"]),
     }
     # nodeports takes its configuration from env variables
-    os.environ["POSTGRES_ENDPOINT"] = f"127.0.0.1:{pg_config['port']}"
+    os.environ["POSTGRES_ENDPOINT"] = f"{pg_config['host']}:{pg_config['port']}"
     os.environ["POSTGRES_USER"] = devel_environ["POSTGRES_USER"]
     os.environ["POSTGRES_PASSWORD"] = devel_environ["POSTGRES_PASSWORD"]
     os.environ["POSTGRES_DB"] = devel_environ["POSTGRES_DB"]
@@ -47,6 +47,7 @@ def postgres_engine(
     )
     # Attempts until responsive
     wait_till_postgres_is_responsive(dsn)
+
     # Configures db and initializes tables
     engine = sa.create_engine(dsn, isolation_level="AUTOCOMMIT")
 
