@@ -91,7 +91,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
     /* /PARAMETERS */
 
     /* COMBINATIONS */
-    hasCombinations: function() {
+    __hasCombinations: function() {
       return this.__combinations.length;
     },
 
@@ -233,7 +233,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
         });
       }
 
-      if (this.hasCombinations()) {
+      if (this.__hasCombinations()) {
         obj["combinations"] = [];
         this.getCombinations().forEach(combination => {
           obj["combinations"].push(combination);
