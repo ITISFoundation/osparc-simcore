@@ -8,4 +8,5 @@ idna==2.9                 # via yarl
 multidict==4.7.6          # via yarl
 psycopg2-binary==2.8.5    # via sqlalchemy
 sqlalchemy[postgresql_psycopg2binary]==1.3.17  # via -r requirements/_base.in
-yarl==1.4.2               # via -r requirements/_base.in
+typing-extensions==3.7.4.2  # via yarl
+yarl==1.5.0               # via -r requirements/_base.in
