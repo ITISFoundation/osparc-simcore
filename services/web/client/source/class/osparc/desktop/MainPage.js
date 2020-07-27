@@ -143,22 +143,27 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __startStudy: function(studyData) {
-      const study = new osparc.data.model.Study(studyData);
       this.__studyEditor = this.__getStudyEditor();
-      this.__studyEditor.setStudy(study);
-      this.__startStudyEditor(this.__studyEditor);
+      this.__showStudyEditor(this.__studyEditor);
+      this.__studyEditor.setStudy(studyData)
+        .then(() => {
+          this.__syncStudyEditor();
+        });
     },
 
-    __startStudyEditor: function(studyEditor) {
+    __showStudyEditor: function(studyEditor) {
       if (this.__studyEditor) {
         this.__mainStack.remove(this.__studyEditor);
       }
 
       this.__studyEditor = studyEditor;
-      const study = studyEditor.getStudy();
       this.__mainStack.add(this.__studyEditor);
       this.__mainStack.setSelection([this.__studyEditor]);
+    },
 
+    __syncStudyEditor: function() {
+      const studyEditor = this.__studyEditor;
+      const study = studyEditor.getStudy();
       this.__navBar.setStudy(study);
       this.__navBar.setPathButtons(this.__studyEditor.getCurrentPathIds());
 
@@ -166,6 +171,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         const elements = ev.getData();
         this.__navBar.setPathButtons(elements);
       }, this);
+
       this.__studyEditor.addListener("studyIsLocked", () => {
         this.__showDashboard();
       }, this);

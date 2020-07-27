@@ -28,7 +28,7 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
     _showLoadingPage: function(label) {
       this._hideLoadingPage();
 
-      this.__showMyLayout(false);
+      this._showMainLayout(false);
 
       if (this.__loadingIFrame === null) {
         this.__loadingIFrame = new osparc.ui.message.Loading(label);
@@ -48,13 +48,14 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
         }
       }
 
-      this.__showMyLayout(true);
+      this._showMainLayout(true);
     },
 
-    __showMyLayout: function(show) {
-      this._getChildren().forEach(children => {
-        children.setVisibility(show ? "visible" : "excluded");
-      });
+    /**
+     * @abstract
+     */
+    _showMainLayout: function() {
+      throw new Error("Abstract method called!");
     }
   }
 });

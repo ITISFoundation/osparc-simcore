@@ -483,6 +483,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       this.__resetCtrlField(portId);
     },
 
+    // overridden
     addParameter: function(portId, parameter) {
       if (!this.__isPortAvailable(portId)) {
         return false;

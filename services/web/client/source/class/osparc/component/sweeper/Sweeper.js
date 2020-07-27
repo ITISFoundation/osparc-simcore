@@ -74,14 +74,9 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
       });
       this._addAt(iterationsTable, 4);
 
-      const openIterationsBtn = this.__createOpenIterationsBtn();
+      const openIterationsBtn = this.__openIterationsBtn = this.__createOpenIterationsBtn();
       openIterationsBtn.setEnabled(false);
       this._addAt(openIterationsBtn, 5);
-      iterationsTable.addListener("cellTap", e => {
-        const selectedRow = e.getRow();
-        openIterationsBtn.setEnabled(true);
-        this.__selectedIteration = this.__iterationsTable.getRowData(selectedRow)["StudyId"];
-      });
       openIterationsBtn.addListener("execute", () => {
         if (this.__selectedIteration) {
           this.fireDataEvent("iterationSelected", this.__selectedIteration);
@@ -158,6 +153,13 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
 
     __createIterationsTable: function() {
       const iterations = new osparc.component.sweeper.Iterations(this.__primaryStudy);
+      iterations.addListener("cellTap", e => {
+        if (this.__openIterationsBtn) {
+          this.__openIterationsBtn.setEnabled(true);
+        }
+        const selectedRow = e.getRow();
+        this.__selectedIteration = iterations.getRowData(selectedRow)["StudyId"];
+      });
       return iterations;
     },
 

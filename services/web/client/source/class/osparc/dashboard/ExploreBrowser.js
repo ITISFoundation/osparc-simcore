@@ -152,6 +152,13 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this.__reloadServices();
     },
 
+    // overridden
+    _showMainLayout: function(show) {
+      this._getChildren().forEach(children => {
+        children.setVisibility(show ? "visible" : "excluded");
+      });
+    },
+
     __getTags: function() {
       return new Promise((resolve, reject) => {
         if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
@@ -258,6 +265,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
             };
             osparc.data.Resources.fetch("studies", "post", params)
               .then(studyData => {
+                this._hideLoadingPage();
                 this.__startStudy(studyData);
               })
               .catch(er => {
@@ -285,6 +293,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       };
       osparc.data.Resources.fetch("studies", "postFromTemplate", params)
         .then(studyData => {
+          this._hideLoadingPage();
           this.__startStudy(studyData);
         })
         .catch(err => {

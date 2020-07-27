@@ -144,6 +144,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(console.error);
     },
 
+    // overridden
+    _showMainLayout: function(show) {
+      this._getChildren().forEach(children => {
+        children.setVisibility(show ? "visible" : "excluded");
+      });
+    },
+
     __reloadResources: function() {
       this.__getActiveStudy();
       this.reloadUserStudies();
@@ -314,6 +321,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       };
       osparc.data.Resources.fetch("studies", "post", params)
         .then(studyData => {
+          this._hideLoadingPage();
           this.__startStudy(studyData);
         })
         .catch(err => {
@@ -570,7 +578,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         operationPromise = osparc.data.Resources.fetch("studies", "delete", params, studyData.uuid);
       }
       operationPromise
-        .then(() => this.__removeFromStudyList(studyData.uuid, false))
+        .then(() => {
+          this.__deleteSecondaryStudies(studyData);
+          this.__removeFromStudyList(studyData.uuid, false);
+        })
         .catch(err => {
           console.error(err);
           osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");
@@ -582,6 +593,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       studiesData.forEach(studyData => {
         this.__deleteStudy(studyData);
       });
+    },
+
+    __deleteSecondaryStudies: function(studyData) {
+      if ("dev" in studyData && "sweeper" in studyData["dev"] && "secondaryStudyIds" in studyData["dev"]["sweeper"]) {
+        const secondaryStudyIds = studyData["dev"]["sweeper"]["secondaryStudyIds"];
+        secondaryStudyIds.forEach(secondaryStudyId => {
+          const params = {
+            url: {
+              projectId: secondaryStudyId
+            }
+          };
+          osparc.data.Resources.fetch("studies", "delete", params, secondaryStudyId);
+        });
+      }
     },
 
     __createConfirmWindow: function(isMulti) {
