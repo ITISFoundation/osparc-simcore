@@ -1,4 +1,4 @@
-qx.Theme.define("osparc.theme.Color", {
+qx.Theme.define("osparc.theme.mixin.Color", {
   colors: {
     "activitytree-background-cpu": "#2C7CCE",
     "activitytree-background-memory": "#358475",
