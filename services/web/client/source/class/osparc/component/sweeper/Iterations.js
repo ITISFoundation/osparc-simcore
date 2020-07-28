@@ -51,14 +51,22 @@ qx.Class.define("osparc.component.sweeper.Iterations", {
       return this.__model.getRowDataAsMap(rowIdx);
     },
 
+    __cleanupCols: function() {
+      Object.keys(this.__cols).forEach(key => {
+        if (!["id", "name"].includes(key)) {
+          delete this.__cols[key];
+        }
+      });
+    },
+
     __initModel: function() {
       const model = this.__model = new qx.ui.table.model.Simple();
-
 
       // add variables in columns
       const primaryStudyData = this.__primaryStudy.serializeStudy();
       const parameters = this.__primaryStudy.getSweeper().getParameters();
       const activeParams = osparc.data.StudyParametrizer.getActiveParameters(primaryStudyData, parameters);
+      this.__cleanupCols();
       const nextCol = this.__cols["name"].col + 1;
       for (let i=0; i<activeParams.length; i++) {
         const parameter = activeParams[i];
