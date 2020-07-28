@@ -69,5 +69,5 @@ class QueueManager:
         return AsyncQueue("workbench_updates")
 
     @classmethod
-    def get_enricher(cls):
-        return AsyncQueue("enricher")
+    def get_enriched_workbenches(cls):
+        return AsyncQueue("enriched_workbenches")
