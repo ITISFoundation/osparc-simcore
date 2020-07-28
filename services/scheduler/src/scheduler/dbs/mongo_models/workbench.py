@@ -11,14 +11,32 @@ from scheduler.dbs.mongo_models.utils import BinaryField
 
 @instance.register
 class WorkbenchUpdate(Document):
-    STATE_EDITABLE = "editable"
-    STATE_RUNNING = "running"
     """Used to store the incoming workbench configurations"""
+
+    # [EDITABLE] Opened in a Browser tab or active in API (actively interacted),
+    # the user has just opened the workbench and a RUN command might be issued, or
+    # a dynamic service might be opened to view results.
+    STATE_EDITABLE = "editable"
+    # [RUNNING] Computational pipeline is running, no changes are accepted, and
+    # the computational graph will be computed and scheduled for running with
+    # updates on all services (creation of containers and starting of containers,
+    # based on constraints)
+    STATE_RUNNING = "running"
+    # [ERROR] Something is not working properly in the pipeline, there might be
+    # some issues with the configuration or a runtime error in the acceptance
+    # pipeline. the user should be prompted to fix it
+    STATE_ERROR = "error"
+    # [CLOSED] Closed in a Browser on not active in API (no interactions), the
+    # most common state, the project is totally closed (nothing needs to run)
+    STATE_CLOSED = "closed"
 
     project_id = fields.UUIDField(required=True, unique=True)
 
     workbench_state = fields.StringField(
-        required=True, validate=validate.OneOf((STATE_RUNNING, STATE_EDITABLE))
+        required=True,
+        validate=validate.OneOf(
+            {STATE_RUNNING, STATE_EDITABLE, STATE_ERROR, STATE_CLOSED}
+        ),
     )
 
     # content of the last workbench
