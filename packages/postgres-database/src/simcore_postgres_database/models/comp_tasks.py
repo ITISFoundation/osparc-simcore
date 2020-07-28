@@ -39,3 +39,53 @@ comp_tasks = sa.Table(
     sa.Column("end", sa.DateTime),
     sa.UniqueConstraint("project_id", "node_id", name="project_node_uniqueness"),
 )
+
+
+DB_PROCEDURE_NAME: str = "notify_comp_tasks_changed"
+DB_TRIGGER_NAME: str = f"{DB_PROCEDURE_NAME}_event"
+DB_CHANNEL_NAME: str = "comp_tasks_output_events"
+
+# ------------------------ TRIGGERS
+
+task_output_changed_trigger = sa.DDL(
+    f"""
+DROP TRIGGER IF EXISTS {DB_TRIGGER_NAME} on comp_tasks;
+CREATE TRIGGER {DB_TRIGGER_NAME}
+AFTER UPDATE OF outputs ON comp_tasks
+    FOR EACH ROW
+    WHEN (OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb AND NEW.node_class <> 'FRONTEND')
+    EXECUTE PROCEDURE {DB_PROCEDURE_NAME}();
+"""
+)
+
+
+# ---------------------- PROCEDURES
+task_output_changed_procedure = sa.DDL(
+    f"""
+CREATE OR REPLACE FUNCTION {DB_PROCEDURE_NAME}() RETURNS TRIGGER AS $$
+    DECLARE
+        record RECORD;
+        payload JSON;
+    BEGIN
+        IF (TG_OP = 'DELETE') THEN
+            record = OLD;
+        ELSE
+            record = NEW;
+        END IF;
+
+        payload = json_build_object('table', TG_TABLE_NAME,
+                                    'action', TG_OP,
+                                    'data', row_to_json(record));
+
+        PERFORM pg_notify('{DB_CHANNEL_NAME}', payload::text);
+
+        RETURN NULL;
+    END;
+$$ LANGUAGE plpgsql;
+"""
+)
+
+sa.event.listen(comp_tasks, "after_create", task_output_changed_procedure)
+sa.event.listen(
+    comp_tasks, "after_create", task_output_changed_trigger,
+)
