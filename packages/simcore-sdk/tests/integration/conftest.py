@@ -15,7 +15,6 @@ from yarl import URL
 
 import np_helpers
 from simcore_sdk.models.pipeline_models import (
-    Base,
     ComputationalPipeline,
     ComputationalTask,
 )
