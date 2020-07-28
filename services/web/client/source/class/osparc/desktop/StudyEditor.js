@@ -57,6 +57,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
   members: {
     __study: null,
+    __settingStudy: null,
     __pane: null,
     __mainPanel: null,
     __sidePanel: null,
@@ -72,19 +73,25 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __lastSavedStudy: null,
 
     setStudy: function(studyData) {
-      this._showLoadingPage(this.tr("Starting ") + (studyData.name || this.tr("Study")));
-
-      // Before starting a study, make sure the latest version is fetched
-      const promises = [
-        osparc.store.Store.getInstance().getStudyWState(studyData.uuid, true),
-        osparc.store.Store.getInstance().getServicesDAGs()
-      ];
       return new Promise((resolve, reject) => {
+        if (this.__settingStudy) {
+          resolve();
+        }
+        this.__settingStudy = true;
+
+        this._showLoadingPage(this.tr("Starting ") + (studyData.name || this.tr("Study")));
+
+        // Before starting a study, make sure the latest version is fetched
+        const promises = [
+          osparc.store.Store.getInstance().getStudyWState(studyData.uuid, true),
+          osparc.store.Store.getInstance().getServicesDAGs()
+        ];
         Promise.all(promises)
           .then(values => {
             studyData = values[0];
             const study = new osparc.data.model.Study(studyData);
             this.__study = study;
+            this.__settingStudy = false;
 
             this._hideLoadingPage();
 
