@@ -324,7 +324,7 @@ OR prj_owner = {user_id})
         return api_projects
 
     async def _get_project(
-        self, user_id: int, project_uuid: str, exclude_foreign: Optional[List] = None
+        self, user_id: int, project_uuid: str, exclude_foreign: Optional[List] = None, include_templates: Optional[bool] = False
     ) -> Dict:
         exclude_foreign = exclude_foreign or []
         async with self.engine.acquire() as conn:
@@ -335,8 +335,9 @@ OR prj_owner = {user_id})
             query = f"""
 SELECT *
 FROM projects
-WHERE projects.type != 'TEMPLATE'
-AND uuid = '{project_uuid}'
+WHERE
+{"" if include_templates else "projects.type != 'TEMPLATE' AND"}
+uuid = '{project_uuid}'
 AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
 OR prj_owner = {user_id})
 """
@@ -488,7 +489,7 @@ OR prj_owner = {user_id})
 
     async def delete_user_project(self, user_id: int, project_uuid: str):
         log.info("Deleting project %s for user %s", project_uuid, user_id)
-        project = await self._get_project(user_id, project_uuid)
+        project = await self._get_project(user_id, project_uuid, include_templates=True)
         async with self.engine.acquire() as conn:
             # if we have delete access we delete the project
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
