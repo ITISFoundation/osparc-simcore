@@ -83,48 +83,82 @@ qx.Class.define("osparc.data.StudyParametrizer", {
     },
 
     recreateIterations: function(primaryStudyData, parameters, combinations) {
-      const secondaryStudiesData = [];
-
-      for (let i=0; i<combinations.length; i++) {
-        const combination = combinations[i];
-        // eslint-disable-next-line no-underscore-dangle
-        let secondaryStudyData = osparc.data.StudyParametrizer.__createSecondaryStudy(primaryStudyData, i);
-        let secondaryStudyDataStr = JSON.stringify(secondaryStudyData);
-
-        const parameterValues = [];
-        for (let j=0; j<combination.length; j++) {
-          const varValue = combination[j];
-          const parameterId = parameters[j].id;
-          const mustachedStr = "\"{{" + parameterId + "}}\"";
-          secondaryStudyDataStr = secondaryStudyDataStr.replace(mustachedStr, varValue);
-          const parameterValue = {};
-          parameterValue[parameterId] = varValue;
-          parameterValues.push(parameterValue);
-        }
-        secondaryStudyData = JSON.parse(secondaryStudyDataStr);
-        secondaryStudyData["dev"]["sweeper"]["parameterValues"] = parameterValues;
-        secondaryStudiesData.push(secondaryStudyData);
-      }
-
-      return secondaryStudiesData;
-    },
-
-    __createSecondaryStudy: function(primaryStudyData, idx) {
-      const secondaryStudyData = osparc.data.model.Study.deepCloneStudyObject(primaryStudyData);
-
-      // give new study id
-      secondaryStudyData["uuid"] = osparc.utils.Utils.uuidv4();
-      // give a different name
-      secondaryStudyData["name"] = secondaryStudyData["name"] + " (it-" + (idx+1) + ")";
-      // replace orignal uuids
-      secondaryStudyData["workbench"] = osparc.data.Converters.replaceUuids(secondaryStudyData["workbench"]);
-
-      // set primary study Id
-      secondaryStudyData["dev"] = {};
-      secondaryStudyData["dev"]["sweeper"] = {};
-      secondaryStudyData["dev"]["sweeper"]["primaryStudyId"] = primaryStudyData.uuid;
-
-      return secondaryStudyData;
+      return new Promise((resolve, reject) => {
+        const store = osparc.store.Store.getInstance();
+        store.getGroupsMe()
+          .then(groupMe => {
+            const templatePrimaryStudyData = osparc.data.model.Study.deepCloneStudyObject(primaryStudyData);
+            templatePrimaryStudyData["accessRights"][groupMe.gid] = osparc.component.export.Permissions.getOwnerAccessRight();
+            const params = {
+              url: {
+                "study_id": this.__studyId
+              },
+              data: templatePrimaryStudyData
+            };
+            osparc.data.Resources.fetch("templates", "postToTemplate", params)
+              .then(temporaryTemplate => {
+                const promisesCreateSecs = [];
+                for (let i=0; i<combinations.length; i++) {
+                  const paramsSec = {
+                    url: {
+                      templateId: temporaryTemplate.uuid
+                    },
+                    data: {
+                      "name": temporaryTemplate["name"] + " (it-" + (i+1) + ")"
+                    }
+                  };
+                  promisesCreateSecs.push(osparc.data.Resources.fetch("studies", "postFromTemplate", paramsSec));
+                }
+                Promise.all(promisesCreateSecs)
+                  .then(secondaryStudiesData => {
+                    if (secondaryStudiesData.length !== combinations.length) {
+                      reject("Number of combinations is not the same as the secondary studies created");
+                    }
+                    const promisesUpdateSecs = [];
+                    for (let i=0; i<combinations.length; i++) {
+                      const combination = combinations[i];
+                      let secondaryStudyData = secondaryStudiesData[i];
+                      let secondaryStudyDataStr = JSON.stringify(secondaryStudyData);
+                      const parameterValues = [];
+                      for (let j=0; j<combination.length; j++) {
+                        const varValue = combination[j];
+                        const parameterId = parameters[j].id;
+                        const mustachedStr = "\"{{" + parameterId + "}}\"";
+                        secondaryStudyDataStr = secondaryStudyDataStr.replace(mustachedStr, varValue);
+                        const parameterValue = {};
+                        parameterValue[parameterId] = varValue;
+                        parameterValues.push(parameterValue);
+                      }
+                      secondaryStudyData = JSON.parse(secondaryStudyDataStr);
+                      secondaryStudyData["dev"] = {
+                        "sweeper": {
+                          "parameterValues": parameterValues
+                        }
+                      };
+                      const paramsUpdateSec = {
+                        url: {
+                          "projectId": secondaryStudyData["uuid"]
+                        },
+                        data: secondaryStudyData
+                      };
+                      promisesUpdateSecs.push(osparc.data.Resources.fetch("studies", "put", paramsUpdateSec));
+                    }
+                    Promise.all(promisesUpdateSecs)
+                      .then(updatedSecondaryStudiesData => {
+                        const paramsTemp = {
+                          url: {
+                            projectId: temporaryTemplate.uuid
+                          }
+                        };
+                        osparc.data.Resources.fetch("templates", "delete", paramsTemp, temporaryTemplate.uuid)
+                          .then(() => {
+                            resolve(updatedSecondaryStudiesData);
+                          });
+                      });
+                  });
+              });
+          });
+      });
     }
   }
 });

@@ -115,32 +115,6 @@ qx.Class.define("osparc.data.model.Sweeper", {
       return this.__secondaryStudyIds;
     },
 
-    __addSecondaryStudy: function(secondaryStudy) {
-      return new Promise((resolve, reject) => {
-        this.__postSecondaryStudy(secondaryStudy)
-          .then(studyData => {
-            this.__secondaryStudyIds.push(studyData.uuid);
-          })
-          .catch(er => {
-            console.error(er);
-          })
-          .finally(() => resolve());
-      });
-    },
-
-    __addSecondaryStudies: function(secondaryStudies) {
-      const addPromises = [];
-      secondaryStudies.forEach(secondaryStudy => {
-        addPromises.push(this.__addSecondaryStudy(secondaryStudy));
-      });
-      return new Promise((resolve, reject) => {
-        Promise.all(addPromises)
-          .then(() => {
-            resolve();
-          });
-      });
-    },
-
     __removeSecondaryStudy: function(secondaryStudyId) {
       return new Promise((resolve, reject) => {
         this.__deleteSecondaryStudy(secondaryStudyId)
@@ -176,13 +150,6 @@ qx.Class.define("osparc.data.model.Sweeper", {
       });
     },
 
-    __postSecondaryStudy: function(secondaryStudy) {
-      const params = {
-        data: secondaryStudy
-      };
-      return osparc.data.Resources.fetch("studies", "post", params);
-    },
-
     __deleteSecondaryStudy: function(secondaryStudyId) {
       return osparc.store.Store.getInstance().deleteStudy(secondaryStudyId);
     },
@@ -214,9 +181,11 @@ qx.Class.define("osparc.data.model.Sweeper", {
             const combinations = osparc.data.StudyParametrizer.calculateCombinations(steps);
             this.__setCombinations(combinations);
 
-            const secondaryStudiesData = osparc.data.StudyParametrizer.recreateIterations(primaryStudyData, usedParams, combinations);
-            this.__addSecondaryStudies(secondaryStudiesData)
-              .then(() => {
+            osparc.data.StudyParametrizer.recreateIterations(primaryStudyData, usedParams, combinations)
+              .then(secondaryStudiesData => {
+                secondaryStudiesData.forEach(secondaryStudyData => {
+                  this.__secondaryStudyIds.push(secondaryStudyData.uuid);
+                });
                 resolve(this.getSecondaryStudyIds());
               });
           });
