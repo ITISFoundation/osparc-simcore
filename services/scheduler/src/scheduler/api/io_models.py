@@ -26,3 +26,7 @@ TypeWorkbench = Dict[str, WorkbenchEntry]
 class ProjectUpdate(BaseModel):
     project_id: UUID
     workbench: TypeWorkbench
+
+class ProjectActiveUpdate(BaseModel):
+    project_id: UUID
+    is_active: bool

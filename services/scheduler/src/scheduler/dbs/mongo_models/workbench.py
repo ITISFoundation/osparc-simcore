@@ -1,6 +1,5 @@
 import datetime
 from typing import Any, Dict
-from uuid import UUID
 
 from deepdiff import DeepDiff, Delta
 from umongo import Document, fields, validate
@@ -39,6 +38,9 @@ class WorkbenchUpdate(Document):
         ),
     )
 
+    # True if opened by the user or used in the API
+    is_active = fields.BooleanField(required=True, default=False)
+
     # content of the last workbench
     ui_workbench = fields.DictField(required=True)
     scheduling_workbench = fields.DictField(required=True)
@@ -50,7 +52,7 @@ class WorkbenchUpdate(Document):
 
     @classmethod
     async def entry_for_project_id(cls, project_id: str) -> "WorkbenchUpdate":
-        return await cls.find_one({"project_id": UUID(project_id)})
+        return await cls.find_one({"project_id": project_id})
 
     @classmethod
     async def create(cls, project_id: str) -> "WorkbenchUpdate":
@@ -107,6 +109,10 @@ class WorkbenchUpdate(Document):
         await ui_diff.commit()
         self.prev_scheduling_workbench_diff = scheduling_diff
         self.prev_ui_workbench_diff = ui_diff
+        await self.commit()
+
+    async def set_active(self, is_active: bool) -> None:
+        self.is_active = is_active
         await self.commit()
 
 

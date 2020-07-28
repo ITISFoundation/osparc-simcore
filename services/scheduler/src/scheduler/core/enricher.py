@@ -1,5 +1,6 @@
 import logging
 from typing import Any, Dict
+from uuid import UUID
 
 from scheduler.dbs.mongo_models.workbench import WorkbenchUpdate
 from scheduler.queues import QueueManager
@@ -13,6 +14,9 @@ async def inject_other_data(raw_workbench: Dict[str, Any]) -> Any:
     # decide on where and how to schedule the services
     # make external calls to the director or other services which contain
     # this information
+
+    # TODO: only keep dynamic services in the first iteration
+    # we shall add other services in the future
     return raw_workbench
 
 
@@ -36,7 +40,7 @@ async def handle_updates_queue_input(project_update: Dict) -> None:
 
     # search for the project or create an entry if missing
     previous_update = await WorkbenchUpdate.entry_for_project_id(
-        project_update["project_id"]
+        UUID(project_update["project_id"])
     )
     if previous_update is None:
         # create an entry and continue with the pipeline
