@@ -1,6 +1,6 @@
 qx.Theme.define("osparc.theme.ColorLight", {
   extend: osparc.theme.osparclight.Color,
-  include: osparc.theme.common.Color,
+  include: osparc.theme.Color,
   colors: {
     "workbench-edge-comp-active": "#888888",
     "workbench-edge-api-active": "#444444",
