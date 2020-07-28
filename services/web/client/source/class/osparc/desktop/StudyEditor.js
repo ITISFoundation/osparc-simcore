@@ -76,6 +76,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return new Promise((resolve, reject) => {
         if (this.__settingStudy) {
           resolve();
+          return;
         }
         this.__settingStudy = true;
 
