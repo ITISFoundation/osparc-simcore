@@ -372,13 +372,13 @@ qx.Class.define("osparc.utils.Utils", {
 
     mustache: {
       mustacheRegEx: function() {
-        return "/{([^{}]*)}/g";
+        return /{{([^{}]*)}}/g;
       },
 
       getVariables: function(obj) {
         const variables = new Set();
         const secondaryStudyDataStr = JSON.stringify(obj);
-        const mustaches = secondaryStudyDataStr.match(this.self().mustache.mustacheRegEx());
+        const mustaches = secondaryStudyDataStr.match(osparc.utils.Utils.mustache.mustacheRegEx());
         mustaches.forEach(mustache => {
           const variable = mustache.replace("{{", "").replace("}}", "");
           variables.add(variable);
@@ -396,6 +396,7 @@ qx.Class.define("osparc.utils.Utils", {
             objStr = objStr.replace(mustache, parameter.label);
           }
         });
+        return JSON.parse(objStr);
       }
     }
   }

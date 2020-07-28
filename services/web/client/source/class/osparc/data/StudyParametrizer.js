@@ -69,6 +69,19 @@ qx.Class.define("osparc.data.StudyParametrizer", {
       return r;
     },
 
+    getActiveParameters: function(studyData, parameters) {
+      const activeParams = [...parameters];
+
+      const variableIds = osparc.utils.Utils.mustache.getVariables(studyData);
+      for (let i=activeParams.length-1; i>=0; i--) {
+        if (!variableIds.includes(activeParams[i].id)) {
+          activeParams.splice(i, 1);
+        }
+      }
+
+      return activeParams;
+    },
+
     recreateIterations: function(primaryStudyData, parameters, combinations) {
       const secondaryStudiesData = [];
 

@@ -208,8 +208,10 @@ qx.Class.define("osparc.data.model.Sweeper", {
         // delete previous iterations
         this.__removeSecondaryStudies()
           .then(() => {
-            const steps = osparc.data.StudyParametrizer.calculateSteps(this.__parameters);
-            if (steps.length !== this.__parameters.length) {
+            const usedParams = osparc.data.StudyParametrizer.getActiveParameters(primaryStudyData, this.__parameters);
+
+            const steps = osparc.data.StudyParametrizer.calculateSteps(usedParams);
+            if (steps.length !== usedParams.length) {
               console.error("Number of elements in the array of steps must be the same as parameters");
               reject();
             }
@@ -217,7 +219,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
             const combinations = osparc.data.StudyParametrizer.calculateCombinations(steps);
             this.__setCombinations(combinations);
 
-            const secondaryStudiesData = osparc.data.StudyParametrizer.recreateIterations(primaryStudyData, this.__parameters, this.__combinations);
+            const secondaryStudiesData = osparc.data.StudyParametrizer.recreateIterations(primaryStudyData, usedParams, combinations);
             this.__addSecondaryStudies(secondaryStudiesData)
               .then(() => {
                 resolve(this.getSecondaryStudyIds());
