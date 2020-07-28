@@ -1,23 +1,20 @@
-from uuid import UUID, uuid4
+import uuid
 
-from scheduler.api.io_models import TypeWorkbench
+from scheduler.api.io_models import ProjectUpdate
 from scheduler.app import app
 from scheduler.core.ingestion import workbench_updated
+from scheduler.utils import get_tracking_log
 
 
-@app.get("/")
-async def read_main():
-    return {"msg": "Hello World"}
+@app.put("/workbench")
+async def update_workbench(project_update: ProjectUpdate) -> str:
+    dict_project_update = project_update.dict()
 
+    dict_project_update["project_id"] = str(dict_project_update["project_id"])
+    dict_project_update["tracking_id"] = str(uuid.uuid4())
 
-@app.post("workbench")
-async def update_workbench(project_id: UUID, workbench: TypeWorkbench) -> str:
-    await workbench_updated(project_id, workbench)
-    return ""
+    log = get_tracking_log(dict_project_update)
+    log.debug("workbench update")
 
-
-@app.post("/mocking")
-async def start_scheduler():
-    """Endpoint used to test while developing """
-    await workbench_updated(uuid4(), {})
+    await workbench_updated(dict_project_update)
     return ""
