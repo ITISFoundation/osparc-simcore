@@ -439,15 +439,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __showSweeper: function() {
-      const primaryStudy = this.getStudy();
-
-      const parameters = new osparc.component.sweeper.Sweeper(primaryStudy);
-      const win = osparc.component.sweeper.Sweeper.popUpInWindow(parameters);
-      parameters.addListener("iterationSelected", e => {
+      const study = this.getStudy();
+      const sweeper = new osparc.component.sweeper.Sweeper(study);
+      const win = osparc.component.sweeper.Sweeper.popUpInWindow(sweeper);
+      sweeper.addListener("iterationSelected", e => {
         win.close();
         const iterationStudyId = e.getData();
         osparc.store.Store.getInstance().getStudyWState(iterationStudyId)
           .then(studyData => {
+            study.removeIFrames();
             this.fireDataEvent("startStudy", studyData);
           });
       });

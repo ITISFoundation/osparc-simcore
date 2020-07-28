@@ -201,6 +201,8 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     closeStudy: function() {
+      this.removeIFrames();
+
       const params = {
         url: {
           projectId: this.getUuid()
@@ -209,8 +211,9 @@ qx.Class.define("osparc.data.model.Study", {
       };
       osparc.data.Resources.fetch("studies", "close", params)
         .catch(err => console.error(err));
+    },
 
-      // remove iFrames
+    removeIFrames: function() {
       const nodes = this.getWorkbench().getNodes(true);
       for (const node of Object.values(nodes)) {
         node.removeIFrame();
