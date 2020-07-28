@@ -98,7 +98,7 @@ qx.Class.define("osparc.wrapper.Svg", {
     },
 
     drawCurve: function(draw, controls, edgeWidth = 3, portSphereDiameter = 4, arrowSize = 4) {
-      const edgeColor = osparc.theme.Color.colors["workbench-edge-comp-active"];
+      const edgeColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-comp-active"];
 
       this.__curateControls(controls);
 
@@ -147,7 +147,7 @@ qx.Class.define("osparc.wrapper.Svg", {
     },
 
     drawDashedRect: function(draw, width, height, x, y) {
-      const edgeColor = osparc.theme.Color.colors["workbench-edge-comp-active"];
+      const edgeColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-comp-active"];
       const rect = draw.rect(width, height)
         .fill("none")
         .stroke({

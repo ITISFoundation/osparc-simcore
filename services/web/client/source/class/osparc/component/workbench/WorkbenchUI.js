@@ -838,7 +838,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (oldId) {
         if (this.__isSelectedItemAnEdge()) {
           const unselectedEdge = this.__getEdgeUI(oldId);
-          const unselectedColor = osparc.theme.Color.colors["workbench-edge-comp-active"];
+          const unselectedColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-comp-active"];
           this.__svgWidgetLinks.updateColor(unselectedEdge.getRepresentation(), unselectedColor);
         }
       }
@@ -846,7 +846,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__selectedItemId = newID;
       if (this.__isSelectedItemAnEdge()) {
         const selectedEdge = this.__getEdgeUI(newID);
-        const selectedColor = osparc.theme.Color.colors["workbench-edge-selected"];
+        const selectedColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-selected"];
         this.__svgWidgetLinks.updateColor(selectedEdge.getRepresentation(), selectedColor);
       } else if (newID) {
         this.fireDataEvent("changeSelectedNode", newID);

@@ -23,9 +23,9 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
 
     this.addListener("changeChecked", e => {
       if (e.getData()) {
-        qx.theme.manager.Color.getInstance().setTheme(qx.Theme.getByName("osparc.theme.osparclight.Color"));
+        qx.theme.manager.Meta.getInstance().setTheme(qx.Theme.getByName("osparc.theme.ThemeLight"));
       } else {
-        qx.theme.manager.Color.getInstance().setTheme(qx.Theme.getByName("osparc.theme.osparcdark.Color"));
+        qx.theme.manager.Meta.getInstance().setTheme(qx.Theme.getByName("osparc.theme.ThemeDark"));
       }
     });
   }
