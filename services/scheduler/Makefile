@@ -41,6 +41,10 @@ tox-tests: _ensure-in-venv ## run only tests from tox cached environment
 tox-tests-recreate: _ensure-in-venv ## run only tests from tox in a new environment
 	@tox -r -e py38
 
+.PHONY: tox-isort
+tox-isort: _ensure-in-venv ## applies isort to all project files
+	@tox -e isort
+
 .PHONY: ci-tox-pylint
 ci-tox-pylint: ## runs pylint in a new enviornment
 	@tox -r -e pylint
