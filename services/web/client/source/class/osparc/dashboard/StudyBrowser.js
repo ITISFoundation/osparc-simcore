@@ -561,21 +561,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const collabGids = Object.keys(studyData["accessRights"]);
       const amICollaborator = collabGids.indexOf(myGid) > -1;
 
-      const params = {
-        url: {
-          projectId: studyData.uuid
-        }
-      };
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
         // remove collaborator
         const permissions = osparc.component.export.Permissions;
         permissions.removeCollaborator(studyData, myGid);
+        const params = {
+          url: {
+            projectId: studyData.uuid
+          }
+        };
         params["data"] = studyData;
         operationPromise = osparc.data.Resources.fetch("studies", "put", params);
       } else {
         // delete study
-        operationPromise = osparc.data.Resources.fetch("studies", "delete", params, studyData.uuid);
+        operationPromise = osparc.store.Store.getInstance().deleteStudy(studyData.uuid);
       }
       operationPromise
         .then(() => {
@@ -599,12 +599,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if ("dev" in studyData && "sweeper" in studyData["dev"] && "secondaryStudyIds" in studyData["dev"]["sweeper"]) {
         const secondaryStudyIds = studyData["dev"]["sweeper"]["secondaryStudyIds"];
         secondaryStudyIds.forEach(secondaryStudyId => {
-          const params = {
-            url: {
-              projectId: secondaryStudyId
-            }
-          };
-          osparc.data.Resources.fetch("studies", "delete", params, secondaryStudyId);
+          osparc.store.Store.getInstance().deleteStudy(secondaryStudyId);
         });
       }
     },

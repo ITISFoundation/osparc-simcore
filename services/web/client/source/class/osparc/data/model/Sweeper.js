@@ -184,12 +184,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
     },
 
     __deleteSecondaryStudy: function(secondaryStudyId) {
-      const params = {
-        url: {
-          projectId: secondaryStudyId
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "delete", params, secondaryStudyId);
+      return osparc.store.Store.getInstance().deleteStudy(secondaryStudyId);
     },
     /* /SECONDARY STUDIES */
 

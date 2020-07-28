@@ -278,6 +278,25 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
+    deleteStudy: function(studyId) {
+      const params = {
+        url: {
+          projectId: studyId
+        }
+      };
+      return new Promise((resolve, reject) => {
+        osparc.data.Resources.fetch("studies", "delete", params, studyId)
+          .then(() => {
+            this.remove("studies", "uuid", studyId);
+            resolve();
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
+    },
+
     /**
      * This functions does the needed processing in order to have a working list of services and DAGs.
      * @param {Boolean} reload ?
