@@ -29,6 +29,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
     this.base(arguments);
 
     this.__parameters = [];
+    this.__parameterValues = [];
     this.__combinations = [];
     this.__secondaryStudyIds = [];
     this.__primaryStudyId = null;
@@ -44,6 +45,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
 
   members: {
     __parameters: null,
+    __parameterValues: null,
     __combinations: null,
     __secondaryStudyIds: null,
     __primaryStudyId: null,
@@ -91,6 +93,20 @@ qx.Class.define("osparc.data.model.Sweeper", {
       return null;
     },
     /* /PARAMETERS */
+
+    /* /PARAMETER VALUES */
+    hasParameterValues: function() {
+      return Boolean(this.__parameterValues.length);
+    },
+
+    getParameterValues: function() {
+      return this.__parameterValues;
+    },
+
+    __setParameterValues: function(parameterValues) {
+      this.__parameterValues = parameterValues;
+    },
+    /* /PARAMETER VALUES */
 
     /* COMBINATIONS */
     __hasCombinations: function() {
@@ -202,6 +218,13 @@ qx.Class.define("osparc.data.model.Sweeper", {
         });
       }
 
+      if (this.hasParameterValues()) {
+        obj["parameterValues"] = [];
+        this.getParameterValues().forEach(parameterValue => {
+          obj["parameterValues"].push(parameterValue);
+        });
+      }
+
       if (this.__hasCombinations()) {
         obj["combinations"] = [];
         this.getCombinations().forEach(combination => {
@@ -227,6 +250,10 @@ qx.Class.define("osparc.data.model.Sweeper", {
     deserializeSweeper: function(sweeperData) {
       if ("parameters" in sweeperData) {
         this.__setParameters(sweeperData["parameters"]);
+      }
+
+      if ("parameterValues" in sweeperData) {
+        this.__setParameterValues(sweeperData["parameterValues"]);
       }
 
       if ("combinations" in sweeperData) {
