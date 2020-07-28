@@ -22,11 +22,12 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
     }
 
     this.addListener("changeChecked", e => {
+      let themeName = "osparc.theme.ThemeDark";
       if (e.getData()) {
-        qx.theme.manager.Meta.getInstance().setTheme(qx.Theme.getByName("osparc.theme.ThemeLight"));
-      } else {
-        qx.theme.manager.Meta.getInstance().setTheme(qx.Theme.getByName("osparc.theme.ThemeDark"));
+        themeName = "osparc.theme.ThemeLight";
       }
+      qx.theme.manager.Meta.getInstance().setTheme(qx.Theme.getByName(themeName));
+      window.localStorage.setItem("themeName", themeName);
     });
   }
 });
