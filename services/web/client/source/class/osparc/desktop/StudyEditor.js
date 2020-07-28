@@ -547,13 +547,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __doStartPipeline: function() {
-      this.getStudy().getWorkbench().clearProgressData();
-      this.__requestStartPipeline(this.getStudy().getUuid());
-
-      const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
-      secondaryStudyIds.forEach(secondaryStudyId => {
-        this.__requestStartPipeline(secondaryStudyId);
-      });
+      if (this.getStudy().getSweeper().hasSecondaryStudies()) {
+        const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
+        secondaryStudyIds.forEach(secondaryStudyId => {
+          this.__requestStartPipeline(secondaryStudyId);
+        });
+      } else {
+        this.getStudy().getWorkbench().clearProgressData();
+        this.__requestStartPipeline(this.getStudy().getUuid());
+      }
     },
 
     __requestStartPipeline: function(studyId) {
