@@ -41,9 +41,7 @@ async def handle_updates_queue_input(project_update: Dict) -> None:
     if previous_update is None:
         # create an entry and continue with the pipeline
         previous_update = await WorkbenchUpdate.create(
-            project_id=project_update["project_id"],
-            ui_workbench=ui_workbench,
-            scheduling_workbench=scheduling_workbench,
+            project_id=project_update["project_id"]
         )
     # TODO: buffer changes while pipeline is "running"
     # recover them when the services have finished execution

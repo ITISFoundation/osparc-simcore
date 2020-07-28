@@ -18,7 +18,7 @@ class WorkbenchUpdate(Document):
     project_id = fields.UUIDField(required=True, unique=True)
 
     workbench_state = fields.StringField(
-        required=True, validate=validate.OneOf(STATE_RUNNING, STATE_EDITABLE)
+        required=True, validate=validate.OneOf((STATE_RUNNING, STATE_EDITABLE))
     )
 
     # content of the last workbench
@@ -35,17 +35,12 @@ class WorkbenchUpdate(Document):
         return await cls.find_one({"project_id": UUID(project_id)})
 
     @classmethod
-    async def create(
-        cls,
-        project_id: str,
-        ui_workbench: Dict[str, Any],
-        scheduling_workbench: Dict[str, Any],
-    ) -> "WorkbenchUpdate":
+    async def create(cls, project_id: str) -> "WorkbenchUpdate":
         workbench_update = cls(
             project_id=project_id,
             workbench_state=cls.STATE_EDITABLE,
-            ui_workbench=ui_workbench,
-            scheduling_workbench=scheduling_workbench,
+            ui_workbench={},
+            scheduling_workbench={},
         )
         await workbench_update.commit()
         return workbench_update
