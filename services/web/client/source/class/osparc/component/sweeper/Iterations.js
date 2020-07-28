@@ -59,7 +59,9 @@ qx.Class.define("osparc.component.sweeper.Iterations", {
         cols.push(this.__cols[colKey].label);
       });
       // add variables in columns
-      this.__primaryStudy.getSweeper().getParameters().forEach(parameter => {
+      const parameters = this.__primaryStudy.getSweeper().getParameters();
+      const activeParams = osparc.data.StudyParametrizer.getActiveParameters(this.__primaryStudy, parameters);
+      activeParams.forEach(parameter => {
         cols.push(parameter.label);
       });
 
