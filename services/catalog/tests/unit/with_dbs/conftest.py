@@ -10,6 +10,7 @@ import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI
 from starlette.testclient import TestClient
+
 from simcore_service_catalog.core.application import init_app
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -28,7 +29,7 @@ def app(
 
 
 @pytest.fixture
-def client(app) -> TestClient:
+def client(app: FastAPI) -> TestClient:
     with TestClient(app) as cli:
         # Note: this way we ensure the events are run in the application
         yield cli
