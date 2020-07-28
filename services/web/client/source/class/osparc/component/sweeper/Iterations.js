@@ -54,18 +54,24 @@ qx.Class.define("osparc.component.sweeper.Iterations", {
     __initModel: function() {
       const model = this.__model = new qx.ui.table.model.Simple();
 
-      const cols = [];
-      Object.keys(this.__cols).forEach(colKey => {
-        cols.push(this.__cols[colKey].label);
-      });
+
       // add variables in columns
       const primaryStudyData = this.__primaryStudy.serializeStudy();
       const parameters = this.__primaryStudy.getSweeper().getParameters();
       const activeParams = osparc.data.StudyParametrizer.getActiveParameters(primaryStudyData, parameters);
-      activeParams.forEach(parameter => {
-        cols.push(parameter.label);
-      });
+      const nextCol = this.__cols["name"].col + 1;
+      for (let i=0; i<activeParams.length; i++) {
+        const parameter = activeParams[i];
+        this.__cols[parameter.id] = {
+          col: nextCol+i,
+          label: parameter.label
+        };
+      }
 
+      const cols = [];
+      Object.keys(this.__cols).forEach(colKey => {
+        cols.push(this.__cols[colKey].label);
+      });
       model.setColumns(cols);
 
       return model;
@@ -85,14 +91,15 @@ qx.Class.define("osparc.component.sweeper.Iterations", {
                 console.error("Secondary study not found", secondaryStudyId);
                 continue;
               }
-              const comb = combinations[i];
               const row = [];
               row[this.__cols["id"].col] = secondaryStudy.uuid;
               row[this.__cols["name"].col] = secondaryStudy.name;
-              const nextCol = this.__cols["name"].col + 1;
-              for (let j=0; j<comb.length; j++) {
-                row[nextCol+j] = comb[j];
-              }
+              const paramValues = secondaryStudy["dev"]["sweeper"]["parameterValues"];
+              paramValues.forEach(paramValue => {
+                for (const [key, value] of Object.entries(paramValue)) {
+                  row[this.__cols[key].col] = value;
+                }
+              });
               rows.push(row);
             }
             this.getTableModel().setData(rows, false);

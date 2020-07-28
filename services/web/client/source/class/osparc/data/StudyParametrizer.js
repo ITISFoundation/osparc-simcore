@@ -85,19 +85,26 @@ qx.Class.define("osparc.data.StudyParametrizer", {
     recreateIterations: function(primaryStudyData, parameters, combinations) {
       const secondaryStudiesData = [];
 
-      combinations.forEach((combination, idx) => {
+      for (let i=0; i<combinations.length; i++) {
+        const combination = combinations[i];
         // eslint-disable-next-line no-underscore-dangle
-        let secondaryStudyData = osparc.data.StudyParametrizer.__createSecondaryStudy(primaryStudyData, idx);
+        let secondaryStudyData = osparc.data.StudyParametrizer.__createSecondaryStudy(primaryStudyData, i);
         let secondaryStudyDataStr = JSON.stringify(secondaryStudyData);
-        combination.forEach((varValue, idx2) => {
-          const parameter = parameters[idx2];
-          // do the mustache thing
-          const mustachedStr = "\"{{" + parameter.id + "}}\"";
+
+        const parameterValues = [];
+        for (let j=0; j<combination.length; j++) {
+          const varValue = combination[j];
+          const parameterId = parameters[j].id;
+          const mustachedStr = "\"{{" + parameterId + "}}\"";
           secondaryStudyDataStr = secondaryStudyDataStr.replace(mustachedStr, varValue);
-        });
+          const parameterValue = {};
+          parameterValue[parameterId] = varValue;
+          parameterValues.push(parameterValue);
+        }
         secondaryStudyData = JSON.parse(secondaryStudyDataStr);
+        secondaryStudyData["dev"]["sweeper"]["parameterValues"] = parameterValues;
         secondaryStudiesData.push(secondaryStudyData);
-      });
+      }
 
       return secondaryStudiesData;
     },
