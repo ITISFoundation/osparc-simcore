@@ -25,11 +25,3 @@ async def test_queues_initialized():
             assert test_queue is not None
             await test_queue.add(test_item)
             assert test_item == await test_queue.get()
-
-
-@pytest.mark.asyncio
-async def test_read_main():
-    async with TestClient(app) as client:
-        response = await client.get("/")
-        assert response.status_code == 200
-        assert response.json() == {"msg": "Hello World"}
