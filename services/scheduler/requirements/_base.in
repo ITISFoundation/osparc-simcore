@@ -16,3 +16,8 @@ umongo
 motor
 umongo[motor]
 async-timeout
+jaeger-client
+opentracing_instrumentation
+Starlette-Opentracing
+structlog
+deepdiff

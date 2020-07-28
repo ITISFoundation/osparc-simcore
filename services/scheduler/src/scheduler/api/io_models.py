@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -13,11 +13,16 @@ class WorkbenchEntry(BaseModel):
     key: str
     version: str
     label: str
-    inputAccess: Dict[str, str]
+    inputAccess: Optional[Dict[str, str]]
     inputNodes: Dict[str, str]
     inputs: Dict[str, str]
     thumbnail: str
     position: WorkbenchEntryPosition
 
 
-TypeWorkbench = Dict[UUID, WorkbenchEntry]
+TypeWorkbench = Dict[str, WorkbenchEntry]
+
+
+class ProjectUpdate(BaseModel):
+    project_id: UUID
+    workbench: TypeWorkbench
