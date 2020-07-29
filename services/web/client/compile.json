@@ -21,20 +21,20 @@
   "applications": [
     {
       "class": "osparc.Application",
-      "theme": "osparc.theme.Theme",
+      "theme": "osparc.theme.ThemeDark",
       "name": "osparc",
       "title": "oSPARC",
       "default": true,
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
-        "osparc.theme.OSparcLight"
+        "osparc.theme.ThemeLight"
       ],
       "bootPath": "source/boot"
     },
     {
       "class": "explorer.Application",
-      "theme": "osparc.theme.Theme",
+      "theme": "osparc.theme.ThemeDark",
       "name": "explorer",
       "title": "oSPARC Explorer",
       "include": [
@@ -67,7 +67,7 @@
     {
       "class": "qxl.testtapper.Application",
       "name": "testtapper",
-      "theme": "osparc.theme.Theme",
+      "theme": "osparc.theme.ThemeDark",
       "title": "Qooxdoo TestTAPper",
       "environment": {
         "qx.icontheme": "Tango"

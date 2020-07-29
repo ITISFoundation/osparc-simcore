@@ -31,7 +31,7 @@
   {
     "APPLICATION"  : "osparc",
     "QOOXDOO_PATH" : "../qooxdoo-sdk/",
-    "QXTHEME"      : "qx.theme.Modern",
+    "QXTHEME"      : "osparc.theme.ThemeDark",
     "API_EXCLUDE"  : ["qx.*", "${APPLICATION}.theme.*", "${APPLICATION}.test.*"],
     "LOCALES"      : [ "en" ],
     "ROOT"         : "."
