@@ -460,6 +460,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const selectButton = new qx.ui.menu.Button(this.tr("Select"));
       selectButton.addListener("execute", () => {
         item.setValue(true);
+        this.__userStudyContainer.setLastSelectedItem(item);
       }, this);
       return selectButton;
     },
@@ -531,8 +532,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __itemClicked: function(item, isShiftPressed) {
+      const studiesCont = this.__userStudyContainer;
       const selected = item.getValue();
-      const selection = this.__userStudyContainer.getSelection();
+      const selection = studiesCont.getSelection();
+
+      if (isShiftPressed) {
+        const lastIdx = studiesCont.getLastSelectedIndex();
+        const currentIdx = studiesCont.getIndex(item);
+        const minMaxIdx = [lastIdx, currentIdx].sort();
+        for (let i=minMaxIdx[0]; i<=minMaxIdx[1]; i++) {
+          const button = studiesCont.getChildren()[i];
+          button.setValue(true);
+        }
+      }
+      studiesCont.setLastSelectedIndex(studiesCont.getIndex(item));
+
       if (selected && selection.length === 1) {
         const studyData = this.__getStudyData(item.getUuid(), false);
         this.__startStudy(studyData);

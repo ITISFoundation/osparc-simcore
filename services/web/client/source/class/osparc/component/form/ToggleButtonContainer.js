@@ -21,6 +21,8 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
   },
 
   members: {
+    __lastSelectedIdx: null,
+
     // overridden
     add: function(child, options) {
       if (child instanceof qx.ui.form.ToggleButton) {
@@ -41,6 +43,7 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
      */
     resetSelection: function() {
       this.getChildren().map(button => button.setValue(false));
+      this.__lastSelectedIdx = null;
     },
 
     /**
@@ -64,6 +67,29 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
      */
     selectOne: function(child) {
       this.getChildren().map(button => button.setValue(button === child));
+      this.setLastSelectedIndex(this.getIndex(child));
+    },
+
+    /**
+     * Gets the index in the container of the given button.
+     * @param {qx.ui.form.ToggleButton} child Button that will be checked
+     */
+    getIndex: function(child) {
+      return this.getChildren().findIndex(button => button === child);
+    },
+
+    getLastSelectedIndex: function() {
+      return this.__lastSelectedIdx;
+    },
+
+    setLastSelectedIndex: function(idx) {
+      if (idx >= 0 && idx < this.getChildren().length-1) {
+        this.__lastSelectedIdx = idx;
+      }
+    },
+
+    setLastSelectedItem: function(item) {
+      this.setLastSelectedIndex(this.getIndex(item));
     }
   }
 });
