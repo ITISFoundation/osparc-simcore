@@ -309,8 +309,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __resetCtrlField: function(portId) {
       let data = this._getCtrlFieldChild(portId);
       if (data) {
-        let child = data.child;
-        let idx = data.idx;
+        const {child, idx} = data;
         const layoutProps = child.getLayoutProperties();
         if (layoutProps.column === this._gridPos.ctrlField) {
           this._remove(child);
