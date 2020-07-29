@@ -86,6 +86,7 @@ def test_project_against_schema(data_path, project_schema, this_repo_root_dir):
             "thumbnail": "labore incid",
             "accessRights": {},
             "workbench": data["workbench"],
+            "dev": {},
         }
         data = prj
 
