@@ -309,8 +309,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __resetCtrlField: function(portId) {
       let data = this._getCtrlFieldChild(portId);
       if (data) {
-        let child = data.child;
-        let idx = data.idx;
+        const {child, idx} = data;
         const layoutProps = child.getLayoutProperties();
         if (layoutProps.column === this._gridPos.ctrlField) {
           this._remove(child);
@@ -515,8 +514,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     removeParameter: function(portId) {
       this.getControlParam(portId).setEnabled(false);
-      if ("parameter" in this._form.getControl(portId)) {
-        delete this._form.getControl(portId).parameter;
+      let ctrlField = this._form.getControl(portId);
+      if (ctrlField && "parameter" in ctrlField) {
+        delete ctrlField.parameter;
       }
 
       this.__parameterRemoved(portId);
