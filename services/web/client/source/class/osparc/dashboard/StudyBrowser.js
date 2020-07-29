@@ -456,7 +456,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return menu;
     },
 
-    __getSelectMenuButton: function(item, studyData) {
+    __getSelectMenuButton: function(item) {
       const selectButton = new qx.ui.menu.Button(this.tr("Select"));
       selectButton.addListener("execute", () => {
         item.setValue(true);
