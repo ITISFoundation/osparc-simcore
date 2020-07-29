@@ -127,7 +127,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     },
 
     __createShowSweeperButton: function() {
-      const parametersButton = this.__createButton(this.tr("Sweeper"), "broom", "showSweeperButton", "showSweeper");
+      const parametersButton = this.__createButton(this.tr("Sweeper"), "paw", "showSweeperButton", "showSweeper");
       return parametersButton;
     },
 
