@@ -159,7 +159,7 @@ class ServiceInput(ServiceProperty):
     )
 
 
-class ServiceData(BaseModel):
+class ServiceBase(BaseModel):
     key: constr(regex=KEY_RE) = Field(
         ...,
         title="",
@@ -176,6 +176,9 @@ class ServiceData(BaseModel):
         # regex=VERSION_RE,
         example=["1.0.0", "0.0.1"],
     )
+
+
+class ServiceData(ServiceBase):
     integration_version: Optional[constr(regex=VERSION_RE)] = Field(
         None,
         alias="integration-version",
@@ -222,6 +225,23 @@ class ServiceData(BaseModel):
         description = "Description of a simcore node 'class' with input and output"
         title = "simcore node"
         extra = Extra.forbid
+
+
+class ServiceAtDB(ServiceBase):
+    version: constr(regex=VERSION_RE) = Field(
+        ...,
+        description="service version number",
+        example=["1.0.0", "0.0.1"],
+        alias="tag",
+    )
+    gid: int = Field(..., description="defines the group id", example=1)
+    execute_access: bool = Field(
+        False,
+        description="defines whether the group defined by gid can execute the service",
+    )
+
+    class Config:
+        orm_mode = True
 
 
 if __name__ == "__main__":
