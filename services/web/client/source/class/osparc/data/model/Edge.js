@@ -45,6 +45,7 @@ qx.Class.define("osparc.data.model.Edge", {
     this.setEdgeId(edgeId || osparc.utils.Utils.uuidv4());
     this.setInputNode(node1);
     this.setOutputNode(node2);
+    this.setIsPortConnected(node2.getPropsForm().hasAnyPortConnected());
   },
 
   properties: {
@@ -81,11 +82,10 @@ qx.Class.define("osparc.data.model.Edge", {
     },
 
     _applyOutputNode: function(node) {
-      node.getPropsForm().addListener("linkModified", e => {
-        const linkModified = e.getData();
-        const added = linkModified.added;
-        console.log("Living on the edge", node.getLabel(), added);
+      node.getPropsForm().addListener("linkModified", () => {
+        this.setIsPortConnected(node.getPropsForm().hasAnyPortConnected());
       });
+      this.setIsPortConnected(node.getPropsForm().hasAnyPortConnected());
     }
   }
 });
