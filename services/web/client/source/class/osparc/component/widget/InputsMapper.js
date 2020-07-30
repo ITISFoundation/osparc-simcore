@@ -185,8 +185,8 @@ qx.Class.define("osparc.component.widget.InputsMapper", {
           const itemProps = osparc.dev.fake.Data.getItem(null, Object.keys(node.getInputsDefault())[0], defValueId);
           if (itemProps) {
             let form = new osparc.component.form.Auto(itemProps);
-            let propsWidget = new osparc.component.form.renderer.PropForm(form, this.getNode());
-            newItemBranch["propsWidget"] = propsWidget;
+            let propsForm = new osparc.component.form.renderer.PropForm(form, this.getNode());
+            newItemBranch["propsForm"] = propsForm;
           }
           data.children.push(newItemBranch);
           const values = defValue[defValueId];
@@ -275,8 +275,8 @@ qx.Class.define("osparc.component.widget.InputsMapper", {
         const itemProps = osparc.dev.fake.Data.getItem(null, fromPortKey, newItem.getKey().getKey());
         if (itemProps) {
           let form = new osparc.component.form.Auto(itemProps);
-          let propsWidget = new osparc.component.form.renderer.PropForm(form, this.getNode());
-          newItem["propsWidget"] = propsWidget;
+          let propsForm = new osparc.component.form.renderer.PropForm(form, this.getNode());
+          newItem["propsForm"] = propsForm;
         }
       }
     },
@@ -314,8 +314,8 @@ qx.Class.define("osparc.component.widget.InputsMapper", {
         return;
       }
       let selectedItem = selectedItems.toArray()[0];
-      if (selectedItem.propsWidget) {
-        this._add(selectedItem["propsWidget"]);
+      if (selectedItem.propsForm) {
+        this._add(selectedItem["propsForm"]);
       }
     }
   }
