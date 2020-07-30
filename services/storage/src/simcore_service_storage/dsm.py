@@ -235,6 +235,7 @@ class DataStorageManager:
                     # there seems to be no project whatsoever for user_id
                     return []
 
+                # only keep files from non-deleted project
                 clean_data = deque()
                 for dx in data:
                     d = dx.fmd
@@ -254,67 +255,9 @@ class DataStorageManager:
                                 / Path(d.node_name)
                                 / Path(d.file_name)
                             )
-                        async with self.engine.acquire() as conn:
-                            query = (
-                                file_meta_data.update()
-                                .where(
-                                    and_(
-                                        file_meta_data.c.node_id == d.node_id,
-                                        file_meta_data.c.user_id == d.user_id,
-                                    )
-                                )
-                                .values(
-                                    project_name=d.project_name,
-                                    node_name=d.node_name,
-                                    raw_file_path=d.raw_file_path,
-                                    file_id=d.file_id,
-                                    display_file_path=d.display_file_path,
-                                )
-                            )
-                            await conn.execute(query)
+                            # once the data was sync to postgres metadata table at this point
                             clean_data.append(dx)
 
-                data = clean_data
-
-                # same as above, make sure file is physically present on s3
-                clean_data = []
-                # FIXME: MaG: This is inefficient: Do this automatically when file is modified
-                session = aiobotocore.get_session()
-                async with session.create_client(
-                    "s3",
-                    endpoint_url=self.s3_client.endpoint_url,
-                    aws_access_key_id=self.s3_client.access_key,
-                    aws_secret_access_key=self.s3_client.secret_key,
-                ) as client:
-                    responses = await asyncio.gather(
-                        *[
-                            client.list_objects_v2(
-                                Bucket=_d.bucket_name, Prefix=_d.object_name
-                            )
-                            for _d in [__d.fmd for __d in data]
-                        ]
-                    )
-                    for dx, resp in zip(data, responses):
-                        if "Contents" in resp:
-                            clean_data.append(dx)
-                            d = dx.fmd
-                            d.file_size = resp["Contents"][0]["Size"]
-                            d.last_modified = str(resp["Contents"][0]["LastModified"])
-                            async with self.engine.acquire() as conn:
-                                query = (
-                                    file_meta_data.update()
-                                    .where(
-                                        and_(
-                                            file_meta_data.c.node_id == d.node_id,
-                                            file_meta_data.c.user_id == d.user_id,
-                                        )
-                                    )
-                                    .values(
-                                        file_size=d.file_size,
-                                        last_modified=d.last_modified,
-                                    )
-                                )
-                                await conn.execute(query)
                 data = clean_data
 
         elif location == DATCORE_STR:
