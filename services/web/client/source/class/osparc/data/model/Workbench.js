@@ -124,10 +124,9 @@ qx.Class.define("osparc.data.model.Workbench", {
       const connectedEdges = [];
       const edges = Object.values(this.__edges);
       for (const edge of edges) {
-        if (edge.getInputNodeId() === nodeId) {
-          connectedEdges.push(edge.getEdgeId());
-        }
-        if (edge.getOutputNodeId() === nodeId) {
+        const inputNodeId = edge.getInputNodeId();
+        const outputNodeId = edge.getOutputNodeId();
+        if ([inputNodeId, outputNodeId].includes(nodeId)) {
           connectedEdges.push(edge.getEdgeId());
         }
       }
