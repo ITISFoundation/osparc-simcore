@@ -80,7 +80,6 @@ async def sync_registry_task(app: FastAPI) -> None:
     # get list of services from director
     while True:
         try:
-            await asyncio.sleep(5)
             logger.debug("syncing services between registry and database...")
             services_in_registry: Set[
                 Tuple[ServiceKey, ServiceVersion]
@@ -93,14 +92,14 @@ async def sync_registry_task(app: FastAPI) -> None:
             # check that the db has all the services at least once
 
             missing_services_in_db = services_in_registry - services_in_db
-            if not missing_services_in_db:
-                logger.debug("no missing services in db")
-                continue
-            logger.debug(
-                "missing services in db:\n%s", pformat(missing_services_in_db),
-            )
-            # update db (rationale: missing services are shared with everyone for now)
-            await _create_services_in_db(app, missing_services_in_db)
+            if missing_services_in_db:
+                logger.debug(
+                    "missing services in db:\n%s", pformat(missing_services_in_db),
+                )
+                # update db (rationale: missing services are shared with everyone for now)
+                await _create_services_in_db(app, missing_services_in_db)
+
+            await asyncio.sleep(5)
 
         except CancelledError:
             # task is stopped
