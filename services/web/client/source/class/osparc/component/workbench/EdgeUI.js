@@ -23,7 +23,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let edge = new osparc.data.model.Edge(edgeId, node1Id, node2Id);
+ *   let edge = new osparc.data.model.Edge(edgeId, node1, node2);
  *   let edgeRepresentation = svgWidget.drawCurve(x1, y1, x2, y2);
  *   let edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
  * </pre>
