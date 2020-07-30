@@ -47,6 +47,7 @@ class ServicesRepository(BaseRepository):
     async def create_service(self, new_service: ServiceAtDB) -> ServiceAtDB:
         row: RowProxy = await (
             await self.connection.execute(
+                # pylint: disable=no-value-for-parameter
                 services.insert()
                 .values(**new_service.dict(by_alias=True))
                 .returning(literal_column("*"))
