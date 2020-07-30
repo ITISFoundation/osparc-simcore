@@ -5,6 +5,7 @@ from typing import List, Optional
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
 from sqlalchemy.sql import and_, or_, distinct
+from sqlalchemy import literal_column
 
 from ...models.domain.service import ServiceAtDB, ServiceBase
 from ...models.schemas.dag import DAGIn
@@ -44,13 +45,15 @@ class ServicesRepository(BaseRepository):
     #         return ServiceAtDB(**row)
     #     return None
 
-    # async def create_service(self, service: ServiceBase) -> int:
-    #     stmt = services.insert().values(
-    #         workbench=json.dumps(dag.dict()["workbench"]),
-    #         **dag.dict(exclude={"workbench"})
-    #     )
-    #     new_id: int = await (await self.connection.execute(stmt)).scalar()
-    #     return new_id
+    async def create_service(self, new_service: ServiceAtDB) -> ServiceAtDB:
+        row: RowProxy = await (
+            await self.connection.execute(
+                services.insert()
+                .values(**new_service.dict(by_alias=True))
+                .returning(literal_column("*"))
+            )
+        ).first()
+        return ServiceAtDB(**row)
 
     # async def replace_dag(self, dag_id: int, dag: DAGIn):
     #     stmt = (
