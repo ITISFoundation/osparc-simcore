@@ -83,7 +83,7 @@ qx.Class.define("osparc.data.model.Edge", {
     _applyOutputNode: function(node) {
       node.getPropsForm().addListener("linkModified", e => {
         const linkModified = e.getData();
-        const {portId, added} = linkModified;
+        const added = linkModified.added;
         console.log("Living on the edge", node.getLabel(), added);
       });
     }
