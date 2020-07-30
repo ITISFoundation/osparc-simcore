@@ -86,7 +86,7 @@ qx.Class.define("osparc.ui.tree.CheckboxTree", {
       let checked = [];
       nodes.forEach(node => {
         if (node.getChecked()) {
-          checked.push(node);
+          checked.push(qx.util.Serializer.toNativeObject(node));
         } else {
           checked = [...checked, ...this.getChecked(node)];
         }

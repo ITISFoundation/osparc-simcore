@@ -520,7 +520,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           get: {
             method: "GET",
-            url: "/resource/classifiers.json",
+            url: "/resource/dev/classifiers.json",
             isJsonFile: true
           }
         }

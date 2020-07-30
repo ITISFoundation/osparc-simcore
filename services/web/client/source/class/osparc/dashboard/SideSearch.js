@@ -5,6 +5,9 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
+/**
+ * @asset(dev/classifiersData.json)
+ */
 qx.Class.define("osparc.dashboard.SideSearch", {
   extend: qx.ui.tabview.TabView,
   construct: function() {
@@ -23,7 +26,7 @@ qx.Class.define("osparc.dashboard.SideSearch", {
         appearance: "dashboard-page",
         layout: new qx.ui.layout.Grow()
       });
-      classifiersPage.add(new osparc.component.filter.TreeFilter("classifiers", "dashboardClassifiers"));
+      classifiersPage.add(new osparc.component.filter.TreeFilter("classifiers", "exploreBrowser"));
       classifiersPage.getChildControl("button").setFont("text-16");
       return classifiersPage;
     }
