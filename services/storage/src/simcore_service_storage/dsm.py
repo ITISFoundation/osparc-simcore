@@ -24,6 +24,7 @@ from s3wrapper.s3_client import S3Client
 from servicelib.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.client_session import get_client_session
 
+from .utils import expo
 from .datcore_wrapper import DatcoreWrapper
 from .models import (
     DatasetMetaData,
@@ -411,6 +412,77 @@ class DataStorageManager:
 
         # actually we have to query the master db
 
+    async def metadata_file_updater(
+        self,
+        file_uuid: str,
+        bucket_name: str,
+        object_name: str,
+        file_size: int,
+        last_modified: str,
+        max_update_retries: int = 50,
+    ):
+        """
+        Will retry max_update_retries to update the metadata on the file after an upload.
+        If it is not successfull it will exit and log an error.
+        
+        Note: MinIO bucket notifications are not available with S3, that's why we have the 
+        following hacky solution
+        """
+        current_iteraction = 0
+
+        session = aiobotocore.get_session()
+        async with session.create_client(
+            "s3",
+            endpoint_url=self.s3_client.endpoint_url,
+            aws_access_key_id=self.s3_client.access_key,
+            aws_secret_access_key=self.s3_client.secret_key,
+        ) as client:
+            current_iteraction += 1
+            continue_loop = True
+            sleep_generator = expo()
+            update_succeeded = False
+
+            while continue_loop:
+                result = await client.list_objects_v2(
+                    Bucket=bucket_name, Prefix=object_name
+                )
+                sleep_amount = next(sleep_generator)
+                continue_loop = current_iteraction <= max_update_retries
+
+                if "Contents" not in result:
+                    logger.info("File '%s' was not found in the bucket", object_name)
+                    await asyncio.sleep(sleep_amount)
+                    continue
+
+                new_file_size = result["Contents"][0]["Size"]
+                new_last_modified = str(result["Contents"][0]["LastModified"])
+                if file_size == new_file_size or last_modified == new_last_modified:
+                    logger.info("File '%s' did not change yet", object_name)
+                    await asyncio.sleep(sleep_amount)
+                    continue
+
+                # finally update the data in the database and exit
+                continue_loop = False
+
+                logger.info(
+                    "Obtained this from S3: new_file_size=%s new_last_modified=%s",
+                    new_file_size,
+                    new_last_modified,
+                )
+
+                async with self.engine.acquire() as conn:
+                    query = (
+                        file_meta_data.update()
+                        .where(file_meta_data.c.file_uuid == file_uuid)
+                        .values(
+                            file_size=new_file_size, last_modified=new_last_modified
+                        )
+                    )  # primary key search is faster
+                    await conn.execute(query)
+                    update_succeeded = True
+            if not update_succeeded:
+                logger.error("Could not update file metadata for '%s'", file_uuid)
+
     async def upload_link(self, user_id: str, file_uuid: str):
         @retry(**postgres_service_retry_policy_kwargs)
         async def _execute_query():
@@ -427,11 +499,24 @@ class DataStorageManager:
                 if exists is None:
                     ins = file_meta_data.insert().values(**vars(fmd))
                     await conn.execute(ins)
+                return fmd.file_size, fmd.last_modified
 
-        await _execute_query()
+        file_size, last_modified = await _execute_query()
 
         bucket_name = self.simcore_bucket_name
         object_name = file_uuid
+
+        # a parallel task is tarted which will update the metadata of the updated file
+        # once the update has finished.
+        asyncio.ensure_future(
+            self.metadata_file_updater(
+                file_uuid=file_uuid,
+                bucket_name=bucket_name,
+                object_name=object_name,
+                file_size=file_size,
+                last_modified=last_modified,
+            )
+        )
         return self.s3_client.create_presigned_put_url(bucket_name, object_name)
 
     async def copy_file_s3_s3(self, user_id: str, dest_uuid: str, source_uuid: str):
@@ -685,7 +770,7 @@ class DataStorageManager:
                 await conn.execute(ins)
 
     async def delete_project_simcore_s3(
-        self, user_id: str, project_id: str, node_id: Optional[str]=None
+        self, user_id: str, project_id: str, node_id: Optional[str] = None
     ) -> web.Response:
         """ Deletes all files from a given node in a project in simcore.s3 and updated db accordingly.
             If node_id is not given, then all the project files db entries are deleted.
