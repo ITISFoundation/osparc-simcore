@@ -92,7 +92,7 @@ def docker_compose_file(default_app_cfg):
     os.environ["TEST_POSTGRES_USER"] = cfg["user"]
     os.environ["TEST_POSTGRES_PASSWORD"] = cfg["password"]
 
-    dc_path = current_dir / "docker-compose-devel.yml"
+    dc_path = current_dir / "docker-compose.yml"
 
     assert dc_path.exists()
     yield str(dc_path)
