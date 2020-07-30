@@ -10,7 +10,6 @@ from aiohttp import web
 from servicelib.application import create_safe_application
 
 from .activity import setup_activity
-from .application_proxy import setup_app_proxy
 from .catalog import setup_catalog
 from .computation import setup_computation
 from .db import setup_db
@@ -67,7 +66,6 @@ def create_application(config: Dict) -> web.Application:
     setup_projects(app)  # needs storage
     setup_studies_access(app)
     setup_activity(app)
-    setup_app_proxy(app)
     setup_resource_manager(app)
     setup_tags(app)
     setup_catalog(app)
