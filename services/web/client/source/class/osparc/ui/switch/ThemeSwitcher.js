@@ -15,27 +15,19 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
   construct: function() {
     this.base(arguments);
 
-    const validThemes = [];
-    const themes = qx.Theme.getAll();
-    for (const key in themes) {
-      const theme = themes[key];
-      if (theme.type === "meta") {
-        validThemes.push(theme);
-      }
-    }
+    const validThemes = Object.values(qx.Theme.getAll()).filter(theme => theme.type === "meta");
     if (validThemes.length !== 2) {
-      this.setVisibility("exluded");
+      this.setVisibility("excluded");
       return;
     }
 
-    this.addListener("changeChecked", () => {
-      const themeMgr = qx.theme.manager.Meta.getInstance();
-      const currentTheme = themeMgr.getTheme();
-      if (currentTheme === validThemes[0]) {
-        themeMgr.setTheme(validThemes[1]);
-      } else {
-        themeMgr.setTheme(validThemes[0]);
+    this.addListener("changeChecked", e => {
+      let themeName = "osparc.theme.ThemeDark";
+      if (e.getData()) {
+        themeName = "osparc.theme.ThemeLight";
       }
+      qx.theme.manager.Meta.getInstance().setTheme(qx.Theme.getByName(themeName));
+      window.localStorage.setItem("themeName", themeName);
     });
   }
 });
