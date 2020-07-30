@@ -6,8 +6,8 @@ from aiopg.sa.result import RowProxy
 from sqlalchemy.sql import and_
 from sqlalchemy.sql.expression import select
 
-from ...models.domain.group import GroupAtDB
-from ..tables import user_to_groups, groups
+from ...models.domain.group import Group, GroupAtDB
+from ..tables import user_to_groups, groups, GroupType
 from ._base import BaseRepository
 
 
@@ -24,6 +24,14 @@ class GroupsRepository(BaseRepository):
             if row:
                 groups_in_db.append(GroupAtDB(**row))
         return groups_in_db
+
+    async def get_everyone_group(self) -> GroupAtDB:
+        row: RowProxy = await (
+            await self.connection.execute(
+                sa.select([groups]).where(groups.c.type == GroupType.EVERYONE)
+            )
+        ).first()
+        return GroupAtDB(**row)
 
     # async def get_service(self, key: str, tag: str, gid: int) -> Optional[DAGAtDB]:
     #     stmt = services.select().where(
