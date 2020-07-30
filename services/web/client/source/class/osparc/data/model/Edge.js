@@ -60,6 +60,7 @@ qx.Class.define("osparc.data.model.Edge", {
 
     outputNode: {
       check: "osparc.data.model.Node",
+      apply: "_applyOutputNode",
       nullable: false
     },
 
@@ -70,13 +71,21 @@ qx.Class.define("osparc.data.model.Edge", {
     }
   },
 
-  memebers: {
+  members: {
     getInputNodeId: function() {
       this.getInputNode().getNodeId();
     },
 
     getOutputNodeId: function() {
       this.getOutputNode().getNodeId();
+    },
+
+    _applyOutputNode: function(node) {
+      node.getPropForm().addListener("linkModified", e => {
+        const linkModified = e.getData();
+        const {portId, added} = linkModified;
+        console.log("Living on the edge", node.getName(), added);
+      });
     }
   }
 });
