@@ -1,20 +1,17 @@
 import asyncio
 import logging
 from asyncio.futures import CancelledError
-from os import sync
-from pprint import pformat, pprint
-from typing import List, Set, Tuple
+from pprint import pformat
+from typing import Set, Tuple
 
 from aiopg.sa import Engine
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from pydantic import ValidationError
 
-from ..api.dependencies.database import get_repository
 from ..api.dependencies.director import get_director_session
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.services import ServicesRepository
 from ..models.domain.service import ServiceAtDB, ServiceData
-from ..services.director import AuthSession
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +105,7 @@ async def sync_registry_task(app: FastAPI) -> None:
         except CancelledError:
             # task is stopped
             return
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             logger.exception("some error occured")
 
 

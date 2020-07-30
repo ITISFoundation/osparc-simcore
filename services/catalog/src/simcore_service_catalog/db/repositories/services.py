@@ -4,11 +4,10 @@ from typing import List, Optional
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
-from sqlalchemy.sql import and_, or_, distinct
+from sqlalchemy.sql import or_
 from sqlalchemy import literal_column
 
-from ...models.domain.service import ServiceAtDB, ServiceBase
-from ...models.schemas.dag import DAGIn
+from ...models.domain.service import ServiceAtDB
 from ..tables import services
 from ._base import BaseRepository
 
