@@ -2,7 +2,8 @@ import asyncio
 import logging
 from asyncio.futures import CancelledError
 from os import sync
-from typing import List
+from pprint import pformat, pprint
+from typing import List, Set, Tuple
 
 from aiopg.sa import Engine
 from fastapi import Depends, FastAPI
@@ -10,20 +11,27 @@ from pydantic import ValidationError
 
 from ..api.dependencies.database import get_repository
 from ..api.dependencies.director import get_director_session
+from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.services import ServicesRepository
 from ..models.domain.service import ServiceAtDB, ServiceData
 from ..services.director import AuthSession
 
 logger = logging.getLogger(__name__)
 
+ServiceKey = str
+ServiceVersion = str
 
-async def _list_director_services(app: FastAPI) -> List[ServiceData]:
+
+async def _list_registry_services(
+    app: FastAPI,
+) -> Set[Tuple[ServiceKey, ServiceVersion]]:
     client = get_director_session(app)
     data = await client.get("/services")
-    services: List[ServiceData] = []
+    services: Set[Tuple[ServiceKey, ServiceVersion]] = set()
     for x in data:
         try:
-            services.append(ServiceData.parse_obj(x))
+            service_data = ServiceData.parse_obj(x)
+            services.add((service_data.key, service_data.version))
         # services = parse_obj_as(List[ServiceOut], data)
         except ValidationError as exc:
             logger.warning(
@@ -36,11 +44,39 @@ async def _list_director_services(app: FastAPI) -> List[ServiceData]:
     return services
 
 
-async def _list_db_services(app: FastAPI) -> List[ServiceAtDB]:
+async def _list_db_services(app: FastAPI) -> Set[Tuple[ServiceKey, ServiceVersion]]:
     engine: Engine = app.state.engine
     async with engine.acquire() as conn:
         services_repo = ServicesRepository(conn)
-        return await services_repo.list_distinct_services()
+        return {
+            (service.key, service.version)
+            for service in await services_repo.list_distinct_services()
+        }
+
+
+async def _get_everyone_gid(app: FastAPI) -> int:
+    engine: Engine = app.state.engine
+    async with engine.acquire() as conn:
+        groups_repo = GroupsRepository(conn)
+        return (await groups_repo.get_everyone_group()).gid
+
+
+async def _create_services_in_db(
+    app: FastAPI, services: Set[Tuple[ServiceKey, ServiceVersion]]
+) -> None:
+    everyone_gid = await _get_everyone_gid(app)
+    engine: Engine = app.state.engine
+    async with engine.acquire() as conn:
+        services_repo = ServicesRepository(conn)
+        for service_key, service_version in services:
+            await services_repo.create_service(
+                ServiceAtDB(
+                    key=service_key,
+                    tag=service_version,
+                    gid=everyone_gid,
+                    execute_access=True,
+                )
+            )
 
 
 async def sync_registry_task(app: FastAPI) -> None:
@@ -48,34 +84,29 @@ async def sync_registry_task(app: FastAPI) -> None:
     while True:
         try:
             await asyncio.sleep(5)
-            logger.info("syncing...")
-            services_in_registry = await _list_director_services(app)
+            logger.debug("syncing services between registry and database...")
+            services_in_registry: Set[
+                Tuple[ServiceKey, ServiceVersion]
+            ] = await _list_registry_services(app)
 
-            # logger.debug(
-            #     "services in registry:\n%s",
-            #     [
-            #         f"{service.key}:{service.version}"
-            #         for service in services_in_registry
-            #     ],
-            # )
-            services_in_registry_filtered = [
-                {service.key: service.version} for service in services_in_registry
-            ]
-            logger.debug("filtered registry:\n%s", services_in_registry_filtered)
-            services_in_db = await _list_db_services(app)
-            # logger.debug(
-            #     "services in db:\n%s", services_in_db,
-            # )
-            services_in_db_filtered = [
-                {service.key: service.version} for service in services_in_db
-            ]
-            logger.debug("filtered db:\n%s", services_in_db_filtered)
+            services_in_db: Set[
+                Tuple[ServiceKey, ServiceVersion]
+            ] = await _list_db_services(app)
+
             # check that the db has all the services at least once
-            # for service in services_in_db:
 
-            # missing_services_in_db = []
+            missing_services_in_db = services_in_registry - services_in_db
+            if not missing_services_in_db:
+                logger.debug("no missing services in db")
+                continue
+            logger.debug(
+                "missing services in db:\n%s", pformat(missing_services_in_db),
+            )
+            # update db (rationale: missing services are shared with everyone for now)
+            await _create_services_in_db(app, missing_services_in_db)
 
         except CancelledError:
+            # task is stopped
             return
         except Exception:
             logger.exception("some error occured")
