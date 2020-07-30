@@ -1,5 +1,3 @@
-import json
-
 from typing import List, Optional
 
 import sqlalchemy as sa

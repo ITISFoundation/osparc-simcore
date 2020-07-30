@@ -1,13 +1,10 @@
-import json
-from typing import List, Optional
+from typing import List
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
-from sqlalchemy.sql import and_
-from sqlalchemy.sql.expression import select
 
-from ...models.domain.group import Group, GroupAtDB
-from ..tables import user_to_groups, groups, GroupType
+from ...models.domain.group import GroupAtDB
+from ..tables import GroupType, groups, user_to_groups
 from ._base import BaseRepository
 
 
