@@ -240,24 +240,26 @@ class DataStorageManager:
                 clean_data = deque()
                 for dx in data:
                     d = dx.fmd
-                    if d.project_id in uuid_name_dict:
-                        d.project_name = uuid_name_dict[d.project_id]
-                        if d.node_id in uuid_name_dict:
-                            d.node_name = uuid_name_dict[d.node_id]
-
-                        d.raw_file_path = str(
-                            Path(d.project_id) / Path(d.node_id) / Path(d.file_name)
+                    if d.project_id not in uuid_name_dict:
+                        continue
+                    
+                    d.project_name = uuid_name_dict[d.project_id]
+                    if d.node_id in uuid_name_dict:
+                        d.node_name = uuid_name_dict[d.node_id]
+                    
+                    d.raw_file_path = str(
+                        Path(d.project_id) / Path(d.node_id) / Path(d.file_name)
+                    )
+                    d.display_file_path = d.raw_file_path
+                    d.file_id = d.file_uuid
+                    if d.node_name and d.project_name:
+                        d.display_file_path = str(
+                            Path(d.project_name)
+                            / Path(d.node_name)
+                            / Path(d.file_name)
                         )
-                        d.display_file_path = d.raw_file_path
-                        d.file_id = d.file_uuid
-                        if d.node_name and d.project_name:
-                            d.display_file_path = str(
-                                Path(d.project_name)
-                                / Path(d.node_name)
-                                / Path(d.file_name)
-                            )
-                            # once the data was sync to postgres metadata table at this point
-                            clean_data.append(dx)
+                        # once the data was sync to postgres metadata table at this point
+                        clean_data.append(dx)
 
                 data = clean_data
 
