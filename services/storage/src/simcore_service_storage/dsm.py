@@ -23,6 +23,7 @@ from yarl import URL
 from s3wrapper.s3_client import S3Client
 from servicelib.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.client_session import get_client_session
+from servicelib.utils import fire_and_forget_task
 
 from .utils import expo
 from .datcore_wrapper import DatcoreWrapper
@@ -242,11 +243,11 @@ class DataStorageManager:
                     d = dx.fmd
                     if d.project_id not in uuid_name_dict:
                         continue
-                    
+
                     d.project_name = uuid_name_dict[d.project_id]
                     if d.node_id in uuid_name_dict:
                         d.node_name = uuid_name_dict[d.node_id]
-                    
+
                     d.raw_file_path = str(
                         Path(d.project_id) / Path(d.node_id) / Path(d.file_name)
                     )
@@ -254,9 +255,7 @@ class DataStorageManager:
                     d.file_id = d.file_uuid
                     if d.node_name and d.project_name:
                         d.display_file_path = str(
-                            Path(d.project_name)
-                            / Path(d.node_name)
-                            / Path(d.file_name)
+                            Path(d.project_name) / Path(d.node_name) / Path(d.file_name)
                         )
                         # once the data was sync to postgres metadata table at this point
                         clean_data.append(dx)
@@ -487,7 +486,7 @@ class DataStorageManager:
 
     async def upload_link(self, user_id: str, file_uuid: str):
         @retry(**postgres_service_retry_policy_kwargs)
-        async def _execute_query():
+        async def _execute_query() -> Tuple[int, str]:
             async with self.engine.acquire() as conn:
                 fmd = FileMetaData()
                 fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
@@ -510,7 +509,7 @@ class DataStorageManager:
 
         # a parallel task is tarted which will update the metadata of the updated file
         # once the update has finished.
-        asyncio.ensure_future(
+        fire_and_forget_task(
             self.metadata_file_updater(
                 file_uuid=file_uuid,
                 bucket_name=bucket_name,
