@@ -166,7 +166,7 @@ def app_config(_webserver_dev_config: Dict, aiohttp_unused_port) -> Dict:
     """
     cfg = deepcopy(_webserver_dev_config)
     cfg["main"]["port"] = aiohttp_unused_port()
-    cfg["main"][
+    cfg["main"]["db"][
         "init_tables"
     ] = False  # this is done by alembic and the postgres_db fixture
     return cfg
