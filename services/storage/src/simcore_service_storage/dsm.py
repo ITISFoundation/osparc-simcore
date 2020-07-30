@@ -7,6 +7,7 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+from collections import deque
 
 import aiobotocore
 import aiofiles
@@ -198,7 +199,7 @@ class DataStorageManager:
 
             Can filter upon regular expression (for now only on key: value pairs of the FileMetaData)
         """
-        data = []
+        data = deque()
         if location == SIMCORE_S3_STR:
             async with self.engine.acquire() as conn:
                 query = sa.select([file_meta_data]).where(
@@ -234,8 +235,7 @@ class DataStorageManager:
                     # there seems to be no project whatsoever for user_id
                     return []
 
-                # only keep files from non-deleted project --> This needs to be fixed
-                clean_data = []
+                clean_data = deque()
                 for dx in data:
                     d = dx.fmd
                     if d.project_id in uuid_name_dict:
@@ -324,7 +324,7 @@ class DataStorageManager:
 
         if uuid_filter:
             _query = re.compile(uuid_filter, re.IGNORECASE)
-            filtered_data = []
+            filtered_data = deque()
             for dx in data:
                 d = dx.fmd
                 if _query.search(d.file_uuid):
@@ -334,7 +334,7 @@ class DataStorageManager:
 
         if regex:
             _query = re.compile(regex, re.IGNORECASE)
-            filtered_data = []
+            filtered_data = deque()
             for dx in data:
                 d = dx.fmd
                 _vars = vars(d)
@@ -344,7 +344,7 @@ class DataStorageManager:
                         break
             return filtered_data
 
-        return data
+        return list(data)
 
     async def list_files_dataset(
         self, user_id: str, location: str, dataset_id: str
