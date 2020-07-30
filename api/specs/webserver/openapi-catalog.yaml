@@ -71,7 +71,7 @@ paths:
       description: Lists available services in catalog
       tags:
         - catalog
-      operationId: services_get
+      operationId: list_catalog_services
       parameters:
         - $ref: "#/components/parameters/ServiceType"
       responses:
