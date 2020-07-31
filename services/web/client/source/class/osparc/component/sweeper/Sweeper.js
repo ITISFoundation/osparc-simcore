@@ -80,8 +80,12 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
 
       this._addAt(new qx.ui.core.Spacer(null, 10), 2);
 
+      const iterationBtns = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      const deleteIterationsBtn = this.__deleteIterationsBtn();
+      iterationBtns.add(deleteIterationsBtn);
       const recreateIterationsBtn = this.__recreateIterationsBtn();
-      this._addAt(recreateIterationsBtn, 3);
+      iterationBtns.add(recreateIterationsBtn);
+      this._addAt(iterationBtns, 3);
       const iterationsTable = this.__iterationsTable = this.__createIterationsTable().set({
         minWidth: 400,
         minHeight: 200,
@@ -131,8 +135,31 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
       return params;
     },
 
+    __deleteIterationsBtn: function() {
+      const deleteIterationsBtn = new osparc.ui.form.FetchButton(this.tr("Delete Iterations")).set({
+        alignX: "left",
+        allowGrowX: false
+      });
+      deleteIterationsBtn.addListener("execute", () => {
+        // recreate table
+        if (this.__iterationsTable) {
+          this._remove(this.__iterationsTable);
+        }
+
+        this.__deleteIterations(deleteIterationsBtn)
+          .then(() => {
+            const paramCombinations = this.__iterationsTable = this.__createIterationsTable().set({
+              maxHeight: 400
+            });
+            this._addAt(paramCombinations, 4);
+          });
+      }, this);
+      return deleteIterationsBtn;
+    },
+
     __recreateIterationsBtn: function() {
       const recreateIterationsBtn = new osparc.ui.form.FetchButton(this.tr("Recreate Iterations")).set({
+        alignX: "right",
         allowGrowX: false
       });
       recreateIterationsBtn.addListener("execute", () => {
@@ -150,6 +177,18 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
           });
       }, this);
       return recreateIterationsBtn;
+    },
+
+    __deleteIterations: function(deleteIterationsBtn) {
+      return new Promise((resolve, reject) => {
+        deleteIterationsBtn.setFetching(true);
+        this.__primaryStudy.getSweeper().removeSecondaryStudies()
+          .then(() => {
+            deleteIterationsBtn.setFetching(false);
+            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Iterations deleted"));
+            resolve();
+          });
+      });
     },
 
     __recreateIterations: function(recreateIterationsBtn) {

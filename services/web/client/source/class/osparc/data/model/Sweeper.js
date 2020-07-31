@@ -147,7 +147,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
       });
     },
 
-    __removeSecondaryStudies: function() {
+    removeSecondaryStudies: function() {
       const deletePromises = [];
       this.getSecondaryStudyIds().forEach(secondaryStudyId => {
         deletePromises.push(this.__removeSecondaryStudy(secondaryStudyId));
@@ -184,7 +184,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
     recreateIterations: function(primaryStudyData) {
       return new Promise((resolve, reject) => {
         // delete previous iterations
-        this.__removeSecondaryStudies()
+        this.removeSecondaryStudies()
           .then(() => {
             const usedParams = osparc.data.StudyParametrizer.getActiveParameters(primaryStudyData, this.__parameters);
 
