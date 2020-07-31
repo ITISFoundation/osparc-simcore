@@ -141,43 +141,15 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
 
       const newParamBtn = new qx.ui.menu.Button(this.tr("Set new parameter"));
       newParamBtn.addListener("execute", () => {
-        const title = this.tr("Create new parameter");
-        const subtitle = this.tr("Do not use whitespaces");
-        const newParamName = new osparc.component.widget.Renamer(null, subtitle, title);
-        newParamName.addListener("labelChanged", e => {
-          const study = osparc.store.Store.getInstance().getCurrentStudy();
-          let newParameterLabel = e.getData()["newLabel"];
-          newParameterLabel = newParameterLabel.replace(" ", "_");
-          if (study.getSweeper().parameterLabelExists(newParameterLabel)) {
-            const msg = this.tr("Parameter name already exists");
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-          } else {
-            const param = study.getSweeper().addNewParameter(newParameterLabel);
-            this.addParameter(field.key, param);
-            newParamName.close();
-          }
-        }, this);
-        newParamName.center();
-        newParamName.open();
+        this.__createNewParameter(field.key);
       }, this);
       menu.add(newParamBtn);
 
       const existingParamMenu = new qx.ui.menu.Menu();
-      const repopulateMenu = () => {
-        existingParamMenu.removeAll();
-        const study = osparc.store.Store.getInstance().getCurrentStudy();
-        study.getSweeper().getParameters().forEach(param => {
-          const paramButton = new qx.ui.menu.Button(param.label);
-          paramButton.addListener("execute", () => {
-            this.addParameter(field.key, param);
-          }, this);
-          existingParamMenu.add(paramButton);
-        });
-      };
-      repopulateMenu();
+      this.__populateExistingParamsMenu(field.key, existingParamMenu);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       study.getSweeper().addListener("changeParameters", () => {
-        repopulateMenu();
+        this.__populateExistingParamsMenu(field.key, existingParamMenu);
       }, this);
 
       const existingParamBtn = new qx.ui.menu.Button(this.tr("Set existing parameter"), null, null, existingParamMenu);
@@ -189,6 +161,39 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         focusable: false
       });
       return menuBtn;
+    },
+
+    __createNewParameter: function(fieldKey) {
+      const title = this.tr("Create new parameter");
+      const subtitle = this.tr("Do not use whitespaces");
+      const newParamName = new osparc.component.widget.Renamer(null, subtitle, title);
+      newParamName.addListener("labelChanged", e => {
+        const study = osparc.store.Store.getInstance().getCurrentStudy();
+        let newParameterLabel = e.getData()["newLabel"];
+        newParameterLabel = newParameterLabel.replace(" ", "_");
+        if (study.getSweeper().parameterLabelExists(newParameterLabel)) {
+          const msg = this.tr("Parameter name already exists");
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        } else {
+          const param = study.getSweeper().addNewParameter(newParameterLabel);
+          this.addParameter(fieldKey, param);
+          newParamName.close();
+        }
+      }, this);
+      newParamName.center();
+      newParamName.open();
+    },
+
+    __populateExistingParamsMenu: function(fieldKey, existingParamMenu) {
+      existingParamMenu.removeAll();
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      study.getSweeper().getParameters().forEach(param => {
+        const paramButton = new qx.ui.menu.Button(param.label);
+        paramButton.addListener("execute", () => {
+          this.addParameter(fieldKey, param);
+        }, this);
+        existingParamMenu.add(paramButton);
+      });
     },
 
     hasVisibleInputs: function() {
