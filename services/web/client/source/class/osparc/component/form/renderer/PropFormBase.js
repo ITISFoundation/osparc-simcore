@@ -229,9 +229,14 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
           flex: 1
         });
 
-        const menuBtn = this.__getMenuButton(field);
+        const menuBtn = this.__getMenuButton(field).set({
+          visibility: "excluded"
+        });
+        osparc.data.model.Sweeper.isSweeperEnabled()
+          .then(isSweeperEnabled => {
+            menuBtn.setVisibility(isSweeperEnabled ? "visible" : "excluded");
+          });
         fieldWMenu.add(menuBtn);
-
         return fieldWMenu;
       }
       return field;

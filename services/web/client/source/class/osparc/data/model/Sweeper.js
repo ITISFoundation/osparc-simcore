@@ -39,6 +39,21 @@ qx.Class.define("osparc.data.model.Sweeper", {
     }
   },
 
+  statics: {
+    isSweeperEnabled: function() {
+      return new Promise((resolve, reject) => {
+        osparc.utils.LibVersions.getPlatformName()
+          .then(platformName => {
+            if (["dev", "master"].includes(platformName)) {
+              resolve(true);
+            } else {
+              resolve(false);
+            }
+          });
+      });
+    }
+  },
+
   events: {
     "changeParameters": "qx.event.type.Event"
   },

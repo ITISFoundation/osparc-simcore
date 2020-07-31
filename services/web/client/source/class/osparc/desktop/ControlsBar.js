@@ -111,9 +111,9 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       const iterationCtrls = new qx.ui.toolbar.Part();
       const sweeperButton = this.__createShowSweeperButton();
       iterationCtrls.add(sweeperButton);
-      osparc.utils.LibVersions.getPlatformName()
-        .then(platformName => {
-          if (["dev", "master"].includes(platformName)) {
+      osparc.data.model.Sweeper.isSweeperEnabled()
+        .then(isSweeperEnabled => {
+          if (isSweeperEnabled) {
             this.add(iterationCtrls);
           }
         });
