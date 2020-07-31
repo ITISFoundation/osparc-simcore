@@ -1,13 +1,13 @@
+import asyncio
 import re
 import uuid
-import aiofiles
-import asyncio
-import yaml
-from sidecar import config
-
+from contextlib import asynccontextmanager
 from typing import Tuple
 
-from contextlib import asynccontextmanager
+import aiofiles
+import yaml
+
+from sidecar import config
 
 
 class InvalidComposeSpec(Exception):

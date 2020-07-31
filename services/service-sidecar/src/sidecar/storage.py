@@ -1,5 +1,4 @@
 import collections
-
 from typing import Any
 
 
@@ -19,4 +18,3 @@ class Store:
 
 
 store = Store()
-

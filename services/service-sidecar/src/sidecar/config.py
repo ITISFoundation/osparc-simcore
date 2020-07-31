@@ -1,4 +1,5 @@
 import uuid
+
 from environs import Env
 
 env = Env()
@@ -15,5 +16,3 @@ max_combined_container_name_length = env.int("MAX_CONTAINER_NAME_LENGTH", 255)
 # When receiving SIGTERM the process has 10 seconds to cleanup its children
 # forcing our children to stop in 5 seconds in all cases
 stop_and_remove_timeout = env.int("STOP_AND_REMOVE_TIMEOUT", 5)
-
-

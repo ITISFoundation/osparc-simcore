@@ -1,24 +1,22 @@
+import logging
 import uuid
-import yaml
-import aiodocker
-from sidecar import config
+from typing import Any, Dict, List
 
+import aiodocker
+import yaml
 from fastapi import FastAPI, Query, Request, Response
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
-from typing import Dict, List, Any
-
+from sidecar import config
+from sidecar.storage import store
 from sidecar.utils import (
-    write_to_tmp_file,
-    async_command,
-    validate_compose_spec,
     InvalidComposeSpec,
     assemble_container_name,
+    async_command,
+    validate_compose_spec,
+    write_to_tmp_file,
 )
-from sidecar.storage import store
-
-import logging
 
 logger = logging.getLogger(__name__)
 
