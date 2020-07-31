@@ -1,0 +1,37 @@
+include ../../scripts/common.Makefile
+
+APP_NAME := $(notdir $(CURDIR))
+
+.DEFAULT_GOAL := help
+
+.PHONY: help
+help: ## display this message
+	@awk 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+.PHONY: _ensure-in-venv
+_ensure-in-venv:
+	@python3 -c "import os; os.environ['VIRTUAL_ENV']" || (echo "\n>>>> You are not in a virtualenv. Activate one <<<<\n"; exit 1)
+
+.PHONY: reqs
+reqs: _ensure-in-venv ## compiles pip requirements (.in -> .txt)
+	@$(MAKE_C) requirements reqs
+
+.PHONY: compile-dependencies
+compile-dependencies: _ensure-in-venv ## snapshot test & package dependencies
+	@pip-compile --build-isolation requirements/_base.in --output-file requirements/_base.txt
+	@pip-compile --build-isolation requirements/_test.in --output-file requirements/_test.txt
+
+.PHONY: install-dev-dependencies
+install-dev-dependencies: _ensure-in-venv ## install depenencies for development
+	@pip install -r requirements/_base.txt
+
+.PHONY: install-dev-dependencies
+install-dev-dependencies: _ensure-in-venv ## install depenencies for development
+	@pip install -r requirements/_base.txt
+
+.PHONY: dev-run
+dev-run: _ensure-in-venv ## starts the container on its own
+	@docker run -it --rm \
+			-p 8000:8000 \
+			-v $(CURDIR):/devel/services/service-sidecar \
+			local/service-sidecar:development
