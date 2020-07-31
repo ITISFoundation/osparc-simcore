@@ -162,7 +162,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
         enabled: false
       });
       infoBtn.addListener("execute", function() {
-        this.__showServiceInfo();
+        this.__showServiceDetails();
       }, this);
       infoPart.add(infoBtn);
       toolbar.add(infoPart);
@@ -288,8 +288,8 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       return osparc.utils.Services.getFromArray(this.__allServicesList, serviceKey, serviceVersion);
     },
 
-    __showServiceInfo: function() {
-      const win = new osparc.component.metadata.ServiceInfoWindow(this.__getSelectedService());
+    __showServiceDetails: function() {
+      const win = new osparc.component.metadata.ServiceDetailsWindow(this.__getSelectedService());
       win.center();
       win.open();
     },

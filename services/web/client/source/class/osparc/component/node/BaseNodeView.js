@@ -242,7 +242,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       titlePart.add(title);
 
       const infoBtn = new qx.ui.toolbar.Button(this.tr("Info"), "@FontAwesome5Solid/info-circle/14");
-      infoBtn.addListener("execute", () => this.__openServiceInfo(), this);
+      infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
       infoPart.add(infoBtn);
 
       if (osparc.data.Permissions.getInstance().canDo("study.node.update")) {
@@ -367,8 +367,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       win.open();
     },
 
-    __openServiceInfo: function() {
-      const win = new osparc.component.metadata.ServiceInfoWindow(this.getNode().getMetaData());
+    __openServiceDetails: function() {
+      const win = new osparc.component.metadata.ServiceDetailsWindow(this.getNode().getMetaData());
       win.center();
       win.open();
     },

@@ -7,20 +7,20 @@
  */
 
 /**
- * Window that contains the ServiceInfo of the given service metadata.
+ * Window that contains the ServiceDetails of the given service metadata.
  *
  * *Example*
  *
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   const win = new osparc.component.metadata.ServiceInfoWindow(service);
+ *   const win = new osparc.component.metadata.ServiceDetailsWindow(service);
  *   win.center();
  *   win.open();
  * </pre>
  */
 
-qx.Class.define("osparc.component.metadata.ServiceInfoWindow", {
+qx.Class.define("osparc.component.metadata.ServiceDetailsWindow", {
   extend: osparc.ui.window.Window,
 
   /**
@@ -42,7 +42,7 @@ qx.Class.define("osparc.component.metadata.ServiceInfoWindow", {
       height: windowHeight
     });
 
-    const serviceInfo = this._serviceInfo = new osparc.component.metadata.ServiceInfo(metadata);
+    const serviceInfo = this._serviceInfo = new osparc.component.metadata.ServiceDetails(metadata);
     serviceInfo.setBackgroundColor("material-button-background");
     const scroll = new qx.ui.container.Scroll();
     scroll.add(serviceInfo);

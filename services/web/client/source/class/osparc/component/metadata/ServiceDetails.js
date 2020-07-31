@@ -14,12 +14,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *    const serviceInfo = new osparc.component.metadata.ServiceInfo(selectedService);
- *    this.add(serviceInfo);
+ *    const serviceDetails = new osparc.component.metadata.ServiceDetails(selectedService);
+ *    this.add(serviceDetails);
  * </pre>
  */
 
-qx.Class.define("osparc.component.metadata.ServiceInfo", {
+qx.Class.define("osparc.component.metadata.ServiceDetails", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -36,7 +36,7 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
 
     this.__metadata = metadata;
 
-    this.__createServiceInfoView();
+    this.__createServiceDetailsView();
   },
 
   members: {
@@ -46,11 +46,11 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
       this._removeAll();
       if (metadata) {
         this.__metadata = metadata;
-        this.__createServiceInfoView();
+        this.__createServiceDetailsView();
       }
     },
 
-    __createServiceInfoView: function() {
+    __createServiceDetailsView: function() {
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(8).set({
         alignY: "middle"
       }));

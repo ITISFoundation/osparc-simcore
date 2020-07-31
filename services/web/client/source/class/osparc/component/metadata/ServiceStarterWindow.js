@@ -17,7 +17,7 @@
 
 
 qx.Class.define("osparc.component.metadata.ServiceStarterWindow", {
-  extend: osparc.component.metadata.ServiceInfoWindow,
+  extend: osparc.component.metadata.ServiceDetailsWindow,
 
   /**
     * @param metadata {Object} Service metadata

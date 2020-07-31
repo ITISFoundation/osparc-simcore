@@ -380,7 +380,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       let showDelete = false;
       const serviceDescription = this.__serviceDescription;
       if (serviceDescription) {
-        const serviceInfo = selectedService ? new osparc.component.metadata.ServiceInfo(selectedService) : null;
+        const serviceInfo = selectedService ? new osparc.component.metadata.ServiceDetails(selectedService) : null;
         serviceDescription.add(serviceInfo);
         this.__selectedService = selectedService;
         showDelete = this.__canServiceBeDeleted(selectedService);
