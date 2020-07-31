@@ -19,7 +19,7 @@ async def ensure_indexes():
     await WorkbenchDiff.ensure_indexes()
 
 
-# @retry(wait=wait_random_exponential(multiplier=1, max=3), stop=stop_after_delay(10))
+@retry(wait=wait_random_exponential(multiplier=1, max=3), stop=stop_after_delay(10))
 async def initialize_mongo_driver():
     """Will initialize the driver and try to access the database """
     # pylint: disable=global-statement
