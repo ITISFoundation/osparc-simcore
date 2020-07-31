@@ -1,5 +1,5 @@
 #
-# Specifies third-party dependencies for 'services/api-server/src'
+# Specifies third-party dependencies for 'services/scheduler/src'
 #
 # NOTE: ALL version constraints MUST be commented
 
