@@ -7,9 +7,8 @@
  */
 
 /**
- * Widget that contains the StudyDetails of the given study metadata.
- *
- * It also provides a button that opens a window with the same information.
+ *  Widget placed in the Study Editor that contains the StudyDetails of the given study.
+ * and a button that opens a the StudyDetailsEditor.
  *
  * *Example*
  *
