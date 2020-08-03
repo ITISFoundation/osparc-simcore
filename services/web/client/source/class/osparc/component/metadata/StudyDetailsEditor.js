@@ -159,8 +159,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         thumbnail
       } = this.__fields;
       editView.add(new qx.ui.basic.Label(this.tr("Title")).set({
-        font: "text-14",
-        marginTop: 20
+        font: "text-14"
       }));
       osparc.utils.Utils.setIdToWidget(name, "studyDetailsEditorTitleFld");
       editView.add(name);
