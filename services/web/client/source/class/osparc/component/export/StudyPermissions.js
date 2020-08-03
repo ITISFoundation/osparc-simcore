@@ -24,7 +24,7 @@
  *   - Remove collaborators
  */
 
-qx.Class.define("osparc.component.export.Permissions", {
+qx.Class.define("osparc.component.export.StudyPermissions", {
   extend: qx.ui.core.Widget,
 
   /**

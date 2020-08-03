@@ -480,7 +480,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getPermissionsMenuButton: function(studyData) {
       const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
       permissionsButton.addListener("execute", () => {
-        const permissionsView = new osparc.component.export.Permissions(studyData);
+        const permissionsView = new osparc.component.export.StudyPermissions(studyData);
         permissionsView.addListener("updateStudy", e => {
           const studyId = e.getData();
           this.__reloadUserStudy(studyId, true);
@@ -585,7 +585,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
         // remove collaborator
-        const permissions = osparc.component.export.Permissions;
+        const permissions = osparc.component.export.StudyPermissions;
         permissions.removeCollaborator(studyData, myGid);
         params["data"] = studyData;
         operationPromise = osparc.data.Resources.fetch("studies", "put", params);

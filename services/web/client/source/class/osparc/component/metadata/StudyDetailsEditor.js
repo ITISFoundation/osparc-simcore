@@ -281,7 +281,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
 
     __openPermissions: function() {
       const studyData = qx.util.Serializer.toNativeObject(this.__studyModel);
-      const permissionsView = new osparc.component.export.Permissions(studyData);
+      const permissionsView = new osparc.component.export.StudyPermissions(studyData);
       const window = permissionsView.createWindow();
       permissionsView.addListener("updateStudy", e => {
         this.fireEvent("updateStudy");

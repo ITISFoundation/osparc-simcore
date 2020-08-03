@@ -522,7 +522,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
         // remove collaborator
-        const permissions = osparc.component.export.Permissions;
+        const permissions = osparc.component.export.StudyPermissions;
         permissions.removeCollaborator(studyData, myGid);
         params["data"] = studyData;
         operationPromise = osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "put", params);
