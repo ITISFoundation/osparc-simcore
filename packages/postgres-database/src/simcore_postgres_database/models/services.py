@@ -8,16 +8,61 @@ import sqlalchemy as sa
 
 from sqlalchemy.sql import func, expression
 
+# NOTE: using func.now() instead of python datetime ensure the time is computed server side
 
 from .base import metadata
 
 
-# NOTE: using func.now() insted of python datetime ensure the time is computed server side
-services = sa.Table(
-    "services",
+services_meta_data = sa.Table(
+    "services_meta_data",
     metadata,
     sa.Column("key", sa.String, nullable=False),
     sa.Column("tag", sa.String, nullable=False),
+    sa.Column(
+        "owner",
+        sa.BigInteger,
+        sa.ForeignKey(
+            "groups.gid",
+            name="fk_services_meta_data_gid_groups",
+            onupdate="CASCADE",
+            ondelete="RESTRICT",
+        ),
+        nullable=True,
+    ),
+    sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
+    sa.Column(
+        "modified",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),  # this will auto-update on modification
+    ),
+    sa.PrimaryKeyConstraint("key", "tag", name="services_meta_data_pk"),
+)
+
+services = sa.Table(
+    "services_access_rights",
+    metadata,
+    sa.Column(
+        "key",
+        sa.String,
+        sa.ForeignKey(
+            "services_meta_data.key",
+            name="fk_services_access_key_services_meta_data",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
+    ),
+    sa.Column(
+        "tag",
+        sa.String,
+        sa.ForeignKey(
+            "services_meta_data.tag",
+            name="fk_services_access_tag_services_meta_data",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
+    ),
     sa.Column(
         "gid",
         sa.BigInteger,
@@ -39,5 +84,5 @@ services = sa.Table(
         server_default=func.now(),
         onupdate=func.now(),  # this will auto-update on modification
     ),
-    sa.PrimaryKeyConstraint("key", "tag", "gid", name="services_pk"),
+    # sa.PrimaryKeyConstraint("key", "tag", "gid", name="services_access_pk"),
 )
