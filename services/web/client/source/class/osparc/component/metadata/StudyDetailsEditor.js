@@ -50,7 +50,6 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     "updateStudy": "qx.event.type.Event",
     "updateTemplate": "qx.event.type.Event",
     "updateTags": "qx.event.type.Data",
-    "closed": "qx.event.type.Event",
     "openStudy": "qx.event.type.Event"
   },
 
