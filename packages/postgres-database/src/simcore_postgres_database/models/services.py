@@ -58,6 +58,9 @@ services = sa.Table(
     sa.Column(
         "execute_access", sa.Boolean, nullable=False, server_default=expression.false()
     ),
+    sa.Column(
+        "write_access", sa.Boolean, nullable=False, server_default=expression.false()
+    ),
     sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
     sa.Column(
         "modified",

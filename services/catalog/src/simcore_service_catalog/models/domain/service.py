@@ -246,8 +246,10 @@ class ServiceAccessRightsAtDB(ServiceBase):
     )
     gid: int = Field(..., description="defines the group id", example=1)
     execute_access: bool = Field(
-        False,
-        description="defines whether the group defined by gid can execute the service",
+        False, description="defines whether the group can execute the service",
+    )
+    write_access: bool = Field(
+        False, description="defines whether the group can modify the service"
     )
 
     class Config:
