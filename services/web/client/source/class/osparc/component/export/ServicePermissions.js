@@ -63,8 +63,8 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
       });
       const params = {
         url: {
-          "key": this.__serviceData["key"],
-          "version": this.__serviceData["version"]
+          "serviceKey": this.__serviceData["key"],
+          "serviceVersion": this.__serviceData["version"]
         },
         data: this.__serviceData
       };
@@ -85,8 +85,8 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
       this.__serviceData["accessRights"][collaborator["gid"]] = osparc.component.export.Permissions.getOwnerAccessRight();
       const params = {
         url: {
-          "key": this.__serviceData["key"],
-          "version": this.__serviceData["version"]
+          "serviceKey": this.__serviceData["key"],
+          "serviceVersion": this.__serviceData["version"]
         },
         data: this.__serviceData
       };
@@ -111,8 +111,8 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
 
       const params = {
         url: {
-          "key": this.__serviceData["key"],
-          "version": this.__serviceData["version"]
+          "serviceKey": this.__serviceData["key"],
+          "serviceVersion": this.__serviceData["version"]
         },
         data: this.__serviceData
       };
