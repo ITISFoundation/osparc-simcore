@@ -67,7 +67,13 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
       displayView.add(serviceVersionDetails, {
         flex: 1
       });
-      displayView.add(this.__createButtons());
+      let buttons = this.__createButtons();
+      displayView.add(buttons);
+      serviceVersionDetails.addListener("changeService", () => {
+        displayView.remove(buttons);
+        buttons = this.__createButtons();
+        displayView.add(buttons);
+      }, this);
       return displayView;
     },
 
@@ -189,10 +195,23 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
     },
 
     __openPermissions: function() {
+      const serviceData = this.__serviceVersionDetails.getService();
+      const permissionsView = new osparc.component.export.Permissions(serviceData);
+      const window = permissionsView.createWindow();
+      permissionsView.addListener("updateStudy", e => {
+        this.fireEvent("updateStudy");
+      });
+      permissionsView.addListener("finished", e => {
+        if (e.getData()) {
+          window.close();
+        }
+      }, this);
+      window.open();
     },
 
     __serializeForm: function() {
-      const data = osparc.utils.Utils.deepCloneObject(this.__serviceModel);
+      const serviceData = this.__serviceVersionDetails.getService();
+      const data = osparc.utils.Utils.deepCloneObject(serviceData);
 
       for (let key in this.__fields) {
         data[key] = this.__fields[key].getValue();
@@ -226,6 +245,10 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
     },
 
     __isUserOwner: function() {
+      const service = this.__serviceVersionDetails.getService();
+      if (service) {
+        return service.contact === osparc.auth.Data.getInstance().getEmail();
+      }
       return false;
     }
   }
