@@ -31,7 +31,7 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
     * @param serviceData {Object} Object containing the Service Data
     */
   construct: function(serviceData) {
-    this.__serviceData = osparc.data.model.Study.deepCloneObject(serviceData);
+    this.__serviceData = osparc.utils.Utils.deepCloneObject(serviceData);
 
     this.base(arguments, this.__studyData);
   },
