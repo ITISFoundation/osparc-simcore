@@ -159,12 +159,10 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       const fieldIsEnabled = isCurrentUserOwner && (!isTemplate || canUpdateTemplate);
 
       const editView = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
-      const buttonsToolbar = new qx.ui.toolbar.ToolBar();
 
       this.__fields = {
         name: new qx.ui.form.TextField(this.__studyModel.getName()).set({
-          font: "title-18",
-          height: 35,
+          font: "title-16",
           enabled: fieldIsEnabled
         }),
         description: new qx.ui.form.TextArea(this.__studyModel.getDescription()).set({
@@ -186,6 +184,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       }));
       osparc.utils.Utils.setIdToWidget(name, "studyDetailsEditorTitleFld");
       editView.add(name);
+
       editView.add(new qx.ui.basic.Label(this.tr("Description")).set({
         font: "text-14"
       }));
@@ -193,6 +192,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       editView.add(description, {
         flex: 1
       });
+
       editView.add(new qx.ui.basic.Label(this.tr("Thumbnail")).set({
         font: "text-14"
       }));
@@ -204,7 +204,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       }
 
       const saveButton = new qx.ui.toolbar.Button(this.tr("Save"), "@FontAwesome5Solid/save/16").set({
-        appearance: "toolbar-lg-button"
+        appearance: "toolbar-md-button"
       });
       osparc.utils.Utils.setIdToWidget(saveButton, "studyDetailsEditorSaveBtn");
       saveButton.addListener("execute", e => {
@@ -215,12 +215,13 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         this.__saveStudy(isTemplate, btn);
       }, this);
       const cancelButton = new qx.ui.toolbar.Button(this.tr("Cancel")).set({
-        appearance: "toolbar-lg-button",
+        appearance: "toolbar-md-button",
         enabled: isCurrentUserOwner && (!isTemplate || canUpdateTemplate)
       });
       osparc.utils.Utils.setIdToWidget(cancelButton, "studyDetailsEditorCancelBtn");
       cancelButton.addListener("execute", () => this.setMode("display"), this);
 
+      const buttonsToolbar = new qx.ui.toolbar.ToolBar();
       buttonsToolbar.addSpacer();
       buttonsToolbar.add(saveButton);
       buttonsToolbar.add(cancelButton);
