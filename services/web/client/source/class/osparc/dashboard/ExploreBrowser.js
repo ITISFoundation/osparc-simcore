@@ -405,7 +405,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       return menu;
     },
 
-    __getMoreInfoMenuButton: function(studyData, isTemplate) {
+    __getMoreInfoMenuButton: function(studyData) {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
         if (studyData["resourceType"] === "service") {
