@@ -481,11 +481,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
       permissionsButton.addListener("execute", () => {
         const permissionsView = new osparc.component.export.StudyPermissions(studyData);
+        const title = this.tr("Share with people and organizations");
+        const window = osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
         permissionsView.addListener("updateStudy", e => {
           const studyId = e.getData();
           this.__reloadUserStudy(studyId, true);
         }, this);
-        const window = permissionsView.createWindow();
         permissionsView.addListener("finished", e => {
           if (e.getData()) {
             window.close();
@@ -500,7 +501,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const saveAsTemplateButton = new qx.ui.menu.Button(this.tr("Save as Template"));
       saveAsTemplateButton.addListener("execute", () => {
         const saveAsTemplateView = new osparc.component.export.SaveAsTemplate(studyData.uuid, studyData);
-        const window = saveAsTemplateView.createWindow();
+        const title = this.tr("Save as Template");
+        const window = osparc.ui.window.Window.popUpInWindow(saveAsTemplateView, title, 400, 300);
         saveAsTemplateView.addListener("finished", e => {
           const template = e.getData();
           if (template) {

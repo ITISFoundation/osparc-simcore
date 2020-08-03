@@ -196,8 +196,9 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
 
     __openPermissions: function() {
       const serviceData = this.__serviceVersionDetails.getService();
-      const permissionsView = new osparc.component.export.Permissions(serviceData);
-      const window = permissionsView.createWindow();
+      const permissionsView = new osparc.component.export.ServicePermissions(serviceData);
+      const title = this.tr("Share with people and organizations");
+      const window = osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
       permissionsView.addListener("updateStudy", e => {
         this.fireEvent("updateStudy");
       });

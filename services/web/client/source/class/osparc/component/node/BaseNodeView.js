@@ -40,19 +40,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         layout: new qx.ui.layout.VBox()
       });
       return settingsGroupBox;
-    },
-
-    createWindow: function(label) {
-      const win = new qx.ui.window.Window(label).set({
-        layout: new qx.ui.layout.Grow(),
-        contentPadding: 10,
-        showMinimize: false,
-        resizable: true,
-        modal: true,
-        height: 600,
-        width: 800
-      });
-      return win;
     }
   },
 

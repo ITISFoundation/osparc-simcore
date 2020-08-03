@@ -65,23 +65,6 @@ qx.Class.define("osparc.component.export.StudyPermissions", {
 
     removeCollaborator: function(studyData, gid) {
       return delete studyData["accessRights"][gid];
-    },
-
-    createWindow: function(winText, shareResourceWidget) {
-      const window = new osparc.ui.window.Window(winText).set({
-        layout: new qx.ui.layout.Grow(),
-        autoDestroy: true,
-        contentPadding: 10,
-        width: 400,
-        height: 300,
-        showMaximize: false,
-        showMinimize: false,
-        modal: true,
-        clickAwayClose: true
-      });
-      window.add(shareResourceWidget);
-      window.center();
-      return window;
     }
   },
 
@@ -90,10 +73,6 @@ qx.Class.define("osparc.component.export.StudyPermissions", {
     __organizationsAndMembers: null,
     __collaboratorsModel: null,
     __myFrieds: null,
-
-    createWindow: function() {
-      return this.self().createWindow(this.tr("Share with people and organizations"), this);
-    },
 
     __buildLayout: function() {
       const addCollaborator = this.__createAddCollaborator();
