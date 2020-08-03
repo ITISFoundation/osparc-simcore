@@ -43,26 +43,8 @@ services_meta_data = sa.Table(
 services = sa.Table(
     "services_access_rights",
     metadata,
-    sa.Column(
-        "key",
-        sa.String,
-        sa.ForeignKey(
-            "services_meta_data.key",
-            name="fk_services_access_key_services_meta_data",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
-        ),
-    ),
-    sa.Column(
-        "tag",
-        sa.String,
-        sa.ForeignKey(
-            "services_meta_data.tag",
-            name="fk_services_access_tag_services_meta_data",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
-        ),
-    ),
+    sa.Column("key", sa.String, nullable=False,),
+    sa.Column("tag", sa.String, nullable=False,),
     sa.Column(
         "gid",
         sa.BigInteger,
@@ -84,5 +66,11 @@ services = sa.Table(
         server_default=func.now(),
         onupdate=func.now(),  # this will auto-update on modification
     ),
-    # sa.PrimaryKeyConstraint("key", "tag", "gid", name="services_access_pk"),
+    sa.ForeignKeyConstraint(
+        ["key", "tag"],
+        ["services_meta_data.key", "services_meta_data.tag"],
+        onupdate="CASCADE",
+        ondelete="CASCADE",
+    ),
+    sa.PrimaryKeyConstraint("key", "tag", "gid", name="services_access_pk"),
 )
