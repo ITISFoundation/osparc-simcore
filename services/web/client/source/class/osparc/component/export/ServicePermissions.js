@@ -63,13 +63,14 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
       });
       const params = {
         url: {
-          "projectId": this.__serviceData["uuid"]
+          "key": this.__serviceData["key"],
+          "version": this.__serviceData["version"]
         },
         data: this.__serviceData
       };
-      osparc.data.Resources.fetch("studies", "put", params)
+      osparc.data.Resources.fetch("services", "put", params)
         .then(() => {
-          this.fireDataEvent("updateService", this.__serviceData["uuid"]);
+          this.fireDataEvent("updateService", this.__serviceData["key"]);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator(s) successfully added"));
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
@@ -84,13 +85,14 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
       this.__serviceData["accessRights"][collaborator["gid"]] = osparc.component.export.Permissions.getOwnerAccessRight();
       const params = {
         url: {
-          "projectId": this.__serviceData["uuid"]
+          "key": this.__serviceData["key"],
+          "version": this.__serviceData["version"]
         },
         data: this.__serviceData
       };
-      osparc.data.Resources.fetch("studies", "put", params)
+      osparc.data.Resources.fetch("services", "put", params)
         .then(() => {
-          this.fireDataEvent("updateService", this.__serviceData["uuid"]);
+          this.fireDataEvent("updateService", this.__serviceData["key"]);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully made Owner"));
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
@@ -109,13 +111,14 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
 
       const params = {
         url: {
-          "projectId": this.__serviceData["uuid"]
+          "key": this.__serviceData["key"],
+          "version": this.__serviceData["version"]
         },
         data: this.__serviceData
       };
-      osparc.data.Resources.fetch("studies", "put", params)
+      osparc.data.Resources.fetch("services", "put", params)
         .then(() => {
-          this.fireDataEvent("updateService", this.__serviceData["uuid"]);
+          this.fireDataEvent("updateService", this.__serviceData["key"]);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully removed"));
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
