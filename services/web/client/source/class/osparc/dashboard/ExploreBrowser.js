@@ -409,17 +409,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
         if (studyData["resourceType"] === "service") {
-          const serviceStarter = new osparc.component.metadata.ServiceVersionDetails(studyData);
-          const title = qx.locale.Manager.tr("Service information") + " · " + serviceStarter.getService().name;
-          const win = osparc.ui.window.Window.popUpInWindow(serviceStarter, title, 700, 800);
-          serviceStarter.addListener("startService", e => {
-            const {
-              serviceKey,
-              serviceVersion
-            } = e.getData();
-            this.__createStudyFromService(serviceKey, serviceVersion);
-            win.close();
-          });
+          this.__createServiceDetailsEditor(studyData);
         } else {
           const winWidth = 400;
           this.__createStudyDetailsEditor(studyData, winWidth);
@@ -459,6 +449,20 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         this.__createStudyBtnClkd(studyData);
       }
       this.resetSelection();
+    },
+
+    __createServiceDetailsEditor: function(serviceData) {
+      const serviceStarter = new osparc.component.metadata.ServiceDetailsEditor(serviceData);
+      const title = this.tr("Service information") + " · " + serviceData.name;
+      const win = osparc.ui.window.Window.popUpInWindow(serviceStarter, title, 700, 800);
+      serviceStarter.addListener("startService", e => {
+        const {
+          serviceKey,
+          serviceVersion
+        } = e.getData();
+        this.__createStudyFromService(serviceKey, serviceVersion);
+        win.close();
+      });
     },
 
     __createStudyDetailsEditor: function(studyData, winWidth) {
