@@ -289,9 +289,8 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     },
 
     __showServiceDetails: function() {
-      const win = new osparc.component.metadata.ServiceDetailsWindow(this.__getSelectedService());
-      win.center();
-      win.open();
+      const serviceDetails = new osparc.component.metadata.ServiceDetails(this.__getSelectedService());
+      osparc.component.metadata.ServiceDetails.popUpInWindow(serviceDetails);
     },
 
     __onCancel: function() {

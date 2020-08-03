@@ -409,8 +409,9 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
         if (studyData["resourceType"] === "service") {
-          const win = new osparc.component.metadata.ServiceStarterWindow(studyData);
-          win.addListener("startService", e => {
+          const serviceStarter = new osparc.component.metadata.ServiceStarter(studyData);
+          const win = osparc.component.metadata.ServiceDetails.popUpInWindow(serviceStarter);
+          serviceStarter.addListener("startService", e => {
             const {
               serviceKey,
               serviceVersion
@@ -418,8 +419,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
             this.__createStudyFromService(serviceKey, serviceVersion);
             win.close();
           });
-          win.open();
-          win.center();
         } else {
           const winWidth = 400;
           this.__createStudyDetailsEditor(studyData, winWidth);

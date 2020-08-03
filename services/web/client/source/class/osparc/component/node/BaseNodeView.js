@@ -368,9 +368,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __openServiceDetails: function() {
-      const win = new osparc.component.metadata.ServiceDetailsWindow(this.getNode().getMetaData());
-      win.center();
-      win.open();
+      const serviceDetails = new osparc.component.metadata.ServiceDetails(this.getNode().getMetaData());
+      osparc.component.metadata.ServiceDetails.popUpInWindow(serviceDetails);
     },
 
     __attachEventHandlers: function() {

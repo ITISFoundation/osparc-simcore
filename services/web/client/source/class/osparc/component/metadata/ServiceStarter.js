@@ -16,19 +16,25 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.component.metadata.ServiceStarterWindow", {
-  extend: osparc.component.metadata.ServiceDetailsWindow,
+qx.Class.define("osparc.component.metadata.ServiceStarter", {
+  extend: osparc.component.metadata.ServiceDetails,
 
   /**
-    * @param metadata {Object} Service metadata
+    * @param serviceData {Object} Service metadata
     */
-  construct: function(metadata) {
-    this.base(arguments, metadata);
+  construct: function(serviceData) {
+    this.base(arguments, serviceData);
 
-    this.__service = metadata;
+    this.__createToolbox();
 
-    const toolboxContainer = this.__createToolbox();
-    this.addAt(toolboxContainer, 0);
+    this.addListener("changeService", e => {
+      const newServ = e.getData();
+      const oldServ = e.getOldData();
+      if (oldServ && oldServ.key === newServ.key) {
+        return;
+      }
+      this.__createToolbox();
+    }, this);
   },
 
   events: {
@@ -36,11 +42,11 @@ qx.Class.define("osparc.component.metadata.ServiceStarterWindow", {
   },
 
   members: {
-    __serviceKey: null,
+    __toolBox: null,
     __versionsUIBox: null,
 
     __createToolbox: function() {
-      const toolboxContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const toolboxContainer = this.__toolBox = new qx.ui.container.Composite(new qx.ui.layout.HBox());
 
       const versionsList = this.__createVersionsList();
       toolboxContainer.add(versionsList);
@@ -54,14 +60,14 @@ qx.Class.define("osparc.component.metadata.ServiceStarterWindow", {
       });
       openButton.addListener("execute", () => {
         const data = {
-          "serviceKey": this.__service.key,
+          "serviceKey": this.getService().key,
           "serviceVersion": this.__getSelectedVersion()
         };
         this.fireDataEvent("startService", data);
       });
       toolboxContainer.add(openButton);
 
-      return toolboxContainer;
+      this._addAt(toolboxContainer, 0);
     },
 
     __createVersionsList: function() {
@@ -72,18 +78,22 @@ qx.Class.define("osparc.component.metadata.ServiceStarterWindow", {
       const store = osparc.store.Store.getInstance();
       store.getServicesDAGs()
         .then(services => {
-          const versions = osparc.utils.Services.getVersions(services, this.__service.key);
+          const versions = osparc.utils.Services.getVersions(services, this.getService().key);
           if (versions) {
-            let lastItem = null;
+            // let lastItem = null;
+            let selectedItem = null;
             versions.forEach(version => {
-              lastItem = new qx.ui.form.ListItem(version).set({
+              const listItem = new qx.ui.form.ListItem(version).set({
                 font: "text-14"
               });
-              versionsList.add(lastItem);
+              versionsList.add(listItem);
+              if (this.getService().version === version) {
+                selectedItem = listItem;
+              }
             });
-            if (lastItem) {
-              versionsList.setSelection([lastItem]);
-              this.__versionSelected(lastItem.getLabel());
+            if (selectedItem) {
+              versionsList.setSelection([selectedItem]);
+              // this.__versionSelected(lastItem.getLabel());
             }
           }
         });
@@ -109,8 +119,8 @@ qx.Class.define("osparc.component.metadata.ServiceStarterWindow", {
       const store = osparc.store.Store.getInstance();
       store.getServicesDAGs()
         .then(services => {
-          const selectedService = osparc.utils.Services.getFromObject(services, this.__service.key, serviceVersion);
-          this._serviceInfo.setService(selectedService);
+          const selectedService = osparc.utils.Services.getFromObject(services, this.getService().key, serviceVersion);
+          this.setService(selectedService);
         });
     }
   }
