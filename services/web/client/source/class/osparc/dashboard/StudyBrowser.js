@@ -107,7 +107,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
      */
     reloadUserStudies: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
-        osparc.store.Store.getInstance().getStudiesWState()
+        osparc.store.Store.getInstance().getStudiesWState(true)
           .then(studies => {
             this.__resetStudyList(studies);
             this.resetSelection();
