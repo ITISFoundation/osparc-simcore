@@ -11,7 +11,7 @@ from pydantic import ValidationError
 from ..api.dependencies.director import get_director_session
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.services import ServicesRepository
-from ..models.domain.service import ServiceAtDB, ServiceData
+from ..models.domain.service import ServiceAccessRightsAtDB, ServiceData
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ async def _create_services_in_db(
         services_repo = ServicesRepository(conn)
         for service_key, service_version in services:
             await services_repo.create_service(
-                ServiceAtDB(
+                ServiceAccessRightsAtDB(
                     key=service_key,
                     tag=service_version,
                     gid=everyone_gid,

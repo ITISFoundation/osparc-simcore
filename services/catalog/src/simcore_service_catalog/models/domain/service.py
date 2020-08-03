@@ -227,7 +227,17 @@ class ServiceData(ServiceBase):
         extra = Extra.forbid
 
 
-class ServiceAtDB(ServiceBase):
+class ServiceMetaDataAtDB(ServiceBase):
+    version: constr(regex=VERSION_RE) = Field(
+        ...,
+        description="service version number",
+        example=["1.0.0", "0.0.1"],
+        alias="tag",
+    )
+    owner: Optional[int] = Field(None,)
+
+
+class ServiceAccessRightsAtDB(ServiceBase):
     version: constr(regex=VERSION_RE) = Field(
         ...,
         description="service version number",

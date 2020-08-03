@@ -18,7 +18,10 @@ from yarl import URL
 
 from simcore_service_catalog.api.dependencies.director import get_director_session
 from simcore_service_catalog.api.routes import services
-from simcore_service_catalog.models.domain.service import ServiceAtDB, ServiceType
+from simcore_service_catalog.models.domain.service import (
+    ServiceAccessRightsAtDB,
+    ServiceType,
+)
 from simcore_service_catalog.models.schemas.service import ServiceOut
 
 core_services = ["postgres"]
@@ -76,9 +79,9 @@ def registry_services() -> List[ServiceOut]:
 @pytest.fixture(scope="session")
 def db_services(
     registry_services: List[ServiceOut], user_groups: List[GroupAtDB]
-) -> List[ServiceAtDB]:
+) -> List[ServiceAccessRightsAtDB]:
     return [
-        ServiceAtDB(
+        ServiceAccessRightsAtDB(
             key=s.key, tag=s.version, gid=user_groups[0].gid, execute_access=True
         )
         for s in registry_services
@@ -106,7 +109,10 @@ async def director_mockup(loop, monkeypatch, registry_services, app: FastAPI):
 
 @pytest.fixture()
 async def db_mockup(
-    loop, app: FastAPI, user_groups: List[GroupAtDB], db_services: List[ServiceAtDB],
+    loop,
+    app: FastAPI,
+    user_groups: List[GroupAtDB],
+    db_services: List[ServiceAccessRightsAtDB],
 ):
     class FakeGroupsRepository:
         async def list_user_groups(self, user_id: int) -> List[GroupAtDB]:
@@ -117,7 +123,7 @@ async def db_mockup(
     class FakeServicesRepository:
         async def list_services(
             self, gids: Optional[List[int]] = None
-        ) -> List[ServiceAtDB]:
+        ) -> List[ServiceAccessRightsAtDB]:
             return db_services
 
     app.dependency_overrides[

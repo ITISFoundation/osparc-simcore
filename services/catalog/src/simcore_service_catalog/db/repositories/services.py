@@ -5,7 +5,7 @@ from aiopg.sa.result import RowProxy
 from sqlalchemy.sql import or_
 from sqlalchemy import literal_column
 
-from ...models.domain.service import ServiceAtDB
+from ...models.domain.service import ServiceAccessRightsAtDB
 from ..tables import services
 from ._base import BaseRepository
 
@@ -13,7 +13,7 @@ from ._base import BaseRepository
 class ServicesRepository(BaseRepository):
     async def list_services(
         self, gids: Optional[List[int]] = None
-    ) -> List[ServiceAtDB]:
+    ) -> List[ServiceAccessRightsAtDB]:
         services_in_db = []
         query = sa.select([services])
         if gids:
@@ -22,15 +22,15 @@ class ServicesRepository(BaseRepository):
             )
         async for row in self.connection.execute(query):
             if row:
-                services_in_db.append(ServiceAtDB(**row))
+                services_in_db.append(ServiceAccessRightsAtDB(**row))
         return services_in_db
 
-    async def list_distinct_services(self) -> List[ServiceAtDB]:
+    async def list_distinct_services(self) -> List[ServiceAccessRightsAtDB]:
         services_in_db = []
         query = sa.select([services]).distinct(services.c.key, services.c.tag)
         async for row in self.connection.execute(query):
             if row:
-                services_in_db.append(ServiceAtDB(**row))
+                services_in_db.append(ServiceAccessRightsAtDB(**row))
         return services_in_db
 
     # async def get_service(self, key: str, tag: str, gid: int) -> Optional[DAGAtDB]:
@@ -39,10 +39,12 @@ class ServicesRepository(BaseRepository):
     #     )
     #     row: RowProxy = await (await self.connection.execute(stmt)).first()
     #     if row:
-    #         return ServiceAtDB(**row)
+    #         return ServiceAccessRightsAtDB(**row)
     #     return None
 
-    async def create_service(self, new_service: ServiceAtDB) -> ServiceAtDB:
+    async def create_service(
+        self, new_service: ServiceAccessRightsAtDB
+    ) -> ServiceAccessRightsAtDB:
         row: RowProxy = await (
             await self.connection.execute(
                 # pylint: disable=no-value-for-parameter
@@ -51,7 +53,7 @@ class ServicesRepository(BaseRepository):
                 .returning(literal_column("*"))
             )
         ).first()
-        return ServiceAtDB(**row)
+        return ServiceAccessRightsAtDB(**row)
 
     # async def replace_dag(self, dag_id: int, dag: DAGIn):
     #     stmt = (

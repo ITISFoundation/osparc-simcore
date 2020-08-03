@@ -36,7 +36,7 @@ class GroupsRepository(BaseRepository):
     #     )
     #     row: RowProxy = await (await self.connection.execute(stmt)).first()
     #     if row:
-    #         return ServiceAtDB(**row)
+    #         return ServiceAccessRightsAtDB(**row)
     #     return None
 
     # async def create_service(self, service: ServiceBase) -> int:
