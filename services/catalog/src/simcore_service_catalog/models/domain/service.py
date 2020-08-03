@@ -236,6 +236,9 @@ class ServiceMetaDataAtDB(ServiceBase):
     )
     owner: Optional[int] = Field(None,)
 
+    class Config:
+        orm_mode = True
+
 
 class ServiceAccessRightsAtDB(ServiceBase):
     version: constr(regex=VERSION_RE) = Field(
