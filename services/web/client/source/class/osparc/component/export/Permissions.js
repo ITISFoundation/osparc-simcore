@@ -88,7 +88,7 @@ qx.Class.define("osparc.component.export.Permissions", {
         flex: 1
       });
 
-      const organizationsAndMembers = this.__organizationsAndMembers = new osparc.component.filter.OrganizationsAndMembers("servicePerms");
+      const organizationsAndMembers = this.__organizationsAndMembers = new osparc.component.filter.OrganizationsAndMembers("orgAndMembPerms");
       hBox.add(organizationsAndMembers, {
         flex: 1
       });
