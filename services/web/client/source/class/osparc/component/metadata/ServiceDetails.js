@@ -37,34 +37,6 @@ qx.Class.define("osparc.component.metadata.ServiceDetails", {
     });
   },
 
-  statics: {
-    popUpInWindow: function(serviceDetails, width = 700, height = 800) {
-      const title = qx.locale.Manager.tr("Service information") + " · " + serviceDetails.getService().name;
-      const win = new osparc.ui.window.Window(title).set({
-        layout: new qx.ui.layout.VBox(10),
-        autoDestroy: true,
-        contentPadding: 10,
-        showMinimize: false,
-        showMaximize: false,
-        resizable: true,
-        width: width,
-        height: height,
-        maxHeight: height,
-        modal: true
-      });
-
-      const scroll = new qx.ui.container.Scroll();
-      scroll.add(serviceDetails);
-      win.add(scroll, {
-        flex: 1
-      });
-
-      win.center();
-      win.open();
-      return win;
-    }
-  },
-
   properties: {
     service: {
       check: "Object",

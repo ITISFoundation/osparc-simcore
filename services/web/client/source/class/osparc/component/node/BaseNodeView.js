@@ -369,7 +369,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     __openServiceDetails: function() {
       const serviceDetails = new osparc.component.metadata.ServiceDetails(this.getNode().getMetaData());
-      osparc.component.metadata.ServiceDetails.popUpInWindow(serviceDetails);
+      const title = qx.locale.Manager.tr("Service information") + " · " + serviceDetails.getService().name;
+      osparc.ui.window.Window.popUpInWindow(serviceDetails, title, 700, 800);
     },
 
     __attachEventHandlers: function() {

@@ -63,7 +63,7 @@ qx.Class.define("osparc.component.metadata.StudyInfo", {
       const title = this.tr("Study Details Editor");
       const studyDetails = new osparc.component.metadata.StudyDetailsEditor(this.__study.serializeStudy(), false, width);
       studyDetails.showOpenButton(false);
-      const win = osparc.component.metadata.StudyDetailsEditor.popUpInWindow(title, studyDetails, width, height);
+      const win = osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
       [
         "updateStudy"
       ].forEach(event => studyDetails.addListener(event, () => {

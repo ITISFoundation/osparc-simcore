@@ -290,7 +290,8 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
 
     __showServiceDetails: function() {
       const serviceDetails = new osparc.component.metadata.ServiceDetails(this.__getSelectedService());
-      osparc.component.metadata.ServiceDetails.popUpInWindow(serviceDetails);
+      const title = qx.locale.Manager.tr("Service information") + " · " + serviceDetails.getService().name;
+      osparc.ui.window.Window.popUpInWindow(serviceDetails, title, 700, 800);
     },
 
     __onCancel: function() {

@@ -555,7 +555,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const height = 400;
       const title = this.tr("Study Details Editor");
-      const win = osparc.component.metadata.StudyDetailsEditor.popUpInWindow(title, studyDetails, winWidth, height);
+      const win = osparc.ui.window.Window.popUpInWindow(studyDetails, title, winWidth, height);
       [
         "updateStudy",
         "openStudy"

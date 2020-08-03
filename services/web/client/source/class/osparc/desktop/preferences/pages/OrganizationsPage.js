@@ -52,7 +52,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       createOrgBtn.addListener("execute", function() {
         const newOrg = true;
         const orgEditor = new osparc.dashboard.OrganizationEditor(newOrg);
-        const win = osparc.dashboard.OrganizationEditor.popUpInWindow(this.tr("Organization Details Editor"), orgEditor);
+        const title = this.tr("Organization Details Editor");
+        const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 250);
         orgEditor.addListener("createOrg", () => {
           this.__createOrganization(win, orgEditor.getChildControl("create"), orgEditor);
         });
@@ -267,7 +268,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       org.bind("thumbnail", orgEditor, "thumbnail", {
         converter: val => val ? val : ""
       });
-      const win = osparc.dashboard.OrganizationEditor.popUpInWindow(this.tr("Organization Details Editor"), orgEditor);
+      const title = this.tr("Organization Details Editor");
+      const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 250);
       orgEditor.addListener("updateOrg", () => {
         this.__updateOrganization(win, orgEditor.getChildControl("save"), orgEditor);
       });

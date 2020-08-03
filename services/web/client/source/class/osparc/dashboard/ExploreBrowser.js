@@ -409,8 +409,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
         if (studyData["resourceType"] === "service") {
-          const serviceStarter = new osparc.component.metadata.ServiceStarter(studyData);
-          const win = osparc.component.metadata.ServiceDetails.popUpInWindow(serviceStarter);
           serviceStarter.addListener("startService", e => {
             const {
               serviceKey,
