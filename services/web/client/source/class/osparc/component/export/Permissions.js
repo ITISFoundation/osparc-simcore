@@ -20,7 +20,7 @@ qx.Class.define("osparc.component.export.Permissions", {
   type: "abstract",
 
   /**
-    * @param serviceData {Object} Object containing the Service Data
+    * @param serializedData {Object} Object containing the Serialized Data
     */
   construct: function(serializedData) {
     this.base(arguments);
