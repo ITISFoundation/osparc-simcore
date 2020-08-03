@@ -11,7 +11,11 @@ from pydantic import ValidationError
 from ..api.dependencies.director import get_director_session
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.services import ServicesRepository
-from ..models.domain.service import ServiceAccessRightsAtDB, ServiceData
+from ..models.domain.service import (
+    ServiceAccessRightsAtDB,
+    ServiceData,
+    ServiceMetaDataAtDB,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +51,7 @@ async def _list_db_services(app: FastAPI) -> Set[Tuple[ServiceKey, ServiceVersio
         services_repo = ServicesRepository(conn)
         return {
             (service.key, service.version)
-            for service in await services_repo.list_distinct_services()
+            for service in await services_repo.list_services()
         }
 
 
@@ -67,12 +71,13 @@ async def _create_services_in_db(
         services_repo = ServicesRepository(conn)
         for service_key, service_version in services:
             await services_repo.create_service(
+                ServiceMetaDataAtDB(key=service_key, tag=service_version, owner=None),
                 ServiceAccessRightsAtDB(
                     key=service_key,
                     tag=service_version,
                     gid=everyone_gid,
                     execute_access=True,
-                )
+                ),
             )
 
 
@@ -90,7 +95,6 @@ async def sync_registry_task(app: FastAPI) -> None:
             ] = await _list_db_services(app)
 
             # check that the db has all the services at least once
-
             missing_services_in_db = services_in_registry - services_in_db
             if missing_services_in_db:
                 logger.debug(

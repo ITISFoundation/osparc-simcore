@@ -40,7 +40,7 @@ services_meta_data = sa.Table(
     sa.PrimaryKeyConstraint("key", "tag", name="services_meta_data_pk"),
 )
 
-services = sa.Table(
+services_access_rights = sa.Table(
     "services_access_rights",
     metadata,
     sa.Column("key", sa.String, nullable=False,),
