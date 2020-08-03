@@ -4,11 +4,12 @@ from typing import Dict, Optional
 
 import attr
 from fastapi import FastAPI, HTTPException
-from starlette import status
-
 from httpx import AsyncClient, Response, StatusCode
 
+from starlette import status
+
 from ..core.settings import DirectorSettings
+
 
 logger = logging.getLogger(__name__)
 

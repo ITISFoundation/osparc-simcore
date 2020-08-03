@@ -5,19 +5,16 @@
 
 import logging
 
-from aiohttp import ClientSession, web
-from yarl import URL
+from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_routing import (
-    get_handlers_from_namespace,
     iter_path_operations,
     map_handlers_with_operations,
 )
 
 from ..rest_config import APP_OPENAPI_SPECS_KEY
-from . import handlers
 from .config import APP_DIRECTOR_API_KEY, CONFIG_SECTION_NAME, build_api_url
 
 logger = logging.getLogger(__name__)

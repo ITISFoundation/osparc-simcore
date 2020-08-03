@@ -24,12 +24,13 @@ import socketio
 import sqlalchemy as sa
 import trafaret_config
 from aiohttp import web
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import NewUser
 from yarl import URL
 
+import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiopg_utils import DSN
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.application import create_application
@@ -101,12 +102,16 @@ def docker_compose_file(default_app_cfg):
 
 
 @pytest.fixture(scope="session")
-def postgres_service(docker_services, docker_ip, default_app_cfg):
+def postgres_dsn(docker_services, docker_ip, default_app_cfg: Dict) -> Dict:
     cfg = deepcopy(default_app_cfg["db"]["postgres"])
     cfg["host"] = docker_ip
     cfg["port"] = docker_services.port_for("postgres", 5432)
+    return cfg
 
-    url = DSN.format(**cfg)
+
+@pytest.fixture(scope="session")
+def postgres_service(docker_services, postgres_dsn):
+    url = DSN.format(**postgres_dsn)
 
     # Wait until service is responsive.
     docker_services.wait_until_responsive(
@@ -117,28 +122,21 @@ def postgres_service(docker_services, docker_ip, default_app_cfg):
 
 
 @pytest.fixture
-def postgres_db(app_cfg: Dict, postgres_service: str) -> sa.engine.Engine:
-    cfg = app_cfg["db"]["postgres"]
-    url_from_cfg = DSN.format(**cfg)
-
-    url = postgres_service or url_from_cfg
+def postgres_db(
+    app_cfg: Dict, postgres_dsn: Dict, postgres_service: str
+) -> sa.engine.Engine:
+    url = postgres_service
 
     # Configures db and initializes tables
+    pg_cli.discover.callback(**postgres_dsn)
+    pg_cli.upgrade.callback("head")
     # Uses syncrounous engine for that
     engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
-    orm.metadata.create_all(
-        bind=engine,
-        tables=[
-            orm.users,
-            orm.confirmations,
-            orm.api_keys,
-            orm.groups,
-            orm.user_to_groups,
-        ],
-        checkfirst=True,
-    )
 
     yield engine
+
+    pg_cli.downgrade.callback("base")
+    pg_cli.clean.callback()
 
     orm.metadata.drop_all(engine)
     engine.dispose()

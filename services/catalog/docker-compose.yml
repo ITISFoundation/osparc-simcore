@@ -68,3 +68,8 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
     ports:
       - "28080:8080"
+  registry:
+    image: registry:2
+    init: true
+    ports:
+      - "5000:5000"
