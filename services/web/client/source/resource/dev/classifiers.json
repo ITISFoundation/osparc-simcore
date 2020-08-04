@@ -47,7 +47,7 @@
     },
     "topics::octave": {
       "classifier": "topics::octave",
-      "display_name": "Ocatave (Jupyter Lab)",
+      "display_name": "Ocatave",
       "short_description": "Jupyter Lab powered by Octave.",
       "logo": "jupyter-notebook.png",
       "aliases": [],
@@ -63,7 +63,7 @@
     },
     "topics::Sim4Life": {
       "classifier": "topics::Sim4Life",
-      "display_name": "Sim4Life (Jupyter Lab)",
+      "display_name": "Sim4Life",
       "short_description": "Jupyter Lab powered by Sim4Life.",
       "logo": "jupyter-notebook.png",
       "aliases": [],
