@@ -47,7 +47,7 @@
     },
     "topics::octave": {
       "classifier": "topics::octave",
-      "display_name": "Ocatave",
+      "display_name": "Octave",
       "short_description": "Jupyter Lab powered by Octave.",
       "logo": "jupyter-notebook.png",
       "aliases": [],
