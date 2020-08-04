@@ -42,14 +42,36 @@ class ServicesRepository(BaseRepository):
                 services_in_db.append(ServiceMetaDataAtDB(**row))
         return services_in_db
 
-    # async def get_service(self, key: str, tag: str, gid: int) -> Optional[DAGAtDB]:
-    #     stmt = services.select().where(
-    #         and_(services.c.key == key, services.c.tag == tag, services.c.gid == gid)
-    #     )
-    #     row: RowProxy = await (await self.connection.execute(stmt)).first()
-    #     if row:
-    #         return ServiceAccessRightsAtDB(**row)
-    #     return None
+    async def get_service(
+        self,
+        key: str,
+        tag: str,
+        gids: Optional[List[int]] = None,
+        execute_access: Optional[bool] = None,
+        write_access: Optional[bool] = None,
+    ) -> Optional[ServiceMetaDataAtDB]:
+        query = sa.select([services_meta_data]).where(
+            (services_meta_data.c.key == key) & (services_meta_data.c.tag == tag)
+        )
+        if gids or execute_access or write_access:
+            query = (
+                sa.select([services_meta_data])
+                .select_from(services_meta_data.join(services_access_rights))
+                .where(
+                    and_(
+                        or_(*[services_access_rights.c.gid == gid for gid in gids])
+                        if gids
+                        else True,
+                        services_access_rights.c.execute_access
+                        if execute_access
+                        else True,
+                        services_access_rights.c.write_access if write_access else True,
+                    )
+                )
+            )
+        row: RowProxy = await (await self.connection.execute(query)).first()
+        if row:
+            return ServiceMetaDataAtDB(**row)
 
     async def create_service(
         self,

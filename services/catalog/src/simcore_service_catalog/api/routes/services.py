@@ -1,25 +1,26 @@
 import logging
-from typing import List
+import pdb
+import urllib.parse
+from typing import List, Set, Tuple
 
-from fastapi import APIRouter, Depends
-from pydantic import ValidationError
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import ValidationError, constr
 
-from ...db.repositories.services import ServicesRepository
-from ...models.schemas.service import ServiceOut
 from ...db.repositories.groups import GroupsRepository
+from ...db.repositories.services import ServicesRepository
+from ...models.domain.service import KEY_RE, VERSION_RE
+from ...models.schemas.service import ServiceOut
 from ..dependencies.database import get_repository
 from ..dependencies.director import AuthSession, get_director_session
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-from typing import Set, Tuple
-
 
 @router.get("", response_model=List[ServiceOut])
 async def list_services(
     user_id: int,
-    client: AuthSession = Depends(get_director_session),
+    director_client: AuthSession = Depends(get_director_session),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
 ):
@@ -34,7 +35,7 @@ async def list_services(
     }
 
     # get the services from the registry
-    data = await client.get("/services")
+    data = await director_client.get("/services")
     services: List[ServiceOut] = []
     for x in data:
         try:
@@ -51,3 +52,42 @@ async def list_services(
             )
 
     return services
+
+
+@router.get("/{service_key:path}/{service_version}", response_model=ServiceOut)
+async def get_service(
+    user_id: int,
+    service_key: constr(regex=KEY_RE),
+    service_version: constr(regex=VERSION_RE),
+    director_client: AuthSession = Depends(get_director_session),
+    groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
+    services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
+):
+    # check the service exists
+    services_in_registry = await director_client.get(
+        f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
+    )
+    # the director client already raises an exception if not found
+
+    # get user groups
+    user_groups = await groups_repository.list_user_groups(user_id)
+    # now check the user has execute access on the service
+    service_in_db = await services_repo.get_service(
+        service_key,
+        service_version,
+        gids=[group.gid for group in user_groups],
+        execute_access=True,
+    )
+    if not service_in_db:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You have insufficient rights to access the service",
+        )
+    # access is allowed
+
+    return ServiceOut.parse_obj(services_in_registry[0])
+
+
+# @router.
+# async def update_service(user_id: int, services_repo: ServicesRepository = Depends(get_repository(ServicesRepository))):
+#     pass
