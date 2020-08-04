@@ -128,13 +128,13 @@ qx.Class.define("osparc.data.model.Node", {
       init: ""
     },
 
-    propsWidget: {
+    propsForm: {
       check: "osparc.component.form.renderer.PropForm",
       init: null,
       nullable: true
     },
 
-    propsWidgetEditor: {
+    propsFormEditor: {
       check: "osparc.component.form.renderer.PropFormEditor",
       init: null,
       nullable: true
@@ -248,15 +248,15 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     getInputValues: function() {
-      if (this.isPropertyInitialized("propsWidget") && this.getPropsWidget()) {
-        return this.getPropsWidget().getValues();
+      if (this.isPropertyInitialized("propsForm") && this.getPropsForm()) {
+        return this.getPropsForm().getValues();
       }
       return {};
     },
 
     getInputEditorValues: function() {
-      if (this.isPropertyInitialized("propsWidgetEditor") && this.getPropsWidgetEditor()) {
-        return this.getPropsWidgetEditor().getValues();
+      if (this.isPropertyInitialized("propsFormEditor") && this.getPropsFormEditor()) {
+        return this.getPropsFormEditor().getValues();
       }
       return {};
     },
@@ -506,10 +506,10 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __addSettingsEditor: function(inputs) {
-      const propsWidget = this.getPropsWidget();
+      const propsForm = this.getPropsForm();
       const form = new osparc.component.form.Auto(inputs);
       form.setData(this.__settingsForm.getData());
-      const propsWidgetEditor = new osparc.component.form.renderer.PropFormEditor(form, this);
+      const propsFormEditor = new osparc.component.form.renderer.PropFormEditor(form, this);
       this.__settingsForm.addListener("changeData", e => {
         // apply data
         const data = this.__settingsForm.getData();
@@ -517,20 +517,19 @@ qx.Class.define("osparc.data.model.Node", {
       }, this);
       propsWidget.addListener("linkFieldModified", e => {
         const linkModified = e.getData();
-        const portId = linkModified.portId;
-        const added = linkModified.added;
+        const {portId, added} = linkModified;
         if (added) {
-          const srcControlLink = propsWidget.getControlLink(portId);
+          const srcControlLink = propsForm.getControlLink(portId);
           const controlLink = new qx.ui.form.TextField().set({
             enabled: false
           });
           srcControlLink.bind("value", controlLink, "value");
-          propsWidgetEditor.linkAdded(portId, controlLink);
+          propsFormEditor.linkAdded(portId, controlLink);
         } else {
-          propsWidgetEditor.linkRemoved(portId);
+          propsFormEditor.linkRemoved(portId);
         }
       }, this);
-      this.setPropsWidgetEditor(propsWidgetEditor);
+      this.setPropsFormEditor(propsFormEditor);
     },
 
     removeNodePortConnections: function(inputNodeId) {
@@ -538,7 +537,7 @@ qx.Class.define("osparc.data.model.Node", {
       for (const portId in inputs) {
         if (inputs[portId] && Object.prototype.hasOwnProperty.call(inputs[portId], "nodeUuid")) {
           if (inputs[portId]["nodeUuid"] === inputNodeId) {
-            this.getPropsWidget().removeLink(portId);
+            this.getPropsForm().removeLink(portId);
           }
         }
       }
@@ -604,8 +603,8 @@ qx.Class.define("osparc.data.model.Node", {
     setInputDataAccess: function(inputAccess) {
       if (inputAccess) {
         this.setInputAccess(inputAccess);
-        this.getPropsWidget().setAccessLevel(inputAccess);
-        this.getPropsWidgetEditor().setAccessLevel(inputAccess);
+        this.getPropsForm().setAccessLevel(inputAccess);
+        this.getPropsFormEditor().setAccessLevel(inputAccess);
       }
     },
 
@@ -667,7 +666,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     addPortLink: function(toPortId, fromNodeId, fromPortId) {
-      return this.getPropsWidget().addLink(toPortId, fromNodeId, fromPortId);
+      return this.getPropsForm().addLink(toPortId, fromNodeId, fromPortId);
     },
 
     // ----- Input Nodes -----
@@ -864,7 +863,7 @@ qx.Class.define("osparc.data.model.Node", {
             } = resp;
             if (portKey) {
               const sizeBytes = (data && ("size_bytes" in data)) ? data["size_bytes"] : 0;
-              this.getPropsWidget().retrievedPortData(portKey, true, sizeBytes);
+              this.getPropsForm().retrievedPortData(portKey, true, sizeBytes);
             }
             console.log(data);
           }, this);
@@ -873,7 +872,7 @@ qx.Class.define("osparc.data.model.Node", {
               error
             } = e.getTarget().getResponse();
             if (portKey) {
-              this.getPropsWidget().retrievedPortData(portKey, false);
+              this.getPropsForm().retrievedPortData(portKey, false);
             }
             console.error("fail", error);
           }, this);
@@ -882,14 +881,14 @@ qx.Class.define("osparc.data.model.Node", {
               error
             } = e.getTarget().getResponse();
             if (portKey) {
-              this.getPropsWidget().retrievedPortData(portKey, false);
+              this.getPropsForm().retrievedPortData(portKey, false);
             }
             console.error("error", error);
           }, this);
           updReq.send();
 
           if (portKey) {
-            this.getPropsWidget().retrievingPortData(portKey);
+            this.getPropsForm().retrievingPortData(portKey);
           }
         }
       }

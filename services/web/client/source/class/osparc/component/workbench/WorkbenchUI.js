@@ -361,7 +361,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const y1 = pointList[0] ? pointList[0][1] : 0;
         const x2 = pointList[1] ? pointList[1][0] : 0;
         const y2 = pointList[1] ? pointList[1][1] : 0;
-        const edgeRepresentation = this.__svgWidgetLinks.drawCurve(x1, y1, x2, y2);
+        const edgeRepresentation = this.__svgWidgetLinks.drawCurve(x1, y1, x2, y2, !edge.getIsPortConnected());
 
         const edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
         this.__edgesUI.push(edgeUI);
@@ -601,7 +601,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           const y1 = pointList[0][1];
           const x2 = pointList[1][0];
           const y2 = pointList[1][1];
-          this.__svgWidgetLinks.updateCurve(edgeUI.getRepresentation(), x1, y1, x2, y2);
+          this.__svgWidgetLinks.updateCurve(edgeUI.getRepresentation(), x1, y1, x2, y2, !edgeUI.getEdge().getIsPortConnected());
         }
       });
     },

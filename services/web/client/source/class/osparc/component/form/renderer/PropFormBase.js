@@ -208,6 +208,17 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       return false;
     },
 
+    hasAnyPortConnected: function() {
+      const data = this._form.getData();
+      for (const portId in data) {
+        const ctrl = this._form.getControl(portId);
+        if (ctrl && ctrl["link"]) {
+          return true;
+        }
+      }
+      return false;
+    },
+
     /**
       * @abstract
       */

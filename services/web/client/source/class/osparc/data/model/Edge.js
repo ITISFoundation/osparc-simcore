@@ -27,7 +27,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let edge = new osparc.data.model.Edge(edgeId, node1Id, node2Id);
+ *   let edge = new osparc.data.model.Edge(edgeId, node1, node2);
  * </pre>
  */
 
@@ -36,15 +36,16 @@ qx.Class.define("osparc.data.model.Edge", {
 
   /**
     * @param edgeId {String} uuid if the edge. If not provided, a random one will be assigned
-    * @param node1Id {String} uuid of the node where the edge comes from
-    * @param node2Id {String} uuid of the node where the edge goes to
+    * @param node1 {osparc.data.model.Node} node where the edge comes from
+    * @param node2 {osparc.data.model.Node} node where the edge goes to
   */
-  construct: function(edgeId, node1Id, node2Id) {
+  construct: function(edgeId, node1, node2) {
     this.base();
 
     this.setEdgeId(edgeId || osparc.utils.Utils.uuidv4());
-    this.setInputNodeId(node1Id);
-    this.setOutputNodeId(node2Id);
+    this.setInputNode(node1);
+    this.setOutputNode(node2);
+    this.setIsPortConnected(node2.getPropsForm().hasAnyPortConnected());
   },
 
   properties: {
@@ -53,14 +54,38 @@ qx.Class.define("osparc.data.model.Edge", {
       nullable: false
     },
 
-    inputNodeId: {
-      init: null,
-      check: "String"
+    inputNode: {
+      check: "osparc.data.model.Node",
+      nullable: false
     },
 
-    outputNodeId: {
-      init: null,
-      check: "String"
+    outputNode: {
+      check: "osparc.data.model.Node",
+      apply: "_applyOutputNode",
+      nullable: false
+    },
+
+    isPortConnected: {
+      check: "Boolean",
+      init: false,
+      nullable: false
+    }
+  },
+
+  members: {
+    getInputNodeId: function() {
+      return this.getInputNode().getNodeId();
+    },
+
+    getOutputNodeId: function() {
+      return this.getOutputNode().getNodeId();
+    },
+
+    _applyOutputNode: function(node) {
+      node.getPropsForm().addListener("linkModified", () => {
+        this.setIsPortConnected(node.getPropsForm().hasAnyPortConnected());
+      });
+      this.setIsPortConnected(node.getPropsForm().hasAnyPortConnected());
     }
   }
 });
