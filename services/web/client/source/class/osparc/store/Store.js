@@ -113,6 +113,10 @@ qx.Class.define("osparc.store.Store", {
     statics: {
       check: "Object",
       init: {}
+    },
+    classifiers: {
+      check: "Object",
+      init: {}
     }
   },
 

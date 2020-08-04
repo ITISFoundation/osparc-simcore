@@ -112,6 +112,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       check: "String",
       nullable: true,
       apply: "_applyLockedBy"
+    },
+    
+    classifiers: {
+      check: "Object"
     }
   },
 
@@ -418,6 +422,22 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       if (data.tags && data.tags.length) {
         const tagNames = this.getTags().map(tag => tag.name);
         if (data.tags.filter(tag => tagNames.includes(tag)).length == 0) {
+          return true;
+        }
+      }
+      if (data.classifiers && data.classifiers.length) {
+        // FIXME: Hardcoded, demo-only code
+        if (!this.getStudyTitle().toLowerCase().includes("jupyter") &&
+          data.classifiers.find(classifier => classifier.label === "Jupyter Notebook")) {
+          return true;
+        }
+        if (!this.getStudyTitle().toLowerCase().includes("python") &&
+          data.classifiers.find(classifier => classifier.label === "Python")) {
+          return true;
+        }
+        if (!(this.getStudyTitle().toLowerCase().includes("sleeper") ||
+          this.getStudyTitle().toLowerCase().includes("octave")) &&
+          data.classifiers.find(classifier => classifier.label === "IT'IS Foundation")) {
           return true;
         }
       }

@@ -1,0 +1,128 @@
+{
+  "build_date": "2020-07-21T15:32:53Z",
+  "vcs_url": "https://gitlab-ci-token:sQNAVkbL2ah8y3Hi5do2@git.speag.com/curated-data/classifiers.git",
+  "vcs_ref": "cb81724",
+  "classifiers": {
+    "topics::python": {
+      "classifier": "topics::python",
+      "display_name": "Python",
+      "short_description": "Python is a dynamically typed programming language.",
+      "logo": "python.png",
+      "aliases": [
+        "python3",
+        " python2",
+        " python-3",
+        " python-2",
+        " python27",
+        " python-3-6",
+        " python-3-5",
+        " py"
+      ],
+      "created_by": "Guido van Rossum",
+      "released": "1991-02-20",
+      "related": [
+        "language",
+        " ruby"
+      ],
+      "url": "https://www.python.org/",
+      "github_url": null,
+      "wikipedia_url": "https://en.wikipedia.org/wiki/Python_(programming_language)",
+      "markdown": "Python is a dynamically typed programming language designed by Guido van Rossum. Much like the programming language Ruby, Python was designed to be easily read by programmers. Because of its large follow"
+    },
+    "topics::jupyter-notebook": {
+      "classifier": "topics::jupyter-notebook",
+      "display_name": "Jupyter Notebook",
+      "short_description": "Jupyter Notebooks are documents that contain live code, visualizations, and narrative text.",
+      "logo": "jupyter-notebook.png",
+      "aliases": [],
+      "created_by": "Jupyter Developers",
+      "released": "2011-12-01",
+      "related": [
+        "jupyter"
+      ],
+      "url": "https://jupyter.org/",
+      "github_url": null,
+      "wikipedia_url": null,
+      "markdown": "\nThe Jupyter Notebook is a language-agnostic HTML notebook application for Project Jupyter. Jupyter notebooks are documents that allow for creating and sharing live code, equations, visualizations, and narrative text together. People use them for data cleaning and transformation, numerical simulation, statistical modeling, data visualization, machine learning, and much more. "
+    },
+    "organizations::zmt": {
+      "classifier": "organizations::zmt",
+      "display_name": "ZMT",
+      "short_description": "ZMT is a member of Zurich43",
+      "logo": null,
+      "aliases": [
+        "Zurich MedTech AG"
+      ],
+      "created_by": "crespo",
+      "released": null,
+      "related": [],
+      "url": "https://zmt.swiss/",
+      "github_url": null,
+      "wikipedia_url": null,
+      "markdown": "Zurich MedTech AG (ZMT) offers tools and best practices for targeted life sciences applications to simulate, analyze, and predict complex and dynamic biological processes and interactions. ZMT is a member of Zurich43"
+    },
+    "organizations::speag": {
+      "classifier": "organizations::speag",
+      "display_name": "SPEAG",
+      "short_description": "SPEAG is a member of Zurich43",
+      "logo": null,
+      "aliases": [
+        "Schmid & Partner Engineering AG"
+      ],
+      "created_by": "crespo",
+      "released": null,
+      "related": [],
+      "url": "https://speag.swiss/",
+      "github_url": null,
+      "wikipedia_url": null,
+      "markdown": "Schmid & Partner Engineering AG (SPEAG) is a leading developer and manufacturer of the most reliable, efficient, user-friendly, and advanced numerical tools and instrumentation for the accurate evaluation of electromagnetic near- and far-fields from static to optical frequencies. SPEAG is a member of Zurich43"
+    },
+    "organizations::itis": {
+      "classifier": "organizations::itis",
+      "display_name": "IT'IS Foundation",
+      "short_description": "IT'IS Foundation is an organization part of Zurich43",
+      "logo": "itis.png",
+      "aliases": [
+        "itisfoundation",
+        "ITISFoundation"
+      ],
+      "created_by": "crespo",
+      "released": null,
+      "related": [],
+      "url": "https://itis.swiss/",
+      "github_url": null,
+      "wikipedia_url": null,
+      "markdown": "The Foundation for Research on Information Technologies in Society (IT'IS) is an independent, nonprofit research foundation dedicated to improving and advancing the quality of people\u2019s lives by enhancing the safety and quality of emerging electromagnetic technologies. IT'IS Foundation is a member of Zurich43 "
+    }
+  },
+  "collections": {
+    "jupyterlab-math": {
+      "items": [
+        "crespo/osparc-demo"
+      ],
+      "display_name": "jupyterlab-math",
+      "created_by": "crespo",
+      "markdown": "Curated collection of repositories with examples of notebooks to run in jupyter-python-octave-math service"
+    },
+    "sim4life": {
+      "items": [
+        "beetbox/beets",
+        "scottschiller/SoundManager2",
+        "CreateJS/SoundJS",
+        "musescore/MuseScore",
+        "tomahawk-player/tomahawk",
+        "cashmusic/platform",
+        "mopidy/mopidy",
+        "AudioKit/AudioKit",
+        "Soundnode/soundnode-app",
+        "gillesdemey/Cumulus",
+        "metabrainz/picard",
+        "overtone/overtone",
+        "samaaron/sonic-pi"
+      ],
+      "display_name": "sim4life",
+      "created_by": "ofli",
+      "markdown": "Curated collection of examples that run in sim4life"
+    }
+  }
+}

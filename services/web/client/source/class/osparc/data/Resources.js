@@ -509,6 +509,21 @@ qx.Class.define("osparc.data.Resources", {
             isJsonFile: true
           }
         }
+      },
+
+      /*
+       * CLASSIFIERS
+       * Gets the json file containing sample classifiers.
+       */
+      "classifiers": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: "/resource/dev/classifiers.json",
+            isJsonFile: true
+          }
+        }
       }
     };
   },
