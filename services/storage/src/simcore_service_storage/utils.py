@@ -39,3 +39,20 @@ async def assert_enpoint_is_ok(
 
 def is_url(location):
     return bool(URL(str(location)).host)
+
+
+def expo(base=1.2, factor=0.1, max_value=2):
+    """Generator for exponential decay.
+    Args:
+        base: The mathematical base of the exponentiation operation
+        factor: Factor to multiply the exponentation by.
+        max_value: The maximum value until it will yield
+    """
+    n = 0
+    while True:
+        a = factor * base ** n
+        if max_value is None or a < max_value:
+            yield a
+            n += 1
+        else:
+            yield max_value
