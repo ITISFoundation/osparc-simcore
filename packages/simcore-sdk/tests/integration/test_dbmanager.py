@@ -13,7 +13,7 @@ core_services = [
     "postgres",
 ]
 
-ops_services = ["minio"]
+ops_services = ["minio", "adminer"]
 
 
 async def test_db_manager_read_config(

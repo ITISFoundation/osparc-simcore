@@ -7,7 +7,6 @@
 # pylint:disable=redefined-outer-name
 
 import os
-import re
 import shutil
 import socket
 import sys
@@ -17,6 +16,7 @@ from typing import Dict, List
 
 import pytest
 import yaml
+from dotenv import dotenv_values
 
 from .helpers.utils_docker import run_docker_compose_config
 
@@ -26,29 +26,14 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
     """ Loads and extends .env-devel returning
         all environment variables key=value
     """
-    key_eq_value_pattern = re.compile(r"^(\w+)=(.*)$")
-    env_devel = {}
-    with env_devel_file.open() as fh:
-        for line in fh:
-            match = key_eq_value_pattern.match(line)
-            if match:
-                key, value = match.groups()
-                env_devel[key] = str(value)
 
-    # Customized EXTENSION: overrides some of the environ to accomodate the test case ----
-    if "REGISTRY_SSL" in env_devel:
-        env_devel["REGISTRY_SSL"] = "False"
-    if "REGISTRY_URL" in env_devel:
-        env_devel["REGISTRY_URL"] = "{}:5000".format(_get_ip())
-    if "REGISTRY_USER" in env_devel:
-        env_devel["REGISTRY_USER"] = "simcore"
-    if "REGISTRY_PW" in env_devel:
-        env_devel["REGISTRY_PW"] = ""
-    if "REGISTRY_AUTH" in env_devel:
-        env_devel["REGISTRY_AUTH"] = False
+    env_devel_unresolved = dotenv_values(env_devel_file, verbose=True, interpolate=True)
+    # get from environ if applicable
+    env_devel = {
+        key: os.environ.get(key, value) for key, value in env_devel_unresolved.items()
+    }
 
-    if "SWARM_STACK_NAME" not in os.environ:
-        env_devel["SWARM_STACK_NAME"] = "simcore"
+    env_devel["SWARM_STACK_NAME"] = "simcore"
 
     return env_devel
 
@@ -150,17 +135,21 @@ def ops_docker_compose(
 
 
 @pytest.fixture(scope="module")
-def core_services_config_file(request, temp_folder, simcore_docker_compose):
-    """ Creates a docker-compose config file for every stack of services in'core_services' module variable
-        File is created in a temp folder
-    """
-    core_services = getattr(
-        request.module, "core_services", []
-    )  # TODO: PC->SAN could also be defined as a fixture instead of a single variable (as with docker_compose)
+def core_services(request) -> List[str]:
+    core_services = getattr(request.module, "core_services", [])
     assert (
         core_services
     ), f"Expected at least one service in 'core_services' within '{request.module.__name__}'"
+    return core_services
 
+
+@pytest.fixture(scope="module")
+def core_docker_compose_file(
+    core_services: List[str], temp_folder: Path, simcore_docker_compose: Dict
+) -> Path:
+    """ Creates a docker-compose config file for every stack of services in'core_services' module variable
+        File is created in a temp folder
+    """
     docker_compose_path = Path(temp_folder / "simcore_docker_compose.filtered.yml")
 
     _filter_services_and_dump(
@@ -171,11 +160,19 @@ def core_services_config_file(request, temp_folder, simcore_docker_compose):
 
 
 @pytest.fixture(scope="module")
-def ops_services_config_file(request, temp_folder, ops_docker_compose):
+def ops_services(request) -> List[str]:
+    ops_services = getattr(request.module, "ops_services", [])
+    return ops_services
+
+
+@pytest.fixture(scope="module")
+def ops_docker_compose_file(
+    ops_services: List[str], temp_folder: Path, ops_docker_compose: Dict
+) -> Path:
     """ Creates a docker-compose config file for every stack of services in 'ops_services' module variable
         File is created in a temp folder
     """
-    ops_services = getattr(request.module, "ops_services", [])
+
     docker_compose_path = Path(temp_folder / "ops_docker_compose.filtered.yml")
 
     _filter_services_and_dump(ops_services, ops_docker_compose, docker_compose_path)

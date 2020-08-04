@@ -54,7 +54,6 @@ def client(
 
     app_config["storage"]["enabled"] = False
     app_config["main"]["testing"] = True
-    app_config["db"]["init_tables"] = True  # inits postgres_service
 
     pprint(app_config)
 
@@ -172,6 +171,7 @@ async def test_start_pipeline(
     client,
     postgres_session,
     rabbit_service,
+    simcore_services,
     sleeper_service,
     logged_user,
     user_project,

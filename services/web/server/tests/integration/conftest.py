@@ -50,6 +50,7 @@ pytest_plugins = [
     "pytest_simcore.postgres_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.websocket_client",
+    "pytest_simcore.simcore_services",
 ]
 
 log = logging.getLogger(__name__)
@@ -165,6 +166,9 @@ def app_config(_webserver_dev_config: Dict, aiohttp_unused_port) -> Dict:
     """
     cfg = deepcopy(_webserver_dev_config)
     cfg["main"]["port"] = aiohttp_unused_port()
+    cfg["db"][
+        "init_tables"
+    ] = False  # this is done by alembic and the postgres_db fixture
     return cfg
 
 

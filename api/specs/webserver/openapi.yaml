@@ -136,9 +136,6 @@ paths:
     $ref: "./openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1datasets"
 
   # SERVICES ------------------------------------------------------------------------
-  /services:
-    $ref: "./openapi-services.yaml#/paths/~1services"
-
   /computation/pipeline/{project_id}:
     $ref: "./openapi-services.yaml#/paths/~1computation~1pipeline~1{project_id}"
 
@@ -203,6 +200,8 @@ paths:
     $ref: "./openapi-catalog.yaml#/paths/~1catalog~1dags"
   /catalog/dags/{dag_id}:
     $ref: "./openapi-catalog.yaml#/paths/~1catalog~1dags~1{dag_id}"
+  /catalog/services:
+    $ref: "./openapi-catalog.yaml#/paths/~1catalog~1services"
 
 components:
   responses:

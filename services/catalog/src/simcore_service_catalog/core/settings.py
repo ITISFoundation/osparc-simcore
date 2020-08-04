@@ -17,6 +17,23 @@ class _CommonConfig:
     env_file = ".env"  # SEE https://pydantic-docs.helpmanual.io/usage/settings/#dotenv-env-support
 
 
+class DirectorSettings(BaseSettings):
+    enabled: bool = Field(
+        True, description="Enables/Disables connection with director service"
+    )
+    host: str
+    port: int = 8080
+    vtag: str = "v0"
+
+    @property
+    def base_url(self):
+        # FIXME: httpx.client does not consder vtag
+        return f"http://{self.host}:{self.port}/{self.vtag}"
+
+    class Config(_CommonConfig):
+        env_prefix = "DIRECTOR_"
+
+
 class PostgresSettings(BaseSettings):
     enabled: bool = Field(
         True, description="Enables/Disables connection with postgres service"
@@ -49,7 +66,7 @@ class AppSettings(BaseSettings):
     @classmethod
     def create_default(cls) -> "AppSettings":
         # This call triggers parsers
-        return cls(postgres=PostgresSettings())
+        return cls(postgres=PostgresSettings(), director=DirectorSettings())
 
     # pylint: disable=no-self-use
     # pylint: disable=no-self-argument
@@ -74,6 +91,9 @@ class AppSettings(BaseSettings):
 
     # POSTGRES
     postgres: PostgresSettings
+
+    # Director service
+    director: DirectorSettings
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
     host: str = "0.0.0.0"  # nosec

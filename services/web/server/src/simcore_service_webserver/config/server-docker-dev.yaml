@@ -21,12 +21,8 @@ catalog:
   host: catalog
   port: 8000
   version: v0
-application_proxy:
-  enabled: False
-reverse_proxy:
-  enabled: False
 db:
-  init_tables: True
+  init_tables: False
   postgres:
     database: ${POSTGRES_DB}
     endpoint: ${POSTGRES_ENDPOINT}
@@ -38,7 +34,7 @@ db:
     maxsize: 40
 resource_manager:
   enabled: True
-  resource_deletion_timeout_seconds:  ${WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS}
+  resource_deletion_timeout_seconds: ${WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS}
   garbage_collection_interval_seconds: ${WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS}
   redis:
     host: ${REDIS_HOST}
@@ -62,7 +58,7 @@ login:
   registration_invitation_required: False
   registration_confirmation_required: False
 smtp:
-  sender: 'OSPARC support <support@osparc.io>'
+  sender: "OSPARC support <support@osparc.io>"
   host: ${SMTP_HOST}
   port: ${SMTP_PORT}
   tls: False
@@ -78,4 +74,3 @@ storage:
   version: v0
 session:
   secret_key: ${WEBSERVER_SESSION_SECRET_KEY}
-...

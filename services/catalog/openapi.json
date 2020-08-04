@@ -350,10 +350,160 @@
           }
         }
       }
+    },
+    "/v0/services": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "List Services",
+        "operationId": "list_services_v0_services_get",
+        "parameters": [
+          {
+            "description": "Requests a specific page of the list results",
+            "required": false,
+            "schema": {
+              "title": "Page Token",
+              "type": "string",
+              "description": "Requests a specific page of the list results"
+            },
+            "name": "page_token",
+            "in": "query"
+          },
+          {
+            "description": "Maximum number of results to be returned by the server",
+            "required": false,
+            "schema": {
+              "title": "Page Size",
+              "minimum": 0.0,
+              "type": "integer",
+              "description": "Maximum number of results to be returned by the server",
+              "default": 0
+            },
+            "name": "page_size",
+            "in": "query"
+          },
+          {
+            "description": "Sorts in ascending order comma-separated fields",
+            "required": false,
+            "schema": {
+              "title": "Order By",
+              "type": "string",
+              "description": "Sorts in ascending order comma-separated fields"
+            },
+            "name": "order_by",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Services V0 Services Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceOut"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "Author": {
+        "title": "Author",
+        "required": [
+          "name",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the author",
+            "example": "Jim Knopf"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email address",
+            "format": "email",
+            "example": [
+              "sun@sense.eight",
+              "deleen@minbar.bab"
+            ]
+          },
+          "affiliation": {
+            "type": "string",
+            "description": "Affiliation of the author",
+            "example": [
+              "Sense8",
+              "Babylon 5"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "Badge": {
+        "title": "Badge",
+        "required": [
+          "name",
+          "image",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the subject",
+            "example": [
+              "travis-ci",
+              "coverals.io",
+              "github.io"
+            ]
+          },
+          "image": {
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "description": "Url to the badge",
+            "format": "uri",
+            "example": [
+              "https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master",
+              "https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master",
+              "https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation"
+            ]
+          },
+          "url": {
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "description": "Link to the status",
+            "format": "uri",
+            "example": [
+              "https://travis-ci.org/ITISFoundation/osparc-simcore 'State of CI: build, test and pushing images'",
+              "https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master 'Test coverage'",
+              "https://itisfoundation.github.io/"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
       "Connection": {
         "title": "Connection",
         "type": "object",
@@ -684,6 +834,326 @@
           }
         }
       },
+      "SelectBox": {
+        "title": "SelectBox",
+        "required": [
+          "structure"
+        ],
+        "type": "object",
+        "properties": {
+          "structure": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Structure"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ServiceInput": {
+        "title": "ServiceInput",
+        "required": [
+          "display_order",
+          "label",
+          "description",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "display_order": {
+            "type": "number",
+            "description": "use this to numerically sort the properties for display",
+            "example": [
+              1,
+              -0.2
+            ]
+          },
+          "label": {
+            "type": "string",
+            "description": "short name for the property",
+            "example": "Age"
+          },
+          "description": {
+            "type": "string",
+            "description": "description of the property",
+            "example": "Age in seconds since 1970"
+          },
+          "type": {
+            "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "type": "string",
+            "description": "data type expected on this input glob matching for data type is allowed",
+            "example": [
+              "number",
+              "boolean",
+              "data:*/*",
+              "data:text/*",
+              "data:[image/jpeg,image/png]",
+              "data:application/json",
+              "data:application/json;schema=https://my-schema/not/really/schema.json",
+              "data:application/vnd.ms-excel",
+              "data:text/plain",
+              "data:application/hdf5",
+              "data:application/edu.ucdavis@ceclancy.xyz"
+            ]
+          },
+          "fileToKeyMap": {
+            "type": "object",
+            "description": "Place the data associated with the named keys in files",
+            "example": [
+              {
+                "dir/input1.txt": "key_1",
+                "dir33/input2.txt": "key2"
+              }
+            ]
+          },
+          "defaultValue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "example": [
+              "Dog",
+              true
+            ]
+          },
+          "widget": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Widget"
+              }
+            ],
+            "description": "custom widget to use instead of the default one determined from the data-type"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ServiceOut": {
+        "title": "simcore node",
+        "required": [
+          "key",
+          "version",
+          "type",
+          "name",
+          "description",
+          "authors",
+          "contact",
+          "inputs",
+          "outputs"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "pattern": "^(simcore)/(services)/(comp|dynamic)(/[^\\s]+)+$",
+            "type": "string",
+            "description": "distinctive name for the node based on the docker registry path",
+            "example": [
+              "simcore/services/comp/itis/sleeper",
+              "simcore/services/dynamic/3dviewer"
+            ]
+          },
+          "version": {
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string",
+            "description": "service version number",
+            "example": [
+              "1.0.0",
+              "0.0.1"
+            ]
+          },
+          "integration_version": {
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string",
+            "description": "service oSparc integration version number",
+            "example": "1.0.0"
+          },
+          "type": {
+            "enum": [
+              "computational",
+              "dynamic"
+            ],
+            "type": "string",
+            "description": "service type",
+            "example": "computational"
+          },
+          "name": {
+            "type": "string",
+            "description": "short, human readable name for the node",
+            "example": "Fast Counter"
+          },
+          "thumbnail": {
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "description": "url to the thumbnail",
+            "format": "uri",
+            "example": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
+          },
+          "badges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Badge"
+            }
+          },
+          "description": {
+            "type": "string",
+            "description": "human readable description of the purpose of the node",
+            "example": [
+              "Our best node type",
+              "The mother of all nodes, makes your numbers shine!"
+            ]
+          },
+          "authors": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Author"
+            }
+          },
+          "contact": {
+            "type": "string",
+            "description": "email to correspond to the authors about the node",
+            "format": "email",
+            "example": [
+              "lab@net.flix"
+            ]
+          },
+          "inputs": {
+            "type": "object",
+            "description": "all the input configurable for this service"
+          },
+          "outputs": {
+            "type": "object",
+            "description": "all the output configurable for this service"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ServiceProperty": {
+        "title": "ServiceProperty",
+        "required": [
+          "display_order",
+          "label",
+          "description",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "display_order": {
+            "type": "number",
+            "description": "use this to numerically sort the properties for display",
+            "example": [
+              1,
+              -0.2
+            ]
+          },
+          "label": {
+            "type": "string",
+            "description": "short name for the property",
+            "example": "Age"
+          },
+          "description": {
+            "type": "string",
+            "description": "description of the property",
+            "example": "Age in seconds since 1970"
+          },
+          "type": {
+            "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "type": "string",
+            "description": "data type expected on this input glob matching for data type is allowed",
+            "example": [
+              "number",
+              "boolean",
+              "data:*/*",
+              "data:text/*",
+              "data:[image/jpeg,image/png]",
+              "data:application/json",
+              "data:application/json;schema=https://my-schema/not/really/schema.json",
+              "data:application/vnd.ms-excel",
+              "data:text/plain",
+              "data:application/hdf5",
+              "data:application/edu.ucdavis@ceclancy.xyz"
+            ]
+          },
+          "fileToKeyMap": {
+            "type": "object",
+            "description": "Place the data associated with the named keys in files",
+            "example": [
+              {
+                "dir/input1.txt": "key_1",
+                "dir33/input2.txt": "key2"
+              }
+            ]
+          },
+          "defaultValue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "example": [
+              "Dog",
+              true
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "Structure": {
+        "title": "Structure",
+        "required": [
+          "key",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TextArea": {
+        "title": "TextArea",
+        "required": [
+          "minHeight"
+        ],
+        "type": "object",
+        "properties": {
+          "minHeight": {
+            "exclusiveMinimum": 0.0,
+            "type": "integer",
+            "description": "minimum Height of the textarea"
+          }
+        },
+        "additionalProperties": false
+      },
       "ValidationError": {
         "title": "ValidationError",
         "required": [
@@ -709,6 +1179,35 @@
             "type": "string"
           }
         }
+      },
+      "Widget": {
+        "title": "Widget",
+        "required": [
+          "type",
+          "details"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "TextArea",
+              "SelectBox"
+            ],
+            "type": "string",
+            "description": "type of the property"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TextArea"
+              },
+              {
+                "$ref": "#/components/schemas/SelectBox"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
       }
     }
   }

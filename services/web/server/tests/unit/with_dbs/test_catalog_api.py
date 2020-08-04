@@ -31,7 +31,6 @@ def client(loop, app_cfg, aiohttp_client, postgres_db):
 
     cfg = deepcopy(app_cfg)
 
-    cfg["db"]["init_tables"] = True  # inits tables of postgres_service upon startup
     cfg["catalog"]["enabled"] = True
 
     app = create_safe_application(app_cfg)

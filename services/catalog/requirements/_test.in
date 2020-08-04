@@ -7,9 +7,10 @@
 -r _base.txt
 
 # 'services/catalog/tests/unit' dependencies
-
+jsonschema
 
 # testing
+mock
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov

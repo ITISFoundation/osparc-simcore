@@ -172,11 +172,11 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           get: {
             method: "GET",
-            url: statics.API + "/services"
+            url: statics.API + "/catalog/services"
           },
           put: {
             method: "PUT",
-            url: statics.API + "/services/{serviceKey}/{serviceVersion}"
+            url: statics.API + "/catalog/services/{serviceKey}/{serviceVersion}"
           }
         }
       },
@@ -424,7 +424,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           delete: {
             method: "DELETE",
-            url:  statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
+            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
           }
         }
       },
