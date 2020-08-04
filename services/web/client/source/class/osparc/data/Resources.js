@@ -177,10 +177,6 @@ qx.Class.define("osparc.data.Resources", {
           put: {
             method: "PUT",
             url: statics.API + "/services/{serviceKey}/{serviceVersion}"
-          },
-          delete: {
-            method: "DELETE",
-            url: statics.API + "/services/{serviceKey}/{serviceVersion}"
           }
         }
       },
