@@ -28,11 +28,11 @@ class ServicesRepository(BaseRepository):
                     and_(
                         or_(*[services_access_rights.c.gid == gid for gid in gids])
                         if gids
-                        else None,
+                        else True,
                         services_access_rights.c.execute_access
                         if execute_access
-                        else None,
-                        services_access_rights.c.write_access if write_access else None,
+                        else True,
+                        services_access_rights.c.write_access if write_access else True,
                     )
                 )
             )

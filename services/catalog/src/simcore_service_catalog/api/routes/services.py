@@ -29,9 +29,8 @@ async def list_services(
     allowed_services: Set[Tuple[str, str]] = {
         (service.key, service.version)
         for service in await services_repo.list_services(
-            gids=[group.gid for group in user_groups]
+            gids=[group.gid for group in user_groups], execute_access=True
         )
-        if service.execute_access
     }
 
     # get the services from the registry
