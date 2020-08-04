@@ -178,7 +178,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this._add(control);
           break;
         case "theme-switch":
-          control = new osparc.ui.switch.ThemeSwitcher();
+          control = new osparc.ui.switch.ThemeSwitcher().set({
+            checked: qx.theme.manager.Meta.getInstance().getTheme().name === "osparc.theme.ThemeLight"
+          });
           this._add(control);
           break;
         case "user-menu":

@@ -12,13 +12,16 @@
 
    Authors:
      * Tobias Oetiker (oetiker)
-     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
-qx.Theme.define("osparc.theme.Color", {
-  extend: osparc.theme.osparcdark.Color,
-
-  colors: {
+qx.Theme.define("osparc.theme.ThemeLight", {
+  meta:
+  {
+    color: osparc.theme.ColorLight,
+    decoration: osparc.theme.Decoration,
+    font: osparc.theme.Font,
+    icon: qx.theme.icon.Oxygen,
+    appearance: osparc.theme.Appearance
   }
 });
