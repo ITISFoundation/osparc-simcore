@@ -10,19 +10,19 @@
       "logo": "python.png",
       "aliases": [
         "python3",
-        " python2",
-        " python-3",
-        " python-2",
-        " python27",
-        " python-3-6",
-        " python-3-5",
-        " py"
+        "python2",
+        "python-3",
+        "python-2",
+        "python27",
+        "python-3-6",
+        "python-3-5",
+        "py"
       ],
       "created_by": "Guido van Rossum",
       "released": "1991-02-20",
       "related": [
         "language",
-        " ruby"
+        "ruby"
       ],
       "url": "https://www.python.org/",
       "github_url": null,
@@ -44,6 +44,38 @@
       "github_url": null,
       "wikipedia_url": null,
       "markdown": "\nThe Jupyter Notebook is a language-agnostic HTML notebook application for Project Jupyter. Jupyter notebooks are documents that allow for creating and sharing live code, equations, visualizations, and narrative text together. People use them for data cleaning and transformation, numerical simulation, statistical modeling, data visualization, machine learning, and much more. "
+    },
+    "topics::octave": {
+      "classifier": "topics::octave",
+      "display_name": "Ocatave (Jupyter Lab)",
+      "short_description": "Jupyter Lab powered by Octave.",
+      "logo": "jupyter-notebook.png",
+      "aliases": [],
+      "created_by": "Jupyter Developers",
+      "released": "2011-12-01",
+      "related": [
+        "jupyter"
+      ],
+      "url": "https://www.gnu.org/software/octave/",
+      "github_url": null,
+      "wikipedia_url": null,
+      "markdown": "\nJupyter Lab powered by Octave."
+    },
+    "topics::Sim4Life": {
+      "classifier": "topics::Sim4Life",
+      "display_name": "Sim4Life (Jupyter Lab)",
+      "short_description": "Jupyter Lab powered by Sim4Life.",
+      "logo": "jupyter-notebook.png",
+      "aliases": [],
+      "created_by": "Zurich Med Tech",
+      "released": "2011-12-01",
+      "related": [
+        "jupyter"
+      ],
+      "url": "https://zmt.swiss/sim4life/",
+      "github_url": null,
+      "wikipedia_url": null,
+      "markdown": "\nJupyter Lab powered by Sim4Life."
     },
     "organizations::zmt": {
       "classifier": "organizations::zmt",
