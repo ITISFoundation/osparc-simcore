@@ -107,7 +107,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
      */
     reloadUserStudies: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
-        osparc.store.Store.getInstance().getStudiesWState()
+        osparc.store.Store.getInstance().getStudiesWState(true)
           .then(studies => {
             this.__resetStudyList(studies);
             this.resetSelection();
@@ -413,9 +413,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const menu = this.__getStudyItemMenu(item, study);
       item.setMenu(menu);
       item.subscribeToFilterGroup("studyBrowser");
-      item.addListener("execute", () => {
+      item.addListener("tap", e => {
         if (!item.isLocked()) {
-          this.__itemClicked(item);
+          this.__itemClicked(item, e.getNativeEvent().shiftKey);
         }
       }, this);
 
@@ -456,10 +456,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return menu;
     },
 
-    __getSelectMenuButton: function(item, studyData) {
+    __getSelectMenuButton: function(item) {
       const selectButton = new qx.ui.menu.Button(this.tr("Select"));
       selectButton.addListener("execute", () => {
         item.setValue(true);
+        this.__userStudyContainer.setLastSelectedItem(item);
       }, this);
       return selectButton;
     },
@@ -530,9 +531,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return this.__userStudies.find(matchesId);
     },
 
-    __itemClicked: function(item) {
+    __itemClicked: function(item, isShiftPressed) {
+      const studiesCont = this.__userStudyContainer;
       const selected = item.getValue();
-      const selection = this.__userStudyContainer.getSelection();
+      const selection = studiesCont.getSelection();
+
+      if (isShiftPressed) {
+        const lastIdx = studiesCont.getLastSelectedIndex();
+        const currentIdx = studiesCont.getIndex(item);
+        const minMaxIdx = [lastIdx, currentIdx].sort();
+        for (let i=minMaxIdx[0]; i<=minMaxIdx[1]; i++) {
+          const button = studiesCont.getChildren()[i];
+          button.setValue(true);
+        }
+      }
+      studiesCont.setLastSelectedIndex(studiesCont.getIndex(item));
+
       if (selected && selection.length === 1) {
         const studyData = this.__getStudyData(item.getUuid(), false);
         this.__startStudy(studyData);

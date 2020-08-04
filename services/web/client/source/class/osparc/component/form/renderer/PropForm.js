@@ -186,7 +186,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           const layoutProps = child.getLayoutProperties();
           if (layoutProps.column === this._gridPos.ctrlField) {
             const ctrl = this._form.getControl(child.key);
-            if (ctrl && ctrl.link) {
+            if (ctrl && ctrl["link"]) {
               this.__setRetrievingStatus(status, child.key, i, layoutProps.row);
             }
           }
@@ -380,7 +380,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         return false;
       }
       this.getControlLink(toPortId).setEnabled(false);
-      this._form.getControl(toPortId).link = {
+      this._form.getControl(toPortId)["link"] = {
         nodeUuid: fromNodeId,
         output: fromPortId
       };
@@ -410,7 +410,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     removeLink: function(toPortId) {
       this.getControlLink(toPortId).setEnabled(false);
       if ("link" in this._form.getControl(toPortId)) {
-        delete this._form.getControl(toPortId).link;
+        delete this._form.getControl(toPortId)["link"];
       }
 
       this.linkRemoved(toPortId);

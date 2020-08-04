@@ -40,13 +40,13 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
     getSettingsEditorLayout: function(nodes) {
       const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox("Settings");
       Object.values(nodes).forEach(innerNode => {
-        const propsWidgetEditor = innerNode.getPropsWidgetEditor();
-        if (propsWidgetEditor && Object.keys(innerNode.getInputs()).length) {
+        const propsFormEditor = innerNode.getPropsFormEditor();
+        if (propsFormEditor && Object.keys(innerNode.getInputs()).length) {
           const innerSettings = osparc.component.node.BaseNodeView.createSettingsGroupBox().set({
             maxWidth: 700
           });
           innerNode.bind("label", innerSettings, "legend");
-          innerSettings.add(propsWidgetEditor);
+          innerSettings.add(propsFormEditor);
           settingsEditorLayout.add(innerSettings);
         }
       });
@@ -61,11 +61,11 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
 
       const innerNodes = this.getNode().getInnerNodes(true);
       Object.values(innerNodes).forEach(innerNode => {
-        const propsWidget = innerNode.getPropsWidget();
-        if (propsWidget && Object.keys(innerNode.getInputs()).length && propsWidget.hasVisibleInputs()) {
+        const propsForm = innerNode.getPropsForm();
+        if (propsForm && Object.keys(innerNode.getInputs()).length && propsForm.hasVisibleInputs()) {
           const innerSettings = osparc.component.node.BaseNodeView.createSettingsGroupBox();
           innerNode.bind("label", innerSettings, "legend");
-          innerSettings.add(propsWidget);
+          innerSettings.add(propsForm);
           this._settingsLayout.add(innerSettings);
         }
         const mapper = innerNode.getInputsMapper();
@@ -88,9 +88,9 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
       const innerNodesArray = Object.values(innerNodes);
       for (let i=0; i<innerNodesArray.length && !anyVisible; i++) {
         const innerNode = innerNodesArray[i];
-        const propsWidget = innerNode.getPropsWidget();
-        if (propsWidget) {
-          anyVisible = propsWidget.hasVisibleInputs();
+        const propsForm = innerNode.getPropsForm();
+        if (propsForm) {
+          anyVisible = propsForm.hasVisibleInputs();
         } else {
           anyVisible = false;
         }
