@@ -113,7 +113,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       nullable: true,
       apply: "_applyLockedBy"
     },
-    
+
     classifiers: {
       check: "Object"
     }

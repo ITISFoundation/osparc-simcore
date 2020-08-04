@@ -20,7 +20,11 @@ function parseCommandLineArguments(args) {
   } = getUserAndPass(args);
 
   return {
-    url, user, pass, newUser, enableDemoMode
+    url,
+    user,
+    pass,
+    newUser,
+    enableDemoMode
   }
 }
 
