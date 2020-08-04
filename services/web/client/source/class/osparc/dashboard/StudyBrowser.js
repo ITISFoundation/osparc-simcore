@@ -482,17 +482,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       permissionsButton.addListener("execute", () => {
         const permissionsView = new osparc.component.export.StudyPermissions(studyData);
         const title = this.tr("Share with people and organizations");
-        const window = osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
+        osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
         permissionsView.addListener("updateStudy", e => {
           const studyId = e.getData();
           this.__reloadUserStudy(studyId, true);
         }, this);
-        permissionsView.addListener("finished", e => {
-          if (e.getData()) {
-            window.close();
-          }
-        }, this);
-        window.open();
       }, this);
       return permissionsButton;
     },
@@ -510,7 +504,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             window.close();
           }
         }, this);
-        window.open();
       }, this);
       return saveAsTemplateButton;
     },

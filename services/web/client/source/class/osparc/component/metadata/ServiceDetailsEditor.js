@@ -198,16 +198,10 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
       const serviceData = this.__serviceVersionDetails.getService();
       const permissionsView = new osparc.component.export.ServicePermissions(serviceData);
       const title = this.tr("Share with people and organizations");
-      const window = osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
+      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
       permissionsView.addListener("updateStudy", e => {
         this.fireEvent("updateStudy");
       });
-      permissionsView.addListener("finished", e => {
-        if (e.getData()) {
-          window.close();
-        }
-      }, this);
-      window.open();
     },
 
     __serializeForm: function() {

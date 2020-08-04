@@ -283,16 +283,10 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       const studyData = qx.util.Serializer.toNativeObject(this.__studyModel);
       const permissionsView = new osparc.component.export.StudyPermissions(studyData);
       const title = this.tr("Share with people and organizations");
-      const window = osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
+      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
       permissionsView.addListener("updateStudy", e => {
         this.fireEvent("updateStudy");
       });
-      permissionsView.addListener("finished", e => {
-        if (e.getData()) {
-          window.close();
-        }
-      }, this);
-      window.open();
     },
 
     __openSaveAsTemplate: function() {
@@ -308,7 +302,6 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
           window.close();
         }
       }, this);
-      window.open();
     },
 
     __serializeForm: function() {
