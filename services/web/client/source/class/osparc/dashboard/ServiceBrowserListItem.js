@@ -32,7 +32,7 @@
  *     bindItem: (c, item, id) => {
  *       c.bindProperty("key", "model", null, item, id);
  *       c.bindProperty("name", "title", null, item, id);
- *       c.bindProperty("description", "description", null, item, id);
+ *       c.bindProperty("description", "subtitle", null, item, id);
  *       c.bindProperty("type", "type", null, item, id);
  *       c.bindProperty("category", "category", null, item, id);
  *       c.bindProperty("contact", "contact", null, item, id);
@@ -49,8 +49,8 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
   construct: function() {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.Grid(0, 5);
-    layout.setColumnFlex(0, 1);
+    const layout = new qx.ui.layout.Grid(8, 5);
+    layout.setColumnFlex(1, 1);
     this._setLayout(layout);
     this.setPadding(5);
 
@@ -83,15 +83,21 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
       nullable : true
     },
 
+    thumbnail: {
+      check : "String",
+      apply : "_applyThumbnail",
+      nullable : true
+    },
+
     title: {
       check : "String",
       apply : "_applyTitle",
       nullable : true
     },
 
-    description: {
+    subtitle: {
       check : "String",
-      apply : "_applyDescription",
+      apply : "_applySubtitle",
       nullable : true
     },
 
@@ -139,23 +145,39 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "thumbnail":
+          control = new qx.ui.basic.Image().set({
+            scale: true,
+            allowGrowX: true,
+            allowGrowY: true,
+            allowShrinkX: true,
+            allowShrinkY: true,
+            maxWidth: 32,
+            maxHeight: 32
+          });
+          this._add(control, {
+            row: 0,
+            column: 0,
+            rowSpan: 2
+          });
+          break;
         case "title":
           control = new qx.ui.basic.Label().set({
             font: "title-14"
           });
           this._add(control, {
             row: 0,
-            column: 0
+            column: 1
           });
           break;
-        case "description":
+        case "subtitle":
           control = new osparc.ui.markdown.Markdown().set({
             font: "text-13",
             maxHeight: 16
           });
           this._add(control, {
             row: 1,
-            column: 0
+            column: 1
           });
           break;
         case "contact":
@@ -164,7 +186,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
           });
           this._add(control, {
             row: 1,
-            column: 1
+            column: 2
           });
           break;
       }
@@ -181,6 +203,14 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
       osparc.utils.Utils.setIdToWidget(this, "serviceBrowserListItem_"+id);
     },
 
+    _applyThumbnail: function(value) {
+      if (value === null) {
+        return;
+      }
+      const thumbnail = this.getChildControl("thumbnail");
+      thumbnail.setSource(value);
+    },
+
     _applyTitle: function(value) {
       if (value === null) {
         return;
@@ -189,11 +219,11 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
       label.setValue(value);
     },
 
-    _applyDescription: function(value) {
+    _applySubtitle: function(value) {
       if (value === null) {
         return;
       }
-      const label = this.getChildControl("description");
+      const label = this.getChildControl("subtitle");
       label.setValue(value);
     },
 

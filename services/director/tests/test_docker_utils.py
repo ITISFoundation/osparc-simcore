@@ -39,6 +39,8 @@ async def test_docker_client(loop):
     ],
 )
 async def test_swarm_method_with_no_swarm(loop, fct):
+    # if this fails on your development machine run
+    # `docker swarm leave --force` to leave the swarm
     with pytest.raises(DockerError):
         await fct()
 

@@ -74,16 +74,10 @@ async def create_project(
 
 
 async def delete_all_projects(app: web.Application):
-    from simcore_service_webserver.projects.projects_models import (
-        projects,
-        user_to_projects,
-    )
+    from simcore_service_webserver.projects.projects_models import projects
 
     db = app[APP_PROJECT_DBAPI]
     async with db.engine.acquire() as conn:
-        query = user_to_projects.delete()
-        await conn.execute(query)
-
         query = projects.delete()
         await conn.execute(query)
 

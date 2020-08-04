@@ -182,7 +182,7 @@ qx.Class.define("osparc.file.FilePicker", {
           path,
           label
         };
-        this.getNode().setProgress(100);
+        this.getNode().getStatus().setProgress(100);
       }
     },
 

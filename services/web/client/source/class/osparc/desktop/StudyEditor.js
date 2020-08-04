@@ -23,18 +23,19 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   construct: function() {
     this.base(arguments, "horizontal");
 
-    const mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
     const sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
       minWidth: 0,
-      width: 400
+      width: Math.min(parseInt(window.innerWidth*0.25), 400)
     });
-    osparc.utils.Utils.addBorder(sidePanel, "right");
+    osparc.utils.Utils.addBorder(sidePanel, 2, "right");
     const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
       minWidth: 0
     });
     scroll.add(sidePanel);
 
     this.add(scroll, 0); // flex 0
+
+    const mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
     this.add(mainPanel, 1); // flex 1
 
     this.__attachEventHandlers();
@@ -49,6 +50,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
   events: {
     "changeMainViewCaption": "qx.event.type.Data",
+    "studyIsLocked": "qx.event.type.Event",
     "studySaved": "qx.event.type.Data"
   },
 
@@ -69,11 +71,23 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     _applyStudy: function(study) {
       osparc.store.Store.getInstance().setCurrentStudy(study);
       study.buildWorkbench();
-      study.openStudy();
+      study.openStudy()
+        .then(() => {
+          study.getWorkbench().initWorkbench();
+        })
+        .catch(err => {
+          if ("status" in err && err["status"] == 423) { // Locked
+            const msg = study.getName() + this.tr(" is already opened");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            this.fireEvent("studyIsLocked");
+          } else {
+            console.error(err);
+          }
+        });
       this.__initViews();
       this.__connectEvents();
+      this.__attachSocketEventHandlers();
       this.__startAutoSaveTimer();
-
       this.__openOneNode();
     },
 
@@ -266,7 +280,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __openFilePicker: function(node) {
       const filePicker = new osparc.file.FilePicker(node, this.getStudy().getUuid());
       // open file picker in window
-      const filePickerWin = new qx.ui.window.Window(node.getLabel()).set({
+      const filePickerWin = new osparc.ui.window.Window(node.getLabel()).set({
         appearance: "service-window",
         layout: new qx.ui.layout.Grow(),
         autoDestroy: true,
@@ -274,7 +288,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         width: 570,
         height: 450,
         showMinimize: false,
-        modal: true
+        modal: true,
+        clickAwayClose: true
       });
       const showParentWorkbench = () => {
         this.nodeSelected(node.getParentNodeId() || this.getStudy().getUuid());
@@ -604,20 +619,28 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__scrollContainer.setVisibility("visible");
       this.__nodeView._maximizeIFrame(false); // eslint-disable-line no-underscore-dangle
       const node = this.getStudy().getWorkbench().getNode(this.__currentNodeId);
-      if (node && node.getIFrame() && !this.__nodeView.isSettingsGroupShowable()) {
+      if (node && node.getIFrame() && (node.getInputNodes().length === 0)) {
         node.getLoadingPage().maximizeIFrame(true);
         node.getIFrame().maximizeIFrame(true);
       }
     },
 
+    __maximizeIframe: function(maximize) {
+      this.getBlocker().setStyles({
+        display: maximize ? "none" : "block"
+      });
+      this.__scrollContainer.setVisibility(maximize ? "excluded" : "visible");
+    },
+
     __attachEventHandlers: function() {
-      this.__blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
+      const blocker = this.getBlocker();
+      blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
+
+      const splitter = this.getChildControl("splitter");
+      splitter.setWidth(1);
 
       const maximizeIframeCb = msg => {
-        this.__blocker.setStyles({
-          display: msg.getData() ? "none" : "block"
-        });
-        this.__scrollContainer.setVisibility(msg.getData() ? "excluded" : "visible");
+        this.__maximizeIframe(msg.getData());
       };
 
       this.addListener("appear", () => {
@@ -635,53 +658,59 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       controlsBar.addListener("ungroupSelection", this.__ungroupSelection, this);
       controlsBar.addListener("startPipeline", this.__startPipeline, this);
       controlsBar.addListener("stopPipeline", this.__stopPipeline, this);
+    },
 
+    __attachSocketEventHandlers: function() {
       // Listen to socket
       const socket = osparc.wrapper.WebSocket.getInstance();
+
       // callback for incoming logs
       const slotName = "logger";
-      socket.removeSlot(slotName);
-      socket.on(slotName, function(jsonString) {
-        const data = JSON.parse(jsonString);
-        if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
-          // Filtering out logs from other studies
-          return;
-        }
-        this.getLogger().infos(data["Node"], data["Messages"]);
-      }, this);
+      if (!socket.slotExists(slotName)) {
+        socket.on(slotName, function(jsonString) {
+          const data = JSON.parse(jsonString);
+          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
+            // Filtering out logs from other studies
+            return;
+          }
+          this.getLogger().infos(data["Node"], data["Messages"]);
+        }, this);
+      }
       socket.emit(slotName);
 
       // callback for incoming progress
       const slotName2 = "progress";
-      socket.removeSlot(slotName2);
-      socket.on(slotName2, function(data) {
-        const d = JSON.parse(data);
-        const nodeId = d["Node"];
-        const progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
-        const workbench = this.getStudy().getWorkbench();
-        const node = workbench.getNode(nodeId);
-        if (node) {
-          node.setProgress(progress);
-        }
-      }, this);
+      if (!socket.slotExists(slotName2)) {
+        socket.on(slotName2, function(data) {
+          const d = JSON.parse(data);
+          const nodeId = d["Node"];
+          const progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
+          const workbench = this.getStudy().getWorkbench();
+          const node = workbench.getNode(nodeId);
+          if (node) {
+            node.getStatus().setProgress(progress);
+          }
+        }, this);
+      }
 
       // callback for node updates
       const slotName3 = "nodeUpdated";
-      socket.removeSlot(slotName3);
-      socket.on(slotName3, data => {
-        const d = JSON.parse(data);
-        const nodeId = d["Node"];
-        const nodeData = d["Data"];
-        const workbench = this.getStudy().getWorkbench();
-        const node = workbench.getNode(nodeId);
-        if (node) {
-          node.setOutputData(nodeData.outputs);
-          if (nodeData.progress) {
-            const progress = Number.parseInt(nodeData.progress);
-            node.setProgress(progress);
+      if (!socket.slotExists(slotName3)) {
+        socket.on(slotName3, data => {
+          const d = JSON.parse(data);
+          const nodeId = d["Node"];
+          const nodeData = d["Data"];
+          const workbench = this.getStudy().getWorkbench();
+          const node = workbench.getNode(nodeId);
+          if (node) {
+            node.setOutputData(nodeData.outputs);
+            if (nodeData.progress) {
+              const progress = Number.parseInt(nodeData.progress);
+              node.getStatus().setProgress(progress);
+            }
           }
-        }
-      }, this);
+        }, this);
+      }
     }
   }
 });

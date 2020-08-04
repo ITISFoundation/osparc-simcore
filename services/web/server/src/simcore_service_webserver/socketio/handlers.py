@@ -8,20 +8,21 @@
 
 import asyncio
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from aiohttp import web
+from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
 
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
-from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
 
+from ..groups_api import list_user_groups
 from ..login.decorators import RQT_USERID_KEY, login_required
-from ..resource_manager.websocket_manager import managed_resource
 from ..resource_manager.config import get_service_deletion_timeout
+from ..resource_manager.websocket_manager import managed_resource
 from .config import get_socket_server
-from .handlers_utils import register_socketio_handler
 from .events import post_messages
+from .handlers_utils import register_socketio_handler
 
 ANONYMOUS_USER_ID = -1
 _SOCKET_IO_AIOHTTP_REQUEST_KEY = "aiohttp.request"
@@ -45,6 +46,7 @@ async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
     request = environ[_SOCKET_IO_AIOHTTP_REQUEST_KEY]
     try:
         await authenticate_user(sid, app, request)
+        await set_user_in_rooms(sid, app, request)
     except web.HTTPUnauthorized:
         raise SocketIOConnectionError("authentification failed")
     except Exception as exc:  # pylint: disable=broad-except
@@ -75,15 +77,27 @@ async def authenticate_user(
         log.error("Tab ID is not available!")
         raise web.HTTPUnauthorized(reason="missing tab id")
 
+    sio = get_socket_server(app)
+    # here we keep the original HTTP request in the socket session storage
+    async with sio.session(sid) as socketio_session:
+        socketio_session["user_id"] = user_id
+        socketio_session["client_session_id"] = client_session_id
+        socketio_session["request"] = request
     with managed_resource(user_id, client_session_id, app) as rt:
-        sio = get_socket_server(app)
-        # here we keep the original HTTP request in the socket session storage
-        async with sio.session(sid) as socketio_session:
-            socketio_session["user_id"] = user_id
-            socketio_session["client_session_id"] = client_session_id
-            socketio_session["request"] = request
         log.info("socketio connection from user %s", user_id)
         await rt.set_socket_id(sid)
+
+
+async def set_user_in_rooms(
+    sid: str, app: web.Application, request: web.Request
+) -> None:
+    user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
+    primary_group, user_groups, all_group = await list_user_groups(app, user_id)
+    groups = [primary_group] + user_groups + [all_group]
+    sio = get_socket_server(app)
+    # TODO: check if it is necessary to leave_room when socket disconnects
+    for group in groups:
+        sio.enter_room(sid, f"{group['gid']}")
 
 
 async def disconnect_other_sockets(sio, sockets: List[str]) -> None:

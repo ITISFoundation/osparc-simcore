@@ -16,21 +16,21 @@ THIS_SERVICE = "storage"
 CONFIG_DIR = "data"
 
 
-@pytest.fixture("session")
+@pytest.fixture(scope="session")
 def env_devel_file(osparc_simcore_root_dir):
     env_devel_fpath = osparc_simcore_root_dir / ".env-devel"
     assert env_devel_fpath.exists()
     return env_devel_fpath
 
 
-@pytest.fixture("session")
+@pytest.fixture(scope="session")
 def services_docker_compose_file(osparc_simcore_root_dir):
     dcpath = osparc_simcore_root_dir / "services" / "docker-compose.yml"
     assert dcpath.exists()
     return dcpath
 
 
-@pytest.fixture("session")
+@pytest.fixture(scope="session")
 def devel_environ(env_devel_file):
     PATTERN_ENVIRON_EQUAL = re.compile(r"^(\w+)=(.*)$")
     env_devel = {}
@@ -69,7 +69,7 @@ def test_variable_expansions(sample, expected_match):
         assert not match
 
 
-@pytest.fixture("session")
+@pytest.fixture(scope="session")
 def container_environ(
     services_docker_compose_file, devel_environ, osparc_simcore_root_dir
 ):

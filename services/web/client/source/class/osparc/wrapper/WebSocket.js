@@ -240,10 +240,13 @@ qx.Class.define("osparc.wrapper.WebSocket", {
      */
     on: function(name, fn, that) {
       this.__name.push(name);
-      if (typeof (that) !== "undefined" && that !== null) {
-        this.getSocket().on(name, qx.lang.Function.bind(fn, that));
-      } else {
-        this.getSocket().on(name, fn);
+      const socket = this.getSocket();
+      if (socket) {
+        if (typeof (that) !== "undefined" && that !== null) {
+          socket.on(name, qx.lang.Function.bind(fn, that));
+        } else {
+          socket.on(name, fn);
+        }
       }
     },
 

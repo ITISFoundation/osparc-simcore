@@ -100,7 +100,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           });
           this._mainLayout.addAt(control, 1);
           break;
-        case "shared-creator":
+        case "shared-description2":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
             anonymous: true
           });
@@ -108,18 +108,18 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           break;
         case "shared": {
           control = new qx.ui.basic.Image();
-          const sharedCreatorLayout = this.getChildControl("shared-creator");
-          sharedCreatorLayout.addAt(control, 0);
+          const sharedDescription2Layout = this.getChildControl("shared-description2");
+          sharedDescription2Layout.addAt(control, 0);
           break;
         }
-        case "creator": {
+        case "description2": {
           control = new qx.ui.basic.Label().set({
             anonymous: true,
             font: "text-13",
             allowGrowY: false
           });
-          const sharedCreatorLayout = this.getChildControl("shared-creator");
-          sharedCreatorLayout.addAt(control, 1, {
+          const sharedDescription2Layout = this.getChildControl("shared-description2");
+          sharedDescription2Layout.addAt(control, 1, {
             flex: 1
           });
           break;

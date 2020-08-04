@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import importlib
 import os
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -10,18 +9,20 @@ from pathlib import Path
 import pytest
 
 import utils
-from simcore_service_storage import datcore
 from simcore_service_storage.datcore_wrapper import DatcoreWrapper
 
 
 @pytest.fixture()
 def mocked_blackfynn_unavailable(mocker):
     def raise_error(*args, **kargs):
-        raise RuntimeError("mocked_blackfynn_unavailable")
+        raise RuntimeError(
+            "Emulating unavailable services."
+            "Error raised upon construction of Blackfynn. "
+            "SEE pytest.fixture mocked_blackfynn_unavailable"
+        )
 
-    mock = mocker.patch("blackfynn.Blackfynn", raise_error)
-    importlib.reload(datcore)
-    return mock
+    mock = mocker.patch("simcore_service_storage.datcore.Blackfynn", raise_error)
+    yield mock
 
 
 async def test_datcore_unavailable(loop, mocked_blackfynn_unavailable):

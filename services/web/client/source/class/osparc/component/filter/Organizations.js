@@ -26,21 +26,18 @@ qx.Class.define("osparc.component.filter.Organizations", {
    *
    * @extends osparc.component.filter.TagsFilter
    */
-  construct: function(filterGroupId) {
-    this.base(arguments, this.tr("My Organizations"), "organizations", filterGroupId);
+  construct: function() {
+    this.base(arguments, this.tr("Select Organization"), "organizations", "organizations");
 
     this.__buildMenu();
   },
 
   members: {
-    /**
-     * Function that uses the information in {osparc.store.Store.getGroupsOrganizations} to build the menu for the filter.
-     */
     __buildMenu: function() {
-      const store = osparc.store.Store.getInstance();
-      store.getGroupsOrganizations()
-        .then(orgs => {
-          orgs.sort(this.__sortByLabel);
+      osparc.data.Resources.get("organizations")
+        .then(resp => {
+          const orgs = resp["organizations"];
+          orgs.sort((a, b) => (a["label"] > b["label"]) ? 1 : -1);
           orgs.forEach(org => {
             const bnt = this._addOption(osparc.utils.Utils.capitalize(org["label"]));
             bnt.gid = org["gid"];
@@ -48,17 +45,7 @@ qx.Class.define("osparc.component.filter.Organizations", {
         });
     },
 
-    __sortByLabel: function(org1, org2) {
-      if (org1.label > org2.label) {
-        return 1;
-      }
-      if (org1.label < org2.label) {
-        return -1;
-      }
-      return 0;
-    },
-
-    getSelectedOrganizationIDs: function() {
+    getSelectedOrgIDs: function() {
       const selectedOrganizationIDs = [];
       const activeMenuButtons = this._getActiveMenuButtons();
       activeMenuButtons.forEach(activeMenuButton => {

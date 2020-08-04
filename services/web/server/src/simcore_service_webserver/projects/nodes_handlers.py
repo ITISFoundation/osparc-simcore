@@ -6,10 +6,11 @@ TODO: handlers implementation. Connect first to fake data for testing
 
 :raises NotImplementedError
 """
-from aiohttp import web
 import logging
-from ..login.decorators import login_required
 
+from aiohttp import web
+
+from ..login.decorators import login_required
 
 log = logging.getLogger(__name__)
 

@@ -9,20 +9,21 @@
 
     The app configuration is created before the application instance exists.
 
-
-TODO: add more strict checks with re
-TODO: add support for versioning.
-    - check shema fits version
-    - parse/format version in schema
 """
+# TODO: add more strict checks with re
+# TODO: add support for versioning.
+#    - check shema fits version
+#    - parse/format version in schema
+
 import logging
 from pathlib import Path
 from typing import Dict
 
 import trafaret as T
+from trafaret_config.simple import read_and_validate
+
 from servicelib import application_keys  # pylint:disable=unused-import
 from servicelib.config_schema_utils import addon_section, minimal_addon_schema
-from trafaret_config.simple import read_and_validate
 
 from . import (
     catalog_config,
@@ -91,6 +92,7 @@ def create_schema() -> T.Dict:
             addon_section("reverse_proxy", optional=True): minimal_addon_schema(),
             addon_section("application_proxy", optional=True): minimal_addon_schema(),
             addon_section("users", optional=True): minimal_addon_schema(),
+            addon_section("groups", optional=True): minimal_addon_schema(),
             addon_section("studies_access", optional=True): minimal_addon_schema(),
             addon_section("tags", optional=True): minimal_addon_schema(),
             addon_section("publications", optional=True): minimal_addon_schema(),
@@ -100,9 +102,9 @@ def create_schema() -> T.Dict:
 
     section_names = [k.name for k in schema.keys]
 
-    assert len(section_names) == len(set(section_names)), (
-        "Found repeated section names in %s" % section_names
-    )  # nosec
+    # fmt: off
+    assert len(section_names) == len(set(section_names)), f"Found repeated section names in {section_names}"  # nosec
+    # fmt: on
 
     return schema
 
@@ -112,4 +114,4 @@ def load_default_config(environs=None) -> Dict:
     return read_and_validate(filepath, trafaret=app_schema, vars=environs)
 
 
-app_schema = create_schema()  # TODO: rename as schema
+app_schema = create_schema()

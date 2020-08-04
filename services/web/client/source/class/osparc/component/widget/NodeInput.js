@@ -93,7 +93,7 @@ qx.Class.define("osparc.component.widget.NodeInput", {
         height: 10,
         margin: 3
       });
-      node.bind("progress", progressBar, "value");
+      node.getStatus().bind("progress", progressBar, "value");
 
       nodeUILayout.add(header);
       nodeUILayout.add(new qx.ui.core.Spacer(), {

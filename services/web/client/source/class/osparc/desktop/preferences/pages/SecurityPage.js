@@ -130,7 +130,7 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
     },
 
     __requestAPIKey: function() {
-      if (!osparc.data.Permissions.getInstance().canDo("preferences.apikey.create", true)) {
+      if (!osparc.data.Permissions.getInstance().canDo("user.apikey.create", true)) {
         return;
       }
 
@@ -197,7 +197,7 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
     },
 
     __deleteAPIKey: function(apiKeyLabel) {
-      if (!osparc.data.Permissions.getInstance().canDo("preferences.apikey.delete", true)) {
+      if (!osparc.data.Permissions.getInstance().canDo("user.apikey.delete", true)) {
         return;
       }
       const params = {
@@ -272,7 +272,7 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
       const addTokenBtn = new qx.ui.form.Button(this.tr("Add"));
       addTokenBtn.setWidth(100);
       addTokenBtn.addListener("execute", e => {
-        if (!osparc.data.Permissions.getInstance().canDo("preferences.token.create", true)) {
+        if (!osparc.data.Permissions.getInstance().canDo("user.token.create", true)) {
           return;
         }
         const params = {
@@ -321,7 +321,7 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
     },
 
     __deleteToken: function(service) {
-      if (!osparc.data.Permissions.getInstance().canDo("preferences.token.delete", true)) {
+      if (!osparc.data.Permissions.getInstance().canDo("user.token.delete", true)) {
         return;
       }
       const params = {

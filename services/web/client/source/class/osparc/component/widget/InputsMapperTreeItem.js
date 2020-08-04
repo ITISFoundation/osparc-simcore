@@ -39,10 +39,6 @@
 qx.Class.define("osparc.component.widget.InputsMapperTreeItem", {
   extend: qx.ui.tree.VirtualTreeItem,
 
-  construct: function() {
-    this.base(arguments);
-  },
-
   properties: {
     isDir: {
       check: "Boolean",

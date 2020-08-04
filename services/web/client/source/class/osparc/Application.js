@@ -41,6 +41,15 @@ qx.Class.define("osparc.Application", {
     main: function() {
       // Call super class
       this.base();
+
+      // Load user preferred theme if present
+      if (window.localStorage.getItem("themeName") &&
+        window.localStorage.getItem("themeName") !== qx.theme.manager.Meta.getInstance().getTheme().name) {
+        qx.theme.manager.Meta.getInstance().setTheme(
+          qx.Theme.getByName(window.localStorage.getItem("themeName"))
+        );
+      }
+
       this.__preventAutofillBrowserSyles();
 
       // Enable logging in debug variant

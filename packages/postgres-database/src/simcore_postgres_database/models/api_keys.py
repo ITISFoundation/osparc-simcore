@@ -1,4 +1,4 @@
-""" API keys to access public gateway
+""" API keys to access public API
 
 
 These keys grant the client authorization to the API resources

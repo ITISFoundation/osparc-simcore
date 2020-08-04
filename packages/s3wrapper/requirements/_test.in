@@ -16,5 +16,5 @@ pytest-runner
 requests
 
 # tools for CI
-pylint==2.5.0 # 2.5.3 fails to run in parallel
+pylint
 coveralls

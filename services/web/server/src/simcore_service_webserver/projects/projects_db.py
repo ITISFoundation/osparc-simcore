@@ -8,7 +8,8 @@
 import logging
 import uuid as uuidlib
 from datetime import datetime
-from typing import Dict, List, Mapping, Optional, Set
+from enum import Enum
+from typing import Dict, List, Mapping, Optional, Set, Union
 
 import psycopg2.errors
 import sqlalchemy as sa
@@ -16,14 +17,13 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
-
 from change_case import ChangeCase
-from psycopg2 import IntegrityError
+from sqlalchemy import literal_column
 from sqlalchemy.sql import and_, select
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
-from ..db_models import study_tags, users, user_to_groups
+from ..db_models import GroupType, groups, study_tags, user_to_groups, users
 from ..utils import format_datetime, now_str
 from .projects_exceptions import (
     ProjectInvalidRightsError,
@@ -31,12 +31,59 @@ from .projects_exceptions import (
     ProjectsException,
 )
 from .projects_fakes import Fake
-from .projects_models import ProjectType, projects, user_to_projects
+from .projects_models import ProjectType, projects
 
 log = logging.getLogger(__name__)
 
 APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
 DB_EXCLUSIVE_COLUMNS = ["type", "id", "published"]
+
+
+class ProjectAccessRights(Enum):
+    OWNER = {"read": True, "write": True, "delete": True}
+    COLLABORATOR = {"read": True, "write": True, "delete": False}
+    VIEWER = {"read": True, "write": False, "delete": False}
+
+
+def _check_project_permissions(
+    project: Union[RowProxy, Dict],
+    user_id: int,
+    user_groups: List[RowProxy],
+    permission: str,
+) -> None:
+    # compute access rights by order of priority all group > organizations > primary
+    primary_group = next(filter(lambda x: x.type == GroupType.PRIMARY, user_groups))
+    standard_groups = filter(lambda x: x.type == GroupType.STANDARD, user_groups)
+    all_group = next(filter(lambda x: x.type == GroupType.EVERYONE, user_groups))
+
+    if f"{primary_group.gid}" in project["access_rights"]:
+        if not project["access_rights"][f"{primary_group.gid}"][permission]:
+            raise ProjectInvalidRightsError(user_id, project["uuid"])
+        return
+    # let's check if standard groups are in there and take the most liberal rights
+    standard_groups_permissions = []
+    for group in standard_groups:
+        if f"{group.gid}" in project["access_rights"]:
+            standard_groups_permissions.append(
+                project["access_rights"][f"{group.gid}"][permission]
+            )
+    if standard_groups_permissions:
+        if not any(standard_groups_permissions):
+            raise ProjectInvalidRightsError(user_id, project["uuid"])
+        return
+
+    if (
+        not f"{all_group.gid}" in project["access_rights"]
+        or not project["access_rights"][f"{all_group.gid}"][permission]
+    ):
+        raise ProjectInvalidRightsError(user_id, project["uuid"])
+
+
+def _create_project_access_rights(
+    gid: int, access: ProjectAccessRights
+) -> Dict[str, Dict[str, bool]]:
+    return {f"{gid}": access.value}
+
 
 # TODO: check here how schema to model db works!?
 def _convert_to_db_names(project_document_data: Dict) -> Dict:
@@ -51,7 +98,9 @@ def _convert_to_db_names(project_document_data: Dict) -> Dict:
     return converted_args
 
 
-def _convert_to_schema_names(project_database_data: Mapping, user_email: str) -> Dict:
+def _convert_to_schema_names(
+    project_database_data: Mapping, user_email: str, **kwargs
+) -> Dict:
     converted_args = {}
     for key, value in project_database_data.items():
         if key in DB_EXCLUSIVE_COLUMNS:
@@ -63,6 +112,7 @@ def _convert_to_schema_names(project_database_data: Mapping, user_email: str) ->
             # this entry has to be converted to the owner e-mail address
             converted_value = user_email
         converted_args[ChangeCase.snake_to_camel(key)] = converted_value
+    converted_args.update(**kwargs)
     return converted_args
 
 
@@ -98,7 +148,7 @@ class ProjectDBAPI:
             self._init_engine()
         return self._engine
 
-    async def add_projects(self, projects_list: List[Dict], user_id: str) -> List[str]:
+    async def add_projects(self, projects_list: List[Dict], user_id: int) -> List[str]:
         """
             adds all projects and assigns to a user
 
@@ -114,7 +164,7 @@ class ProjectDBAPI:
     async def add_project(
         self,
         prj: Dict,
-        user_id: str,
+        user_id: int,
         *,
         force_project_uuid=False,
         force_as_template=False,
@@ -127,7 +177,7 @@ class ProjectDBAPI:
         :param prj: schema-compliant project data
         :type prj: Dict
         :param user_id: database's user identifier
-        :type user_id: str
+        :type user_id: int
         :param force_project_uuid: enforces valid uuid, defaults to False
         :type force_project_uuid: bool, optional
         :param force_as_template: adds data as template, defaults to False
@@ -153,6 +203,14 @@ class ProjectDBAPI:
                     "prj_owner": user_id if user_id else None,
                 }
             )
+            # validate access_rights. are the gids valid? also ensure prj_owner is in there
+            if user_id:
+                primary_gid = await self._get_user_primary_group_gid(conn, user_id)
+                kargs["access_rights"].update(
+                    _create_project_access_rights(
+                        primary_gid, ProjectAccessRights.OWNER
+                    )
+                )
 
             # must be valid uuid
             try:
@@ -164,13 +222,11 @@ class ProjectDBAPI:
 
             # insert project
             retry = True
-            project_id = None
             while retry:
                 try:
                     query = projects.insert().values(**kargs)
                     result = await conn.execute(query)
-                    row = await result.first()
-                    project_id = row[projects.c.id]
+                    await result.first()
                     retry = False
                 except psycopg2.errors.UniqueViolation as err:  # pylint: disable=no-member
                     if (
@@ -181,21 +237,6 @@ class ProjectDBAPI:
                     kargs["uuid"] = str(uuidlib.uuid1())
                     retry = True
 
-            if user_id is not None:
-                try:
-                    query = user_to_projects.insert().values(
-                        user_id=user_id, project_id=project_id
-                    )
-                    await conn.execute(query)
-                except IntegrityError as exc:
-                    log.exception("Cannot associate project %d to user %d", project_id, user_id)
-
-                    # rollback projects database
-                    query = projects.delete().where(projects.c.id == project_id)
-                    await conn.execute(query)
-
-                    raise ProjectInvalidRightsError(user_id, prj["uuid"]) from exc
-
             # Updated values
             user_email = await self._get_user_email(conn, user_id)
             prj = _convert_to_schema_names(kargs, user_email)
@@ -203,27 +244,25 @@ class ProjectDBAPI:
                 prj["tags"] = []
             return prj
 
-    async def load_user_projects(self, user_id: str) -> List[Dict]:
+    async def load_user_projects(self, user_id: int) -> List[Dict]:
         log.info("Loading projects for user %s", user_id)
-
-        query = (
-            select([projects])
-            .select_from(user_to_projects.join(projects))
-            .where(
-                and_(
-                    user_to_projects.c.user_id == user_id,
-                    projects.c.type != ProjectType.TEMPLATE,
-                )
-            )
-        )
-
         async with self.engine.acquire() as conn:
-            projects_list = await self.__load_projects(conn, query)
+            user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
+            query = f"""
+    SELECT *
+    FROM projects
+    WHERE projects.type != 'TEMPLATE'
+    AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
+    OR prj_owner = {user_id})
+    """
+            projects_list = await self.__load_projects(
+                conn, query, user_id, user_groups
+            )
 
         return projects_list
 
     async def load_template_projects(
-        self, user_id: str, *, only_published=False
+        self, user_id: int, *, only_published=False
     ) -> List[Dict]:
         log.info("Loading public template projects")
 
@@ -231,32 +270,44 @@ class ProjectDBAPI:
         projects_list = [prj.data for prj in Fake.projects.values() if prj.template]
 
         async with self.engine.acquire() as conn:
-            user_groups: List[str] = await self.__load_user_groups(conn, user_id)
+            user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
             # NOTE: in order to use specific postgresql function jsonb_exists_any we use raw call here
             query = f"""
 SELECT *
 FROM projects
 WHERE projects.type = 'TEMPLATE'
 {'AND projects.published ' if only_published else ''}
-AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group}'" for group in user_groups)}])
+AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
 OR prj_owner = {user_id})
             """
-            db_projects = await self.__load_projects(conn, query)
+            db_projects = await self.__load_projects(conn, query, user_id, user_groups)
             projects_list.extend(db_projects)
 
         return projects_list
 
-    async def __load_user_groups(self, conn: SAConnection, user_id: str) -> List[str]:
-        user_groups: List[str] = []
-        query = select([user_to_groups.c.gid]).where(user_to_groups.c.uid == user_id)
+    async def __load_user_groups(
+        self, conn: SAConnection, user_id: int
+    ) -> List[RowProxy]:
+        user_groups: List[RowProxy] = []
+        query = (
+            select([groups])
+            .select_from(groups.join(user_to_groups))
+            .where(user_to_groups.c.uid == user_id)
+        )
         async for row in conn.execute(query):
-            user_groups.append(row[user_to_groups.c.gid])
+            user_groups.append(row)
         return user_groups
 
-    async def __load_projects(self, conn: SAConnection, query) -> List[Dict]:
+    async def __load_projects(
+        self, conn: SAConnection, query: str, user_id: int, user_groups: List[RowProxy]
+    ) -> List[Dict]:
         api_projects: List[Dict] = []  # API model-compatible projects
         db_projects: List[Dict] = []  # DB model-compatible projects
         async for row in conn.execute(query):
+            try:
+                _check_project_permissions(row, user_id, user_groups, "read")
+            except ProjectInvalidRightsError:
+                continue
             prj = dict(row.items())
             log.debug("found project: %s", prj)
             db_projects.append(prj)
@@ -273,26 +324,30 @@ OR prj_owner = {user_id})
         return api_projects
 
     async def _get_project(
-        self, user_id: str, project_uuid: str, exclude_foreign: Optional[List] = None
+        self, user_id: int, project_uuid: str, exclude_foreign: Optional[List] = None
     ) -> Dict:
         exclude_foreign = exclude_foreign or []
         async with self.engine.acquire() as conn:
-            joint_table = user_to_projects.join(projects)
-            query = (
-                select([projects])
-                .select_from(joint_table)
-                .where(
-                    and_(
-                        projects.c.uuid == project_uuid,
-                        user_to_projects.c.user_id == user_id,
-                    )
-                )
-            )
+            # this retrieves the projects where user is owner
+            user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
+
+            # NOTE: in order to use specific postgresql function jsonb_exists_any we use raw call here
+            query = f"""
+SELECT *
+FROM projects
+WHERE projects.type != 'TEMPLATE'
+AND uuid = '{project_uuid}'
+AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
+OR prj_owner = {user_id})
+"""
             result = await conn.execute(query)
             project_row = await result.first()
 
             if not project_row:
                 raise ProjectNotFoundError(project_uuid)
+
+            # now carefuly check the access rights
+            _check_project_permissions(project_row, user_id, user_groups, "read")
 
             project = dict(project_row.items())
 
@@ -302,7 +357,7 @@ OR prj_owner = {user_id})
 
             return project
 
-    async def add_tag(self, user_id: str, project_uuid: str, tag_id: int) -> Dict:
+    async def add_tag(self, user_id: int, project_uuid: str, tag_id: int) -> Dict:
         project = await self._get_project(user_id, project_uuid)
         async with self.engine.acquire() as conn:
             # pylint: disable=no-value-for-parameter
@@ -314,7 +369,7 @@ OR prj_owner = {user_id})
                     return _convert_to_schema_names(project, user_email)
                 raise ProjectsException()
 
-    async def remove_tag(self, user_id: str, project_uuid: str, tag_id: int) -> Dict:
+    async def remove_tag(self, user_id: int, project_uuid: str, tag_id: int) -> Dict:
         project = await self._get_project(user_id, project_uuid)
         async with self.engine.acquire() as conn:
             user_email = await self._get_user_email(conn, user_id)
@@ -330,12 +385,12 @@ OR prj_owner = {user_id})
                     project["tags"].remove(tag_id)
                 return _convert_to_schema_names(project, user_email)
 
-    async def get_user_project(self, user_id: str, project_uuid: str) -> Dict:
+    async def get_user_project(self, user_id: int, project_uuid: str) -> Dict:
         """ Returns all projects *owned* by the user
 
-            - A project is owned with it is mapped in user_to_projects list
-            - prj_owner field is not
+            - prj_owner
             - Notice that a user can have access to a template but he might not onw it
+            - Notice that a user can have access to a project where he/she has read access
 
         :raises ProjectNotFoundError: project is not assigned to user
         :return: schema-compliant project
@@ -349,7 +404,7 @@ OR prj_owner = {user_id})
         project = await self._get_project(user_id, project_uuid)
         async with self.engine.acquire() as conn:
             # pylint: disable=no-value-for-parameter
-            user_email = await self._get_user_email(conn, user_id)
+            user_email = await self._get_user_email(conn, project["prj_owner"])
             return _convert_to_schema_names(project, user_email)
 
     async def get_template_project(
@@ -360,7 +415,7 @@ OR prj_owner = {user_id})
         if prj and prj.template:
             return prj.data
 
-        template_prj = None
+        template_prj = {}
         async with self.engine.acquire() as conn:
             if only_published:
                 condition = and_(
@@ -386,19 +441,8 @@ OR prj_owner = {user_id})
 
         return template_prj
 
-    async def get_project_workbench(self, project_uuid: str):
-        async with self.engine.acquire() as conn:
-            query = select([projects.c.workbench]).where(
-                projects.c.uuid == project_uuid
-            )
-            result = await conn.execute(query)
-            row = await result.first()
-            if row:
-                return row[projects.c.workbench]
-        return {}
-
     async def update_user_project(
-        self, project_data: Dict, user_id: str, project_uuid: str
+        self, project_data: Dict, user_id: int, project_uuid: str
     ):
         """ updates a project from a user
 
@@ -409,69 +453,50 @@ OR prj_owner = {user_id})
             row = await self._get_project(
                 user_id, project_uuid, exclude_foreign=["tags"]
             )
-
+            user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
+            _check_project_permissions(row, user_id, user_groups, "write")
             # uuid can ONLY be set upon creation
             if row[projects.c.uuid.key] != project_data["uuid"]:
-                # TODO: add message
                 raise ProjectInvalidRightsError(user_id, project_data["uuid"])
-            # TODO: should also take ownership???
+            # ensure the prj owner is always in the access rights
+            owner_primary_gid = await self._get_user_primary_group_gid(
+                conn, row[projects.c.prj_owner.key]
+            )
+            project_data["accessRights"].update(
+                _create_project_access_rights(
+                    owner_primary_gid, ProjectAccessRights.OWNER
+                )
+            )
 
             # update timestamps
             project_data["lastChangeDate"] = now_str()
-
             # now update it
-            # FIXME: E1120:No value for argument 'dml' in method call
-            # pylint: disable=E1120
-            query = (
+            result = await conn.execute(
+                # pylint: disable=no-value-for-parameter
                 projects.update()
                 .values(**_convert_to_db_names(project_data))
                 .where(projects.c.id == row[projects.c.id.key])
+                .returning(literal_column("*"))
             )
-            await conn.execute(query)
+            project: RowProxy = await result.fetchone()
+            user_email = await self._get_user_email(conn, project.prj_owner)
+
+            tags = await self._get_tags_by_project(
+                conn, project_id=project[projects.c.id]
+            )
+            return _convert_to_schema_names(project, user_email, tags=tags)
 
     async def delete_user_project(self, user_id: int, project_uuid: str):
         log.info("Deleting project %s for user %s", project_uuid, user_id)
+        project = await self._get_project(user_id, project_uuid)
         async with self.engine.acquire() as conn:
-            joint_table = user_to_projects.join(projects)
-            query = (
-                select([projects.c.id, user_to_projects.c.id], use_labels=True)
-                .select_from(joint_table)
-                .where(
-                    and_(
-                        projects.c.uuid == project_uuid,
-                        user_to_projects.c.user_id == user_id,
-                    )
-                )
+            # if we have delete access we delete the project
+            user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
+            _check_project_permissions(project, user_id, user_groups, "delete")
+            await conn.execute(
+                # pylint: disable=no-value-for-parameter
+                projects.delete().where(projects.c.uuid == project_uuid)
             )
-            result = await conn.execute(query)
-            # ensure we have found one
-            rows = await result.fetchall()
-
-            if not rows:
-                # no project found
-                raise ProjectNotFoundError(project_uuid)
-
-            if len(rows) == 1:
-                row = rows[0]
-                # now let's delete the link to the user
-                # FIXME: E1120:No value for argument 'dml' in method call
-                # pylint: disable=E1120
-                project_id = row[user_to_projects.c.id]
-                log.info("will delete row with project_id %s", project_id)
-                query = user_to_projects.delete().where(
-                    user_to_projects.c.id == project_id
-                )
-                await conn.execute(query)
-
-                query = user_to_projects.select().where(
-                    user_to_projects.c.project_id == row[projects.c.id]
-                )
-                result = await conn.execute(query)
-                remaining_users = await result.fetchall()
-                if not remaining_users:
-                    # only delete project if there are no other user mapped
-                    query = projects.delete().where(projects.c.id == row[projects.c.id])
-                    await conn.execute(query)
 
     async def make_unique_project_uuid(self) -> str:
         """ Generates a project identifier still not used in database
@@ -494,20 +519,27 @@ OR prj_owner = {user_id})
                     break
         return project_uuid
 
-    async def _get_user_email(self, conn: SAConnection, user_id: Optional[str]) -> str:
+    async def _get_user_email(self, conn: SAConnection, user_id: Optional[int]) -> str:
         if not user_id:
             return "not_a_user@unknown.com"
-        stmt = sa.select([users.c.email]).where(users.c.id == user_id)
-        result: ResultProxy = await conn.execute(stmt)
-        row: RowProxy = await result.first()
-        return row[users.c.email] if row else "Unknown"
+        email: ResultProxy = await conn.scalar(
+            sa.select([users.c.email]).where(users.c.id == user_id)
+        )
+        return email or "Unknown"
+
+    async def _get_user_primary_group_gid(
+        self, conn: SAConnection, user_id: int
+    ) -> int:
+        primary_gid: int = await conn.scalar(
+            sa.select([users.c.primary_gid]).where(users.c.id == str(user_id))
+        )
+        return primary_gid
 
     async def _get_tags_by_project(self, conn: SAConnection, project_id: str) -> List:
         query = sa.select([study_tags.c.tag_id]).where(
             study_tags.c.study_id == project_id
         )
-        rows = await (await conn.execute(query)).fetchall()
-        return [row.tag_id for row in rows]
+        return [row.tag_id async for row in conn.execute(query)]
 
     async def get_all_node_ids_from_workbenches(
         self, project_uuid: str = None

@@ -1,5 +1,31 @@
 version: "3.7"
 services:
+  api-server:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/api-server:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    environment:
+      - WEBSERVER_HOST=${WEBSERVER_HOST:-webserver}
+      - LOGLEVEL=${LOG_LEVEL:-INFO}
+    env_file:
+      - ../.env
+    depends_on:
+      - postgres
+      - webserver
+    deploy:
+      labels:
+        - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
+        # gzip compression
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_gzip.compress=true
+        # ssl header necessary so that socket.io upgrades correctly from polling to websocket mode. the middleware must be attached to the right connection.
+        - traefik.enable=true
+        - traefik.http.services.${SWARM_STACK_NAME}_api-server.loadbalancer.server.port=8000
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.rule=hostregexp(`{host:.+}`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.entrypoints=simcore_api
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.priority=1
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.middlewares=${SWARM_STACK_NAME}_gzip@docker
+    networks:
+      - default
+
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -9,8 +35,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
-      - TESTING=false
-      - LOGLEVEL=${LOG_LEVEL:-WARNING}
+      - LOG_LEVEL=${LOG_LEVEL:-WARNING}
     depends_on:
       - postgres
     networks:
@@ -88,15 +113,15 @@ services:
       labels:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
         # gzip compression
-        - traefik.http.middlewares.gzip.compress=true
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_gzip.compress=true
         # ssl header necessary so that socket.io upgrades correctly from polling to websocket mode. the middleware must be attached to the right connection.
-        - traefik.http.middlewares.simcore_sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
+        - traefik.http.middlewares.${SWARM_STACK_NAME_NO_HYPHEN}_sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
         - traefik.enable=true
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.server.port=8080
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=hostregexp(`{host:.+}`)
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.priority=1
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=gzip@docker, simcore_sslheader@docker
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@docker
     networks:
       - default
       - interactive_services_subnet
@@ -227,7 +252,7 @@ services:
       - default
 
   traefik:
-    image: traefik:v2.2.0
+    image: traefik:v2.2.1
     init: true
     command:
       - "--api=true"
@@ -241,6 +266,8 @@ services:
       - "--metrics.prometheus.entryPoint=metrics"
       - "--entryPoints.http.address=:80"
       - "--entryPoints.http.forwardedHeaders.insecure"
+      - "--entryPoints.simcore_api.address=:10081"
+      - "--entryPoints.simcore_api.forwardedHeaders.insecure"
       - "--entryPoints.traefik_monitor.address=:8080"
       - "--entryPoints.traefik_monitor.forwardedHeaders.insecure"
       - "--providers.docker.endpoint=unix:///var/run/docker.sock"

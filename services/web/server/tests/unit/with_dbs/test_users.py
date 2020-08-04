@@ -24,12 +24,14 @@ from pytest_simcore.helpers.utils_tokens import (
 )
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
+from simcore_service_webserver.groups import setup_groups
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.users import setup_users
+
 
 API_VERSION = "v0"
 
@@ -53,6 +55,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_service):
     setup_rest(app)
     setup_login(app)
     setup_users(app)
+    setup_groups(app)
 
     client = loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
@@ -130,10 +133,10 @@ PREFIX = "/" + API_VERSION + "/me"
     ],
 )
 async def test_get_profile(
-    logged_user,
+    logged_user: Dict,
     client,
-    role,
-    expected,
+    role: UserRole,
+    expected: web.HTTPException,
     primary_group: Dict[str, str],
     standard_groups: List[Dict[str, str]],
     all_group: Dict[str, str],
@@ -304,9 +307,6 @@ async def test_delete_token(
 
     if not error:
         assert not (await get_token_from_db(tokens_db, token_service=sid))
-
-
-## BUG FIXES #######################################################
 
 
 @pytest.fixture

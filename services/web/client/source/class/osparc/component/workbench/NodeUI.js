@@ -64,6 +64,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     this.__createNodeLayout();
 
     this.subscribeToFilterGroup("workbench");
+
+    this.getChildControl("captionbar").setCursor("move");
+    this.getChildControl("title").setCursor("move");
   },
 
   properties: {
@@ -109,10 +112,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     getNodeId: function() {
       return this.getNode().getNodeId();
-    },
-
-    getCaptionBar: function() {
-      return this.getChildControl("captionbar");
     },
 
     _createChildControlImpl: function(id) {
@@ -172,7 +171,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.__progressBar = this.getChildControl("progress");
       }
       if (node.isDynamic()) {
-        const nodeStatus = new osparc.component.service.NodeStatus(node);
+        const nodeStatus = new osparc.component.service.NodeStatusUI(node);
         this.__chipContainer.add(nodeStatus);
       }
     },
@@ -187,7 +186,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.__createUIPorts(true, metaData && metaData.inputs);
       this.__createUIPorts(false, metaData && metaData.outputs);
       if (node.isComputational() || node.isFilePicker()) {
-        node.bind("progress", this.__progressBar, "value");
+        node.getStatus().bind("progress", this.__progressBar, "value");
       }
     },
 
@@ -241,6 +240,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         paddingLeft: 5,
         paddingRight: 5
       });
+      uiPort.setCursor("pointer");
       return uiPort;
     },
 

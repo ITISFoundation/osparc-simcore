@@ -50,10 +50,30 @@ Once finalized, the migration script also needs to be added to version control.
 ### Upgrade
 
 Upgrades to given revision (get ``info`` to check history)
+
 ```bash
   simcore-postgres-database upgrade head
 ```
 
-
 [alembic]:https://alembic.sqlalchemy.org/en/latest/
 [flask-migrate]:https://flask-migrate.readthedocs.io/en/latest/
+
+
+### Development
+
+1. In order to create/modify/delete tables one can use sc-pg to start a clean database:
+
+  ```console
+  make setup-commit # this will start a clean database and it is visible under http://127.0.0.1:18080/?pgsql=postgres&username=test&db=test&ns=public
+  ```
+
+2. Modify the models in [src/simcore_postgres_database/models](src/simcore_postgres_database/models) according to the new needs
+3. Create a migration script:
+
+    ```console
+    sc-pg review -m "some meaningful message" # this will generate an alembic migration script in [scripts](./scripts)
+    sc-pg upgrade # this will apply the generated migration script on the database
+    sc-pg downgrade # this will downgrade the database again to the previous state
+    ```
+
+    NOTE: when changing the scripts, one needs to delete the current script or the database state will be undefined.

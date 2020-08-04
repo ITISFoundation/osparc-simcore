@@ -4,6 +4,7 @@
     - settings
 """
 import trafaret as T
+
 from servicelib.config_schema_utils import minimal_addon_schema
 
 from .settings import APP_OPENAPI_SPECS_KEY

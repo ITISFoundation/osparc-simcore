@@ -4,9 +4,7 @@ from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
-from servicelib.tracing import setup_tracing
-from servicelib.tracing import schema
-
+from servicelib.tracing import schema, setup_tracing
 
 CONFIG_SECTION_NAME = "tracing"
 

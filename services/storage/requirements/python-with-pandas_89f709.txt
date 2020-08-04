@@ -1,8 +1,0 @@
-#
-# Taken from https://github.com/ITISFoundation/dockerfiles/blob/89f70938b66c0e4c1966c9a62da7a6dc89778f45/python-with-pandas/3.6-alpine/requirements.txt
-#
-numpy==1.16.3
-pandas==0.24.2
-python-dateutil==2.8.0    # via pandas
-pytz==2019.1              # via pandas
-six==1.12.0               # via python-dateutil

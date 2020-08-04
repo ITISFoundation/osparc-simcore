@@ -7,15 +7,15 @@ from email.mime.text import MIMEText
 from logging import getLogger
 from os.path import join
 from pprint import pformat
-from typing import Mapping, Optional, Tuple, List
-
-import attr
+from typing import List, Mapping, Optional, Tuple
 
 import aiosmtplib
+import attr
 import passlib.hash
 from aiohttp import web
 from aiohttp_jinja2 import render_string
 from passlib import pwd
+
 from servicelib.rest_models import LogMessageType
 
 from ..resources import resources

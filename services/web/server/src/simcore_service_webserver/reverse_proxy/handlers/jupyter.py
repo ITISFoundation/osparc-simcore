@@ -8,9 +8,9 @@ import pprint
 
 import aiohttp
 from aiohttp import web
-from .aiohttp_client_extension import client_request
 from yarl import URL
 
+from .aiohttp_client_extension import client_request
 
 APP_SOCKETS_KEY = "simcore_service_webserver.reverse_proxy.settings.sockets"
 # FIXME: Image tag should determine the handler instead of the opposite!!!

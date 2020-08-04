@@ -110,7 +110,8 @@ ENV/
 node_modules/
 
 # IDEs config
-.vscode/
+.vscode/launch.json
+.vscode/settings.json
 
 # Manual overrides
 services/docker-compose.override.yml
@@ -150,3 +151,7 @@ prof/
 
 # outputs from make
 .stack-*.yml
+
+
+# Copies
+services/**/.codeclimate.yml

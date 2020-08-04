@@ -33,6 +33,7 @@ test('Register and Log Out', async () => {
       }
     }
   });
+
   await auto.register(page, user, pass);
 
   page.on('response', async response => {
@@ -53,6 +54,9 @@ test('Register and Log Out', async () => {
       catch (e) {
         console.log("Pptr error", e);
       }
+    }
+    else if (response.url().endsWith("/logout")) {
+      expect(response.status()).toBe(200);
     }
   });
 

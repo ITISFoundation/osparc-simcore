@@ -11,10 +11,10 @@
 import json
 import logging
 import sys
+from asyncio import Future
 from pathlib import Path
 from typing import Dict
 from uuid import uuid4
-from asyncio import Future
 
 import pytest
 

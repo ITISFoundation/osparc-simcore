@@ -10,8 +10,9 @@ from aiohttp import web
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram
 from prometheus_client.registry import CollectorRegistry
 
-from .diagnostics_core import DelayWindowProbe, kLATENCY_PROBE
 from servicelib.monitor_services import add_instrumentation
+
+from .diagnostics_core import DelayWindowProbe, kLATENCY_PROBE
 
 log = logging.getLogger(__name__)
 
@@ -44,9 +45,9 @@ def middleware_factory(app_name: str) -> Coroutine:
             resp = await handler(request)
             log_exception = None
 
-            assert isinstance(
-                resp, web.StreamResponse
-            ), "Forgot envelope middleware?"  # nsec
+            # fmt: off
+            assert isinstance(resp, web.StreamResponse), "Forgot envelope middleware?"  # nsec
+            # fmt: om
 
         except web.HTTPServerError as exc:
             # Transforms exception into response object and log exception

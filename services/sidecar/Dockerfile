@@ -1,5 +1,5 @@
 ARG PYTHON_VERSION="3.6.10"
-FROM python:${PYTHON_VERSION}-slim as base
+FROM python:${PYTHON_VERSION}-slim-buster as base
 #
 #  USAGE:
 #     cd sercices/sidecar
@@ -61,7 +61,7 @@ RUN apt-get update &&\
 RUN python -m venv ${VIRTUAL_ENV}
 
 RUN pip --no-cache-dir install --upgrade \
-    pip~=20.0.2  \
+    pip~=20.1.1  \
     wheel \
     setuptools
 
@@ -110,7 +110,7 @@ COPY --chown=scu:scu services/sidecar/docker services/sidecar/docker
 #             --timeout=20s \
 #             --start-period=30s \
 #             --retries=3 \
-#             CMD ["python3", "services/api-gateway/docker/healthcheck.py", "http://localhost:8000/"]
+#             CMD ["python3", "services/api-server/docker/healthcheck.py", "http://localhost:8000/"]
 
 ENTRYPOINT [ "/bin/sh", "services/sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/sidecar/docker/boot.sh"]

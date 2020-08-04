@@ -18,7 +18,6 @@ Q&A:
 
 import os
 import sys
-
 from urllib.request import urlopen
 
 SUCCESS, UNHEALTHY = 0, 1

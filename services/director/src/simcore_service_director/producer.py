@@ -176,7 +176,7 @@ async def _create_docker_service_params(
             f"traefik.http.routers.{service_name}.rule": f"PathPrefix(`/x/{node_uuid}`)",
             f"traefik.http.routers.{service_name}.entrypoints": "http",
             f"traefik.http.routers.{service_name}.priority": "10",
-            f"traefik.http.routers.{service_name}.middlewares": "gzip@docker",
+            f"traefik.http.routers.{service_name}.middlewares": f"{config.SWARM_STACK_NAME}_gzip@docker",
         },
         "networks": [internal_network_id] if internal_network_id else [],
     }
@@ -439,31 +439,34 @@ async def _get_service_state(
         tasks = await client.tasks.list(filters={"service": service_name})
         # only keep the ones with the right service ID (we're being a bit picky maybe)
         tasks = [x for x in tasks if x["ServiceID"] == service["ID"]]
+
         # we are only interested in the last task which has index 0
         if tasks:
             last_task = tasks[0]
             task_state = last_task["Status"]["State"]
             log.debug("%s %s", service["ID"], task_state)
-            simcore_state = ServiceState.STARTING
-            simcore_message = (
+
+            last_task_state = ServiceState.STARTING # default
+            last_task_error_msg = (
                 last_task["Status"]["Err"] if "Err" in last_task["Status"] else ""
             )
             if task_state in ("failed", "rejected"):
                 log.error(
                     "service %s failed with %s", service_name, last_task["Status"]
                 )
-                simcore_state = ServiceState.FAILED
+                last_task_state = ServiceState.FAILED
             elif task_state in ("pending"):
-                simcore_state = ServiceState.PENDING
+                last_task_state = ServiceState.PENDING
             elif task_state in ("assigned", "accepted", "preparing"):
-                simcore_state = ServiceState.PULLING
+                last_task_state = ServiceState.PULLING
             elif task_state in ("ready", "starting"):
-                simcore_state = ServiceState.STARTING
+                last_task_state = ServiceState.STARTING
             elif task_state in ("running"):
-                simcore_state = ServiceState.RUNNING
+                last_task_state = ServiceState.RUNNING
             elif task_state in ("complete", "shutdown"):
-                simcore_state = ServiceState.COMPLETE
-            return (simcore_state, simcore_message)
+                last_task_state = ServiceState.COMPLETE
+            return (last_task_state, last_task_error_msg)
+
         # allows dealing with other events instead of wasting time here
         await asyncio.sleep(1)  # 1s
     log.debug("Waited for service %s to start", service_name)
@@ -600,6 +603,7 @@ async def _start_docker_service(
         service = await client.services.inspect(service["ID"])
         service_name = service["Spec"]["Name"]
         service_state, service_msg = await _get_service_state(client, service)
+
         # wait for service to start
         # await _wait_until_service_running_or_failed(client, service, node_uuid)
         log.debug("Service %s successfully started", service_name)
@@ -756,13 +760,7 @@ async def start_service(
         node_details = containers_meta_data[0]
         if config.MONITORING_ENABLED:
             service_started(
-                app,
-                user_id,
-                project_id,
-                node_uuid,
-                service_key,
-                service_tag,
-                "DYNAMIC",
+                app, user_id, service_key, service_tag, "DYNAMIC",
             )
         # we return only the info of the main service
         return node_details
@@ -939,10 +937,39 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
             service_stopped(
                 app,
                 "undefined_user",
-                "undefined project",
-                node_uuid,
                 service_details["service_key"],
                 service_details["service_version"],
                 "DYNAMIC",
                 "SUCCESS",
             )
+
+
+async def generate_service_extras(
+    app: web.Application, image_key: str, image_tag: str
+) -> Dict:
+    result = {}
+    labels = await registry_proxy.get_image_labels(app, image_key, image_tag)
+    log.debug("Compiling service extras from labels %s", labels)
+
+    # check physical node requirements
+    # all nodes require "CPU"
+    result["node_requirements"] = ["CPU"]
+    # check if the service requires GPU support
+
+    def validate_vram(entry_to_validate):
+        for element in (
+            entry_to_validate.get("value", {})
+            .get("Reservations", {})
+            .get("GenericResources", [])
+        ):
+            if element.get("DiscreteResourceSpec", {}).get("Kind") == "VRAM":
+                return True
+        return False
+
+    if SERVICE_RUNTIME_SETTINGS in labels:
+        service_settings = json.loads(labels[SERVICE_RUNTIME_SETTINGS])
+        for entry in service_settings:
+            if entry.get("name") == "Resources" and validate_vram(entry):
+                result["node_requirements"].append("GPU")
+
+    return result

@@ -21,7 +21,7 @@
  */
 
 qx.Class.define("osparc.component.metadata.ServiceInfoWindow", {
-  extend: qx.ui.window.Window,
+  extend: osparc.ui.window.Window,
 
   /**
     * @param metadata {Object} Service metadata
@@ -32,7 +32,7 @@ qx.Class.define("osparc.component.metadata.ServiceInfoWindow", {
     const windowWidth = 700;
     const windowHeight = 800;
     this.set({
-      layout: new qx.ui.layout.Grow(),
+      layout: new qx.ui.layout.VBox(10),
       autoDestroy: true,
       contentPadding: 10,
       showMinimize: false,
@@ -42,10 +42,13 @@ qx.Class.define("osparc.component.metadata.ServiceInfoWindow", {
       height: windowHeight
     });
 
-    const serviceDetails = new osparc.component.metadata.ServiceInfo(metadata);
+    const serviceInfo = this._serviceInfo = new osparc.component.metadata.ServiceInfo(metadata);
+    serviceInfo.setBackgroundColor("material-button-background");
     const scroll = new qx.ui.container.Scroll();
-    scroll.add(serviceDetails);
-    this.add(scroll);
+    scroll.add(serviceInfo);
+    this.add(scroll, {
+      flex: 1
+    });
   },
 
   properties: {
@@ -53,5 +56,9 @@ qx.Class.define("osparc.component.metadata.ServiceInfoWindow", {
       refine: true,
       init: "info-service-window"
     }
+  },
+
+  members: {
+    _serviceInfo: null
   }
 });

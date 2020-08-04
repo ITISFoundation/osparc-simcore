@@ -81,6 +81,18 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
+    organizations: {
+      check: "Object",
+      init: {}
+    },
+    organizationMembers: {
+      check: "Object",
+      init: {}
+    },
+    reachableMembers: {
+      check: "Object",
+      init: {}
+    },
     services: {
       check: "Array",
       init: []
@@ -159,10 +171,118 @@ qx.Class.define("osparc.store.Store", {
     },
 
     /**
+     * Invalidates the cache for the given resources.
+     * If resource is a string, it will invalidate that resource.
+     * If it is an array, it will try to invalidate every resource in the array.
+     * If it is not provided, it will invalidate all resources.
+     *
+     * @param {(string|string[])} [resources] Property or array of property names that must be reset
+     */
+    invalidate: function(resources) {
+      if (typeof resources === "string" || resources instanceof String) {
+        this.reset(resources);
+      } else {
+        let propertyArray;
+        if (resources == null) {
+          propertyArray = Object.keys(qx.util.PropertyUtil.getProperties(osparc.store.Store));
+        } else if (Array.isArray(resources)) {
+          propertyArray = resources;
+        }
+        propertyArray.forEach(propName => {
+          this.reset(propName);
+          // Not sure reset actually works
+          const initVal = qx.util.PropertyUtil.getInitValue(this, propName);
+          qx.util.PropertyUtil.getUserValue(this, propName, initVal);
+        });
+      }
+    },
+
+    getStudyWState: function(studyId, reload = false) {
+      return new Promise((resolve, reject) => {
+        const studiesWStateCache = this.getStudies();
+        const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
+        if (!reload && idx !== -1) {
+          resolve(studiesWStateCache[idx]);
+          return;
+        }
+        const params = {
+          url: {
+            "projectId": studyId
+          }
+        };
+        osparc.data.Resources.getOne("studies", params)
+          .then(study => {
+            osparc.data.Resources.fetch("studies", "state", params)
+              .then(state => {
+                study["locked"] = state["locked"];
+                if (idx === -1) {
+                  studiesWStateCache.push(study);
+                } else {
+                  studiesWStateCache[idx] = study;
+                }
+                resolve(study);
+              })
+              .catch(er => {
+                console.error(er);
+                reject();
+              });
+          })
+          .catch(err => {
+            console.error(err);
+            reject();
+          });
+      });
+    },
+
+    /**
+     * This function provides the list of studies with their state
+     * @param {Boolean} reload ?
+     */
+    getStudiesWState: function(reload = false) {
+      return new Promise((resolve, reject) => {
+        const studiesWStateCache = this.getStudies();
+        if (!reload && studiesWStateCache.length) {
+          resolve(studiesWStateCache);
+          return;
+        }
+        studiesWStateCache.length = 0;
+        osparc.data.Resources.get("studies")
+          .then(studies => {
+            const studiesWStatePromises = [];
+            studies.forEach(study => {
+              const params = {
+                url: {
+                  "projectId": study.uuid
+                }
+              };
+              studiesWStatePromises.push(osparc.data.Resources.fetch("studies", "state", params));
+            });
+            Promise.all(studiesWStatePromises)
+              .then(states => {
+                states.forEach((state, idx) => {
+                  const study = studies[idx];
+                  study["locked"] = state["locked"];
+                  studiesWStateCache.push(study);
+                });
+                resolve(studiesWStateCache);
+              })
+              .catch(er => {
+                console.error(er);
+                reject();
+              });
+          })
+          .catch(err => {
+            console.error(err);
+            reject();
+          });
+      });
+    },
+
+    /**
      * This functions does the needed processing in order to have a working list of services and DAGs.
      * @param {Boolean} reload ?
      */
-    getServicesDAGs: function(reload) {
+    getServicesDAGs: function(reload = false) {
       return new Promise((resolve, reject) => {
         const allServices = osparc.utils.Services.getBuiltInServices();
         const servicesPromise = osparc.data.Resources.get("services", null, !reload);
@@ -230,26 +350,37 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    /**
-     * Invalidates the cache for the given resources.
-     * If resource is a string, it will invalidate that resource.
-     * If it is an array, it will try to invalidate every resource in the array.
-     * If it is not provided, it will invalidate all resources.
-     *
-     * @param {(string|string[])} [resources] Property or array of property names that must be reset
-     */
-    invalidate: function(resources) {
-      if (typeof resources === "string" || resources instanceof String) {
-        this.reset(resources);
-      } else {
-        let propertyArray;
-        if (resources == null) {
-          propertyArray = Object.keys(qx.util.PropertyUtil.getProperties(osparc.store.Store));
-        } else if (Array.isArray(resources)) {
-          propertyArray = resources;
+    getVisibleMembers: function(reload = false) {
+      return new Promise((resolve, reject) => {
+        const reachableMembers = this.getReachableMembers();
+        if (!reload && Object.keys(reachableMembers).length) {
+          resolve(reachableMembers);
+          return;
         }
-        propertyArray.forEach(propName => this.reset(propName));
-      }
+        osparc.data.Resources.get("organizations")
+          .then(resp => {
+            const orgMembersPromises = [];
+            const orgs = resp["organizations"];
+            orgs.forEach(org => {
+              const params = {
+                url: {
+                  "gid": org["gid"]
+                }
+              };
+              orgMembersPromises.push(osparc.data.Resources.get("organizationMembers", params));
+            });
+            Promise.all(orgMembersPromises)
+              .then(orgMemberss => {
+                orgMemberss.forEach(orgMembers => {
+                  orgMembers.forEach(orgMember => {
+                    orgMember["label"] = osparc.utils.Utils.firstsUp(orgMember["first_name"], orgMember["last_name"]);
+                    reachableMembers[orgMember["gid"]] = orgMember;
+                  });
+                });
+                resolve(reachableMembers);
+              });
+          });
+      });
     },
 
     _applyStudy: function(newStudy) {

@@ -19,7 +19,8 @@ pytest_plugins = [
     "pytest_simcore.rabbit_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.minio_service",
-    "pytest_simcore.traefik_service"
+    "pytest_simcore.traefik_service",
+    "pytest_simcore.simcore_webserver_service",
 ]
 log = logging.getLogger(__name__)
 
@@ -45,7 +46,13 @@ def prepare_all_services(
 
 
 @pytest.fixture(scope="module")
+def create_db_on_start(devel_environ: Dict[str, str]):
+    devel_environ["WEBSERVER_DB_INITTABLES"] = "1"
+
+
+@pytest.fixture(scope="module")
 def make_up_prod(
+    create_db_on_start,
     prepare_all_services: Dict,
     simcore_docker_compose: Dict,
     ops_docker_compose: Dict,

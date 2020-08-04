@@ -84,6 +84,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       return control || this.base(arguments, id);
     },
 
+    __getToolbarButtons: function(toolbar) {
+      const toolBarChildren = toolbar.getChildren();
+      return toolBarChildren.filter(toolBarChild => toolBarChild instanceof qx.ui.toolbar.Button);
+    },
+
     __buildToolbar: function() {
       const iconSize = 14;
       const toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
@@ -133,6 +138,16 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       }, this);
       osparc.utils.Utils.setIdToWidget(deleteButton, "deleteServiceBtn");
       toolbar.add(deleteButton);
+
+      const toolBarBtns = this.__getToolbarButtons(toolbar);
+      let btnsWidth = 11;
+      toolBarBtns.forEach(toolBarBtn => {
+        const pad = 5;
+        const spa = 10;
+        const width = toolBarBtn.getSizeHint().width + pad + spa;
+        btnsWidth += width;
+      });
+      this.__toolbarInitMinWidth = btnsWidth;
 
       return toolbar;
     },
@@ -314,11 +329,31 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           this.__deleteNode();
         }
       }, this);
+
       this.addListener("keypress", function(keyEvent) {
         if (keyEvent.getKeyIdentifier() === "F2") {
           this.__openItemRenamer();
         }
       }, this);
+
+      this.__toolBar.addListener("resize", () => {
+        const toolBarBtns = this.__getToolbarButtons(this.__toolBar);
+        if (this.__toolBar.getBounds().width < this.__toolbarInitMinWidth) {
+          // Hide Label
+          toolBarBtns.forEach(toolBarBtn => {
+            const label = toolBarBtn.getChildControl("label");
+            label.exclude();
+            toolBarBtn.setToolTipText(label.getValue());
+          });
+        } else {
+          // Show Label
+          toolBarBtns.forEach(toolBarBtn => {
+            toolBarBtn.getChildControl("label").show();
+            toolBarBtn.setToolTipText(null);
+          });
+        }
+      }, this);
+
       qx.event.message.Bus.getInstance().subscribe("updateStudy", () => {
         this.populateTree();
       }, this);

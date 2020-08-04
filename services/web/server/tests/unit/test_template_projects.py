@@ -9,6 +9,8 @@ from typing import Dict
 import aiohttp
 import pytest
 from jsonschema import SchemaError, ValidationError
+from yarl import URL
+
 from servicelib.jsonschema_specs import create_jsonschema_specs
 from servicelib.jsonschema_validation import validate_instance
 from simcore_service_webserver.projects.projects_fakes import Fake
@@ -17,7 +19,6 @@ from simcore_service_webserver.projects.projects_utils import (
     variable_pattern,
 )
 from simcore_service_webserver.resources import resources
-from yarl import URL
 
 
 @pytest.fixture

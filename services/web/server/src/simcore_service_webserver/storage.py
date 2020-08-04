@@ -5,12 +5,12 @@
 import logging
 
 from aiohttp import web
+
 from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
+from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from . import storage_routes
 from .storage_config import get_config
-
-from servicelib.application_setup import app_module_setup, ModuleCategory
 
 log = logging.getLogger(__name__)
 

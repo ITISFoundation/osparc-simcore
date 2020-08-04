@@ -12,7 +12,7 @@ install() {
 test() {
     pytest --cov=simcore_service_catalog --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml \
-          -v -m "not travis" services/catalog/tests
+          -v -m "not travis" services/catalog/tests/unit
 }
 
 # Check if the function exists (bash specific)

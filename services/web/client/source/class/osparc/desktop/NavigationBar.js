@@ -18,7 +18,7 @@
 /**
  * Widget containing:
  * - LogoOnOff
- * - Dashboard button
+ * - Dashboard (button)
  * - List of buttons for node navigation (only study editing)
  * - User menu
  *   - Preferences
@@ -49,32 +49,10 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     this.set({
       paddingLeft: 10,
       paddingRight: 10,
+      height: 50,
       maxHeight: 50,
       backgroundColor: "background-main-lighter"
     });
-
-    this.getChildControl("logo");
-    this.getChildControl("platform");
-
-    this._add(new qx.ui.core.Spacer(20));
-
-    this.__dashboardBtn = this.getChildControl("dashboard-button");
-    this.__dashboardLabel = this.getChildControl("dashboard-label");
-    this.__dashboardContext();
-
-    this._add(new qx.ui.core.Spacer(20));
-
-    const studyTitle = this.__studyTitle = this.__createStudyTitle();
-    this._add(studyTitle);
-    this.__mainViewCaptionLayout = this.getChildControl("study-path-container");
-
-    this._add(new qx.ui.core.Spacer(), {
-      flex: 1
-    });
-
-    this.getChildControl("user-manual");
-    this.getChildControl("feedback");
-    this.getChildControl("user-menu");
   },
 
   events: {
@@ -105,6 +83,32 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     __dashboardLabel: null,
     __studyTitle: null,
     __mainViewCaptionLayout: null,
+
+    buildLayout: function() {
+      this.getChildControl("logo");
+      this.getChildControl("platform");
+
+      this._add(new qx.ui.core.Spacer(20));
+
+      this.__dashboardBtn = this.getChildControl("dashboard-button");
+      this.__dashboardLabel = this.getChildControl("dashboard-label");
+      this.__dashboardContext();
+
+      this._add(new qx.ui.core.Spacer(20));
+
+      const studyTitle = this.__studyTitle = this.__createStudyTitle();
+      this._add(studyTitle);
+      this.__mainViewCaptionLayout = this.getChildControl("study-path-container");
+
+      this._add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      this.getChildControl("user-manual");
+      this.getChildControl("feedback");
+      this.getChildControl("theme-switch");
+      this.getChildControl("user-menu");
+    },
 
     _createChildControlImpl: function(id) {
       let control;
@@ -170,6 +174,12 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           control = new osparc.ui.form.LinkButton(this.tr("Give us feedback"), this.self().FEEDBACK_FORM_URL).set({
             appearance: "link-button",
             font: "text-14"
+          });
+          this._add(control);
+          break;
+        case "theme-switch":
+          control = new osparc.ui.switch.ThemeSwitcher().set({
+            checked: qx.theme.manager.Meta.getInstance().getTheme().name === "osparc.theme.ThemeLight"
           });
           this._add(control);
           break;

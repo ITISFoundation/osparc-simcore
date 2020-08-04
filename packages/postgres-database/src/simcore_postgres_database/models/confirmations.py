@@ -6,6 +6,7 @@
 
 """
 import enum
+
 import sqlalchemy as sa
 
 from .base import metadata

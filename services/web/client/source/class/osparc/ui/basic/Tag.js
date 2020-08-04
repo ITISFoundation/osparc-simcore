@@ -20,10 +20,10 @@ qx.Class.define("osparc.ui.basic.Tag", {
    */
   construct: function(value, color, filterGroupId) {
     this.base(arguments, value);
+    this.setFont("text-11");
     if (color) {
       this.setColor(color);
     }
-    this.setFont(osparc.utils.Utils.getFont(11));
     if (filterGroupId) {
       this.setCursor("pointer");
       this.addListener("tap", e => {

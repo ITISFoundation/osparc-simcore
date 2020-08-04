@@ -21,7 +21,7 @@ async function run () {
   // DASHBOARD navigation
   await auto.dashboardAbout(page);
   await auto.dashboardPreferences(page);
-  await auto.dashboardServiceBrowser(page);
+  await auto.dashboardDiscoverBrowser(page);
   await auto.dashboardStudyBrowser(page);
 
   // NEW STUDY from Scratch

@@ -4,17 +4,17 @@
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import (
     ConfirmationAction,
+    GroupType,
     UserRole,
     UserStatus,
-    confirmations,
-    tokens,
-    users,
-    groups,
-    GroupType,
-    user_to_groups,
-    tags,
-    study_tags,
     api_keys,
+    confirmations,
+    groups,
+    study_tags,
+    tags,
+    tokens,
+    user_to_groups,
+    users,
 )
 
 # TODO: roles table that maps every role with allowed tasks e.g. read/write,...??

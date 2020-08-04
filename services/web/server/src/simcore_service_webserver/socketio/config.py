@@ -7,9 +7,9 @@ from typing import Dict
 
 import trafaret as T
 from aiohttp import web
+from socketio import AsyncServer
 
 from servicelib.application_keys import APP_CONFIG_KEY
-from socketio import AsyncServer
 
 CONFIG_SECTION_NAME = "socketio"
 APP_CLIENT_SOCKET_SERVER_KEY = __name__ + ".socketio_socketio"

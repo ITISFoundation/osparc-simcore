@@ -14,6 +14,10 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     this.base(arguments, null, "@FontAwesome5Solid/tags/24");
     this.setLayout(new qx.ui.layout.Grow());
     this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    this.__container.set({
+      backgroundColor: "material-button-background",
+      paddingLeft: 10
+    });
     const scroll = new qx.ui.container.Scroll(this.__container);
     this.add(scroll);
     this.__createComponents();
@@ -23,7 +27,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     __tagItems: null,
     __createComponents: function() {
       this.__addTagButton = new qx.ui.form.Button(this.tr("Add new tag"), "@FontAwesome5Solid/plus-circle/14").set({
-        appearance: "md-button"
+        appearance: "toolbar-md-button"
       });
       osparc.data.Resources.get("tags")
         .then(tags => {

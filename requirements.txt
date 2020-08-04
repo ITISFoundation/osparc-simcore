@@ -15,6 +15,7 @@
 
 # formatter
 black
+isort==4.3.21
 # dependency manager
 pip-tools
 # version manager

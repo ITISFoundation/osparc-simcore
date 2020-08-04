@@ -105,18 +105,12 @@ qx.Class.define("osparc.component.export.ExportDAG", {
         flex: 1
       });
 
-      // const shareWith = new osparc.component.export.ShareWith("exportDAG");
-      // this._add(shareWith);
-
       const exportBtn = this.__getExportBtn();
       exportBtn.addListener("execute", () => {
         if (manager.validate()) {
           this.__exportAsMacroService(exportBtn);
         }
       }, this);
-      // shareWith.addListener("changeReady", e => {
-      //   exportBtn.setEnabled(e.getData());
-      // });
       this._add(exportBtn);
     },
 
@@ -149,7 +143,7 @@ qx.Class.define("osparc.component.export.ExportDAG", {
     },
 
     __getExportBtn: function() {
-      const exportBtn = new osparc.ui.form.FetchButton(this.tr("Export")).set({
+      const exportBtn = new osparc.ui.form.FetchButton(this.tr("Publish Group")).set({
         allowGrowX: false,
         alignX: "right"
       });

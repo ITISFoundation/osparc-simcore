@@ -107,9 +107,9 @@ jobs:
       after_failure:
         - unbuffer bash ci/travis/unit-testing/webserver.bash after_failure
 
-    # test python, api-gateway ----------------------------------------------------------------------
+    # test python, api-server ----------------------------------------------------------------------
     - stage: build / unit-testing
-      name: api-gateway
+      name: api-server
       language: python
       python:
         - "3.6"
@@ -118,17 +118,17 @@ jobs:
         - docker
       cache: pip
       before_install:
-        - sudo bash ci/travis/unit-testing/api-gateway.bash before_install
+        - sudo bash ci/travis/unit-testing/api-server.bash before_install
       install:
-        - unbuffer bash ci/travis/unit-testing/api-gateway.bash install
+        - unbuffer bash ci/travis/unit-testing/api-server.bash install
       before_script:
-        - unbuffer bash ci/travis/unit-testing/api-gateway.bash before_script
+        - unbuffer bash ci/travis/unit-testing/api-server.bash before_script
       script:
-        - unbuffer bash ci/travis/unit-testing/api-gateway.bash script
+        - unbuffer bash ci/travis/unit-testing/api-server.bash script
       after_success:
-        - unbuffer bash ci/travis/unit-testing/api-gateway.bash after_success
+        - unbuffer bash ci/travis/unit-testing/api-server.bash after_success
       after_failure:
-        - unbuffer bash ci/travis/unit-testing/api-gateway.bash after_failure
+        - unbuffer bash ci/travis/unit-testing/api-server.bash after_failure
 
     # test python, catalog ----------------------------------------------------------------------
     - stage: build / unit-testing
@@ -385,41 +385,7 @@ jobs:
       after_failure:
         - unbuffer bash ci/travis/system-testing/swarm-deploy.bash after_failure
 
-    # system testing e2e testing -----------------------------------------------------------------
-    # https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
-    - stage: integration-testing / system-testing
-      name: e2e testing
-      language: node_js
-      node_js:
-        - "10"
-      sudo: required
-      services:
-        - xvfb
-      addons:
-        apt:
-          packages:
-            - libnss3 # This is required to run new chrome on old trusty
-            - expect-dev # for unbuffer: brings color back into travis logs
-            - docker-ce
-            - python3-venv
-      notifications:
-        email: false
-      cache:
-        directories:
-          - node_modules
-      before_install:
-        - sudo bash ci/travis/system-testing/e2e.bash before_install
-      install:
-        - unbuffer bash ci/travis/system-testing/e2e.bash install
-      before_script:
-        - unbuffer bash ci/travis/system-testing/e2e.bash before_script
-      script:
-        - unbuffer bash ci/travis/system-testing/e2e.bash script
-      after_success:
-        - unbuffer bash ci/travis/system-testing/e2e.bash after_success
-      after_failure:
-        - unbuffer bash ci/travis/system-testing/e2e.bash after_failure
-
+    # deployment in master environ ----------------------------------------------------------------
     - stage: deployment
       name: master
       if: branch = master
@@ -434,6 +400,8 @@ jobs:
           script: unbuffer bash ci/deploy/dockerhub-deploy.bash
           on:
             branch: master
+
+    # deployment to staging environ ----------------------------------------------------------------
     - stage: deployment
       name: staging
       if: branch = staging
@@ -448,6 +416,8 @@ jobs:
           script: unbuffer bash ci/deploy/dockerhub-deploy.bash
           on:
             branch: staging
+
+    # deployment to production environ ----------------------------------------------------------------
     - stage: deployment
       name: production/release
       env:
@@ -464,6 +434,7 @@ jobs:
             all_branches: true
             tags: true
             condition: $TRAVIS_TAG =~ ^v[0-9]+.[0-9]+.[0-9]+$
+
 notifications:
   email:
     on_success: never

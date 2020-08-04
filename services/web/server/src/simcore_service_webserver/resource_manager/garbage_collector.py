@@ -13,24 +13,24 @@ from aiohttp import web
 
 from servicelib.observer import emit
 from servicelib.utils import logged_gather
-
-from .config import APP_GARBAGE_COLLECTOR_KEY, get_garbage_collector_interval
-from .registry import RedisResourceRegistry, get_registry
-from simcore_service_webserver.projects.projects_api import delete_project_from_db
-from simcore_service_webserver.users_api import is_user_guest, delete_user
-from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
-from simcore_service_webserver.projects.projects_api import (
-    get_workbench_node_ids_from_project_uuid,
-    is_node_id_present_in_any_project_workbench,
-)
 from simcore_service_webserver.director.director_api import (
     get_running_interactive_services,
     stop_service,
 )
 from simcore_service_webserver.director.director_exceptions import (
-    ServiceNotFoundError,
     DirectorException,
+    ServiceNotFoundError,
 )
+from simcore_service_webserver.projects.projects_api import (
+    delete_project_from_db,
+    get_workbench_node_ids_from_project_uuid,
+    is_node_id_present_in_any_project_workbench,
+)
+from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
+from simcore_service_webserver.users_api import delete_user, is_user_guest
+
+from .config import APP_GARBAGE_COLLECTOR_KEY, get_garbage_collector_interval
+from .registry import RedisResourceRegistry, get_registry
 
 logger = logging.getLogger(__name__)
 

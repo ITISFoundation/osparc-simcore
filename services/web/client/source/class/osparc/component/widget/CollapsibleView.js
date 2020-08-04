@@ -32,9 +32,7 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
     // Title bar
     this.__titleBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
       alignY: "middle"
-    })).set({
-      allowGrowX: false
-    });
+    }));
     this._add(this.__titleBar);
 
     this.__caret = this.getChildControl("caret");
@@ -46,9 +44,6 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
     if (content) {
       this.setContent(content);
     }
-
-    // Attach handlers
-    this.__attachEventHandlers();
   },
 
   statics: {
@@ -101,10 +96,14 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
             visibility: "excluded"
           });
           this.__titleBar.addAt(control, 0);
+          // Attach handler
+          this.__attachToggler(control);
           break;
         case "title":
           control = new qx.ui.basic.Atom(this.getTitle());
           this.__titleBar.addAt(control, 1);
+          // Attach handler
+          this.__attachToggler(control);
           break;
       }
       return control || this.base(arguments, id);
@@ -198,8 +197,8 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
       return collapsed ? moreCaret + caretSize : lessCaret + caretSize;
     },
 
-    __attachEventHandlers: function() {
-      this.__titleBar.addListener("tap", () => {
+    __attachToggler: function(control) {
+      control.addListener("tap", () => {
         this.toggleCollapsed();
       }, this);
     }

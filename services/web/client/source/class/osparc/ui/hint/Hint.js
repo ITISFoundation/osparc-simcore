@@ -65,7 +65,7 @@ qx.Class.define("osparc.ui.hint.Hint", {
     active: {
       check: "Boolean",
       nullable: false,
-      init: true
+      init: false
     },
     orientation: {
       check: "Integer",

@@ -160,7 +160,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
           ctrl.bindProperty("key", "key", null, item, id);
           ctrl.bindProperty("version", "version", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
-          ctrl.bindProperty("description", "description", null, item, id);
+          ctrl.bindProperty("description", "subtitle", null, item, id);
           ctrl.bindProperty("type", "type", null, item, id);
           ctrl.bindProperty("category", "category", null, item, id);
           ctrl.bindProperty("contact", "contact", null, item, id);
@@ -274,8 +274,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __displayServiceSubmissionForm: function(formData) {
-      const addServiceWindow = new qx.ui.window.Window(this.tr("Submit a new service")).set({
-        appearance: "service-window",
+      const addServiceWindow = new osparc.ui.window.Window(this.tr("Submit a new service")).set({
         modal: true,
         autoDestroy: true,
         showMinimize: false,

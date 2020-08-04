@@ -13,13 +13,13 @@ import sys
 import traceback
 import warnings
 from types import SimpleNamespace, TracebackType
+from typing import List  # noqa
 from typing import (
     Any,
     Coroutine,
     Generator,
     Generic,
     Iterable,
-    List,  # noqa
     Mapping,
     Optional,
     Set,
@@ -77,12 +77,8 @@ from aiohttp.helpers import (
     strip_auth_from_url,
 )
 from aiohttp.http import WS_KEY, HttpVersion, WebSocketReader, WebSocketWriter
-from aiohttp.http_websocket import (
-    WSHandshakeError,
-    WSMessage,  # noqa
-    ws_ext_gen,
-    ws_ext_parse,
-)
+from aiohttp.http_websocket import WSMessage  # noqa
+from aiohttp.http_websocket import WSHandshakeError, ws_ext_gen, ws_ext_parse
 from aiohttp.streams import FlowControlDataQueue
 from aiohttp.tracing import Trace, TraceConfig
 from aiohttp.typedefs import JSONEncoder, LooseCookies, LooseHeaders, StrOrURL

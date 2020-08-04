@@ -8,8 +8,31 @@ components:
         data:
           type: array
           items:
-            $ref: './node-meta-v0.0.1-converted.yaml'
+            $ref: "./node-meta-v0.0.1-converted.yaml"
         error:
           nullable: true
           default: null
-          
+
+    ServiceExtras:
+      type: object
+      required:
+        - node_requirements
+      properties:
+        node_requirements:
+          type: array
+          items:
+            type: string
+            enum:
+              - CPU
+              - GPU
+
+    ServiceExtrasEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/ServiceExtras"
+        error:
+          nullable: true
+          default: null

@@ -129,6 +129,42 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorEnveloped'
 
+  /service_extras/{service_key}/{service_version}:
+    get:
+      tags:
+        - users
+      summary: Returns the service's details which should be hidden from the user defined as extras.
+      description: Currently returns the node_requirements an array of resoruces needed for scheduling.
+      operationId: services_extras_get
+      parameters:
+        - $ref: '#/components/parameters/ServiceKeyPath'
+        - $ref: '#/components/parameters/ServiceVersionPath'
+      responses:
+        "200":
+          description: Success, returns an object containing details hidden from the user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceExtrasEnveloped'
+        "401":
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnveloped'
+        "404":
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnveloped'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnveloped'
+
   /running_interactive_services:
     get:
       tags:
@@ -402,6 +438,9 @@ components:
 
     ServicesEnveloped:
       $ref: '../common/schemas/services.yaml#/components/schemas/ServicesEnveloped'
+
+    ServiceExtrasEnveloped:
+      $ref: '../common/schemas/services.yaml#/components/schemas/ServiceExtrasEnveloped'
 
     HealthCheckEnveloped:
       $ref: '../common/schemas/health_check.yaml#/components/schemas/HealthCheckEnveloped'

@@ -34,20 +34,20 @@
  */
 
 qx.Class.define("osparc.component.workbench.ServiceCatalog", {
-  extend: qx.ui.window.Window,
+  extend: osparc.ui.window.Window,
 
   construct: function() {
     this.base();
 
     this.set({
-      appearance: "service-window",
       autoDestroy: true,
       caption: this.tr("Service catalog"),
       showMinimize: false,
       minWidth: 400,
       minHeight: 400,
       modal: true,
-      contentPadding: 0
+      contentPadding: 0,
+      clickAwayClose: true
     });
 
     let catalogLayout = new qx.ui.layout.VBox();

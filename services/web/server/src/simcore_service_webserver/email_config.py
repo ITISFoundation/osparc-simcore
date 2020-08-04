@@ -5,7 +5,6 @@
 """
 import trafaret as T
 
-
 CONFIG_SECTION_NAME = "smtp"
 
 

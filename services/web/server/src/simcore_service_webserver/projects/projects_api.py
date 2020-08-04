@@ -22,13 +22,16 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 
 from ..computation_api import delete_pipeline_db
 from ..director import director_api
-from ..storage_api import \
-    copy_data_folders_from_project  # mocked in unit-tests
-from ..storage_api import (delete_data_folders_of_project,
-                           delete_data_folders_of_project_node)
+from ..socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT, post_group_messages
+from ..storage_api import copy_data_folders_from_project  # mocked in unit-tests
+from ..storage_api import (
+    delete_data_folders_of_project,
+    delete_data_folders_of_project_node,
+)
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import NodeNotFoundError
+from .projects_models import ProjectState
 from .projects_utils import clone_project_document
 
 log = logging.getLogger(__name__)
@@ -48,7 +51,7 @@ async def get_project_for_user(
     project_uuid: str,
     user_id: int,
     *,
-    include_templates: bool = False
+    include_templates: bool = False,
 ) -> Dict:
     """ Returns a project accessible to user
 
@@ -291,7 +294,9 @@ async def update_project_node_outputs(
     if data:
         # NOTE: update outputs (not required) if necessary as the UI expects a
         # dataset/label field that is missing
-        outputs: Dict[str,Any] = project["workbench"][node_id].setdefault("outputs", {})
+        outputs: Dict[str, Any] = project["workbench"][node_id].setdefault(
+            "outputs", {}
+        )
         outputs.update(data)
 
         for output_key in outputs.keys():
@@ -308,6 +313,7 @@ async def update_project_node_outputs(
         await db.update_user_project(project, user_id, project_id)
     return project["workbench"][node_id]
 
+
 async def get_workbench_node_ids_from_project_uuid(
     app: web.Application, project_uuid: str,
 ) -> Set[str]:
@@ -322,3 +328,21 @@ async def is_node_id_present_in_any_project_workbench(
     """If the node_id is presnet in one of the projects' workbenche returns True"""
     db = app[APP_PROJECT_DBAPI]
     return node_id in await db.get_all_node_ids_from_workbenches()
+
+
+async def notify_project_state_update(
+    app: web.Application, project: Dict, state: ProjectState
+) -> None:
+    rooms_to_notify = [
+        f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
+    ]
+
+    messages = {
+        SOCKET_IO_PROJECT_UPDATED_EVENT: {
+            "project_uuid": project["uuid"],
+            "data": state.dict(),
+        }
+    }
+
+    for room in rooms_to_notify:
+        await post_group_messages(app, room, messages)

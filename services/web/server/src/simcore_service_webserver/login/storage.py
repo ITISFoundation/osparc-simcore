@@ -1,13 +1,12 @@
-from logging import getLogger
-from datetime import datetime
 import enum
+from datetime import datetime
+from logging import getLogger
+
 import asyncpg
 
-from .utils import get_random_string
+from ..db_models import ConfirmationAction, UserRole, UserStatus
 from . import sql
-
-from ..db_models import UserRole, UserStatus, ConfirmationAction
-
+from .utils import get_random_string
 
 log = getLogger(__name__)
 

@@ -42,3 +42,7 @@ logging.getLogger("sqlalchemy.engine").setLevel(SIDECAR_LOGLEVEL)
 logging.getLogger("sqlalchemy.pool").setLevel(SIDECAR_LOGLEVEL)
 
 RABBIT_CONFIG = RabbitConfig()
+
+# sidecar celery starting mode overwrite
+FORCE_START_CPU_MODE = os.environ.get("START_AS_MODE_CPU")
+FORCE_START_GPU_MODE = os.environ.get("START_AS_MODE_GPU")

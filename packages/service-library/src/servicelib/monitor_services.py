@@ -10,8 +10,6 @@ kSERVICE_STOPPED = f"{__name__}.services_stopped"
 
 SERVICE_STARTED_LABELS: List[str] = [
     "user_id",
-    "project_id",
-    "service_uuid",
     "service_key",
     "service_tag",
     "service_type",
@@ -19,8 +17,6 @@ SERVICE_STARTED_LABELS: List[str] = [
 
 SERVICE_STOPPED_LABELS: List[str] = [
     "user_id",
-    "project_id",
-    "service_uuid",
     "service_key",
     "service_tag",
     "service_type",
@@ -28,7 +24,9 @@ SERVICE_STOPPED_LABELS: List[str] = [
 ]
 
 
-def add_instrumentation(app: web.Application, reg: CollectorRegistry, app_name: str) -> None:
+def add_instrumentation(
+    app: web.Application, reg: CollectorRegistry, app_name: str
+) -> None:
 
     app[kSERVICE_STARTED] = Counter(
         name="services_started_total",
@@ -63,16 +61,12 @@ def service_started(
     # pylint: disable=too-many-arguments
     app: web.Application,
     user_id: str,
-    project_id: str,
-    service_uuid: str,
     service_key: str,
     service_tag: str,
     service_type: Union[ServiceType, str],
 ) -> None:
     app[kSERVICE_STARTED].labels(
         user_id=user_id,
-        project_id=project_id,
-        service_uuid=service_uuid,
         service_key=service_key,
         service_tag=service_tag,
         service_type=service_type,
@@ -83,8 +77,6 @@ def service_stopped(
     # pylint: disable=too-many-arguments
     app: web.Application,
     user_id: str,
-    project_id: str,
-    service_uuid: str,
     service_key: str,
     service_tag: str,
     service_type: Union[ServiceType, str],
@@ -92,8 +84,6 @@ def service_stopped(
 ) -> None:
     app[kSERVICE_STOPPED].labels(
         user_id=user_id,
-        project_id=project_id,
-        service_uuid=service_uuid,
         service_key=service_key,
         service_tag=service_tag,
         service_type=service_type,

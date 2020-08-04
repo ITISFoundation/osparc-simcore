@@ -19,6 +19,8 @@ async function logIn(page, user, pass) {
     return;
   }
 
+  // NOTE: since environ WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0, the
+  // backend automatically creates session after registration is submitted
   console.log("Logging in:", user);
   await page.waitForSelector('[osparc-test-id="loginUserEmailFld"]', {
     visible: true,
@@ -31,12 +33,13 @@ async function logIn(page, user, pass) {
 }
 
 async function logOut(page) {
+  console.log("Logging out");
+
+
   await page.waitForSelector('[osparc-test-id="userMenuMainBtn"]', {
     visible: true,
     timeout: 1000
   });
-
-  console.log("Logging out");
   await utils.waitAndClick(page, '[osparc-test-id="userMenuMainBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuLogoutBtn"]');
 }
@@ -60,19 +63,9 @@ async function dashboardPreferences(page) {
   await utils.waitAndClick(page, '[osparc-test-id="preferencesWindowCloseBtn"]');
 }
 
-async function dashboardServiceBrowser(page) {
-  console.log("Navigating through Services");
-
-  await utils.waitAndClick('[osparc-test-id="servicesTabBtn"]')
-  await utils.waitAndClick(page, 'div > div > div > .qx-no-radius-button:nth-child(1) > div:nth-child(1)')
-  await utils.waitAndClick(page, 'div > div > div > div > .qx-no-radius-button:nth-child(3)')
-  await utils.waitAndClick(page, 'div > div > div > div > .qx-no-radius-button:nth-child(6)')
-  await utils.waitAndClick(page, '[osparc-test-id="serviceBrowserVersionsDrpDwn"]')
-  await utils.waitAndClick(page, '.qx-popup > div > div > div > div:nth-child(1)')
-  await utils.waitAndClick(page, '[osparc-test-id="serviceBrowserVersionsDrpDwn"]')
-  await utils.waitAndClick(page, '.qx-popup > div > div > div > div:nth-child(2)')
-  await utils.waitAndClick(page, 'div > .qx-panelview > div:nth-child(1) > div > div')
-  await utils.waitAndClick(page, 'div > .qx-panelview > div:nth-child(1) > div > div')
+async function dashboardDiscoverBrowser(page) {
+  console.log("Navigating through Templates and Services");
+  await utils.waitAndClick('[osparc-test-id="discoverTabBtn"]');
 }
 
 async function dashboardDataBrowser(page) {
@@ -95,7 +88,7 @@ async function dashboardStudyBrowser(page) {
     console.log("Editing thumbnail: no study found")
     return
   }
-  for (let i=0; i<children.length; i++) {
+  for (let i = 0; i < children.length; i++) {
     const childId = '[osparc-test-id="' + children[i] + '"]'
     await utils.waitAndClick(page, childId);
   }
@@ -138,34 +131,44 @@ async function dashboardNewStudy(page) {
 
 async function toDashboard(page) {
   console.log("To Dashboard");
-
   await utils.waitAndClick(page, '[osparc-test-id="dashboardBtn"]')
 }
 
 async function dashboardOpenFirstTemplate(page, templateName) {
+  // Returns true if template is found
   console.log("Creating New Study from template");
 
-  await utils.waitAndClick(page, '[osparc-test-id="studiesTabBtn"]')
+  await utils.waitAndClick(page, '[osparc-test-id="discoverTabBtn"]')
 
   if (templateName) {
-    await __dashboardFilterStudiesByText(page, templateName);
+    await __filterTemplatesByText(page, templateName);
   }
 
   await page.waitForSelector('[osparc-test-id="templateStudiesList"]')
   const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templateStudiesList"]');
-  if (children.length === 0) {
-    console.log("Creating New Study from template: no template found");
-    return;
+
+  if (children.length) {
+    const firstChildId = '[osparc-test-id="' + children[0] + '"]';
+    await utils.waitAndClick(page, firstChildId);
+    return true;
   }
-  const firstChildId = '[osparc-test-id="' + children[0] + '"]';
-  await utils.waitAndClick(page, firstChildId);
+  console.log("Creating New Study from template: no template found");
+  return false;
 }
 
-async function __dashboardFilterStudiesByText(page, templateName) {
-  console.log("Filtering by", templateName);
+async function __filterStudiesByText(page, studyName) {
+  console.log("Filtering by", studyName);
 
   await utils.waitAndClick(page, '[osparc-test-id="studyFiltersTextFld"]')
-  await page.type('[osparc-test-id="studyFiltersTextFld"]', templateName)
+  await page.type('[osparc-test-id="studyFiltersTextFld"]', studyName)
+  await page.keyboard.press('Enter')
+}
+
+async function __filterTemplatesByText(page, templateName) {
+  console.log("Filtering by", templateName);
+
+  await utils.waitAndClick(page, '[osparc-test-id="exploreFiltersTextFld"]')
+  await page.type('[osparc-test-id="exploreFiltersTextFld"]', templateName)
   await page.keyboard.press('Enter')
 }
 
@@ -180,7 +183,7 @@ async function runStudy(page, waitFor = 0) {
   // make sure start request was sent
   const tries = 3;
   let reqInQueue = responsesQueue.isRequestInQueue("/start");
-  for (let i=0; i<tries && reqInQueue; i++) {
+  for (let i = 0; i < tries && reqInQueue; i++) {
     await utils.sleep(200);
     reqInQueue = responsesQueue.isRequestInQueue("/start");
   }
@@ -192,22 +195,34 @@ async function runStudy(page, waitFor = 0) {
   try {
     await responsesQueue.waitUntilResponse("/start");
   }
-  catch(err) {
+  catch (err) {
     console.error(err);
-    throw(err);
+    throw (err);
   }
 
-  console.log("Running study and waiting for", waitFor/1000, "seconds");
+  console.log("Running study and waiting for", waitFor / 1000, "seconds");
   await page.waitFor(waitFor);
 }
 
-async function dashboardDeleteFirstStudy(page) {
+async function dashboardDeleteFirstStudy(page, studyName) {
   console.log("Deleting first study")
 
   await utils.waitAndClick(page, '[osparc-test-id="studiesTabBtn"]')
-  await utils.waitAndClick(page, '[osparc-test-id="userStudiesList"] > .qx-pb-listitem:nth-child(1) > [osparc-test-id="studyItemMenuButton"]')
-  await utils.waitAndClick(page, '[osparc-test-id="studyItemMenuDelete"]')
-  await utils.waitAndClick(page, '[osparc-test-id="confirmDeleteStudyBtn"]')
+
+  if (studyName) {
+    await __filterStudiesByText(page, studyName);
+  }
+
+  await page.waitForSelector('[osparc-test-id="userStudiesList"]')
+  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="userStudiesList"]');
+  if (children.length === 0) {
+    console.log("Deleting first Study: no study found");
+    return;
+  }
+  const firstChildId = '[osparc-test-id="' + children[0] + '"]';
+  await utils.waitAndClick(page, firstChildId + ' > [osparc-test-id="studyItemMenuButton"]');
+  await utils.waitAndClick(page, '[osparc-test-id="studyItemMenuDelete"]');
+  await utils.waitAndClick(page, '[osparc-test-id="confirmDeleteStudyBtn"]');
 }
 
 async function openNode(page, pos) {
@@ -215,13 +230,17 @@ async function openNode(page, pos) {
 
   const children = await utils.getNodeTreeItemIDs(page);
   console.log("children", children);
-  if (children.length < pos+1) {
+  if (children.length < pos + 1) {
     console.log("Node tree items not found");
-    return;
+    return null;
   }
-  const childId = '[osparc-test-id="' + children[pos] + '"]';
+  const nodeWidgetId = children[pos];
+  const childId = '[osparc-test-id="' + nodeWidgetId + '"]';
   await utils.waitAndClick(page, childId);
   await utils.waitAndClick(page, '[osparc-test-id="openServiceBtn"]');
+
+  const nodeId = nodeWidgetId.replace("nodeTreeItem_", "");
+  return nodeId;
 }
 
 async function openLastNode(page) {
@@ -232,7 +251,7 @@ async function openLastNode(page) {
     console.log("Node tree items not found");
     return;
   }
-  this.openNode(page, children.length-1);
+  this.openNode(page, children.length - 1);
 }
 
 async function restoreIFrame(page) {
@@ -257,29 +276,20 @@ async function checkDataProducedByNode(page, nFiles = 1) {
   console.log("checking Data produced by Node. Expecting", nFiles, "file(s)");
   const tries = 3;
   let children = [];
-  for (let i=0; i<tries && children.length === 0; i++) {
-    await page.waitFor(1000); // it takes some time to build the tree
+  const minTime = 1000; // wait a bit longer for fetching the files
+  for (let i = 0; i < tries && children.length === 0; i++) {
+    await page.waitFor(minTime * (i + 1));
     await page.waitForSelector('[osparc-test-id="fileTreeItem_NodeFiles"]');
     children = await utils.getFileTreeItemIDs(page, "NodeFiles");
-    console.log(i+1, 'try: ', children);
+    console.log(i + 1, 'try: ', children);
   }
   const nFolders = 3;
-  if (children.length < (nFolders+nFiles)) { // 4 = location + study + node + file
-    throw("Expected files not found");
+  if (children.length < (nFolders + nFiles)) { // 4 = location + study + node + file
+    throw ("Expected files not found");
   }
 
   const lastChildId = '[osparc-test-id="' + children.pop() + '"]';
   await utils.waitAndClick(page, lastChildId);
-
-  /*
-  try {
-    await downloadSelectedFile(page);
-  }
-  catch(err) {
-    throw(err);
-  }
-  */
-
   await utils.waitAndClick(page, '[osparc-test-id="nodeDataManagerCloseBtn"]');
 }
 
@@ -292,9 +302,9 @@ async function downloadSelectedFile(page) {
     const value = await utils.waitForValidOutputFile(page)
     console.log("valid output file value", value)
   }
-  catch(err) {
+  catch (err) {
     console.error(err);
-    throw(err);
+    throw (err);
   }
 }
 
@@ -317,7 +327,7 @@ module.exports = {
   logOut,
   dashboardAbout,
   dashboardPreferences,
-  dashboardServiceBrowser,
+  dashboardDiscoverBrowser,
   dashboardDataBrowser,
   dashboardStudyBrowser,
   dashboardEditFristStudyThumbnail,
