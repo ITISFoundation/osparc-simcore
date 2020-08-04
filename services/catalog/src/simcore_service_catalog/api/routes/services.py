@@ -3,8 +3,9 @@ import pdb
 import urllib.parse
 from typing import List, Set, Tuple
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import ValidationError, constr
+from pydantic.types import PositiveInt
 
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 @router.get("", response_model=List[ServiceOut])
 async def list_services(
-    user_id: int,
+    user_id: PositiveInt,
     director_client: AuthSession = Depends(get_director_session),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
@@ -88,6 +89,12 @@ async def get_service(
     return ServiceOut.parse_obj(services_in_registry[0])
 
 
-# @router.
-# async def update_service(user_id: int, services_repo: ServicesRepository = Depends(get_repository(ServicesRepository))):
-#     pass
+@router.patch("/{service_key:path}/{service_version}", response_model=ServiceOut)
+async def modify_service(
+    user_id: int,
+    service_key: constr(regex=KEY_RE),
+    service_version: constr(regex=VERSION_RE),
+    groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
+    services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
+):
+    pass
