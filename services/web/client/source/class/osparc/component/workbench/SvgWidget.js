@@ -84,14 +84,14 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
       }];
     },
 
-    drawCurve: function(x1, y1, x2, y2) {
+    drawCurve: function(x1, y1, x2, y2, dashed = false) {
       const controls = this.__getControls(x1, y1, x2, y2);
-      return this.__svgWrapper.drawCurve(this.__canvas, controls);
+      return this.__svgWrapper.drawCurve(this.__canvas, controls, dashed);
     },
 
-    updateCurve: function(curve, x1, y1, x2, y2) {
+    updateCurve: function(curve, x1, y1, x2, y2, dashed = false) {
       const controls = this.__getControls(x1, y1, x2, y2);
-      this.__svgWrapper.updateCurve(curve, controls);
+      this.__svgWrapper.updateCurve(curve, controls, dashed);
     },
 
     removeCurve: function(curve) {
