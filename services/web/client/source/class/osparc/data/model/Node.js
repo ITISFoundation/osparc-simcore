@@ -499,8 +499,8 @@ qx.Class.define("osparc.data.model.Node", {
       const propsForm = new osparc.component.form.renderer.PropForm(form, this);
       this.setPropsForm(propsForm);
       propsForm.addListener("linkFieldModified", e => {
-        const linkModified = e.getData();
-        const portId = linkModified.portId;
+        const linkFieldModified = e.getData();
+        const portId = linkFieldModified.portId;
         this.__retrieveInputs(portId);
       }, this);
     },
@@ -516,8 +516,8 @@ qx.Class.define("osparc.data.model.Node", {
         form.setData(data);
       }, this);
       propsForm.addListener("linkFieldModified", e => {
-        const linkModified = e.getData();
-        const {portId, added} = linkModified;
+        const linkFieldModified = e.getData();
+        const {portId, added} = linkFieldModified;
         if (added) {
           const srcControlLink = propsForm.getControlLink(portId);
           const controlLink = new qx.ui.form.TextField().set({

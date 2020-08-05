@@ -372,21 +372,21 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           column: this._gridPos.ctrlField
         });
 
-        const linkModified = {
+        const linkFieldModified = {
           portId,
           added: true
         };
-        this.fireDataEvent("linkFieldModified", linkModified);
+        this.fireDataEvent("linkFieldModified", linkFieldModified);
       }
     },
 
     __linkRemoved: function(portId) {
       if (this.__resetCtrlField(portId)) {
-        const linkModified = {
+        const linkFieldModified = {
           portId,
           added: false
         };
-        this.fireDataEvent("linkFieldModified", linkModified);
+        this.fireDataEvent("linkFieldModified", linkFieldModified);
       }
     },
 
