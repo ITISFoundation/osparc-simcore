@@ -378,7 +378,7 @@ qx.Class.define("osparc.utils.Utils", {
       getVariables: function(obj) {
         const variables = new Set();
         const secondaryStudyDataStr = JSON.stringify(obj);
-        const mustaches = secondaryStudyDataStr.match(osparc.utils.Utils.mustache.mustacheRegEx());
+        const mustaches = secondaryStudyDataStr.match(osparc.utils.Utils.mustache.mustacheRegEx()) || [];
         mustaches.forEach(mustache => {
           const variable = mustache.replace("{{", "").replace("}}", "");
           variables.add(variable);
