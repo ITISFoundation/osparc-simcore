@@ -124,7 +124,23 @@
       "url": "https://itis.swiss/",
       "github_url": null,
       "wikipedia_url": null,
-      "markdown": "The Foundation for Research on Information Technologies in Society (IT'IS) is an independent, nonprofit research foundation dedicated to improving and advancing the quality of people\u2019s lives by enhancing the safety and quality of emerging electromagnetic technologies. IT'IS Foundation is a member of Zurich43 "
+      "markdown": "The Foundation for Research on Information Technologies in Society (IT'IS) is an independent, nonprofit research foundation dedicated to improving and advancing the quality of people\u2019s lives by enhancing the safety and quality of emerging electromagnetic technologies. IT'IS Foundation is a member of Zurich43"
+    },
+    "organizations::z43::tisolutions": {
+      "classifier": "organizations::z43::tisolutions",
+      "display_name": "TI Solutions",
+      "short_description": "Temporal Interference Solutions",
+      "logo": "null",
+      "aliases": [
+        "tisolutions"
+      ],
+      "created_by": "maiz",
+      "released": null,
+      "related": [],
+      "url": null,
+      "github_url": null,
+      "wikipedia_url": null,
+      "markdown": "Temporal Interference Solutions"
     }
   },
   "collections": {
