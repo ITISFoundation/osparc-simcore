@@ -152,6 +152,7 @@ qx.Class.define("osparc.data.Permissions", {
           "study.node.export",
           "study.edge.create",
           "study.edge.delete",
+          "study.classifier",
           "study.tag"
         ],
         "tester": [

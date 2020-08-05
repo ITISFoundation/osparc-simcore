@@ -199,6 +199,10 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       osparc.utils.Utils.setIdToWidget(thumbnail, "studyDetailsEditorThumbFld");
       editView.add(thumbnail);
 
+      if (osparc.data.Permissions.getInstance().canDo("study.classifier")) {
+        editView.add(this.__classifiersSection());
+      }
+
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         editView.add(this.__tagsSection());
       }
@@ -227,6 +231,24 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       editView.add(buttonsToolbar);
 
       return editView;
+    },
+
+    __classifiersSection: function() {
+      const classifiersSection = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+        alignY: "middle"
+      }));
+      classifiersSection.add(new qx.ui.basic.Label(this.tr("Classifiers")).set({
+        font: "text-14"
+      }));
+      const editButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/14").set({
+        appearance: "link-button"
+      });
+      editButton.addListener("execute", () => {
+        console.log("open Classfier update");
+      });
+      classifiersSection.add(editButton);
+
+      return classifiersSection;
     },
 
     __tagsSection: function() {

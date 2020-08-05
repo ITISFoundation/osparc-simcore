@@ -54,6 +54,7 @@ ROLES_PERMISSIONS = {
             # "study.edge.delete"
             "project.node.create",
             "project.node.delete",
+            "project.classifier.*",  # "study.classifier"
             "project.tag.*",  # "study.tag"
             "user.profile.update",  # "user.user.update",
             # "user.role.update"
