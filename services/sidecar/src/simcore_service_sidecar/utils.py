@@ -87,6 +87,7 @@ def is_gpu_node() -> bool:
             "AttachStderr": False,
             "Tty": False,
             "OpenStdin": False,
+            "HostConfig": {"AutoRemove": True},
         }
         try:
             await docker.containers.run(
