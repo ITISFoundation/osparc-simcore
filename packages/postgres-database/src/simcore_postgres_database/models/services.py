@@ -31,7 +31,7 @@ services_meta_data = sa.Table(
     ),
     sa.Column("name", sa.String, nullable=False),
     sa.Column("description", sa.String, nullable=False),
-    sa.Column("thumbnail", sa.String, nullable=False),
+    sa.Column("thumbnail", sa.String, nullable=True),
     sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
     sa.Column(
         "modified",

@@ -26,7 +26,7 @@ def upgrade():
         sa.Column("owner", sa.BigInteger(), nullable=True),
         sa.Column("name", sa.String, nullable=False),
         sa.Column("description", sa.String, nullable=False),
-        sa.Column("thumbnail", sa.String, nullable=False),
+        sa.Column("thumbnail", sa.String, nullable=True),
         sa.Column(
             "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
         ),
