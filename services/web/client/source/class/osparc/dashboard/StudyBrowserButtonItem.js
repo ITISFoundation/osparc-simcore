@@ -115,7 +115,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     classifiers: {
-      check: "Object"
+      check: "Array"
     }
   },
 
@@ -409,37 +409,49 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       });
     },
 
-    _shouldApplyFilter: function(data) {
-      if (data.text) {
+    __filterText: function(text) {
+      if (text) {
         const checks = [
           this.getStudyTitle(),
           this.getCreator()
         ];
-        if (checks.filter(label => label.toLowerCase().trim().includes(data.text)).length == 0) {
+        if (checks.filter(label => label.toLowerCase().trim().includes(text)).length == 0) {
           return true;
         }
       }
-      if (data.tags && data.tags.length) {
+      return false;
+    },
+
+    __filterTags: function(tags) {
+      if (tags && tags.length) {
         const tagNames = this.getTags().map(tag => tag.name);
-        if (data.tags.filter(tag => tagNames.includes(tag)).length == 0) {
+        if (tags.filter(tag => tagNames.includes(tag)).length == 0) {
           return true;
         }
       }
-      if (data.classifiers && data.classifiers.length) {
-        // FIXME: Hardcoded, demo-only code
-        if (!this.getStudyTitle().toLowerCase().includes("jupyter") &&
-          data.classifiers.find(classifier => classifier.label === "Jupyter Notebook")) {
+      return false;
+    },
+
+    __filterClassifiers: function(classifiers) {
+      if (classifiers && classifiers.length) {
+        const classes = osparc.utils.Classifiers.getLeaveClassifiers(classifiers);
+        const myClassifiers = this.getClassifiers();
+        if (classes.filter(clas => myClassifiers.includes(clas.data.classifier)).length == 0) {
           return true;
         }
-        if (!this.getStudyTitle().toLowerCase().includes("python") &&
-          data.classifiers.find(classifier => classifier.label === "Python")) {
-          return true;
-        }
-        if (!(this.getStudyTitle().toLowerCase().includes("sleeper") ||
-          this.getStudyTitle().toLowerCase().includes("octave")) &&
-          data.classifiers.find(classifier => classifier.label === "IT'IS Foundation")) {
-          return true;
-        }
+      }
+      return false;
+    },
+
+    _shouldApplyFilter: function(data) {
+      if (this.__filterText(data.text)) {
+        return true;
+      }
+      if (this.__filterTags(data.tags)) {
+        return true;
+      }
+      if (this.__filterClassifiers(data.classifiers)) {
+        return true;
       }
       return false;
     }
