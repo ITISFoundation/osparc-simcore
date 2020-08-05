@@ -68,19 +68,55 @@ paths:
 
   /catalog/services:
     get:
-      description: Lists available services in catalog
       tags:
         - catalog
+      summary: List Services
       operationId: list_catalog_services
-      parameters:
-        - $ref: "#/components/parameters/ServiceType"
       responses:
         "200":
-          description: Returns list of services in catalog
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServicesEnveloped"
+          description: Returns list of services from the catalog
+        default:
+          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
+  /catalog/services/{service_key}/{service_version}:
+    parameters:
+      - in: path
+        name: service_key
+        required: true
+        schema:
+          title: Service key
+          type: string
+          pattern: ^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$
+      - in: path
+        name: service_version
+        required: true
+        schema:
+          title: Service version
+          type: string
+          pattern: ^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$
+    get:
+      tags:
+        - catalog
+      summary: Get Service
+      operationId: get_catalog_service
+      responses:
+        "200":
+          description: Returns service
+        default:
+          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
+    patch:
+      tags:
+        - catalog
+      summary: Update Service
+      operationId: update_catalog_service
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Returns modified service
         default:
           $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 
