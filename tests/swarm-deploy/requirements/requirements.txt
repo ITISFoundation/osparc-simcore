@@ -16,6 +16,7 @@ docker==4.2.2             # via -r requirements/requirements.in
 idna-ssl==1.1.0           # via aiohttp
 idna==2.10                # via requests, yarl
 importlib-metadata==1.7.0  # via pluggy, pytest
+iniconfig==1.0.1          # via pytest
 more-itertools==8.4.0     # via pytest
 multidict==4.7.6          # via aiohttp, yarl
 packaging==20.4           # via pytest, pytest-sugar
@@ -29,15 +30,15 @@ pytest-instafail==0.4.2   # via -r requirements/requirements.in
 pytest-mock==3.2.0        # via -r requirements/requirements.in
 pytest-runner==5.2        # via -r requirements/requirements.in
 pytest-sugar==0.9.4       # via -r requirements/requirements.in
-pytest==5.4.3             # via -r requirements/requirements.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-mock, pytest-sugar
+pytest==6.0.1             # via -r requirements/requirements.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-mock, pytest-sugar
 pyyaml==5.3.1             # via -r requirements/requirements.in
 requests==2.24.0          # via docker
 six==1.15.0               # via docker, packaging, tenacity, websocket-client
 tenacity==6.2.0           # via -r requirements/requirements.in
 termcolor==1.1.0          # via pytest-sugar
+toml==0.10.1              # via pytest
 typing-extensions==3.7.4.2  # via aiohttp
 urllib3==1.25.9           # via requests
-wcwidth==0.2.5            # via pytest
 websocket-client==0.57.0  # via docker
 yarl==1.4.2               # via aio-pika, aiohttp, aiormq
 zipp==3.1.0               # via importlib-metadata
