@@ -5,7 +5,6 @@ from aiopg.sa.result import RowProxy
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql import and_, or_
-from sqlalchemy.sql.expression import bindparam
 
 from ...models.domain.service import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from ..tables import services_access_rights, services_meta_data
@@ -45,6 +44,7 @@ class ServicesRepository(BaseRepository):
         return services_in_db
 
     async def get_service(
+        # pylint: disable=too-many-arguments
         self,
         key: str,
         version: str,

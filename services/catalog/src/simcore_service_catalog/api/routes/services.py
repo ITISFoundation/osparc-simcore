@@ -101,6 +101,7 @@ async def list_services(
 
 @router.get("/{service_key:path}/{service_version}", response_model=ServiceOut)
 async def get_service(
+    # pylint: disable=too-many-arguments
     user_id: int,
     service_key: constr(regex=KEY_RE),
     service_version: constr(regex=VERSION_RE),
@@ -159,6 +160,7 @@ async def get_service(
 
 @router.patch("/{service_key:path}/{service_version}", response_model=ServiceOut)
 async def modify_service(
+    # pylint: disable=too-many-arguments
     user_id: int,
     service_key: constr(regex=KEY_RE),
     service_version: constr(regex=VERSION_RE),
