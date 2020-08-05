@@ -77,7 +77,7 @@ def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
                 mount[field] = s[field]
             else:
                 log.warning(
-                    "Mount Settings are missing required keys [Source, Target, Type]"
+                    "Mount settings have wrong format. Required keys [Source, Target, Type]"
                 )
                 continue
 
