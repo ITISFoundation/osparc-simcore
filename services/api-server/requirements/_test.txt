@@ -23,7 +23,7 @@ chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, httpx, reque
 click==7.1.2              # via -r requirements/_base.txt, uvicorn
 codecov==2.1.7            # via -r requirements/_test.in
 contextvars==2.4          # via -r requirements/_base.txt, sniffio
-coverage==5.2             # via codecov, coveralls, pytest-cov
+coverage==5.2.1           # via codecov, coveralls, pytest-cov
 coveralls==2.1.1          # via -r requirements/_test.in
 cryptography==2.9.2       # via -r requirements/_base.txt
 dataclasses==0.7          # via -r requirements/_base.txt, pydantic

@@ -21,7 +21,7 @@ certifi==2020.6.20        # via -r requirements/_base.txt, requests
 chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, requests
 codecov==2.1.7            # via -r requirements/_test.in
 configparser==5.0.0       # via -r requirements/_base.txt, blackfynn
-coverage==5.1             # via -r requirements/_test.in, codecov, coveralls, pytest-cov
+coverage==5.2.1           # via -r requirements/_test.in, codecov, coveralls, pytest-cov
 coveralls==2.0.0          # via -r requirements/_test.in
 deprecated==1.2.10        # via -r requirements/_base.txt, blackfynn
 docopt==0.6.2             # via -r requirements/_base.txt, blackfynn, coveralls

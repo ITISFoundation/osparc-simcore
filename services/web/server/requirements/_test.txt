@@ -29,7 +29,7 @@ cffi==1.14.0              # via -r requirements/_base.txt, cryptography
 change-case==0.5.2        # via -r requirements/_base.txt
 chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, requests
 codecov==2.1.7            # via -r requirements/_test.in
-coverage==5.2             # via -r requirements/_test.in, codecov, coveralls, pytest-cov
+coverage==5.2.1           # via -r requirements/_test.in, codecov, coveralls, pytest-cov
 coveralls==2.1.1          # via -r requirements/_test.in
 cryptography==2.9.2       # via -r requirements/_base.txt, aiohttp-session
 docker==4.2.2             # via -r requirements/_test.in

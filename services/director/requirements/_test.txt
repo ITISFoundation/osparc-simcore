@@ -15,7 +15,7 @@ attrs==19.1.0             # via -r requirements/_base.txt, aiohttp, pytest
 certifi==2019.3.9         # via -r requirements/_base.txt, requests
 chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, requests
 codecov==2.1.7            # via -r requirements/_test.in
-coverage==4.5.1           # via -r requirements/_test.in, codecov, coveralls, pytest-cov
+coverage==5.2.1           # via -r requirements/_test.in, codecov, coveralls, pytest-cov
 coveralls==2.1.1          # via -r requirements/_test.in
 docker==4.2.2             # via -r requirements/_test.in
 docopt==0.6.2             # via coveralls
