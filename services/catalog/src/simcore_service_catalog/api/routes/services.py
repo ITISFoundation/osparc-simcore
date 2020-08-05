@@ -34,6 +34,12 @@ async def list_services(
 ):
     # get user groups
     user_groups = await groups_repository.list_user_groups(user_id)
+    if not user_groups:
+        # deny access
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You have unsufficient rights to access the services",
+        )
     # now get the executable services
     executable_services: Set[Tuple[str, str]] = {
         (service.key, service.version)
@@ -111,6 +117,12 @@ async def get_service(
 
     # get the user groups
     user_groups = await groups_repository.list_user_groups(user_id)
+    if not user_groups:
+        # deny access
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You have unsufficient rights to access the service",
+        )
     # check the user has access to this service and to which extent
     service_in_db = await services_repo.get_service(
         service_key,
@@ -163,6 +175,12 @@ async def modify_service(
 
     # get the user groups
     user_groups = await groups_repository.list_user_groups(user_id)
+    if not user_groups:
+        # deny access
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You have unsufficient rights to access the service",
+        )
     # check the user has write access to this service
     writable_service = await services_repo.get_service(
         service_key,
@@ -183,7 +201,17 @@ async def modify_service(
         version=service_version,
         **updated_service.dict(exclude_unset=True),
     )
-    partial_updated_rights = [
+    await services_repo.update_service(partial_updated_service)
+    # let's modify the service access rights (they can be added/removed/modified)
+    current_gids_in_db = [
+        r.gid
+        for r in await services_repo.get_service_access_rights(
+            service_key, service_version
+        )
+    ]
+
+    # start by updating/inserting new entries
+    new_access_rights = [
         ServiceAccessRightsAtDB(
             key=service_key,
             version=service_version,
@@ -193,7 +221,17 @@ async def modify_service(
         )
         for gid, rights in updated_service.access_rights.items()
     ]
-    await services_repo.update_service(partial_updated_service, partial_updated_rights)
+    await services_repo.upsert_service_access_rights(new_access_rights)
+
+    # then delete the ones that were removed
+    removed_gids = [
+        gid for gid in current_gids_in_db if gid not in updated_service.access_rights
+    ]
+    deleted_access_rights = [
+        ServiceAccessRightsAtDB(key=service_key, version=service_version, gid=gid)
+        for gid in removed_gids
+    ]
+    await services_repo.delete_service_access_rights(deleted_access_rights)
 
     # now return the service
     return await get_service(
