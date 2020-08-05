@@ -63,6 +63,7 @@ def _check_setting_correctness(setting: Dict) -> None:
     if "name" not in setting or "type" not in setting or "value" not in setting:
         raise exceptions.DirectorException("Invalid setting in %s" % setting)
 
+
 def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
     mounts = list()
     for s in settings:
@@ -71,18 +72,21 @@ def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
         mount["ReadOnly"] = True
         if "ReadOnly" in s and s["ReadOnly"] in ["false", "False", False]:
             mount["ReadOnly"] = False
-        
+
         for field in ["Source", "Target", "Type"]:
             if field in s:
                 mount[field] = s[field]
             else:
-                log.warning("Mount Settings are missing required keys [Source, Target, Type]")
+                log.warning(
+                    "Mount Settings are missing required keys [Source, Target, Type]"
+                )
                 continue
 
         log.debug("Append mount settings %s", mount)
         mounts.append(mount)
 
     return mount
+
 
 def _parse_env_settings(settings: List[str]) -> Dict:
     envs = dict()
@@ -91,12 +95,13 @@ def _parse_env_settings(settings: List[str]) -> Dict:
         if "=" in s:
             parts = s.split("=")
             if len(parts) == 2:
-                envs.update({parts[0]:  parts[1]})
+                envs.update({parts[0]: parts[1]})
 
-    log.debug("Parsed env settings %s", s)
+        log.debug("Parsed env settings %s", s)
 
     return envs
-    
+
+
 async def _read_service_settings(
     app: web.Application, key: str, tag: str, settings_name: str
 ) -> Dict:
@@ -149,7 +154,7 @@ async def _create_docker_service_params(
             "node_id": node_uuid,
             "swarm_stack_name": config.SWARM_STACK_NAME,
         },
-        "Mounts": []
+        "Mounts": [],
     }
 
     if (
@@ -290,16 +295,22 @@ async def _create_docker_service_params(
             docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
         elif param["name"] == "env":
             log.debug("Found env parameter %s", param["value"])
-            log.debug("Env type: %s", type(docker_params["task_template"]["ContainerSpec"]["Env"]))
+            log.debug(
+                "Env type: %s",
+                type(docker_params["task_template"]["ContainerSpec"]["Env"]),
+            )
             env_settings = _parse_env_settings(param["value"])
             if env_settings:
-                docker_params["task_template"]["ContainerSpec"]["Env"].update(env_settings)
+                docker_params["task_template"]["ContainerSpec"]["Env"].update(
+                    env_settings
+                )
         elif param["name"] == "mount":
             log.debug("Found mount parameter %s", param["value"])
             mount_settings = _parse_mount_settings(param["value"])
             if mount_settings:
-                docker_params["task_template"]["ContainerSpec"]["Mounts"].append(mount_settings)
-            
+                docker_params["task_template"]["ContainerSpec"]["Mounts"].append(
+                    mount_settings
+                )
 
     # attach the service to the swarm network dedicated to services
     try:
@@ -494,7 +505,7 @@ async def _get_service_state(
             task_state = last_task["Status"]["State"]
             log.debug("%s %s", service["ID"], task_state)
 
-            last_task_state = ServiceState.STARTING # default
+            last_task_state = ServiceState.STARTING  # default
             last_task_error_msg = (
                 last_task["Status"]["Err"] if "Err" in last_task["Status"] else ""
             )
