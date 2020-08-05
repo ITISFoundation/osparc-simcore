@@ -3,15 +3,16 @@
 import asyncio
 import json
 import logging
+import os
 import re
 from distutils.version import StrictVersion
 from enum import Enum
 from typing import Dict, List, Optional, Tuple
 
-import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
 
+import aiodocker
 from servicelib.monitor_services import service_started, service_stopped
 
 from . import config, docker_utils, exceptions, registry_proxy
@@ -62,7 +63,40 @@ def _check_setting_correctness(setting: Dict) -> None:
     if "name" not in setting or "type" not in setting or "value" not in setting:
         raise exceptions.DirectorException("Invalid setting in %s" % setting)
 
+def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
+    mounts = list()
+    for s in settings:
+        log.debug("Retrieved mount settings %s", s)
+        mount = dict()
+        mount["ReadOnly"] = True
+        if "ReadOnly" in s and s["ReadOnly"] in ["false", "False", False]:
+            mount["ReadOnly"] = False
+        
+        for field in ["Source", "Target", "Type"]:
+            if field in s:
+                mount[field] = s[field]
+            else:
+                log.warning("Mount Settings are missing required keys [Source, Target, Type]")
+                continue
 
+        log.debug("Append mount settings %s", mount)
+        mounts.append(mount)
+
+    return mount
+
+def _parse_env_settings(settings: List[str]) -> Dict:
+    envs = dict()
+    for s in settings:
+        log.debug("Retrieved env settings %s", s)
+        if "=" in s:
+            parts = s.split("=")
+            if len(parts) == 2:
+                envs.update({parts[0]:  parts[1]})
+
+    log.debug("Parsed env settings %s", s)
+
+    return envs
+    
 async def _read_service_settings(
     app: web.Application, key: str, tag: str, settings_name: str
 ) -> Dict:
@@ -115,6 +149,7 @@ async def _create_docker_service_params(
             "node_id": node_uuid,
             "swarm_stack_name": config.SWARM_STACK_NAME,
         },
+        "Mounts": []
     }
 
     if (
@@ -253,6 +288,18 @@ async def _create_docker_service_params(
             docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
         elif param["type"] == "Constraints":  # REST-API compatible
             docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
+        elif param["name"] == "env":
+            log.debug("Found env parameter %s", param["value"])
+            log.debug("Env type: %s", type(docker_params["task_template"]["ContainerSpec"]["Env"]))
+            env_settings = _parse_env_settings(param["value"])
+            if env_settings:
+                docker_params["task_template"]["ContainerSpec"]["Env"].update(env_settings)
+        elif param["name"] == "mount":
+            log.debug("Found mount parameter %s", param["value"])
+            mount_settings = _parse_mount_settings(param["value"])
+            if mount_settings:
+                docker_params["task_template"]["ContainerSpec"]["Mounts"].append(mount_settings)
+            
 
     # attach the service to the swarm network dedicated to services
     try:
@@ -440,9 +487,10 @@ async def _get_service_state(
         # only keep the ones with the right service ID (we're being a bit picky maybe)
         tasks = [x for x in tasks if x["ServiceID"] == service["ID"]]
 
-        # we are only interested in the last task which has index 0
+        # we are only interested in the last task which has been created first
         if tasks:
-            last_task = tasks[0]
+            sorted_tasks = sorted(tasks, key=lambda task: task["UpdatedAt"])
+            last_task = sorted_tasks[-1]
             task_state = last_task["Status"]["State"]
             log.debug("%s %s", service["ID"], task_state)
 
