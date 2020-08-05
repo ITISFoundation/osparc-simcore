@@ -22,7 +22,7 @@ def upgrade():
     op.create_table(
         "services_meta_data",
         sa.Column("key", sa.String(), nullable=False),
-        sa.Column("tag", sa.String(), nullable=False),
+        sa.Column("version", sa.String(), nullable=False),
         sa.Column("owner", sa.BigInteger(), nullable=True),
         sa.Column("name", sa.String, nullable=False),
         sa.Column("description", sa.String, nullable=False),
@@ -40,12 +40,12 @@ def upgrade():
             onupdate="CASCADE",
             ondelete="RESTRICT",
         ),
-        sa.PrimaryKeyConstraint("key", "tag", name="services_meta_data_pk"),
+        sa.PrimaryKeyConstraint("key", "version", name="services_meta_data_pk"),
     )
     op.create_table(
         "services_access_rights",
         sa.Column("key", sa.String(), nullable=False),
-        sa.Column("tag", sa.String(), nullable=False),
+        sa.Column("version", sa.String(), nullable=False),
         sa.Column("gid", sa.BigInteger(), nullable=False),
         sa.Column(
             "execute_access",
@@ -73,12 +73,12 @@ def upgrade():
             ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
-            ["key", "tag"],
-            ["services_meta_data.key", "services_meta_data.tag"],
+            ["key", "version"],
+            ["services_meta_data.key", "services_meta_data.version"],
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint("key", "tag", "gid", name="services_access_pk"),
+        sa.PrimaryKeyConstraint("key", "version", "gid", name="services_access_pk"),
     )
     # ### end Alembic commands ###
 
