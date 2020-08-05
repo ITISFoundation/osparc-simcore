@@ -239,6 +239,7 @@ qx.Class.define("osparc.utils.Services", {
 
     __addExtraInfo: function(services) {
       const categories = this.__getCategories();
+      const classifiers = this.__getClassifiers();
       Object.values(services).forEach(serviceWVersion => {
         Object.values(serviceWVersion).forEach(service => {
           service["uuid"] = service["key"];
@@ -256,11 +257,16 @@ qx.Class.define("osparc.utils.Services", {
           } else {
             service["category"] = "Unknown";
           }
+          if (Object.prototype.hasOwnProperty.call(classifiers, service["key"])) {
+            service["classifiers"] = classifiers[service["key"]]["classifiers"];
+          } else {
+            service["classifiers"] = [];
+          }
         });
       });
     },
 
-    __getCategories: function(services) {
+    __getCategories: function() {
       return {
         "simcore/services/frontend/file-picker": {
           "category": "Data"
@@ -421,6 +427,81 @@ qx.Class.define("osparc.utils.Services", {
         },
         "simcore/services/frontend/multi-plot": {
           "category": "PostPro"
+        }
+      };
+    },
+
+    __getClassifiers: function() {
+      return {
+        "simcore/services/comp/isolve": {
+          "classifiers": [
+            "topics::Sim4Life",
+            "organizations::z43::itis"
+          ]
+        },
+        "simcore/services/comp/ti-solutions-optimizer": {
+          "classifiers": [
+            "organizations::z43::tisolutions"
+          ]
+        },
+        "simcore/services/dynamic/electrode-selector": {
+          "classifiers": [
+            "organizations::z43::tisolutions"
+          ]
+        },
+        "simcore/services/dynamic/jupyter-base-notebook": {
+          "classifiers": [
+            "topics::jupyter-notebook",
+            "organizations::z43::itis"
+          ]
+        },
+        "simcore/services/dynamic/jupyter-neuron": {
+          "classifiers": [
+            "topics::python",
+            "topics::jupyter-notebook",
+            "organizations::z43::itis"
+          ]
+        },
+        "simcore/services/dynamic/jupyter-octave": {
+          "classifiers": [
+            "topics::jupyter-notebook",
+            "topics::octave",
+            "organizations::z43::itis"
+          ]
+        },
+        "simcore/services/dynamic/jupyter-octave-python-math": {
+          "classifiers": [
+            "topics::jupyter-notebook",
+            "topics::octave",
+            "organizations::z43::itis"
+          ]
+        },
+        "simcore/services/dynamic/jupyter-scipy-notebook": {
+          "classifiers": [
+            "topics::python",
+            "topics::jupyter-notebook",
+            "organizations::z43::itis"
+          ]
+        },
+        "simcore/services/dynamic/jupyter-smash": {
+          "classifiers": [
+            "topics::python",
+            "topics::jupyter-notebook",
+            "topics::Sim4Life",
+            "organizations::z43::itis"
+          ]
+        },
+        "simcore/services/dynamic/osparc-lab": {
+          "classifiers": [
+            "topics::python",
+            "topics::jupyter-notebook",
+            "organizations::z43::itis"
+          ]
+        },
+        "simcore/services/dynamic/tissue-properties": {
+          "classifiers": [
+            "organizations::z43::itis"
+          ]
         }
       };
     }
