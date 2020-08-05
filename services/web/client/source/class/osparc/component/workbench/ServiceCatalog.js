@@ -50,8 +50,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       clickAwayClose: true
     });
 
-    let catalogLayout = new qx.ui.layout.VBox();
-    this.setLayout(catalogLayout);
+    this.setLayout(new qx.ui.layout.VBox());
 
     let filterLayout = this.__createFilterLayout();
     this.add(filterLayout);
@@ -129,8 +128,9 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       this.__allServicesObj = {};
 
       const services = this.__serviceBrowser = new osparc.component.service.ServiceList("serviceCatalog").set({
-        width: 568,
-        backgroundColor: "background-main"
+        width: 560,
+        backgroundColor: "background-main",
+        padding: 5
       });
       const scrolledServices = new qx.ui.container.Scroll().set({
         height: 260
