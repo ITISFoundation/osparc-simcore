@@ -179,17 +179,7 @@ class ServiceKeyVersion(BaseModel):
     )
 
 
-class ServiceDockerData(ServiceKeyVersion):
-    integration_version: Optional[constr(regex=VERSION_RE)] = Field(
-        None,
-        alias="integration-version",
-        description="integration version number",
-        # regex=VERSION_RE,
-        example="1.0.0",
-    )
-    service_type: ServiceType = Field(
-        ..., alias="type", description="service type", example="computational",
-    )
+class ServiceCommonData(BaseModel):
     name: str = Field(
         ...,
         description="short, human readable name for the node",
@@ -200,7 +190,6 @@ class ServiceDockerData(ServiceKeyVersion):
         description="url to the thumbnail",
         example="https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
     )
-    badges: Optional[List[Badge]] = Field(None)
     description: str = Field(
         ...,
         description="human readable description of the purpose of the node",
@@ -209,6 +198,22 @@ class ServiceDockerData(ServiceKeyVersion):
             "The mother of all nodes, makes your numbers shine!",
         ],
     )
+
+
+class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
+    integration_version: Optional[constr(regex=VERSION_RE)] = Field(
+        None,
+        alias="integration-version",
+        description="integration version number",
+        # regex=VERSION_RE,
+        example="1.0.0",
+    )
+    service_type: ServiceType = Field(
+        ..., alias="type", description="service type", example="computational",
+    )
+
+    badges: Optional[List[Badge]] = Field(None)
+
     authors: List[Author] = Field(..., min_items=1)
     contact: EmailStr = Field(
         ...,
@@ -228,7 +233,7 @@ class ServiceDockerData(ServiceKeyVersion):
         extra = Extra.forbid
 
 
-class ServiceAccessRights(BaseModel):
+class ServiceGroupAccessRights(BaseModel):
     execute_access: bool = Field(
         False, description="defines whether the group can execute the service",
     )
@@ -237,32 +242,20 @@ class ServiceAccessRights(BaseModel):
     )
 
 
-class ServiceEnhancedData(ServiceDockerData):
-    access_rights: Optional[Dict[GroupId, ServiceAccessRights]] = Field(
+class ServiceAccessRights(BaseModel):
+    access_rights: Optional[Dict[GroupId, ServiceGroupAccessRights]] = Field(
         None, description="service access rights per group id"
     )
 
 
-class ServiceMetaDataAtDB(ServiceKeyVersion):
-    version: constr(regex=VERSION_RE) = Field(
-        ...,
-        description="service version number",
-        example=["1.0.0", "0.0.1"],
-        alias="tag",
-    )
+class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceCommonData):
     owner: Optional[int] = Field(None,)
 
     class Config:
         orm_mode = True
 
 
-class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceAccessRights):
-    version: constr(regex=VERSION_RE) = Field(
-        ...,
-        description="service version number",
-        example=["1.0.0", "0.0.1"],
-        alias="tag",
-    )
+class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
     gid: int = Field(..., description="defines the group id", example=1)
 
     class Config:

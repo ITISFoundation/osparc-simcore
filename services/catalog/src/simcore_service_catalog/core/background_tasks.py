@@ -2,7 +2,7 @@ import asyncio
 import logging
 from asyncio.futures import CancelledError
 from pprint import pformat
-from typing import Set, Tuple
+from typing import Dict, Set, Tuple
 
 from aiopg.sa import Engine
 from fastapi import FastAPI
@@ -25,14 +25,14 @@ ServiceVersion = str
 
 async def _list_registry_services(
     app: FastAPI,
-) -> Set[Tuple[ServiceKey, ServiceVersion]]:
+) -> Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData]:
     client = get_director_session(app)
     data = await client.get("/services")
-    services: Set[Tuple[ServiceKey, ServiceVersion]] = set()
+    services: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData] = {}
     for x in data:
         try:
             service_data = ServiceDockerData.parse_obj(x)
-            services.add((service_data.key, service_data.version))
+            services[(service_data.key, service_data.version)] = service_data
         # services = parse_obj_as(List[ServiceOut], data)
         except ValidationError as exc:
             logger.warning(
@@ -63,18 +63,21 @@ async def _get_everyone_gid(app: FastAPI) -> int:
 
 
 async def _create_services_in_db(
-    app: FastAPI, services: Set[Tuple[ServiceKey, ServiceVersion]]
+    app: FastAPI,
+    service_keys: Set[Tuple[ServiceKey, ServiceVersion]],
+    services: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData],
 ) -> None:
     everyone_gid = await _get_everyone_gid(app)
     engine: Engine = app.state.engine
     async with engine.acquire() as conn:
         services_repo = ServicesRepository(conn)
-        for service_key, service_version in services:
+        for service_key, service_version in service_keys:
+            service: ServiceDockerData = services[(service_key, service_version)]
             await services_repo.create_service(
-                ServiceMetaDataAtDB(key=service_key, tag=service_version, owner=None),
+                ServiceMetaDataAtDB.parse_obj(service),
                 ServiceAccessRightsAtDB(
                     key=service_key,
-                    tag=service_version,
+                    version=service_version,
                     gid=everyone_gid,
                     execute_access=True,
                 ),
@@ -86,21 +89,23 @@ async def sync_registry_task(app: FastAPI) -> None:
     while True:
         try:
             logger.debug("syncing services between registry and database...")
-            services_in_registry: Set[
-                Tuple[ServiceKey, ServiceVersion]
+            services_in_registry: Dict[
+                Tuple[ServiceKey, ServiceVersion], ServiceDockerData
             ] = await _list_registry_services(app)
             services_in_db: Set[
                 Tuple[ServiceKey, ServiceVersion]
             ] = await _list_db_services(app)
 
             # check that the db has all the services at least once
-            missing_services_in_db = services_in_registry - services_in_db
+            missing_services_in_db = set(services_in_registry.keys()) - services_in_db
             if missing_services_in_db:
                 logger.debug(
                     "missing services in db:\n%s", pformat(missing_services_in_db),
                 )
                 # update db (rationale: missing services are shared with everyone for now)
-                await _create_services_in_db(app, missing_services_in_db)
+                await _create_services_in_db(
+                    app, missing_services_in_db, services_in_registry
+                )
 
             await asyncio.sleep(5)
 

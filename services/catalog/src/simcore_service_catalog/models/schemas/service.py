@@ -1,5 +1,9 @@
-from ..domain import service
+from ..domain.service import ServiceDockerData, ServiceCommonData, ServiceAccessRights
 
 
-class ServiceOut(service.ServiceEnhancedData):
+class ServiceOut(ServiceAccessRights, ServiceDockerData):
+    pass
+
+
+class ServiceIn(ServiceCommonData, ServiceAccessRights):
     pass
