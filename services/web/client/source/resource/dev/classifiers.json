@@ -77,8 +77,8 @@
       "wikipedia_url": null,
       "markdown": "\nJupyter Lab powered by Sim4Life."
     },
-    "organizations::zmt": {
-      "classifier": "organizations::zmt",
+    "organizations::z43::zmt": {
+      "classifier": "organizations::z43::zmt",
       "display_name": "ZMT",
       "short_description": "ZMT is a member of Zurich43",
       "logo": null,
@@ -93,8 +93,8 @@
       "wikipedia_url": null,
       "markdown": "Zurich MedTech AG (ZMT) offers tools and best practices for targeted life sciences applications to simulate, analyze, and predict complex and dynamic biological processes and interactions. ZMT is a member of Zurich43"
     },
-    "organizations::speag": {
-      "classifier": "organizations::speag",
+    "organizations::z43::speag": {
+      "classifier": "organizations::z43::speag",
       "display_name": "SPEAG",
       "short_description": "SPEAG is a member of Zurich43",
       "logo": null,
@@ -109,8 +109,8 @@
       "wikipedia_url": null,
       "markdown": "Schmid & Partner Engineering AG (SPEAG) is a leading developer and manufacturer of the most reliable, efficient, user-friendly, and advanced numerical tools and instrumentation for the accurate evaluation of electromagnetic near- and far-fields from static to optical frequencies. SPEAG is a member of Zurich43"
     },
-    "organizations::itis": {
-      "classifier": "organizations::itis",
+    "organizations::z43::itis": {
+      "classifier": "organizations::z43::itis",
       "display_name": "IT'IS Foundation",
       "short_description": "IT'IS Foundation is an organization part of Zurich43",
       "logo": "itis.png",
