@@ -3,7 +3,6 @@
 import asyncio
 import json
 import logging
-import os
 import re
 from distutils.version import StrictVersion
 from enum import Enum
