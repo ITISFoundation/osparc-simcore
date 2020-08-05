@@ -294,10 +294,6 @@ async def _create_docker_service_params(
             docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
         elif param["name"] == "env":
             log.debug("Found env parameter %s", param["value"])
-            log.debug(
-                "Env type: %s",
-                type(docker_params["task_template"]["ContainerSpec"]["Env"]),
-            )
             env_settings = _parse_env_settings(param["value"])
             if env_settings:
                 docker_params["task_template"]["ContainerSpec"]["Env"].update(
