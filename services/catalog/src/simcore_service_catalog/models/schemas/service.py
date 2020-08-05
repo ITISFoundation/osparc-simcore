@@ -1,5 +1,5 @@
 from ..domain import service
 
 
-class ServiceOut(service.ServiceData):
+class ServiceOut(service.ServiceEnhancedData):
     pass

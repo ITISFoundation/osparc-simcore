@@ -42,6 +42,19 @@ class ServicesRepository(BaseRepository):
                 services_in_db.append(ServiceMetaDataAtDB(**row))
         return services_in_db
 
+    async def get_service_access_rights(
+        self, key: str, tag: str
+    ) -> List[ServiceAccessRightsAtDB]:
+        services_in_db = []
+        query = sa.select([services_access_rights]).where(
+            (services_access_rights.c.key == key)
+            & (services_access_rights.c.tag == tag)
+        )
+        async for row in self.connection.execute(query):
+            if row:
+                services_in_db.append(ServiceAccessRightsAtDB(**row))
+        return services_in_db
+
     async def get_service(
         self,
         key: str,

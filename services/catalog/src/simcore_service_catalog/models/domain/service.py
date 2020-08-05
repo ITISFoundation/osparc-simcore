@@ -17,6 +17,7 @@ FILENAME_RE = r".+"
 
 PropertyName = constr(regex=PROPERTY_KEY_RE)
 FileName = constr(regex=FILENAME_RE)
+GroupId = PositiveInt
 
 
 class ServiceType(str, Enum):
@@ -159,7 +160,7 @@ class ServiceInput(ServiceProperty):
     )
 
 
-class ServiceBase(BaseModel):
+class ServiceKeyVersion(BaseModel):
     key: constr(regex=KEY_RE) = Field(
         ...,
         title="",
@@ -178,7 +179,7 @@ class ServiceBase(BaseModel):
     )
 
 
-class ServiceData(ServiceBase):
+class ServiceDockerData(ServiceKeyVersion):
     integration_version: Optional[constr(regex=VERSION_RE)] = Field(
         None,
         alias="integration-version",
@@ -227,7 +228,22 @@ class ServiceData(ServiceBase):
         extra = Extra.forbid
 
 
-class ServiceMetaDataAtDB(ServiceBase):
+class ServiceAccessRights(BaseModel):
+    execute_access: bool = Field(
+        False, description="defines whether the group can execute the service",
+    )
+    write_access: bool = Field(
+        False, description="defines whether the group can modify the service"
+    )
+
+
+class ServiceEnhancedData(ServiceDockerData):
+    access_rights: Optional[Dict[GroupId, ServiceAccessRights]] = Field(
+        None, description="service access rights per group id"
+    )
+
+
+class ServiceMetaDataAtDB(ServiceKeyVersion):
     version: constr(regex=VERSION_RE) = Field(
         ...,
         description="service version number",
@@ -240,7 +256,7 @@ class ServiceMetaDataAtDB(ServiceBase):
         orm_mode = True
 
 
-class ServiceAccessRightsAtDB(ServiceBase):
+class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceAccessRights):
     version: constr(regex=VERSION_RE) = Field(
         ...,
         description="service version number",
@@ -248,12 +264,6 @@ class ServiceAccessRightsAtDB(ServiceBase):
         alias="tag",
     )
     gid: int = Field(..., description="defines the group id", example=1)
-    execute_access: bool = Field(
-        False, description="defines whether the group can execute the service",
-    )
-    write_access: bool = Field(
-        False, description="defines whether the group can modify the service"
-    )
 
     class Config:
         orm_mode = True
@@ -262,4 +272,4 @@ class ServiceAccessRightsAtDB(ServiceBase):
 if __name__ == "__main__":
 
     with open(current_file.with_suffix(".json"), "wt") as fh:
-        print(ServiceData.schema_json(indent=2), file=fh)
+        print(ServiceDockerData.schema_json(indent=2), file=fh)

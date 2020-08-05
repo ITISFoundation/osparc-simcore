@@ -13,7 +13,7 @@ from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.services import ServicesRepository
 from ..models.domain.service import (
     ServiceAccessRightsAtDB,
-    ServiceData,
+    ServiceDockerData,
     ServiceMetaDataAtDB,
 )
 
@@ -31,7 +31,7 @@ async def _list_registry_services(
     services: Set[Tuple[ServiceKey, ServiceVersion]] = set()
     for x in data:
         try:
-            service_data = ServiceData.parse_obj(x)
+            service_data = ServiceDockerData.parse_obj(x)
             services.add((service_data.key, service_data.version))
         # services = parse_obj_as(List[ServiceOut], data)
         except ValidationError as exc:
@@ -89,7 +89,6 @@ async def sync_registry_task(app: FastAPI) -> None:
             services_in_registry: Set[
                 Tuple[ServiceKey, ServiceVersion]
             ] = await _list_registry_services(app)
-
             services_in_db: Set[
                 Tuple[ServiceKey, ServiceVersion]
             ] = await _list_db_services(app)

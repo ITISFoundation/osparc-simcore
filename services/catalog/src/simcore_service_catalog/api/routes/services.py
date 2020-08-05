@@ -1,4 +1,5 @@
 import logging
+from os import write
 import pdb
 import urllib.parse
 from typing import List, Set, Tuple
@@ -9,7 +10,13 @@ from pydantic.types import PositiveInt
 
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
-from ...models.domain.service import KEY_RE, VERSION_RE
+from ...models.domain.service import (
+    KEY_RE,
+    VERSION_RE,
+    ServiceAccessRights,
+    ServiceAccessRightsAtDB,
+    ServiceDockerData,
+)
 from ...models.schemas.service import ServiceOut
 from ..dependencies.database import get_repository
 from ..dependencies.director import AuthSession, get_director_session
@@ -27,23 +34,41 @@ async def list_services(
 ):
     # get user groups
     user_groups = await groups_repository.list_user_groups(user_id)
-    # now get the allowed services
-    allowed_services: Set[Tuple[str, str]] = {
+    # now get the executable services
+    executable_services: Set[Tuple[str, str]] = {
         (service.key, service.version)
         for service in await services_repo.list_services(
             gids=[group.gid for group in user_groups], execute_access=True
         )
     }
-
+    # get the writable services
+    writable_services: Set[Tuple[str, str]] = {
+        (service.key, service.version)
+        for service in await services_repo.list_services(
+            gids=[group.gid for group in user_groups], write_access=True
+        )
+    }
     # get the services from the registry
     data = await director_client.get("/services")
     services: List[ServiceOut] = []
     for x in data:
         try:
             service = ServiceOut.parse_obj(x)
-            if (service.key, service.version) in allowed_services:
+            if (service.key, service.version) in writable_services:
+                # we have write access for that service, fill in the service rights
+                service_access_rights: List[
+                    ServiceAccessRightsAtDB
+                ] = await services_repo.get_service_access_rights(
+                    service.key, service.version
+                )
+                service.access_rights = {
+                    rights.gid: rights for rights in service_access_rights
+                }
                 services.append(service)
-        # services = parse_obj_as(List[ServiceOut], data)
+            elif (service.key, service.version) in executable_services:
+                services.append(service)
+
+        # services = parse_obj_as(List[ServiceOut], data) this does not work since if one service has an issue it fails
         except ValidationError as exc:
             logger.warning(
                 "skip service %s:%s that has invalid fields\n%s",
@@ -68,25 +93,40 @@ async def get_service(
     services_in_registry = await director_client.get(
         f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
     )
+    service = ServiceOut.parse_obj(services_in_registry[0])
     # the director client already raises an exception if not found
 
-    # get user groups
+    # get the user groups
     user_groups = await groups_repository.list_user_groups(user_id)
-    # now check the user has execute access on the service
-    service_in_db = await services_repo.get_service(
+    # check the user has access to this service and to which extent
+    writable_service = await services_repo.get_service(
+        service_key,
+        service_version,
+        gids=[group.gid for group in user_groups],
+        write_access=True,
+    )
+    if writable_service:
+        # we have full access, let's add the access to the output
+        service_access_rights: List[
+            ServiceAccessRightsAtDB
+        ] = await services_repo.get_service_access_rights(service.key, service.version)
+        service.access_rights = {rights.gid: rights for rights in service_access_rights}
+        return service
+
+    # check if we have executable rights
+    executable_service = await services_repo.get_service(
         service_key,
         service_version,
         gids=[group.gid for group in user_groups],
         execute_access=True,
     )
-    if not service_in_db:
+    if not executable_service:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You have insufficient rights to access the service",
         )
     # access is allowed
-
-    return ServiceOut.parse_obj(services_in_registry[0])
+    return service
 
 
 @router.patch("/{service_key:path}/{service_version}", response_model=ServiceOut)
