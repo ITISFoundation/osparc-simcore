@@ -374,6 +374,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         accessRights: study.accessRights ? study.accessRights : null,
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
         icon: study.thumbnail || defaultThumbnail,
+        classifiers: study.classifiers || [],
         tags
       });
       const menu = this.__getStudyItemMenu(item, study);
