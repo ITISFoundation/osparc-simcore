@@ -28,7 +28,7 @@ log.setLevel(config.SIDECAR_LOGLEVEL)
 node_port_log.setLevel(config.SIDECAR_LOGLEVEL)
 
 
-async def does_task_require_gpu(node_id: str) -> bool:
+async def task_required_resources(node_id: str) -> bool:
     """Checks if the comp_task's image field if it requires to use the GPU"""
     async with DBContextManager() as db_engine:
         async with db_engine.acquire() as db_connection:
@@ -42,8 +42,11 @@ async def does_task_require_gpu(node_id: str) -> bool:
                 raise exceptions.TaskNotFound("Could not find a relative task")
 
             # Image has to following format
-            # {"name": "simcore/services/comp/itis/sleeper", "tag": "1.0.0", "requires_gpu": false}
-            return task["image"]["requires_gpu"]
+            # {"name": "simcore/services/comp/itis/sleeper", "tag": "1.0.0", "requires_gpu": false, "requires_mpi": false}
+            return {
+                "requires_gpu": task["image"]["requires_gpu"],
+                "requires_mpi": task["image"]["requires_mpi"],
+            }
 
 
 async def _try_get_task_from_db(

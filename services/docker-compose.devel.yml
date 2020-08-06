@@ -52,6 +52,7 @@ services:
       # force to start as cpu mode otherwise it will boot in gpu mode in development
       - START_AS_MODE_CPU=1
       - SC_BOOT_MODE=debug-ptvsd
+      - TARGET_MPI_NODE_CPU_COUNT=12  # development computer CPU count, which can also be put in the env var
     ports:
       - "3002:3000"
     deploy:

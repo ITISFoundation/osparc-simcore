@@ -956,20 +956,22 @@ async def generate_service_extras(
     result["node_requirements"] = ["CPU"]
     # check if the service requires GPU support
 
-    def validate_vram(entry_to_validate):
+    def validate_kind(entry_to_validate, kind_name):
         for element in (
             entry_to_validate.get("value", {})
             .get("Reservations", {})
             .get("GenericResources", [])
         ):
-            if element.get("DiscreteResourceSpec", {}).get("Kind") == "VRAM":
+            if element.get("DiscreteResourceSpec", {}).get("Kind") == kind_name:
                 return True
         return False
 
     if SERVICE_RUNTIME_SETTINGS in labels:
         service_settings = json.loads(labels[SERVICE_RUNTIME_SETTINGS])
         for entry in service_settings:
-            if entry.get("name") == "Resources" and validate_vram(entry):
+            if entry.get("name") == "Resources" and validate_kind(entry, "VRAM"):
                 result["node_requirements"].append("GPU")
+            if entry.get("name") == "Resources" and validate_kind(entry, "MPI"):
+                result["node_requirements"].append("MPI")
 
     return result
