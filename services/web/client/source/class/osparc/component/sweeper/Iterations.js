@@ -63,13 +63,11 @@ qx.Class.define("osparc.component.sweeper.Iterations", {
       const model = this.__model = new qx.ui.table.model.Simple();
 
       // add variables in columns
-      const primaryStudyData = this.__primaryStudy.serializeStudy();
       const parameters = this.__primaryStudy.getSweeper().getParameters();
-      const activeParams = osparc.data.StudyParametrizer.getActiveParameters(primaryStudyData, parameters);
       this.__cleanupCols();
       const nextCol = this.__cols["name"].col + 1;
-      for (let i=0; i<activeParams.length; i++) {
-        const parameter = activeParams[i];
+      for (let i=0; i<parameters.length; i++) {
+        const parameter = parameters[i];
         this.__cols[parameter.id] = {
           col: nextCol+i,
           label: parameter.label
@@ -78,7 +76,9 @@ qx.Class.define("osparc.component.sweeper.Iterations", {
 
       const cols = [];
       Object.keys(this.__cols).forEach(colKey => {
-        cols.push(this.__cols[colKey].label);
+        const idx = this.__cols[colKey].col;
+        const label = this.__cols[colKey].label;
+        cols.splice(idx, 0, label);
       });
       model.setColumns(cols);
 
