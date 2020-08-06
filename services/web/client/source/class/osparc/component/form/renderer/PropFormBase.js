@@ -170,7 +170,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       newParamName.addListener("labelChanged", e => {
         const study = osparc.store.Store.getInstance().getCurrentStudy();
         let newParameterLabel = e.getData()["newLabel"];
-        newParameterLabel = newParameterLabel.replace(" ", "_");
+        newParameterLabel = newParameterLabel.replace(/ /g, "_");
         newParameterLabel = newParameterLabel.replace(/"/g, "'");
         if (study.getSweeper().parameterLabelExists(newParameterLabel)) {
           const msg = this.tr("Parameter name already exists");
