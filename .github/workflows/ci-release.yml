@@ -14,7 +14,7 @@ env:
 jobs:
   deploy:
     # only run on staging branch
-    if: github.event.base_ref == 'ref/heads/staging'
+    if: github.event.base_ref == 'refs/heads/staging'
     name: deploy release
     runs-on: ubuntu-latest
     env:
