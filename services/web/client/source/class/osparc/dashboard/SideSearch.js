@@ -5,9 +5,6 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
-/**
- * @asset(dev/classifiersData.json)
- */
 qx.Class.define("osparc.dashboard.SideSearch", {
   extend: qx.ui.tabview.TabView,
   construct: function() {
