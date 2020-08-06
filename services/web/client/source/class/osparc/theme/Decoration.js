@@ -197,6 +197,11 @@ qx.Theme.define("osparc.theme.Decoration", {
       style: {
         radius: 0
       }
-    }
+    },
+    "cucumbar": {
+      style: {
+        radius: 3
+      }
+    },
   }
 });

@@ -630,6 +630,19 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: state => ({
         font: "text-14"
       })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Cucumbar
+    ---------------------------------------------------------------------------
+    */
+    "cucumbar": {
+      style: state => ({
+        padding: 8,
+        backgroundColor: "background-main-lighter",
+        decorator: "cucumbar"
+      })
     }
   }
 });

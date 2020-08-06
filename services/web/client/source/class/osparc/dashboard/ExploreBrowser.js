@@ -205,8 +205,12 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __createServicesLayout: function() {
-      const servicesContainer = this.__servicesContainer = this.__createResourceListLayout();
-      osparc.utils.Utils.setIdToWidget(servicesContainer, "servicesList");
+      const serviceList = this.__servicesContainer = this.__createResourceListLayout();
+      osparc.utils.Utils.setIdToWidget(serviceList, "servicesList");
+      
+      const servicesContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(osparc.dashboard.StudyBrowserButtonBase.SPACING));
+      servicesContainer.add(new osparc.component.filter.group.Cucumbar("cucumbar"));
+      servicesContainer.add(serviceList);
       const servicesLayout = this.__createButtonsLayout(this.tr("Services"), servicesContainer);
 
       const servicesTitleContainer = servicesLayout.getTitleBar();

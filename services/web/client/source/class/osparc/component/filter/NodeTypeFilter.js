@@ -28,8 +28,6 @@ qx.Class.define("osparc.component.filter.NodeTypeFilter", {
    */
   construct: function(filterId, filterGroupId) {
     this.base(arguments, this.tr("Node types"), filterId, filterGroupId);
-    this._setLayout(new qx.ui.layout.HBox());
-
     this.__buildMenu();
   },
 

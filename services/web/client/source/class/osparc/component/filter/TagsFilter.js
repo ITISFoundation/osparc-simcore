@@ -28,14 +28,24 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
    */
   construct: function(label, filterId, filterGroupId) {
     this.base(arguments, filterId, filterGroupId);
-    this._setLayout(new qx.ui.layout.HBox());
-
+    this._setLayout(new qx.ui.layout.Flow().set({
+      alignY: "middle"
+    }));
     this._dropdown = new qx.ui.toolbar.MenuButton(label);
     this._add(this._dropdown);
   },
 
   statics: {
     ActiveTagIcon: "@FontAwesome5Solid/check/12"
+  },
+
+  properties: {
+    tagsVisibility: {
+      nullable: false,
+      init: "visible",
+      event: "changeTagsVisibility",
+      check: ["visible", "hidden", "excluded"]
+    }
   },
 
   members: {
@@ -76,6 +86,7 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
         menuButton.setIcon(this.self().ActiveTagIcon);
         // Add tag
         const tagButton = new qx.ui.toolbar.Button(tagName, "@MaterialIcons/close/12");
+        this.bind("tagsVisibility", tagButton, "visibility")
         this._add(tagButton);
         tagButton.addListener("execute", () => this.__removeTag(tagName, menuButton));
         // Update state
