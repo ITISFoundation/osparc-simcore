@@ -81,7 +81,7 @@ def is_gpu_node() -> bool:
     async def async_is_gpu_node() -> bool:
         docker = aiodocker.Docker()
 
-        config = {
+        spec_config = {
             "Cmd": "nvidia-smi",
             "Image": "nvidia/cuda:10.0-base",
             "AttachStdin": False,
@@ -93,7 +93,7 @@ def is_gpu_node() -> bool:
         }
         try:
             await docker.containers.run(
-                config=config, name=f"sidecar_{os.getpid()}_test_gpu"
+                config=spec_config, name=f"sidecar_{os.getpid()}_test_gpu"
             )
             return True
         except aiodocker.exceptions.DockerError:

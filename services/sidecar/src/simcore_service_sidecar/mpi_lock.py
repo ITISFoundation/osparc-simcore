@@ -12,8 +12,8 @@ How it works:
 
 import asyncio
 import datetime
-from typing import Any, Coroutine, Callable
-from aioredlock import Aioredlock, LockError, Sentinel, Lock
+from typing import Any, Callable
+from aioredlock import Aioredlock, LockError, Lock
 from threading import Thread
 from typing import Tuple
 from simcore_service_sidecar import config
