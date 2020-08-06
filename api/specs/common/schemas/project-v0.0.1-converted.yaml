@@ -231,6 +231,11 @@ properties:
               'y':
                 type: integer
     additionalProperties: true
+  classifiers:
+    type: array
+    items:
+      type: string
+    description: List of classifier identifiers
   tags:
     type: array
     items:
