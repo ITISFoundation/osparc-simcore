@@ -434,7 +434,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     __filterClassifiers: function(classifiers) {
       if (classifiers && classifiers.length) {
-        const classes = osparc.utils.Classifiers.getLeaveClassifiers(classifiers);
+        const classes = osparc.utils.Classifiers.getLeafClassifiers(classifiers);
         const myClassifiers = this.getClassifiers();
         if (classes.filter(clas => myClassifiers.includes(clas.data.classifier)).length == 0) {
           return true;

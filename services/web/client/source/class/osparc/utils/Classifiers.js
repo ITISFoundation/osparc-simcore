@@ -59,11 +59,11 @@ qx.Class.define("osparc.utils.Classifiers", {
       });
     },
 
-    getLeaveClassifiers: function(classifiers, leaves = []) {
+    getLeafClassifiers: function(classifiers, leaves = []) {
       for (let i=0; i<classifiers.length; i++) {
         const classifier = classifiers[i];
         if (classifier.children.length) {
-          this.self().getLeaveClassifiers(classifier.children, leaves);
+          this.self().getLeafClassifiers(classifier.children, leaves);
         } else {
           leaves.push(classifier);
         }
