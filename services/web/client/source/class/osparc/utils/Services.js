@@ -243,7 +243,7 @@ qx.Class.define("osparc.utils.Services", {
         Object.values(serviceWVersion).forEach(service => {
           service["uuid"] = service["key"];
           service["prjOwner"] = service["contact"];
-          service["thumbnail"] = "@FontAwesome5Solid/paw/50";
+          service["thumbnail"] = service["thumbnail"] || "@FontAwesome5Solid/paw/50";
           service["accessRights"] = {
             "1": {
               "read": true,
