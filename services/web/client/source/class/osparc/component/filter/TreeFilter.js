@@ -12,7 +12,7 @@ qx.Class.define("osparc.component.filter.TreeFilter", {
     * @param {string} filterGroupId Unique group id where the filter belongs.
     * @param {Array} initTreeData Initialization data
     */
-  construct: function(filterId, filterGroupId, initTreeData = ["organizations::z43::itis"]) {
+  construct: function(filterId, filterGroupId, initTreeData = []) {
     this.base(arguments, filterId, filterGroupId);
     this._setLayout(new qx.ui.layout.Grow());
     this.__createClassifiersTree(initTreeData);
