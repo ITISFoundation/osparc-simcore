@@ -47,12 +47,12 @@ qx.Class.define("osparc.component.node.NodeView", {
       this._mapperLayout.removeAll();
 
       const node = this.getNode();
-      const propsWidget = node.getPropsWidget();
-      if (propsWidget && Object.keys(node.getInputs()).length) {
-        propsWidget.addListener("changeChildVisibility", () => {
+      const propsForm = node.getPropsForm();
+      if (propsForm && Object.keys(node.getInputs()).length) {
+        propsForm.addListener("changeChildVisibility", () => {
           this.__checkSettingsVisibility();
         }, this);
-        this._settingsLayout.add(propsWidget);
+        this._settingsLayout.add(propsForm);
       }
       this.__checkSettingsVisibility();
       const mapper = node.getInputsMapper();
@@ -75,8 +75,8 @@ qx.Class.define("osparc.component.node.NodeView", {
 
     isSettingsGroupShowable: function() {
       const node = this.getNode();
-      if (node && ("getPropsWidget" in node) && node.getPropsWidget()) {
-        return node.getPropsWidget().hasVisibleInputs();
+      if (node && ("getPropsForm" in node) && node.getPropsForm()) {
+        return node.getPropsForm().hasVisibleInputs();
       }
       return false;
     },
@@ -133,7 +133,7 @@ qx.Class.define("osparc.component.node.NodeView", {
 
     _openEditAccessLevel: function() {
       const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
-      settingsEditorLayout.add(this.getNode().getPropsWidgetEditor());
+      settingsEditorLayout.add(this.getNode().getPropsFormEditor());
       const title = this.getNode().getLabel();
       osparc.ui.window.Window.popUpInWindow(settingsEditorLayout, title, 800, 600);
     },
