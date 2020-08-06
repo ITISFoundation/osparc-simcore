@@ -11,7 +11,7 @@ from typing import Callable, Dict
 
 import pytest
 
-from simcore_service_catalog.models.domain.service import ServiceData
+from simcore_service_catalog.models.domain.service import ServiceDockerData
 
 
 @pytest.fixture(scope="session")
@@ -48,5 +48,5 @@ def diff_json_schemas(json_diff_script: Path, tmp_path_factory: Path) -> Callabl
 def test_generated_schema_same_as_original(
     diff_json_schemas: Callable, node_meta_schema: Dict
 ):
-    generated_schema = json.loads(ServiceData.schema_json(indent=2))
+    generated_schema = json.loads(ServiceDockerData.schema_json(indent=2))
     assert diff_json_schemas(node_meta_schema, generated_schema)

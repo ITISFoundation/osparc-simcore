@@ -17,6 +17,7 @@ FILENAME_RE = r".+"
 
 PropertyName = constr(regex=PROPERTY_KEY_RE)
 FileName = constr(regex=FILENAME_RE)
+GroupId = PositiveInt
 
 
 class ServiceType(str, Enum):
@@ -159,7 +160,7 @@ class ServiceInput(ServiceProperty):
     )
 
 
-class ServiceBase(BaseModel):
+class ServiceKeyVersion(BaseModel):
     key: constr(regex=KEY_RE) = Field(
         ...,
         title="",
@@ -178,17 +179,7 @@ class ServiceBase(BaseModel):
     )
 
 
-class ServiceData(ServiceBase):
-    integration_version: Optional[constr(regex=VERSION_RE)] = Field(
-        None,
-        alias="integration-version",
-        description="integration version number",
-        # regex=VERSION_RE,
-        example="1.0.0",
-    )
-    service_type: ServiceType = Field(
-        ..., alias="type", description="service type", example="computational",
-    )
+class ServiceCommonData(BaseModel):
     name: str = Field(
         ...,
         description="short, human readable name for the node",
@@ -199,7 +190,6 @@ class ServiceData(ServiceBase):
         description="url to the thumbnail",
         example="https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
     )
-    badges: Optional[List[Badge]] = Field(None)
     description: str = Field(
         ...,
         description="human readable description of the purpose of the node",
@@ -208,6 +198,22 @@ class ServiceData(ServiceBase):
             "The mother of all nodes, makes your numbers shine!",
         ],
     )
+
+
+class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
+    integration_version: Optional[constr(regex=VERSION_RE)] = Field(
+        None,
+        alias="integration-version",
+        description="integration version number",
+        # regex=VERSION_RE,
+        example="1.0.0",
+    )
+    service_type: ServiceType = Field(
+        ..., alias="type", description="service type", example="computational",
+    )
+
+    badges: Optional[List[Badge]] = Field(None)
+
     authors: List[Author] = Field(..., min_items=1)
     contact: EmailStr = Field(
         ...,
@@ -227,33 +233,30 @@ class ServiceData(ServiceBase):
         extra = Extra.forbid
 
 
-class ServiceMetaDataAtDB(ServiceBase):
-    version: constr(regex=VERSION_RE) = Field(
-        ...,
-        description="service version number",
-        example=["1.0.0", "0.0.1"],
-        alias="tag",
-    )
-    owner: Optional[int] = Field(None,)
-
-    class Config:
-        orm_mode = True
-
-
-class ServiceAccessRightsAtDB(ServiceBase):
-    version: constr(regex=VERSION_RE) = Field(
-        ...,
-        description="service version number",
-        example=["1.0.0", "0.0.1"],
-        alias="tag",
-    )
-    gid: int = Field(..., description="defines the group id", example=1)
+class ServiceGroupAccessRights(BaseModel):
     execute_access: bool = Field(
         False, description="defines whether the group can execute the service",
     )
     write_access: bool = Field(
         False, description="defines whether the group can modify the service"
     )
+
+
+class ServiceAccessRights(BaseModel):
+    access_rights: Optional[Dict[GroupId, ServiceGroupAccessRights]] = Field(
+        None, description="service access rights per group id"
+    )
+
+
+class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceCommonData):
+    owner: Optional[int] = Field(None,)
+
+    class Config:
+        orm_mode = True
+
+
+class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
+    gid: int = Field(..., description="defines the group id", example=1)
 
     class Config:
         orm_mode = True
@@ -262,4 +265,4 @@ class ServiceAccessRightsAtDB(ServiceBase):
 if __name__ == "__main__":
 
     with open(current_file.with_suffix(".json"), "wt") as fh:
-        print(ServiceData.schema_json(indent=2), file=fh)
+        print(ServiceDockerData.schema_json(indent=2), file=fh)
