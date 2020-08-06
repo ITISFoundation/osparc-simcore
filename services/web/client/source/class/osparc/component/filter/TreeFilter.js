@@ -10,12 +10,12 @@ qx.Class.define("osparc.component.filter.TreeFilter", {
   /**
     * @param {string} filterId Group-unique id for the filter.
     * @param {string} filterGroupId Unique group id where the filter belongs.
-    * @param {Array} treeData Initialization data
+    * @param {Array} initTreeData Initialization data
     */
-  construct: function(filterId, filterGroupId, treeData = []) {
+  construct: function(filterId, filterGroupId, initTreeData = ["organizations::z43::itis"]) {
     this.base(arguments, filterId, filterGroupId);
     this._setLayout(new qx.ui.layout.Grow());
-    this.__createClassifiersTree(treeData);
+    this.__createClassifiersTree(initTreeData);
   },
 
   members: {
@@ -30,7 +30,10 @@ qx.Class.define("osparc.component.filter.TreeFilter", {
         this._removeAll();
         this._add(this.__tree);
 
-        this.__setCheckedClassifiers(this.__tree.getModel(), checkedClassifiers);
+        if (checkedClassifiers.length) {
+          this.__setCheckedClassifiers(this.__tree.getModel(), checkedClassifiers);
+          this._filterChange(this.__tree.getChecked());
+        }
       });
     },
 
