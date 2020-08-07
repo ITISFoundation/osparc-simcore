@@ -232,9 +232,7 @@ properties:
                 type: integer
     additionalProperties: true
   classifiers:
-    type: array
-    items:
-      type: string
+    type: object
     description: List of classifier identifiers
   tags:
     type: array

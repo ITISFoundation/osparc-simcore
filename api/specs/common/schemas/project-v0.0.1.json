@@ -328,10 +328,7 @@
       }
     },
     "classifiers": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
+      "type": "object",
       "description": "List of classifier identifiers"
     },
     "tags": {
