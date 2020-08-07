@@ -18,10 +18,17 @@
 /* eslint newline-per-chained-call: 0 */
 
 qx.Class.define("osparc.desktop.StudyEditor", {
-  extend: qx.ui.splitpane.Pane,
+  extend: osparc.ui.basic.LoadingPageHandler,
 
   construct: function() {
-    this.base(arguments, "horizontal");
+    this.base(arguments);
+
+    this._setLayout(new qx.ui.layout.VBox(10));
+
+    const pane = this.__pane = new qx.ui.splitpane.Pane("horizontal");
+    this._add(pane, {
+      flex: 1
+    });
 
     const sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
       minWidth: 0,
@@ -33,28 +40,25 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     });
     scroll.add(sidePanel);
 
-    this.add(scroll, 0); // flex 0
+    pane.add(scroll, 0); // flex 0
 
     const mainPanel = this.__mainPanel = new osparc.desktop.MainPanel();
-    this.add(mainPanel, 1); // flex 1
+    pane.add(mainPanel, 1); // flex 1
 
     this.__attachEventHandlers();
-  },
-
-  properties: {
-    study: {
-      check: "osparc.data.model.Study",
-      apply: "_applyStudy"
-    }
   },
 
   events: {
     "changeMainViewCaption": "qx.event.type.Data",
     "studyIsLocked": "qx.event.type.Event",
-    "studySaved": "qx.event.type.Data"
+    "studySaved": "qx.event.type.Data",
+    "startStudy": "qx.event.type.Data"
   },
 
   members: {
+    __study: null,
+    __settingStudy: null,
+    __pane: null,
     __mainPanel: null,
     __sidePanel: null,
     __scrollContainer: null,
@@ -68,27 +72,63 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __autoSaveTimer: null,
     __lastSavedStudy: null,
 
-    _applyStudy: function(study) {
-      osparc.store.Store.getInstance().setCurrentStudy(study);
-      study.buildWorkbench();
-      study.openStudy()
-        .then(() => {
-          study.getWorkbench().initWorkbench();
-        })
-        .catch(err => {
-          if ("status" in err && err["status"] == 423) { // Locked
-            const msg = study.getName() + this.tr(" is already opened");
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-            this.fireEvent("studyIsLocked");
-          } else {
-            console.error(err);
-          }
-        });
-      this.__initViews();
-      this.__connectEvents();
-      this.__attachSocketEventHandlers();
-      this.__startAutoSaveTimer();
-      this.__openOneNode();
+    setStudy: function(studyData) {
+      return new Promise((resolve, reject) => {
+        if (this.__settingStudy) {
+          resolve();
+          return;
+        }
+        this.__settingStudy = true;
+
+        this._showLoadingPage(this.tr("Starting ") + (studyData.name || this.tr("Study")));
+
+        // Before starting a study, make sure the latest version is fetched
+        const promises = [
+          osparc.store.Store.getInstance().getStudyWState(studyData.uuid, true),
+          osparc.store.Store.getInstance().getServicesDAGs()
+        ];
+        Promise.all(promises)
+          .then(values => {
+            studyData = values[0];
+            const study = new osparc.data.model.Study(studyData);
+            this.__study = study;
+            this.__settingStudy = false;
+
+            this._hideLoadingPage();
+
+            resolve();
+
+            osparc.store.Store.getInstance().setCurrentStudy(study);
+            study.buildWorkbench();
+            study.openStudy()
+              .then(() => {
+                study.getWorkbench().initWorkbench();
+              })
+              .catch(err => {
+                if ("status" in err && err["status"] == 423) { // Locked
+                  const msg = study.getName() + this.tr(" is already opened");
+                  osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                  this.fireEvent("studyIsLocked");
+                } else {
+                  console.error(err);
+                }
+              });
+            this.__initViews();
+            this.__connectEvents();
+            this.__attachSocketEventHandlers();
+            this.__startAutoSaveTimer();
+            this.__openOneNode();
+          });
+      });
+    },
+
+    getStudy: function() {
+      return this.__study;
+    },
+
+    // overridden
+    _showMainLayout: function(show) {
+      this.__pane.setVisibility(show ? "visible" : "excluded");
     },
 
     __openOneNode: function() {
@@ -406,6 +446,21 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
+    __showSweeper: function() {
+      const study = this.getStudy();
+      const sweeper = new osparc.component.sweeper.Sweeper(study);
+      const win = osparc.component.sweeper.Sweeper.popUpInWindow(sweeper);
+      sweeper.addListener("iterationSelected", e => {
+        win.close();
+        const iterationStudyId = e.getData();
+        osparc.store.Store.getInstance().getStudyWState(iterationStudyId)
+          .then(studyData => {
+            study.removeIFrames();
+            this.fireDataEvent("startStudy", studyData);
+          });
+      });
+    },
+
     __showWorkbenchUI: function() {
       const workbench = this.getStudy().getWorkbench();
       const currentNode = workbench.getNode(this.__currentNodeId);
@@ -500,10 +555,19 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __doStartPipeline: function() {
-      this.getStudy().getWorkbench().clearProgressData();
+      if (this.getStudy().getSweeper().hasSecondaryStudies()) {
+        const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
+        secondaryStudyIds.forEach(secondaryStudyId => {
+          this.__requestStartPipeline(secondaryStudyId);
+        });
+      } else {
+        this.getStudy().getWorkbench().clearProgressData();
+        this.__requestStartPipeline(this.getStudy().getUuid());
+      }
+    },
 
-      // post pipeline
-      const url = "/computation/pipeline/" + encodeURIComponent(this.getStudy().getUuid()) + "/start";
+    __requestStartPipeline: function(studyId) {
+      const url = "/computation/pipeline/" + encodeURIComponent(studyId) + "/start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
@@ -626,17 +690,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __maximizeIframe: function(maximize) {
-      this.getBlocker().setStyles({
+      this.__pane.getBlocker().setStyles({
         display: maximize ? "none" : "block"
       });
       this.__scrollContainer.setVisibility(maximize ? "excluded" : "visible");
     },
 
     __attachEventHandlers: function() {
-      const blocker = this.getBlocker();
+      const blocker = this.__pane.getBlocker();
       blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
 
-      const splitter = this.getChildControl("splitter");
+      const splitter = this.__pane.getChildControl("splitter");
       splitter.setWidth(1);
 
       const maximizeIframeCb = msg => {
@@ -652,6 +716,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
 
       const controlsBar = this.__mainPanel.getControls();
+      controlsBar.addListener("showSweeper", this.__showSweeper, this);
       controlsBar.addListener("showWorkbench", this.__showWorkbenchUI, this);
       controlsBar.addListener("showSettings", this.__showSettings, this);
       controlsBar.addListener("groupSelection", this.__groupSelection, this);

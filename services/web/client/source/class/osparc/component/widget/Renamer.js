@@ -37,15 +37,15 @@
 qx.Class.define("osparc.component.widget.Renamer", {
   extend: osparc.ui.window.Window,
 
-  construct: function(oldLabel) {
-    this.base(arguments, "Rename");
+  construct: function(oldLabel = "", subtitle = "", winTitle) {
+    this.base(arguments, winTitle || this.tr("Rename"));
 
     const maxWidth = 350;
     const minWidth = 100;
-    const labelWidth = Math.min(Math.max(parseInt(oldLabel.length*4), minWidth), maxWidth);
+    const labelWidth = oldLabel ? Math.min(Math.max(parseInt(oldLabel.length*4), minWidth), maxWidth) : 90;
     this.set({
       appearance: "window-small-cap",
-      layout: new qx.ui.layout.HBox(4),
+      layout: new qx.ui.layout.VBox(5),
       autoDestroy: true,
       padding: 2,
       modal: true,
@@ -54,7 +54,10 @@ qx.Class.define("osparc.component.widget.Renamer", {
       width: labelWidth,
       clickAwayClose: true
     });
+
     this.__populateNodeLabelEditor(oldLabel, labelWidth);
+    this.__addSubtitle(subtitle);
+    this.__attachEventHandlers();
   },
 
   events: {
@@ -62,42 +65,58 @@ qx.Class.define("osparc.component.widget.Renamer", {
   },
 
   members: {
+    __save: null,
+
     __populateNodeLabelEditor: function(oldLabel, labelWidth) {
+      const nodeLabelEditor = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
       // Create a text field in which to edit the data
-      let labelEditor = new qx.ui.form.TextField(oldLabel).set({
+      const labelEditor = new qx.ui.form.TextField(oldLabel).set({
         allowGrowX: true,
         minWidth: labelWidth
       });
-      this.add(labelEditor, {
+      nodeLabelEditor.add(labelEditor, {
         flex: 1
       });
 
       this.addListener("appear", e => {
         labelEditor.focus();
-        labelEditor.setTextSelection(0, labelEditor.getValue().length);
+        if (labelEditor.getValue()) {
+          labelEditor.setTextSelection(0, labelEditor.getValue().length);
+        }
       }, this);
 
       // Create the "Save" button to close the cell editor
-      let save = new qx.ui.form.Button("Save");
+      const save = this.__save = new qx.ui.form.Button(this.tr("Save"));
       save.addListener("execute", e => {
         const newLabel = labelEditor.getValue();
         const data = {
           newLabel
         };
         this.fireDataEvent("labelChanged", data);
-        this.close();
       }, this);
-      this.add(save);
+      nodeLabelEditor.add(save);
 
-      // Let user press Enter from the cell editor text field to finish.
+      this.add(nodeLabelEditor);
+    },
+
+    __addSubtitle: function(subtitleLabel) {
+      if (subtitleLabel) {
+        const subtitle = new qx.ui.basic.Label(subtitleLabel).set({
+          font: "text-12"
+        });
+        this.add(subtitle);
+      }
+    },
+
+    __attachEventHandlers: function() {
       let command = new qx.ui.command.Command("Enter");
       command.addListener("execute", e => {
-        save.execute();
+        this.__save.execute();
         command.dispose();
         command = null;
       });
 
-      // Let user press Enter from the cell editor text field to finish.
       let commandEsc = new qx.ui.command.Command("Esc");
       commandEsc.addListener("execute", e => {
         this.close();
