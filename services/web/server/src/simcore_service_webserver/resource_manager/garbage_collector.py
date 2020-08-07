@@ -112,15 +112,17 @@ async def remove_users_manually_marked_as_guests(
     alive_keys: List[Dict[str, str]],
     dead_keys: List[Dict[str, str]],
 ) -> None:
-    """GO through all the projects and remove them if guest user 
-    and if not present in the dead or alive keys"""
+    """
+    Removes all the projects associated with GUEST users in the system.
+    If the user defined a TEMPLATE, this one also gets removed.
+    """
 
     user_ids_to_ignore = set()
     for entry in chain(alive_keys, dead_keys):
         user_ids_to_ignore.add(int(entry["user_id"]))
 
     guest_user_ids = await get_guest_user_ids(app)
-    logger.info("Probable GUEST user ids to clean %s", guest_user_ids)
+    logger.info("GUEST user id candidates to clean %s", guest_user_ids)
 
     for guest_user_id in guest_user_ids:
         if guest_user_id in user_ids_to_ignore:
