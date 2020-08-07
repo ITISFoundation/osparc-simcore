@@ -21,23 +21,11 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
   construct: function(studyData) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(8));
+    this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
-    const classifiers = studyData.classifiers && studyData.classifiers.classifierIDs ? studyData.classifiers.classifierIDs : [];
-    const classifiersTree = new osparc.component.filter.ClassifiersFilter("classifiersEditor", "exploreBrowser", classifiers);
-    this._add(classifiersTree, {
-      flex: 1
-    });
+    this._setLayout(new qx.ui.layout.VBox(10));
 
-    const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
-      alignX: "right"
-    }));
-    const saveBtn = new osparc.ui.form.FetchButton(this.tr("Save"));
-    saveBtn.addListener("execute", () => {
-      this.__saveClassifiers(classifiersTree, saveBtn);
-    }, this);
-    buttons.add(saveBtn);
-    this._add(buttons);
+    this.__buildLayout();
   },
 
   statics: {
@@ -61,14 +49,51 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
   },
 
   events: {
-    "updateClassifiers": "qx.event.type.Event"
+    "updateClassifiers": "qx.event.type.Data"
   },
 
   members: {
-    __saveClassifiers: function(classifiersTree, saveBtn) {
+    __studyData: null,
+    __classifiersTree: null,
+
+    __buildLayout: function() {
+      const studyData = this.__studyData;
+      const classifiers = studyData.classifiers && studyData.classifiers.classifierIDs ? studyData.classifiers.classifierIDs : [];
+      const classifiersTree = this.__classifiersTree = new osparc.component.filter.ClassifiersFilter("classifiersEditor", "exploreBrowser", classifiers);
+      this._add(classifiersTree, {
+        flex: 1
+      });
+
+      const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
+        alignX: "right"
+      }));
+      const saveBtn = new osparc.ui.form.FetchButton(this.tr("Save"));
+      saveBtn.addListener("execute", () => {
+        this.__saveClassifiers(saveBtn);
+      }, this);
+      buttons.add(saveBtn);
+      this._add(buttons);
+    },
+
+    __saveClassifiers: function(saveBtn) {
       saveBtn.setFetching(true);
-      console.log(classifiersTree.getChecked());
-      saveBtn.setFetching(false);
+
+      this.__studyData["classifiers"]["classifierIDs"] = this.__classifiersTree.getCheckedClassifierIDs();
+      const params = {
+        url: {
+          "projectId": this.__studyData["uuid"]
+        },
+        data: this.__studyData
+      };
+      osparc.data.Resources.fetch("studies", "put", params)
+        .then(() => {
+          this.fireDataEvent("updateClassifiers", this.__studyData["uuid"]);
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
+          console.error(err);
+        });
     }
   }
 });

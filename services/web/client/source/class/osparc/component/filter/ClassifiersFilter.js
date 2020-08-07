@@ -37,6 +37,14 @@ qx.Class.define("osparc.component.filter.ClassifiersFilter", {
       });
     },
 
+    getCheckedClassifierIDs: function() {
+      const checkedClassifierIDs = [];
+      this.__tree.getChecked().forEach(checkedClassifier => {
+        checkedClassifierIDs.push(checkedClassifier.classifier);
+      });
+      return checkedClassifierIDs;
+    },
+
     __setCheckedClassifiers: function(model, checkedClassifiers) {
       if (checkedClassifiers.length === 0) {
         return;

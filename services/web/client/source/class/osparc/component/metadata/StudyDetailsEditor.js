@@ -256,7 +256,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       const studyData = qx.util.Serializer.toNativeObject(this.__studyModel);
       const classifiersEditor = new osparc.dashboard.ClassifiersEditor(studyData);
       const title = this.tr("Classifiers");
-      osparc.dashboard.popUpInWindow(title, classifiersEditor);
+      osparc.dashboard.ClassifiersEditor.popUpInWindow(title, classifiersEditor);
     },
 
     __tagsSection: function() {

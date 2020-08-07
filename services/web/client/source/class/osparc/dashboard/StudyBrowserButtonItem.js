@@ -90,6 +90,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       nullable: true
     },
 
+    classifiers: {
+      check: "Array"
+    },
+
     tags: {
       check: "Array",
       apply: "_applyTags"
@@ -112,10 +116,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       check: "String",
       nullable: true,
       apply: "_applyLockedBy"
-    },
-
-    classifiers: {
-      check: "Array"
     }
   },
 
