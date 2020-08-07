@@ -155,7 +155,13 @@ async def remove_resources_if_guest_user(
     )
     await garbage_collector_remove_project_from_db(app=app, project_uuid=project_uuid)
 
+    # when manually changing a user to GUEST, it might happen that it has more then one project
+    try:
     await delete_user(app, user_id)
+    except Exception:
+        logger.warning(
+            "User '%s' still has some projects, could not be deleted", user_id
+        )
 
 
 async def garbage_collector_task(app: web.Application):
