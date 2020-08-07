@@ -9,6 +9,8 @@
 import asyncio
 import logging
 
+from itertools import chain
+from typing import List, Dict
 from aiohttp import web
 
 from servicelib.observer import emit
@@ -27,7 +29,15 @@ from simcore_service_webserver.projects.projects_api import (
     is_node_id_present_in_any_project_workbench,
 )
 from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
-from simcore_service_webserver.users_api import delete_user, is_user_guest
+from simcore_service_webserver.users_api import (
+    delete_user,
+    is_user_guest,
+    get_guest_user_ids,
+)
+from simcore_service_webserver.projects.projects_api import (
+    list_all_projects_by_uuid_for_user,
+    garbage_collector_remove_project_from_db,
+)
 
 from .config import APP_GARBAGE_COLLECTOR_KEY, get_garbage_collector_interval
 from .registry import RedisResourceRegistry, get_registry
@@ -90,8 +100,52 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
                     user_id=int(dead_key["user_id"]),
                 )
 
+    # try to remove users which were marked as GUESTS manually
+    await remove_users_manually_marked_as_guests(
+        app=app, alive_keys=alive_keys, dead_keys=dead_keys
+    )
+
     # remove possible pending contianers
     await remove_orphaned_services(registry, app)
+
+
+async def remove_users_manually_marked_as_guests(
+    app: web.Application,
+    alive_keys: List[Dict[str, str]],
+    dead_keys: List[Dict[str, str]],
+) -> None:
+    """GO through all the projects and remove them if guest user 
+    and if not present in the dead or alive keys"""
+
+    user_ids_to_ignore = set()
+    for entry in chain(alive_keys, dead_keys):
+        user_ids_to_ignore.add(int(entry["user_id"]))
+
+    guest_user_ids = await get_guest_user_ids(app)
+    logger.info("Probable GUEST user ids to clean %s", guest_user_ids)
+
+    for guest_user_id in guest_user_ids:
+        if guest_user_id in user_ids_to_ignore:
+            logger.info(
+                "Ignoring user '%s' as it previously had alive or dead resource keys ",
+                guest_user_id,
+            )
+            continue
+        logger.info("Will try to remove resources for guest '%s'", guest_user_id)
+        # get all projects for this user and then remove with remove_resources_if_guest_user
+        user_project_uuids = await list_all_projects_by_uuid_for_user(
+            app=app, user_id=guest_user_id
+        )
+        logger.info(
+            "Project uuids, to clean, for user '%s': '%s'",
+            guest_user_id,
+            user_project_uuids,
+        )
+
+        for project_uuid in user_project_uuids:
+            await remove_resources_if_guest_user(
+                app=app, project_uuid=project_uuid, user_id=guest_user_id,
+            )
 
 
 async def remove_orphaned_services(
@@ -157,7 +211,7 @@ async def remove_resources_if_guest_user(
 
     # when manually changing a user to GUEST, it might happen that it has more then one project
     try:
-    await delete_user(app, user_id)
+        await delete_user(app, user_id)
     except Exception:
         logger.warning(
             "User '%s' still has some projects, could not be deleted", user_id
@@ -180,7 +234,10 @@ async def garbage_collector_task(app: web.Application):
             keep_alive = False
             logger.info("Garbage collection task was cancelled, it will not restart!")
         except Exception:  # pylint: disable=broad-except
-            logger.warning("There was an error during garbage collection, restarting...", exc_info=True)
+            logger.warning(
+                "There was an error during garbage collection, restarting...",
+                exc_info=True,
+            )
             # will wait 5 seconds before restarting to avoid restart loops
             await asyncio.sleep(5)
 
