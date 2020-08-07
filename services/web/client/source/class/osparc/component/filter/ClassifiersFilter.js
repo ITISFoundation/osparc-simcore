@@ -40,7 +40,9 @@ qx.Class.define("osparc.component.filter.ClassifiersFilter", {
     getCheckedClassifierIDs: function() {
       const checkedClassifierIDs = [];
       this.__tree.getChecked().forEach(checkedClassifier => {
-        checkedClassifierIDs.push(checkedClassifier.classifier);
+        if (checkedClassifier.children.length === 0) {
+          checkedClassifierIDs.push(checkedClassifier.data.classifier);
+        }
       });
       return checkedClassifierIDs;
     },

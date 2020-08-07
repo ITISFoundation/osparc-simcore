@@ -257,6 +257,9 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       const classifiersEditor = new osparc.dashboard.ClassifiersEditor(studyData);
       const title = this.tr("Classifiers");
       osparc.dashboard.ClassifiersEditor.popUpInWindow(title, classifiersEditor);
+      classifiersEditor.addListener("updateStudy", e => {
+        this.fireEvent("updateStudy");
+      });
     },
 
     __tagsSection: function() {
