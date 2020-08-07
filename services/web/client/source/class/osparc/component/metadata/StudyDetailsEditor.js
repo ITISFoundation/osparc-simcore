@@ -246,7 +246,6 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       });
       editButton.addListener("execute", () => {
         this.__openClassifiers();
-        console.log("open Classfier update");
       });
       classifiersSection.add(editButton);
 
