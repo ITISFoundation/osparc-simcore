@@ -4,7 +4,7 @@
  * License: MIT - https://opensource.org/licenses/MIT
  * Authors: Ignacio Pascual (ignapas)
  */
-qx.Class.define("osparc.component.filter.TreeFilter", {
+qx.Class.define("osparc.component.filter.ClassifiersFilter", {
   extend: osparc.component.filter.UIFilter,
 
   /**
