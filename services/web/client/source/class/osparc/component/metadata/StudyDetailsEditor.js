@@ -244,11 +244,19 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         appearance: "link-button"
       });
       editButton.addListener("execute", () => {
+        this.__openClassifiers();
         console.log("open Classfier update");
       });
       classifiersSection.add(editButton);
 
       return classifiersSection;
+    },
+
+    __openClassifiers: function() {
+      const studyData = qx.util.Serializer.toNativeObject(this.__studyModel);
+      const classifiersEditor = new osparc.dashboard.ClassifiersEditor(studyData);
+      const title = this.tr("Classifiers");
+      osparc.dashboard.popUpInWindow(title, classifiersEditor);
     },
 
     __tagsSection: function() {
