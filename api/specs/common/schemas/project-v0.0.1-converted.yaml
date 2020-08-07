@@ -240,3 +240,6 @@ properties:
     type: array
     items:
       type: integer
+  dev:
+    type: object
+    description: object used for development purposes only
