@@ -346,3 +346,16 @@ async def notify_project_state_update(
 
     for room in rooms_to_notify:
         await post_group_messages(app, room, messages)
+
+async def garbage_collector_remove_project_from_db(
+    app: web.Application, project_uuid: str
+) -> None:
+    """Directly remove a project from the database without any extra checks. 
+    Used by the garbage collector"""
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        await conn.execute(
+            # pylint: disable=no-value-for-parameter
+            projects.delete().where(projects.c.uuid == project_uuid)
+        )
+
