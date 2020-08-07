@@ -396,9 +396,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
         icon: study.thumbnail || defaultThumbnail,
         state: study.state ? study.state : {},
-        classifiers: study.classifiers || [],
+        classifiers: study.classifiers && study.classifiers.classifierIDs ? study.classifiers.classifierIDs : [],
         tags
       });
+
       const menu = this.__getStudyItemMenu(item, study);
       item.setMenu(menu);
       item.subscribeToFilterGroup("studyBrowser");

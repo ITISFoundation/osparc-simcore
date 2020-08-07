@@ -434,74 +434,96 @@ qx.Class.define("osparc.utils.Services", {
     __getClassifiers: function() {
       return {
         "simcore/services/comp/isolve": {
-          "classifiers": [
-            "topics::Sim4Life",
-            "organizations::z43::itis"
-          ]
+          "classifiers": {
+            "classifierIDs": [
+              "topics::Sim4Life",
+              "organizations::z43::itis"
+            ]
+          }
         },
         "simcore/services/comp/ti-solutions-optimizer": {
-          "classifiers": [
-            "organizations::z43::tisolutions"
-          ]
+          "classifiers": {
+            "classifierIDs": [
+              "organizations::z43::tisolutions"
+            ]
+          }
         },
         "simcore/services/dynamic/electrode-selector": {
-          "classifiers": [
-            "organizations::z43::tisolutions"
-          ]
+          "classifiers": {
+            "classifierIDs": [
+              "organizations::z43::tisolutions"
+            ]
+          }
         },
         "simcore/services/dynamic/jupyter-base-notebook": {
-          "classifiers": [
-            "topics::jupyter-notebook",
-            "organizations::z43::itis"
-          ]
+          "classifiers": {
+            "classifierIDs": [
+              "topics::jupyter-notebook",
+              "organizations::z43::itis"
+            ]
+          }
         },
         "simcore/services/dynamic/jupyter-neuron": {
-          "classifiers": [
-            "topics::python",
-            "topics::jupyter-notebook",
-            "organizations::z43::itis"
-          ]
+          "classifiers": {
+            "classifierIDs": [
+              "topics::python",
+              "topics::jupyter-notebook",
+              "organizations::z43::itis"
+            ]
+          }
         },
         "simcore/services/dynamic/jupyter-octave": {
-          "classifiers": [
-            "topics::jupyter-notebook",
-            "topics::octave",
-            "organizations::z43::itis"
-          ]
+          "classifiers": {
+            "classifierIDs": [
+              "topics::jupyter-notebook",
+              "topics::octave",
+              "organizations::z43::itis"
+            ]
+          }
         },
         "simcore/services/dynamic/jupyter-octave-python-math": {
-          "classifiers": [
-            "topics::jupyter-notebook",
-            "topics::octave",
-            "organizations::z43::itis"
-          ]
+          "classifiers": {
+            "classifierIDs": [
+              "topics::jupyter-notebook",
+              "topics::octave",
+              "organizations::z43::itis"
+            ]
+          }
         },
         "simcore/services/dynamic/jupyter-scipy-notebook": {
-          "classifiers": [
-            "topics::python",
-            "topics::jupyter-notebook",
-            "organizations::z43::itis"
-          ]
+          "classifiers": {
+            "classifierIDs": [
+              "topics::python",
+              "topics::jupyter-notebook",
+              "organizations::z43::itis"
+            ]
+          }
         },
         "simcore/services/dynamic/jupyter-smash": {
-          "classifiers": [
-            "topics::python",
-            "topics::jupyter-notebook",
-            "topics::Sim4Life",
-            "organizations::z43::itis"
-          ]
+          "classifiers": {
+            "classifierIDs": [
+              "topics::python",
+              "topics::jupyter-notebook",
+              "topics::Sim4Life",
+              "organizations::z43::itis"
+            ]
+          }
         },
         "simcore/services/dynamic/osparc-lab": {
-          "classifiers": [
-            "topics::python",
-            "topics::jupyter-notebook",
-            "organizations::z43::itis"
-          ]
+          "classifiers": {
+            "classifierIDs": [
+              "topics::python",
+              "topics::jupyter-notebook",
+              "organizations::z43::itis"
+            ]
+          }
         },
         "simcore/services/dynamic/tissue-properties": {
-          "classifiers": [
-            "organizations::z43::itis"
-          ]
+          "classifiers": {
+            "classifierIDs": [
+              "organizations::z43::itis"
+            ]
+          }
         }
       };
     }
