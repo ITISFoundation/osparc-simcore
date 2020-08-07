@@ -49,7 +49,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
   },
 
   events: {
-    "updateStudy": "qx.event.type.Data"
+    "updateClassifiers": "qx.event.type.Data"
   },
 
   members: {
@@ -87,7 +87,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
       };
       osparc.data.Resources.fetch("studies", "put", params)
         .then(() => {
-          this.fireDataEvent("updateStudy", this.__studyData["uuid"]);
+          this.fireDataEvent("updateClassifiers", this.__studyData["uuid"]);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
           saveBtn.setFetching(false);
         })

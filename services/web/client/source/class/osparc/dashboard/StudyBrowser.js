@@ -549,6 +549,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       studyDetails.addListener("openStudy", () => {
         this.__startStudy(studyData);
       }, this);
+      studyDetails.addListener("updateClassifiers", e => {
+        const studyId = e.getData();
+        this.__reloadUserStudy(studyId, true);
+        this.__resetStudyList(osparc.store.Store.getInstance().getStudies());
+      });
+
       studyDetails.addListener("updateTags", () => {
         this.__resetStudyList(osparc.store.Store.getInstance().getStudies());
       });

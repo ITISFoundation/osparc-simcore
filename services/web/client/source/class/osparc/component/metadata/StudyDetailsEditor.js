@@ -49,6 +49,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
   events: {
     "updateStudy": "qx.event.type.Event",
     "updateTemplate": "qx.event.type.Event",
+    "updateClassifiers": "qx.event.type.Data",
     "updateTags": "qx.event.type.Data",
     "closed": "qx.event.type.Event",
     "openStudy": "qx.event.type.Event"
@@ -257,8 +258,8 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       const classifiersEditor = new osparc.dashboard.ClassifiersEditor(studyData);
       const title = this.tr("Classifiers");
       osparc.dashboard.ClassifiersEditor.popUpInWindow(title, classifiersEditor);
-      classifiersEditor.addListener("updateStudy", e => {
-        this.fireEvent("updateStudy");
+      classifiersEditor.addListener("updateClassifiers", e => {
+        this.fireDataEvent("updateClassifiers", e.getData());
       });
     },
 
