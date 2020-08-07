@@ -5905,6 +5905,9 @@ paths:
                           type: array
                           items:
                             type: integer
+                        dev:
+                          type: object
+                          description: object used for development purposes only
                   error:
                     nullable: true
                     default: null
@@ -6242,6 +6245,9 @@ paths:
                   type: array
                   items:
                     type: integer
+                dev:
+                  type: object
+                  description: object used for development purposes only
       responses:
         '201':
           description: project created
@@ -6484,6 +6490,9 @@ paths:
                         type: array
                         items:
                           type: integer
+                      dev:
+                        type: object
+                        description: object used for development purposes only
                   error:
                     nullable: true
                     default: null
@@ -6818,6 +6827,9 @@ paths:
                         type: array
                         items:
                           type: integer
+                      dev:
+                        type: object
+                        description: object used for development purposes only
                   error:
                     nullable: true
                     default: null
@@ -7158,6 +7170,9 @@ paths:
                         type: array
                         items:
                           type: integer
+                      dev:
+                        type: object
+                        description: object used for development purposes only
                   error:
                     nullable: true
                     default: null
@@ -7490,6 +7505,9 @@ paths:
                   type: array
                   items:
                     type: integer
+                dev:
+                  type: object
+                  description: object used for development purposes only
       responses:
         '200':
           description: got detailed project
@@ -7732,6 +7750,9 @@ paths:
                         type: array
                         items:
                           type: integer
+                      dev:
+                        type: object
+                        description: object used for development purposes only
                   error:
                     nullable: true
                     default: null
@@ -8088,6 +8109,9 @@ paths:
                         type: array
                         items:
                           type: integer
+                      dev:
+                        type: object
+                        description: object used for development purposes only
                   error:
                     nullable: true
                     default: null
@@ -9256,6 +9280,9 @@ paths:
                         type: array
                         items:
                           type: integer
+                      dev:
+                        type: object
+                        description: object used for development purposes only
                   error:
                     nullable: true
                     default: null
@@ -9589,6 +9616,9 @@ paths:
                         type: array
                         items:
                           type: integer
+                      dev:
+                        type: object
+                        description: object used for development purposes only
                   error:
                     nullable: true
                     default: null

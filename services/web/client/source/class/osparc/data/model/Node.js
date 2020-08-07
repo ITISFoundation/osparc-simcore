@@ -492,15 +492,14 @@ qx.Class.define("osparc.data.model.Node", {
 
     /**
      * Add settings widget with those inputs that can be represented in a form
-     *
      */
     __addSettings: function(inputs) {
       const form = this.__settingsForm = new osparc.component.form.Auto(inputs);
       const propsForm = new osparc.component.form.renderer.PropForm(form, this);
       this.setPropsForm(propsForm);
-      propsForm.addListener("linkModified", e => {
-        const linkModified = e.getData();
-        const portId = linkModified.portId;
+      propsForm.addListener("linkFieldModified", e => {
+        const linkFieldModified = e.getData();
+        const portId = linkFieldModified.portId;
         this.__retrieveInputs(portId);
       }, this);
     },
@@ -515,9 +514,9 @@ qx.Class.define("osparc.data.model.Node", {
         const data = this.__settingsForm.getData();
         form.setData(data);
       }, this);
-      propsForm.addListener("linkModified", e => {
-        const linkModified = e.getData();
-        const {portId, added} = linkModified;
+      propsForm.addListener("linkFieldModified", e => {
+        const linkFieldModified = e.getData();
+        const {portId, added} = linkFieldModified;
         if (added) {
           const srcControlLink = propsForm.getControlLink(portId);
           const controlLink = new qx.ui.form.TextField().set({
@@ -579,26 +578,23 @@ qx.Class.define("osparc.data.model.Node", {
       this.__addOutputWidget();
     },
 
-    __isInputDataALink: function(data) {
-      if (data !== null && typeof data === "object" && data.nodeUuid) {
-        return true;
-      }
-      return false;
-    },
-
     setInputData: function(inputs) {
       if (this.__settingsForm && inputs) {
         const inputData = {};
         const inputLinks = {};
+        const inputParameters = {};
         const inputsCopy = osparc.utils.Utils.deepCloneObject(inputs);
         for (let key in inputsCopy) {
-          if (this.__isInputDataALink(inputsCopy[key])) {
+          if (osparc.utils.Ports.isDataALink(inputsCopy[key])) {
             inputLinks[key] = inputsCopy[key];
+          } else if (osparc.utils.Ports.isDataAParameter(inputsCopy[key])) {
+            inputParameters[key] = inputsCopy[key];
           } else {
             inputData[key] = inputsCopy[key];
           }
         }
         this.getPropsForm().addLinks(inputLinks);
+        this.getPropsForm().addParameters(inputParameters);
         this.__settingsForm.setData(inputData);
       }
     },
@@ -995,7 +991,12 @@ qx.Class.define("osparc.data.model.Node", {
     },
     __nodeState: function() {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
+      // Check if study is still there
       if (study === null) {
+        return;
+      }
+      // Check if node is still there
+      if (study.getWorkbench().getNode(this.getNodeId()) === null) {
         return;
       }
 
@@ -1046,6 +1047,11 @@ qx.Class.define("osparc.data.model.Node", {
         const error = e.getTarget().getResponse();
         this.getStatus().setInteractiveStatus("connecting");
         console.log("service not ready yet, waiting... " + error);
+        // Check if node is still there
+        const study = osparc.store.Store.getInstance().getCurrentStudy();
+        if (study.getWorkbench().getNode(this.getNodeId()) === null) {
+          return;
+        }
         const interval = 1000;
         qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
       });

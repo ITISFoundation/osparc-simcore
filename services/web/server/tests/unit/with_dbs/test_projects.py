@@ -342,6 +342,7 @@ async def _new_project(
             "accessRights": {},
             "workbench": {},
             "tags": [],
+            "dev": {},
         }
         if project:
             project_data.update(project)
