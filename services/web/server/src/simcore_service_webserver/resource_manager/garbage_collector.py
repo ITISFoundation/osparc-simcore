@@ -24,11 +24,9 @@ from simcore_service_webserver.director.director_exceptions import (
     ServiceNotFoundError,
 )
 from simcore_service_webserver.projects.projects_api import (
-    delete_project_from_db,
     get_workbench_node_ids_from_project_uuid,
     is_node_id_present_in_any_project_workbench,
 )
-from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
 from simcore_service_webserver.users_api import (
     delete_user,
     is_user_guest,
@@ -212,7 +210,7 @@ async def remove_resources_if_guest_user(
     # when manually changing a user to GUEST, it might happen that it has more then one project
     try:
         await delete_user(app, user_id)
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         logger.warning(
             "User '%s' still has some projects, could not be deleted", user_id
         )

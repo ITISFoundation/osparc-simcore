@@ -34,4 +34,5 @@ __all__ = (
     "tags",
     "study_tags",
     "api_keys",
+    "projects"
 )
