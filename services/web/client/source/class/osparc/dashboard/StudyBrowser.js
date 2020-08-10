@@ -73,6 +73,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   members: {
     __studyFilters: null,
     __userStudyContainer: null,
+    __deleteStudiesButton: null,
     __userStudies: null,
     __newStudyBtn: null,
 
@@ -176,10 +177,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createStudiesLayout: function() {
+      const entryLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       const studyFilters = this.__studyFilters = new osparc.component.filter.group.StudyFilterGroup("studyBrowser").set({
         paddingTop: 5
       });
-      this._add(studyFilters);
+      entryLayout.add(studyFilters);
+      entryLayout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+      // Delete Studies Button
+      const deleteStudiesButton = this.__deleteStudiesButton = this.__createDeleteStudiesButton(false);
+      entryLayout.add(deleteStudiesButton);
+      this._add(entryLayout);
+
 
       const studyBrowserLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
       const userStudyLayout = this.__createUserStudiesLayout();
@@ -214,24 +224,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const userStudyContainer = this.__userStudyContainer = this.__createStudyListLayout();
       osparc.utils.Utils.setIdToWidget(userStudyContainer, "userStudiesList");
       const userStudyLayout = this.__createButtonsLayout(this.tr("Recent studies"), userStudyContainer);
-
-      const studiesTitleContainer = userStudyLayout.getTitleBar();
-
-      // Delete Studies Button
-      const studiesDeleteButton = this.__createDeleteButton(false);
-      studiesTitleContainer.add(new qx.ui.core.Spacer(20, null));
-      studiesTitleContainer.add(studiesDeleteButton);
-      userStudyContainer.addListener("changeSelection", e => {
-        const nSelected = e.getData().length;
-        this.__newStudyBtn.setEnabled(!nSelected);
-        this.__userStudyContainer.getChildren().forEach(userStudyItem => {
-          if (userStudyItem instanceof osparc.dashboard.StudyBrowserButtonItem) {
-            userStudyItem.multiSelection(nSelected);
-          }
-        });
-        this.__updateDeleteStudiesButton(studiesDeleteButton);
-      }, this);
-
       return userStudyLayout;
     },
 
@@ -249,12 +241,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __createDeleteButton: function() {
-      const deleteButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14").set({
+    __createDeleteStudiesButton: function() {
+      const deleteStudiesButton = new qx.ui.toolbar.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12").set({
+        font: "text-13",
+        alignY: "middle",
         visibility: "excluded"
       });
-      osparc.utils.Utils.setIdToWidget(deleteButton, "deleteStudiesBtn");
-      deleteButton.addListener("execute", () => {
+      osparc.utils.Utils.setIdToWidget(deleteStudiesButton, "deleteStudiesBtn");
+      deleteStudiesButton.addListener("execute", () => {
         const selection = this.__userStudyContainer.getSelection();
         const win = this.__createConfirmWindow(selection.length > 1);
         win.center();
@@ -265,13 +259,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
         }, this);
       }, this);
-      return deleteButton;
+      return deleteStudiesButton;
     },
 
     __attachEventHandlers: function() {
-      // Listen to socket
       const socket = osparc.wrapper.WebSocket.getInstance();
-      // callback for incoming logs
       const slotName = "projectStateUpdated";
       socket.removeSlot(slotName);
       socket.on(slotName, function(jsonString) {
@@ -284,6 +276,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             studyItem.setState(state);
           }
         }
+      }, this);
+
+      this.__userStudyContainer.addListener("changeSelection", e => {
+        const nSelected = e.getData().length;
+        this.__newStudyBtn.setEnabled(!nSelected);
+        this.__userStudyContainer.getChildren().forEach(userStudyItem => {
+          if (userStudyItem instanceof osparc.dashboard.StudyBrowserButtonItem) {
+            userStudyItem.multiSelection(nSelected);
+          }
+        });
+        this.__updateDeleteStudiesButton(this.__deleteStudiesButton);
       }, this);
 
       const textfield = this.__studyFilters.getTextFilter().getChildControl("textfield");
