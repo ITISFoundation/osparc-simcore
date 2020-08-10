@@ -6,26 +6,38 @@
  */
 
 qx.Class.define("osparc.dashboard.SideSearch", {
-  extend: qx.ui.tabview.TabView,
+  extend: qx.ui.core.Widget,
+
   construct: function() {
     this.base(arguments);
-    this.add(this.__classifiersFilter());
+    this._setLayout(new qx.ui.layout.VBox());
+
+    this.set({
+      padding: 10,
+      marginTop: 20
+    });
+
+    this.__buildLayout();
   },
+
   properties: {
     appearance: {
       init: "dashboard",
       refine: true
     }
   },
+
   members: {
-    __classifiersFilter: function() {
-      const classifiersPage = new qx.ui.tabview.Page(this.tr("Classifiers")).set({
-        appearance: "dashboard-page",
-        layout: new qx.ui.layout.Grow()
+    __buildLayout: function() {
+      const title = new qx.ui.basic.Label(this.tr("Classifiers")).set({
+        font: "title-14"
       });
-      classifiersPage.add(new osparc.component.filter.ClassifiersFilter("classifiers", "studyBrowser"));
-      classifiersPage.getChildControl("button").setFont("text-16");
-      return classifiersPage;
+      this._add(title);
+
+      const classifier = new osparc.component.filter.ClassifiersFilter("classifiers", "studyBrowser");
+      this._add(classifier, {
+        flex: 1
+      });
     }
   }
 });
