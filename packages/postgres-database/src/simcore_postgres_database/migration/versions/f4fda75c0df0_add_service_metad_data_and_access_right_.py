@@ -27,6 +27,7 @@ def upgrade():
         sa.Column("name", sa.String, nullable=False),
         sa.Column("description", sa.String, nullable=False),
         sa.Column("thumbnail", sa.String, nullable=True),
+        sa.Column("classifiers", ARRAY(sa.String, dimensions=1), nullable=False,),
         sa.Column(
             "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
         ),

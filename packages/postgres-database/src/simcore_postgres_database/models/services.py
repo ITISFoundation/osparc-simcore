@@ -7,6 +7,8 @@
 import sqlalchemy as sa
 
 from sqlalchemy.sql import func, expression
+from sqlalchemy.dialects.postgresql import ARRAY
+
 
 # NOTE: using func.now() instead of python datetime ensure the time is computed server side
 
@@ -32,6 +34,7 @@ services_meta_data = sa.Table(
     sa.Column("name", sa.String, nullable=False),
     sa.Column("description", sa.String, nullable=False),
     sa.Column("thumbnail", sa.String, nullable=True),
+    sa.Column("classifiers", ARRAY(sa.String, dimensions=1), nullable=False),
     sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
     sa.Column(
         "modified",
