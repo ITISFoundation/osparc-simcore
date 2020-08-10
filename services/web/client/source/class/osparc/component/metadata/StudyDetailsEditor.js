@@ -283,7 +283,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       const studyData = qx.util.Serializer.toNativeObject(this.__studyModel);
       const permissionsView = new osparc.component.export.StudyPermissions(studyData);
       const title = this.tr("Share with people and organizations");
-      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 500, 300);
+      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
       permissionsView.addListener("updateStudy", e => {
         this.fireEvent("updateStudy");
       });
@@ -292,7 +292,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     __openSaveAsTemplate: function() {
       const saveAsTemplateView = new osparc.component.export.SaveAsTemplate(this.__studyModel.getUuid(), this.__serializeForm());
       const title = this.tr("Save as Template");
-      const window = osparc.ui.window.Window.popUpInWindow(saveAsTemplateView, title, 400, 300);
+      const window = osparc.ui.window.Window.popUpInWindow(saveAsTemplateView, title, 500, 300);
       saveAsTemplateView.addListener("finished", e => {
         const template = e.getData();
         if (template) {
