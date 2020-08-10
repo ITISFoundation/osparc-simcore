@@ -478,27 +478,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this.__createStudy(minStudyData, templateData.uuid);
     },
 
-    __updateDeleteTemplatesButton: function(templateDeleteButton) {
-      const templateSelection = this.__templatesContainer.getSelection();
-      const canDeleteTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.delete");
-      let allMine = Boolean(templateSelection.length) && canDeleteTemplate;
-      for (let i=0; i<templateSelection.length && allMine; i++) {
-        if (templateSelection[i] instanceof osparc.dashboard.StudyBrowserButtonNew) {
-          allMine = false;
-        } else {
-          const isCurrentUserOwner = this.__isUserOwner(templateSelection[i]);
-          allMine &= isCurrentUserOwner;
-        }
-      }
-      if (allMine) {
-        const nSelected = templateSelection.length;
-        templateDeleteButton.setLabel(nSelected > 1 ? this.tr("Delete selected")+" ("+nSelected+")" : this.tr("Delete"));
-        templateDeleteButton.setVisibility("visible");
-      } else {
-        templateDeleteButton.setVisibility("excluded");
-      }
-    },
-
     __deleteStudy: function(studyData, isTemplate = false) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const collabGids = Object.keys(studyData["accessRights"]);
