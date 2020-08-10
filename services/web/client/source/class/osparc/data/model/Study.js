@@ -37,8 +37,8 @@ qx.Class.define("osparc.data.model.Study", {
   extend: qx.core.Object,
 
   /**
-    * @param studyData {Object} Object containing the serialized Study Data
-    */
+   * @param studyData {Object} Object containing the serialized Study Data
+   */
   construct: function(studyData) {
     this.base(arguments);
 
@@ -56,6 +56,8 @@ qx.Class.define("osparc.data.model.Study", {
 
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
     this.setWorkbench(new osparc.data.model.Workbench(wbData));
+
+    this.setSweeper(new osparc.data.model.Sweeper(studyData));
   },
 
   properties: {
@@ -122,6 +124,11 @@ qx.Class.define("osparc.data.model.Study", {
     tags: {
       check: "Array",
       init: []
+    },
+
+    sweeper: {
+      check: "osparc.data.model.Sweeper",
+      nullable: false
     }
   },
 
@@ -168,6 +175,13 @@ qx.Class.define("osparc.data.model.Study", {
         }
       });
       return studyObject;
+    },
+
+    isStudySecondary: function(studyData) {
+      if ("dev" in studyData && "sweeper" in studyData["dev"] && "primaryStudyId" in studyData["dev"]["sweeper"]) {
+        return true;
+      }
+      return false;
     }
   },
 
@@ -187,6 +201,8 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     closeStudy: function() {
+      this.removeIFrames();
+
       const params = {
         url: {
           projectId: this.getUuid()
@@ -195,8 +211,9 @@ qx.Class.define("osparc.data.model.Study", {
       };
       osparc.data.Resources.fetch("studies", "close", params)
         .catch(err => console.error(err));
+    },
 
-      // remove iFrames
+    removeIFrames: function() {
       const nodes = this.getWorkbench().getNodes(true);
       for (const node of Object.values(nodes)) {
         node.removeIFrame();
@@ -207,7 +224,13 @@ qx.Class.define("osparc.data.model.Study", {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
-        const value = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
+        // TODO OM: Hacky
+        if (key === "sweeper") {
+          jsonObject["dev"] = {};
+          jsonObject["dev"]["sweeper"] = this.getSweeper().serializeSweeper();
+          return;
+        }
+        let value = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
         if (value !== null) {
           // only put the value in the payload if there is a value
           jsonObject[key] = value;
