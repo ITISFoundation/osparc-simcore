@@ -7,7 +7,7 @@ To decide where a task should be routed to, the current worker will
 use a look ahead function to check the type of upcoming task and
 schedule it accordingly.
 """
-
+import traceback
 from typing import Tuple
 from celery import Celery, states
 from simcore_sdk.config.rabbit import Config as RabbitConfig
@@ -42,11 +42,9 @@ def dispatch_comp_task(user_id: str, project_id: str, node_id: str) -> None:
     try:
         required_resources = wrap_async_call(task_required_resources(node_id))
     except Exception:  # pylint: disable=broad-except
-        import traceback
-
         log.error(
             "%s\nThe above exception ocurred because it could not be "
-            "determined if task requires GPU for node_id %s",
+            "determined if task requires GPU or MPI for node_id %s",
             traceback.format_exc(),
             node_id,
         )
@@ -84,7 +82,7 @@ def _dispatch_to_mpi_queue(user_id: str, project_id: str, node_id: str) -> None:
 def shared_task_dispatch(
     celery_request, user_id: str, project_id: str, node_id: str = None
 ) -> None:
-    """This is the original task which is run by either a GPU or CPU node"""
+    """This is the original task which is run by either MPI, GPU or CPU node"""
     try:
         log.info(
             "Will dispatch to appropriate queue %s, %s, %s",
