@@ -76,7 +76,7 @@ def _dispatch_to_gpu_queue(user_id: str, project_id: str, node_id: str) -> None:
 
 
 def _dispatch_to_mpi_queue(user_id: str, project_id: str, node_id: str) -> None:
-    _celery_app_gpu.send_task(
+    _celery_app_mpi.send_task(
         "comp.task.mpi", args=(user_id, project_id, node_id), kwargs={}
     )
 
