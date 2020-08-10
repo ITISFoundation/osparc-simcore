@@ -10,11 +10,11 @@ qx.Class.define("osparc.dashboard.SideSearch", {
 
   construct: function() {
     this.base(arguments);
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox(6));
 
     this.set({
-      padding: 10,
-      marginTop: 20
+      padding: 15,
+      marginTop: 15
     });
 
     this.__buildLayout();
@@ -30,7 +30,7 @@ qx.Class.define("osparc.dashboard.SideSearch", {
   members: {
     __buildLayout: function() {
       const title = new qx.ui.basic.Label(this.tr("Classifiers")).set({
-        font: "title-14"
+        font: "text-16"
       });
       this._add(title);
 
