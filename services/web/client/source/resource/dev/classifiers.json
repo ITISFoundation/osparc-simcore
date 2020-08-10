@@ -77,6 +77,23 @@
       "wikipedia_url": null,
       "markdown": "\nJupyter Lab powered by Sim4Life."
     },
+    "topics::rec5g": {
+      "classifier": "topics::rec5g",
+      "display_name": "Reconstruction 5G",
+      "short_description": "Reconstruction 5G",
+      "logo": "null",
+      "aliases": [
+        "rec5g",
+        "rec5G"
+      ],
+      "created_by": "Zurich Med Tech",
+      "released": "2020-08-10",
+      "related": [],
+      "url": "null",
+      "github_url": null,
+      "wikipedia_url": null,
+      "markdown": "\nReconstruction 5G."
+    },
     "organizations::z43::zmt": {
       "classifier": "organizations::z43::zmt",
       "display_name": "ZMT",

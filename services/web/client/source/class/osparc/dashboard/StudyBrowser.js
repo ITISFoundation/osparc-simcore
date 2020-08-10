@@ -244,6 +244,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __createDeleteStudiesButton: function() {
       const deleteStudiesButton = new qx.ui.toolbar.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12").set({
         font: "text-13",
+        maxHeight: 24,
         alignY: "middle",
         visibility: "excluded"
       });
