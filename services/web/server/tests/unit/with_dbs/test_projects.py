@@ -1309,6 +1309,7 @@ async def test_open_shared_project_2_users_locked(
     expected: ExpectedResponse,
     aiohttp_client,
     mocker,
+    disable_gc_manual_guest_users,
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
     mock_project_state_updated_handler = mocker.Mock()

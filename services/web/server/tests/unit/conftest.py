@@ -100,3 +100,13 @@ def mock_orphaned_services(mocker):
     )
     remove_orphaned_services.return_value.set_result("")
     return remove_orphaned_services
+
+
+@pytest.fixture
+def disable_gc_manual_guest_users(mocker):
+    """Disable to avoid an almost instant cleanup of GUEST users with their projects"""
+    mocker.patch(
+        "simcore_service_webserver.resource_manager.garbage_collector.remove_users_manually_marked_as_guests",
+        return_value=Future(),
+    )
+
