@@ -32,12 +32,9 @@ from simcore_service_webserver.users_api import (
     is_user_guest,
     get_guest_user_ids,
 )
-from simcore_service_webserver.projects.projects_api import (
-    delete_project_from_db,
-    list_all_projects_by_uuid_for_user,
-    garbage_collector_remove_project_from_db,
-)
+from simcore_service_webserver.projects.projects_api import delete_project_from_db
 from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
+from simcore_service_webserver.projects.projects_db import ProjectDBAPI
 
 from .config import APP_GARBAGE_COLLECTOR_KEY, get_garbage_collector_interval
 from .registry import RedisResourceRegistry, get_registry
@@ -98,7 +95,6 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
                     app=app,
                     project_uuid=resource_value,
                     user_id=int(dead_key["user_id"]),
-                    disable_access_check=False,
                 )
 
     # try to remove users which were marked as GUESTS manually
@@ -136,8 +132,8 @@ async def remove_users_manually_marked_as_guests(
             continue
         logger.info("Will try to remove resources for guest '%s'", guest_user_id)
         # get all projects for this user and then remove with remove_resources_if_guest_user
-        user_project_uuids = await list_all_projects_by_uuid_for_user(
-            app=app, user_id=guest_user_id
+        user_project_uuids = await ProjectDBAPI(app).list_all_projects_by_uuid_for_user(
+            user_id=guest_user_id
         )
         logger.info(
             "Project uuids, to clean, for user '%s': '%s'",
@@ -147,10 +143,7 @@ async def remove_users_manually_marked_as_guests(
 
         for project_uuid in user_project_uuids:
             await remove_resources_if_guest_user(
-                app=app,
-                project_uuid=project_uuid,
-                user_id=guest_user_id,
-                disable_access_check=True,
+                app=app, project_uuid=project_uuid, user_id=guest_user_id,
             )
 
 
@@ -200,7 +193,7 @@ async def remove_orphaned_services(
 
 
 async def remove_resources_if_guest_user(
-    app: web.Application, project_uuid: str, user_id: int, disable_access_check: bool
+    app: web.Application, project_uuid: str, user_id: int
 ) -> None:
     """When a guest user finishes using the platform its Posgtres
     and S3/MinIO entries need to be removed
@@ -214,15 +207,10 @@ async def remove_resources_if_guest_user(
         "Removing project '%s' from the database", project_uuid,
     )
 
-    if disable_access_check:
-        await garbage_collector_remove_project_from_db(
-            app=app, project_uuid=project_uuid
-        )
-    else:
-        try:
-            await delete_project_from_db(app, project_uuid, user_id)
-        except ProjectNotFoundError:
-            logging.warning("Project '%s' not found, skipping removal", project_uuid)
+    try:
+        await delete_project_from_db(app, project_uuid, user_id)
+    except ProjectNotFoundError:
+        logging.warning("Project '%s' not found, skipping removal", project_uuid)
 
     # when manually changing a user to GUEST, it might happen that it has more then one project
     try:
@@ -258,9 +246,7 @@ async def garbage_collector_task(app: web.Application):
 
 
 async def setup_garbage_collector_task(app: web.Application):
-    app[APP_GARBAGE_COLLECTOR_KEY] = app.loop.create_task(
-        garbage_collector_task(app)
-    )
+    app[APP_GARBAGE_COLLECTOR_KEY] = app.loop.create_task(garbage_collector_task(app))
     yield
     task = app[APP_GARBAGE_COLLECTOR_KEY]
     task.cancel()
