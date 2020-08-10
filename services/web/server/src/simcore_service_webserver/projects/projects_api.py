@@ -10,14 +10,12 @@
 
 import logging
 from pprint import pformat
-from typing import Any, Dict, Optional, Set, List
+from typing import Any, Dict, Optional, Set
 from uuid import uuid4
-from collections import deque
-import sqlalchemy as sa
 
 from aiohttp import web
 
-from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY, APP_DB_ENGINE_KEY
+from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
@@ -36,7 +34,6 @@ from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import NodeNotFoundError
 from .projects_models import ProjectState
 from .projects_utils import clone_project_document
-from simcore_service_webserver.db_models import projects
 
 
 log = logging.getLogger(__name__)
