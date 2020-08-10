@@ -82,7 +82,7 @@ qx.Class.define("osparc.data.model.Edge", {
     },
 
     _applyOutputNode: function(node) {
-      node.getPropsForm().addListener("linkModified", () => {
+      node.getPropsForm().addListener("linkFieldModified", () => {
         this.setIsPortConnected(node.getPropsForm().hasAnyPortConnected());
       });
       this.setIsPortConnected(node.getPropsForm().hasAnyPortConnected());
