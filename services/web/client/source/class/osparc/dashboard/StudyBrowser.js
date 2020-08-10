@@ -432,6 +432,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const shareStudyButton = this.__getPermissionsMenuButton(studyData);
       menu.add(shareStudyButton);
 
+      const studyServicesButton = this.__getStudyServicesMenuButton(studyData);
+      menu.add(studyServicesButton);
+
       const isCurrentUserOwner = this.__isUserOwner(studyData);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       if (isCurrentUserOwner && canCreateTemplate) {
@@ -478,6 +481,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }, this);
       }, this);
       return permissionsButton;
+    },
+
+    __getStudyServicesMenuButton: function(studyData) {
+      const studyServicesButton = new qx.ui.menu.Button(this.tr("Services"));
+      studyServicesButton.addListener("execute", () => {
+        const servicesInStudy = new osparc.component.metadata.ServicesInStudy(studyData);
+        const title = this.tr("Services in Study");
+        osparc.ui.window.Window.popUpInWindow(servicesInStudy, title, 400, 400);
+      }, this);
+      return studyServicesButton;
     },
 
     __getSaveAsTemplateMenuButton: function(studyData) {
