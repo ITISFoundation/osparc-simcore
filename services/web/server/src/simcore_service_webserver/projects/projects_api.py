@@ -351,30 +351,3 @@ async def notify_project_state_update(
 
     for room in rooms_to_notify:
         await post_group_messages(app, room, messages)
-
-
-async def list_all_projects_by_uuid_for_user(
-    app: web.Application, user_id: int
-) -> List[str]:
-    engine = app[APP_DB_ENGINE_KEY]
-    result = deque()
-    async with engine.acquire() as conn:
-        async for row in conn.execute(
-            sa.select([projects.c.uuid]).where(projects.c.prj_owner == user_id)
-        ):
-            result.append(row[0])
-        return list(result)
-
-
-async def garbage_collector_remove_project_from_db(
-    app: web.Application, project_uuid: str
-) -> None:
-    """Directly remove a project from the database without any extra checks. 
-    Used by the garbage collector"""
-    engine = app[APP_DB_ENGINE_KEY]
-    async with engine.acquire() as conn:
-        await conn.execute(
-            # pylint: disable=no-value-for-parameter
-            projects.delete().where(projects.c.uuid == project_uuid)
-        )
-
