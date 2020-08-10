@@ -342,10 +342,6 @@ qx.Class.define("osparc.utils.Utils", {
       return clientSessionID;
     },
 
-    getFont: function(size=14, bold=false) {
-      return qx.bom.Font.fromConfig(osparc.theme.Font.fonts[`${bold ? "title" : "text"}-${size}`]);
-    },
-
     getFreeDistanceToWindowEdges: function(layoutItem) {
       const domElement = layoutItem.getContentElement().getDomElement();
       if (domElement === null) {
@@ -372,6 +368,36 @@ qx.Class.define("osparc.utils.Utils", {
 
     isObject: function(v) {
       return typeof v === "object" && v !== null;
+    },
+
+    mustache: {
+      mustacheRegEx: function() {
+        return /{{([^{}]*)}}/g;
+      },
+
+      getVariables: function(obj) {
+        const variables = new Set();
+        const secondaryStudyDataStr = JSON.stringify(obj);
+        const mustaches = secondaryStudyDataStr.match(osparc.utils.Utils.mustache.mustacheRegEx()) || [];
+        mustaches.forEach(mustache => {
+          const variable = mustache.replace("{{", "").replace("}}", "");
+          variables.add(variable);
+        });
+        return Array.from(variables);
+      },
+
+      replace: function(obj, parameters) {
+        const mustaches = this.self().mustache.getVariables(obj);
+        let objStr = JSON.stringify(obj);
+        mustaches.forEach(mustache => {
+          const paramId = mustache.replace("{{", "").replace("}}", "");
+          const parameter = parameters.find(param => param.id === paramId);
+          if (parameter) {
+            objStr = objStr.replace(mustache, parameter.label);
+          }
+        });
+        return JSON.parse(objStr);
+      }
     }
   }
 });
