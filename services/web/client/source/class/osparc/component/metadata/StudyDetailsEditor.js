@@ -283,7 +283,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       const studyData = qx.util.Serializer.toNativeObject(this.__studyModel);
       const permissionsView = new osparc.component.export.StudyPermissions(studyData);
       const title = this.tr("Share with people and organizations");
-      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
+      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 500, 300);
       permissionsView.addListener("updateStudy", e => {
         this.fireEvent("updateStudy");
       });

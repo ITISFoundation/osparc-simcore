@@ -38,10 +38,11 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     __populateLayout: function() {
       const nodes = Object.values(this.__studyData.workbench);
       for (let i=0; i<nodes.length; i++) {
-        const nameLabel = new qx.ui.basic.Label(nodes[i]["key"]).set({
+        const nameLabel = new qx.ui.basic.Label(nodes[i]["label"]).set({
           font: "text-14"
         });
-        const keyLabel = new qx.ui.basic.Label(nodes[i]["key"]).set({
+        const parts = nodes[i]["key"].split("/");
+        const keyLabel = new qx.ui.basic.Label(parts[parts.length-1]).set({
           font: "text-14"
         });
         const versionLabel = new qx.ui.basic.Label(nodes[i]["version"]).set({
