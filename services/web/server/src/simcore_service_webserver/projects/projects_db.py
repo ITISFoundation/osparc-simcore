@@ -324,11 +324,7 @@ OR prj_owner = {user_id})
         return api_projects
 
     async def _get_project(
-        self,
-        user_id: int,
-        project_uuid: str,
-        exclude_foreign: Optional[List] = None,
-        include_templates: Optional[bool] = False,
+        self, user_id: int, project_uuid: str, exclude_foreign: Optional[List] = None, include_templates: Optional[bool] = False
     ) -> Dict:
         exclude_foreign = exclude_foreign or []
         async with self.engine.acquire() as conn:
