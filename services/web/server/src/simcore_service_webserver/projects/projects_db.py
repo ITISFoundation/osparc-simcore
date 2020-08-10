@@ -568,6 +568,15 @@ OR prj_owner = {user_id})
 
             return result
 
+    async def list_all_projects_by_uuid_for_user(self, user_id: int) -> List[str]:
+        result = deque()
+        async with self.engine.acquire() as conn:
+            async for row in conn.execute(
+                sa.select([projects.c.uuid]).where(projects.c.prj_owner == user_id)
+            ):
+                result.append(row[0])
+            return list(result)
+
 
 def setup_projects_db(app: web.Application):
     db = ProjectDBAPI(app)
