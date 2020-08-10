@@ -18,8 +18,8 @@
 /**
  * Widget containing a TabView including:
  * - StudyBrowser
- * - ServiceBrowser
  * - DataManager
+ * - Explorer
  *
  * *Example*
  *
@@ -38,6 +38,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     this.base(arguments);
 
     this.set({
+      contentPaddingTop: 15,
       contentPaddingLeft: 0,
       barPosition: "top"
     });
