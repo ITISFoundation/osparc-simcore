@@ -30,7 +30,7 @@ qx.Class.define("osparc.test.data.model.Workbench",
         console.debug("Setting up .. ");
         this.debug("Setting up ...");
 
-        // ToDo OM: Tobi is this correct?
+        // TODO OM: Tobi is this correct?
         osparc.data.Permissions.getInstance().setRole("user");
 
         const wbData = {};
