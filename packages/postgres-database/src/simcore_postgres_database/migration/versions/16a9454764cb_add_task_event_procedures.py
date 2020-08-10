@@ -1,7 +1,7 @@
 """Add task event procedures
 
 Revision ID: 16a9454764cb
-Revises: 31f0ab4a338b
+Revises: 694f201e484a
 Create Date: 2020-07-28 06:36:47.491622+00:00
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "16a9454764cb"
-down_revision = "31f0ab4a338b"
+down_revision = "694f201e484a"
 branch_labels = None
 depends_on = None
 
