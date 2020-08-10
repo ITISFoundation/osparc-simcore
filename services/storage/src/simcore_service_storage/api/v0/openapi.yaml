@@ -1970,10 +1970,6 @@ paths:
                     dev:
                       type: object
                       description: object used for development purposes only
-                    classifiers:
-                      type: array
-                      items:
-                        type: string
                 destination:
                   title: simcore project
                   description: Description of a simcore project
@@ -2215,10 +2211,6 @@ paths:
                     dev:
                       type: object
                       description: object used for development purposes only
-                    classifiers:
-                      type: array
-                      items:
-                        type: string
                 nodes_map:
                   type: object
                   description: maps source and destination node uuids
@@ -2470,10 +2462,6 @@ paths:
                   dev:
                     type: object
                     description: object used for development purposes only
-                  classifiers:
-                    type: array
-                    items:
-                      type: string
         default:
           description: Unexpected error
           content:
@@ -2825,10 +2813,6 @@ components:
         dev:
           type: object
           description: object used for development purposes only
-        classifiers:
-          type: array
-          items:
-            type: string
   responses:
     OK_NoContent_204:
       description: 'everything is OK, but there is no content to return'

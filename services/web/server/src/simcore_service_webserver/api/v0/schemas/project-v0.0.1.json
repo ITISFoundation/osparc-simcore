@@ -346,12 +346,6 @@
     "dev": {
       "type": "object",
       "description": "object used for development purposes only"
-    },
-    "classifiers": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
     }
   }
 }
