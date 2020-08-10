@@ -5908,6 +5908,10 @@ paths:
                         dev:
                           type: object
                           description: object used for development purposes only
+                        classifiers:
+                          type: array
+                          items:
+                            type: string
                   error:
                     nullable: true
                     default: null
@@ -6248,6 +6252,10 @@ paths:
                 dev:
                   type: object
                   description: object used for development purposes only
+                classifiers:
+                  type: array
+                  items:
+                    type: string
       responses:
         '201':
           description: project created
@@ -6493,6 +6501,10 @@ paths:
                       dev:
                         type: object
                         description: object used for development purposes only
+                      classifiers:
+                        type: array
+                        items:
+                          type: string
                   error:
                     nullable: true
                     default: null
@@ -6830,6 +6842,10 @@ paths:
                       dev:
                         type: object
                         description: object used for development purposes only
+                      classifiers:
+                        type: array
+                        items:
+                          type: string
                   error:
                     nullable: true
                     default: null
@@ -7173,6 +7189,10 @@ paths:
                       dev:
                         type: object
                         description: object used for development purposes only
+                      classifiers:
+                        type: array
+                        items:
+                          type: string
                   error:
                     nullable: true
                     default: null
@@ -7508,6 +7528,10 @@ paths:
                 dev:
                   type: object
                   description: object used for development purposes only
+                classifiers:
+                  type: array
+                  items:
+                    type: string
       responses:
         '200':
           description: got detailed project
@@ -7753,6 +7777,10 @@ paths:
                       dev:
                         type: object
                         description: object used for development purposes only
+                      classifiers:
+                        type: array
+                        items:
+                          type: string
                   error:
                     nullable: true
                     default: null
@@ -8112,6 +8140,10 @@ paths:
                       dev:
                         type: object
                         description: object used for development purposes only
+                      classifiers:
+                        type: array
+                        items:
+                          type: string
                   error:
                     nullable: true
                     default: null
@@ -9283,6 +9315,10 @@ paths:
                       dev:
                         type: object
                         description: object used for development purposes only
+                      classifiers:
+                        type: array
+                        items:
+                          type: string
                   error:
                     nullable: true
                     default: null
@@ -9619,6 +9655,10 @@ paths:
                       dev:
                         type: object
                         description: object used for development purposes only
+                      classifiers:
+                        type: array
+                        items:
+                          type: string
                   error:
                     nullable: true
                     default: null
