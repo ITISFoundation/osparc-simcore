@@ -2,17 +2,17 @@
 
 
 Revision ID: f4fda75c0df0
-Revises: 37deb1354a3f
+Revises: 31f0ab4a338b
 Create Date: 2020-08-03 13:04:05.565295+00:00
 
 """
-from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+from alembic import op
+from sqlalchemy.dialects.postgresql import ARRAY
 
 # revision identifiers, used by Alembic.
 revision = "f4fda75c0df0"
-down_revision = "16a9454764cb"
+down_revision = "31f0ab4a338b"
 branch_labels = None
 depends_on = None
 
@@ -27,6 +27,12 @@ def upgrade():
         sa.Column("name", sa.String, nullable=False),
         sa.Column("description", sa.String, nullable=False),
         sa.Column("thumbnail", sa.String, nullable=True),
+        sa.Column(
+            "classifiers",
+            ARRAY(sa.String, dimensions=1),
+            nullable=False,
+            server_default="{}",
+        ),
         sa.Column(
             "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
         ),

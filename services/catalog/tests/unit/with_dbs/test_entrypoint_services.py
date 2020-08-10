@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
-
 from random import randint
 from typing import List, Optional
 
@@ -89,7 +88,9 @@ def db_services(
 
 
 @pytest.fixture()
-async def director_mockup(loop, monkeypatch, registry_services, app: FastAPI):
+async def director_mockup(
+    loop, monkeypatch, registry_services: List[ServiceOut], app: FastAPI
+):
     async def return_list_services(user_id: int) -> List[ServiceOut]:
         return registry_services
 
