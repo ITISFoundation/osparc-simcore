@@ -3,7 +3,9 @@ import os
 import socket
 import subprocess
 import tempfile
+from datetime import datetime
 from pathlib import Path
+from pprint import pformat, pprint
 from typing import Dict, List, Optional, Union
 
 import docker
@@ -121,3 +123,25 @@ def run_docker_compose_config(
         temp_dir.unlink()
 
     return config
+
+
+def save_docker_infos(destination_path: Path):
+    client = docker.from_env()
+    all_services = client.services.list()
+    # get the services logs
+    for service in all_services:
+        service_file = destination_path / f"{service.name}.logs"
+        service_file.write_text(pformat(list(service.logs(stdout=True, stderr=True))))
+
+
+def print_docker_infos():
+    client = docker.from_env()
+    all_services = client.services.list()
+    # get the services logs
+    for service in all_services:
+        print(
+            "------------- PRINTING SERVICE LOGS of %s:%s ---------------------",
+            service.name,
+            service.version,
+        )
+        pprint(list(service.logs(stdout=True, stderr=True)))

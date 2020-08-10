@@ -5905,6 +5905,12 @@ paths:
                           type: array
                           items:
                             type: integer
+                        classifiers:
+                          type: array
+                          description: Contains the reference to the project classifiers
+                          items:
+                            type: string
+                          example: 'some:id:to:a:classifier'
                         dev:
                           type: object
                           description: object used for development purposes only
@@ -6249,6 +6255,12 @@ paths:
                   type: array
                   items:
                     type: integer
+                classifiers:
+                  type: array
+                  description: Contains the reference to the project classifiers
+                  items:
+                    type: string
+                  example: 'some:id:to:a:classifier'
                 dev:
                   type: object
                   description: object used for development purposes only
@@ -6498,6 +6510,12 @@ paths:
                         type: array
                         items:
                           type: integer
+                      classifiers:
+                        type: array
+                        description: Contains the reference to the project classifiers
+                        items:
+                          type: string
+                        example: 'some:id:to:a:classifier'
                       dev:
                         type: object
                         description: object used for development purposes only
@@ -6839,6 +6857,12 @@ paths:
                         type: array
                         items:
                           type: integer
+                      classifiers:
+                        type: array
+                        description: Contains the reference to the project classifiers
+                        items:
+                          type: string
+                        example: 'some:id:to:a:classifier'
                       dev:
                         type: object
                         description: object used for development purposes only
@@ -7186,6 +7210,12 @@ paths:
                         type: array
                         items:
                           type: integer
+                      classifiers:
+                        type: array
+                        description: Contains the reference to the project classifiers
+                        items:
+                          type: string
+                        example: 'some:id:to:a:classifier'
                       dev:
                         type: object
                         description: object used for development purposes only
@@ -7525,6 +7555,12 @@ paths:
                   type: array
                   items:
                     type: integer
+                classifiers:
+                  type: array
+                  description: Contains the reference to the project classifiers
+                  items:
+                    type: string
+                  example: 'some:id:to:a:classifier'
                 dev:
                   type: object
                   description: object used for development purposes only
@@ -7774,6 +7810,12 @@ paths:
                         type: array
                         items:
                           type: integer
+                      classifiers:
+                        type: array
+                        description: Contains the reference to the project classifiers
+                        items:
+                          type: string
+                        example: 'some:id:to:a:classifier'
                       dev:
                         type: object
                         description: object used for development purposes only
@@ -8137,6 +8179,12 @@ paths:
                         type: array
                         items:
                           type: integer
+                      classifiers:
+                        type: array
+                        description: Contains the reference to the project classifiers
+                        items:
+                          type: string
+                        example: 'some:id:to:a:classifier'
                       dev:
                         type: object
                         description: object used for development purposes only
@@ -9312,6 +9360,12 @@ paths:
                         type: array
                         items:
                           type: integer
+                      classifiers:
+                        type: array
+                        description: Contains the reference to the project classifiers
+                        items:
+                          type: string
+                        example: 'some:id:to:a:classifier'
                       dev:
                         type: object
                         description: object used for development purposes only
@@ -9652,6 +9706,12 @@ paths:
                         type: array
                         items:
                           type: integer
+                      classifiers:
+                        type: array
+                        description: Contains the reference to the project classifiers
+                        items:
+                          type: string
+                        example: 'some:id:to:a:classifier'
                       dev:
                         type: object
                         description: object used for development purposes only
