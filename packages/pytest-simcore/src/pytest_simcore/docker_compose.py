@@ -18,7 +18,7 @@ import pytest
 import yaml
 from dotenv import dotenv_values
 
-from .helpers.utils_docker import run_docker_compose_config
+from .helpers.utils_docker import print_docker_infos, run_docker_compose_config
 
 
 @pytest.fixture("session")
@@ -232,3 +232,8 @@ def _filter_services_and_dump(
             # locally we have access to file
             print(f"Saving config to '{docker_compose_path}'")
         yaml.dump(content, fh, default_flow_style=False)
+
+
+@pytest.hookimpl()
+def pytest_exception_interact(node, call, report):
+    print_docker_infos()
