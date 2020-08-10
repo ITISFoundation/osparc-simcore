@@ -3,22 +3,18 @@
               2018 ITIS Foundation
    License:   MIT
    Authors:   Tobi Oetiker <tobi@oetiker.ch>
+              Odei Maiz <odeimaiz>
    Utf8Check: äöü
 ************************************************************************ */
 
-/* eslint no-underscore-dangle: ["error", { "allowAfterThis": true}] */
-
 /**
- * A special renderer for AutoForms which includes notes below the section header
- * widget and next to the individual form widgets.
+ * An extension of the PropFormBase that is able to handle port-links.
  */
 
 qx.Class.define("osparc.component.form.renderer.PropForm", {
   extend: osparc.component.form.renderer.PropFormBase,
 
   /**
-   * create a page for the View Tab with the given title
-   *
    * @param form {osparc.component.form.Auto} form widget to embedd
    * @param node {osparc.data.model.Node} Node owning the widget
    */
@@ -28,12 +24,15 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     this.__ctrlLinkMap = {};
     this.__addLinkCtrls();
 
+    this.__ctrlParamMap = {};
+    this.__addParamCtrls();
+
     this.setDroppable(true);
     this.__attachDragoverHighlighter();
   },
 
   events: {
-    "linkModified": "qx.event.type.Data",
+    "linkFieldModified": "qx.event.type.Data",
     "changeChildVisibility": "qx.event.type.Event"
   },
 
@@ -110,63 +109,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         }
 
         this.fireEvent("changeChildVisibility");
-      }
-    },
-
-    linkAdded: function(portId) {
-      let data = this._getCtrlFieldChild(portId);
-      if (data) {
-        let child = data.child;
-        let idx = data.idx;
-        const layoutProps = child.getLayoutProperties();
-        this._remove(child);
-
-        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-        hBox.add(this.getControlLink(portId), {
-          flex: 1
-        });
-
-        const unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
-        unlinkBtn.addListener("execute", function() {
-          this.removeLink(portId);
-        }, this);
-        hBox.add(unlinkBtn);
-
-        hBox.key = portId;
-        this._addAt(hBox, idx, {
-          row: layoutProps.row,
-          column: this._gridPos.ctrlField
-        });
-
-        const linkModified = {
-          portId,
-          added: true
-        };
-        this.fireDataEvent("linkModified", linkModified);
-      }
-    },
-
-    linkRemoved: function(portId) {
-      let data = this._getCtrlFieldChild(portId);
-      if (data) {
-        let child = data.child;
-        let idx = data.idx;
-        const layoutProps = child.getLayoutProperties();
-        if (layoutProps.column === this._gridPos.ctrlField) {
-          this._remove(child);
-          const item = this._form.getControl(portId);
-          const field = new osparc.component.form.FieldWHint(null, item.description, item);
-          this._addAt(field, idx, {
-            row: layoutProps.row,
-            column: this._gridPos.ctrlField
-          });
-
-          const linkModified = {
-            portId,
-            added: false
-          };
-          this.fireDataEvent("linkModified", linkModified);
-        }
       }
     },
 
@@ -345,12 +287,55 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       });
     },
 
-    getControlLinks: function() {
-      return this.__ctrlLinkMap;
+    __isPortAvailable: function(portId) {
+      const port = this._form.getControl(portId);
+      if (!port ||
+        !port.getEnabled() ||
+        Object.prototype.hasOwnProperty.call(port, "link") ||
+        Object.prototype.hasOwnProperty.call(port, "parameter")) {
+        return false;
+      }
+      return true;
     },
 
+    __createFieldCtrl: function(portId) {
+      const controlParam = new qx.ui.form.TextField().set({
+        enabled: false
+      });
+      controlParam.key = portId;
+      return controlParam;
+    },
+
+    __resetCtrlField: function(portId) {
+      let data = this._getCtrlFieldChild(portId);
+      if (data) {
+        const {child, idx} = data;
+        const layoutProps = child.getLayoutProperties();
+        if (layoutProps.column === this._gridPos.ctrlField) {
+          this._remove(child);
+          const item = this._form.getControl(portId);
+
+          const fieldWMenu = this._createFieldWithMenu(item);
+
+          const field = this._createFieldWithHint(fieldWMenu, item.description);
+          this._addAt(field, idx, {
+            row: layoutProps.row,
+            column: this._gridPos.ctrlField
+          });
+          return true;
+        }
+      }
+      return false;
+    },
+
+    /* LINKS */
     getControlLink: function(key) {
       return this.__ctrlLinkMap[key];
+    },
+
+    __addLinkCtrl: function(portId) {
+      const controlLink = this.__createFieldCtrl(portId);
+      this.__ctrlLinkMap[portId] = controlLink;
     },
 
     __addLinkCtrls: function() {
@@ -359,20 +344,50 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       });
     },
 
-    __addLinkCtrl: function(portId) {
-      const controlLink = new qx.ui.form.TextField().set({
-        enabled: false
-      });
-      controlLink.key = portId;
-      this.__ctrlLinkMap[portId] = controlLink;
+    __linkAdded: function(portId) {
+      let data = this._getCtrlFieldChild(portId);
+      if (data) {
+        let child = data.child;
+        const hint = "getField" in child ? child.getField().description : "";
+        const idx = data.idx;
+        const layoutProps = child.getLayoutProperties();
+        this._remove(child);
+
+        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+        hBox.add(this.getControlLink(portId), {
+          flex: 1
+        });
+
+        const unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
+        unlinkBtn.addListener("execute", function() {
+          this.removeLink(portId);
+        }, this);
+        hBox.add(unlinkBtn);
+
+        const field = this._createFieldWithHint(hBox, hint);
+        field.key = portId;
+
+        this._addAt(field, idx, {
+          row: layoutProps.row,
+          column: this._gridPos.ctrlField
+        });
+
+        const linkFieldModified = {
+          portId,
+          added: true
+        };
+        this.fireDataEvent("linkFieldModified", linkFieldModified);
+      }
     },
 
-    __isPortAvailable: function(portId) {
-      const port = this._form.getControl(portId);
-      if (!port || !port.getEnabled() || Object.prototype.hasOwnProperty.call(port, "link")) {
-        return false;
+    __linkRemoved: function(portId) {
+      if (this.__resetCtrlField(portId)) {
+        const linkFieldModified = {
+          portId,
+          added: false
+        };
+        this.fireDataEvent("linkFieldModified", linkFieldModified);
       }
-      return true;
     },
 
     addLink: function(toPortId, fromNodeId, fromPortId) {
@@ -394,14 +409,14 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         converter: label => label + ": " + fromPortLabel
       });
 
-      this.linkAdded(toPortId);
+      this.__linkAdded(toPortId);
 
       return true;
     },
 
     addLinks: function(data) {
       for (let key in data) {
-        if (data[key] !== null && typeof data[key] === "object" && data[key].nodeUuid) {
+        if (osparc.utils.Ports.isDataALink(data[key])) {
           this.addLink(key, data[key].nodeUuid, data[key].output);
         }
       }
@@ -413,20 +428,100 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         delete this._form.getControl(toPortId)["link"];
       }
 
-      this.linkRemoved(toPortId);
+      this.__linkRemoved(toPortId);
+    },
+    /* /LINKS */
+
+    /* PARAMETERS */
+    getControlParam: function(key) {
+      return this.__ctrlParamMap[key];
     },
 
-    hasVisibleInputs: function() {
-      const children = this._getChildren();
-      for (let i=0; i<children.length; i++) {
-        const child = children[i];
+    __addParamCtrl: function(portId) {
+      const controlParam = this.__createFieldCtrl(portId);
+      this.__ctrlParamMap[portId] = controlParam;
+    },
+
+    __addParamCtrls: function() {
+      Object.keys(this._form.getControls()).forEach(portId => {
+        this.__addParamCtrl(portId);
+      });
+    },
+
+    __parameterAdded: function(portId) {
+      let data = this._getCtrlFieldChild(portId);
+      if (data) {
+        let child = data.child;
+        const hint = "getField" in child ? child.getField().description : "";
+        const idx = data.idx;
         const layoutProps = child.getLayoutProperties();
-        if (layoutProps.column === this._gridPos.label && child.getBuddy().isVisible()) {
-          return true;
+        this._remove(child);
+
+        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+        hBox.add(this.getControlParam(portId), {
+          flex: 1
+        });
+
+        const unparamBtn = new qx.ui.form.Button(this.tr("Remove parameter"), "@FontAwesome5Solid/unlink/14");
+        unparamBtn.addListener("execute", function() {
+          this.removeParameter(portId);
+        }, this);
+        hBox.add(unparamBtn);
+
+        const field = this._createFieldWithHint(hBox, hint);
+        field.key = portId;
+
+        this._addAt(field, idx, {
+          row: layoutProps.row,
+          column: this._gridPos.ctrlField
+        });
+      }
+    },
+
+    __parameterRemoved: function(portId) {
+      this.__resetCtrlField(portId);
+    },
+
+    // overridden
+    addParameter: function(portId, parameter) {
+      if (!this.__isPortAvailable(portId)) {
+        return false;
+      }
+      if (!parameter) {
+        return false;
+      }
+
+      this.getControlParam(portId).setEnabled(false);
+      this._form.getControl(portId).parameter = parameter;
+      // ToDo: Binding missing
+      this.getControlParam(portId).setValue(this.tr("Parameter: ") + parameter.label);
+      this.__parameterAdded(portId);
+      return true;
+    },
+
+    addParameters: function(data) {
+      for (let key in data) {
+        if (osparc.utils.Ports.isDataAParameter(data[key])) {
+          const parameterId = data[key].replace("{{", "").replace("}}", "");
+          const study = osparc.store.Store.getInstance().getCurrentStudy();
+          const parameter = study.getSweeper().getParameter(parameterId);
+          if (parameter) {
+            this.addParameter(key, parameter);
+          }
         }
       }
-      return false;
     },
+
+    removeParameter: function(portId) {
+      this.getControlParam(portId).setEnabled(false);
+      let ctrlField = this._form.getControl(portId);
+      if (ctrlField && "parameter" in ctrlField) {
+        delete ctrlField.parameter;
+      }
+
+      this.__parameterRemoved(portId);
+    },
+    /* /PARAMETERS */
 
     __changeControlVisibility: function(control, visibility) {
       if (control === null) {
