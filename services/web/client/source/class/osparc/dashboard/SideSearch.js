@@ -3,6 +3,7 @@
  * Copyright: 2020 IT'IS Foundation - https://itis.swiss
  * License: MIT - https://opensource.org/licenses/MIT
  * Authors: Ignacio Pascual (ignapas)
+ *          Odei Maiz (odeimaiz)
  */
 
 qx.Class.define("osparc.dashboard.SideSearch", {
@@ -14,7 +15,8 @@ qx.Class.define("osparc.dashboard.SideSearch", {
 
     this.set({
       padding: 15,
-      marginTop: 15
+      marginTop: 15,
+      minWidth: 220
     });
 
     this.__buildLayout();
@@ -28,16 +30,46 @@ qx.Class.define("osparc.dashboard.SideSearch", {
   },
 
   members: {
+    __textFilter: null,
+    __tagsFilter: null,
+    __classifierFilter: null,
+
     __buildLayout: function() {
-      const title = new qx.ui.basic.Label(this.tr("Classifiers")).set({
+      const filterGroupId = "sideSearchFilter";
+      const title = new qx.ui.basic.Label(this.tr("Filter by")).set({
         font: "text-16"
       });
       this._add(title);
 
-      const classifier = new osparc.component.filter.ClassifiersFilter("classifiers", "studyBrowser");
+      const textFilter = this.__textFilter = new osparc.component.filter.TextFilter("text", filterGroupId);
+      textFilter.getChildControl("textfield").setFont("text-14");
+      osparc.utils.Utils.setIdToWidget(textFilter, "studyFiltersTextFld");
+      this._add(textFilter);
+
+      const tagsFilter = this.__tagsFilter = new osparc.component.filter.UserTagsFilter("tags", filterGroupId).set({
+        visibility: osparc.data.Permissions.getInstance().canDo("study.tag") ? "visible" : "excluded"
+      });
+      this._add(tagsFilter);
+
+      const classifier = this.__classifierFilter = new osparc.component.filter.ClassifiersFilter("classifiers", filterGroupId);
       this._add(classifier, {
         flex: 1
       });
+    },
+
+    /**
+     * Resets the text and active tags.
+     */
+    reset: function() {
+      this.__textFilter.reset();
+      this.__tagsFilter.reset();
+    },
+
+    /**
+     * Returns the text filter widget.
+     */
+    getTextFilter: function() {
+      return this.__textFilter;
     }
   }
 });

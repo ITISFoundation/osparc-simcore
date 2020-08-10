@@ -59,7 +59,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
     __buildLayout: function() {
       const studyData = this.__studyData;
       const classifiers = studyData.classifiers && studyData.classifiers.classifierIDs ? studyData.classifiers.classifierIDs : [];
-      const classifiersTree = this.__classifiersTree = new osparc.component.filter.ClassifiersFilter("classifiersEditor", "exploreBrowser", classifiers);
+      const classifiersTree = this.__classifiersTree = new osparc.component.filter.ClassifiersFilter("classifiersEditor", "sideSearchFilter", classifiers);
       this._add(classifiersTree, {
         flex: 1
       });

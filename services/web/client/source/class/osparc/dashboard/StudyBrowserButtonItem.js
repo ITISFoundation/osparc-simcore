@@ -359,7 +359,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         const tagsContainer = this.getChildControl("tags");
         tagsContainer.removeAll();
         tags.forEach(tag => {
-          const tagUI = new osparc.ui.basic.Tag(tag.name, tag.color, "studyBrowser");
+          const tagUI = new osparc.ui.basic.Tag(tag.name, tag.color, "sideSearchFilter");
           tagUI.setFont("text-12");
           tagsContainer.add(tagUI);
         });

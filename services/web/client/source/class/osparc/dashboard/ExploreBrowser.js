@@ -143,7 +143,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
           this._hideLoadingPage();
           this.__createResourcesLayout();
           this.__reloadResources();
-          this.__attachEventHandlers();
         });
     },
 
@@ -172,12 +171,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __createResourcesLayout: function() {
-      const exploreFilters = this.__exploreFilters = new osparc.component.filter.group.StudyFilterGroup("exploreBrowser").set({
-        paddingTop: 5
-      });
-      osparc.utils.Utils.setIdToWidget(exploreFilters.getTextFilter(), "exploreFiltersTextFld");
-      this._add(exploreFilters);
-
       const exploreBrowserLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
 
       const tempStudyLayout = this.__createTemplatesLayout();
@@ -219,13 +212,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this.__addNewServiceButtons(servicesTitleContainer);
 
       return servicesLayout;
-    },
-
-    __attachEventHandlers: function() {
-      const textfield = this.__exploreFilters.getTextFilter().getChildControl("textfield");
-      textfield.addListener("appear", () => {
-        textfield.focus();
-      }, this);
     },
 
     __createStudyFromService: function(serviceKey, serviceVersion) {
@@ -372,7 +358,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
       const menu = this.__getStudyItemMenu(item, study);
       item.setMenu(menu);
-      item.subscribeToFilterGroup("exploreBrowser");
+      item.subscribeToFilterGroup("sideSearchFilter");
       item.addListener("execute", () => {
         this.__itemClicked(item);
       }, this);
