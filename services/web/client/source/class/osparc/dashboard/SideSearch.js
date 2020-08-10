@@ -54,7 +54,10 @@ qx.Class.define("osparc.dashboard.SideSearch", {
       });
       this._add(tagsFilter);
 
-      const classifier = this.__classifierFilter = new osparc.component.filter.ClassifiersFilter("classifiers", filterGroupId);
+      const classifier = this.__classifierFilter = new osparc.component.filter.ClassifiersFilter("classifiers", filterGroupId).set({
+        marginLeft: -12,
+        marginTop: -5
+      });
       this._add(classifier, {
         flex: 1
       });
