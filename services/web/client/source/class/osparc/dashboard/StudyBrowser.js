@@ -71,7 +71,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   members: {
-    __studyFilters: null,
     __userStudyContainer: null,
     __userStudies: null,
     __newStudyBtn: null,
@@ -82,11 +81,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     resetSelection: function() {
       if (this.__userStudyContainer) {
         this.__userStudyContainer.resetSelection();
-      }
-    },
-    resetFilter: function() {
-      if (this.__studyFilters) {
-        this.__studyFilters.reset();
       }
     },
 
@@ -281,10 +275,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       }, this);
 
-      const textfield = this.__studyFilters.getTextFilter().getChildControl("textfield");
-      textfield.addListener("appear", () => {
-        textfield.focus();
-      }, this);
       const commandEsc = new qx.ui.command.Command("Esc");
       commandEsc.addListener("execute", e => {
         this.resetSelection();

@@ -58,7 +58,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
   },
 
   members: {
-    __exploreFilters: null,
     __templatesContainer: null,
     __servicesContainer: null,
     __templates: null,
@@ -73,11 +72,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       }
       if (this.__servicesContainer) {
         this.__servicesContainer.resetSelection();
-      }
-    },
-    resetFilter: function() {
-      if (this.__exploreFilters) {
-        this.__exploreFilters.reset();
       }
     },
 

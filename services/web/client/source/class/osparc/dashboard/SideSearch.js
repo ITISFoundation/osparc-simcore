@@ -20,6 +20,7 @@ qx.Class.define("osparc.dashboard.SideSearch", {
     });
 
     this.__buildLayout();
+    this.__attachEventHandlers();
   },
 
   properties: {
@@ -41,9 +42,11 @@ qx.Class.define("osparc.dashboard.SideSearch", {
       });
       this._add(title);
 
-      const textFilter = this.__textFilter = new osparc.component.filter.TextFilter("text", filterGroupId);
+      const textFilter = this.__textFilter = new osparc.component.filter.TextFilter("text", filterGroupId).set({
+        allowStretchX: true
+      });
       textFilter.getChildControl("textfield").setFont("text-14");
-      osparc.utils.Utils.setIdToWidget(textFilter, "studyFiltersTextFld");
+      osparc.utils.Utils.setIdToWidget(textFilter, "sideSearchFiltersTextFld");
       this._add(textFilter);
 
       const tagsFilter = this.__tagsFilter = new osparc.component.filter.UserTagsFilter("tags", filterGroupId).set({
@@ -55,6 +58,13 @@ qx.Class.define("osparc.dashboard.SideSearch", {
       this._add(classifier, {
         flex: 1
       });
+    },
+
+    __attachEventHandlers: function() {
+      const textfield = this.__textFilter.getChildControl("textfield");
+      textfield.addListener("appear", () => {
+        textfield.focus();
+      }, this);
     },
 
     /**
