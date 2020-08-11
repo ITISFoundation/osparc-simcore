@@ -837,7 +837,7 @@ jobs:
           path: simcore_logs
       - name: upload screenshots
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v1
         with:
           name: e2e_screenshots
           path: tests/e2e/screenshots
