@@ -23,7 +23,7 @@ class TutorialBase {
 
   init() {
     const dir = 'screenshots';
-    if (!fs.existsSync(dir)){
+    if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);
     }
   }
@@ -161,6 +161,15 @@ class TutorialBase {
     await utils.takeScreenshot(this.__page, this.__templateName + "_runStudy_after");
   }
 
+  async openNode(nodePosInTree = 0) {
+    await auto.openNode(this.__page, nodePosInTree);
+    await utils.takeScreenshot(this.__page, this.__templateName + '_openNode_' + nodePosInTree);
+  }
+
+  async getIframe() {
+    return await this.__page.$$("iframe");
+  }
+
   async openNodeFiles(nodePosInTree = 0) {
     const nodeId = await auto.openNode(this.__page, nodePosInTree);
     this.__responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
@@ -173,11 +182,15 @@ class TutorialBase {
     }
   }
 
-  async openNodeRetrieveAndRestart(nodePosInTree = 0, waitAfterRetrieve = 5000) {
-    await utils.takeScreenshot(this.__page, "openNodeRetrieveAndRestart_before");
-    await auto.openNode(this.__page, nodePosInTree);
+  async retrieve(waitAfterRetrieve = 5000) {
     await auto.clickRetrieve(this.__page);
     await this.__page.waitFor(waitAfterRetrieve);
+  }
+
+  async openNodeRetrieveAndRestart(nodePosInTree = 0) {
+    await utils.takeScreenshot(this.__page, "openNodeRetrieveAndRestart_before");
+    await auto.openNode(this.__page, nodePosInTree);
+    await this.retrieve();
     await auto.clickRestart(this.__page);
     await utils.takeScreenshot("openNodeRetrieveAndRestart_after");
   }
@@ -217,6 +230,10 @@ class TutorialBase {
 
   async waitFor(waitFor) {
     await this.__page.waitFor(waitFor);
+  }
+
+  async takeScreenshot(screenshotTitle) {
+    await utils.takeScreenshot(this.__page, this.__templateName + '_' + screenshotTitle);
   }
 }
 
