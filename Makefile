@@ -228,7 +228,7 @@ down: ## Stops and removes stack
 	# Removing generated docker compose configurations, i.e. .stack-*
 	-$(shell rm $(wildcard .stack-*))
 	# Removing local registry if any
-	-$(shell docker rm --force local_registry)
+	-$(shell docker rm --force $(local_registry))
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
@@ -387,13 +387,27 @@ postgres-upgrade: ## initalize or upgrade postgres db to latest state
 	@$(MAKE_C) packages/postgres-database/docker build
 	@$(MAKE_C) packages/postgres-database/docker upgrade
 
+local_registry=registry
 .PHONY: setup-local-registry
-setup-local-registry: .env ## creates a local docker registry and configure simcore to use it
-	@docker run --detach --init --publish "5000:5000" --name local_registry registry:2
+setup-local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
+	# add registry to host file
+	@echo 127.0.0.1 $(local_registry) >> /etc/hosts
+	# allow docker engine to use local insecure registry
+	@echo {\"insecure-registries\": [\"$(local_registry):5000\"]} >> /etc/docker/daemon.json
+	@service docker restart
+	# start registry...
+	@docker run --detach \
+							--init \
+							--publish 5000:5000 \
+							--volume $(local_registry):/var/lib/registry \
+							--name $(local_registry) \
+							registry:2
+	# set up environment variables to use local registry...
 	@echo REGISTRY_AUTH=False >> .env
 	@echo REGISTRY_SSL=False >> .env
-	@echo REGISTRY_URL=172.17.0.1:5000 >> .env
+	@echo REGISTRY_URL=$(local_registry):5000 >> .env
 	@echo DIRECTOR_REGISTRY_CACHING=False >> .env
+
 
 
 ## INFO -------------------------------
