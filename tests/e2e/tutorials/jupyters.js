@@ -28,7 +28,7 @@ async function runTutorial() {
   await tutorial.openTemplate(5000);
 
   // Some time for loading notebook and jupyter lab
-  await tutorial.waitFor(25000);
+  await tutorial.waitFor(30000);
 
 
   // open notebook
@@ -51,7 +51,7 @@ async function runTutorial() {
 
   // inside the first notebook, click Run button 4 times
   const runNBBtnSelector = '#run_int > button:nth-child(1)';
-  const runNotebookTimes = 4;
+  const runNotebookTimes = 5;
   for (let i=0; i<runNotebookTimes; i++) {
     await nbIframe.waitForSelector(runNBBtnSelector);
     await nbIframe.click(runNBBtnSelector);
@@ -64,8 +64,8 @@ async function runTutorial() {
   console.log('Checking results for the notebook:');
   await tutorial.openNodeFiles(1);
   const outFiles = [
-    "notebooks.zip",
-    "TheNumberNumber.txt"
+    "TheNumberNumber.txt",
+    "notebooks.zip"
   ];
   await tutorial.checkResults(outFiles.length);
 
@@ -96,14 +96,14 @@ async function runTutorial() {
 
   // click Run Menu
   const mainRunMenuBtnSelector = '#jp-MainMenu > ul > li:nth-child(4)';
-  await nbIframe.waitForSelector(mainRunMenuBtnSelector);
-  await nbIframe.click(mainRunMenuBtnSelector);
-  await tutorial.waitFor(2000);
+  await jLabIframe.waitForSelector(mainRunMenuBtnSelector);
+  await jLabIframe.click(mainRunMenuBtnSelector);
+  await tutorial.waitFor(1000);
 
   // click Run All Cells
-  const mainRunAllBtnSelector = 'body > div.lm-Widget.p-Widget.lm-Menu.p-Menu.lm-MenuBar-menu.p-MenuBar-menu > ul > li:nth-child(17)';
-  await nbIframe.waitForSelector(mainRunAllBtnSelector);
-  await nbIframe.click(mainRunAllBtnSelector);
+  const mainRunAllBtnSelector = '  body > div.lm-Widget.p-Widget.lm-Menu.p-Menu.lm-MenuBar-menu.p-MenuBar-menu > ul > li:nth-child(17)';
+  await jLabIframe.waitForSelector(mainRunAllBtnSelector);
+  await jLabIframe.click(mainRunAllBtnSelector);
   await tutorial.waitFor(6000);
   await tutorial.takeScreenshot("pressRunJLab");
 
