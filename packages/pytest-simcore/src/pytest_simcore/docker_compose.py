@@ -36,6 +36,11 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
         key: os.environ.get(key, value) for key, value in env_devel_unresolved.items()
     }
 
+    env_devel["REGISTRY_SSL"] = "False"
+    env_devel["REGISTRY_URL"] = "{}:5000".format(_get_ip())
+    env_devel["REGISTRY_USER"] = "simcore"
+    env_devel["REGISTRY_PW"] = ""
+    env_devel["REGISTRY_AUTH"] = "False"
     env_devel["SWARM_STACK_NAME"] = "simcore"
     env_devel["DIRECTOR_REGISTRY_CACHING"] = "False"
 
