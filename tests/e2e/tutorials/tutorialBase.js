@@ -23,7 +23,7 @@ class TutorialBase {
 
   init() {
     const dir = 'screenshots';
-    if (!fs.existsSync(dir)){
+    if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);
     }
   }
@@ -161,6 +161,11 @@ class TutorialBase {
     await utils.takeScreenshot(this.__page, this.__templateName + "_runStudy_after");
   }
 
+  async openNode(nodePosInTree = 0) {
+    await auto.openNode(this.__page, nodePosInTree);
+    await utils.takeScreenshot(this.__page, this.__templateName + '_openNode_' + nodePosInTree);
+  }
+
   async openNodeFiles(nodePosInTree = 0) {
     const nodeId = await auto.openNode(this.__page, nodePosInTree);
     this.__responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
@@ -217,6 +222,10 @@ class TutorialBase {
 
   async waitFor(waitFor) {
     await this.__page.waitFor(waitFor);
+  }
+
+  async takeScreenshot(screenshotTitle) {
+    await utils.takeScreenshot(this.__page, this.__templateName + '_' + screenshotTitle);
   }
 }
 
