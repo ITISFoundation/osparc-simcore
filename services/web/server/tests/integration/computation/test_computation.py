@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
 import json
 import sys
 import time
@@ -178,6 +179,7 @@ async def test_start_pipeline(
     mock_workbench_adjacency_list,
     expected_response,
 ):
+    await asyncio.sleep(20)
     project_id = user_project["uuid"]
     mock_workbench_payload = user_project["workbench"]
 
