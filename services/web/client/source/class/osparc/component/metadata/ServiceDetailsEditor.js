@@ -191,7 +191,29 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
 
     __saveService: function(btn) {
       const data = this.__serializeForm();
-      console.log(data);
+      const params = {
+        url: {
+          "serviceKey": this.__serviceVersionDetails.getService().key,
+          "serviceVersion": this.__serviceVersionDetails.getSelectedVersion()
+        },
+        data
+      };
+      osparc.data.Resources.fetch("services", "put", params)
+        .then(serviceData => {
+          btn.resetIcon();
+          btn.getChildControl("icon").getContentElement()
+            .removeClass("rotate");
+          this.__studyModel.set(serviceData);
+          this.setMode("display");
+          this.fireEvent("updateService");
+        })
+        .catch(err => {
+          btn.resetIcon();
+          btn.getChildControl("icon").getContentElement()
+            .removeClass("rotate");
+          console.error(err);
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
+        });
     },
 
     __openPermissions: function() {
@@ -215,7 +237,8 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
       [
         "name",
         "description",
-        "thumbnail"
+        "thumbnail",
+        "accessRights"
       ].forEach(fieldKey => {
         const dirty = data[fieldKey];
         const clean = osparc.wrapper.DOMPurify.getInstance().sanitize(dirty);
@@ -224,7 +247,6 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
         }
         data[fieldKey] = clean;
       }, this);
-      data.tags = this.__selectedTags;
       return data;
     },
 
