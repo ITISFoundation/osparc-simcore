@@ -74,8 +74,8 @@ class Executor:
             await self._post_messages(
                 LogType.LOG, "[sidecar]...task completed successfully."
             )
-        except exceptions.SidecarException:
-            await self._post_messages(LogType.LOG, "[sidecar]...task failed.")
+        except exceptions.SidecarException as e:
+            await self._post_messages(LogType.LOG, f"[sidecar]...task failed: {str(e)}")
             raise
 
     async def preprocess(self):
