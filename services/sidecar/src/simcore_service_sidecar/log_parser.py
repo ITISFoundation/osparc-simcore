@@ -3,6 +3,7 @@ import logging
 import re
 from enum import Enum
 from pathlib import Path
+import aiodocker
 from typing import Awaitable, Callable, Tuple, Union
 
 import aiofiles
@@ -78,8 +79,14 @@ async def monitor_logs_task(
 async def _monitor_docker_container(
     container: DockerContainer, log_cb: Awaitable[Callable[[LogType, str], None]]
 ) -> None:
-    async for line in container.log(stdout=True, stderr=True, follow=True):
-        log_type, parsed_line = await parse_line(line)
+    try:
+        async for line in container.log(stdout=True, stderr=True, follow=True):
+            log_type, parsed_line = await parse_line(line)
+            await log_cb(log_type, parsed_line)
+    except aiodocker.exceptions.DockerError:
+        log_type, parsed_line = await parse_line(
+            "Could not recover logs from container"
+        )
         await log_cb(log_type, parsed_line)
 
 
