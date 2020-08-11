@@ -12,13 +12,13 @@ core_services = ["postgres"]
 ops_services = ["adminer"]
 
 
-def test_read_healthcheck(client):
+def test_read_healthcheck(director_mockup, client):
     response = client.get("/")
     assert response.status_code == 200
     assert response.text == '":-)"'
 
 
-def test_read_meta(client):
+def test_read_meta(director_mockup, client):
     response = client.get("/v0/meta")
     assert response.status_code == 200
     meta = Meta(**response.json())
@@ -26,7 +26,7 @@ def test_read_meta(client):
     assert meta.name == "simcore_service_catalog"
 
 
-def test_list_dags(client):
+def test_list_dags(director_mockup, client):
     response = client.get("/v0/dags")
     assert response.status_code == 200
     assert response.json() == []
@@ -39,7 +39,7 @@ def test_list_dags(client):
     # TODO: assert dagout have identifiers now
 
 
-def test_standard_operations_on_resource(client, fake_data_dag_in):
+def test_standard_operations_on_resource(director_mockup, client, fake_data_dag_in):
 
     response = client.post("/v0/dags", json=fake_data_dag_in)
     assert response.status_code == 201
