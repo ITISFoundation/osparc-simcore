@@ -227,6 +227,8 @@ down: ## Stops and removes stack
 	-$(MAKE_C) services/web/client down
 	# Removing generated docker compose configurations, i.e. .stack-*
 	-$(shell rm $(wildcard .stack-*))
+	# Removing local registry if any
+	-$(shell docker rm --force local_registry)
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
@@ -385,6 +387,13 @@ postgres-upgrade: ## initalize or upgrade postgres db to latest state
 	@$(MAKE_C) packages/postgres-database/docker build
 	@$(MAKE_C) packages/postgres-database/docker upgrade
 
+.PHONY: setup-local-registry
+setup-local-registry: .env ## creates a local docker registry and configure simcore to use it
+	@docker run --detach --init --publish "5000:5000" --name local_registry registry:2
+	@echo REGISTRY_AUTH=False >> .env
+	@echo REGISTRY_SSL=False >> .env
+	@echo REGISTRY_URL=172.17.0.1:5000 >> .env
+	@echo DIRECTOR_REGISTRY_CACHING=False >> .env
 
 
 ## INFO -------------------------------
