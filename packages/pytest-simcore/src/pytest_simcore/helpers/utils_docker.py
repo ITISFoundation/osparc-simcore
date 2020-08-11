@@ -133,11 +133,7 @@ def save_docker_infos(destination_path: Path):
     for cont in all_containers:
         service_file = destination_path / f"{cont.name}.logs"
         service_file.write_text(
-            pformat(
-                cont.logs(
-                    stream=True, timestamps=True, stdout=True, stderr=True
-                ).decode()
-            ),
+            pformat(cont.logs(timestamps=True, stdout=True, stderr=True).decode()),
         )
 
 
