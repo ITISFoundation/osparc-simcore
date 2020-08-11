@@ -576,7 +576,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: integration_tests_webserver_failures
+          name: integration_tests_webserver_docker_logs
           path: ./services/web/server/test_failures
       - name: cleanup
         if: always()
@@ -635,6 +635,12 @@ jobs:
         run: ./ci/github/integration-testing/sidecar.bash install
       - name: test
         run: ./ci/github/integration-testing/sidecar.bash test
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: integration_tests_sidecar_docker_logs
+          path: ./services/sidecar/test_failures
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/sidecar.bash clean_up
@@ -692,6 +698,12 @@ jobs:
         run: ./ci/github/integration-testing/simcore-sdk.bash install
       - name: test
         run: ./ci/github/integration-testing/simcore-sdk.bash test
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: integration_tests_simcore_sdk_docker_logs
+          path: ./packages/simcore-sdk/test_failures
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/simcore-sdk.bash clean_up
