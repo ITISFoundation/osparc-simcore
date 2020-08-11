@@ -135,6 +135,7 @@ def save_docker_infos(destination_path: Path):
         service_file.write_text(
             pformat(cont.logs(timestamps=True, stdout=True, stderr=True).decode()),
         )
+    print("wrote docker log files in ", destination_path)
 
 
 def print_docker_infos():
