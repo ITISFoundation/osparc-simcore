@@ -574,7 +574,7 @@ jobs:
         run: ./ci/github/integration-testing/webserver.bash test
       - name: upload failed tests logs
         if: failure()
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: integration_tests_webserver_failures
           path: test_failures
