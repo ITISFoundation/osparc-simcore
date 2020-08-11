@@ -12,7 +12,7 @@ function parseCommandLineArguments(args) {
   }
 
   const url = args[0];
-  const enableDemoMode = args.length > 1 ? args[1] === "--demo" : false;
+  const enableDemoMode = args.includes("--demo");
   const {
     user,
     pass,
@@ -20,7 +20,11 @@ function parseCommandLineArguments(args) {
   } = getUserAndPass(args);
 
   return {
-    url, user, pass, newUser, enableDemoMode
+    url,
+    user,
+    pass,
+    newUser,
+    enableDemoMode
   }
 }
 
@@ -30,7 +34,7 @@ function getUserAndPass(args) {
     pass: null,
     newUser: true
   };
-  if (args && args.length === 3) {
+  if (args && args.length > 2) {
     userPass.user = args[1];
     userPass.pass = args[2];
     userPass.newUser = false;
