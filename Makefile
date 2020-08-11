@@ -407,7 +407,7 @@ setup-local-registry: .env ## creates a local docker registry and configure simc
 	@echo REGISTRY_SSL=False >> .env
 	@echo REGISTRY_URL=$(local_registry):5000 >> .env
 	@echo DIRECTOR_REGISTRY_CACHING=False >> .env
-
+	# add registry 172.17.0.1 as extra_host to containers that need access to the registry
 
 
 ## INFO -------------------------------
