@@ -572,6 +572,12 @@ jobs:
         run: ./ci/github/integration-testing/webserver.bash install
       - name: test
         run: ./ci/github/integration-testing/webserver.bash test
+      - name: upload failed tests logs
+        if: failed()
+        uses: actions/upload-artifact@v1
+        with:
+          name: integration_tests_webserver_failures
+          path: test_failures
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/webserver.bash clean_up

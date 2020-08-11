@@ -126,11 +126,19 @@ def run_docker_compose_config(
 
 def save_docker_infos(destination_path: Path):
     client = docker.from_env()
-    all_services = client.services.list()
+    all_containers = client.containers.list()
+    # ensure the parent dir exists
+    destination_path.mkdir(parents=True, exist_ok=True)
     # get the services logs
-    for service in all_services:
-        service_file = destination_path / f"{service.name}.logs"
-        service_file.write_text(pformat(list(service.logs(stdout=True, stderr=True))))
+    for cont in all_containers:
+        service_file = destination_path / f"{cont.name}.logs"
+        service_file.write_text(
+            pformat(
+                cont.logs(
+                    stream=True, timestamps=True, stdout=True, stderr=True
+                ).decode()
+            ),
+        )
 
 
 def print_docker_infos():

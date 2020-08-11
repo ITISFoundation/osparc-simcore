@@ -18,7 +18,10 @@ import pytest
 import yaml
 from dotenv import dotenv_values
 
-from .helpers.utils_docker import print_docker_infos, run_docker_compose_config
+from .helpers.utils_docker import (
+    run_docker_compose_config,
+    save_docker_infos,
+)
 
 
 @pytest.fixture("session")
@@ -236,4 +239,7 @@ def _filter_services_and_dump(
 
 @pytest.hookimpl()
 def pytest_exception_interact(node, call, report):
-    print_docker_infos()
+    # get the node root dir (guaranteed to exist)
+    root_directory: Path = Path(node.config.rootdir)
+    failed_test_directory = root_directory / "test_failures" / node.name
+    save_docker_infos(failed_test_directory)
