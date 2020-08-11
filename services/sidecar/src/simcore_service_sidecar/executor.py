@@ -308,6 +308,7 @@ class Executor:
                 docker_image,
                 docker_container_config,
             )
+            
         finally:
             stop_time = time.perf_counter()
             log.info("Running %s took %sseconds", docker_image, stop_time - start_time)
