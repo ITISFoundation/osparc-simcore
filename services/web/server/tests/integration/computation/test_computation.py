@@ -169,17 +169,16 @@ async def test_check_health(loop, mock_orphaned_services, docker_stack, client):
     ],
 )
 async def test_start_pipeline(
+    sleeper_service,
     client,
     postgres_session,
     rabbit_service,
     simcore_services,
-    sleeper_service,
     logged_user,
     user_project,
     mock_workbench_adjacency_list,
     expected_response,
 ):
-    await asyncio.sleep(20)
     project_id = user_project["uuid"]
     mock_workbench_payload = user_project["workbench"]
 

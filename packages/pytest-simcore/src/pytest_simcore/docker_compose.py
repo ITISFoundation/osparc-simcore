@@ -37,6 +37,7 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
     }
 
     env_devel["SWARM_STACK_NAME"] = "simcore"
+    env_devel["DIRECTOR_REGISTRY_CACHING"] = "False"
 
     return env_devel
 
