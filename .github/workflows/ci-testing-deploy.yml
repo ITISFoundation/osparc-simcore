@@ -136,6 +136,12 @@ jobs:
         run: ./ci/github/unit-testing/catalog.bash install
       - name: test
         run: ./ci/github/unit-testing/catalog.bash test
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit_tests_catalog_docker_logs
+          path: ./services/catalog/test_failures
       - uses: codecov/codecov-action@v1
         with:
           flags: unittests #optional
