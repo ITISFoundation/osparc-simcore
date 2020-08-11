@@ -577,7 +577,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: integration_tests_webserver_failures
-          path: test_failures
+          path: ./services/web/server/test_failures
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/webserver.bash clean_up
