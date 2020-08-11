@@ -34,23 +34,26 @@ async function runTutorial() {
   // open notebook
   await tutorial.openNode(1);
 
-  const iframeHandles = tutorial.getIframe();
-  console.log(iframeHandles);
+  const iframeHandles = await tutorial.getIframe();
   // expected two iframes = loading + raw-graph
-  const frame = await iframeHandles[1].contentFrame();
+  const nbIframe = await iframeHandles[1].contentFrame();
 
-  // inside the iFrame, click on the first notebook
-  const notebookSelector = '#notebook_list > div:nth-child(2) > div > a';
-  await frame.waitForSelector(notebookSelector);
-  await frame.click(notebookSelector);
+  // inside the iFrame, open the first notebook
+  const notebookCBSelector = '#notebook_list > div:nth-child(2) > div > input[type=checkbox]';
+  await nbIframe.waitForSelector(notebookCBSelector);
+  await nbIframe.click(notebookCBSelector);
+  await tutorial.waitFor(2000);
+  const notebookViewSelector = "#notebook_toolbar > div.col-sm-8.no-padding > div.dynamic-buttons > button.view-button.btn.btn-default.btn-xs"
+  await nbIframe.waitForSelector(notebookViewSelector);
+  await nbIframe.click(notebookViewSelector);
   await tutorial.waitFor(2000);
   await tutorial.takeScreenshot("openNotebook");
 
   // inside the first notebook, click Run button 4 times
   for (let i=0; i<4; i++) {
     const runBtnSelector = '#run_int > button:nth-child(1)';
-    await frame.waitForSelector(runBtnSelector);
-    await frame.click(runBtnSelector);
+    await nbIframe.waitForSelector(runBtnSelector);
+    await nbIframe.click(runBtnSelector);
     await tutorial.waitFor(3000);
     await tutorial.takeScreenshot("pressRun_" + i+1);
   }
