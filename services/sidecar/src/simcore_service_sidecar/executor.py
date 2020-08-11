@@ -10,6 +10,7 @@ import aiopg
 import attr
 from celery.utils.log import get_task_logger
 from packaging import version
+from tenacity import retry, stop_after_attempt
 
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_sdk import node_data, node_ports
@@ -156,6 +157,7 @@ class Executor:
             file_name.write_text(json.dumps(inputs))
             log.debug("Writing input file DONE")
 
+    @retry(reraise=True, stop=stop_after_attempt(3))
     async def _pull_image(self):
         docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
         log.debug(
