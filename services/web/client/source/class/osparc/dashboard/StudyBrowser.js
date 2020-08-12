@@ -412,6 +412,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(moreInfoButton);
       }
 
+      const classifiersButton = this.__getClassifiersMenuButton(studyData);
+      if (classifiersButton) {
+        menu.add(classifiersButton);
+      }
+
       const shareStudyButton = this.__getPermissionsMenuButton(studyData);
       menu.add(shareStudyButton);
 
@@ -447,6 +452,28 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__createStudyDetailsEditor(studyData, winWidth);
       }, this);
       return moreInfoButton;
+    },
+
+    __getClassifiersMenuButton: function(studyData) {
+      if (!osparc.data.Permissions.getInstance().canDo("study.classifier")) {
+        return null;
+      }
+
+      const classifiersButton = new qx.ui.menu.Button(this.tr("Classifiers"));
+      classifiersButton.addListener("execute", () => {
+        this.__openClassifiers(studyData);
+      }, this);
+      return classifiersButton;
+    },
+
+    __openClassifiers: function(studyData) {
+      const classifiersEditor = new osparc.dashboard.ClassifiersEditor(studyData);
+      const title = this.tr("Classifiers");
+      osparc.dashboard.ClassifiersEditor.popUpInWindow(title, classifiersEditor);
+      classifiersEditor.addListener("updateClassifiers", e => {
+        const studyId = e.getData();
+        this.__reloadUserStudy(studyId, true);
+      }, this);
     },
 
     __getPermissionsMenuButton: function(studyData) {
@@ -537,11 +564,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       studyDetails.addListener("openStudy", () => {
         this.__startStudy(studyData);
       }, this);
-      studyDetails.addListener("updateClassifiers", e => {
-        const studyId = e.getData();
-        this.__reloadUserStudy(studyId, true);
-      });
-
       studyDetails.addListener("updateTags", () => {
         this.__resetStudyList(osparc.store.Store.getInstance().getStudies());
       });
