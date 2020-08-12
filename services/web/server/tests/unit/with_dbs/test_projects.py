@@ -468,6 +468,7 @@ async def test_new_project_from_template_with_body(
         },
         "workbench": {},
         "tags": [],
+        "classifiers": [],
     }
     project = await _new_project(
         client,
@@ -569,6 +570,7 @@ async def test_new_template_from_project(
             str(all_group["gid"]): {"read": True, "write": False, "delete": False},
         },
         "tags": [],
+        "classifiers": [],
     }
 
     resp = await client.post(url, json=predefined)
