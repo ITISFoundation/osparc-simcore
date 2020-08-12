@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
+import aiodocker
 import aiopg
 import networkx as nx
 from celery.utils.log import get_task_logger
@@ -170,7 +171,7 @@ async def inspect(
         )
         await sidecar.run()
         next_task_nodes = list(graph.successors(node_id))
-    except exceptions.SidecarException:
+    except (aiodocker.exceptions.DockerError, exceptions.SidecarException):
         run_result = FAILED
         log.exception("Error during execution")
 
