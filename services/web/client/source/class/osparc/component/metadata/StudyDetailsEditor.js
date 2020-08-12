@@ -47,8 +47,8 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
   },
 
   events: {
-    "updateStudy": "qx.event.type.Event",
-    "updateTemplate": "qx.event.type.Event",
+    "updateStudy": "qx.event.type.Data",
+    "updateTemplate": "qx.event.type.Data",
     "updateClassifiers": "qx.event.type.Data",
     "updateTags": "qx.event.type.Data",
     "closed": "qx.event.type.Event",
@@ -321,7 +321,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
             .removeClass("rotate");
           this.__studyModel.set(studyData);
           this.setMode("display");
-          this.fireEvent(isTemplate ? "updateTemplate" : "updateStudy");
+          this.fireDataEvent(isTemplate ? "updateTemplate" : "updateStudy", studyData.uuid);
         })
         .catch(err => {
           btn.resetIcon();
@@ -337,7 +337,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       const permissionsView = new osparc.component.export.Permissions(studyData);
       const window = permissionsView.createWindow();
       permissionsView.addListener("updateStudy", e => {
-        this.fireEvent("updateStudy");
+        this.fireDataEvent("updateStudy", e.getData());
       });
       permissionsView.addListener("finished", e => {
         if (e.getData()) {
