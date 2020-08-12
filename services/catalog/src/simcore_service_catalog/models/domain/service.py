@@ -261,7 +261,6 @@ class ServiceAccessRights(BaseModel):
 class ServiceMetaData(ServiceCommonData):
     # for a partial update all members must be Optional
     name: Optional[str]
-    # owner: Optional[int]
     thumbnail: Optional[HttpUrl]
     description: Optional[str]
     classifiers: Optional[List[str]]
@@ -273,20 +272,21 @@ class ServiceUpdate(ServiceMetaData, ServiceAccessRights):
 
 
 class ServiceOut(ServiceDockerData, ServiceAccessRights, ServiceMetaData):
-    pass
+    owner: Optional[EmailStr]
 
 
 # Databases models (tables services_meta_data and services_access_rights)
 class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaData):
     # for a partial update all members must be Optional
     classifiers: Optional[List[str]] = Field([])
+    owner: Optional[PositiveInt]
 
     class Config:
         orm_mode = True
 
 
 class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
-    gid: int = Field(..., description="defines the group id", example=1)
+    gid: PositiveInt = Field(..., description="defines the group id", example=1)
 
     class Config:
         orm_mode = True
