@@ -134,6 +134,9 @@ qx.Class.define("osparc.data.Permissions", {
         "user": [
           "studies.user.read",
           "studies.user.create",
+          "studies.template.create",
+          "studies.template.update",
+          "studies.template.delete",
           "storage.datcore.read",
           "user.user.update",
           "user.apikey.create",
@@ -156,9 +159,7 @@ qx.Class.define("osparc.data.Permissions", {
           "study.tag"
         ],
         "tester": [
-          "studies.template.create",
-          "studies.template.update",
-          "studies.template.delete",
+          "studies.template.create.all",
           "services.all.read",
           "user.role.update",
           "user.organizations.create",
