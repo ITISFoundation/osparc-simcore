@@ -258,25 +258,28 @@ class ServiceAccessRights(BaseModel):
     )
 
 
-# OpenAPI models
-class ServiceUpdate(ServiceCommonData, ServiceAccessRights):
+class ServiceMetaData(ServiceCommonData):
     # for a partial update all members must be Optional
     name: Optional[str]
+    # owner: Optional[int]
     thumbnail: Optional[HttpUrl]
     description: Optional[str]
     classifiers: Optional[List[str]]
 
 
-class ServiceOut(ServiceAccessRights, ServiceDockerData):
-    # properties to return to client
+# OpenAPI models (contain both service metadata and access rights)
+class ServiceUpdate(ServiceMetaData, ServiceAccessRights):
+    pass
+
+
+class ServiceOut(ServiceDockerData, ServiceAccessRights, ServiceMetaData):
     pass
 
 
 # Databases models (tables services_meta_data and services_access_rights)
-
-
-class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceCommonData):
-    owner: Optional[int] = Field(None,)
+class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaData):
+    # for a partial update all members must be Optional
+    classifiers: Optional[List[str]] = Field([])
 
     class Config:
         orm_mode = True

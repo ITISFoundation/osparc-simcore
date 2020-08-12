@@ -23,7 +23,6 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 # FIXME: too many DB calls
-SERVICE_OVERRIDEN_VARIABLES = ["name", "description", "thumbnail"]
 
 
 @router.get("", response_model=List[ServiceOut])
@@ -84,8 +83,7 @@ async def list_services(
             service_in_db = await services_repo.get_service(
                 service.key, service.version
             )
-            for attr in SERVICE_OVERRIDEN_VARIABLES:
-                setattr(service, attr, getattr(service_in_db, attr))
+            service = service.copy(update=service_in_db.dict(exclude_unset=True))
             services.append(service)
 
         # services = parse_obj_as(List[ServiceOut], data) this does not work since if one service has an issue it fails
@@ -153,8 +151,7 @@ async def get_service(
                 detail="You have insufficient rights to access the service",
             )
     # access is allowed, override some of the values with what is in the db
-    for attr in SERVICE_OVERRIDEN_VARIABLES:
-        setattr(service, attr, getattr(service_in_db, attr))
+    service = service.copy(update=service_in_db.dict(exclude_unset=True))
 
     return service
 
@@ -199,12 +196,13 @@ async def modify_service(
         )
 
     # let's modify the service then
-    partial_updated_service = ServiceMetaDataAtDB(
-        key=service_key,
-        version=service_version,
-        **updated_service.dict(exclude_unset=True),
+    await services_repo.update_service(
+        ServiceMetaDataAtDB(
+            key=service_key,
+            version=service_version,
+            **updated_service.dict(exclude_unset=True),
+        )
     )
-    await services_repo.update_service(partial_updated_service)
     # let's modify the service access rights (they can be added/removed/modified)
     current_gids_in_db = [
         r.gid
@@ -213,28 +211,31 @@ async def modify_service(
         )
     ]
 
-    # start by updating/inserting new entries
-    new_access_rights = [
-        ServiceAccessRightsAtDB(
-            key=service_key,
-            version=service_version,
-            gid=gid,
-            execute_access=rights.execute_access,
-            write_access=rights.write_access,
-        )
-        for gid, rights in updated_service.access_rights.items()
-    ]
-    await services_repo.upsert_service_access_rights(new_access_rights)
+    if updated_service.access_rights:
+        # start by updating/inserting new entries
+        new_access_rights = [
+            ServiceAccessRightsAtDB(
+                key=service_key,
+                version=service_version,
+                gid=gid,
+                execute_access=rights.execute_access,
+                write_access=rights.write_access,
+            )
+            for gid, rights in updated_service.access_rights.items()
+        ]
+        await services_repo.upsert_service_access_rights(new_access_rights)
 
-    # then delete the ones that were removed
-    removed_gids = [
-        gid for gid in current_gids_in_db if gid not in updated_service.access_rights
-    ]
-    deleted_access_rights = [
-        ServiceAccessRightsAtDB(key=service_key, version=service_version, gid=gid)
-        for gid in removed_gids
-    ]
-    await services_repo.delete_service_access_rights(deleted_access_rights)
+        # then delete the ones that were removed
+        removed_gids = [
+            gid
+            for gid in current_gids_in_db
+            if gid not in updated_service.access_rights
+        ]
+        deleted_access_rights = [
+            ServiceAccessRightsAtDB(key=service_key, version=service_version, gid=gid)
+            for gid in removed_gids
+        ]
+        await services_repo.delete_service_access_rights(deleted_access_rights)
 
     # now return the service
     return await get_service(
