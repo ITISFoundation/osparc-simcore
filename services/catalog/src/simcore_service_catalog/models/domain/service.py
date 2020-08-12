@@ -271,7 +271,9 @@ class ServiceUpdate(ServiceMetaData, ServiceAccessRights):
     pass
 
 
-class ServiceOut(ServiceDockerData, ServiceAccessRights, ServiceMetaData):
+class ServiceOut(
+    ServiceDockerData, ServiceAccessRights, ServiceMetaData
+):  # pylint: disable=too-many-ancestors
     owner: Optional[EmailStr]
 
 
