@@ -14,6 +14,7 @@ from servicelib.aiopg_utils import (
     is_postgres_responsive,
 )
 from simcore_postgres_database.models.comp_tasks import comp_tasks
+from .exceptions import NodeNotFond
 
 from . import config
 
@@ -121,6 +122,9 @@ class DBManager:
         async with DBContextManager(self._db_engine) as engine:
             async with engine.acquire() as connection:
                 node = await _get_node_from_db(node_uuid, connection)
+                if node is None:
+                    raise NodeNotFond(f"Could not find {node_uuid} int he db.")
+
                 node_json_config = json.dumps(
                     {
                         "version": "0.1",
