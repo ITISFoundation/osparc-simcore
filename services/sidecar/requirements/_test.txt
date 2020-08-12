@@ -35,7 +35,6 @@ iniconfig==1.0.1          # via pytest
 isort==4.3.21             # via pylint
 kombu==4.6.11             # via -r requirements/_base.txt, celery
 lazy-object-proxy==1.4.3  # via astroid
-markupsafe==1.1.1         # via mako
 mccabe==0.6.1             # via pylint
 more-itertools==8.4.0     # via pytest
 multidict==4.7.6          # via -r requirements/_base.txt, aiohttp, yarl
@@ -56,6 +55,7 @@ pytest-lazy-fixture==0.6.3  # via -r requirements/_test.in
 pytest-mock==3.2.0        # via -r requirements/_test.in
 pytest-sugar==0.9.4       # via -r requirements/_test.in
 pytest==6.0.1             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-lazy-fixture, pytest-mock, pytest-sugar
+python-dotenv==0.14.0     # via -r requirements/_test.in
 pytz==2020.1              # via -r requirements/_base.txt, celery
 requests==2.24.0          # via coveralls, docker
 six==1.15.0               # via -r requirements/_base.txt, astroid, docker, packaging, tenacity, websocket-client
