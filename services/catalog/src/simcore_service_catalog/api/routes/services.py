@@ -70,20 +70,26 @@ async def list_services(
 
             if (service.key, service.version) in writable_services:
                 # we have write access for that service, fill in the service rights
-                service_access_rights: List[
+                access_rights: List[
                     ServiceAccessRightsAtDB
                 ] = await services_repo.get_service_access_rights(
                     service.key, service.version
                 )
-                service.access_rights = {
-                    rights.gid: rights for rights in service_access_rights
-                }
+                service.access_rights = {rights.gid: rights for rights in access_rights}
 
             # access is allowed, override some of the values with what is in the db
             service_in_db = await services_repo.get_service(
                 service.key, service.version
             )
-            service = service.copy(update=service_in_db.dict(exclude_unset=True))
+            service = service.copy(
+                update=service_in_db.dict(exclude_unset=True, exclude={"owner"})
+            )
+            # the owner shall be converted to an email address
+            if service_in_db.owner:
+                service.owner = await groups_repository.get_user_email_from_gid(
+                    service_in_db.owner
+                )
+
             services.append(service)
 
         # services = parse_obj_as(List[ServiceOut], data) this does not work since if one service has an issue it fails
