@@ -74,7 +74,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         resizable: true,
         width: width,
         height: height,
-        modal: true
+        clickAwayClose: true
       });
       win.add(studyDetailsEditor);
       win.center();

@@ -87,9 +87,8 @@ qx.Class.define("osparc.ui.tree.CheckboxTree", {
       nodes.forEach(node => {
         if (node.getChecked()) {
           checked.push(qx.util.Serializer.toNativeObject(node));
-        } else {
-          checked = [...checked, ...this.getChecked(node)];
         }
+        checked = [...checked, ...this.getChecked(node)];
       });
       return checked;
     }
