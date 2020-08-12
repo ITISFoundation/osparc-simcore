@@ -10,8 +10,6 @@ from fastapi import FastAPI
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 
-from simcore_postgres_database.models.services import services_access_rights
-
 from ..api.dependencies.director import get_director_session
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.services import ServicesRepository
