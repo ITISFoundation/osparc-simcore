@@ -108,6 +108,13 @@ async function runTutorial() {
     await tutorial.waitFor(6000);
     await tutorial.takeScreenshot("pressRunJLab");
 
+    console.log('Checking results for the jupyter lab:');
+    await tutorial.openNodeFiles(2);
+    const outFiles2 = [
+      "TheNumber.txt"
+    ];
+    await tutorial.checkResults(outFiles2.length);
+
 
     await tutorial.removeStudy();
   }
