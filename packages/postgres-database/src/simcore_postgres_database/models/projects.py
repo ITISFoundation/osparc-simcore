@@ -7,7 +7,7 @@ import enum
 import logging
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.sql import func
 
 from .base import metadata
@@ -61,7 +61,12 @@ projects = sa.Table(
         "access_rights", JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")
     ),
     sa.Column("workbench", sa.JSON, nullable=False),
-    sa.Column("classifiers", JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")),
+    sa.Column(
+        "classifiers",
+        ARRAY(sa.String, dimensions=1),
+        nullable=False,
+        server_default="{}",
+    ),
     sa.Column("dev", JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")),
     sa.Column("published", sa.Boolean, nullable=False, default=False),
 )
