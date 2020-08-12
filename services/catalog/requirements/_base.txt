@@ -56,4 +56,4 @@ urllib3==1.25.10          # via requests
 uvicorn==0.11.6           # via fastapi
 uvloop==0.14.0            # via uvicorn
 websockets==8.1           # via uvicorn
-yarl==1.5.0               # via -r requirements/../../../packages/postgres-database/requirements/_base.in
+yarl==1.5.1               # via -r requirements/../../../packages/postgres-database/requirements/_base.in
