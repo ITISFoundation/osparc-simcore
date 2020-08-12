@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Union
+import traceback
 
 import aiodocker
 import aiopg
@@ -29,25 +30,34 @@ log.setLevel(config.SIDECAR_LOGLEVEL)
 node_port_log.setLevel(config.SIDECAR_LOGLEVEL)
 
 
-async def task_required_resources(node_id: str) -> bool:
+async def task_required_resources(node_id: str) -> Union[bool, None]:
     """Checks if the comp_task's image field if it requires to use the GPU"""
-    async with DBContextManager() as db_engine:
-        async with db_engine.acquire() as db_connection:
-            result = await db_connection.execute(
-                query=comp_tasks.select().where(comp_tasks.c.node_id == node_id)
-            )
-            task = await result.fetchone()
+    try:
+        async with DBContextManager() as db_engine:
+            async with db_engine.acquire() as db_connection:
+                result = await db_connection.execute(
+                    query=comp_tasks.select().where(comp_tasks.c.node_id == node_id)
+                )
+                task = await result.fetchone()
 
-            if not task:
-                log.warning("Task for node_id %s was not found", node_id)
-                raise exceptions.TaskNotFound("Could not find a relative task")
+                if not task:
+                    log.warning("Task for node_id %s was not found", node_id)
+                    raise exceptions.TaskNotFound("Could not find a relative task")
 
-            # Image has to following format
-            # {"name": "simcore/services/comp/itis/sleeper", "tag": "1.0.0", "requires_gpu": false, "requires_mpi": false}
-            return {
-                "requires_gpu": task["image"]["requires_gpu"],
-                "requires_mpi": task["image"]["requires_mpi"],
-            }
+                # Image has to following format
+                # {"name": "simcore/services/comp/itis/sleeper", "tag": "1.0.0", "requires_gpu": false, "requires_mpi": false}
+                return {
+                    "requires_gpu": task["image"]["requires_gpu"],
+                    "requires_mpi": task["image"]["requires_mpi"],
+                }
+    except Exception:  # pylint: disable=broad-except
+        log.error(
+            "%s\nThe above exception ocurred because it could not be "
+            "determined if task requires GPU, MPI  MPI for node_id %s",
+            traceback.format_exc(),
+            node_id,
+        )
+        return None
 
 
 async def _try_get_task_from_db(

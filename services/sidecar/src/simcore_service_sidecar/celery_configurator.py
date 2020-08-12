@@ -39,15 +39,9 @@ def dispatch_comp_task(user_id: str, project_id: str, node_id: str) -> None:
         return
 
     # query comp_tasks for the thing you need and see if it is false
-    try:
-        required_resources = wrap_async_call(task_required_resources(node_id))
-    except Exception:  # pylint: disable=broad-except
-        log.error(
-            "%s\nThe above exception ocurred because it could not be "
-            "determined if task requires GPU or MPI for node_id %s",
-            traceback.format_exc(),
-            node_id,
-        )
+
+    required_resources = wrap_async_call(task_required_resources(node_id))
+    if required_resources is None:
         return
 
     if required_resources["requires_mpi"]:
