@@ -231,13 +231,16 @@ properties:
               'y':
                 type: integer
     additionalProperties: true
-  classifiers:
-    type: object
-    description: List of classifier identifiers
   tags:
     type: array
     items:
       type: integer
+  classifiers:
+    type: array
+    description: Contains the reference to the project classifiers
+    items:
+      type: string
+    example: 'some:id:to:a:classifier'
   dev:
     type: object
     description: object used for development purposes only
