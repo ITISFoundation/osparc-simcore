@@ -136,7 +136,7 @@ class Executor:
             PORTS = await self._get_node_ports()
         except node_ports.exceptions.NodeNotFound:
             await self._error_message_to_ui_and_logs(
-                "Could not find the node ports in the database"
+                "Missing node information in the database"
             )
             return input_ports
 
