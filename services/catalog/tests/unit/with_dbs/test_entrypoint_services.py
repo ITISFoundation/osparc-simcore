@@ -21,8 +21,8 @@ from simcore_service_catalog.api.routes import services
 from simcore_service_catalog.models.domain.service import (
     ServiceAccessRightsAtDB,
     ServiceType,
+    ServiceOut,
 )
-from simcore_service_catalog.models.schemas.service import ServiceOut
 
 core_services = ["postgres"]
 ops_services = ["adminer"]
