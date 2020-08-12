@@ -21,7 +21,7 @@ pytest-docker
 # fixtures
 Faker
 
-# migration due to pytest_simcore.postgres_service2
+# migration due to pytest_simcore.postgres_service
 alembic
 docker
 
