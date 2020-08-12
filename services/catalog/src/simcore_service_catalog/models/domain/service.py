@@ -20,6 +20,9 @@ FileName = constr(regex=FILENAME_RE)
 GroupId = PositiveInt
 
 
+# Service base schema (used for docker labels on docker images)
+
+
 class ServiceType(str, Enum):
     computational = "computational"
     dynamic = "dynamic"
@@ -160,6 +163,10 @@ class ServiceInput(ServiceProperty):
     )
 
 
+class ServiceOutput(ServiceProperty):
+    pass
+
+
 class ServiceKeyVersion(BaseModel):
     key: constr(regex=KEY_RE) = Field(
         ...,
@@ -223,7 +230,7 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
     inputs: Optional[Dict[PropertyName, ServiceInput]] = Field(
         ..., description="definition of the inputs of this node"
     )
-    outputs: Optional[Dict[PropertyName, ServiceProperty]] = Field(
+    outputs: Optional[Dict[PropertyName, ServiceOutput]] = Field(
         ..., description="definition of the outputs of this node"
     )
 
@@ -231,6 +238,9 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
         description = "Description of a simcore node 'class' with input and output"
         title = "simcore node"
         extra = Extra.forbid
+
+
+# Service access rights models
 
 
 class ServiceGroupAccessRights(BaseModel):
@@ -246,6 +256,23 @@ class ServiceAccessRights(BaseModel):
     access_rights: Optional[Dict[GroupId, ServiceGroupAccessRights]] = Field(
         None, description="service access rights per group id"
     )
+
+
+# OpenAPI models
+class ServiceUpdate(ServiceCommonData, ServiceAccessRights):
+    # for a partial update all members must be Optional
+    name: Optional[str]
+    thumbnail: Optional[HttpUrl]
+    description: Optional[str]
+    classifiers: Optional[List[str]]
+
+
+class ServiceOut(ServiceAccessRights, ServiceDockerData):
+    # properties to return to client
+    pass
+
+
+# Databases models (tables services_meta_data and services_access_rights)
 
 
 class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceCommonData):

@@ -13,8 +13,9 @@ from ...models.domain.service import (
     VERSION_RE,
     ServiceAccessRightsAtDB,
     ServiceMetaDataAtDB,
+    ServiceUpdate,
+    ServiceOut,
 )
-from ...models.schemas.service import ServiceIn, ServiceOut
 from ..dependencies.database import get_repository
 from ..dependencies.director import AuthSession, get_director_session
 
@@ -164,7 +165,7 @@ async def modify_service(
     user_id: int,
     service_key: constr(regex=KEY_RE),
     service_version: constr(regex=VERSION_RE),
-    updated_service: ServiceIn,
+    updated_service: ServiceUpdate,
     director_client: AuthSession = Depends(get_director_session),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
