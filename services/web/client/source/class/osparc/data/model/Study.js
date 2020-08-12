@@ -51,7 +51,7 @@ qx.Class.define("osparc.data.model.Study", {
       accessRights: studyData.accessRights === undefined ? this.getAccessRights() : studyData.accessRights,
       creationDate: studyData.creationDate === undefined ? this.getCreationDate() : new Date(studyData.creationDate),
       lastChangeDate: studyData.lastChangeDate === undefined ? this.getLastChangeDate() : new Date(studyData.lastChangeDate),
-      classifiers: studyData.classifiers && studyData.classifiers.classifierIDs ? studyData.classifiers.classifierIDs : [],
+      classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
       tags: studyData.tags || []
     });
 

@@ -61,6 +61,22 @@
       "wikipedia_url": null,
       "markdown": "\nJupyter Lab powered by Octave."
     },
+    "topics::z43::s4l": {
+      "classifier": "topics::z43::s4l",
+      "display_name": "Sim4Life",
+      "short_description": "Jupyter Lab powered by Sim4Life.",
+      "logo": "jupyter-notebook.png",
+      "aliases": [],
+      "created_by": "Zurich Med Tech",
+      "released": "2011-12-01",
+      "related": [
+        "jupyter"
+      ],
+      "url": "https://zmt.swiss/sim4life/",
+      "github_url": null,
+      "wikipedia_url": null,
+      "markdown": "\nJupyter Lab powered by Sim4Life."
+    },
     "State Of Code::Production Ready": {
       "classifier": "State Of Code::Production Ready",
       "display_name": "Production Ready",
@@ -144,22 +160,6 @@
       "github_url": null,
       "wikipedia_url": null,
       "markdown": "Other"
-    },
-    "topics::z43::s4l": {
-      "classifier": "topics::z43::s4l",
-      "display_name": "Sim4Life",
-      "short_description": "Jupyter Lab powered by Sim4Life.",
-      "logo": "jupyter-notebook.png",
-      "aliases": [],
-      "created_by": "Zurich Med Tech",
-      "released": "2011-12-01",
-      "related": [
-        "jupyter"
-      ],
-      "url": "https://zmt.swiss/sim4life/",
-      "github_url": null,
-      "wikipedia_url": null,
-      "markdown": "\nJupyter Lab powered by Sim4Life."
     },
     "company::z43::z43": {
       "classifier": "company::z43::z43",

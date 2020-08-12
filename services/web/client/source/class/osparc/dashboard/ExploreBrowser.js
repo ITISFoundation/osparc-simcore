@@ -346,7 +346,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         accessRights: study.accessRights ? study.accessRights : null,
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
         icon: study.thumbnail || defaultThumbnail,
-        classifiers: study.classifiers && study.classifiers.classifierIDs ? study.classifiers.classifierIDs : [],
+        classifiers: study.classifiers && study.classifiers ? study.classifiers : [],
         tags
       });
 

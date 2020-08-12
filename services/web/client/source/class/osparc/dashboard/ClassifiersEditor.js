@@ -58,7 +58,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
 
     __buildLayout: function() {
       const studyData = this.__studyData;
-      const classifiers = studyData.classifiers && studyData.classifiers.classifierIDs ? studyData.classifiers.classifierIDs : [];
+      const classifiers = studyData.classifiers && studyData.classifiers ? studyData.classifiers : [];
       const classifiersTree = this.__classifiersTree = new osparc.component.filter.ClassifiersFilter("classifiersEditor", "sideSearchFilter", classifiers);
       this._add(classifiersTree, {
         flex: 1
@@ -78,7 +78,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
     __saveClassifiers: function(saveBtn) {
       saveBtn.setFetching(true);
 
-      this.__studyData["classifiers"]["classifierIDs"] = this.__classifiersTree.getCheckedClassifierIDs();
+      this.__studyData["classifiers"] = this.__classifiersTree.getCheckedClassifierIDs();
       const params = {
         url: {
           "projectId": this.__studyData["uuid"]
