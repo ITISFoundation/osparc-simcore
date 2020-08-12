@@ -41,7 +41,9 @@ async def _get_node_from_db(
         log.error("the node id %s is not unique", node_uuid)
     node = await result.fetchone()
     if not node:
-        log.error("the node id %s was not found", node_uuid)
+        message = "the node id %s was not found", node_uuid
+        log.error(message)
+        raise NodeNotFond(message)
     return node
 
 
@@ -122,9 +124,6 @@ class DBManager:
         async with DBContextManager(self._db_engine) as engine:
             async with engine.acquire() as connection:
                 node = await _get_node_from_db(node_uuid, connection)
-                if node is None:
-                    raise NodeNotFond(f"Could not find {node_uuid} int he db.")
-
                 node_json_config = json.dumps(
                     {
                         "version": "0.1",
