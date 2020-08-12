@@ -11,6 +11,8 @@ from sqlalchemy import and_
 from celery import Celery
 from simcore_postgres_database.sidecar_models import SUCCESS, comp_pipeline, comp_tasks
 from simcore_sdk.config.rabbit import Config as RabbitConfig
+from simcore_service_sidecar import config
+from simcore_service_sidecar.mpi_lock import acquire_mpi_lock
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +81,7 @@ def is_gpu_node() -> bool:
     async def async_is_gpu_node() -> bool:
         docker = aiodocker.Docker()
 
-        config = {
+        spec_config = {
             "Cmd": "nvidia-smi",
             "Image": "nvidia/cuda:10.0-base",
             "AttachStdin": False,
@@ -87,10 +89,11 @@ def is_gpu_node() -> bool:
             "AttachStderr": False,
             "Tty": False,
             "OpenStdin": False,
+            "HostConfig": {"AutoRemove": True},
         }
         try:
             await docker.containers.run(
-                config=config, name=f"sidecar_{os.getpid()}_test_gpu"
+                config=spec_config, name=f"sidecar_{os.getpid()}_test_gpu"
             )
             return True
         except aiodocker.exceptions.DockerError:
@@ -98,6 +101,26 @@ def is_gpu_node() -> bool:
         return False
 
     return wrap_async_call(async_is_gpu_node())
+
+
+def start_as_mpi_node() -> bool:
+    """
+    Checks if this node can be a taraget to start as an MPI node.
+    If it can it will try to grab a Redlock, ensure it is the only service who can be 
+    started as MPI.
+    """
+    import subprocess
+
+    command_output = subprocess.Popen(
+        "cat /proc/cpuinfo | grep processor | wc -l", shell=True, stdout=subprocess.PIPE
+    ).stdout.read()
+    current_cpu_count: int = int(command_output)
+    if current_cpu_count != config.TARGET_MPI_NODE_CPU_COUNT:
+        return False
+
+    # it the mpi_lock is acquired, this service must start as MPI node
+    is_mpi_node = acquire_mpi_lock(current_cpu_count)
+    return is_mpi_node
 
 
 def assemble_celery_app(task_default_queue: str, rabbit_config: RabbitConfig) -> Celery:

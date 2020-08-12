@@ -194,9 +194,14 @@ async def _parse_project_data(pipeline_data: Dict, app: web.Application):
                 "outputs": node_details["outputs"],
             }
 
-        # _get_node_extras returns None ins ome situation, the below check is required
+        # _get_node_extras returns None ins ome situation, the below checks are required
         requires_gpu = (
             "GPU" in node_extras.get("node_requirements", [])
+            if node_extras is not None
+            else False
+        )
+        requires_mpi = (
+            "MPI" in node_extras.get("node_requirements", [])
             if node_extras is not None
             else False
         )
@@ -209,6 +214,7 @@ async def _parse_project_data(pipeline_data: Dict, app: web.Application):
                 "name": node_key,
                 "tag": node_version,
                 "requires_gpu": requires_gpu,
+                "requires_mpi": requires_mpi,
             },
             "node_class": to_node_class(node_key),
         }
