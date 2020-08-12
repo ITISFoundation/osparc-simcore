@@ -7,7 +7,6 @@ To decide where a task should be routed to, the current worker will
 use a look ahead function to check the type of upcoming task and
 schedule it accordingly.
 """
-import traceback
 from typing import Tuple
 from celery import Celery, states
 from simcore_sdk.config.rabbit import Config as RabbitConfig
