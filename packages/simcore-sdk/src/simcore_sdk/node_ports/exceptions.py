@@ -131,8 +131,9 @@ class PortNotFound(NodeportsException):
         super(PortNotFound, self).__init__(msg)
 
 
-class NodeNotFond(NodeportsException):
-    """Accessed key does not exist"""
+class NodeNotFound(NodeportsException):
+    """The given node_uuid was not found"""
 
-    def __init__(self, msg):
-        super(NodeNotFond, self).__init__(msg)
+    def __init__(self, node_uuid):
+        message = f"the node id {node_uuid} was not found"
+        super(NodeNotFound, self).__init__(message)

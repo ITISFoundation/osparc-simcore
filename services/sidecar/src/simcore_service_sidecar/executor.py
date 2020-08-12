@@ -134,7 +134,7 @@ class Executor:
         input_ports = dict()
         try:
             PORTS = await self._get_node_ports()
-        except node_ports.exceptions.NodeNotFond:
+        except node_ports.exceptions.NodeNotFound:
             await self._error_message_to_ui_and_logs(
                 "Could not find the node ports in the database"
             )
@@ -377,7 +377,7 @@ class Executor:
                 # WARNING: nodeports is NOT concurrent-safe, dont' use gather here
                 for coro in file_upload_tasks:
                     await coro
-        except node_ports.exceptions.NodeNotFond:
+        except node_ports.exceptions.NodeNotFound:
             await self._error_message_to_ui_and_logs(
                 "Error: no ports info found in the database."
             )
