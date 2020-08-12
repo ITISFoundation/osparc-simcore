@@ -44,5 +44,18 @@ logging.getLogger("sqlalchemy.pool").setLevel(SIDECAR_LOGLEVEL)
 RABBIT_CONFIG = RabbitConfig()
 
 # sidecar celery starting mode overwrite
-FORCE_START_CPU_MODE = os.environ.get("START_AS_MODE_CPU")
-FORCE_START_GPU_MODE = os.environ.get("START_AS_MODE_GPU")
+FORCE_START_CPU_MODE: str = os.environ.get("START_AS_MODE_CPU")
+FORCE_START_GPU_MODE: str = os.environ.get("START_AS_MODE_GPU")
+
+# if a node has this amount of CPUs it will be a candidate an MPI candidate
+TARGET_MPI_NODE_CPU_COUNT: int = int(os.environ.get("TARGET_MPI_NODE_CPU_COUNT", "-1"))
+
+# Redis configuration
+REDIS_CONNECTION_STRING: str = os.environ.get(
+    "REDIS_CONNECTION_STRING", "redis://redis:6379/0"
+)
+# used by the mpi lock to ensure the lock is acquired and released in time
+REDLOCK_REFRESH_INTERVAL_SECONDS: float = max(
+    float(os.environ.get("REDLOCK_REFRESH_INTERVAL_SECONDS", "5.0")), 1.0
+)  # enforce at least 1 second
+
