@@ -16,7 +16,7 @@ qx.Class.define("osparc.dashboard.SideSearch", {
     this.set({
       padding: 15,
       marginTop: 15,
-      minWidth: 220
+      maxWidth: 220
     });
 
     this.__buildLayout();

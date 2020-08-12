@@ -1,7 +1,7 @@
 """add classifiers in projects table
 
 Revision ID: 437fc7dd8763
-Revises: f4fda75c0df0
+Revises: 31f0ab4a338b
 Create Date: 2020-08-10 09:46:27.364227+00:00
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '437fc7dd8763'
-down_revision = 'f4fda75c0df0'
+down_revision = '31f0ab4a338b'
 branch_labels = None
 depends_on = None
 
