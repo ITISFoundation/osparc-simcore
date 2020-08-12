@@ -14,7 +14,7 @@ from servicelib.aiopg_utils import (
     is_postgres_responsive,
 )
 from simcore_postgres_database.models.comp_tasks import comp_tasks
-from .exceptions import NodeNotFond
+from .exceptions import NodeNotFound
 
 from . import config
 
@@ -41,9 +41,8 @@ async def _get_node_from_db(
         log.error("the node id %s is not unique", node_uuid)
     node = await result.fetchone()
     if not node:
-        message = "the node id %s was not found", node_uuid
-        log.error(message)
-        raise NodeNotFond(message)
+        log.error("the node id %s was not found", node_uuid)
+        raise NodeNotFound(node_uuid)
     return node
 
 
