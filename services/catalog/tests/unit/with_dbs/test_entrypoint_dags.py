@@ -2,28 +2,26 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import List
+from typing import Dict, List
 
 import pytest
 from simcore_service_catalog.__version__ import api_version
 from simcore_service_catalog.models.schemas.meta import Meta
+from starlette.testclient import TestClient
 
 core_services = ["postgres"]
 ops_services = ["adminer"]
 
 
 @pytest.mark.skip(reason="Failing on github actions")
-def test_read_healthcheck(director_mockup, client):
-    import pdb
-
-    pdb.set_trace()
+def test_read_healthcheck(director_mockup, client: TestClient):
     response = client.get("/")
     assert response.status_code == 200
     assert response.text == '":-)"'
 
 
 @pytest.mark.skip(reason="Failing on github actions")
-def test_read_meta(director_mockup, client):
+def test_read_meta(director_mockup, client: TestClient):
     response = client.get("/v0/meta")
     assert response.status_code == 200
     meta = Meta(**response.json())
@@ -32,7 +30,7 @@ def test_read_meta(director_mockup, client):
 
 
 @pytest.mark.skip(reason="Failing on github actions")
-def test_list_dags(director_mockup, client):
+def test_list_dags(director_mockup, client: TestClient):
     response = client.get("/v0/dags")
     assert response.status_code == 200
     assert response.json() == []
@@ -46,7 +44,9 @@ def test_list_dags(director_mockup, client):
 
 
 @pytest.mark.skip(reason="Failing on github actions")
-def test_standard_operations_on_resource(director_mockup, client, fake_data_dag_in):
+def test_standard_operations_on_resource(
+    director_mockup, client: TestClient, fake_data_dag_in: Dict
+):
 
     response = client.post("/v0/dags", json=fake_data_dag_in)
     assert response.status_code == 201
