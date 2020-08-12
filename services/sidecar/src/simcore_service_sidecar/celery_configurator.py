@@ -17,7 +17,6 @@ from .utils import wrap_async_call, is_gpu_node, start_as_mpi_node
 from .celery_log_setup import get_task_logger
 from .utils import assemble_celery_app
 from .core import task_required_resources
-from .exceptions import DatabaseError
 
 log = get_task_logger(__name__)
 
@@ -94,12 +93,17 @@ def shared_task_dispatch(
         next_task_nodes = wrap_async_call(
             run_sidecar(celery_request.request.id, user_id, project_id, node_id)
         )
-        celery_request.update_state(state=states.SUCCESS)
 
+        if type(next_task_nodes) == str:
+            celery_request.update_state(state=states.FAILURE)
+            log.exception(next_task_nodes)
+            return
+
+        celery_request.update_state(state=states.SUCCESS)
         if next_task_nodes:
             for _node_id in next_task_nodes:
                 dispatch_comp_task(user_id, project_id, _node_id)
-    except (DatabaseError, Exception):  # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         celery_request.update_state(state=states.FAILURE)
         log.exception("Uncaught exception")
 
