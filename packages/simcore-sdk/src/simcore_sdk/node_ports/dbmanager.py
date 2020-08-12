@@ -14,6 +14,7 @@ from servicelib.aiopg_utils import (
     is_postgres_responsive,
 )
 from simcore_postgres_database.models.comp_tasks import comp_tasks
+from .exceptions import NodeNotFound
 
 from . import config
 
@@ -41,6 +42,7 @@ async def _get_node_from_db(
     node = await result.fetchone()
     if not node:
         log.error("the node id %s was not found", node_uuid)
+        raise NodeNotFound(node_uuid)
     return node
 
 
