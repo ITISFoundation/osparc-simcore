@@ -493,7 +493,7 @@ async def _get_service_state(
         # only keep the ones with the right service ID (we're being a bit picky maybe)
         tasks = [x for x in tasks if x["ServiceID"] == service["ID"]]
 
-        # we are only interested in the last task which has been created first
+        # we are only interested in the last task which has been created last
         if tasks:
             sorted_tasks = sorted(tasks, key=lambda task: task["UpdatedAt"])
             last_task = sorted_tasks[-1]
