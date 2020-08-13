@@ -143,8 +143,10 @@ qx.Class.define("osparc.component.export.ShareWith", {
             break;
           }
           case "all":
-            this.__publicLayout = rb;
-            this.add(rb);
+            if (osparc.data.Permissions.getInstance().canDo("studies.template.create.all")) {
+              this.__publicLayout = rb;
+              this.add(rb);
+            }
             break;
         }
         this.__rbManager.add(rb);
@@ -182,14 +184,6 @@ qx.Class.define("osparc.component.export.ShareWith", {
         return this.__myOrgs.getSelectedOrgIDs();
       }
       return [];
-    },
-
-    showPrivate: function(show) {
-      this.__privateLayout.setVisibility(show ? "visible" : "excluded");
-    },
-
-    showPublic: function(show) {
-      this.__publicLayout.setVisibility(show ? "visible" : "excluded");
     },
 
     getSelectedGroups: function() {
