@@ -326,29 +326,35 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __createStudyItem: function(study) {
-      let defaultThumbnail = "";
-      switch (study["resourceType"]) {
-        case "template":
-          defaultThumbnail = "@FontAwesome5Solid/copy/50";
-          break;
-        case "service":
-          defaultThumbnail = "@FontAwesome5Solid/paw/50";
-          break;
-      }
       const tags = study.tags ? osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id)) : [];
 
       const item = new osparc.dashboard.StudyBrowserButtonItem().set({
         resourceType: study.resourceType,
-        uuid: study.uuid,
         studyTitle: study.name,
         studyDescription: study.description,
-        creator: study.prjOwner ? study.prjOwner : null,
-        accessRights: study.accessRights ? study.accessRights : null,
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
-        icon: study.thumbnail || defaultThumbnail,
         classifiers: study.classifiers && study.classifiers ? study.classifiers : [],
         tags
       });
+      switch (study["resourceType"]) {
+        case "template":
+          item.set({
+            uuid: study.uuid,
+            creator: study.prjOwner ? study.prjOwner : null,
+            accessRights: study.accessRights ? study.accessRights : null,
+            icon: study.thumbnail ? study.thumbnail : "@FontAwesome5Solid/copy/50"
+          });
+          break;
+        case "service":
+          item.set({
+            uuid: study.key,
+            creator: study.contact ? study.contact : null,
+            accessRights: study.access_rights ? study.access_rights : null,
+            icon: study.thumbnail ? study.thumbnail : "@FontAwesome5Solid/paw/50"
+          });
+          break;
+      }
+
 
       const menu = this.__getStudyItemMenu(item, study);
       item.setMenu(menu);
