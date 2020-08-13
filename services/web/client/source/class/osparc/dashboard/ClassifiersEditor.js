@@ -87,7 +87,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
             "serviceVersion": this.__studyData["version"]
           },
           data: {
-            "classifiers": this.__classifiersTree.getCheckedClassifierIDs();
+            "classifiers": this.__classifiersTree.getCheckedClassifierIDs()
           }
         };
         osparc.data.Resources.fetch("services", "patch", params)
