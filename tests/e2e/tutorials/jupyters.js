@@ -18,21 +18,13 @@ async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, user, pass, newUser, templateName, enableDemoMode);
 
   try {
-    tutorial.createScreenshotsDir();
-    await tutorial.beforeScript();
-    await tutorial.goTo();
+    await tutorial.start();
+    const studyData = await tutorial.openTemplate(1000);
 
-    const needsRegister = await tutorial.registerIfNeeded();
-    if (!needsRegister) {
-      await tutorial.login();
-    }
-    await tutorial.openTemplate(5000);
+    const workbenchData = utils.extractWorkbenchData(studyData["data"]);
+    await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][1], workbenchData["nodeIds"][2]]);
 
-    // Some time for loading notebook and jupyter lab
-    await tutorial.waitFor(30000);
-
-
-    // open notebook
+    // open jupyterNB
     await tutorial.openNode(1);
 
     const iframeHandles = await tutorial.getIframe();
@@ -50,14 +42,14 @@ async function runTutorial() {
     await tutorial.waitFor(2000);
     await tutorial.takeScreenshot("openNotebook");
 
-    // inside the first notebook, click Run button 4 times
+    // inside the first notebook, click Run button 5 times
     const runNBBtnSelector = '#run_int > button:nth-child(1)';
     const runNotebookTimes = 5;
     for (let i=0; i<runNotebookTimes; i++) {
       await nbIframe.waitForSelector(runNBBtnSelector);
       await nbIframe.click(runNBBtnSelector);
       await tutorial.waitFor(3000);
-      await tutorial.takeScreenshot("pressRunNB_" + i+1);
+      await tutorial.takeScreenshot("pressRunNB_" + (i+1));
     }
 
     await tutorial.retrieve();
@@ -81,7 +73,7 @@ async function runTutorial() {
     const jLabIframe = await iframeHandles2[2].contentFrame();
 
     // inside the iFrame, open the first notebook
-    const input2outputFileSelector = '#filebrowser > div.lm-Widget.p-Widget.jp-DirListing.jp-FileBrowser-listing.jp-DirListing-narrow > ul > li:nth-child(2)';
+    const input2outputFileSelector = '#filebrowser > div.lm-Widget.p-Widget.jp-DirListing.jp-FileBrowser-listing.jp-DirListing-narrow > ul > li:nth-child(3)';
     await jLabIframe.waitForSelector(input2outputFileSelector);
     await jLabIframe.click(input2outputFileSelector, {
       clickCount: 2

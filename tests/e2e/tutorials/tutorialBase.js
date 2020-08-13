@@ -21,6 +21,17 @@ class TutorialBase {
     this.__responsesQueue = null;
   }
 
+  async start() {
+    this.createScreenshotsDir();
+    await this.beforeScript();
+    await this.goTo();
+
+    const needsRegister = await this.registerIfNeeded();
+    if (!needsRegister) {
+      await this.login();
+    }
+  }
+
   createScreenshotsDir() {
     const dir = 'screenshots';
     if (!fs.existsSync(dir)) {
@@ -139,16 +150,22 @@ class TutorialBase {
     return resp;
   }
 
-  async waitForService(studyId, nodeId) {
-    this.__responsesQueue.addResponseServiceListener(studyId, nodeId);
-    let resp = null;
-    try {
-      resp = await this.__responsesQueue.waitUntilServiceReady(studyId, nodeId);
-    }
-    catch(err) {
-      console.error(this.__templateName, "could not be started", err);
-    }
-    return resp;
+  async waitForServices(studyId, nodeIds) {
+    const promises = [];
+    nodeIds.forEach(nodeId => {
+      this.__responsesQueue.addResponseServiceListener(studyId, nodeId);
+      promises.push(this.__responsesQueue.waitUntilServiceReady(studyId, nodeId));
+    });
+    return new Promise((resolve, reject) => {
+      Promise.all(promises)
+        .then(resps => {
+          resolve(resps);
+        })
+        .catch(err => {
+          console.error(this.__templateName, "could not be started", err);
+          reject(err);
+        });
+    });
   }
 
   async restoreIFrame() {

@@ -18,14 +18,7 @@ async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, user, pass, newUser, templateName, enableDemoMode);
 
   try {
-    tutorial.createScreenshotsDir();
-    await tutorial.beforeScript();
-    await tutorial.goTo();
-
-    const needsRegister = await tutorial.registerIfNeeded();
-    if (!needsRegister) {
-      await tutorial.login();
-    }
+    await tutorial.start();
     await tutorial.openTemplate(1000);
 
     // Some time for loading the workbench

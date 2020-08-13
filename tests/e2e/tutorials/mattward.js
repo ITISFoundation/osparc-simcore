@@ -18,15 +18,11 @@ async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, user, pass, newUser, templateName, enableDemoMode);
 
   try {
-    tutorial.createScreenshotsDir();
-    await tutorial.beforeScript();
-    await tutorial.goTo();
-
-    await tutorial.registerIfNeeded();
-    await tutorial.login();
+    await tutorial.start();
     const studyData = await tutorial.openTemplate(1000);
+
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
-    await tutorial.waitForService(workbenchData["studyId"], workbenchData["nodeIds"][0]);
+    await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][0]]);
 
     // Wait for the output files to be pushed
     await tutorial.waitFor(30000);
