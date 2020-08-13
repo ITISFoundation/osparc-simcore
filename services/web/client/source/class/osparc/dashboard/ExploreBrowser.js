@@ -409,6 +409,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __getClassifiersMenuButton: function(studyData) {
+      const isCurrentUserOwner = this.__isUserOwner(studyData);
+      if (!isCurrentUserOwner) {
+        return null;
+      }
+
       if (!osparc.data.Permissions.getInstance().canDo("study.classifier")) {
         return null;
       }
@@ -577,8 +582,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const myEmail = osparc.auth.Data.getInstance().getEmail();
       if ("prjOwner" in studyData) {
         return studyData.prjOwner === myEmail;
-      } else if ("getCreator" in studyData) {
-        return studyData.getCreator() === myEmail;
+      } else if ("creator" in studyData) {
+        return studyData.creator === myEmail;
       }
       return false;
     },
