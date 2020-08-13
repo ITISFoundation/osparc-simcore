@@ -515,7 +515,7 @@ async def test_new_template_from_project(
     storage_subsystem_mock,
     project_db_cleaner,
 ):
-    # POST /v0/projects?as_template={user_uuid}
+    # POST /v0/projects?as_template={project_uuid}
     url = (
         client.app.router["create_projects"]
         .url_for()
