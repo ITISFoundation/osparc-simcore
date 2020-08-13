@@ -580,10 +580,10 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
     __isUserOwner: function(studyData) {
       const myEmail = osparc.auth.Data.getInstance().getEmail();
-      if ("prjOwner" in studyData) {
+      if (studyData["resourceType"] === "template") {
         return studyData.prjOwner === myEmail;
-      } else if ("creator" in studyData) {
-        return studyData.creator === myEmail;
+      } else if (studyData["resourceType"] === "service") {
+        return studyData.contact === myEmail;
       }
       return false;
     },
