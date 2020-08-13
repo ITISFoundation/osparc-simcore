@@ -511,7 +511,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const saveAsTemplateButton = new qx.ui.menu.Button(this.tr("Publish as Template"));
       saveAsTemplateButton.addListener("execute", () => {
         const saveAsTemplateView = new osparc.component.export.SaveAsTemplate(studyData.uuid, studyData);
-        const title = this.tr("Save as Template");
+        const title = this.tr("Publish as Template");
         const window = osparc.ui.window.Window.popUpInWindow(saveAsTemplateView, title, 400, 300);
         saveAsTemplateView.addListener("finished", e => {
           const template = e.getData();
