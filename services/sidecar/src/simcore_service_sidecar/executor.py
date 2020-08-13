@@ -74,7 +74,7 @@ class Executor:
             await self._post_messages(
                 LogType.LOG, "[sidecar]...task completed successfully."
             )
-        except exceptions.SidecarException as e:
+        except (aiodocker.exceptions.DockerError, exceptions.SidecarException) as e:
             await self._post_messages(LogType.LOG, f"[sidecar]...task failed: {str(e)}")
             raise
 
@@ -132,7 +132,14 @@ class Executor:
         log.debug("Inputs parsing...")
 
         input_ports = dict()
-        PORTS = await self._get_node_ports()
+        try:
+            PORTS = await self._get_node_ports()
+        except node_ports.exceptions.NodeNotFound:
+            await self._error_message_to_ui_and_logs(
+                "Missing node information in the database"
+            )
+            return input_ports
+
         await self._post_messages(
             LogType.LOG, "[sidecar]Downloading inputs...",
         )
@@ -344,13 +351,13 @@ class Executor:
         await self._post_messages(
             LogType.LOG, "[sidecar]Uploading outputs...",
         )
-        PORTS = await self._get_node_ports()
-        stem = (
-            "output"
-            if self.integration_version == version.parse("0.0.0")
-            else "outputs"
-        )
         try:
+            PORTS = await self._get_node_ports()
+            stem = (
+                "output"
+                if self.integration_version == version.parse("0.0.0")
+                else "outputs"
+            )
             file_upload_tasks = []
             for file_path in self.shared_folders.output_folder.rglob("*"):
                 if file_path.name == f"{stem}.json":
@@ -370,13 +377,20 @@ class Executor:
                 # WARNING: nodeports is NOT concurrent-safe, dont' use gather here
                 for coro in file_upload_tasks:
                     await coro
-
+        except node_ports.exceptions.NodeNotFound:
+            await self._error_message_to_ui_and_logs(
+                "Error: no ports info found in the database."
+            )
         except json.JSONDecodeError:
-            logging.exception("Error occured while decoding output.json")
+            await self._error_message_to_ui_and_logs(
+                "Error occurred while decoding output.json"
+            )
         except node_ports.exceptions.NodeportsException:
-            logging.exception("Error occured while setting port")
+            await self._error_message_to_ui_and_logs(
+                "Error occurred while setting port"
+            )
         except (OSError, IOError):
-            logging.exception("Could not process output")
+            await self._error_message_to_ui_and_logs("Could not process output")
         log.debug("Processing outputs DONE")
 
     async def _process_task_log(self):
@@ -399,3 +413,7 @@ class Executor:
             await self.rabbit_mq.post_progress_message(
                 self.user_id, self.task.project_id, self.task.node_id, message,
             )
+
+    async def _error_message_to_ui_and_logs(self, error_message):
+        logging.exception(error_message)
+        await self._post_messages(LogType.LOG, f"[ERROR]: {error_message}")

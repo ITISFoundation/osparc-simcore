@@ -47,7 +47,7 @@ qx.Class.define("explorer.MainPage", {
       const studyButtons = osparc.dashboard.StudyBrowserButtonBase;
       const exploreBrowser = new osparc.dashboard.ExploreBrowser().set({
         alignX: "center",
-        maxWidth: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) + 10 // padding + scrollbar
+        maxWidth: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) // padding + scrollbar
       });
       return exploreBrowser;
     }

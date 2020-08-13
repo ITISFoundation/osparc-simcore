@@ -167,7 +167,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       unlinkBtn.addListener("execute", function() {
         if (this.__selectedItemId && this.__isSelectedItemAnEdge()) {
           this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
-          this.__selectedItemId = null;
+          this.__selectedItemChanged(null);
         }
       }, this);
       return unlinkBtn;

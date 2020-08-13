@@ -85,7 +85,7 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
     __formData: null,
 
     createWindow: function() {
-      return this.self().createWindow(this.tr("Save as Template"), this);
+      return this.self().createWindow(this.tr("Publish as Template"), this);
     },
 
     __buildLayout: function() {
