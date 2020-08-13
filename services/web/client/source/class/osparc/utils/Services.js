@@ -242,16 +242,6 @@ qx.Class.define("osparc.utils.Services", {
       const classifiers = this.__getClassifiers();
       Object.values(services).forEach(serviceWVersion => {
         Object.values(serviceWVersion).forEach(service => {
-          service["uuid"] = service["key"];
-          service["prjOwner"] = service["contact"];
-          service["thumbnail"] = service["thumbnail"] || "@FontAwesome5Solid/paw/50";
-          service["accessRights"] = {
-            "1": {
-              "read": true,
-              "write": true,
-              "delete": false
-            }
-          };
           if (Object.prototype.hasOwnProperty.call(categories, service["key"])) {
             service["category"] = categories[service["key"]]["category"];
           } else {
