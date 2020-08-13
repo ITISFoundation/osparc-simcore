@@ -333,6 +333,16 @@
         "type": "integer"
       }
     },
+    "classifiers": {
+      "type": "array",
+      "description": "Contains the reference to the project classifiers",
+      "examples": [
+        "some:id:to:a:classifier"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
     "dev": {
       "type": "object",
       "description": "object used for development purposes only"

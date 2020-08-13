@@ -18,7 +18,7 @@
 /**
  * Widget containing a TabView including:
  * - StudyBrowser
- * - ServiceBrowser
+ * - Explorer
  * - DataManager
  *
  * *Example*
@@ -38,6 +38,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     this.base(arguments);
 
     this.set({
+      contentPaddingTop: 15,
       contentPaddingLeft: 0,
       barPosition: "top"
     });
@@ -70,9 +71,9 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     __createMainViewLayout: function() {
       [
         [this.tr("Studies"), this.__createStudyBrowser],
+        [this.tr("Discover"), this.__createExploreBrowser],
         // [this.tr("Services"), this.__createServiceBrowser],
-        [this.tr("Data"), this.__createDataBrowser],
-        [this.tr("Discover"), this.__createExploreBrowser]
+        [this.tr("Data"), this.__createDataBrowser]
       ].forEach(tuple => {
         const tabPage = new qx.ui.tabview.Page(tuple[0]).set({
           appearance: "dashboard-page"
@@ -87,9 +88,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabButton.addListener("execute", () => {
           if (viewLayout.resetSelection) {
             viewLayout.resetSelection();
-          }
-          if (viewLayout.resetFilter) {
-            viewLayout.resetFilter();
           }
         }, this);
         const scrollerMainView = new qx.ui.container.Scroll();

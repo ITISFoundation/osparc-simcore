@@ -25,7 +25,7 @@ qx.Class.define("osparc.ui.form.AutocompleteField", {
 
   members: {
     __textfield: null,
-    __dropdown: null,
+
     __attachEventHandlers: function() {
       this.__textfield.setLiveUpdate(true);
       this.__textfield.addListener("changeValue", e => {

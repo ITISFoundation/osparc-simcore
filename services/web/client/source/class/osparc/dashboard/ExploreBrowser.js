@@ -58,7 +58,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
   },
 
   members: {
-    __exploreFilters: null,
     __templatesContainer: null,
     __servicesContainer: null,
     __templates: null,
@@ -73,11 +72,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       }
       if (this.__servicesContainer) {
         this.__servicesContainer.resetSelection();
-      }
-    },
-    resetFilter: function() {
-      if (this.__exploreFilters) {
-        this.__exploreFilters.reset();
       }
     },
 
@@ -143,7 +137,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
           this._hideLoadingPage();
           this.__createResourcesLayout();
           this.__reloadResources();
-          this.__attachEventHandlers();
         });
     },
 
@@ -172,12 +165,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __createResourcesLayout: function() {
-      const exploreFilters = this.__exploreFilters = new osparc.component.filter.group.StudyFilterGroup("exploreBrowser").set({
-        paddingTop: 5
-      });
-      osparc.utils.Utils.setIdToWidget(exploreFilters.getTextFilter(), "exploreFiltersTextFld");
-      this._add(exploreFilters);
-
       const exploreBrowserLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
 
       const tempStudyLayout = this.__createTemplatesLayout();
@@ -219,13 +206,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this.__addNewServiceButtons(servicesTitleContainer);
 
       return servicesLayout;
-    },
-
-    __attachEventHandlers: function() {
-      const textfield = this.__exploreFilters.getTextFilter().getChildControl("textfield");
-      textfield.addListener("appear", () => {
-        textfield.focus();
-      }, this);
     },
 
     __createStudyFromService: function(serviceKey, serviceVersion) {
@@ -366,11 +346,13 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         accessRights: study.accessRights ? study.accessRights : null,
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
         icon: study.thumbnail || defaultThumbnail,
+        classifiers: study.classifiers && study.classifiers ? study.classifiers : [],
         tags
       });
+
       const menu = this.__getStudyItemMenu(item, study);
       item.setMenu(menu);
-      item.subscribeToFilterGroup("exploreBrowser");
+      item.subscribeToFilterGroup("sideSearchFilter");
       item.addListener("execute", () => {
         this.__itemClicked(item);
       }, this);
@@ -474,27 +456,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       minStudyData["name"] = templateData.name;
       minStudyData["description"] = templateData.description;
       this.__createStudy(minStudyData, templateData.uuid);
-    },
-
-    __updateDeleteTemplatesButton: function(templateDeleteButton) {
-      const templateSelection = this.__templatesContainer.getSelection();
-      const canDeleteTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.delete");
-      let allMine = Boolean(templateSelection.length) && canDeleteTemplate;
-      for (let i=0; i<templateSelection.length && allMine; i++) {
-        if (templateSelection[i] instanceof osparc.dashboard.StudyBrowserButtonNew) {
-          allMine = false;
-        } else {
-          const isCurrentUserOwner = this.__isUserOwner(templateSelection[i]);
-          allMine &= isCurrentUserOwner;
-        }
-      }
-      if (allMine) {
-        const nSelected = templateSelection.length;
-        templateDeleteButton.setLabel(nSelected > 1 ? this.tr("Delete selected")+" ("+nSelected+")" : this.tr("Delete"));
-        templateDeleteButton.setVisibility("visible");
-      } else {
-        templateDeleteButton.setVisibility("excluded");
-      }
     },
 
     __deleteStudy: function(studyData, isTemplate = false) {
