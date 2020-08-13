@@ -370,6 +370,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         menu.add(moreInfoButton);
       }
 
+      const permissionsButton = this.__getPermissionsMenuButton(studyData);
+      if (permissionsButton) {
+        menu.add(permissionsButton);
+      }
+
       const deleteButton = this.__getDeleteTemplateMenuButton(studyData);
       if (deleteButton) {
         menu.addSeparator();
@@ -390,6 +395,23 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         }
       }, this);
       return moreInfoButton;
+    },
+
+    __getPermissionsMenuButton: function(studyData) {
+      const isCurrentUserOwner = this.__isUserOwner(studyData);
+      if (!isCurrentUserOwner) {
+        return null;
+      }
+
+      const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
+      permissionsButton.addListener("execute", () => {
+        if (studyData["resourceType"] === "service") {
+          this.__openServicePermissions(studyData);
+        } else {
+          this.__openTemplatePermissions(studyData);
+        }
+      }, this);
+      return permissionsButton;
     },
 
     __getDeleteTemplateMenuButton: function(studyData) {
@@ -453,6 +475,28 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const title = this.tr("Study Details Editor");
       const win = osparc.ui.window.Window.popUpInWindow(studyDetails, title, winWidth, height);
       studyDetails.addListener("updateTemplate", () => win.close());
+    },
+
+    __openServicePermissions: function(serviceData) {
+      const permissionsView = new osparc.component.export.ServicePermissions(serviceData);
+      const title = this.tr("Available to");
+      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
+      permissionsView.addListener("updateService", e => {
+        const serviceKey = e.getData();
+        console.log(serviceKey);
+        this.__reloadServices();
+      });
+    },
+
+    __openTemplatePermissions: function(studyData) {
+      const permissionsView = new osparc.component.export.StudyPermissions(studyData);
+      const title = this.tr("Available to");
+      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
+      permissionsView.addListener("updateStudy", e => {
+        const studyId = e.getData();
+        console.log(studyId);
+        this.reloadTemplates();
+      });
     },
 
     __createStudyBtnClkd: function(templateData) {

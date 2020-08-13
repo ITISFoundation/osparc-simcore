@@ -89,15 +89,6 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
         osparc.utils.Utils.setIdToWidget(modeButton, "editServiceBtn");
         modeButton.addListener("execute", () => this.setMode("edit"), this);
         buttonsToolbar.add(modeButton);
-
-        const permissionsButton = new qx.ui.toolbar.Button(this.tr("Permissions")).set({
-          appearance: "toolbar-md-button"
-        });
-        osparc.utils.Utils.setIdToWidget(permissionsButton, "permissionsBtn");
-        permissionsButton.addListener("execute", e => {
-          this.__openPermissions();
-        }, this);
-        buttonsToolbar.add(permissionsButton);
       }
 
       buttonsToolbar.addSpacer();
@@ -214,16 +205,6 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
           console.error(err);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
         });
-    },
-
-    __openPermissions: function() {
-      const serviceData = this.__serviceVersionDetails.getService();
-      const permissionsView = new osparc.component.export.ServicePermissions(serviceData);
-      const title = this.tr("Share with people and organizations");
-      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
-      permissionsView.addListener("updateStudy", e => {
-        this.fireEvent("updateStudy");
-      });
     },
 
     __serializeForm: function() {
