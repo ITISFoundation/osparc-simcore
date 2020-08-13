@@ -198,7 +198,7 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
         },
         data
       };
-      osparc.data.Resources.fetch("services", "put", params)
+      osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
           btn.resetIcon();
           btn.getChildControl("icon").getContentElement()
