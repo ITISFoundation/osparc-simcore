@@ -21,7 +21,7 @@ class TutorialBase {
     this.__responsesQueue = null;
   }
 
-  init() {
+  createScreenshotsDir() {
     const dir = 'screenshots';
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);

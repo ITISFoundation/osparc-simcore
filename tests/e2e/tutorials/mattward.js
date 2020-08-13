@@ -18,7 +18,7 @@ async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, user, pass, newUser, templateName, enableDemoMode);
 
   try {
-    tutorial.init();
+    tutorial.createScreenshotsDir();
     await tutorial.beforeScript();
     await tutorial.goTo();
 
