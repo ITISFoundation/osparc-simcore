@@ -35,7 +35,7 @@ qx.Class.define("osparc.component.export.Permissions", {
 
     this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
-    this._setLayout(new qx.ui.layout.VBox(15));
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__buildLayout();
 
@@ -277,7 +277,7 @@ qx.Class.define("osparc.component.export.Permissions", {
           this.__reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went adding collaborator(s)"), "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong adding collaborator(s)"), "ERROR");
           console.error(err);
         });
     },
