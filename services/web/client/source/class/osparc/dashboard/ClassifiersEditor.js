@@ -28,26 +28,6 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
     this.__buildLayout();
   },
 
-  statics: {
-    popUpInWindow: function(title, classifiersEditor, width = 400, height = 400) {
-      const win = new osparc.ui.window.Window(title).set({
-        layout: new qx.ui.layout.Grow(),
-        autoDestroy: true,
-        contentPadding: 10,
-        width,
-        height,
-        showMaximize: false,
-        showMinimize: false,
-        modal: true,
-        clickAwayClose: true
-      });
-      win.add(classifiersEditor);
-      win.center();
-      win.open();
-      return win;
-    }
-  },
-
   events: {
     "updateClassifiers": "qx.event.type.Data"
   },

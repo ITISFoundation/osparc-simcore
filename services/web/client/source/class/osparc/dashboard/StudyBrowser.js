@@ -476,7 +476,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __openClassifiers: function(studyData) {
       const classifiersEditor = new osparc.dashboard.ClassifiersEditor(studyData);
       const title = this.tr("Classifiers");
-      osparc.dashboard.ClassifiersEditor.popUpInWindow(title, classifiersEditor);
+      osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
       classifiersEditor.addListener("updateClassifiers", e => {
         const studyId = e.getData();
         this.__reloadUserStudy(studyId, true);
