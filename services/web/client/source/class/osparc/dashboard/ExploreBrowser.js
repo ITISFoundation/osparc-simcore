@@ -386,6 +386,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         menu.add(permissionsButton);
       }
 
+      const studyServicesButton = this.__getStudyServicesMenuButton(studyData);
+      if (studyServicesButton) {
+        menu.add(studyServicesButton);
+      }
+
       const deleteButton = this.__getDeleteTemplateMenuButton(studyData);
       if (deleteButton) {
         menu.addSeparator();
@@ -450,6 +455,20 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         }
       }, this);
       return permissionsButton;
+    },
+
+    __getStudyServicesMenuButton: function(studyData) {
+      if (studyData["resourceType"] === "service") {
+        return null;
+      }
+
+      const studyServicesButton = new qx.ui.menu.Button(this.tr("Services"));
+      studyServicesButton.addListener("execute", () => {
+        const servicesInStudy = new osparc.component.metadata.ServicesInStudy(studyData);
+        const title = this.tr("Services in Study");
+        osparc.ui.window.Window.popUpInWindow(servicesInStudy, title, 400, 100);
+      }, this);
+      return studyServicesButton;
     },
 
     __getDeleteTemplateMenuButton: function(studyData) {
