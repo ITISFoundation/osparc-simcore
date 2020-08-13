@@ -365,12 +365,12 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         position: "bottom-right"
       });
 
-      const moreInfoButton = this.__getMoreInfoMenuButton(studyData, true);
+      const moreInfoButton = this.__getMoreInfoMenuButton(studyData);
       if (moreInfoButton) {
         menu.add(moreInfoButton);
       }
 
-      const deleteButton = this.__getDeleteTemplateMenuButton(studyData, true);
+      const deleteButton = this.__getDeleteTemplateMenuButton(studyData);
       if (deleteButton) {
         menu.addSeparator();
         menu.add(deleteButton);
