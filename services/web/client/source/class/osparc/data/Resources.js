@@ -179,8 +179,8 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/catalog/services"
           },
-          patch: {
-            method: "PATCH",
+          put: {
+            method: "PUT",
             url: statics.API + "/catalog/services/{serviceKey}/{serviceVersion}"
           }
         }
