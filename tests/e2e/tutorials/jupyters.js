@@ -96,6 +96,7 @@ async function runTutorial() {
     console.log('Checking results for the jupyter lab:');
     await tutorial.openNodeFiles(2);
     const outFiles2 = [
+      "work.zip",
       "TheNumber.txt"
     ];
     await tutorial.checkResults(outFiles2.length);
