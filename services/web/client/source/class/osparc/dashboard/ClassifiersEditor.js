@@ -62,8 +62,8 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
     __saveClassifiers: function(saveBtn) {
       saveBtn.setFetching(true);
 
-      this.__studyData["classifiers"] = this.__classifiersTree.getCheckedClassifierIDs();
       if ("uuid" in this.__studyData) {
+        this.__studyData["classifiers"] = this.__classifiersTree.getCheckedClassifierIDs();
         const params = {
           url: {
             "projectId": this.__studyData["uuid"]
@@ -86,9 +86,11 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
             "serviceKey": this.__studyData["key"],
             "serviceVersion": this.__studyData["version"]
           },
-          data: this.__studyData
+          data: {
+            "classifiers": this.__classifiersTree.getCheckedClassifierIDs();
+          }
         };
-        osparc.data.Resources.fetch("services", "put", params)
+        osparc.data.Resources.fetch("services", "patch", params)
           .then(() => {
             this.fireDataEvent("updateClassifiers", this.__studyData["key"]);
             osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));

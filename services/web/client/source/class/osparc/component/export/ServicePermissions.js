@@ -68,7 +68,7 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
         },
         data: this.__serviceData
       };
-      osparc.data.Resources.fetch("services", "put", params)
+      osparc.data.Resources.fetch("services", "patch", params)
         .then(() => {
           this.fireDataEvent("updateService", this.__serviceData["key"]);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator(s) successfully added"));
@@ -90,7 +90,7 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
         },
         data: this.__serviceData
       };
-      osparc.data.Resources.fetch("services", "put", params)
+      osparc.data.Resources.fetch("services", "patch", params)
         .then(() => {
           this.fireDataEvent("updateService", this.__serviceData["key"]);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully made Owner"));
@@ -116,7 +116,7 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
         },
         data: this.__serviceData
       };
-      osparc.data.Resources.fetch("services", "put", params)
+      osparc.data.Resources.fetch("services", "patch", params)
         .then(() => {
           this.fireDataEvent("updateService", this.__serviceData["key"]);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully removed"));
