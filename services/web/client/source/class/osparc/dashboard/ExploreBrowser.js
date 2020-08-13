@@ -376,6 +376,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         menu.add(moreInfoButton);
       }
 
+      const classifiersButton = this.__getClassifiersMenuButton(studyData);
+      if (classifiersButton) {
+        menu.add(classifiersButton);
+      }
+
       const permissionsButton = this.__getPermissionsMenuButton(studyData);
       if (permissionsButton) {
         menu.add(permissionsButton);
@@ -401,6 +406,28 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         }
       }, this);
       return moreInfoButton;
+    },
+
+    __getClassifiersMenuButton: function(studyData) {
+      if (!osparc.data.Permissions.getInstance().canDo("study.classifier")) {
+        return null;
+      }
+
+      const classifiersButton = new qx.ui.menu.Button(this.tr("Classifiers"));
+      classifiersButton.addListener("execute", () => {
+        this.__openClassifiers(studyData);
+      }, this);
+      return classifiersButton;
+    },
+
+    __openClassifiers: function(studyData) {
+      const classifiersEditor = new osparc.dashboard.ClassifiersEditor(studyData, studyData["resourceType"] === "template");
+      const title = this.tr("Classifiers");
+      osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
+      classifiersEditor.addListener("updateClassifiers", e => {
+        const studyId = e.getData();
+        this.__reloadUserStudy(studyId, true);
+      }, this);
     },
 
     __getPermissionsMenuButton: function(studyData) {
