@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Optional
 
 from pydantic import BaseSettings, Field, SecretStr, validator
+from pydantic.types import PositiveInt
 from yarl import URL
 
 
@@ -99,6 +100,9 @@ class AppSettings(BaseSettings):
     host: str = "0.0.0.0"  # nosec
     port: int = 8000
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
+
+    # background task
+    background_task_rest_time: PositiveInt = 5
 
     class Config(_CommonConfig):
         env_prefix = ""

@@ -1,10 +1,12 @@
-from typing import List
+from typing import List, Optional
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
+from pydantic.networks import EmailStr
+from pydantic.types import PositiveInt
 
 from ...models.domain.group import GroupAtDB
-from ..tables import GroupType, groups, user_to_groups
+from ..tables import GroupType, groups, user_to_groups, users
 from ._base import BaseRepository
 
 
@@ -30,45 +32,19 @@ class GroupsRepository(BaseRepository):
         ).first()
         return GroupAtDB(**row)
 
-    # async def get_service(self, key: str, tag: str, gid: int) -> Optional[DAGAtDB]:
-    #     stmt = services.select().where(
-    #         and_(services.c.key == key, services.c.tag == tag, services.c.gid == gid)
-    #     )
-    #     row: RowProxy = await (await self.connection.execute(stmt)).first()
-    #     if row:
-    #         return ServiceAccessRightsAtDB(**row)
-    #     return None
+    async def get_user_gid_from_email(
+        self, user_email: EmailStr
+    ) -> Optional[PositiveInt]:
+        return await self.connection.scalar(
+            sa.select([users.c.primary_gid]).where(users.c.email == user_email)
+        )
 
-    # async def create_service(self, service: ServiceBase) -> int:
-    #     stmt = services.insert().values(
-    #         workbench=json.dumps(dag.dict()["workbench"]),
-    #         **dag.dict(exclude={"workbench"})
-    #     )
-    #     new_id: int = await (await self.connection.execute(stmt)).scalar()
-    #     return new_id
+    async def get_gid_from_affiliation(self, affiliation: str) -> Optional[PositiveInt]:
+        return await self.connection.scalar(
+            sa.select([groups.c.gid]).where(groups.c.name == affiliation)
+        )
 
-    # async def replace_dag(self, dag_id: int, dag: DAGIn):
-    #     stmt = (
-    #         dags.update()
-    #         .values(
-    #             workbench=json.dumps(dag.dict()["workbench"]),
-    #             **dag.dict(exclude={"workbench"})
-    #         )
-    #         .where(dags.c.id == dag_id)
-    #     )
-    #     await self.connection.execute(stmt)
-
-    # async def update_dag(self, dag_id: int, dag: DAGIn):
-    #     patch = dag.dict(exclude_unset=True, exclude={"workbench"})
-    #     if "workbench" in dag.__fields_set__:
-    #         patch["workbench"] = json.dumps(patch["workbench"])
-
-    #     stmt = sa.update(dags).values(**patch).where(dags.c.id == dag_id)
-    #     res = await self.connection.execute(stmt)
-
-    #     # TODO: dev asserts
-    #     assert res.returns_rows == False  # nosec
-
-    # async def delete_dag(self, dag_id: int):
-    #     stmt = sa.delete(dags).where(dags.c.id == dag_id)
-    #     await self.connection.execute(stmt)
+    async def get_user_email_from_gid(self, gid: PositiveInt) -> Optional[EmailStr]:
+        return await self.connection.scalar(
+            sa.select([users.c.email]).where(users.c.primary_gid == gid)
+        )

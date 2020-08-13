@@ -79,7 +79,7 @@ class ServicesRepository(BaseRepository):
     async def create_service(
         self,
         new_service: ServiceMetaDataAtDB,
-        new_service_access_rights: ServiceAccessRightsAtDB,
+        new_service_access_rights: List[ServiceAccessRightsAtDB],
     ) -> ServiceMetaDataAtDB:
         row: RowProxy = await (
             await self.connection.execute(
@@ -90,24 +90,12 @@ class ServicesRepository(BaseRepository):
             )
         ).first()
         created_service = ServiceMetaDataAtDB(**row)
-        await self.connection.execute(
-            # pylint: disable=no-value-for-parameter
-            services_access_rights.insert().values(
-                **new_service_access_rights.dict(by_alias=True)
+        for rights in new_service_access_rights:
+            insert_stmt = insert(services_access_rights).values(
+                **rights.dict(by_alias=True)
             )
-        )
+            await self.connection.execute(insert_stmt)
         return created_service
-
-    # async def replace_dag(self, dag_id: int, dag: DAGIn):
-    #     stmt = (
-    #         dags.update()
-    #         .values(
-    #             workbench=json.dumps(dag.dict()["workbench"]),
-    #             **dag.dict(exclude={"workbench"})
-    #         )
-    #         .where(dags.c.id == dag_id)
-    #     )
-    #     await self.connection.execute(stmt)
 
     async def update_service(
         self, patched_service: ServiceMetaDataAtDB

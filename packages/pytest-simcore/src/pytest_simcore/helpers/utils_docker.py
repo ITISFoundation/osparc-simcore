@@ -3,7 +3,6 @@ import os
 import socket
 import subprocess
 import tempfile
-from datetime import datetime
 from pathlib import Path
 from pprint import pformat, pprint
 from typing import Dict, List, Optional, Union
@@ -127,11 +126,18 @@ def run_docker_compose_config(
 
 def save_docker_infos(destination_path: Path):
     client = docker.from_env()
-    all_services = client.services.list()
+    all_containers = client.containers.list()
+    # ensure the parent dir exists
+    destination_path.mkdir(parents=True, exist_ok=True)
     # get the services logs
-    for service in all_services:
-        service_file = destination_path / f"{service.name}.logs"
-        service_file.write_text(pformat(list(service.logs(stdout=True, stderr=True))))
+    for cont in all_containers:
+        service_file = destination_path / f"{cont.name}.logs"
+        service_file.write_text(
+            pformat(
+                cont.logs(timestamps=True, stdout=True, stderr=True).decode(), width=200
+            ),
+        )
+    print("wrote docker log files in ", destination_path)
 
 
 def print_docker_infos():

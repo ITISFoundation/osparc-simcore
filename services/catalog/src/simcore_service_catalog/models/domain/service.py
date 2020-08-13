@@ -20,6 +20,9 @@ FileName = constr(regex=FILENAME_RE)
 GroupId = PositiveInt
 
 
+# Service base schema (used for docker labels on docker images)
+
+
 class ServiceType(str, Enum):
     computational = "computational"
     dynamic = "dynamic"
@@ -160,6 +163,10 @@ class ServiceInput(ServiceProperty):
     )
 
 
+class ServiceOutput(ServiceProperty):
+    pass
+
+
 class ServiceKeyVersion(BaseModel):
     key: constr(regex=KEY_RE) = Field(
         ...,
@@ -223,7 +230,7 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
     inputs: Optional[Dict[PropertyName, ServiceInput]] = Field(
         ..., description="definition of the inputs of this node"
     )
-    outputs: Optional[Dict[PropertyName, ServiceProperty]] = Field(
+    outputs: Optional[Dict[PropertyName, ServiceOutput]] = Field(
         ..., description="definition of the outputs of this node"
     )
 
@@ -231,6 +238,9 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
         description = "Description of a simcore node 'class' with input and output"
         title = "simcore node"
         extra = Extra.forbid
+
+
+# Service access rights models
 
 
 class ServiceGroupAccessRights(BaseModel):
@@ -248,15 +258,37 @@ class ServiceAccessRights(BaseModel):
     )
 
 
-class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceCommonData):
-    owner: Optional[int] = Field(None,)
+class ServiceMetaData(ServiceCommonData):
+    # for a partial update all members must be Optional
+    name: Optional[str]
+    thumbnail: Optional[HttpUrl]
+    description: Optional[str]
+    classifiers: Optional[List[str]]
+
+
+# OpenAPI models (contain both service metadata and access rights)
+class ServiceUpdate(ServiceMetaData, ServiceAccessRights):
+    pass
+
+
+class ServiceOut(
+    ServiceDockerData, ServiceAccessRights, ServiceMetaData
+):  # pylint: disable=too-many-ancestors
+    owner: Optional[EmailStr]
+
+
+# Databases models (tables services_meta_data and services_access_rights)
+class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaData):
+    # for a partial update all members must be Optional
+    classifiers: Optional[List[str]] = Field([])
+    owner: Optional[PositiveInt]
 
     class Config:
         orm_mode = True
 
 
 class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
-    gid: int = Field(..., description="defines the group id", example=1)
+    gid: PositiveInt = Field(..., description="defines the group id", example=1)
 
     class Config:
         orm_mode = True

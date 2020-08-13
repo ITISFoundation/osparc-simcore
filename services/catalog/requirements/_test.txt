@@ -107,7 +107,7 @@ wcwidth==0.2.5            # via pytest
 websocket-client==0.57.0  # via docker, docker-compose
 websockets==8.1           # via -r requirements/_base.txt, uvicorn
 wrapt==1.12.1             # via astroid
-yarl==1.5.0               # via -r requirements/_base.txt, aiohttp
+yarl==1.5.1               # via -r requirements/_base.txt, aiohttp
 zipp==3.1.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:

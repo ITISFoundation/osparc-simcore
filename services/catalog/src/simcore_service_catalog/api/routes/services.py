@@ -13,8 +13,9 @@ from ...models.domain.service import (
     VERSION_RE,
     ServiceAccessRightsAtDB,
     ServiceMetaDataAtDB,
+    ServiceUpdate,
+    ServiceOut,
 )
-from ...models.schemas.service import ServiceIn, ServiceOut
 from ..dependencies.database import get_repository
 from ..dependencies.director import AuthSession, get_director_session
 
@@ -22,7 +23,6 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 # FIXME: too many DB calls
-SERVICE_OVERRIDEN_VARIABLES = ["name", "description", "thumbnail"]
 
 
 @router.get("", response_model=List[ServiceOut])
@@ -70,21 +70,26 @@ async def list_services(
 
             if (service.key, service.version) in writable_services:
                 # we have write access for that service, fill in the service rights
-                service_access_rights: List[
+                access_rights: List[
                     ServiceAccessRightsAtDB
                 ] = await services_repo.get_service_access_rights(
                     service.key, service.version
                 )
-                service.access_rights = {
-                    rights.gid: rights for rights in service_access_rights
-                }
+                service.access_rights = {rights.gid: rights for rights in access_rights}
 
             # access is allowed, override some of the values with what is in the db
             service_in_db = await services_repo.get_service(
                 service.key, service.version
             )
-            for attr in SERVICE_OVERRIDEN_VARIABLES:
-                setattr(service, attr, getattr(service_in_db, attr))
+            service = service.copy(
+                update=service_in_db.dict(exclude_unset=True, exclude={"owner"})
+            )
+            # the owner shall be converted to an email address
+            if service_in_db.owner:
+                service.owner = await groups_repository.get_user_email_from_gid(
+                    service_in_db.owner
+                )
+
             services.append(service)
 
         # services = parse_obj_as(List[ServiceOut], data) this does not work since if one service has an issue it fails
@@ -152,8 +157,7 @@ async def get_service(
                 detail="You have insufficient rights to access the service",
             )
     # access is allowed, override some of the values with what is in the db
-    for attr in SERVICE_OVERRIDEN_VARIABLES:
-        setattr(service, attr, getattr(service_in_db, attr))
+    service = service.copy(update=service_in_db.dict(exclude_unset=True))
 
     return service
 
@@ -164,7 +168,7 @@ async def modify_service(
     user_id: int,
     service_key: constr(regex=KEY_RE),
     service_version: constr(regex=VERSION_RE),
-    updated_service: ServiceIn,
+    updated_service: ServiceUpdate,
     director_client: AuthSession = Depends(get_director_session),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
@@ -198,12 +202,13 @@ async def modify_service(
         )
 
     # let's modify the service then
-    partial_updated_service = ServiceMetaDataAtDB(
-        key=service_key,
-        version=service_version,
-        **updated_service.dict(exclude_unset=True),
+    await services_repo.update_service(
+        ServiceMetaDataAtDB(
+            key=service_key,
+            version=service_version,
+            **updated_service.dict(exclude_unset=True),
+        )
     )
-    await services_repo.update_service(partial_updated_service)
     # let's modify the service access rights (they can be added/removed/modified)
     current_gids_in_db = [
         r.gid
@@ -212,28 +217,31 @@ async def modify_service(
         )
     ]
 
-    # start by updating/inserting new entries
-    new_access_rights = [
-        ServiceAccessRightsAtDB(
-            key=service_key,
-            version=service_version,
-            gid=gid,
-            execute_access=rights.execute_access,
-            write_access=rights.write_access,
-        )
-        for gid, rights in updated_service.access_rights.items()
-    ]
-    await services_repo.upsert_service_access_rights(new_access_rights)
+    if updated_service.access_rights:
+        # start by updating/inserting new entries
+        new_access_rights = [
+            ServiceAccessRightsAtDB(
+                key=service_key,
+                version=service_version,
+                gid=gid,
+                execute_access=rights.execute_access,
+                write_access=rights.write_access,
+            )
+            for gid, rights in updated_service.access_rights.items()
+        ]
+        await services_repo.upsert_service_access_rights(new_access_rights)
 
-    # then delete the ones that were removed
-    removed_gids = [
-        gid for gid in current_gids_in_db if gid not in updated_service.access_rights
-    ]
-    deleted_access_rights = [
-        ServiceAccessRightsAtDB(key=service_key, version=service_version, gid=gid)
-        for gid in removed_gids
-    ]
-    await services_repo.delete_service_access_rights(deleted_access_rights)
+        # then delete the ones that were removed
+        removed_gids = [
+            gid
+            for gid in current_gids_in_db
+            if gid not in updated_service.access_rights
+        ]
+        deleted_access_rights = [
+            ServiceAccessRightsAtDB(key=service_key, version=service_version, gid=gid)
+            for gid in removed_gids
+        ]
+        await services_repo.delete_service_access_rights(deleted_access_rights)
 
     # now return the service
     return await get_service(

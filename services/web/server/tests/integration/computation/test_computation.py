@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
 import json
 import sys
 import time
@@ -168,11 +169,11 @@ async def test_check_health(loop, mock_orphaned_services, docker_stack, client):
     ],
 )
 async def test_start_pipeline(
+    sleeper_service,
     client,
     postgres_session,
     rabbit_service,
     simcore_services,
-    sleeper_service,
     logged_user,
     user_project,
     mock_workbench_adjacency_list,

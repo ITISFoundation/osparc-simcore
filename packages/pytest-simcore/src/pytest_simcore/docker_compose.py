@@ -18,7 +18,10 @@ import pytest
 import yaml
 from dotenv import dotenv_values
 
-from .helpers.utils_docker import print_docker_infos, run_docker_compose_config
+from .helpers.utils_docker import (
+    run_docker_compose_config,
+    save_docker_infos,
+)
 
 
 @pytest.fixture("session")
@@ -33,7 +36,13 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
         key: os.environ.get(key, value) for key, value in env_devel_unresolved.items()
     }
 
+    env_devel["REGISTRY_SSL"] = "False"
+    env_devel["REGISTRY_URL"] = "{}:5000".format(_get_ip())
+    env_devel["REGISTRY_USER"] = "simcore"
+    env_devel["REGISTRY_PW"] = ""
+    env_devel["REGISTRY_AUTH"] = "False"
     env_devel["SWARM_STACK_NAME"] = "simcore"
+    env_devel["DIRECTOR_REGISTRY_CACHING"] = "False"
 
     return env_devel
 
@@ -236,4 +245,7 @@ def _filter_services_and_dump(
 
 @pytest.hookimpl()
 def pytest_exception_interact(node, call, report):
-    print_docker_infos()
+    # get the node root dir (guaranteed to exist)
+    root_directory: Path = Path(node.config.rootdir)
+    failed_test_directory = root_directory / "test_failures" / node.name
+    save_docker_infos(failed_test_directory)
