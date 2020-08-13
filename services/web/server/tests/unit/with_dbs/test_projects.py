@@ -342,6 +342,7 @@ async def _new_project(
             "accessRights": {},
             "workbench": {},
             "tags": [],
+            "classifiers": [],
             "dev": {},
         }
         if project:
@@ -466,6 +467,7 @@ async def test_new_project_from_template_with_body(
         },
         "workbench": {},
         "tags": [],
+        "classifiers": [],
     }
     project = await _new_project(
         client,
@@ -497,7 +499,7 @@ async def test_new_project_from_template_with_body(
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPCreated),
         (UserRole.TESTER, web.HTTPCreated),
     ],
 )
@@ -512,7 +514,7 @@ async def test_new_template_from_project(
     storage_subsystem_mock,
     project_db_cleaner,
 ):
-    # POST /v0/projects?as_template={user_uuid}
+    # POST /v0/projects?as_template={project_uuid}
     url = (
         client.app.router["create_projects"]
         .url_for()
@@ -567,6 +569,7 @@ async def test_new_template_from_project(
             str(all_group["gid"]): {"read": True, "write": False, "delete": False},
         },
         "tags": [],
+        "classifiers": [],
     }
 
     resp = await client.post(url, json=predefined)
