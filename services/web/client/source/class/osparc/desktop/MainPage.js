@@ -127,8 +127,8 @@ qx.Class.define("osparc.desktop.MainPage", {
       [
         studyBrowser,
         exploreBrowser
-      ].forEach(studyStarter => {
-        studyStarter.addListener("startStudy", e => {
+      ].forEach(browser => {
+        browser.addListener("startStudy", e => {
           const studyData = e.getData();
           this.__startStudy(studyData);
         }, this);
