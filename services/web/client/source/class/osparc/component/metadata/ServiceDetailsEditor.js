@@ -206,18 +206,14 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
     },
 
     __serializeForm: function() {
-      const serviceData = this.__serviceVersionDetails.getService();
-      const data = osparc.utils.Utils.deepCloneObject(serviceData);
-
+      const data = {};
       for (let key in this.__fields) {
         data[key] = this.__fields[key].getValue();
       }
-      // Protect text fields against injecting malicious html/code in them
       [
         "name",
         "description",
-        "thumbnail",
-        "accessRights"
+        "thumbnail"
       ].forEach(fieldKey => {
         const dirty = data[fieldKey];
         const clean = osparc.wrapper.DOMPurify.getInstance().sanitize(dirty);
@@ -243,7 +239,7 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
     __isUserOwner: function() {
       const service = this.__serviceVersionDetails.getService();
       if (service) {
-        return service.contact === osparc.auth.Data.getInstance().getEmail();
+        return service.owner === osparc.auth.Data.getInstance().getEmail();
       }
       return false;
     }
