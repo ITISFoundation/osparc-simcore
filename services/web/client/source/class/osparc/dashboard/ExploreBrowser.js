@@ -75,6 +75,16 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       }
     },
 
+    __reloadTemplate: function(studyId, reload) {
+      osparc.store.Store.getInstance().getStudyWState(studyId, reload)
+        .then(studyData => {
+          this.__resetTemplateItem(studyData);
+        })
+        .catch(err => {
+          console.error(err);
+        });
+    },
+
     __checkLoggedIn: function() {
       let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
       if (!isLogged) {
@@ -289,6 +299,17 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this.fireDataEvent("startStudy", studyData);
     },
 
+    __resetTemplateItem: function(templateData) {
+      const templatesList = this.__templates;
+      const index = templatesList.findIndex(template => template["uuid"] === templateData["uuid"]);
+      if (index === -1) {
+        templatesList.push(templateData);
+      } else {
+        templatesList[index] = templateData;
+      }
+      this.__resetTemplatesList(templatesList);
+    },
+
     __resetTemplatesList: function(tempStudyList) {
       this.__templates = tempStudyList;
       this.__templatesContainer.removeAll();
@@ -348,7 +369,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         case "service":
           item.set({
             uuid: study.key,
-            creator: study.owner ? study.owner : null,
+            creator: study.owner ? study.owner : "unknown",
             accessRights: study.access_rights ? study.access_rights : null,
             icon: study.thumbnail ? study.thumbnail : "@FontAwesome5Solid/paw/50"
           });
@@ -435,8 +456,12 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const title = this.tr("Classifiers");
       osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
       classifiersEditor.addListener("updateClassifiers", e => {
-        const studyId = e.getData();
-        this.__reloadUserStudy(studyId, true);
+        if (studyData["resourceType"] === "template") {
+          const studyId = e.getData();
+          this.__reloadTemplate(studyId, true);
+        } else {
+          console.log(e.getData());
+        }
       }, this);
     },
 
