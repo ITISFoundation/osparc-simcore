@@ -236,12 +236,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       store.getServicesDAGs()
         .then(services => {
           if (serviceKey in services) {
-            let service = null;
-            if (serviceVersion) {
-              service= osparc.utils.Services.getFromObject(services, serviceKey, serviceVersion);
-            } else {
-              service= osparc.utils.Services.getLatest(services, serviceKey);
-            }
+            const service = serviceVersion ? osparc.utils.Services.getFromObject(services, serviceKey, serviceVersion) : osparc.utils.Services.getLatest(services, serviceKey);
             const newUuid = osparc.utils.Utils.uuidv4();
             const minStudyData = osparc.data.model.Study.createMinimumStudyObject();
             minStudyData["name"] = service["name"];
