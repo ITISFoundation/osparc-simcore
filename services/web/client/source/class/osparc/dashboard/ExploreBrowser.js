@@ -348,7 +348,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         case "service":
           item.set({
             uuid: study.key,
-            creator: study.contact ? study.contact : null,
+            creator: study.owner ? study.owner : null,
             accessRights: study.access_rights ? study.access_rights : null,
             icon: study.thumbnail ? study.thumbnail : "@FontAwesome5Solid/paw/50"
           });
