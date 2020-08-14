@@ -102,7 +102,7 @@ class AppSettings(BaseSettings):
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
 
     # background task
-    background_task_rest_time: PositiveInt = 5
+    background_task_rest_time: PositiveInt = 20
 
     class Config(_CommonConfig):
         env_prefix = ""
