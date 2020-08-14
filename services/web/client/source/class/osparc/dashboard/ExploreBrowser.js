@@ -54,6 +54,14 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         };
       };
       studyList.sort(sortByProperty("lastChangeDate"));
+    },
+
+    isTemplate: function(studyData) {
+      return (studyData["resourceType"] === "template");
+    },
+
+    isService: function(studyData) {
+      return (studyData["resourceType"] === "service");
     }
   },
 
@@ -358,23 +366,20 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         classifiers: study.classifiers && study.classifiers ? study.classifiers : [],
         tags
       });
-      switch (study["resourceType"]) {
-        case "template":
-          item.set({
-            uuid: study.uuid,
-            creator: study.prjOwner ? study.prjOwner : null,
-            accessRights: study.accessRights ? study.accessRights : null,
-            icon: study.thumbnail ? study.thumbnail : "@FontAwesome5Solid/copy/50"
-          });
-          break;
-        case "service":
-          item.set({
-            uuid: study.key,
-            creator: study.owner ? study.owner : "unknown",
-            accessRights: study.access_rights ? study.access_rights : null,
-            icon: study.thumbnail ? study.thumbnail : "@FontAwesome5Solid/paw/50"
-          });
-          break;
+      if (this.self().isTemplate(study)) {
+        item.set({
+          uuid: study.uuid,
+          creator: study.prjOwner ? study.prjOwner : null,
+          accessRights: study.accessRights ? study.accessRights : null,
+          icon: study.thumbnail ? study.thumbnail : "@FontAwesome5Solid/copy/50"
+        });
+      } else if (this.self().isService(study)) {
+        item.set({
+          uuid: study.key,
+          creator: study.owner ? study.owner : "unknown",
+          accessRights: study.access_rights ? study.access_rights : null,
+          icon: study.thumbnail ? study.thumbnail : "@FontAwesome5Solid/paw/50"
+        });
       }
 
 
@@ -425,11 +430,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __getMoreInfoMenuButton: function(studyData) {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
-        if (studyData["resourceType"] === "service") {
-          this.__createServiceDetailsEditor(studyData);
-        } else {
+        if (this.self().isTemplate(studyData)) {
           const winWidth = 400;
           this.__createStudyDetailsEditor(studyData, winWidth);
+        } else if (this.self().isService(studyData)) {
+          this.__createServiceDetailsEditor(studyData);
         }
       }, this);
       return moreInfoButton;
@@ -453,14 +458,14 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __openClassifiers: function(studyData) {
-      const classifiersEditor = new osparc.dashboard.ClassifiersEditor(studyData, studyData["resourceType"] === "template");
+      const classifiersEditor = new osparc.dashboard.ClassifiersEditor(studyData, this.self().isTemplate(studyData));
       const title = this.tr("Classifiers");
       osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
       classifiersEditor.addListener("updateClassifiers", e => {
-        if (studyData["resourceType"] === "template") {
+        if (this.self().isTemplate(studyData)) {
           const studyId = e.getData();
           this.__reloadTemplate(studyId, true);
-        } else {
+        } else if (this.self().isService(studyData)) {
           console.log(e.getData());
         }
       }, this);
@@ -474,17 +479,17 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
       const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
       permissionsButton.addListener("execute", () => {
-        if (studyData["resourceType"] === "service") {
-          this.__openServicePermissions(studyData);
-        } else {
+        if (this.self().isTemplate(studyData)) {
           this.__openTemplatePermissions(studyData);
+        } else if (this.self().isService(studyData)) {
+          this.__openServicePermissions(studyData);
         }
       }, this);
       return permissionsButton;
     },
 
     __getStudyServicesMenuButton: function(studyData) {
-      if (studyData["resourceType"] === "service") {
+      if (this.self().isService(studyData)) {
         return null;
       }
 
@@ -625,9 +630,9 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
     __isUserOwner: function(studyData) {
       const myEmail = osparc.auth.Data.getInstance().getEmail();
-      if (studyData["resourceType"] === "template") {
+      if (this.self().isTemplate(studyData)) {
         return studyData.prjOwner === myEmail;
-      } else if (studyData["resourceType"] === "service") {
+      } else if (this.self().isService(studyData)) {
         return studyData.contact === myEmail;
       }
       return false;
