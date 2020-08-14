@@ -46,9 +46,9 @@ def diff_json_schemas(json_diff_script: Path, tmp_path_factory: Path) -> Callabl
 
         # https://www.npmjs.com/package/json-schema-diff returns true (at least in WSL whatever the result)
         # ```false``` is returned at the end of the stdout
-        assert "No differences found" == process_completion.stdout.decode, pformat(
-            process_completion.stdout.decode("utf-8")
-        )
+        assert "No differences found" in process_completion.stdout.decode(
+            "utf-8"
+        ), pformat(process_completion.stdout.decode("utf-8"))
         return process_completion.returncode == 0
 
     yield diff
