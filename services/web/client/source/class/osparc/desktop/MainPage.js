@@ -149,11 +149,19 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __startStudy: function(studyData) {
-      this.__studyEditor = this.__getStudyEditor();
-      this.__showStudyEditor(this.__studyEditor);
-      this.__studyEditor.setStudy(studyData)
-        .then(() => {
-          this.__syncStudyEditor();
+      osparc.store.Store.getInstance().getUnaccessibleServices(studyData)
+        .then(unaccessibleServices => {
+          if (unaccessibleServices.length) {
+            const msg = unaccessibleServices.length + " service(s) are not accessible";
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          } else {
+            this.__studyEditor = this.__getStudyEditor();
+            this.__showStudyEditor(this.__studyEditor);
+            this.__studyEditor.setStudy(studyData)
+              .then(() => {
+                this.__syncStudyEditor();
+              });
+          }
         });
     },
 
