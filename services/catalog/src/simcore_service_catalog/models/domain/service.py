@@ -3,7 +3,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr
+from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
 from pydantic.types import PositiveInt
 
 current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
@@ -201,6 +201,12 @@ class ServiceCommonData(BaseModel):
             "The mother of all nodes, makes your numbers shine!",
         ],
     )
+
+    @validator("thumbnail", pre=True, always=False)
+    def validate_thumbnail(cls, value):
+        if value == "":
+            return None
+        return value
 
 
 class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
