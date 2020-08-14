@@ -203,7 +203,7 @@ class ServiceCommonData(BaseModel):
     )
 
     @validator("thumbnail", pre=True, always=False)
-    def validate_thumbnail(cls, value):
+    def validate_thumbnail(cls, value):  # pylint: disable=no-self-argument,no-self-use
         if value == "":
             return None
         return value
