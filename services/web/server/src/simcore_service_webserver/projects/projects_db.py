@@ -443,7 +443,7 @@ OR prj_owner = {user_id})
         return template_prj
 
     async def update_user_project(
-        self, project_data: Dict, user_id: int, project_uuid: str
+        self, project_data: Dict, user_id: int, project_uuid: str, include_templates: Optional[bool] = False
     ):
         """ updates a project from a user
 
@@ -452,7 +452,7 @@ OR prj_owner = {user_id})
 
         async with self.engine.acquire() as conn:
             row = await self._get_project(
-                user_id, project_uuid, exclude_foreign=["tags"]
+                user_id, project_uuid, exclude_foreign=["tags"], include_templates=include_templates
             )
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
             _check_project_permissions(row, user_id, user_groups, "write")
