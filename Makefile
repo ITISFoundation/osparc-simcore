@@ -161,11 +161,13 @@ shell:
 #
 SWARM_HOSTS            = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),null,/dev/null))
 docker-compose-configs = $(wildcard services/docker-compose*.yml)
+CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 
 .stack-simcore-development.yml: .env $(docker-compose-configs)
 	# Creating config for stack with 'local/{service}:development' to $@
-	@export DOCKER_REGISTRY=local;       \
+	@export DOCKER_REGISTRY=local \
 	export DOCKER_IMAGE_TAG=development; \
+	export DEV_PC_CPU_COUNT=${CPU_COUNT}; \
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.local.yml -f services/docker-compose.devel.yml --log-level=ERROR config > $@
 
 .stack-simcore-production.yml: .env $(docker-compose-configs)

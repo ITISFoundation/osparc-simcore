@@ -183,6 +183,7 @@ services:
     depends_on:
       - rabbit
       - postgres
+      - redis
     networks:
       - computational_services_subnet
 
@@ -266,6 +267,7 @@ services:
     init: true
     networks:
       - default
+      - computational_services_subnet
 
   traefik:
     image: traefik:v2.2.1

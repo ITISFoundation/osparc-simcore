@@ -21,9 +21,20 @@ class TutorialBase {
     this.__responsesQueue = null;
   }
 
-  init() {
+  async start() {
+    this.createScreenshotsDir();
+    await this.beforeScript();
+    await this.goTo();
+
+    const needsRegister = await this.registerIfNeeded();
+    if (!needsRegister) {
+      await this.login();
+    }
+  }
+
+  createScreenshotsDir() {
     const dir = 'screenshots';
-    if (!fs.existsSync(dir)){
+    if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);
     }
   }
@@ -139,16 +150,22 @@ class TutorialBase {
     return resp;
   }
 
-  async waitForService(studyId, nodeId) {
-    this.__responsesQueue.addResponseServiceListener(studyId, nodeId);
-    let resp = null;
-    try {
-      resp = await this.__responsesQueue.waitUntilServiceReady(studyId, nodeId);
-    }
-    catch(err) {
-      console.error(this.__templateName, "could not be started", err);
-    }
-    return resp;
+  async waitForServices(studyId, nodeIds) {
+    const promises = [];
+    nodeIds.forEach(nodeId => {
+      this.__responsesQueue.addResponseServiceListener(studyId, nodeId);
+      promises.push(this.__responsesQueue.waitUntilServiceReady(studyId, nodeId));
+    });
+    return new Promise((resolve, reject) => {
+      Promise.all(promises)
+        .then(resps => {
+          resolve(resps);
+        })
+        .catch(err => {
+          console.error(this.__templateName, "could not be started", err);
+          reject(err);
+        });
+    });
   }
 
   async restoreIFrame() {
@@ -159,6 +176,15 @@ class TutorialBase {
     await utils.takeScreenshot(this.__page, this.__templateName + "_runStudy_before");
     await auto.runStudy(this.__page, waitFor);
     await utils.takeScreenshot(this.__page, this.__templateName + "_runStudy_after");
+  }
+
+  async openNode(nodePosInTree = 0) {
+    await auto.openNode(this.__page, nodePosInTree);
+    await utils.takeScreenshot(this.__page, this.__templateName + '_openNode_' + nodePosInTree);
+  }
+
+  async getIframe() {
+    return await this.__page.$$("iframe");
   }
 
   async openNodeFiles(nodePosInTree = 0) {
@@ -173,11 +199,15 @@ class TutorialBase {
     }
   }
 
-  async openNodeRetrieveAndRestart(nodePosInTree = 0, waitAfterRetrieve = 5000) {
-    await utils.takeScreenshot(this.__page, "openNodeRetrieveAndRestart_before");
-    await auto.openNode(this.__page, nodePosInTree);
+  async retrieve(waitAfterRetrieve = 5000) {
     await auto.clickRetrieve(this.__page);
     await this.__page.waitFor(waitAfterRetrieve);
+  }
+
+  async openNodeRetrieveAndRestart(nodePosInTree = 0) {
+    await utils.takeScreenshot(this.__page, "openNodeRetrieveAndRestart_before");
+    await auto.openNode(this.__page, nodePosInTree);
+    await this.retrieve();
     await auto.clickRestart(this.__page);
     await utils.takeScreenshot("openNodeRetrieveAndRestart_after");
   }
@@ -217,6 +247,10 @@ class TutorialBase {
 
   async waitFor(waitFor) {
     await this.__page.waitFor(waitFor);
+  }
+
+  async takeScreenshot(screenshotTitle) {
+    await utils.takeScreenshot(this.__page, this.__templateName + '_' + screenshotTitle);
   }
 }
 

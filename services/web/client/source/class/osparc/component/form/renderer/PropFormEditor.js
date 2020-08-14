@@ -15,13 +15,14 @@
 
 ************************************************************************ */
 
+/**
+ * An extension of the PropFormBase that is able to handle the Access Level of each entry.
+ */
 
 qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
   extend: osparc.component.form.renderer.PropFormBase,
 
   /**
-   * create a page for the View Tab with the given title
-   *
    * @param form {osparc.component.form.Auto} form widget to embedd
    * @param node {osparc.data.model.Node} Node owning the widget
    */
@@ -159,7 +160,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
       inputAccess[portId] = accessLevel;
       this.getNode().setInputAccess(inputAccess);
 
-      const propWidget = this.getNode().getPropsWidget();
+      const propWidget = this.getNode().getPropsForm();
       propWidget.setAccessLevel(data);
     },
 

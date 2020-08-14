@@ -113,6 +113,10 @@ qx.Class.define("osparc.store.Store", {
     statics: {
       check: "Object",
       init: {}
+    },
+    classifiers: {
+      check: "Object",
+      init: {}
     }
   },
 
@@ -274,6 +278,25 @@ qx.Class.define("osparc.store.Store", {
           .catch(err => {
             console.error(err);
             reject();
+          });
+      });
+    },
+
+    deleteStudy: function(studyId) {
+      const params = {
+        url: {
+          projectId: studyId
+        }
+      };
+      return new Promise((resolve, reject) => {
+        osparc.data.Resources.fetch("studies", "delete", params, studyId)
+          .then(() => {
+            this.remove("studies", "uuid", studyId);
+            resolve();
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
           });
       });
     },

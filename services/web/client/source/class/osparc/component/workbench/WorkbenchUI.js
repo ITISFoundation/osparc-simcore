@@ -167,7 +167,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       unlinkBtn.addListener("execute", function() {
         if (this.__selectedItemId && this.__isSelectedItemAnEdge()) {
           this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
-          this.__selectedItemId = null;
+          this.__selectedItemChanged(null);
         }
       }, this);
       return unlinkBtn;
@@ -361,7 +361,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const y1 = pointList[0] ? pointList[0][1] : 0;
         const x2 = pointList[1] ? pointList[1][0] : 0;
         const y2 = pointList[1] ? pointList[1][1] : 0;
-        const edgeRepresentation = this.__svgWidgetLinks.drawCurve(x1, y1, x2, y2);
+        const edgeRepresentation = this.__svgWidgetLinks.drawCurve(x1, y1, x2, y2, !edge.getIsPortConnected());
 
         const edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
         this.__edgesUI.push(edgeUI);
@@ -601,7 +601,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           const y1 = pointList[0][1];
           const x2 = pointList[1][0];
           const y2 = pointList[1][1];
-          this.__svgWidgetLinks.updateCurve(edgeUI.getRepresentation(), x1, y1, x2, y2);
+          this.__svgWidgetLinks.updateCurve(edgeUI.getRepresentation(), x1, y1, x2, y2, !edgeUI.getEdge().getIsPortConnected());
         }
       });
     },
@@ -838,7 +838,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (oldId) {
         if (this.__isSelectedItemAnEdge()) {
           const unselectedEdge = this.__getEdgeUI(oldId);
-          const unselectedColor = osparc.theme.Color.colors["workbench-edge-comp-active"];
+          const unselectedColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-comp-active"];
           this.__svgWidgetLinks.updateColor(unselectedEdge.getRepresentation(), unselectedColor);
         }
       }
@@ -846,7 +846,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__selectedItemId = newID;
       if (this.__isSelectedItemAnEdge()) {
         const selectedEdge = this.__getEdgeUI(newID);
-        const selectedColor = osparc.theme.Color.colors["workbench-edge-selected"];
+        const selectedColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-selected"];
         this.__svgWidgetLinks.updateColor(selectedEdge.getRepresentation(), selectedColor);
       } else if (newID) {
         this.fireDataEvent("changeSelectedNode", newID);
