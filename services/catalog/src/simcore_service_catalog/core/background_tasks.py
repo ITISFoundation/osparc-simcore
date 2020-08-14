@@ -175,7 +175,8 @@ async def sync_registry_task(app: FastAPI) -> None:
             # task is stopped
             return
         except Exception:  # pylint: disable=broad-except
-            logger.exception("some error occured")
+            logger.exception("Error while processing services entry")
+            await asyncio.sleep(5)  # wait a bit before retrying
 
 
 async def start_registry_sync_task(app: FastAPI) -> None:
