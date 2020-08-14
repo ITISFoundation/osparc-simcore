@@ -222,11 +222,11 @@ async def replace_project(request: web.Request):
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
-            include_templates=False,
+            include_templates=True,
         )
         if current_project["accessRights"] != new_project["accessRights"]:
             await check_permission(request, "project.access_rights.update")
-        new_project = await db.update_user_project(new_project, user_id, project_uuid)
+        new_project = await db.update_user_project(new_project, user_id, project_uuid, include_templates)
         await update_pipeline_db(
             request.app, project_uuid, new_project["workbench"], replace_pipeline
         )
