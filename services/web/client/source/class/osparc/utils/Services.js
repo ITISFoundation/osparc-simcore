@@ -156,15 +156,6 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
-    isServiceInList: function(listOfServices, serveiceKey) {
-      for (let i=0; i<listOfServices.length; i++) {
-        if (listOfServices[i].key === serveiceKey) {
-          return true;
-        }
-      }
-      return false;
-    },
-
     getNodeMetaData: function(key, version) {
       let metaData = null;
       if (key && version) {
