@@ -154,6 +154,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           if (unaccessibleServices.length) {
             const msg = unaccessibleServices.length + " service(s) are not accessible";
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            this.__dashboard.getStudyBrowser().resetSelection();
           } else {
             this.__studyEditor = this.__getStudyEditor();
             this.__showStudyEditor(this.__studyEditor);
