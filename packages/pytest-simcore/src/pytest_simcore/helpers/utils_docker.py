@@ -138,16 +138,3 @@ def save_docker_infos(destination_path: Path):
             ),
         )
     print("\n\twrote docker log files in ", destination_path)
-
-
-def print_docker_infos():
-    client = docker.from_env()
-    all_services = client.services.list()
-    # get the services logs
-    for service in all_services:
-        print(
-            "------------- PRINTING SERVICE LOGS of %s:%s ---------------------",
-            service.name,
-            service.version,
-        )
-        pprint(list(service.logs(stdout=True, stderr=True)))

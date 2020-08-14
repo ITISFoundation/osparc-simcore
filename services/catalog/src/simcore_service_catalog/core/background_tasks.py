@@ -19,6 +19,18 @@ from ..models.domain.service import (
     ServiceMetaDataAtDB,
 )
 
+"""This background task does the following:
+1. gets the full list of services from the docker registry through the director
+2. gets the same list from the DB
+3. if services are missing from the DB, they are added with basic access rights
+3.a. basic access rights are set as following:
+    1. writable access allow the user to change meta data as well as access rights
+    2. executable access allow the user to see/execute the service
+
+
+"""
+
+
 logger = logging.getLogger(__name__)
 
 ServiceKey = str
@@ -163,7 +175,10 @@ async def sync_registry_task(app: FastAPI) -> None:
             # task is stopped
             return
         except Exception:  # pylint: disable=broad-except
-            logger.exception("some error occured")
+            logger.exception("Error while processing services entry")
+            await asyncio.sleep(
+                5
+            )  # wait a bit before retrying, so it does not block everything until the director is up
 
 
 async def start_registry_sync_task(app: FastAPI) -> None:
