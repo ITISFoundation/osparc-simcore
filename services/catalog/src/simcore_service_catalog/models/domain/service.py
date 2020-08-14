@@ -172,17 +172,13 @@ class ServiceKeyVersion(BaseModel):
         ...,
         title="",
         description="distinctive name for the node based on the docker registry path",
-        # regex=KEY_RE,
         example=[
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
         ],
     )
     version: constr(regex=VERSION_RE) = Field(
-        ...,
-        description="service version number",
-        # regex=VERSION_RE,
-        example=["1.0.0", "0.0.1"],
+        ..., description="service version number", example=["1.0.0", "0.0.1"],
     )
 
 
