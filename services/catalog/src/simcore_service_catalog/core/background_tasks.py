@@ -67,13 +67,6 @@ async def _list_db_services(app: FastAPI) -> Set[Tuple[ServiceKey, ServiceVersio
         }
 
 
-async def _get_everyone_gid(app: FastAPI) -> int:
-    engine: Engine = app.state.engine
-    async with engine.acquire() as conn:
-        groups_repo = GroupsRepository(conn)
-        return (await groups_repo.get_everyone_group()).gid
-
-
 async def _get_service_access_rights(
     service: ServiceDockerData, connection: SAConnection
 ) -> Tuple[Optional[PositiveInt], List[ServiceAccessRightsAtDB]]:
