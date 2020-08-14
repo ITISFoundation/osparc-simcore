@@ -176,7 +176,9 @@ async def sync_registry_task(app: FastAPI) -> None:
             return
         except Exception:  # pylint: disable=broad-except
             logger.exception("Error while processing services entry")
-            await asyncio.sleep(5)  # wait a bit before retrying
+            await asyncio.sleep(
+                5
+            )  # wait a bit before retrying, so it does not block everything until the director is up
 
 
 async def start_registry_sync_task(app: FastAPI) -> None:
