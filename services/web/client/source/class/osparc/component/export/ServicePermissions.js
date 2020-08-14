@@ -45,7 +45,7 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
 
     _isUserOwner: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const aceessRights = this.__serviceData["accessRights"];
+      const aceessRights = this.__serviceData["access_rights"];
       if (myGid in aceessRights) {
         return aceessRights[myGid]["delete"];
       }
@@ -57,17 +57,14 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
       if (gids.length === 0) {
         return;
       }
-
       gids.forEach(gid => {
-        this.__serviceData["accessRights"][gid] = osparc.component.export.Permissions.getCollaboratorAccessRight();
+        this.__serviceData["access_rights"][gid] = osparc.component.export.Permissions.getCollaboratorAccessRight();
       });
-      const params = {
-        url: {
-          "serviceKey": this.__serviceData["key"],
-          "serviceVersion": this.__serviceData["version"]
-        },
-        data: this.__serviceData
-      };
+      const params = osparc.data.Resources.getServiceParams(
+        this.__serviceData["key"],
+        this.__serviceData["version"],
+        this.__serviceData
+      );
       osparc.data.Resources.fetch("services", "patch", params)
         .then(() => {
           this.fireDataEvent("updateService", this.__serviceData["key"]);
@@ -82,14 +79,12 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
     },
 
     _promoteCollaborator: function(collaborator) {
-      this.__serviceData["accessRights"][collaborator["gid"]] = osparc.component.export.Permissions.getOwnerAccessRight();
-      const params = {
-        url: {
-          "serviceKey": this.__serviceData["key"],
-          "serviceVersion": this.__serviceData["version"]
-        },
-        data: this.__serviceData
-      };
+      this.__serviceData["access_rights"][collaborator["gid"]] = osparc.component.export.Permissions.getOwnerAccessRight();
+      const params = osparc.data.Resources.getServiceParams(
+        this.__serviceData["key"],
+        this.__serviceData["version"],
+        this.__serviceData
+      );
       osparc.data.Resources.fetch("services", "patch", params)
         .then(() => {
           this.fireDataEvent("updateService", this.__serviceData["key"]);
@@ -109,13 +104,11 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
       }
 
-      const params = {
-        url: {
-          "serviceKey": this.__serviceData["key"],
-          "serviceVersion": this.__serviceData["version"]
-        },
-        data: this.__serviceData
-      };
+      const params = osparc.data.Resources.getServiceParams(
+        this.__serviceData["key"],
+        this.__serviceData["version"],
+        this.__serviceData
+      );
       osparc.data.Resources.fetch("services", "patch", params)
         .then(() => {
           this.fireDataEvent("updateService", this.__serviceData["key"]);

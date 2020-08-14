@@ -690,6 +690,16 @@ qx.Class.define("osparc.data.Resources", {
     },
     get: function(resource, params, useCache) {
       return this.getInstance().get(resource, params, useCache);
+    },
+
+    getServiceParams: function(serviceKey, serviceVersion, data) {
+      return {
+        url: {
+          "serviceKey": encodeURIComponent(serviceKey),
+          "serviceVersion": serviceVersion
+        },
+        data: data
+      };
     }
   }
 });

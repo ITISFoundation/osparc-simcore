@@ -182,13 +182,11 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
 
     __saveService: function(btn) {
       const data = this.__serializeForm();
-      const params = {
-        url: {
-          "serviceKey": this.__serviceVersionDetails.getService().key,
-          "serviceVersion": this.__serviceVersionDetails.getSelectedVersion()
-        },
+      const params = osparc.data.Resources.getServiceParams(
+        this.__serviceVersionDetails.getService().key,
+        this.__serviceVersionDetails.getSelectedVersion(),
         data
-      };
+      );
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
           btn.resetIcon();
