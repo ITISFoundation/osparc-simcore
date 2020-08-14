@@ -68,14 +68,13 @@ async def list_services(
                 # no access to that service
                 continue
 
-            if (service.key, service.version) in writable_services:
-                # we have write access for that service, fill in the service rights
-                access_rights: List[
-                    ServiceAccessRightsAtDB
-                ] = await services_repo.get_service_access_rights(
-                    service.key, service.version
-                )
-                service.access_rights = {rights.gid: rights for rights in access_rights}
+            # we have write access for that service, fill in the service rights
+            access_rights: List[
+                ServiceAccessRightsAtDB
+            ] = await services_repo.get_service_access_rights(
+                service.key, service.version
+            )
+            service.access_rights = {rights.gid: rights for rights in access_rights}
 
             # access is allowed, override some of the values with what is in the db
             service_in_db = await services_repo.get_service(
