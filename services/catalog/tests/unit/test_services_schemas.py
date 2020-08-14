@@ -37,7 +37,7 @@ def diff_json_schemas(json_diff_script: Path, tmp_path_factory: Path) -> Callabl
             command,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            check=True,
+            check=False,
             cwd=tmp_path,
         )
         assert process_completion.returncode == 0, pformat(
