@@ -390,8 +390,8 @@ postgres-upgrade: ## initalize or upgrade postgres db to latest state
 	@$(MAKE_C) packages/postgres-database/docker upgrade
 
 local_registry=registry
-.PHONY: setup-local-registry
-setup-local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
+.PHONY: local-registry
+local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
 	# add registry to host file
 	@echo 127.0.0.1 $(local_registry) >> /etc/hosts
 	# allow docker engine to use local insecure registry
