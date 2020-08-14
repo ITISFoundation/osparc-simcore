@@ -3,7 +3,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr
+from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
 from pydantic.types import PositiveInt
 
 current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
@@ -172,17 +172,13 @@ class ServiceKeyVersion(BaseModel):
         ...,
         title="",
         description="distinctive name for the node based on the docker registry path",
-        # regex=KEY_RE,
         example=[
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
         ],
     )
     version: constr(regex=VERSION_RE) = Field(
-        ...,
-        description="service version number",
-        # regex=VERSION_RE,
-        example=["1.0.0", "0.0.1"],
+        ..., description="service version number", example=["1.0.0", "0.0.1"],
     )
 
 
@@ -205,6 +201,12 @@ class ServiceCommonData(BaseModel):
             "The mother of all nodes, makes your numbers shine!",
         ],
     )
+
+    @validator("thumbnail", pre=True, always=False)
+    def validate_thumbnail(cls, value):  # pylint: disable=no-self-argument,no-self-use
+        if value == "":
+            return None
+        return value
 
 
 class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):

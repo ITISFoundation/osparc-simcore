@@ -1,3 +1,12 @@
+"""This background task does the following:
+1. gets the full list of services from the docker registry through the director
+2. gets the same list from the DB
+3. if services are missing from the DB, they are added with basic access rights
+3.a. basic access rights are set as following:
+    1. writable access allow the user to change meta data as well as access rights
+    2. executable access allow the user to see/execute the service
+"""
+
 import asyncio
 import logging
 from asyncio.futures import CancelledError
@@ -6,6 +15,7 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
+
 from fastapi import FastAPI
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
@@ -18,18 +28,6 @@ from ..models.domain.service import (
     ServiceDockerData,
     ServiceMetaDataAtDB,
 )
-
-"""This background task does the following:
-1. gets the full list of services from the docker registry through the director
-2. gets the same list from the DB
-3. if services are missing from the DB, they are added with basic access rights
-3.a. basic access rights are set as following:
-    1. writable access allow the user to change meta data as well as access rights
-    2. executable access allow the user to see/execute the service
-
-
-"""
-
 
 logger = logging.getLogger(__name__)
 

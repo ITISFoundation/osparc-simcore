@@ -4,7 +4,7 @@ import socket
 import subprocess
 import tempfile
 from pathlib import Path
-from pprint import pformat, pprint
+from pprint import pformat
 from typing import Dict, List, Optional, Union
 
 import docker
