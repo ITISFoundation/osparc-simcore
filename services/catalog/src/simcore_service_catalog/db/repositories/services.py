@@ -62,6 +62,8 @@ class ServicesRepository(BaseRepository):
                 .select_from(services_meta_data.join(services_access_rights))
                 .where(
                     and_(
+                        (services_meta_data.c.key == key),
+                        (services_meta_data.c.version == version),
                         or_(*[services_access_rights.c.gid == gid for gid in gids])
                         if gids
                         else True,
