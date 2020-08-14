@@ -21,6 +21,9 @@ def json_diff_script(script_dir: Path) -> Path:
     return json_diff_script
 
 
+from pprint import pformat
+
+
 @pytest.fixture(scope="session")
 def diff_json_schemas(json_diff_script: Path, tmp_path_factory: Path) -> Callable:
     def diff(schema_a: Dict, schema_b: Dict) -> bool:
@@ -34,12 +37,18 @@ def diff_json_schemas(json_diff_script: Path, tmp_path_factory: Path) -> Callabl
             command,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            check=True,
+            check=False,
             cwd=tmp_path,
         )
-        assert process_completion.returncode == 0, print(
+        assert process_completion.returncode == 0, pformat(
             f"Exit code {process_completion.returncode}\n{process_completion.stdout.decode('utf-8')}"
         )
+
+        # https://www.npmjs.com/package/json-schema-diff returns true (at least in WSL whatever the result)
+        # ```false``` is returned at the end of the stdout
+        assert "No differences found" in process_completion.stdout.decode(
+            "utf-8"
+        ), pformat(process_completion.stdout.decode("utf-8"))
         return process_completion.returncode == 0
 
     yield diff

@@ -202,6 +202,8 @@ paths:
     $ref: "./openapi-catalog.yaml#/paths/~1catalog~1dags~1{dag_id}"
   /catalog/services:
     $ref: "./openapi-catalog.yaml#/paths/~1catalog~1services"
+  /catalog/services/{service_key}/{service_version}:
+    $ref: "./openapi-catalog.yaml#/paths/~1catalog~1services~1{service_key}~1{service_version}"
 
 components:
   responses:

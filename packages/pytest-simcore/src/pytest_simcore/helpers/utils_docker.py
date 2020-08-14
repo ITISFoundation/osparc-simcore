@@ -137,7 +137,7 @@ def save_docker_infos(destination_path: Path):
                 cont.logs(timestamps=True, stdout=True, stderr=True).decode(), width=200
             ),
         )
-    print("wrote docker log files in ", destination_path)
+    print("\n\twrote docker log files in ", destination_path)
 
 
 def print_docker_infos():
