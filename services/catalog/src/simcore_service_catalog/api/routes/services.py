@@ -156,7 +156,12 @@ async def get_service(
                 detail="You have insufficient rights to access the service",
             )
     # access is allowed, override some of the values with what is in the db
-    service = service.copy(update=service_in_db.dict(exclude_unset=True))
+    service = service.copy(update=service_in_db.dict(exclude_unset=True, exclude={"owner"}))
+    # the owner shall be converted to an email address
+    if service_in_db.owner:
+        service.owner = await groups_repository.get_user_email_from_gid(
+            service_in_db.owner
+        )
 
     return service
 
