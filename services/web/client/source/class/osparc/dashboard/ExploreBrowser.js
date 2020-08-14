@@ -336,6 +336,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         service["resourceType"] = "service";
         this.__servicesContainer.add(this.__createStudyItem(service));
       });
+      osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
     },
 
     __removeFromStudyList: function(studyId) {
