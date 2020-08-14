@@ -633,7 +633,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       if (this.self().isTemplate(studyData)) {
         return studyData.prjOwner === myEmail;
       } else if (this.self().isService(studyData)) {
-        return studyData.contact === myEmail;
+        return studyData.owner === myEmail;
       }
       return false;
     },
