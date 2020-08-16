@@ -10,7 +10,7 @@ aiopg[sa]==1.0.0          # via -r requirements/_base.txt
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via -r requirements/_base.txt, aiohttp
 attrs==19.3.0             # via -r requirements/_base.txt, aiohttp, jsonschema, pytest, pytest-docker
-bcrypt==3.1.7             # via paramiko
+bcrypt==3.2.0             # via paramiko
 cached-property==1.5.1    # via docker-compose
 certifi==2020.6.20        # via requests
 cffi==1.14.2              # via bcrypt, cryptography, pynacl
@@ -18,13 +18,15 @@ chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, requests
 coverage==5.2.1           # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==2.1.2          # via -r requirements/_test.in
 cryptography==3.0         # via paramiko
+dataclasses==0.7          # via -r requirements/_base.txt, pydantic
 decorator==4.4.2          # via -r requirements/_base.txt, networkx
 distro==1.5.0             # via docker-compose
 docker-compose==1.26.2    # via pytest-docker
 docker[ssh]==4.3.0        # via -r requirements/_test.in, docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
-idna==2.10                # via -r requirements/_base.txt, requests, yarl
+idna-ssl==1.1.0           # via -r requirements/_base.txt, aiohttp
+idna==2.10                # via -r requirements/_base.txt, idna-ssl, requests, yarl
 importlib-metadata==1.7.0  # via jsonschema, pluggy, pytest
 isort==4.3.21             # via pylint
 jsonschema==3.2.0         # via docker-compose
@@ -66,7 +68,7 @@ toml==0.10.1              # via pylint
 trafaret-config==2.0.2    # via -r requirements/_base.txt
 trafaret==2.0.2           # via -r requirements/_base.txt, trafaret-config
 typed-ast==1.4.1          # via astroid
-typing-extensions==3.7.4.2  # via -r requirements/_base.txt, yarl
+typing-extensions==3.7.4.2  # via -r requirements/_base.txt, aiohttp, yarl
 urllib3==1.25.10          # via requests
 wcwidth==0.2.5            # via pytest
 websocket-client==0.57.0  # via docker, docker-compose

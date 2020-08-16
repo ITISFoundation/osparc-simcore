@@ -6,7 +6,7 @@
 #
 astroid==2.4.2            # via pylint
 attrs==19.3.0             # via jsonschema, pytest, pytest-docker
-bcrypt==3.1.7             # via paramiko
+bcrypt==3.2.0             # via paramiko
 cached-property==1.5.1    # via docker-compose
 certifi==2020.6.20        # via -r requirements/_base.txt, minio, requests
 cffi==1.14.2              # via bcrypt, cryptography, pynacl
