@@ -6,6 +6,9 @@
 from asyncio import sleep
 from copy import deepcopy
 
+
+from typing import Callable
+
 import pytest
 import socketio
 import socketio.exceptions
@@ -124,11 +127,7 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
     resp = await client.post(url, json=client_session_id)
     await assert_status(resp, web.HTTPNoContent)
 
-
 # ------------------------ TESTS -------------------------------
-from typing import Callable
-
-
 async def test_anonymous_websocket_connection(
     client_session_id: str,
     socketio_url: Callable,
