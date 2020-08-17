@@ -159,7 +159,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.data.Resources.fetch("studies", "getActive", params)
         .then(studyData => {
           if (studyData) {
-            this.__startStudy(studyData);
+            this.__startStudy(studyData["uuid"]);
           } else {
             osparc.store.Store.getInstance().setCurrentStudyId(null);
           }
@@ -227,7 +227,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getStudyAndStart: function(loadStudyId) {
       osparc.store.Store.getInstance().getStudyWState(loadStudyId, true)
         .then(studyData => {
-          this.__startStudy(studyData);
+          this.__startStudy(studyData["uuid"]);
         })
         .catch(err => {
           if (osparc.data.Permissions.getInstance().getRole() === "Guest") {
@@ -311,15 +311,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.data.Resources.fetch("studies", "post", params)
         .then(studyData => {
           this._hideLoadingPage();
-          this.__startStudy(studyData);
+          this.__startStudy(studyData["uuid"]);
         })
         .catch(err => {
           console.error(err);
         });
     },
 
-    __startStudy: function(studyData) {
-      this.fireDataEvent("startStudy", studyData);
+    __startStudy: function(studyId) {
+      this.fireDataEvent("startStudy", studyId);
     },
 
     __resetStudyItem: function(studyData) {
@@ -563,7 +563,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       if (selected && selection.length === 1) {
         const studyData = this.__getStudyData(item.getUuid(), false);
-        this.__startStudy(studyData);
+        this.__startStudy(studyData["uuid"]);
       }
     },
 
@@ -574,7 +574,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__reloadUserStudy(studyId, true);
       });
       studyDetails.addListener("openStudy", () => {
-        this.__startStudy(studyData);
+        this.__startStudy(studyData["uuid"]);
       }, this);
       studyDetails.addListener("updateTags", () => {
         this.__resetStudyList(osparc.store.Store.getInstance().getStudies());

@@ -259,7 +259,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
             osparc.data.Resources.fetch("studies", "post", params)
               .then(studyData => {
                 this._hideLoadingPage();
-                this.__startStudy(studyData);
+                this.__startStudy(studyData["uuid"]);
               })
               .catch(er => {
                 console.error(er);
@@ -287,19 +287,19 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       osparc.data.Resources.fetch("studies", "postFromTemplate", params)
         .then(studyData => {
           this._hideLoadingPage();
-          this.__startStudy(studyData);
+          this.__startStudy(studyData["uuid"]);
         })
         .catch(err => {
           console.error(err);
         });
     },
 
-    __startStudy: function(studyData) {
+    __startStudy: function(studyId) {
       if (!this.__checkLoggedIn()) {
         return;
       }
 
-      this.fireDataEvent("startStudy", studyData);
+      this.fireDataEvent("startStudy", studyId);
     },
 
     __resetTemplateItem: function(templateData) {
