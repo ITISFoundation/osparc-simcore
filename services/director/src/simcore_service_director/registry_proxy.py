@@ -191,9 +191,11 @@ async def get_image_labels(app: web.Application, image: str, tag: str) -> Dict:
     _logger.debug("getting image labels of %s:%s", image, tag)
     path = f"/v2/{image}/manifests/{tag}"
     request_result, _ = await registry_request(app, path)
-    labels = json.loads(request_result["history"][0]["v1Compatibility"])[
-        "container_config"
-    ]["Labels"]
+    v1_compatibility_key = json.loads(request_result["history"][0]["v1Compatibility"])
+    container_config = v1_compatibility_key.get(
+        "container_config", v1_compatibility_key["config"]
+    )
+    labels = container_config["Labels"]
     _logger.debug("retrieved labels of image %s:%s: %s", image, tag, request_result)
     return labels
 
