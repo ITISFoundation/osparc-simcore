@@ -80,11 +80,11 @@ def shared_task_dispatch(
             project_id,
             node_id,
         )
-        next_task_nodes = wrap_async_call(
+        next_task_nodes, error = wrap_async_call(
             run_sidecar(celery_request.request.id, user_id, project_id, node_id)
         )
 
-        if type(next_task_nodes) == str:
+        if error:
             celery_request.update_state(state=states.FAILURE)
             log.exception(next_task_nodes)
             return

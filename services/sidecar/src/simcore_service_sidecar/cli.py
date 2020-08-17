@@ -1,5 +1,5 @@
 import logging
-from typing import List, Union
+from typing import List, Tuple
 
 import click
 
@@ -26,7 +26,7 @@ def main(job_id: str, user_id: str, project_id: str, node_id: str) -> List[str]:
         node_id,
     )
     try:
-        next_task_nodes = wrap_async_call(
+        next_task_nodes, _ = wrap_async_call(
             run_sidecar(job_id, user_id, project_id, node_id=node_id)
         )
         log.info(
@@ -42,7 +42,7 @@ def main(job_id: str, user_id: str, project_id: str, node_id: str) -> List[str]:
 
 async def run_sidecar(
     job_id: str, user_id: str, project_id: str, node_id: str
-) -> Union[List[str], str]:
+) -> Tuple[List[str], str]:
     try:
         async with DBContextManager() as db_engine:
             async with RabbitMQ(config=RABBIT_CONFIG) as rabbit_mq:
@@ -55,8 +55,8 @@ async def run_sidecar(
                     project_id,
                     node_id,
                 )
-                return next_task_nodes
+                return next_task_nodes, None
     except Exception as e:  # pylint: disable=broad-except
         error_message = f"run_sidecar caught the following exception: {str(e)}"
         log.warning(error_message)
-        return error_message
+        return None, error_message
