@@ -61,6 +61,9 @@ async def service_submission(request: web.Request):
         # TODO: Move outside when get_handlers_from_namespace is fixed
         from .login.utils import render_and_send_mail
 
+        attachments = [("metadata.json", json.dumps(data, indent=4))]
+        if filedata:
+            attachments.append((filename, filedata))
         # send email
         await render_and_send_mail(
             request,
@@ -73,12 +76,7 @@ async def service_submission(request: web.Request):
                 ),
                 "subject": "TEST: " * (not is_real_usage) + "New service submission",
             },
-            attachments=[
-                (filename, filedata),
-                ("metadata.json", json.dumps(data, indent=4)),
-            ]
-            if filedata
-            else None,
+            attachments=attachments,
         )
     except Exception:
         log.exception("Error while sending the 'new service submission' mail.")

@@ -54,6 +54,11 @@
  * For just getting the resources without modifying them in the server, we use the dedicated methods 'get' and 'getOne'.
  * They will try to get them from the cache if they exist there. If not, they will issue the call to get them from the server.
  */
+
+/**
+ * @asset(dev/classifiers.json)
+ */
+
 qx.Class.define("osparc.data.Resources", {
   extend: qx.core.Object,
 
@@ -506,6 +511,21 @@ qx.Class.define("osparc.data.Resources", {
           get: {
             method: "GET",
             url: "/resource/statics.json",
+            isJsonFile: true
+          }
+        }
+      },
+
+      /*
+       * CLASSIFIERS
+       * Gets the json file containing sample classifiers.
+       */
+      "classifiers": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: "/resource/dev/classifiers.json",
             isJsonFile: true
           }
         }

@@ -61,6 +61,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonNew", {
       if (data.tags && data.tags.length) {
         return true;
       }
+      if (data.classifiers && data.classifiers.length) {
+        return true;
+      }
       return false;
     }
   }
