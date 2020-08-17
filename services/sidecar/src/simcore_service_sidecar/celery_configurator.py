@@ -45,13 +45,10 @@ def dispatch_comp_task(user_id: str, project_id: str, node_id: str) -> None:
 
     if required_resources["requires_mpi"]:
         _dispatch_to_mpi_queue(user_id, project_id, node_id)
-        return
-
-    if required_resources["requires_gpu"]:
+    elif required_resources["requires_gpu"]:
         _dispatch_to_gpu_queue(user_id, project_id, node_id)
-        return
-
-    _dispatch_to_cpu_queue(user_id, project_id, node_id)
+    else:
+        _dispatch_to_cpu_queue(user_id, project_id, node_id)
 
 
 def _dispatch_to_cpu_queue(user_id: str, project_id: str, node_id: str) -> None:
