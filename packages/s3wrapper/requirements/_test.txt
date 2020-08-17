@@ -5,36 +5,56 @@
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
 astroid==2.4.2            # via pylint
-attrs==19.3.0             # via pytest, pytest-docker
+attrs==19.3.0             # via jsonschema, pytest, pytest-docker
+bcrypt==3.2.0             # via paramiko
+cached-property==1.5.1    # via docker-compose
 certifi==2020.6.20        # via -r requirements/_base.txt, minio, requests
+cffi==1.14.2              # via bcrypt, cryptography, pynacl
 chardet==3.0.4            # via requests
 configparser==5.0.0       # via -r requirements/_base.txt, minio
-coverage==5.2             # via -r requirements/_test.in, coveralls, pytest-cov
-coveralls==2.1.1          # via -r requirements/_test.in
-docopt==0.6.2             # via coveralls
+coverage==5.2.1           # via -r requirements/_test.in, coveralls, pytest-cov
+coveralls==2.1.2          # via -r requirements/_test.in
+cryptography==3.0         # via paramiko
+distro==1.5.0             # via docker-compose
+docker-compose==1.26.2    # via pytest-docker
+docker[ssh]==4.3.0        # via docker-compose
+dockerpty==0.4.1          # via docker-compose
+docopt==0.6.2             # via coveralls, docker-compose
 idna==2.10                # via requests
-importlib-metadata==1.7.0  # via pluggy, pytest
+importlib-metadata==1.7.0  # via jsonschema, pluggy, pytest
 isort==4.3.21             # via pylint
+jsonschema==3.2.0         # via docker-compose
 lazy-object-proxy==1.4.3  # via astroid
 mccabe==0.6.1             # via pylint
-minio==5.0.10             # via -r requirements/_base.txt
+minio==6.0.0              # via -r requirements/_base.txt
 more-itertools==8.4.0     # via pytest
 packaging==20.4           # via pytest
+paramiko==2.7.1           # via docker
 pluggy==0.13.1            # via pytest
 py==1.9.0                 # via pytest
+pycparser==2.20           # via cffi
 pylint==2.5.3             # via -r requirements/_test.in
+pynacl==1.4.0             # via paramiko
 pyparsing==2.4.7          # via packaging
-pytest-cov==2.10.0        # via -r requirements/_test.in
-pytest-docker==0.7.2      # via -r requirements/_test.in
+pyrsistent==0.16.0        # via jsonschema
+pytest-cov==2.10.1        # via -r requirements/_test.in
+pytest-docker==0.8.0      # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
-pytest==5.4.3             # via -r requirements/_test.in, pytest-cov
+pytest==5.4.3             # via -r requirements/_test.in, pytest-cov, pytest-docker
 python-dateutil==2.8.1    # via -r requirements/_base.txt, minio
+python-dotenv==0.14.0     # via docker-compose
 pytz==2020.1              # via -r requirements/_base.txt, minio
-requests==2.24.0          # via -r requirements/_test.in, coveralls
-six==1.15.0               # via -r requirements/_base.txt, astroid, packaging, python-dateutil
+pyyaml==5.3.1             # via docker-compose
+requests==2.24.0          # via -r requirements/_test.in, coveralls, docker, docker-compose
+six==1.15.0               # via -r requirements/_base.txt, astroid, bcrypt, cryptography, docker, docker-compose, dockerpty, jsonschema, packaging, pynacl, pyrsistent, python-dateutil, websocket-client
+texttable==1.6.2          # via docker-compose
 toml==0.10.1              # via pylint
 typed-ast==1.4.1          # via astroid
-urllib3==1.25.9           # via -r requirements/_base.txt, minio, requests
+urllib3==1.25.10          # via -r requirements/_base.txt, minio, requests
 wcwidth==0.2.5            # via pytest
+websocket-client==0.57.0  # via docker, docker-compose
 wrapt==1.12.1             # via astroid
 zipp==3.1.0               # via importlib-metadata
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools
