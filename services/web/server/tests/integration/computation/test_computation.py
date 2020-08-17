@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
 import json
 import sys
 import time
@@ -54,7 +55,6 @@ def client(
 
     app_config["storage"]["enabled"] = False
     app_config["main"]["testing"] = True
-    app_config["db"]["init_tables"] = True  # inits postgres_service
 
     pprint(app_config)
 
@@ -169,10 +169,11 @@ async def test_check_health(loop, mock_orphaned_services, docker_stack, client):
     ],
 )
 async def test_start_pipeline(
+    sleeper_service,
     client,
     postgres_session,
     rabbit_service,
-    sleeper_service,
+    simcore_services,
     logged_user,
     user_project,
     mock_workbench_adjacency_list,

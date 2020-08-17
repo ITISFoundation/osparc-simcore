@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import logging
 import subprocess
 import time
 from pathlib import Path
@@ -11,8 +12,10 @@ from typing import Dict
 import docker
 import pytest
 import tenacity
-from servicelib.simcore_service_utils import SimcoreRetryPolicyUponInitialization
+
 from .helpers.utils_docker import get_ip
+
+log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session")
@@ -41,7 +44,12 @@ def docker_swarm(
             assert docker_client.swarm.leave(force=True)
 
 
-@tenacity.retry(**SimcoreRetryPolicyUponInitialization().kwargs)
+@tenacity.retry(
+    wait=tenacity.wait_fixed(5),
+    stop=tenacity.stop_after_attempt(20),
+    before_sleep=tenacity.before_sleep_log(log, logging.INFO),
+    reraise=True,
+)
 def _wait_for_services(docker_client: docker.client.DockerClient) -> None:
     pre_states = ["NEW", "PENDING", "ASSIGNED", "PREPARING", "STARTING"]
     services = docker_client.services.list()
@@ -65,11 +73,11 @@ def _print_services(docker_client: docker.client.DockerClient, msg: str) -> None
 def docker_stack(
     docker_swarm,
     docker_client: docker.client.DockerClient,
-    core_services_config_file: Path,
-    ops_services_config_file: Path,
+    core_docker_compose_file: Path,
+    ops_docker_compose_file: Path,
     keep_docker_up: bool,
 ) -> Dict:
-    stacks = {"simcore": core_services_config_file, "ops": ops_services_config_file}
+    stacks = {"simcore": core_docker_compose_file, "ops": ops_docker_compose_file}
 
     # make up-version
     stacks_up = []

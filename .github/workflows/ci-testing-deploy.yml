@@ -98,7 +98,7 @@ jobs:
           chmod +x ./cc-test-reporter
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_api_server_coverage.json coverage.xml
       - name: upload codeclimate coverage
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: unit_api_server_coverage
           path: codeclimate.unit_api_server_coverage.json
@@ -136,6 +136,12 @@ jobs:
         run: ./ci/github/unit-testing/catalog.bash install
       - name: test
         run: ./ci/github/unit-testing/catalog.bash test
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit_tests_catalog_docker_logs
+          path: ./services/catalog/test_failures
       - uses: codecov/codecov-action@v1
         with:
           flags: unittests #optional
@@ -145,7 +151,7 @@ jobs:
           chmod +x ./cc-test-reporter
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_catalog_coverage.json coverage.xml
       - name: upload codeclimate coverage
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: unit_catalog_coverage
           path: codeclimate.unit_catalog_coverage.json
@@ -192,7 +198,7 @@ jobs:
           chmod +x ./cc-test-reporter
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_director_coverage.json coverage.xml
       - name: upload codeclimate coverage
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: unit_director_coverage
           path: codeclimate.unit_director_coverage.json
@@ -239,7 +245,7 @@ jobs:
           chmod +x ./cc-test-reporter
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_sidecar_coverage.json coverage.xml
       - name: upload codeclimate coverage
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: unit_sidecar_coverage
           path: codeclimate.unit_sidecar_coverage.json
@@ -356,7 +362,7 @@ jobs:
           chmod +x ./cc-test-reporter
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_servicelib_coverage.json coverage.xml
       - name: upload codeclimate coverage
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: unit_servicelib_coverage
           path: codeclimate.unit_servicelib_coverage.json
@@ -403,7 +409,7 @@ jobs:
           chmod +x ./cc-test-reporter
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_simcoresdk_coverage.json coverage.xml
       - name: upload codeclimate coverage
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: unit_simcoresdk_coverage
           path: codeclimate.unit_simcoresdk_coverage.json
@@ -450,7 +456,7 @@ jobs:
           chmod +x ./cc-test-reporter
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_storage_coverage.json coverage.xml
       - name: upload codeclimate coverage
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: unit_storage_coverage
           path: codeclimate.unit_storage_coverage.json
@@ -497,7 +503,7 @@ jobs:
           chmod +x ./cc-test-reporter
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_webserver_coverage.json coverage.xml
       - name: upload codeclimate coverage
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: unit_webserver_coverage
           path: codeclimate.unit_webserver_coverage.json
@@ -572,6 +578,12 @@ jobs:
         run: ./ci/github/integration-testing/webserver.bash install
       - name: test
         run: ./ci/github/integration-testing/webserver.bash test
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: integration_tests_webserver_docker_logs
+          path: ./services/web/server/test_failures
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/webserver.bash clean_up
@@ -584,7 +596,7 @@ jobs:
           chmod +x ./cc-test-reporter
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_webserver_coverage.json coverage.xml
       - name: upload codeclimate coverage
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: integration_webserver_coverage
           path: codeclimate.integration_webserver_coverage.json
@@ -629,6 +641,12 @@ jobs:
         run: ./ci/github/integration-testing/sidecar.bash install
       - name: test
         run: ./ci/github/integration-testing/sidecar.bash test
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: integration_tests_sidecar_docker_logs
+          path: ./services/sidecar/test_failures
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/sidecar.bash clean_up
@@ -641,7 +659,7 @@ jobs:
           chmod +x ./cc-test-reporter
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_sidecar_coverage.json coverage.xml
       - name: upload codeclimate coverage
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: integration_sidecar_coverage
           path: codeclimate.integration_sidecar_coverage.json
@@ -686,6 +704,12 @@ jobs:
         run: ./ci/github/integration-testing/simcore-sdk.bash install
       - name: test
         run: ./ci/github/integration-testing/simcore-sdk.bash test
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: integration_tests_simcore_sdk_docker_logs
+          path: ./packages/simcore-sdk/test_failures
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/simcore-sdk.bash clean_up
@@ -698,7 +722,7 @@ jobs:
           chmod +x ./cc-test-reporter
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_simcoresdk_coverage.json coverage.xml
       - name: upload codeclimate coverage
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: integration_simcoresdk_coverage
           path: codeclimate.integration_simcoresdk_coverage.json
@@ -813,7 +837,7 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash recover_artifacts
       - name: upload docker logs
         if: always()
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: e2e_docker_container_logs
           path: simcore_logs
