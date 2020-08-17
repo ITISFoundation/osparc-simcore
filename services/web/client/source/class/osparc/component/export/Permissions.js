@@ -34,6 +34,26 @@ qx.Class.define("osparc.component.export.Permissions", {
     this.__getMyFriends();
   },
 
+  statics: {
+    canDelete: function(accessRights) {
+      let canDelete = accessRights.getDelete ? accessRights.getDelete() : false;
+      canDelete = accessRights.getWrite_access ? accessRights.getWrite_access() : false;
+      return canDelete;
+    },
+
+    canWrite: function(accessRights) {
+      let canWrite = accessRights.getWrite ? accessRights.getWrite() : false;
+      canWrite = accessRights.getWrite_access ? accessRights.getWrite_access() : false;
+      return canWrite;
+    },
+
+    canView: function(accessRights) {
+      let canView = accessRights.getRead ? accessRights.getRead() : false;
+      canView = accessRights.getExecute_access ? accessRights.getExecute_access() : false;
+      return canView;
+    }
+  },
+
   members: {
     __serializedData: null,
     __organizationsAndMembers: null,
