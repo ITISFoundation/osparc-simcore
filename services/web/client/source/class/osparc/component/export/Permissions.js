@@ -34,28 +34,6 @@ qx.Class.define("osparc.component.export.Permissions", {
     this.__getMyFriends();
   },
 
-  statics: {
-    getCollaboratorAccessRight: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": false
-      };
-    },
-
-    getOwnerAccessRight: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": true
-      };
-    },
-
-    removeCollaborator: function(serializedData, gid) {
-      return delete serializedData["accessRights"][gid];
-    }
-  },
-
   members: {
     __serializedData: null,
     __organizationsAndMembers: null,

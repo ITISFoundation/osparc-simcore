@@ -607,8 +607,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
         // remove collaborator
-        const permissions = osparc.component.export.StudyPermissions;
-        permissions.removeCollaborator(studyData, myGid);
+        osparc.component.export.StudyPermissions.removeCollaborator(studyData, myGid);
         const params = {
           url: {
             projectId: studyData.uuid

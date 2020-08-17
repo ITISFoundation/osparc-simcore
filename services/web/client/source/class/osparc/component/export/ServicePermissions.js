@@ -40,6 +40,26 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
     "updateService": "qx.event.type.Data"
   },
 
+  statics: {
+    getCollaboratorAccessRight: function() {
+      return {
+        "execute_access": true,
+        "write_access": false
+      };
+    },
+
+    getOwnerAccessRight: function() {
+      return {
+        "execute_access": true,
+        "write_access": true
+      };
+    },
+
+    removeCollaborator: function(serializedData, gid) {
+      return delete serializedData["access_rights"][gid];
+    }
+  },
+
   members: {
     __serviceData: null,
 
@@ -58,7 +78,7 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
         return;
       }
       gids.forEach(gid => {
-        this.__serviceData["access_rights"][gid] = osparc.component.export.Permissions.getCollaboratorAccessRight();
+        this.__serviceData["access_rights"][gid] = this.self().getCollaboratorAccessRight();
       });
       const params = osparc.data.Resources.getServiceParams(
         this.__serviceData["key"],
@@ -79,7 +99,7 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
     },
 
     _promoteCollaborator: function(collaborator) {
-      this.__serviceData["access_rights"][collaborator["gid"]] = osparc.component.export.Permissions.getOwnerAccessRight();
+      this.__serviceData["access_rights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
       const params = osparc.data.Resources.getServiceParams(
         this.__serviceData["key"],
         this.__serviceData["version"],
@@ -99,7 +119,7 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
     },
 
     _deleteCollaborator: function(collaborator) {
-      const success = osparc.component.export.Permissions.removeCollaborator(this.__serviceData, collaborator["gid"]);
+      const success = this.self().removeCollaborator(this.__serviceData, collaborator["gid"]);
       if (!success) {
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
       }

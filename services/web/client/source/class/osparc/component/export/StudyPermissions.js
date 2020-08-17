@@ -40,6 +40,28 @@ qx.Class.define("osparc.component.export.StudyPermissions", {
     "updateStudy": "qx.event.type.Data"
   },
 
+  statics: {
+    getCollaboratorAccessRight: function() {
+      return {
+        "read": true,
+        "write": true,
+        "delete": false
+      };
+    },
+
+    getOwnerAccessRight: function() {
+      return {
+        "read": true,
+        "write": true,
+        "delete": true
+      };
+    },
+
+    removeCollaborator: function(studyData, gid) {
+      return delete studyData["accessRights"][gid];
+    }
+  },
+
   members: {
     __studyData: null,
 
@@ -59,7 +81,7 @@ qx.Class.define("osparc.component.export.StudyPermissions", {
       }
 
       gids.forEach(gid => {
-        this.__studyData["accessRights"][gid] = osparc.component.export.Permissions.getCollaboratorAccessRight();
+        this.__studyData["accessRights"][gid] = this.self().getCollaboratorAccessRight();
       });
       const params = {
         url: {
@@ -81,7 +103,7 @@ qx.Class.define("osparc.component.export.StudyPermissions", {
     },
 
     _promoteCollaborator: function(collaborator) {
-      this.__studyData["accessRights"][collaborator["gid"]] = osparc.component.export.Permissions.getOwnerAccessRight();
+      this.__studyData["accessRights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
       const params = {
         url: {
           "projectId": this.__studyData["uuid"]
@@ -102,7 +124,7 @@ qx.Class.define("osparc.component.export.StudyPermissions", {
     },
 
     _deleteCollaborator: function(collaborator) {
-      const success = osparc.component.export.Permissions.removeCollaborator(this.__studyData, collaborator["gid"]);
+      const success = this.self().removeCollaborator(this.__studyData, collaborator["gid"]);
       if (!success) {
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
       }
