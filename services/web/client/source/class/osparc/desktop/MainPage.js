@@ -174,6 +174,7 @@ qx.Class.define("osparc.desktop.MainPage", {
                   this.__syncStudyEditor();
                 });
             });
+        });
     },
 
     __showStudyEditor: function(studyEditor) {
