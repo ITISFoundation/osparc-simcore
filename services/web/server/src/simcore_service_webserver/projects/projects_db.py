@@ -7,9 +7,9 @@
 
 import logging
 import uuid as uuidlib
+from collections import deque
 from datetime import datetime
 from enum import Enum
-from collections import deque
 from typing import Dict, List, Mapping, Optional, Set, Union
 
 import psycopg2.errors

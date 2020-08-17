@@ -1,6 +1,7 @@
 import logging
-from typing import Any, Dict, List
 from collections import deque
+from typing import Any, Dict, List
+
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy

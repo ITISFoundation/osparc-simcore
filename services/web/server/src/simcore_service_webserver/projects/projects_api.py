@@ -20,7 +20,6 @@ from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
-
 from ..computation_api import delete_pipeline_db
 from ..director import director_api
 from ..socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT, post_group_messages
@@ -34,7 +33,6 @@ from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import NodeNotFoundError
 from .projects_models import ProjectState
 from .projects_utils import clone_project_document
-
 
 log = logging.getLogger(__name__)
 

@@ -158,7 +158,10 @@ async def test_websocket_manager(loop, redis_enabled_app, redis_registry, user_i
             tabs[socket_id] = client_session_id
             with managed_resource(user_id, client_session_id, redis_enabled_app) as rt:
                 # pylint: disable=protected-access
-                resource_key = {"user_id": f"{user_id}", "client_session_id": client_session_id}
+                resource_key = {
+                    "user_id": f"{user_id}",
+                    "client_session_id": client_session_id,
+                }
                 assert rt._resource_key() == resource_key
 
                 # set the socket id and check it is rightfully there

@@ -109,4 +109,3 @@ def disable_gc_manual_guest_users(mocker):
         "simcore_service_webserver.resource_manager.garbage_collector.remove_users_manually_marked_as_guests",
         return_value=Future(),
     )
-

@@ -24,12 +24,12 @@ import socketio
 import sqlalchemy as sa
 import trafaret_config
 from aiohttp import web
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import NewUser
 from yarl import URL
 
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiopg_utils import DSN
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.application import create_application

@@ -8,9 +8,9 @@
 
 import asyncio
 import logging
-
 from itertools import chain
-from typing import List, Dict
+from typing import Dict, List
+
 from aiohttp import web
 
 from servicelib.observer import emit
@@ -24,17 +24,17 @@ from simcore_service_webserver.director.director_exceptions import (
     ServiceNotFoundError,
 )
 from simcore_service_webserver.projects.projects_api import (
+    delete_project_from_db,
     get_workbench_node_ids_from_project_uuid,
     is_node_id_present_in_any_project_workbench,
 )
+from simcore_service_webserver.projects.projects_db import ProjectDBAPI
+from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
 from simcore_service_webserver.users_api import (
     delete_user,
-    is_user_guest,
     get_guest_user_ids,
+    is_user_guest,
 )
-from simcore_service_webserver.projects.projects_api import delete_project_from_db
-from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
-from simcore_service_webserver.projects.projects_db import ProjectDBAPI
 
 from .config import APP_GARBAGE_COLLECTOR_KEY, get_garbage_collector_interval
 from .registry import RedisResourceRegistry, get_registry

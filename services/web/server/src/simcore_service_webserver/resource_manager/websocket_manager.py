@@ -18,10 +18,9 @@ import logging
 from contextlib import contextmanager
 from typing import Dict, Iterator, List, Optional, Union
 
+import aioredlock
 import attr
 from aiohttp import web
-
-import aioredlock
 
 from .config import get_service_deletion_timeout
 from .redis import get_redis_lock
