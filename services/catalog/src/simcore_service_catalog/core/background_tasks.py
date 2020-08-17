@@ -19,6 +19,7 @@ from aiopg.sa.connection import SAConnection
 from fastapi import FastAPI
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
+from simcore_service_catalog.db.repositories.projects import ProjectsRepository
 
 from ..api.dependencies.director import get_director_session
 from ..db.repositories.groups import GroupsRepository
@@ -26,6 +27,7 @@ from ..db.repositories.services import ServicesRepository
 from ..models.domain.service import (
     ServiceAccessRightsAtDB,
     ServiceDockerData,
+    ServiceKeyVersion,
     ServiceMetaDataAtDB,
 )
 
@@ -96,6 +98,17 @@ async def _get_service_access_rights(
             reader_gids.append(possible_gid)
             if not owner_gid:
                 owner_gid = possible_gid
+
+    # if the service is part of a published template, it has to be available to everyone
+    projects_repo = ProjectsRepository(connection)
+    published_services: List[
+        ServiceKeyVersion
+    ] = await projects_repo.list_services_from_published_templates()
+    if (
+        ServiceKeyVersion(key=service.key, version=service.version)
+        in published_services
+    ):
+        reader_gids.append(everyone_gid)
 
     # if no owner gid yet, we pass readable rights to the everyone group
     if not owner_gid:
