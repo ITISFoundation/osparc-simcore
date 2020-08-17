@@ -67,7 +67,7 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const aceessRights = this.__serviceData["access_rights"];
       if (myGid in aceessRights) {
-        return aceessRights[myGid]["delete"];
+        return aceessRights[myGid]["write_access"];
       }
       return false;
     },
