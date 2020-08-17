@@ -74,6 +74,7 @@ qx.Class.define("osparc.data.Resources", {
        */
       "studies": {
         useCache: false,
+        idField: "uuid",
         endpoints: {
           get: {
             method: "GET",
@@ -150,6 +151,7 @@ qx.Class.define("osparc.data.Resources", {
        */
       "templates": {
         useCache: true,
+        idField: "uuid",
         endpoints: {
           get: {
             method: "GET",
@@ -174,6 +176,7 @@ qx.Class.define("osparc.data.Resources", {
        */
       "services": {
         useCache: true,
+        idField: "key",
         endpoints: {
           get: {
             method: "GET",
@@ -190,6 +193,7 @@ qx.Class.define("osparc.data.Resources", {
        */
       "dags": {
         usesCache: true,
+        idField: "key",
         endpoints: {
           post: {
             method: "POST",
@@ -252,8 +256,8 @@ qx.Class.define("osparc.data.Resources", {
        * TOKENS
        */
       "tokens": {
-        idField: "service",
         useCache: true,
+        idField: "service",
         endpoints: {
           get: {
             method: "GET",
