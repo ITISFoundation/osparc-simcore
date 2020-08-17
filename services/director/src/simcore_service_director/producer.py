@@ -8,10 +8,10 @@ from distutils.version import StrictVersion
 from enum import Enum
 from typing import Dict, List, Optional, Tuple
 
-import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
 
+import aiodocker
 from servicelib.monitor_services import service_started, service_stopped
 
 from . import config, docker_utils, exceptions, registry_proxy
@@ -61,6 +61,44 @@ async def _check_node_uuid_available(
 def _check_setting_correctness(setting: Dict) -> None:
     if "name" not in setting or "type" not in setting or "value" not in setting:
         raise exceptions.DirectorException("Invalid setting in %s" % setting)
+
+
+def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
+    mounts = list()
+    for s in settings:
+        log.debug("Retrieved mount settings %s", s)
+        mount = dict()
+        mount["ReadOnly"] = True
+        if "ReadOnly" in s and s["ReadOnly"] in ["false", "False", False]:
+            mount["ReadOnly"] = False
+
+        for field in ["Source", "Target", "Type"]:
+            if field in s:
+                mount[field] = s[field]
+            else:
+                log.warning(
+                    "Mount settings have wrong format. Required keys [Source, Target, Type]"
+                )
+                continue
+
+        log.debug("Append mount settings %s", mount)
+        mounts.append(mount)
+
+    return mount
+
+
+def _parse_env_settings(settings: List[str]) -> Dict:
+    envs = dict()
+    for s in settings:
+        log.debug("Retrieved env settings %s", s)
+        if "=" in s:
+            parts = s.split("=")
+            if len(parts) == 2:
+                envs.update({parts[0]: parts[1]})
+
+        log.debug("Parsed env settings %s", s)
+
+    return envs
 
 
 async def _read_service_settings(
@@ -115,6 +153,7 @@ async def _create_docker_service_params(
             "node_id": node_uuid,
             "swarm_stack_name": config.SWARM_STACK_NAME,
         },
+        "Mounts": [],
     }
 
     if (
@@ -253,6 +292,20 @@ async def _create_docker_service_params(
             docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
         elif param["type"] == "Constraints":  # REST-API compatible
             docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
+        elif param["name"] == "env":
+            log.debug("Found env parameter %s", param["value"])
+            env_settings = _parse_env_settings(param["value"])
+            if env_settings:
+                docker_params["task_template"]["ContainerSpec"]["Env"].update(
+                    env_settings
+                )
+        elif param["name"] == "mount":
+            log.debug("Found mount parameter %s", param["value"])
+            mount_settings = _parse_mount_settings(param["value"])
+            if mount_settings:
+                docker_params["task_template"]["ContainerSpec"]["Mounts"].append(
+                    mount_settings
+                )
 
     # attach the service to the swarm network dedicated to services
     try:
@@ -440,13 +493,14 @@ async def _get_service_state(
         # only keep the ones with the right service ID (we're being a bit picky maybe)
         tasks = [x for x in tasks if x["ServiceID"] == service["ID"]]
 
-        # we are only interested in the last task which has index 0
+        # we are only interested in the last task which has been created last
         if tasks:
-            last_task = tasks[0]
+            sorted_tasks = sorted(tasks, key=lambda task: task["UpdatedAt"])
+            last_task = sorted_tasks[-1]
             task_state = last_task["Status"]["State"]
             log.debug("%s %s", service["ID"], task_state)
 
-            last_task_state = ServiceState.STARTING # default
+            last_task_state = ServiceState.STARTING  # default
             last_task_error_msg = (
                 last_task["Status"]["Err"] if "Err" in last_task["Status"] else ""
             )
@@ -956,20 +1010,22 @@ async def generate_service_extras(
     result["node_requirements"] = ["CPU"]
     # check if the service requires GPU support
 
-    def validate_vram(entry_to_validate):
+    def validate_kind(entry_to_validate, kind_name):
         for element in (
             entry_to_validate.get("value", {})
             .get("Reservations", {})
             .get("GenericResources", [])
         ):
-            if element.get("DiscreteResourceSpec", {}).get("Kind") == "VRAM":
+            if element.get("DiscreteResourceSpec", {}).get("Kind") == kind_name:
                 return True
         return False
 
     if SERVICE_RUNTIME_SETTINGS in labels:
         service_settings = json.loads(labels[SERVICE_RUNTIME_SETTINGS])
         for entry in service_settings:
-            if entry.get("name") == "Resources" and validate_vram(entry):
+            if entry.get("name") == "Resources" and validate_kind(entry, "VRAM"):
                 result["node_requirements"].append("GPU")
+            if entry.get("name") == "Resources" and validate_kind(entry, "MPI"):
+                result["node_requirements"].append("MPI")
 
     return result
