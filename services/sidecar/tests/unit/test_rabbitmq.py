@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument
 
 import json
+import asyncio
 from typing import List
 
 import aio_pika
@@ -49,10 +50,15 @@ async def test_rabbitmq(
         await rabbitmq.post_log_message(user_id, project_id, node_id, log_messages)
         await rabbitmq.post_progress_message(user_id, project_id, node_id, progress_msg)
 
+    # wait for all the messages to be delivered,
+    # the next assert sometimes fails in the CI
+    await asyncio.sleep(1)
+
     mock_close_channel_cb.assert_called_once()
     mock_close_connection_cb.assert_called_once()
     mock_reconnect_cb.assert_not_called()
 
+    # if this fails the above sleep did not work
     assert len(incoming_data) == 3
 
     assert incoming_data[0] == {

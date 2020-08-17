@@ -2,9 +2,9 @@ import logging
 
 import aioredis
 from aiohttp import web
+from aioredlock import Aioredlock
 from tenacity import Retrying, before_log, stop_after_attempt, wait_random
 
-from aioredlock import Aioredlock
 from servicelib.application_keys import APP_CONFIG_KEY
 
 from .config import (
