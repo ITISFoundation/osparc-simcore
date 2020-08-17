@@ -28,7 +28,7 @@ from simcore_service_webserver.projects.projects_api import (
     get_workbench_node_ids_from_project_uuid,
     is_node_id_present_in_any_project_workbench,
 )
-from simcore_service_webserver.projects.projects_db import ProjectDBAPI
+from simcore_service_webserver.projects.projects_db import APP_PROJECT_DBAPI
 from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
 from simcore_service_webserver.users_api import (
     delete_user,
@@ -132,7 +132,7 @@ async def remove_users_manually_marked_as_guests(
             continue
         logger.info("Will try to remove resources for guest '%s'", guest_user_id)
         # get all projects for this user and then remove with remove_resources_if_guest_user
-        user_project_uuids = await ProjectDBAPI(app).list_all_projects_by_uuid_for_user(
+        user_project_uuids = app[APP_PROJECT_DBAPI].list_all_projects_by_uuid_for_user(
             user_id=guest_user_id
         )
         logger.info(
