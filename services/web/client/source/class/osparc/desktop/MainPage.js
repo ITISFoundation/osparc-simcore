@@ -148,22 +148,32 @@ qx.Class.define("osparc.desktop.MainPage", {
       }
     },
 
-    __startStudy: function(studyData) {
-      osparc.store.Store.getInstance().getUnaccessibleServices(studyData)
-        .then(unaccessibleServices => {
-          if (unaccessibleServices.length) {
-            const msg = unaccessibleServices.length + " service(s) are not accessible";
+    __startStudy: function(studyId) {
+      const store = osparc.store.Store.getInstance();
+      store.getStudyWState(studyId, true)
+        .then(latestStudyData => {
+          const state = latestStudyData["state"];
+          const locked = ("locked" in state) ? state["locked"]["value"] : false;
+          if (locked) {
+            const msg = this.tr("Study is opened");
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-            this.__dashboard.getStudyBrowser().resetSelection();
-          } else {
-            this.__studyEditor = this.__getStudyEditor();
-            this.__showStudyEditor(this.__studyEditor);
-            this.__studyEditor.setStudy(studyData)
-              .then(() => {
-                this.__syncStudyEditor();
-              });
+            return;
           }
-        });
+          store.getUnaccessibleServices(latestStudyData)
+            .then(unaccessibleServices => {
+              if (unaccessibleServices.length) {
+                const msg = unaccessibleServices.length + this.tr(" service(s) are not accessible");
+                osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                this.__dashboard.getStudyBrowser().resetSelection();
+                return;
+              }
+              this.__studyEditor = this.__getStudyEditor();
+              this.__showStudyEditor(this.__studyEditor);
+              this.__studyEditor.setStudy(latestStudyData)
+                .then(() => {
+                  this.__syncStudyEditor();
+                });
+            });
     },
 
     __showStudyEditor: function(studyEditor) {
