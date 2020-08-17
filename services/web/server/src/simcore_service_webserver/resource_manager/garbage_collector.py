@@ -132,7 +132,7 @@ async def remove_users_manually_marked_as_guests(
             continue
         logger.info("Will try to remove resources for guest '%s'", guest_user_id)
         # get all projects for this user and then remove with remove_resources_if_guest_user
-        user_project_uuids = app[APP_PROJECT_DBAPI].list_all_projects_by_uuid_for_user(
+        user_project_uuids = await app[APP_PROJECT_DBAPI].list_all_projects_by_uuid_for_user(
             user_id=guest_user_id
         )
         logger.info(
