@@ -11,8 +11,7 @@
 
 # installs this repo's packages
 ../../packages/s3wrapper/
-../../packages/postgres-database/
+../../packages/postgres-database/[migration]
 ../../packages/simcore-sdk/
 ../../packages/service-library/
 ../../packages/pytest-simcore/
-

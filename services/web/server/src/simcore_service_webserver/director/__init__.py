@@ -5,19 +5,16 @@
 
 import logging
 
-from aiohttp import ClientSession, web
-from yarl import URL
+from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_routing import (
-    get_handlers_from_namespace,
     iter_path_operations,
     map_handlers_with_operations,
 )
 
 from ..rest_config import APP_OPENAPI_SPECS_KEY
-from . import handlers
 from .config import APP_DIRECTOR_API_KEY, CONFIG_SECTION_NAME, build_api_url
 
 logger = logging.getLogger(__name__)
@@ -44,11 +41,9 @@ def setup(app: web.Application, *, disable_login=False):
 
     def include_path(tup_object):
         _method, path, _operation_id, _tags = tup_object
-        return any(
-            tail in path for tail in ["/running_interactive_services", "/services"]
-        )
+        return any(tail in path for tail in ["/running_interactive_services"])
 
-    handlers_dict = {"services_get": handlers.services_get}
+    handlers_dict = {}
 
     # Disables login_required decorator for testing purposes
     if disable_login:

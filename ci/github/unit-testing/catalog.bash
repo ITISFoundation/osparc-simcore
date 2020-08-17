@@ -11,7 +11,7 @@ install() {
 
 test() {
     pytest --cov=simcore_service_catalog --durations=10 --cov-append \
-          --color=yes --cov-report=term-missing --cov-report=xml \
+          --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
           -v -m "not travis" services/catalog/tests/unit
 }
 

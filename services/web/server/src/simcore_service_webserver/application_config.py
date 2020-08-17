@@ -89,8 +89,6 @@ def create_schema() -> T.Dict:
             resource_manager_config.CONFIG_SECTION_NAME: resource_manager_config.schema,
             # BELOW HERE minimal sections until more options are needed
             addon_section("diagnostics", optional=True): minimal_addon_schema(),
-            addon_section("reverse_proxy", optional=True): minimal_addon_schema(),
-            addon_section("application_proxy", optional=True): minimal_addon_schema(),
             addon_section("users", optional=True): minimal_addon_schema(),
             addon_section("groups", optional=True): minimal_addon_schema(),
             addon_section("studies_access", optional=True): minimal_addon_schema(),

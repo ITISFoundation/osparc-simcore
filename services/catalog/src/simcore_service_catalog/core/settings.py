@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Optional
 
 from pydantic import BaseSettings, Field, SecretStr, validator
+from pydantic.types import PositiveInt
 from yarl import URL
 
 
@@ -15,6 +16,23 @@ class BootModeEnum(str, Enum):
 class _CommonConfig:
     case_sensitive = False
     env_file = ".env"  # SEE https://pydantic-docs.helpmanual.io/usage/settings/#dotenv-env-support
+
+
+class DirectorSettings(BaseSettings):
+    enabled: bool = Field(
+        True, description="Enables/Disables connection with director service"
+    )
+    host: str
+    port: int = 8080
+    vtag: str = "v0"
+
+    @property
+    def base_url(self):
+        # FIXME: httpx.client does not consder vtag
+        return f"http://{self.host}:{self.port}/{self.vtag}"
+
+    class Config(_CommonConfig):
+        env_prefix = "DIRECTOR_"
 
 
 class PostgresSettings(BaseSettings):
@@ -49,7 +67,7 @@ class AppSettings(BaseSettings):
     @classmethod
     def create_default(cls) -> "AppSettings":
         # This call triggers parsers
-        return cls(postgres=PostgresSettings())
+        return cls(postgres=PostgresSettings(), director=DirectorSettings())
 
     # pylint: disable=no-self-use
     # pylint: disable=no-self-argument
@@ -75,10 +93,16 @@ class AppSettings(BaseSettings):
     # POSTGRES
     postgres: PostgresSettings
 
+    # Director service
+    director: DirectorSettings
+
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
     host: str = "0.0.0.0"  # nosec
     port: int = 8000
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
+
+    # background task
+    background_task_rest_time: PositiveInt = 60
 
     class Config(_CommonConfig):
         env_prefix = ""

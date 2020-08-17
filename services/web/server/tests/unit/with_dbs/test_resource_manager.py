@@ -41,12 +41,11 @@ SIO_VERSION = tuple(int(digit) for digit in socketio.__version__.split("."))
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, postgres_service, mock_orphaned_services):
+def client(loop, aiohttp_client, app_cfg, postgres_db, mock_orphaned_services):
     cfg = deepcopy(app_cfg)
 
     assert cfg["rest"]["version"] == API_VERSION
     assert cfg["rest"]["enabled"]
-    cfg["db"]["init_tables"] = True  # inits postgres_service
     cfg["projects"]["enabled"] = True
     cfg["director"]["enabled"] = True
     cfg[config.CONFIG_SECTION_NAME][

@@ -15,6 +15,7 @@ from pprint import pprint
 from typing import Dict, List
 
 import pytest
+import sqlalchemy as sa
 from aiohttp import web
 
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -55,7 +56,6 @@ def client(
     assert app_config["rest"]["version"] == API_VERSION
 
     app_config["main"]["testing"] = True
-    app_config["db"]["init_tables"] = True
 
     app_config["storage"]["enabled"] = False
     app_config["rabbit"]["enabled"] = False
@@ -225,6 +225,7 @@ async def _request_delete(client, pid):
 
 async def test_workflow(
     client,
+    postgres_db: sa.engine.Engine,
     fake_project_data,
     logged_user,
     primary_group: Dict[str, str],

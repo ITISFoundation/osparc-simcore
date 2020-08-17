@@ -18,6 +18,7 @@ pytest-lazy-fixture
 # fixtures
 aiopg
 docker
+python-dotenv
 
 # tools for CI
 pylint
