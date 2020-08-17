@@ -181,6 +181,7 @@ qx.Class.define("osparc.utils.Services", {
           email: "maiz@itis.swiss"
         }],
         contact: "maiz@itis.swiss",
+        owner: "maiz@itis.swiss",
         inputs: {},
         outputs: {
           outFile: {
@@ -190,7 +191,9 @@ qx.Class.define("osparc.utils.Services", {
             type: "data:*/*"
           }
         },
-        "access_rights": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
+        "access_rights": {
+          "1": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
+        }
       };
     },
 
@@ -206,9 +209,12 @@ qx.Class.define("osparc.utils.Services", {
           email: "maiz@itis.swiss"
         }],
         contact: "maiz@itis.swiss",
+        owner: "maiz@itis.swiss",
         inputs: {},
         outputs: {},
-        "access_rights": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
+        "access_rights": {
+          "1": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
+        }
       };
     },
 
