@@ -3,7 +3,7 @@ from typing import List, Optional
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
-from psycopg2.errors import ForeignKeyViolation
+from psycopg2.errors import ForeignKeyViolation  # pylint: disable=no-name-in-module
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql import and_, or_
