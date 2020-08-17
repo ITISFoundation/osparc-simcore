@@ -17,7 +17,7 @@ certifi==2020.6.20        # via requests
 cffi==1.14.1              # via bcrypt, cryptography, pynacl
 chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, requests
 coverage==5.2.1           # via -r requirements/_test.in, coveralls, pytest-cov
-coveralls==2.1.1          # via -r requirements/_test.in
+coveralls==2.1.2          # via -r requirements/_test.in
 cryptography==3.0         # via paramiko
 distro==1.5.0             # via docker-compose
 docker-compose==1.26.2    # via pytest-docker
