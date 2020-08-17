@@ -48,7 +48,7 @@ pynacl==1.4.0             # via paramiko
 pyparsing==2.4.7          # via packaging
 pyrsistent==0.16.0        # via -r requirements/_base.txt, jsonschema
 pytest-aiohttp==0.3.0     # via -r requirements/_test.in
-pytest-cov==2.10.0        # via -r requirements/_test.in
+pytest-cov==2.10.1        # via -r requirements/_test.in
 pytest-docker==0.8.0      # via -r requirements/_test.in
 pytest-instafail==0.4.2   # via -r requirements/_test.in
 pytest-mock==3.2.0        # via -r requirements/_test.in
