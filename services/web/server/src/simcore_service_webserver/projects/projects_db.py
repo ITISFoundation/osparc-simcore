@@ -7,6 +7,7 @@
 
 import logging
 import uuid as uuidlib
+from collections import deque
 from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Mapping, Optional, Set, Union
@@ -324,7 +325,11 @@ OR prj_owner = {user_id})
         return api_projects
 
     async def _get_project(
-        self, user_id: int, project_uuid: str, exclude_foreign: Optional[List] = None, include_templates: Optional[bool] = False
+        self,
+        user_id: int,
+        project_uuid: str,
+        exclude_foreign: Optional[List] = None,
+        include_templates: Optional[bool] = False,
     ) -> Dict:
         exclude_foreign = exclude_foreign or []
         async with self.engine.acquire() as conn:
@@ -562,6 +567,15 @@ OR prj_owner = {user_id})
                 result.update(set(row.values()))
 
             return result
+
+    async def list_all_projects_by_uuid_for_user(self, user_id: int) -> List[str]:
+        result = deque()
+        async with self.engine.acquire() as conn:
+            async for row in conn.execute(
+                sa.select([projects.c.uuid]).where(projects.c.prj_owner == user_id)
+            ):
+                result.append(row[0])
+            return list(result)
 
 
 def setup_projects_db(app: web.Application):

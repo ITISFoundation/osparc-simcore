@@ -32,7 +32,6 @@ from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.users import setup_users
 
-
 API_VERSION = "v0"
 
 
