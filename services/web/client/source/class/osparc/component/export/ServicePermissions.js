@@ -33,7 +33,7 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
   construct: function(serviceData) {
     this.__serviceData = osparc.utils.Utils.deepCloneObject(serviceData);
 
-    this.base(arguments, this.__studyData);
+    this.base(arguments, this.__serviceData);
   },
 
   events: {
