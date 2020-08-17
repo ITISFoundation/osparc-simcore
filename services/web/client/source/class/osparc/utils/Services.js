@@ -189,7 +189,8 @@ qx.Class.define("osparc.utils.Services", {
             description: "Chosen File",
             type: "data:*/*"
           }
-        }
+        },
+        "access_rights": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
       };
     },
 
@@ -206,7 +207,8 @@ qx.Class.define("osparc.utils.Services", {
         }],
         contact: "maiz@itis.swiss",
         inputs: {},
-        outputs: {}
+        outputs: {},
+        "access_rights": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
       };
     },
 
