@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict
 import traceback
 
 import aiodocker
@@ -30,7 +30,7 @@ log.setLevel(config.SIDECAR_LOGLEVEL)
 node_port_log.setLevel(config.SIDECAR_LOGLEVEL)
 
 
-async def task_required_resources(node_id: str) -> Union[bool, None]:
+async def task_required_resources(node_id: str) -> Union[Dict[str, bool], None]:
     """Checks if the comp_task's image field if it requires to use the GPU"""
     try:
         async with DBContextManager() as db_engine:
