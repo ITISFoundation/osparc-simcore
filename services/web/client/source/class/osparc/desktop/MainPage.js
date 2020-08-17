@@ -152,8 +152,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const store = osparc.store.Store.getInstance();
       store.getStudyWState(studyId, true)
         .then(latestStudyData => {
-          const state = latestStudyData["state"];
-          const locked = ("locked" in state) ? state["locked"]["value"] : false;
+          const locked = ("locked" in latestStudyData) ? latestStudyData["locked"]["value"] : false;
           if (locked) {
             const msg = this.tr("Study is opened");
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
