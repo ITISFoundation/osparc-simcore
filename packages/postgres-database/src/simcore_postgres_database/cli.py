@@ -9,6 +9,7 @@ import json.decoder
 import logging
 import os
 import sys
+import time
 from copy import deepcopy
 from logging.config import fileConfig
 from pathlib import Path
@@ -16,10 +17,11 @@ from typing import Dict, Optional
 
 import alembic.command
 import click
+import docker
 from alembic import __version__ as __alembic_version__
 from alembic.config import Config as AlembicConfig
+from tenacity import Retrying, after_log, wait_fixed
 
-import docker
 from simcore_postgres_database.models import *
 from simcore_postgres_database.utils import build_url, raise_if_not_responsive
 
@@ -239,6 +241,22 @@ def info():
 def clean():
     """ Clears discovered database """
     _reset_cache()
+
+
+@main.command()
+def service():
+    """ migration service program (use only in that case)"""
+
+    for attempt in Retrying(wait=wait_fixed(5), after=after_log(log, logging.ERROR)):
+        with attempt:
+            if not discover.callback():
+                raise Exception("Postgres db was not discover")
+
+    upgrade(revision="head")
+
+    print("Started ...")
+    while True:
+        time.sleep(10000)
 
 
 # Bypasses alembic CLI into a reduced version  ------------
