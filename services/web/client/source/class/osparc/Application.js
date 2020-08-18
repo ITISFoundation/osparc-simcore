@@ -92,6 +92,8 @@ qx.Class.define("osparc.Application", {
 
       this.__initRouting();
       this.__loadCommonCss();
+
+      this.__updateTabName();
     },
 
     __initRouting: function() {
@@ -125,6 +127,13 @@ qx.Class.define("osparc.Application", {
       } else {
         this.__restart();
       }
+    },
+
+    __updateTabName: function() {
+      osparc.utils.LibVersions.getPlatformName()
+        .then(platformName => {
+          document.title += ` (${platformName})`;
+        });
     },
 
     __restart: function() {
