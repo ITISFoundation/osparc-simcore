@@ -126,10 +126,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       Promise.all(resourcePromises)
         .then(() => {
-          this._hideLoadingPage();
           this.__createStudiesLayout();
           this.__reloadResources();
           this.__attachEventHandlers();
+          this._hideLoadingPage();
           const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
           if (loadStudyId) {
             this.__getStudyAndStart(loadStudyId);
@@ -228,13 +228,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.store.Store.getInstance().getStudyWState(loadStudyId, true)
         .then(studyData => {
           this.__startStudy(studyData["uuid"]);
-        })
-        .catch(err => {
-          if (osparc.data.Permissions.getInstance().getRole() === "Guest") {
-            // If guest fails to load study, log him out
-            osparc.auth.Manager.getInstance().logout();
-          }
-          console.error(err);
         });
     },
 

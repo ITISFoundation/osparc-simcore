@@ -144,6 +144,12 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __showDashboard: function() {
+      if (osparc.data.Permissions.getInstance().getRole() === "guest") {
+        // If guest fails to load study, log him out
+        osparc.auth.Manager.getInstance().logout();
+        return;
+      }
+
       this.__mainStack.setSelection([this.__dashboardLayout]);
       this.__dashboard.getStudyBrowser().reloadUserStudies();
       this.__navBar.setPathButtons([]);
