@@ -217,7 +217,6 @@ services:
       - default
       - computational_services_subnet
 
-
   migration:
     image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}
     init: true

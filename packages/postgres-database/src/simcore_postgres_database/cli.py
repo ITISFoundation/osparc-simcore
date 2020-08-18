@@ -252,7 +252,13 @@ def service():
             if not discover.callback():
                 raise Exception("Postgres db was not discover")
 
-    upgrade(revision="head")
+    # FIXME: if database is not stampped!?
+    try:
+        info.callback()
+        upgrade.callback(revision="head")
+        info.callback()
+    except Exception:
+        log.exception("Unable to upgrade")
 
     print("Started ...")
     while True:
