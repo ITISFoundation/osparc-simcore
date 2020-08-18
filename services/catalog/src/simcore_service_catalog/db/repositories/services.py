@@ -1,7 +1,9 @@
+import logging
 from typing import List, Optional
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
+from psycopg2.errors import ForeignKeyViolation  # pylint: disable=no-name-in-module
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql import and_, or_
@@ -9,6 +11,8 @@ from sqlalchemy.sql import and_, or_
 from ...models.domain.service import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from ..tables import services_access_rights, services_meta_data
 from ._base import BaseRepository
+
+logger = logging.getLogger(__name__)
 
 
 class ServicesRepository(BaseRepository):
@@ -147,10 +151,17 @@ class ServicesRepository(BaseRepository):
                 ],
                 set_=rights.dict(by_alias=True, exclude_unset=True),
             )
-            await self.connection.execute(
-                # pylint: disable=no-value-for-parameter
-                on_update_stmt
-            )
+            try:
+                await self.connection.execute(
+                    # pylint: disable=no-value-for-parameter
+                    on_update_stmt
+                )
+            except ForeignKeyViolation:
+                logger.warning(
+                    "The service %s:%s is missing from services_meta_data",
+                    rights.key,
+                    rights.version,
+                )
 
     async def delete_service_access_rights(
         self, delete_access_rights: List[ServiceAccessRightsAtDB]
