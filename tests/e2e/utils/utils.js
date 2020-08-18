@@ -173,7 +173,9 @@ async function waitForValidOutputFile(page) {
 }
 
 async function waitAndClick(page, id) {
-  await page.waitForSelector(id);
+  await page.waitForSelector(id, {
+    timeout: 2000
+  });
   await page.click(id);
 }
 
