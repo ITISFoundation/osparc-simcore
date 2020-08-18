@@ -19,6 +19,7 @@ from aiopg.sa.connection import SAConnection
 from fastapi import FastAPI
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
+from simcore_service_catalog.db.repositories.projects import ProjectsRepository
 
 from ..api.dependencies.director import get_director_session
 from ..db.repositories.groups import GroupsRepository
@@ -26,6 +27,7 @@ from ..db.repositories.services import ServicesRepository
 from ..models.domain.service import (
     ServiceAccessRightsAtDB,
     ServiceDockerData,
+    ServiceKeyVersion,
     ServiceMetaDataAtDB,
 )
 
@@ -57,14 +59,14 @@ async def _list_registry_services(
     return services
 
 
-async def _list_db_services(app: FastAPI) -> Set[Tuple[ServiceKey, ServiceVersion]]:
-    engine: Engine = app.state.engine
-    async with engine.acquire() as conn:
-        services_repo = ServicesRepository(conn)
-        return {
-            (service.key, service.version)
-            for service in await services_repo.list_services()
-        }
+async def _list_db_services(
+    connection: SAConnection,
+) -> Set[Tuple[ServiceKey, ServiceVersion]]:
+    services_repo = ServicesRepository(connection)
+    return {
+        (service.key, service.version)
+        for service in await services_repo.list_services()
+    }
 
 
 async def _get_service_access_rights(
@@ -97,6 +99,17 @@ async def _get_service_access_rights(
             if not owner_gid:
                 owner_gid = possible_gid
 
+    # if the service is part of a published template, it has to be available to everyone
+    projects_repo = ProjectsRepository(connection)
+    published_services: List[
+        ServiceKeyVersion
+    ] = await projects_repo.list_services_from_published_templates()
+    if (
+        ServiceKeyVersion(key=service.key, version=service.version)
+        in published_services
+    ):
+        reader_gids.append(everyone_gid)
+
     # if no owner gid yet, we pass readable rights to the everyone group
     if not owner_gid:
         reader_gids.append(everyone_gid)
@@ -117,53 +130,100 @@ async def _get_service_access_rights(
 
 
 async def _create_services_in_db(
-    app: FastAPI,
+    connection: SAConnection,
     service_keys: Set[Tuple[ServiceKey, ServiceVersion]],
     services: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData],
 ) -> None:
-    engine: Engine = app.state.engine
-    async with engine.acquire() as conn:
-        services_repo = ServicesRepository(conn)
-        for service_key, service_version in service_keys:
-            service: ServiceDockerData = services[(service_key, service_version)]
-            # find the service owner
-            owner_gid, service_access_rights = await _get_service_access_rights(
-                service, conn
-            )
-            # set the service in the DB
-            await services_repo.create_service(
-                ServiceMetaDataAtDB(**service.dict(), owner=owner_gid),
-                service_access_rights,
-            )
+
+    services_repo = ServicesRepository(connection)
+    for service_key, service_version in service_keys:
+        service: ServiceDockerData = services[(service_key, service_version)]
+        # find the service owner
+        owner_gid, service_access_rights = await _get_service_access_rights(
+            service, connection
+        )
+        # set the service in the DB
+        await services_repo.create_service(
+            ServiceMetaDataAtDB(**service.dict(), owner=owner_gid),
+            service_access_rights,
+        )
+
+
+async def _ensure_registry_insync_with_db(
+    app: FastAPI, connection: SAConnection
+) -> None:
+    services_in_registry: Dict[
+        Tuple[ServiceKey, ServiceVersion], ServiceDockerData
+    ] = await _list_registry_services(app)
+    services_in_db: Set[Tuple[ServiceKey, ServiceVersion]] = await _list_db_services(
+        connection
+    )
+
+    # check that the db has all the services at least once
+    missing_services_in_db = set(services_in_registry.keys()) - services_in_db
+    if missing_services_in_db:
+        logger.debug(
+            "missing services in db:\n%s", pformat(missing_services_in_db),
+        )
+        # update db (rationale: missing services are shared with everyone for now)
+        await _create_services_in_db(
+            connection, missing_services_in_db, services_in_registry
+        )
+
+
+async def _ensure_published_templates_accessible(connection: SAConnection) -> None:
+    # Rationale: if a project template was published, its services must be available to everyone.
+    # a published template has a column Published that is set to True
+    projects_repo = ProjectsRepository(connection)
+    published_services: Set[Tuple[str, str]] = {
+        (service.key, service.version)
+        for service in await projects_repo.list_services_from_published_templates()
+    }
+
+    groups_repo = GroupsRepository(connection)
+    everyone_gid = (await groups_repo.get_everyone_group()).gid
+
+    services_repo = ServicesRepository(connection)
+    available_services: Set[Tuple[str, str]] = {
+        (service.key, service.version)
+        for service in await services_repo.list_services(
+            gids=[everyone_gid], execute_access=True
+        )
+    }
+
+    missing_services = published_services - available_services
+    missing_services_access_rights = [
+        ServiceAccessRightsAtDB(
+            key=service[0], version=service[1], gid=everyone_gid, execute_rights=True
+        )
+        for service in missing_services
+    ]
+    if missing_services_access_rights:
+        logger.info(
+            "Adding access rights for published templates\n: %s",
+            missing_services_access_rights,
+        )
+        await services_repo.upsert_service_access_rights(missing_services_access_rights)
 
 
 async def sync_registry_task(app: FastAPI) -> None:
     # get list of services from director
+    engine: Engine = app.state.engine
     while True:
         try:
-            logger.debug("syncing services between registry and database...")
-            services_in_registry: Dict[
-                Tuple[ServiceKey, ServiceVersion], ServiceDockerData
-            ] = await _list_registry_services(app)
-            services_in_db: Set[
-                Tuple[ServiceKey, ServiceVersion]
-            ] = await _list_db_services(app)
+            async with engine.acquire() as conn:
+                logger.debug("syncing services between registry and database...")
+                # check that the list of services is in sync with the registry
+                await _ensure_registry_insync_with_db(app, conn)
 
-            # check that the db has all the services at least once
-            missing_services_in_db = set(services_in_registry.keys()) - services_in_db
-            if missing_services_in_db:
-                logger.debug(
-                    "missing services in db:\n%s", pformat(missing_services_in_db),
-                )
-                # update db (rationale: missing services are shared with everyone for now)
-                await _create_services_in_db(
-                    app, missing_services_in_db, services_in_registry
-                )
+                # check that the published services are available to everyone (templates are published to GUESTs, so their services must be also accessible)
+                await _ensure_published_templates_accessible(conn)
 
             await asyncio.sleep(app.state.settings.background_task_rest_time)
 
         except CancelledError:
             # task is stopped
+            logger.debug("Catalog background task cancelled", exc_info=True)
             return
         except Exception:  # pylint: disable=broad-except
             logger.exception("Error while processing services entry")
