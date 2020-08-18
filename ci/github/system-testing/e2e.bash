@@ -148,11 +148,11 @@ recover_artifacts() {
   # get docker logs.
   # WARNING: dumping long logs might take hours!!
   mkdir simcore_logs
-  (docker service logs --timestamps --tail=300 --details simcore_webserver >simcore_logs/webserver.log 2>&1) || true
-  (docker service logs --timestamps --tail=200 --details simcore_director >simcore_logs/director.log 2>&1) || true
-  (docker service logs --timestamps --tail=200 --details simcore_storage >simcore_logs/storage.log 2>&1) || true
-  (docker service logs --timestamps --tail=200 --details simcore_sidecar >simcore_logs/sidecar.log 2>&1) || true
-  (docker service logs --timestamps --tail=200 --details simcore_catalog >simcore_logs/catalog.log 2>&1) || true
+  (docker service logs --timestamps --tail=300 --details ${SWARM_STACK_NAME}_webserver >simcore_logs/webserver.log 2>&1) || true
+  (docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_director >simcore_logs/director.log 2>&1) || true
+  (docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_storage >simcore_logs/storage.log 2>&1) || true
+  (docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_sidecar >simcore_logs/sidecar.log 2>&1) || true
+  (docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_catalog >simcore_logs/catalog.log 2>&1) || true
 }
 
 clean_up() {
