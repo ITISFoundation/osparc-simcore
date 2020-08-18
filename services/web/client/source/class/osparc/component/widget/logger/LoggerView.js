@@ -184,6 +184,16 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       }, this);
       toolbar.add(logLevelSelectBox);
 
+      const copyToClipboardButton = new qx.ui.form.Button().set({
+        icon: "@FontAwesome5Solid/copy/14",
+        toolTipText: this.tr("Copy logs to clipboard"),
+        appearance: "toolbar-button"
+      });
+      copyToClipboardButton.addListener("execute", e => {
+        this.__copyLogsToClipboard();
+      }, this);
+      toolbar.add(copyToClipboardButton);
+
       return toolbar;
     },
 
@@ -237,6 +247,14 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
         // Root selected
         this.__textFilterField.setValue("");
       }
+    },
+
+    __copyLogsToClipboard: function() {
+      let logs = "";
+      this.__logModel.getRows().forEach(row => {
+        logs += `(${row.nodeId}) ${row.label}: ${row.msg} \n`;
+      });
+      osparc.utils.Utils.copyTextToClipboard(logs);
     },
 
     debug: function(nodeId, msg = "") {

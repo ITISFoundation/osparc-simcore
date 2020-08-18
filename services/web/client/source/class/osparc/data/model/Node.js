@@ -40,6 +40,7 @@
 
 qx.Class.define("osparc.data.model.Node", {
   extend: qx.core.Object,
+  include: qx.locale.MTranslation,
 
   /**
     * @param key {String} key of the service represented by the node
