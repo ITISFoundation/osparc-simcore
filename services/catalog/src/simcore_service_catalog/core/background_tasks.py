@@ -149,7 +149,7 @@ async def _create_services_in_db(
         )
 
 
-async def _ensure_services_metadata_uptodate(
+async def _ensure_registry_insync_with_db(
     app: FastAPI, connection: SAConnection
 ) -> None:
     services_in_registry: Dict[
@@ -171,7 +171,7 @@ async def _ensure_services_metadata_uptodate(
         )
 
 
-async def _ensure_published_services_are_accessible(connection: SAConnection) -> None:
+async def _ensure_published_templates_accessible(connection: SAConnection) -> None:
     # Rationale: if a project template was published, its services must be available to everyone.
     # a published template has a column Published that is set to True
     projects_repo = ProjectsRepository(connection)
@@ -214,10 +214,10 @@ async def sync_registry_task(app: FastAPI) -> None:
             async with engine.acquire() as conn:
                 logger.debug("syncing services between registry and database...")
                 # check that the list of services is in sync with the registry
-                await _ensure_services_metadata_uptodate(app, conn)
+                await _ensure_registry_insync_with_db(app, conn)
 
                 # check that the published services are available to everyone (templates are published to GUESTs, so their services must be also accessible)
-                await _ensure_published_services_are_accessible(conn)
+                await _ensure_published_templates_accessible(conn)
 
             await asyncio.sleep(app.state.settings.background_task_rest_time)
 
