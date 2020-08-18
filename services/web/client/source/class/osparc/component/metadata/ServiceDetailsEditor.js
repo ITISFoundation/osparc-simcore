@@ -219,7 +219,7 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
       ].forEach(fieldKey => {
         const dirty = data[fieldKey];
         const clean = osparc.wrapper.DOMPurify.getInstance().sanitize(dirty);
-        if (dirty !== clean) {
+        if (dirty && dirty !== clean) {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an issue in the text of ") + fieldKey, "ERROR");
         }
         data[fieldKey] = clean;
