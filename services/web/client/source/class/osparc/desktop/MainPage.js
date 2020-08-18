@@ -57,6 +57,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     __mainStack: null,
     __dashboard: null,
     __dashboardLayout: null,
+    __loadingPage: null,
     __studyEditor: null,
 
     __createNavigationBar: function() {
@@ -88,8 +89,11 @@ qx.Class.define("osparc.desktop.MainPage", {
         alignX: "center"
       });
 
-      const dashboardLayout = this.__createDashboardStack();
+      const dashboardLayout = this.__dashboardLayout = this.__createDashboardStack();
       mainStack.add(dashboardLayout);
+
+      const loadingPage = this.__loadingPage = new osparc.ui.message.Loading();
+      mainStack.add(loadingPage);
 
       const studyEditor = this.__studyEditor = this.__getStudyEditor();
       mainStack.add(studyEditor);
@@ -110,7 +114,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           return [0, 1].includes(tabIndex) ? "visible" : "hidden";
         }
       });
-      const dashboardLayout = this.__dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       dashboardLayout.add(sideSearch, {
         flex: 1
       });
@@ -148,32 +152,9 @@ qx.Class.define("osparc.desktop.MainPage", {
       }
     },
 
-    __startStudy: function(studyId) {
-      const store = osparc.store.Store.getInstance();
-      store.getStudyWState(studyId, true)
-        .then(latestStudyData => {
-          const locked = ("locked" in latestStudyData) ? latestStudyData["locked"]["value"] : false;
-          if (locked) {
-            const msg = this.tr("Study is opened");
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-            return;
-          }
-          store.getUnaccessibleServices(latestStudyData)
-            .then(unaccessibleServices => {
-              if (unaccessibleServices.length) {
-                const msg = unaccessibleServices.length + this.tr(" service(s) are not accessible");
-                osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-                this.__dashboard.getStudyBrowser().resetSelection();
-                return;
-              }
-              this.__studyEditor = this.__getStudyEditor();
-              this.__showStudyEditor(this.__studyEditor);
-              this.__studyEditor.setStudy(latestStudyData)
-                .then(() => {
-                  this.__syncStudyEditor();
-                });
-            });
-        });
+    __showLoadingPage: function(msg) {
+      this.__loadingPage.setHeader(msg);
+      this.__mainStack.setSelection([this.__loadingPage]);
     },
 
     __showStudyEditor: function(studyEditor) {
@@ -184,6 +165,47 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__studyEditor = studyEditor;
       this.__mainStack.add(this.__studyEditor);
       this.__mainStack.setSelection([this.__studyEditor]);
+    },
+
+    __startStudy: function(studyId) {
+      this.__showLoadingPage(this.tr("Loading Study"));
+
+      const store = osparc.store.Store.getInstance();
+      store.getStudyWState(studyId, true)
+        .then(latestStudyData => {
+          if (!latestStudyData) {
+            const msg = this.tr("Study not found");
+            throw new Error(msg);
+          }
+          const locked = ("locked" in latestStudyData) ? latestStudyData["locked"]["value"] : false;
+          if (locked) {
+            const msg = this.tr("Study is opened");
+            throw new Error(msg);
+          }
+          store.getUnaccessibleServices(latestStudyData)
+            .then(unaccessibleServices => {
+              if (unaccessibleServices.length) {
+                this.__dashboard.getStudyBrowser().resetSelection();
+                const msg = unaccessibleServices.length + this.tr(" service(s) are not accessible");
+                throw new Error(msg);
+              }
+              this.__showStudyEditor(this.__getStudyEditor());
+              this.__studyEditor.setStudy(latestStudyData)
+                .then(() => {
+                  this.__syncStudyEditor();
+                });
+            })
+            .catch(err => {
+              osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+              this.__showDashboard();
+              return;
+            });
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          this.__showDashboard();
+          return;
+        });
     },
 
     __syncStudyEditor: function() {
