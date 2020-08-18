@@ -25,6 +25,8 @@ class ProjectsRepository(BaseRepository):
             for node in project_workbench:
                 service = project_workbench[node]
                 try:
+                    if service.key.contains("file-picker"):
+                        continue
                     list_of_published_services.append(ServiceKeyVersion(**service))
                 except ValidationError:
                     logger.warning(
