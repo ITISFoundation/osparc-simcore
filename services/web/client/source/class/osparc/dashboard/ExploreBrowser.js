@@ -93,6 +93,16 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         });
     },
 
+    __reloadService: function(serviceKey, serviceVersion, reload) {
+      osparc.store.Store.getInstance().getService(serviceKey, serviceVersion, reload)
+        .then(serviceData => {
+          this.__resetServiceItem(serviceData);
+        })
+        .catch(err => {
+          console.error(err);
+        });
+    },
+
     __checkLoggedIn: function() {
       let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
       if (!isLogged) {
@@ -324,6 +334,17 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
     },
 
+    __resetServiceItem: function(serviceData) {
+      const servicesList = this.__services;
+      const index = servicesList.findIndex(service => service["key"] === serviceData["key"]);
+      if (index === -1) {
+        servicesList.push(serviceData);
+      } else {
+        servicesList[index] = serviceData;
+      }
+      this.__resetServicesList(servicesList);
+    },
+
     __resetServicesList: function(servicesList) {
       this.__services = servicesList;
       this.__servicesContainer.removeAll();
@@ -462,7 +483,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
           const studyId = e.getData();
           this.__reloadTemplate(studyId, true);
         } else if (this.self().isService(studyData)) {
-          console.log(e.getData());
+          const serviceKey = e.getData();
+          this.__reloadService(serviceKey, studyData.version);
         }
       }, this);
     },
@@ -531,20 +553,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this.resetSelection();
     },
 
-    __createServiceDetailsEditor: function(serviceData) {
-      const serviceStarter = new osparc.component.metadata.ServiceDetailsEditor(serviceData);
-      const title = this.tr("Service information") + " · " + serviceData.name;
-      const win = osparc.ui.window.Window.popUpInWindow(serviceStarter, title, 700, 800);
-      serviceStarter.addListener("startService", e => {
-        const {
-          serviceKey,
-          serviceVersion
-        } = e.getData();
-        this.__createStudyFromService(serviceKey, serviceVersion);
-        win.close();
-      });
-    },
-
     __createStudyDetailsEditor: function(studyData, winWidth) {
       const studyDetails = new osparc.component.metadata.StudyDetailsEditor(studyData, true, winWidth);
       studyDetails.addListener("updateTemplate", () => this.reloadTemplates(), this);
@@ -559,6 +567,25 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const title = this.tr("Study Details Editor");
       const win = osparc.ui.window.Window.popUpInWindow(studyDetails, title, winWidth, height);
       studyDetails.addListener("updateTemplate", () => win.close());
+    },
+
+    __createServiceDetailsEditor: function(serviceData) {
+      const serviceDetailsEditor = new osparc.component.metadata.ServiceDetailsEditor(serviceData);
+      const title = this.tr("Service information") + " · " + serviceData.name;
+      const win = osparc.ui.window.Window.popUpInWindow(serviceDetailsEditor, title, 700, 800);
+      serviceDetailsEditor.addListener("startService", e => {
+        const {
+          serviceKey,
+          serviceVersion
+        } = e.getData();
+        this.__createStudyFromService(serviceKey, serviceVersion);
+        win.close();
+      });
+      serviceDetailsEditor.addListener("updateService", e => {
+        const newServiceData = e.getData();
+        this.__resetServiceItem(newServiceData);
+        win.close();
+      });
     },
 
     __openServicePermissions: function(serviceData) {

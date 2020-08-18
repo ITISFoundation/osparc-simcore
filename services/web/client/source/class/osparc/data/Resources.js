@@ -182,6 +182,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/catalog/services"
           },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/catalog/services/{serviceKey}/{serviceVersion}"
+          },
           patch: {
             method: "PATCH",
             url: statics.API + "/catalog/services/{serviceKey}/{serviceVersion}"
@@ -692,13 +696,10 @@ qx.Class.define("osparc.data.Resources", {
       return this.getInstance().get(resource, params, useCache);
     },
 
-    getServiceUrl: function(serviceKey, serviceVersion, data) {
+    getServiceUrl: function(serviceKey, serviceVersion) {
       return {
-        url: {
-          "serviceKey": encodeURIComponent(serviceKey),
-          "serviceVersion": serviceVersion
-        },
-        data: data
+        "serviceKey": encodeURIComponent(serviceKey),
+        "serviceVersion": serviceVersion
       };
     }
   }

@@ -37,7 +37,7 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
   },
 
   events: {
-    "updateService": "qx.event.type.Event",
+    "updateService": "qx.event.type.Data",
     "startService": "qx.event.type.Data"
   },
 
@@ -191,19 +191,16 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
       };
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
-          btn.resetIcon();
-          btn.getChildControl("icon").getContentElement()
-            .removeClass("rotate");
-          this.__studyModel.set(serviceData);
-          this.setMode("display");
-          this.fireEvent("updateService");
+          this.fireDataEvent("updateService", serviceData);
         })
         .catch(err => {
+          console.error(err);
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
+        })
+        .finally(() => {
           btn.resetIcon();
           btn.getChildControl("icon").getContentElement()
             .removeClass("rotate");
-          console.error(err);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
         });
     },
 
