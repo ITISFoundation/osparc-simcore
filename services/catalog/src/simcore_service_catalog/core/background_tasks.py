@@ -194,7 +194,7 @@ async def _ensure_published_templates_accessible(connection: SAConnection) -> No
     missing_services = published_services - available_services
     missing_services_access_rights = [
         ServiceAccessRightsAtDB(
-            key=service[0], version=service[1], gid=everyone_gid, execute_rights=True
+            key=service[0], version=service[1], gid=everyone_gid, execute_access=True
         )
         for service in missing_services
     ]
@@ -239,5 +239,5 @@ async def start_registry_sync_task(app: FastAPI) -> None:
 
 async def stop_registry_sync_task(app: FastAPI) -> None:
     task = app.state.registry_sync_task
-    await task.cancel()
-    await task.close()
+    task.cancel()
+    await task
