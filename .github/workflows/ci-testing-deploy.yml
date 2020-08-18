@@ -461,6 +461,7 @@ jobs:
           name: unit_storage_coverage
           path: codeclimate.unit_storage_coverage.json
 
+  # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
   unit-test-webserver-isolated:
     name: Unit-testing webserver isolated
     runs-on: ${{ matrix.os }}
@@ -508,6 +509,7 @@ jobs:
           name: unit_webserver_isolated_coverage
           path: codeclimate.unit_webserver_isolated_coverage.json
 
+  # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
   unit-test-webserver-slow:
     name: Unit-testing webserver slow
     runs-on: ${{ matrix.os }}
@@ -555,6 +557,7 @@ jobs:
           name: unit_webserver_slow_coverage
           path: codeclimate.unit_webserver_slow_coverage.json
 
+  # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
   unit-test-webserver-medium:
     name: Unit-testing webserver medium
     runs-on: ${{ matrix.os }}
@@ -602,6 +605,7 @@ jobs:
           name: unit_webserver_medium_coverage
           path: codeclimate.unit_webserver_medium_coverage.json
 
+  # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
   unit-test-webserver-fast:
     name: Unit-testing webserver fast
     runs-on: ${{ matrix.os }}
