@@ -24,7 +24,7 @@ from .helpers.utils_docker import (
 )
 
 
-@pytest.fixture("session")
+@pytest.fixture(scope="session")
 def devel_environ(env_devel_file: Path) -> Dict[str, str]:
     """ Loads and extends .env-devel returning
         all environment variables key=value
@@ -82,7 +82,7 @@ def make_up_prod_environ():
     os.environ = old_env
 
 
-@pytest.fixture("module")
+@pytest.fixture(scope="module")
 def simcore_docker_compose(
     osparc_simcore_root_dir: Path,
     env_file: Path,
@@ -117,7 +117,7 @@ def simcore_docker_compose(
     return config
 
 
-@pytest.fixture("module")
+@pytest.fixture(scope="module")
 def ops_docker_compose(
     osparc_simcore_root_dir: Path, env_file: Path, temp_folder: Path
 ) -> Dict:
