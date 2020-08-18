@@ -540,7 +540,7 @@ jobs:
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_slow
+        run: ./ci/github/unit-testing/webserver.bash test_with_db_slow
       - uses: codecov/codecov-action@v1
         with:
           flags: unittests #optional
@@ -587,7 +587,7 @@ jobs:
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_medium
+        run: ./ci/github/unit-testing/webserver.bash test_with_db_medium
       - uses: codecov/codecov-action@v1
         with:
           flags: unittests #optional
@@ -634,7 +634,7 @@ jobs:
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_fast
+        run: ./ci/github/unit-testing/webserver.bash test_with_db_fast
       - uses: codecov/codecov-action@v1
         with:
           flags: unittests #optional
