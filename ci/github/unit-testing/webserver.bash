@@ -9,10 +9,28 @@ install() {
     pip list -v
 }
 
-test() {
+test_isolated() {
     pytest --cov=simcore_service_webserver --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-          -v -m "not travis" services/web/server/tests/unit
+          -v -m "not travis" services/web/server/tests/unit/isolated
+}
+
+test_with_db_slow() {
+    pytest --cov=simcore_service_webserver --durations=10 --cov-append \
+          --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
+          -v -m "not travis" services/web/server/tests/unit/with_db/slow
+}
+
+test_with_db_medium() {
+    pytest --cov=simcore_service_webserver --durations=10 --cov-append \
+          --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
+          -v -m "not travis" services/web/server/tests/unit/with_db/medium
+}
+
+test_with_db_fast() {
+    pytest --cov=simcore_service_webserver --durations=10 --cov-append \
+          --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
+          -v -m "not travis" services/web/server/tests/unit/with_db/fast
 }
 
 # Check if the function exists (bash specific)
