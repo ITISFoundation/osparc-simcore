@@ -55,7 +55,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     _buildPage: function() {
       this.__form = new qx.ui.form.Form();
 
-      const image = new osparc.ui.basic.OSparcLogo().set({
+      const image = new osparc.ui.basic.Logo().set({
         width: 250,
         height: 150
       });

@@ -48,7 +48,7 @@ qx.Class.define("osparc.component.widget.LogoOnOff", {
     });
     this.add(offLogo);
 
-    const onLogo = new osparc.ui.basic.OSparcLogo().set({
+    const onLogo = new osparc.ui.basic.Logo().set({
       width,
       height
     });
