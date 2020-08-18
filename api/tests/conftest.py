@@ -64,7 +64,7 @@ def api_specs_info(api_specs_dir):
     return info
 
 
-@pytest.fixture("session")
+@pytest.fixture(scope="session")
 def all_api_specs_tails(api_specs_dir):
     """ Returns openapi/jsonschema spec files path relative to specs_dir
 

@@ -32,8 +32,7 @@ before_script() {
 script() {
     if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
-        pytest --cov=api --durations=10 --cov-append \
-          --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
+        pytest --durations=10 \
           -v -m "not travis" api/tests
     else
         echo "No changes detected. Skipping unit-testing of apihub."

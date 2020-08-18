@@ -94,7 +94,7 @@ def change_references_to_schemas(filepath: Path, specs: dict):
                     specs[key] = file_ref + "#" + section_ref
 
 
-@pytest.fixture("session")
+@pytest.fixture(scope="session")
 def converted_specs_testdir(api_specs_dir, all_api_specs_tails, tmpdir_factory):
     """
         - All api_specs files are copied into tmpdir
