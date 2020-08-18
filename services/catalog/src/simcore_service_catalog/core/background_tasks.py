@@ -223,6 +223,7 @@ async def sync_registry_task(app: FastAPI) -> None:
 
         except CancelledError:
             # task is stopped
+            logger.debug("Catalog background task cancelled", exc_info=True)
             return
         except Exception:  # pylint: disable=broad-except
             logger.exception("Error while processing services entry")
