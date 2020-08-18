@@ -29,26 +29,26 @@ from simcore_service_webserver.resources import resources
 config_yaml_filenames = [str(name) for name in resources.listdir("config")]
 
 
-@pytest.fixture("session")
+@pytest.fixture(scope="session")
 def app_config_schema():
     return create_schema()
 
 
-@pytest.fixture("session")
+@pytest.fixture(scope="session")
 def env_devel_file(osparc_simcore_root_dir):
     env_devel_fpath = osparc_simcore_root_dir / ".env-devel"
     assert env_devel_fpath.exists()
     return env_devel_fpath
 
 
-@pytest.fixture("session")
+@pytest.fixture(scope="session")
 def services_docker_compose_file(osparc_simcore_root_dir):
     dcpath = osparc_simcore_root_dir / "services" / "docker-compose.yml"
     assert dcpath.exists()
     return dcpath
 
 
-@pytest.fixture("session")
+@pytest.fixture(scope="session")
 def devel_environ(env_devel_file):
     env_devel = {}
     with env_devel_file.open() as f:
@@ -56,7 +56,7 @@ def devel_environ(env_devel_file):
     return env_devel
 
 
-@pytest.fixture("session")
+@pytest.fixture(scope="session")
 def service_webserver_environ(
     services_docker_compose_file, devel_environ, osparc_simcore_root_dir
 ):
@@ -82,7 +82,7 @@ def service_webserver_environ(
     return webserver_environ
 
 
-@pytest.fixture("session")
+@pytest.fixture(scope="session")
 def app_submodules_with_setup_funs(package_dir) -> List:
     """
         subsystem = all modules in package with a setup function
@@ -106,7 +106,7 @@ def app_submodules_with_setup_funs(package_dir) -> List:
     return modules
 
 
-@pytest.fixture("session")
+@pytest.fixture(scope="session")
 def app_subsystems(app_submodules_with_setup_funs) -> List[Dict]:
     metadata = []
     for module in app_submodules_with_setup_funs:
