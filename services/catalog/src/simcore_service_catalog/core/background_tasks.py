@@ -209,9 +209,9 @@ async def _ensure_published_services_are_accessible(connection: SAConnection) ->
 async def sync_registry_task(app: FastAPI) -> None:
     # get list of services from director
     engine: Engine = app.state.engine
-    async with engine.acquire() as conn:
-        while True:
-            try:
+    while True:
+        try:
+            async with engine.acquire() as conn:
                 logger.debug("syncing services between registry and database...")
                 # check that the list of services is in sync with the registry
                 await _ensure_services_metadata_uptodate(app, conn)
@@ -219,16 +219,16 @@ async def sync_registry_task(app: FastAPI) -> None:
                 # check that the published services are available to everyone (templates are published to GUESTs, so their services must be also accessible)
                 await _ensure_published_services_are_accessible(conn)
 
-                await asyncio.sleep(app.state.settings.background_task_rest_time)
+            await asyncio.sleep(app.state.settings.background_task_rest_time)
 
-            except CancelledError:
-                # task is stopped
-                return
-            except Exception:  # pylint: disable=broad-except
-                logger.exception("Error while processing services entry")
-                await asyncio.sleep(
-                    5
-                )  # wait a bit before retrying, so it does not block everything until the director is up
+        except CancelledError:
+            # task is stopped
+            return
+        except Exception:  # pylint: disable=broad-except
+            logger.exception("Error while processing services entry")
+            await asyncio.sleep(
+                5
+            )  # wait a bit before retrying, so it does not block everything until the director is up
 
 
 async def start_registry_sync_task(app: FastAPI) -> None:
