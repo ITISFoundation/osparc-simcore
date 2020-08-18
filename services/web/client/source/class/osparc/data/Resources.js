@@ -692,7 +692,7 @@ qx.Class.define("osparc.data.Resources", {
       return this.getInstance().get(resource, params, useCache);
     },
 
-    getServiceParams: function(serviceKey, serviceVersion, data) {
+    getServiceUrl: function(serviceKey, serviceVersion, data) {
       return {
         url: {
           "serviceKey": encodeURIComponent(serviceKey),

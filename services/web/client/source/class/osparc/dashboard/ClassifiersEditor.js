@@ -81,13 +81,15 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
             console.error(err);
           });
       } else {
-        const params = osparc.data.Resources.getServiceParams(
-          this.__studyData["key"],
-          this.__studyData["version"],
-          {
+        const params = {
+          url: osparc.data.Resources.getServiceUrl(
+            this.__studyData["key"],
+            this.__studyData["version"]
+          ),
+          data: {
             "classifiers": this.__classifiersTree.getCheckedClassifierIDs()
           }
-        );
+        };
         osparc.data.Resources.fetch("services", "patch", params)
           .then(() => {
             this.fireDataEvent("updateClassifiers", this.__studyData["key"]);
