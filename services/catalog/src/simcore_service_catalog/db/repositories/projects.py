@@ -25,7 +25,7 @@ class ProjectsRepository(BaseRepository):
             for node in project_workbench:
                 service = project_workbench[node]
                 try:
-                    if service.key.contains("file-picker") or service.key.contains(
+                    if service["key"].contains("file-picker") or service["key"].contains(
                         "nodes-group"
                     ):
                         # these 2 are not going to pass the validation tests, they are frontend only nodes.
