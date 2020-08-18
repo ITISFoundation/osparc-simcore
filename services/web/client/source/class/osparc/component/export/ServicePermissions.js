@@ -88,8 +88,8 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
         data: this.__serviceData
       };
       osparc.data.Resources.fetch("services", "patch", params)
-        .then(() => {
-          this.fireDataEvent("updateService", this.__serviceData["key"]);
+        .then(serviceData => {
+          this.fireDataEvent("updateService", serviceData);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator(s) successfully added"));
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
@@ -110,8 +110,8 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
         data: this.__serviceData
       };
       osparc.data.Resources.fetch("services", "patch", params)
-        .then(() => {
-          this.fireDataEvent("updateService", this.__serviceData["key"]);
+        .then(serviceData => {
+          this.fireDataEvent("updateService", serviceData);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully made Owner"));
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
@@ -136,8 +136,8 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
         data: this.__serviceData
       };
       osparc.data.Resources.fetch("services", "patch", params)
-        .then(() => {
-          this.fireDataEvent("updateService", this.__serviceData["key"]);
+        .then(serviceData => {
+          this.fireDataEvent("updateService", serviceData);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully removed"));
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();

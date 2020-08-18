@@ -593,9 +593,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const title = this.tr("Available to");
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
       permissionsView.addListener("updateService", e => {
-        const serviceKey = e.getData();
-        console.log(serviceKey);
-        this.__reloadServices();
+        const newServiceData = e.getData();
+        this.__resetServiceItem(newServiceData);
       });
     },
 
