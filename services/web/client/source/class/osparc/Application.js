@@ -132,6 +132,9 @@ qx.Class.define("osparc.Application", {
     __updateTabName: function() {
       osparc.utils.LibVersions.getPlatformName()
         .then(platformName => {
+          if (window.location.hostname.includes("speag")) {
+            document.title += " z43";
+          }
           document.title += ` (${platformName})`;
         });
     },
