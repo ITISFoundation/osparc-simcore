@@ -7,6 +7,10 @@ from ...models.domain.service import ServiceKeyVersion
 from ..tables import ProjectType, projects
 from ._base import BaseRepository
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class ProjectsRepository(BaseRepository):
     async def list_services_from_published_templates(self) -> List[ServiceKeyVersion]:
@@ -23,6 +27,9 @@ class ProjectsRepository(BaseRepository):
                 try:
                     list_of_published_services.append(ServiceKeyVersion(**service))
                 except ValidationError:
+                    logger.warning(
+                        "service %s could not be validated", service, exc_info=True
+                    )
                     continue
 
         return list_of_published_services
