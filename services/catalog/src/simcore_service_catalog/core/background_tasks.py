@@ -239,5 +239,5 @@ async def start_registry_sync_task(app: FastAPI) -> None:
 
 async def stop_registry_sync_task(app: FastAPI) -> None:
     task = app.state.registry_sync_task
-    await task.cancel()
-    await task.close()
+    task.cancel()
+    await task
