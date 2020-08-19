@@ -531,7 +531,7 @@ async def _wait_until_service_running_or_failed(
     while True:
         tasks = await client.tasks.list(filters={"service": service_name})
         # only keep the ones with the right service ID (we're being a bit picky maybe)
-        tasks = [x for x in tasksread_service if x["ServiceID"] == service["ID"]]
+        tasks = [x for x in tasks if x["ServiceID"] == service["ID"]]
         # we are only interested in the last task which has index 0
         if tasks:
             last_task = tasks[0]
