@@ -952,6 +952,15 @@ paths:
                           enum:
                             - CPU
                             - GPU
+                      service_build_details:
+                        type: object
+                        properties:
+                          build_date:
+                            type: string
+                          vcs_ref:
+                            type: string
+                          vcs_url:
+                            type: string
                   error:
                     nullable: true
                     default: null
@@ -2404,6 +2413,15 @@ components:
                 enum:
                   - CPU
                   - GPU
+            service_build_details:
+              type: object
+              properties:
+                build_date:
+                  type: string
+                vcs_ref:
+                  type: string
+                vcs_url:
+                  type: string
         error:
           nullable: true
           default: null
