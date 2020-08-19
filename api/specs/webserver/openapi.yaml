@@ -115,6 +115,9 @@ paths:
   /groups/{gid}/users/{uid}:
     $ref: "./openapi-groups.yaml#/paths/~1groups~1{gid}~1users~1{uid}"
 
+  /groups/{gid}/classifiers:
+    $ref: "./openapi-groups.yaml#/paths/~1groups~1{gid}~1classifiers"
+
   # DATA STORAGE SERVICES ----------------------------------------------------------
 
   /storage/locations:
