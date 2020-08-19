@@ -5,6 +5,7 @@
 
 """
 from .models.api_keys import api_keys
+from .models.classifiers import group_classifiers
 from .models.comp_pipeline import comp_pipeline
 from .models.comp_tasks import DB_CHANNEL_NAME, comp_tasks
 from .models.confirmations import ConfirmationAction, confirmations
@@ -32,4 +33,5 @@ __all__ = [
     "tags",
     "study_tags",
     "api_keys",
+    "group_classifiers",
 ]

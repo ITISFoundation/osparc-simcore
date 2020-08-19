@@ -9,6 +9,7 @@ from typing import Dict
 
 import psycopg2.errors
 import pytest
+import sqlalchemy as sa
 from aiopg.sa.engine import Engine
 from sqlalchemy import literal_column
 
@@ -80,6 +81,15 @@ async def test_register_group_classifiers(pg_engine: Engine, classifiers_bundle:
         assert row[group_classifiers.c.gid] == gid
         assert row[group_classifiers.c.bundle] == classifiers_bundle
 
+        # get bundle in one query
+        bundle = await conn.scalar(
+            sa.select([group_classifiers.c.bundle]).where(
+                group_classifiers.c.gid == gid
+            )
+        )
+        assert bundle
+        assert classifiers_bundle == bundle
+
         # Cannot add more than one classifier's bundle to the same group
         with pytest.raises(psycopg2.errors.UniqueViolation):
             await conn.execute(group_classifiers.insert().values(bundle={}, gid=gid))
@@ -93,3 +103,11 @@ async def test_register_group_classifiers(pg_engine: Engine, classifiers_bundle:
 
         assert groups_count == 0
         assert classifiers_count <= groups_count
+
+        #
+        bundle = await conn.scalar(
+            sa.select([group_classifiers.c.bundle]).where(
+                group_classifiers.c.gid == gid
+            )
+        )
+        assert bundle is None
