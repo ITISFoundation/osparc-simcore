@@ -19,6 +19,7 @@ from simcore_sdk.node_ports.dbmanager import DBManager
 from . import config, exceptions
 from .log_parser import LogType, monitor_logs_task
 from .rabbitmq import RabbitMQ
+from .boot_mode import get_boot_mode
 
 log = get_task_logger(__name__)
 
@@ -208,11 +209,14 @@ class Executor:
         docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
 
         # NOTE: Env/Binds for log folder is only necessary for integraion "0"
+        env_vars = [
+            f"{name.upper()}_FOLDER=/{name}/{self.task.job_id}"
+            for name in ["input", "output", "log",]
+        ]
+        env_vars.append(f"SC_COMP_SERVICES_SCHEDULED_AS={get_boot_mode().value}")
+
         docker_container_config = {
-            "Env": [
-                f"{name.upper()}_FOLDER=/{name}/{self.task.job_id}"
-                for name in ["input", "output", "log"]
-            ],
+            "Env": env_vars,
             "Cmd": "run",
             "Image": docker_image,
             "Labels": {
