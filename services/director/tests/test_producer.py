@@ -252,3 +252,24 @@ async def test_dependent_services_have_common_network(run_services):
             list_of_services[0].attrs["Spec"]["Networks"][0]["Target"]
             == list_of_services[1].attrs["Spec"]["Networks"][0]["Target"]
         )
+
+
+async def test_generate_service_extras(
+    aiohttp_mock_app,
+    push_services,
+    configure_registry_access,
+    configure_schemas_location,
+):
+    images = push_services(
+        number_of_computational_services=1, number_of_interactive_services=1
+    )
+
+    for image in images:
+        service_description = image["service_description"]
+        service_extras = image["service_extras"]
+
+        extras = await producer.generate_service_extras(
+            aiohttp_mock_app, service_description["key"], service_description["version"]
+        )
+
+        assert extras == service_extras

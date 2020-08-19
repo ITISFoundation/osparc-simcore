@@ -78,6 +78,9 @@ def push_services(loop, docker_registry, tmpdir):
     _clean_registry(registry_url, dependent_images)
 
 
+from random import randint
+
+
 def _build_push_image(
     docker_dir,
     registry_url,
@@ -95,6 +98,7 @@ def _build_push_image(
     additional_docker_labels = [
         {"name": "constraints", "type": "string", "value": ["node.role==manager"]}
     ]
+
     internal_port = None
     entry_point = ""
     if service_type == "dynamic":
@@ -128,6 +132,18 @@ def _build_push_image(
                 "'fjks" + docker_labels["simcore.service.dependencies"]
             )
 
+    # create the typical org.label-schema labels
+    service_extras = {
+        "node_requirements": ["CPU"],
+        "build_date": "2020-08-19T15:36:27Z",
+        "vcs_ref": "ca180ef1",
+        "vcs_url": "git@github.com:ITISFoundation/osparc-simcore.git",
+    }
+    docker_labels["org.label-schema.build-date"] = service_extras["build_date"]
+    docker_labels["org.label-schema.schema-version"] = "1.0"
+    docker_labels["org.label-schema.vcs-ref"] = service_extras["vcs_ref"]
+    docker_labels["org.label-schema.vcs-url"] = service_extras["vcs_url"]
+
     image = _create_base_image(docker_dir, docker_labels)
     # tag image
     image_tag = registry_url + "/{key}:{version}".format(
@@ -144,6 +160,7 @@ def _build_push_image(
         "image_path": image_tag,
         "internal_port": internal_port,
         "entry_point": entry_point,
+        "service_extras": service_extras,
     }
 
 
@@ -206,4 +223,5 @@ def _create_docker_labels(service_description, bad_json_format):
             docker_labels[".".join(["io", "simcore", key])] = (
                 "d32;'" + docker_labels[".".join(["io", "simcore", key])]
             )
+
     return docker_labels

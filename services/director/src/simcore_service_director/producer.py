@@ -8,10 +8,10 @@ from distutils.version import StrictVersion
 from enum import Enum
 from typing import Dict, List, Optional, Tuple
 
+import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
 
-import aiodocker
 from servicelib.monitor_services import service_started, service_stopped
 
 from . import config, docker_utils, exceptions, registry_proxy
@@ -535,7 +535,7 @@ async def _wait_until_service_running_or_failed(
     while True:
         tasks = await client.tasks.list(filters={"service": service_name})
         # only keep the ones with the right service ID (we're being a bit picky maybe)
-        tasks = [x for x in tasks if x["ServiceID"] == service["ID"]]
+        tasks = [x for x in tasksread_service if x["ServiceID"] == service["ID"]]
         # we are only interested in the last task which has index 0
         if tasks:
             last_task = tasks[0]
@@ -998,6 +998,13 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
             )
 
 
+ORG_LABELS_TO_SCHEMA_LABELS = {
+    "org.label-schema.build-date": "build_date",
+    "org.label-schema.vcs-ref": "vcs_ref",
+    "org.label-schema.vcs-url": "vcs_url",
+}
+
+
 async def generate_service_extras(
     app: web.Application, image_key: str, image_tag: str
 ) -> Dict:
@@ -1027,5 +1034,14 @@ async def generate_service_extras(
                 result["node_requirements"].append("GPU")
             if entry.get("name") == "Resources" and validate_kind(entry, "MPI"):
                 result["node_requirements"].append("MPI")
+
+    # get org labels
+    result.update(
+        {
+            sl: labels[dl]
+            for dl, sl in ORG_LABELS_TO_SCHEMA_LABELS.items()
+            if dl in labels
+        }
+    )
 
     return result
