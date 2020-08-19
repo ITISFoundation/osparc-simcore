@@ -18,7 +18,7 @@
 /**
  * Theme dependant oSparc logo
  */
-qx.Class.define("osparc.ui.basic.OSparcLogo", {
+qx.Class.define("osparc.ui.basic.Logo", {
   extend: qx.ui.basic.Image,
 
   construct: function() {
