@@ -30,19 +30,6 @@ install: ## install testing framework
 	@pushd "$(abspath $(CURDIR)/../../packages/postgres-database)"; pip install -r requirements/prod.txt; popd
 
 
-.PHONY: pg-db-tables
-pg-db-tables: ## inits pg database tables
-	# Cleaning up tables
-	sc-pg clean
-	-sc-pg info
-	# Discovering database
-	sc-pg discover -u scu -p adminadmin -d simcoredb
-	# Upgrading database
-	sc-pg upgrade
-	sc-pg info
-	sc-pg clean
-
-
 registry-up: ## deploys the insecure docker registry in the simcore network
 	docker stack deploy -c docker-compose.yml registry
 

@@ -122,12 +122,6 @@ setup_database() {
   docker ps --filter "ancestor=$IMAGE_NAME"
   docker inspect "$(docker ps --filter "ancestor=$IMAGE_NAME" -q)"
 
-  # Cleaning up volumes
-  docker volume prune --force
-
-  # migrates tables
-  make pg-db-tables
-
   # Injects project template
   make inject-templates-in-db
   popd
