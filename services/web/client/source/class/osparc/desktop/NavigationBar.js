@@ -104,6 +104,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         flex: 1
       });
 
+      if (osparc.utils.Utils.isInZ43()) {
+        this.getChildControl("z43-manual");
+      }
       this.getChildControl("user-manual");
       this.getChildControl("feedback");
       this.getChildControl("theme-switch");
@@ -161,6 +164,13 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignY: "middle"
           }));
+          this._add(control);
+          break;
+        case "z43-manual":
+          control = new osparc.ui.form.LinkButton(this.tr("z43 manual"), "https://osparc.git.speag.com/z43-manual").set({
+            appearance: "link-button",
+            font: "text-14"
+          });
           this._add(control);
           break;
         case "user-manual":

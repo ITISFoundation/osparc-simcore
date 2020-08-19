@@ -132,7 +132,7 @@ qx.Class.define("osparc.Application", {
     __updateTabName: function() {
       osparc.utils.LibVersions.getPlatformName()
         .then(platformName => {
-          if (window.location.hostname.includes("speag")) {
+          if (osparc.utils.Utils.isInZ43()) {
             document.title += " z43";
           }
           document.title += ` (${platformName})`;
