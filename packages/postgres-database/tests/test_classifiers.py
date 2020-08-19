@@ -56,7 +56,6 @@ async def pg_engine(loop, make_engine) -> Engine:
     sync_engine.dispose()
 
 
-
 async def test_register_group_classifiers(pg_engine: Engine, classifiers_bundle: Dict):
 
     async with pg_engine.acquire() as conn:
@@ -83,14 +82,13 @@ async def test_register_group_classifiers(pg_engine: Engine, classifiers_bundle:
 
         # Cannot add more than one classifier's bundle to the same group
         with pytest.raises(psycopg2.errors.UniqueViolation):
-            await conn.execute( group_classifiers.insert().values(bundle={}, gid=gid))
+            await conn.execute(group_classifiers.insert().values(bundle={}, gid=gid))
 
         # deleting a group deletes the classifier
-        await conn.execute( groups.delete().where(groups.c.gid == gid) )
-
+        await conn.execute(groups.delete().where(groups.c.gid == gid))
 
         # FIXME: count returns 1 but the db is empty!??
-        groups_count = 0 # await conn.scalar(groups.count())
+        groups_count = 0  # await conn.scalar(groups.count())
         classifiers_count = await conn.scalar(group_classifiers.count())
 
         assert groups_count == 0
