@@ -86,7 +86,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     buildLayout: function() {
       this.getChildControl("logo");
-      this.getChildControl("platform");
 
       this._add(new qx.ui.core.Spacer(20));
 
@@ -118,33 +117,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       switch (id) {
         case "logo": {
           control = osparc.component.widget.LogoOnOff.getInstance();
-          const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
-            alignY: "middle"
-          }));
-          logoContainer.add(control);
-          const logoPlatformContainer = this.getChildControl("logo-platform-container");
-          logoPlatformContainer.add(logoContainer, {
-            height: "100%"
-          });
-          break;
-        }
-        case "platform": {
-          control = new qx.ui.basic.Label().set({
-            font: "text-9"
-          });
-          osparc.utils.LibVersions.getPlatformName()
-            .then(platformName => control.setValue(platformName.toUpperCase()));
-          const logoPlatformContainer = this.getChildControl("logo-platform-container");
-          logoPlatformContainer.add(control, {
-            bottom: 3,
-            right: 0
-          });
-          break;
-        }
-        case "logo-platform-container":
-          control = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
           this._add(control);
           break;
+        }
         case "dashboard-button":
           control = new qx.ui.form.Button(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/14");
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
