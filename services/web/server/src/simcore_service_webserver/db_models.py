@@ -9,6 +9,7 @@ from simcore_postgres_database.webserver_models import (
     UserStatus,
     api_keys,
     confirmations,
+    group_classifiers,
     groups,
     projects,
     study_tags,
@@ -35,4 +36,5 @@ __all__ = (
     "study_tags",
     "api_keys",
     "projects",
+    "group_classifiers",
 )
