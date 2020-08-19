@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Big button representing a service. It shows it name, description and contact information. It also adds
+ * Big button representing a service. It shows it name, description and owner information. It also adds
  * filtering capabilities.
  */
 qx.Class.define("osparc.component.service.ServiceJumbo", {
@@ -30,7 +30,7 @@ qx.Class.define("osparc.component.service.ServiceJumbo", {
   construct: function(serviceModel, icon) {
     const label = serviceModel.getName ? serviceModel.getName() : "";
     const text = serviceModel.getDescription ? serviceModel.getDescription() : "";
-    const footer = serviceModel.getContact ? serviceModel.getContact() : "";
+    const footer = serviceModel.getOwner ? serviceModel.getOwner() : "";
     this.base(arguments, label, text, icon, footer);
     if (serviceModel != null) {
       this.setServiceModel(serviceModel);

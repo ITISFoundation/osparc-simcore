@@ -86,6 +86,11 @@ qx.Class.define("osparc.component.sweeper.Iterations", {
     },
 
     __updateTable: function() {
+      const columnModel = this.getTableColumnModel();
+      for (let i=2; i<Object.keys(this.__cols).length; i++) {
+        columnModel.setDataCellRenderer(i, new qx.ui.table.cellrenderer.Number());
+      }
+
       const combinations = this.__primaryStudy.getSweeper().getCombinations();
       const secondaryStudyIds = this.__primaryStudy.getSweeper().getSecondaryStudyIds();
       if (combinations.length === secondaryStudyIds.length) {

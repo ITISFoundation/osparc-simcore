@@ -142,7 +142,7 @@ qx.Class.define("osparc.Application", {
         osparc.store.Store.getInstance().invalidate();
 
         osparc.auth.Manager.getInstance().validateToken(data => {
-          if (data.role === "Guest") {
+          if (data.role.toLowerCase() === "guest") {
             // Logout a guest trying to access the Dashboard
             osparc.auth.Manager.getInstance().logout();
           } else {

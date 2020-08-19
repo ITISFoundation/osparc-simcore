@@ -17,7 +17,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *    const serviceInfo = new osparc.component.metadata.ServiceInfo(selectedService);
+ *    const serviceInfo = new osparc.component.metadata.ServiceDetails(selectedService);
  *    this.add(serviceInfo);
  * </pre>
  */
@@ -50,7 +50,6 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateTags": "qx.event.type.Data",
-    "closed": "qx.event.type.Event",
     "openStudy": "qx.event.type.Event"
   },
 
@@ -60,25 +59,6 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       init: "display",
       nullable: false,
       apply: "_applyMode"
-    }
-  },
-
-  statics: {
-    popUpInWindow: function(title, studyDetailsEditor, width = 400, height = 400) {
-      const win = new osparc.ui.window.Window(title).set({
-        autoDestroy: true,
-        layout: new qx.ui.layout.Grow(),
-        showMinimize: false,
-        showMaximize: false,
-        resizable: true,
-        width: width,
-        height: height,
-        clickAwayClose: true
-      });
-      win.add(studyDetailsEditor);
-      win.center();
-      win.open();
-      return win;
     }
   },
 
@@ -136,12 +116,10 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       const fieldIsEnabled = isCurrentUserOwner && (!isTemplate || canUpdateTemplate);
 
       const editView = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
-      const buttonsToolbar = new qx.ui.toolbar.ToolBar();
 
       this.__fields = {
         name: new qx.ui.form.TextField(this.__studyModel.getName()).set({
-          font: "title-18",
-          height: 35,
+          font: "title-16",
           enabled: fieldIsEnabled
         }),
         description: new qx.ui.form.TextArea(this.__studyModel.getDescription()).set({
@@ -158,11 +136,11 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         thumbnail
       } = this.__fields;
       editView.add(new qx.ui.basic.Label(this.tr("Title")).set({
-        font: "text-14",
-        marginTop: 20
+        font: "text-14"
       }));
       osparc.utils.Utils.setIdToWidget(name, "studyDetailsEditorTitleFld");
       editView.add(name);
+
       editView.add(new qx.ui.basic.Label(this.tr("Description")).set({
         font: "text-14"
       }));
@@ -170,6 +148,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       editView.add(description, {
         flex: 1
       });
+
       editView.add(new qx.ui.basic.Label(this.tr("Thumbnail")).set({
         font: "text-14"
       }));
@@ -198,6 +177,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       osparc.utils.Utils.setIdToWidget(cancelButton, "studyDetailsEditorCancelBtn");
       cancelButton.addListener("execute", () => this.setMode("display"), this);
 
+      const buttonsToolbar = new qx.ui.toolbar.ToolBar();
       buttonsToolbar.addSpacer();
       buttonsToolbar.add(saveButton);
       buttonsToolbar.add(cancelButton);
@@ -232,7 +212,11 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       const tagSection = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       tagSection.add(header);
       tagSection.add(this.__renderTags());
-      osparc.store.Store.getInstance().addListener("changeTags", () => this.__renderTags(), this);
+      osparc.store.Store.getInstance().addListener("changeTags", () => {
+        if (osparc.auth.Manager.getInstance().isLoggedIn()) {
+          this.__renderTags();
+        }
+      }, this);
       return tagSection;
     },
 
@@ -294,7 +278,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       ].forEach(fieldKey => {
         const dirty = data[fieldKey];
         const clean = osparc.wrapper.DOMPurify.getInstance().sanitize(dirty);
-        if (dirty !== clean) {
+        if (dirty && dirty !== clean) {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an issue in the text of ") + fieldKey, "ERROR");
         }
         data[fieldKey] = clean;

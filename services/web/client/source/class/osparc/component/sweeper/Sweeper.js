@@ -31,23 +31,6 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
     }
   },
 
-  statics: {
-    popUpInWindow: function(parametersWidget) {
-      const window = new osparc.ui.window.Window(qx.locale.Manager.tr("Parameters")).set({
-        autoDestroy: true,
-        layout: new qx.ui.layout.VBox(),
-        showMinimize: false,
-        showMaximize: false,
-        resizable: true,
-        modal: true
-      });
-      window.add(parametersWidget);
-      window.center();
-      window.open();
-      return window;
-    }
-  },
-
   events: {
     "iterationSelected": "qx.event.type.Data"
   },

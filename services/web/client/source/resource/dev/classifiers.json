@@ -3,8 +3,8 @@
   "vcs_url": "https://gitlab-ci-token:sQNAVkbL2ah8y3Hi5do2@git.speag.com/curated-data/classifiers.git",
   "vcs_ref": "cb81724",
   "classifiers": {
-    "topics::python": {
-      "classifier": "topics::python",
+    "z43::topics::python": {
+      "classifier": "z43::topics::python",
       "display_name": "Python",
       "short_description": "Python is a dynamically typed programming language.",
       "logo": "python.png",
@@ -29,8 +29,8 @@
       "wikipedia_url": "https://en.wikipedia.org/wiki/Python_(programming_language)",
       "markdown": "Python is a dynamically typed programming language designed by Guido van Rossum. Much like the programming language Ruby, Python was designed to be easily read by programmers. Because of its large follow"
     },
-    "topics::jupyter-notebook": {
-      "classifier": "topics::jupyter-notebook",
+    "z43::topics::jupyter-notebook": {
+      "classifier": "z43::topics::jupyter-notebook",
       "display_name": "Jupyter Notebook",
       "short_description": "Jupyter Notebooks are documents that contain live code, visualizations, and narrative text.",
       "logo": "jupyter-notebook.png",
@@ -45,8 +45,8 @@
       "wikipedia_url": null,
       "markdown": "\nThe Jupyter Notebook is a language-agnostic HTML notebook application for Project Jupyter. Jupyter notebooks are documents that allow for creating and sharing live code, equations, visualizations, and narrative text together. People use them for data cleaning and transformation, numerical simulation, statistical modeling, data visualization, machine learning, and much more. "
     },
-    "topics::octave": {
-      "classifier": "topics::octave",
+    "z43::topics::octave": {
+      "classifier": "z43::topics::octave",
       "display_name": "Octave/Matlab",
       "short_description": "Jupyter Lab powered by Octave.",
       "logo": "jupyter-notebook.png",
@@ -61,8 +61,8 @@
       "wikipedia_url": null,
       "markdown": "\nJupyter Lab powered by Octave."
     },
-    "topics::z43::s4l": {
-      "classifier": "topics::z43::s4l",
+    "z43::topics::s4l": {
+      "classifier": "z43::topics::s4l",
       "display_name": "Sim4Life",
       "short_description": "Jupyter Lab powered by Sim4Life.",
       "logo": "jupyter-notebook.png",
@@ -77,8 +77,8 @@
       "wikipedia_url": null,
       "markdown": "\nJupyter Lab powered by Sim4Life."
     },
-    "State Of Code::Production Ready": {
-      "classifier": "State Of Code::Production Ready",
+    "z43::State Of Code::Production Ready": {
+      "classifier": "z43::State Of Code::Production Ready",
       "display_name": "Production Ready",
       "short_description": "",
       "logo": "null",
@@ -91,8 +91,8 @@
       "wikipedia_url": null,
       "markdown": "Production Ready"
     },
-    "State Of Code::Waiting for Review": {
-      "classifier": "State Of Code::Waiting for Review",
+    "z43::State Of Code::Waiting for Review": {
+      "classifier": "z43::State Of Code::Waiting for Review",
       "display_name": "Waiting for Review/Approval",
       "short_description": "",
       "logo": "null",
@@ -105,8 +105,8 @@
       "wikipedia_url": null,
       "markdown": "Waiting for Review/Approval"
     },
-    "State Of Code::Draft": {
-      "classifier": "State Of Code::Draft",
+    "z43::State Of Code::Draft": {
+      "classifier": "z43::State Of Code::Draft",
       "display_name": "Sandbox/Draft",
       "short_description": "",
       "logo": "null",
@@ -119,8 +119,8 @@
       "wikipedia_url": null,
       "markdown": "Sandbox/Draft"
     },
-    "State Of Code::Idea": {
-      "classifier": "State Of Code::Idea",
+    "z43::State Of Code::Idea": {
+      "classifier": "z43::State Of Code::Idea",
       "display_name": "Idea",
       "short_description": "",
       "logo": "null",
@@ -133,8 +133,8 @@
       "wikipedia_url": null,
       "markdown": "Idea"
     },
-    "State Of Code::Epic": {
-      "classifier": "State Of Code::Epic",
+    "z43::State Of Code::Epic": {
+      "classifier": "z43::State Of Code::Epic",
       "display_name": "Epic",
       "short_description": "",
       "logo": "null",
@@ -147,8 +147,8 @@
       "wikipedia_url": null,
       "markdown": "Epic"
     },
-    "State Of Code::Other": {
-      "classifier": "State Of Code::Other",
+    "z43::State Of Code::Other": {
+      "classifier": "z43::State Of Code::Other",
       "display_name": "Other",
       "short_description": "",
       "logo": "null",
@@ -161,8 +161,8 @@
       "wikipedia_url": null,
       "markdown": "Other"
     },
-    "company::z43::z43": {
-      "classifier": "company::z43::z43",
+    "z43::company::z43": {
+      "classifier": "z43::company::z43",
       "display_name": "Z43",
       "short_description": "Zurich43 alliance",
       "logo": null,
@@ -175,8 +175,8 @@
       "wikipedia_url": null,
       "markdown": "Z43 alliance: IT'IS, Speag and ZMT"
     },
-    "company::z43::zmt": {
-      "classifier": "company::z43::zmt",
+    "z43::company::zmt": {
+      "classifier": "z43::company::zmt",
       "display_name": "ZMT",
       "short_description": "ZMT is a member of Zurich43",
       "logo": null,
@@ -191,8 +191,8 @@
       "wikipedia_url": null,
       "markdown": "Zurich MedTech AG (ZMT) offers tools and best practices for targeted life sciences applications to simulate, analyze, and predict complex and dynamic biological processes and interactions. ZMT is a member of Zurich43"
     },
-    "company::z43::speag": {
-      "classifier": "company::z43::speag",
+    "z43::company::speag": {
+      "classifier": "z43::company::speag",
       "display_name": "SPEAG",
       "short_description": "SPEAG is a member of Zurich43",
       "logo": null,
@@ -207,8 +207,8 @@
       "wikipedia_url": null,
       "markdown": "Schmid & Partner Engineering AG (SPEAG) is a leading developer and manufacturer of the most reliable, efficient, user-friendly, and advanced numerical tools and instrumentation for the accurate evaluation of electromagnetic near- and far-fields from static to optical frequencies. SPEAG is a member of Zurich43"
     },
-    "company::z43::itis": {
-      "classifier": "company::z43::itis",
+    "z43::company::itis": {
+      "classifier": "z43::company::itis",
       "display_name": "IT'IS Foundation",
       "short_description": "IT'IS Foundation is an organization part of Zurich43",
       "logo": "itis.png",
@@ -224,8 +224,8 @@
       "wikipedia_url": null,
       "markdown": "The Foundation for Research on Information Technologies in Society (IT'IS) is an independent, nonprofit research foundation dedicated to improving and advancing the quality of people\u2019s lives by enhancing the safety and quality of emerging electromagnetic technologies. IT'IS Foundation is a member of Zurich43"
     },
-    "company::z43::tisolutions": {
-      "classifier": "company::z43::tisolutions",
+    "z43::company::tisolutions": {
+      "classifier": "z43::company::tisolutions",
       "display_name": "TI Solutions",
       "short_description": "Temporal Interference Solutions",
       "logo": "null",
@@ -240,8 +240,8 @@
       "wikipedia_url": null,
       "markdown": "Temporal Interference Solutions"
     },
-    "company::other": {
-      "classifier": "company::other",
+    "z43::company::other": {
+      "classifier": "z43::company::other",
       "display_name": "Other",
       "short_description": "",
       "logo": "null",
@@ -254,8 +254,8 @@
       "wikipedia_url": null,
       "markdown": "Other"
     },
-    "project::z43::dak": {
-      "classifier": "project::z43::dak",
+    "z43::project::dak": {
+      "classifier": "z43::project::dak",
       "display_name": "DAK",
       "short_description": "",
       "logo": "null",
@@ -268,8 +268,8 @@
       "wikipedia_url": null,
       "markdown": "DAK"
     },
-    "project::z43::dasy": {
-      "classifier": "project::z43::dasy",
+    "z43::project::dasy": {
+      "classifier": "z43::project::dasy",
       "display_name": "DASY",
       "short_description": "",
       "logo": "null",
@@ -282,8 +282,8 @@
       "wikipedia_url": null,
       "markdown": "DASY"
     },
-    "project::z43::easy": {
-      "classifier": "project::z43::easy",
+    "z43::project::easy": {
+      "classifier": "z43::project::easy",
       "display_name": "EASY",
       "short_description": "",
       "logo": "null",
@@ -296,8 +296,8 @@
       "wikipedia_url": null,
       "markdown": "EASY"
     },
-    "project::z43::wpt-magpy": {
-      "classifier": "project::z43::wpt-magpy",
+    "z43::project::wpt-magpy": {
+      "classifier": "z43::project::wpt-magpy",
       "display_name": "WPT/MAGPy",
       "short_description": "",
       "logo": "null",
@@ -310,8 +310,8 @@
       "wikipedia_url": null,
       "markdown": "WPT/MAGPy"
     },
-    "project::z43::ota": {
-      "classifier": "project::z43::ota",
+    "z43::project::ota": {
+      "classifier": "z43::project::ota",
       "display_name": "OTA",
       "short_description": "",
       "logo": "null",
@@ -324,8 +324,8 @@
       "wikipedia_url": null,
       "markdown": "OTA"
     },
-    "project::z43::tds": {
-      "classifier": "project::z43::tds",
+    "z43::project::tds": {
+      "classifier": "z43::project::tds",
       "display_name": "TDS",
       "short_description": "",
       "logo": "null",
@@ -338,8 +338,8 @@
       "wikipedia_url": null,
       "markdown": "TDS"
     },
-    "project::z43::s4l": {
-      "classifier": "project::z43::s4l",
+    "z43::project::s4l": {
+      "classifier": "z43::project::s4l",
       "display_name": "Sim4Life",
       "short_description": "",
       "logo": "null",
@@ -352,8 +352,8 @@
       "wikipedia_url": null,
       "markdown": "Sim4Life"
     },
-    "project::z43::tis": {
-      "classifier": "project::z43::tis",
+    "z43::project::tis": {
+      "classifier": "z43::project::tis",
       "display_name": "TIS",
       "short_description": "",
       "logo": "null",
@@ -366,8 +366,8 @@
       "wikipedia_url": null,
       "markdown": "TIS"
     },
-    "project::z43::hyt": {
-      "classifier": "project::z43::hyt",
+    "z43::project::hyt": {
+      "classifier": "z43::project::hyt",
       "display_name": "HYT",
       "short_description": "",
       "logo": "null",
@@ -380,8 +380,8 @@
       "wikipedia_url": null,
       "markdown": "HYT"
     },
-    "project::z43::vip": {
-      "classifier": "project::z43::vip",
+    "z43::project::vip": {
+      "classifier": "z43::project::vip",
       "display_name": "VIP",
       "short_description": "Virtual Popilation",
       "logo": "null",
@@ -394,8 +394,8 @@
       "wikipedia_url": null,
       "markdown": "VIP"
     },
-    "project::z43::csar3d": {
-      "classifier": "project::z43::csar3d",
+    "z43::project::csar3d": {
+      "classifier": "z43::project::csar3d",
       "display_name": "cSAR3D",
       "short_description": "",
       "logo": "null",
@@ -408,8 +408,8 @@
       "wikipedia_url": null,
       "markdown": "cSAR3D"
     },
-    "project::z43::implant-safety": {
-      "classifier": "project::z43::implant-safety",
+    "z43::project::implant-safety": {
+      "classifier": "z43::project::implant-safety",
       "display_name": "Implant Safety",
       "short_description": "",
       "logo": "null",
@@ -422,8 +422,8 @@
       "wikipedia_url": null,
       "markdown": "Implant Safety"
     },
-    "project::z43::itis": {
-      "classifier": "project::z43::itis",
+    "z43::project::itis": {
+      "classifier": "z43::project::itis",
       "display_name": "General IT'IS Projects",
       "short_description": "",
       "logo": "null",
@@ -436,8 +436,8 @@
       "wikipedia_url": null,
       "markdown": "General IT'IS Projects"
     },
-    "project::other": {
-      "classifier": "project::other",
+    "z43::project::other": {
+      "classifier": "z43::project::other",
       "display_name": "Other",
       "short_description": "",
       "logo": "null",
@@ -450,8 +450,8 @@
       "wikipedia_url": null,
       "markdown": "Other"
     },
-    "application::z43::antennas": {
-      "classifier": "application::z43::antennas",
+    "z43::application::antennas": {
+      "classifier": "z43::application::antennas",
       "display_name": "Antennas/Mobile Comm",
       "short_description": "",
       "logo": "null",
@@ -464,8 +464,8 @@
       "wikipedia_url": null,
       "markdown": "Antennas/Mobile Comm"
     },
-    "application::z43::optics": {
-      "classifier": "application::z43::optics",
+    "z43::application::optics": {
+      "classifier": "z43::application::optics",
       "display_name": "Optics",
       "short_description": "",
       "logo": "null",
@@ -478,8 +478,8 @@
       "wikipedia_url": null,
       "markdown": "Optics"
     },
-    "application::z43::mmwave": {
-      "classifier": "application::z43::mmwave",
+    "z43::application::mmwave": {
+      "classifier": "z43::application::mmwave",
       "display_name": "mmWave/5G",
       "short_description": "",
       "logo": "null",
@@ -492,8 +492,8 @@
       "wikipedia_url": null,
       "markdown": "mmWave/5G"
     },
-    "application::z43::uwave": {
-      "classifier": "application::z43::uwave",
+    "z43::application::uwave": {
+      "classifier": "z43::application::uwave",
       "display_name": "uWave",
       "short_description": "",
       "logo": "null",
@@ -506,8 +506,8 @@
       "wikipedia_url": null,
       "markdown": "uWave"
     },
-    "application::z43::neuro": {
-      "classifier": "application::z43::neuro",
+    "z43::application::neuro": {
+      "classifier": "z43::application::neuro",
       "display_name": "Neuro",
       "short_description": "",
       "logo": "null",
@@ -520,8 +520,8 @@
       "wikipedia_url": null,
       "markdown": "Neuro"
     },
-    "application::z43::mri-implantsafety": {
-      "classifier": "application::z43::mri-implantsafety",
+    "z43::application::mri-implantsafety": {
+      "classifier": "z43::application::mri-implantsafety",
       "display_name": "MRI/Implant Safety",
       "short_description": "",
       "logo": "null",
@@ -534,8 +534,8 @@
       "wikipedia_url": null,
       "markdown": "MRI/Implant Safety"
     },
-    "application::z43::lf-wpt": {
-      "classifier": "application::z43::lf-wpt",
+    "z43::application::lf-wpt": {
+      "classifier": "z43::application::lf-wpt",
       "display_name": "LF/WPT",
       "short_description": "",
       "logo": "null",
@@ -548,8 +548,8 @@
       "wikipedia_url": null,
       "markdown": "LF/WPT"
     },
-    "application::z43::thermal": {
-      "classifier": "application::z43::thermal",
+    "z43::application::thermal": {
+      "classifier": "z43::application::thermal",
       "display_name": "Thermal",
       "short_description": "",
       "logo": "null",
@@ -562,8 +562,8 @@
       "wikipedia_url": null,
       "markdown": "Thermal"
     },
-    "application::z43::acoustics": {
-      "classifier": "application::z43::acoustics",
+    "z43::application::acoustics": {
+      "classifier": "z43::application::acoustics",
       "display_name": "Acoustics",
       "short_description": "",
       "logo": "null",
@@ -576,8 +576,8 @@
       "wikipedia_url": null,
       "markdown": "Acoustics"
     },
-    "application::z43::iot-bodynetworks": {
-      "classifier": "application::z43::iot-bodynetworks",
+    "z43::application::iot-bodynetworks": {
+      "classifier": "z43::application::iot-bodynetworks",
       "display_name": "IOT/Body Networks",
       "short_description": "",
       "logo": "null",
@@ -590,8 +590,8 @@
       "wikipedia_url": null,
       "markdown": "IOT/Body Networks"
     },
-    "application::z43::materials-tissues": {
-      "classifier": "application::z43::materials-tissues",
+    "z43::application::materials-tissues": {
+      "classifier": "z43::application::materials-tissues",
       "display_name": "Materials, Tissues",
       "short_description": "",
       "logo": "null",
@@ -604,8 +604,8 @@
       "wikipedia_url": null,
       "markdown": "Materials, Tissues"
     },
-    "application::z43::emc-emi": {
-      "classifier": "application::z43::emc-emi",
+    "z43::application::emc-emi": {
+      "classifier": "z43::application::emc-emi",
       "display_name": "EMC/EMI",
       "short_description": "",
       "logo": "null",
@@ -618,8 +618,8 @@
       "wikipedia_url": null,
       "markdown": "EMC/EMI"
     },
-    "application::z43::exposure-assessment": {
-      "classifier": "application::z43::exposure-assessment",
+    "z43::application::exposure-assessment": {
+      "classifier": "z43::application::exposure-assessment",
       "display_name": "Exposure Assessment",
       "short_description": "",
       "logo": "null",
@@ -632,8 +632,8 @@
       "wikipedia_url": null,
       "markdown": "Exposure Assessment"
     },
-    "application::z43::healthriskassessment": {
-      "classifier": "application::z43::healthriskassessment",
+    "z43::application::healthriskassessment": {
+      "classifier": "z43::application::healthriskassessment",
       "display_name": "Health Risk Assessment",
       "short_description": "",
       "logo": "null",
@@ -646,8 +646,8 @@
       "wikipedia_url": null,
       "markdown": "Health Risk Assessment"
     },
-    "application::other": {
-      "classifier": "application::other",
+    "z43::application::other": {
+      "classifier": "z43::application::other",
       "display_name": "Other",
       "short_description": "",
       "logo": "null",
@@ -660,8 +660,8 @@
       "wikipedia_url": null,
       "markdown": "Other"
     },
-    "work::z43::r&d": {
-      "classifier": "work::z43::r&d",
+    "z43::work::r&d": {
+      "classifier": "z43::work::r&d",
       "display_name": "R&D",
       "short_description": "",
       "logo": "null",
@@ -674,8 +674,8 @@
       "wikipedia_url": null,
       "markdown": "R&D"
     },
-    "work::z43::support": {
-      "classifier": "work::z43::support",
+    "z43::work::support": {
+      "classifier": "z43::work::support",
       "display_name": "Customer Support",
       "short_description": "",
       "logo": "null",
@@ -688,8 +688,8 @@
       "wikipedia_url": null,
       "markdown": "Customer Support"
     },
-    "work::z43::productionwork": {
-      "classifier": "work::z43::productionwork",
+    "z43::work::productionwork": {
+      "classifier": "z43::work::productionwork",
       "display_name": "Production Work",
       "short_description": "",
       "logo": "null",
@@ -702,8 +702,8 @@
       "wikipedia_url": null,
       "markdown": "Production Work"
     },
-    "work::z43::customizedresearch": {
-      "classifier": "work::z43::customizedresearch",
+    "z43::work::customizedresearch": {
+      "classifier": "z43::work::customizedresearch",
       "display_name": "Customized Research",
       "short_description": "",
       "logo": "null",
@@ -716,8 +716,8 @@
       "wikipedia_url": null,
       "markdown": "Customized Research"
     },
-    "work::z43::v&v": {
-      "classifier": "work::z43::v&v",
+    "z43::work::v&v": {
+      "classifier": "z43::work::v&v",
       "display_name": "V&V",
       "short_description": "",
       "logo": "null",
@@ -730,8 +730,8 @@
       "wikipedia_url": null,
       "markdown": "V&V"
     },
-    "work::z43::qa": {
-      "classifier": "work::z43::qa",
+    "z43::work::qa": {
+      "classifier": "z43::work::qa",
       "display_name": "QA",
       "short_description": "",
       "logo": "null",
@@ -744,8 +744,8 @@
       "wikipedia_url": null,
       "markdown": "QA"
     },
-    "work::z43::certification": {
-      "classifier": "work::z43::certification",
+    "z43::work::certification": {
+      "classifier": "z43::work::certification",
       "display_name": "Std/Certification",
       "short_description": "",
       "logo": "null",
@@ -758,8 +758,8 @@
       "wikipedia_url": null,
       "markdown": "Std/Certification"
     },
-    "work::z43::compliance": {
-      "classifier": "work::z43::compliance",
+    "z43::work::compliance": {
+      "classifier": "z43::work::compliance",
       "display_name": "Compliance",
       "short_description": "",
       "logo": "null",
@@ -772,8 +772,8 @@
       "wikipedia_url": null,
       "markdown": "Compliance"
     },
-    "work::other": {
-      "classifier": "work::other",
+    "z43::work::other": {
+      "classifier": "z43::work::other",
       "display_name": "Other",
       "short_description": "",
       "logo": "null",
@@ -786,8 +786,8 @@
       "wikipedia_url": null,
       "markdown": "Other"
     },
-    "algorithm::z43::ai-ml": {
-      "classifier": "algorithm::z43::ai-ml",
+    "z43::algorithm::ai-ml": {
+      "classifier": "z43::algorithm::ai-ml",
       "display_name": "AI/ML",
       "short_description": "",
       "logo": "null",
@@ -800,8 +800,8 @@
       "wikipedia_url": null,
       "markdown": "AI/ML"
     },
-    "algorithm::z43::optimization": {
-      "classifier": "algorithm::z43::optimization",
+    "z43::algorithm::optimization": {
+      "classifier": "z43::algorithm::optimization",
       "display_name": "Optimization",
       "short_description": "",
       "logo": "null",
@@ -814,8 +814,8 @@
       "wikipedia_url": null,
       "markdown": "Optimization"
     },
-    "algorithm::z43::sweeps": {
-      "classifier": "algorithm::z43::sweeps",
+    "z43::algorithm::sweeps": {
+      "classifier": "z43::algorithm::sweeps",
       "display_name": "Parameter Sweeps",
       "short_description": "",
       "logo": "null",
@@ -828,8 +828,8 @@
       "wikipedia_url": null,
       "markdown": "Parameter Sweeps"
     },
-    "algorithm::z43::postpro": {
-      "classifier": "algorithm::z43::postpro",
+    "z43::algorithm::postpro": {
+      "classifier": "z43::algorithm::postpro",
       "display_name": "Postpro",
       "short_description": "",
       "logo": "null",
@@ -842,8 +842,8 @@
       "wikipedia_url": null,
       "markdown": "Postpro"
     },
-    "algorithm::z43::imageprocessing": {
-      "classifier": "algorithm::z43::imageprocessing",
+    "z43::algorithm::imageprocessing": {
+      "classifier": "z43::algorithm::imageprocessing",
       "display_name": "Image Processing",
       "short_description": "",
       "logo": "null",
@@ -856,8 +856,8 @@
       "wikipedia_url": null,
       "markdown": "Image Processing"
     },
-    "algorithm::z43::modeling": {
-      "classifier": "algorithm::z43::modeling",
+    "z43::algorithm::modeling": {
+      "classifier": "z43::algorithm::modeling",
       "display_name": "CAD/Modeling",
       "short_description": "",
       "logo": "null",
@@ -870,8 +870,8 @@
       "wikipedia_url": null,
       "markdown": "CAD/Modeling"
     },
-    "algorithm::z43::meshing": {
-      "classifier": "algorithm::z43::meshing",
+    "z43::algorithm::meshing": {
+      "classifier": "z43::algorithm::meshing",
       "display_name": "Meshing",
       "short_description": "",
       "logo": "null",
@@ -884,8 +884,8 @@
       "wikipedia_url": null,
       "markdown": "Meshing"
     },
-    "algorithm::z43::statistics": {
-      "classifier": "algorithm::z43::statistics",
+    "z43::algorithm::statistics": {
+      "classifier": "z43::algorithm::statistics",
       "display_name": "Statistics",
       "short_description": "",
       "logo": "null",
@@ -898,8 +898,8 @@
       "wikipedia_url": null,
       "markdown": "Statistics"
     },
-    "algorithm::z43::math": {
-      "classifier": "algorithm::z43::math",
+    "z43::algorithm::math": {
+      "classifier": "z43::algorithm::math",
       "display_name": "General Math/Algo",
       "short_description": "",
       "logo": "null",
@@ -912,8 +912,8 @@
       "wikipedia_url": null,
       "markdown": "General Math/Algo"
     },
-    "algorithm::z43::numerics": {
-      "classifier": "algorithm::z43::numerics",
+    "z43::algorithm::numerics": {
+      "classifier": "z43::algorithm::numerics",
       "display_name": "General Numerics/Comp",
       "short_description": "",
       "logo": "null",
@@ -926,8 +926,8 @@
       "wikipedia_url": null,
       "markdown": "General Numerics/Comp"
     },
-    "algorithm::z43::other": {
-      "classifier": "algorithm::z43::other",
+    "z43::algorithm::other": {
+      "classifier": "z43::algorithm::other",
       "display_name": "Other",
       "short_description": "",
       "logo": "null",
