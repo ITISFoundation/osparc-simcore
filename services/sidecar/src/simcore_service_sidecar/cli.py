@@ -58,5 +58,5 @@ async def run_sidecar(
                 return next_task_nodes, None
     except Exception as e:  # pylint: disable=broad-except
         error_message = f"run_sidecar caught the following exception: {str(e)}"
-        log.warning(error_message)
+        log.exception(error_message)
         return None, error_message
