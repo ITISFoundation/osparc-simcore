@@ -91,6 +91,10 @@ qx.Class.define("osparc.component.widget.logger.RemoteTableModel", {
       }
     },
 
+    getRows: function() {
+      return this.__rawData;
+    },
+
     nodeLabelChanged: function(nodeId, newLabel) {
       for (let i=0; i<this.__rawData.length; i++) {
         const row = this.__rawData[i];

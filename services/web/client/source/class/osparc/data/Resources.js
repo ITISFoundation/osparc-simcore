@@ -74,6 +74,7 @@ qx.Class.define("osparc.data.Resources", {
        */
       "studies": {
         useCache: false,
+        idField: "uuid",
         endpoints: {
           get: {
             method: "GET",
@@ -150,6 +151,7 @@ qx.Class.define("osparc.data.Resources", {
        */
       "templates": {
         useCache: true,
+        idField: "uuid",
         endpoints: {
           get: {
             method: "GET",
@@ -174,10 +176,19 @@ qx.Class.define("osparc.data.Resources", {
        */
       "services": {
         useCache: true,
+        idField: "key",
         endpoints: {
           get: {
             method: "GET",
             url: statics.API + "/catalog/services"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/catalog/services/{serviceKey}/{serviceVersion}"
+          },
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/catalog/services/{serviceKey}/{serviceVersion}"
           }
         }
       },
@@ -186,6 +197,7 @@ qx.Class.define("osparc.data.Resources", {
        */
       "dags": {
         usesCache: true,
+        idField: "key",
         endpoints: {
           post: {
             method: "POST",
@@ -248,8 +260,8 @@ qx.Class.define("osparc.data.Resources", {
        * TOKENS
        */
       "tokens": {
-        idField: "service",
         useCache: true,
+        idField: "service",
         endpoints: {
           get: {
             method: "GET",
@@ -682,6 +694,13 @@ qx.Class.define("osparc.data.Resources", {
     },
     get: function(resource, params, useCache) {
       return this.getInstance().get(resource, params, useCache);
+    },
+
+    getServiceUrl: function(serviceKey, serviceVersion) {
+      return {
+        "serviceKey": encodeURIComponent(serviceKey),
+        "serviceVersion": serviceVersion
+      };
     }
   }
 });

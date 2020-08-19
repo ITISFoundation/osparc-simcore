@@ -177,6 +177,12 @@ async function waitAndClick(page, id) {
   await page.click(id);
 }
 
+async function clearInput(page, selector) {
+  await page.evaluate(selector => {
+    document.querySelector(selector).value = "";
+  }, selector);
+}
+
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -222,6 +228,7 @@ module.exports = {
   waitForResponse,
   waitForValidOutputFile,
   waitAndClick,
+  clearInput,
   sleep,
   takeScreenshot,
   extractWorkbenchData,
