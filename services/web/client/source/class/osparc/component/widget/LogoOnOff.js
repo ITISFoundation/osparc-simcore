@@ -53,7 +53,7 @@ qx.Class.define("osparc.component.widget.LogoOnOff", {
       width,
       height
     });
-    onLogo.setFont("text-9");
+    onLogo.setFont("text-8");
     this.add(onLogo);
   },
 

@@ -53,7 +53,7 @@ qx.Class.define("osparc.ui.basic.LogoWPlatform", {
         }
         case "platform": {
           control = new qx.ui.basic.Label().set({
-            font: "text-9"
+            font: "text-8"
           });
 
           osparc.utils.LibVersions.getPlatformName()
