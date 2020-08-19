@@ -69,9 +69,14 @@ async def _list_db_services(
     }
 
 
-async def _get_service_access_rights(
+async def _create_service_default_access_rights(
     service: ServiceDockerData, connection: SAConnection
 ) -> Tuple[Optional[PositiveInt], List[ServiceAccessRightsAtDB]]:
+    """Rationale as of 19.08.2020: all services that were put in oSparc before today
+    will be visible to everyone.
+    The services afterwards will be visible ONLY to his/her owner.
+    """
+
     groups_repo = GroupsRepository(connection)
     everyone_gid = (await groups_repo.get_everyone_group()).gid
     owner_gid = None
@@ -139,7 +144,7 @@ async def _create_services_in_db(
     for service_key, service_version in service_keys:
         service: ServiceDockerData = services[(service_key, service_version)]
         # find the service owner
-        owner_gid, service_access_rights = await _get_service_access_rights(
+        owner_gid, service_access_rights = await _create_service_default_access_rights(
             service, connection
         )
         # set the service in the DB
