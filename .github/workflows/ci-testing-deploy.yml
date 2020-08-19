@@ -28,7 +28,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -62,7 +62,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -109,7 +109,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -162,7 +162,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -209,7 +209,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -255,7 +255,7 @@ jobs:
     strategy:
       matrix:
         node: [10]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -292,7 +292,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -326,7 +326,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -373,7 +373,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -420,7 +420,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -468,7 +468,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -516,7 +516,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -564,7 +564,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -612,7 +612,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -655,7 +655,7 @@ jobs:
 
   build-test-images:
     # make PR faster by executing this one straight as PR cannot push to the registry anyway
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     name: build docker test images
     steps:
       - uses: actions/checkout@v2
@@ -690,7 +690,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -753,7 +753,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -816,7 +816,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -879,7 +879,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-16.04, ubuntu-18.04]
+        os: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04]
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -926,7 +926,7 @@ jobs:
       matrix:
         python: [3.6]
         node: [10]
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - name: set PR default variables
