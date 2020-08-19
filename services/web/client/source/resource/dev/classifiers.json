@@ -1,10 +1,10 @@
 {
   "build_date": "2020-08-19T12:19:53Z",
-  "vcs_url": "https://gitlab-ci-token:nn4JK2m7nkB6fJg1RTxe@git.speag.com/curated-data/classifiers.git",
-  "vcs_ref": "fb00b54",
+  "vcs_url": "https://git.speag.com/curated-data/classifiers.git",
+  "vcs_ref": "fb00b54-modified",
   "classifiers": {
     "topics::s4l": {
-      "classifier": "topics::s4l",
+      "classifier": "z43::topics::s4l",
       "display_name": "Sim4Life",
       "short_description": null,
       "logo": null,
@@ -15,10 +15,10 @@
       "url": "https://zmt.swiss/sim4life/",
       "github_url": null,
       "wikipedia_url": null,
-      "markdown": "\n"
+      "markdown": ""
     },
     "topics::python": {
-      "classifier": "topics::python",
+      "classifier": "z43::topics::python",
       "display_name": "Python",
       "short_description": "Python is a dynamically typed programming language.",
       "logo": "python.png",
@@ -44,7 +44,7 @@
       "markdown": "Python is a dynamically typed programming language designed by Guido van Rossum. Much like the programming language Ruby, Python was designed to be easily read by programmers. Because of its large follow"
     },
     "topics::octave": {
-      "classifier": "topics::octave",
+      "classifier": "z43::topics::octave",
       "display_name": "Octave/Matlab",
       "short_description": null,
       "logo": null,
@@ -60,7 +60,7 @@
       "markdown": ""
     },
     "topics::jupyter-notebook": {
-      "classifier": "topics::jupyter-notebook",
+      "classifier": "z43::topics::jupyter-notebook",
       "display_name": "Jupyter Notebook",
       "short_description": "Jupyter Notebooks are documents that contain live code, visualizations, and narrative text.",
       "logo": "jupyter-notebook.png",
@@ -76,7 +76,7 @@
       "markdown": "\nThe Jupyter Notebook is a language-agnostic HTML notebook application for Project Jupyter. Jupyter notebooks are documents that allow for creating and sharing live code, equations, visualizations, and narrative text together. People use them for data cleaning and transformation, numerical simulation, statistical modeling, data visualization, machine learning, and much more. "
     },
     "state of code::production": {
-      "classifier": "state of code::production",
+      "classifier": "z43::state of code::production",
       "display_name": "Production Ready",
       "short_description": null,
       "logo": null,
@@ -90,7 +90,7 @@
       "markdown": ""
     },
     "state of code::draft": {
-      "classifier": "state of code::draft",
+      "classifier": "z43::state of code::draft",
       "display_name": "Draft",
       "short_description": null,
       "logo": null,
@@ -104,7 +104,7 @@
       "markdown": ""
     },
     "state of code::idea": {
-      "classifier": "state of code::idea",
+      "classifier": "z43::state of code::idea",
       "display_name": "Idea",
       "short_description": null,
       "logo": null,
@@ -118,7 +118,7 @@
       "markdown": ""
     },
     "state of code::review": {
-      "classifier": "state of code::review",
+      "classifier": "z43::state of code::review",
       "display_name": "Waiting for review",
       "short_description": null,
       "logo": null,
@@ -132,7 +132,7 @@
       "markdown": ""
     },
     "state of code::epic": {
-      "classifier": "state of code::epic",
+      "classifier": "z43::state of code::epic",
       "display_name": "Epic",
       "short_description": null,
       "logo": null,
@@ -146,7 +146,7 @@
       "markdown": ""
     },
     "algorithm::numerics": {
-      "classifier": "algorithm::numerics",
+      "classifier": "z43::algorithm::numerics",
       "display_name": "General Numerics/Comp",
       "short_description": null,
       "logo": null,
@@ -160,7 +160,7 @@
       "markdown": ""
     },
     "algorithm::sweeps": {
-      "classifier": "algorithm::sweeps",
+      "classifier": "z43::algorithm::sweeps",
       "display_name": "Parameter Sweeps",
       "short_description": null,
       "logo": null,
@@ -174,7 +174,7 @@
       "markdown": ""
     },
     "algorithm::math": {
-      "classifier": "algorithm::math",
+      "classifier": "z43::algorithm::math",
       "display_name": "General Math/Algo",
       "short_description": null,
       "logo": null,
@@ -188,7 +188,7 @@
       "markdown": ""
     },
     "algorithm::other": {
-      "classifier": "algorithm::other",
+      "classifier": "z43::algorithm::other",
       "display_name": "Other",
       "short_description": null,
       "logo": null,
@@ -202,7 +202,7 @@
       "markdown": ""
     },
     "algorithm::postpro": {
-      "classifier": "algorithm::postpro",
+      "classifier": "z43::algorithm::postpro",
       "display_name": "Postpro",
       "short_description": null,
       "logo": null,
@@ -216,7 +216,7 @@
       "markdown": ""
     },
     "algorithm::imageprocessing": {
-      "classifier": "algorithm::imageprocessing",
+      "classifier": "z43::algorithm::imageprocessing",
       "display_name": "Image Processing",
       "short_description": null,
       "logo": null,
@@ -230,7 +230,7 @@
       "markdown": ""
     },
     "algorithm::meshing": {
-      "classifier": "algorithm::meshing",
+      "classifier": "z43::algorithm::meshing",
       "display_name": "Meshing",
       "short_description": null,
       "logo": null,
@@ -244,7 +244,7 @@
       "markdown": ""
     },
     "algorithm::optimization": {
-      "classifier": "algorithm::optimization",
+      "classifier": "z43::algorithm::optimization",
       "display_name": "Optimization",
       "short_description": null,
       "logo": null,
@@ -258,7 +258,7 @@
       "markdown": ""
     },
     "algorithm::modeling": {
-      "classifier": "algorithm::modeling",
+      "classifier": "z43::algorithm::modeling",
       "display_name": "CAD/Modeling",
       "short_description": null,
       "logo": null,
@@ -272,7 +272,7 @@
       "markdown": ""
     },
     "algorithm::ai-ml": {
-      "classifier": "algorithm::ai-ml",
+      "classifier": "z43::algorithm::ai-ml",
       "display_name": "AI/ML",
       "short_description": null,
       "logo": null,
@@ -286,7 +286,7 @@
       "markdown": ""
     },
     "algorithm::statistics": {
-      "classifier": "algorithm::statistics",
+      "classifier": "z43::algorithm::statistics",
       "display_name": "Statistics",
       "short_description": null,
       "logo": null,
@@ -300,7 +300,7 @@
       "markdown": ""
     },
     "organization::zmt": {
-      "classifier": "organization::zmt",
+      "classifier": "z43::organization::zmt",
       "display_name": "ZMT",
       "short_description": "ZMT is a member of Zurich43",
       "logo": null,
@@ -316,7 +316,7 @@
       "markdown": "Zurich MedTech AG (ZMT) offers tools and best practices for targeted life sciences applications to simulate, analyze, and predict complex and dynamic biological processes and interactions. ZMT is a member of Zurich43"
     },
     "organization::other": {
-      "classifier": "organization::other",
+      "classifier": "z43::organization::other",
       "display_name": "Other",
       "short_description": null,
       "logo": null,
@@ -330,7 +330,7 @@
       "markdown": ""
     },
     "organization::speag": {
-      "classifier": "organization::speag",
+      "classifier": "z43::organization::speag",
       "display_name": "SPEAG",
       "short_description": "SPEAG is a member of Zurich43",
       "logo": null,
@@ -346,7 +346,7 @@
       "markdown": "Schmid & Partner Engineering AG (SPEAG) is a leading developer and manufacturer of the most reliable, efficient, user-friendly, and advanced numerical tools and instrumentation for the accurate evaluation of electromagnetic near- and far-fields from static to optical frequencies. SPEAG is a member of Zurich43"
     },
     "organization::tisolutions": {
-      "classifier": "organization::tisolutions",
+      "classifier": "z43::organization::tisolutions",
       "display_name": "TI Solutions",
       "short_description": "Temporal Interference Solutions",
       "logo": null,
@@ -362,7 +362,7 @@
       "markdown": "Temporal Interference Solutions\n"
     },
     "organization::itis": {
-      "classifier": "organization::itis",
+      "classifier": "z43::organization::itis",
       "display_name": "IT'IS Foundation",
       "short_description": "IT'IS Foundation is an organization part of Zurich43",
       "logo": "itis.png",
@@ -379,7 +379,7 @@
       "markdown": "The Foundation for Research on Information Technologies in Society (IT'IS) is an independent, nonprofit research foundation dedicated to improving and advancing the quality of people\u2019s lives by enhancing the safety and quality of emerging electromagnetic technologies. IT'IS Foundation is a member of Zurich43 "
     },
     "work::r&d": {
-      "classifier": "work::r&d",
+      "classifier": "z43::work::r&d",
       "display_name": "R&D",
       "short_description": null,
       "logo": null,
@@ -393,7 +393,7 @@
       "markdown": ""
     },
     "work::compliance": {
-      "classifier": "work::compliance",
+      "classifier": "z43::work::compliance",
       "display_name": "Compliance",
       "short_description": null,
       "logo": null,
@@ -407,7 +407,7 @@
       "markdown": ""
     },
     "work::other": {
-      "classifier": "work::other",
+      "classifier": "z43::work::other",
       "display_name": "Other",
       "short_description": null,
       "logo": null,
@@ -421,7 +421,7 @@
       "markdown": ""
     },
     "work::v&v": {
-      "classifier": "work::v&v",
+      "classifier": "z43::work::v&v",
       "display_name": "V&V",
       "short_description": null,
       "logo": null,
@@ -435,7 +435,7 @@
       "markdown": ""
     },
     "work::certification": {
-      "classifier": "work::certification",
+      "classifier": "z43::work::certification",
       "display_name": "Std/Certification",
       "short_description": null,
       "logo": null,
@@ -449,7 +449,7 @@
       "markdown": ""
     },
     "work::productionwork": {
-      "classifier": "work::productionwork",
+      "classifier": "z43::work::productionwork",
       "display_name": "Production Work",
       "short_description": null,
       "logo": null,
@@ -463,7 +463,7 @@
       "markdown": ""
     },
     "work::qa": {
-      "classifier": "work::qa",
+      "classifier": "z43::work::qa",
       "display_name": "QA",
       "short_description": null,
       "logo": null,
@@ -477,7 +477,7 @@
       "markdown": ""
     },
     "work::customizedresearch": {
-      "classifier": "work::customizedresearch",
+      "classifier": "z43::work::customizedresearch",
       "display_name": "Customized Research",
       "short_description": null,
       "logo": null,
@@ -491,7 +491,7 @@
       "markdown": ""
     },
     "work::support": {
-      "classifier": "work::support",
+      "classifier": "z43::work::support",
       "display_name": "Customer Support",
       "short_description": null,
       "logo": null,
@@ -505,7 +505,7 @@
       "markdown": ""
     },
     "project::s4l": {
-      "classifier": "project::s4l",
+      "classifier": "z43::project::s4l",
       "display_name": "Sim4Life",
       "short_description": null,
       "logo": null,
@@ -519,7 +519,7 @@
       "markdown": ""
     },
     "project::hyt": {
-      "classifier": "project::hyt",
+      "classifier": "z43::project::hyt",
       "display_name": "HYT",
       "short_description": null,
       "logo": null,
@@ -533,7 +533,7 @@
       "markdown": ""
     },
     "project::dasy": {
-      "classifier": "project::dasy",
+      "classifier": "z43::project::dasy",
       "display_name": "DASY",
       "short_description": null,
       "logo": null,
@@ -547,7 +547,7 @@
       "markdown": ""
     },
     "project::other": {
-      "classifier": "project::other",
+      "classifier": "z43::project::other",
       "display_name": "Other",
       "short_description": null,
       "logo": null,
@@ -561,7 +561,7 @@
       "markdown": ""
     },
     "project::dak": {
-      "classifier": "project::dak",
+      "classifier": "z43::project::dak",
       "display_name": "DAK",
       "short_description": null,
       "logo": null,
@@ -575,7 +575,7 @@
       "markdown": ""
     },
     "project::ota": {
-      "classifier": "project::ota",
+      "classifier": "z43::project::ota",
       "display_name": "OTA",
       "short_description": null,
       "logo": null,
@@ -589,7 +589,7 @@
       "markdown": ""
     },
     "project::tis": {
-      "classifier": "project::tis",
+      "classifier": "z43::project::tis",
       "display_name": "TIS",
       "short_description": null,
       "logo": null,
@@ -603,7 +603,7 @@
       "markdown": ""
     },
     "project::tds": {
-      "classifier": "project::tds",
+      "classifier": "z43::project::tds",
       "display_name": "TDS",
       "short_description": null,
       "logo": null,
@@ -617,7 +617,7 @@
       "markdown": ""
     },
     "project::vip": {
-      "classifier": "project::vip",
+      "classifier": "z43::project::vip",
       "display_name": "VIP",
       "short_description": "Virtual Popilation",
       "logo": null,
@@ -631,7 +631,7 @@
       "markdown": ""
     },
     "project::itis": {
-      "classifier": "project::itis",
+      "classifier": "z43::project::itis",
       "display_name": "General IT'IS Projects",
       "short_description": null,
       "logo": null,
@@ -645,7 +645,7 @@
       "markdown": ""
     },
     "project::easy": {
-      "classifier": "project::easy",
+      "classifier": "z43::project::easy",
       "display_name": "EASY",
       "short_description": null,
       "logo": null,
@@ -659,7 +659,7 @@
       "markdown": ""
     },
     "project::wpt-magpy": {
-      "classifier": "project::wpt-magpy",
+      "classifier": "z43::project::wpt-magpy",
       "display_name": "WPT/MAGPy",
       "short_description": null,
       "logo": null,
@@ -673,7 +673,7 @@
       "markdown": ""
     },
     "project::csar3d": {
-      "classifier": "project::csar3d",
+      "classifier": "z43::project::csar3d",
       "display_name": "cSAR3D",
       "short_description": null,
       "logo": null,
@@ -687,7 +687,7 @@
       "markdown": ""
     },
     "project::implant-safety": {
-      "classifier": "project::implant-safety",
+      "classifier": "z43::project::implant-safety",
       "display_name": "Implant Safety",
       "short_description": null,
       "logo": null,
@@ -701,7 +701,7 @@
       "markdown": ""
     },
     "application::thermal": {
-      "classifier": "application::thermal",
+      "classifier": "z43::application::thermal",
       "display_name": "Thermal",
       "short_description": null,
       "logo": null,
@@ -715,7 +715,7 @@
       "markdown": ""
     },
     "application::mmwave": {
-      "classifier": "application::mmwave",
+      "classifier": "z43::application::mmwave",
       "display_name": "mmWave/5G",
       "short_description": null,
       "logo": null,
@@ -729,7 +729,7 @@
       "markdown": ""
     },
     "application::iot-bodynetworks": {
-      "classifier": "application::iot-bodynetworks",
+      "classifier": "z43::application::iot-bodynetworks",
       "display_name": "IOT/Body Networks",
       "short_description": null,
       "logo": null,
@@ -743,7 +743,7 @@
       "markdown": ""
     },
     "application::other": {
-      "classifier": "application::other",
+      "classifier": "z43::application::other",
       "display_name": "Other",
       "short_description": null,
       "logo": null,
@@ -757,7 +757,7 @@
       "markdown": ""
     },
     "application::acoustics": {
-      "classifier": "application::acoustics",
+      "classifier": "z43::application::acoustics",
       "display_name": "Acoustics",
       "short_description": null,
       "logo": null,
@@ -771,7 +771,7 @@
       "markdown": ""
     },
     "application::exposure-assessment": {
-      "classifier": "application::exposure-assessment",
+      "classifier": "z43::application::exposure-assessment",
       "display_name": "Exposure Assessment",
       "short_description": null,
       "logo": null,
@@ -785,7 +785,7 @@
       "markdown": ""
     },
     "application::materials-tissues": {
-      "classifier": "application::materials-tissues",
+      "classifier": "z43::application::materials-tissues",
       "display_name": "Materials, Tissues",
       "short_description": null,
       "logo": null,
@@ -799,7 +799,7 @@
       "markdown": ""
     },
     "application::mri-implantsafety": {
-      "classifier": "application::mri-implantsafety",
+      "classifier": "z43::application::mri-implantsafety",
       "display_name": "MRI/Implant Safety",
       "short_description": null,
       "logo": null,
@@ -813,7 +813,7 @@
       "markdown": ""
     },
     "application::neuro": {
-      "classifier": "application::neuro",
+      "classifier": "z43::application::neuro",
       "display_name": "Neuro",
       "short_description": null,
       "logo": null,
@@ -827,7 +827,7 @@
       "markdown": ""
     },
     "application::emc-emi": {
-      "classifier": "application::emc-emi",
+      "classifier": "z43::application::emc-emi",
       "display_name": "EMC/EMI",
       "short_description": null,
       "logo": null,
@@ -841,7 +841,7 @@
       "markdown": ""
     },
     "application::healthriskassessment": {
-      "classifier": "application::healthriskassessment",
+      "classifier": "z43::application::healthriskassessment",
       "display_name": "Health Risk Assessment",
       "short_description": null,
       "logo": null,
@@ -855,7 +855,7 @@
       "markdown": ""
     },
     "application::antennas": {
-      "classifier": "application::antennas",
+      "classifier": "z43::application::antennas",
       "display_name": "Antennas/Mobile Comm",
       "short_description": null,
       "logo": null,
@@ -869,7 +869,7 @@
       "markdown": ""
     },
     "application::uwave": {
-      "classifier": "application::uwave",
+      "classifier": "z43::application::uwave",
       "display_name": "uWave",
       "short_description": null,
       "logo": null,
@@ -883,7 +883,7 @@
       "markdown": ""
     },
     "application::optics": {
-      "classifier": "application::optics",
+      "classifier": "z43::application::optics",
       "display_name": "Optics",
       "short_description": null,
       "logo": null,
@@ -897,7 +897,7 @@
       "markdown": ""
     },
     "application::lf-wpt": {
-      "classifier": "application::lf-wpt",
+      "classifier": "z43::application::lf-wpt",
       "display_name": "LF/WPT",
       "short_description": null,
       "logo": null,
