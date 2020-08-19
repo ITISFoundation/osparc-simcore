@@ -57,8 +57,8 @@ async def pg_engine(loop, make_engine) -> Engine:
     sync_engine.dispose()
 
 
-async def test_register_group_classifiers(pg_engine: Engine, classifiers_bundle: Dict):
-
+async def test_operations_on_group_classifiers(pg_engine: Engine, classifiers_bundle: Dict):
+    # NOTE: mostly for TDD
     async with pg_engine.acquire() as conn:
 
         # creates a group
@@ -91,6 +91,7 @@ async def test_register_group_classifiers(pg_engine: Engine, classifiers_bundle:
         assert classifiers_bundle == bundle
 
         # Cannot add more than one classifier's bundle to the same group
+        # pylint: disable=no-member
         with pytest.raises(psycopg2.errors.UniqueViolation):
             await conn.execute(group_classifiers.insert().values(bundle={}, gid=gid))
 
@@ -104,7 +105,7 @@ async def test_register_group_classifiers(pg_engine: Engine, classifiers_bundle:
         assert groups_count == 0
         assert classifiers_count <= groups_count
 
-        #
+        # no bundle
         bundle = await conn.scalar(
             sa.select([group_classifiers.c.bundle]).where(
                 group_classifiers.c.gid == gid
