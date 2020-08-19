@@ -17,6 +17,16 @@ logging.basicConfig(
 API_VERSION: str = "v0"
 API_ROOT: str = "api"
 
+SERVICE_RUNTIME_SETTINGS: str = "simcore.service.settings"
+SERVICE_REVERSE_PROXY_SETTINGS: str = "simcore.service.reverse-proxy-settings"
+SERVICE_RUNTIME_BOOTSETTINGS: str = "simcore.service.bootsettings"
+
+ORG_LABELS_TO_SCHEMA_LABELS = {
+    "org.label-schema.build-date": "build_date",
+    "org.label-schema.vcs-ref": "vcs_ref",
+    "org.label-schema.vcs-url": "vcs_url",
+}
+
 DIRECTOR_REGISTRY_CACHING: bool = os.environ.get("DIRECTOR_REGISTRY_CACHING", True) in [
     "true",
     "True",

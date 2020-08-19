@@ -906,7 +906,7 @@ paths:
         - users
       summary: Returns the service's details which should be hidden from the user defined as extras.
       description: Currently returns the node_requirements an array of resoruces needed for scheduling.
-      operationId: services_extras_get
+      operationId: service_extras_by_key_version_get
       parameters:
         - in: path
           name: service_key
