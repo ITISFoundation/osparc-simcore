@@ -60,7 +60,7 @@ qx.Class.define("osparc.ui.basic.LogoWPlatform", {
             .then(platformName => {
               platformName = platformName.toUpperCase();
               if (osparc.utils.Utils.isInZ43()) {
-                platformName = "z43" + platformName;
+                platformName = "Z43 " + platformName;
               }
               control.setValue(platformName);
             });
