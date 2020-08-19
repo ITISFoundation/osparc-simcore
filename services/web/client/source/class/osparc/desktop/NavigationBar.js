@@ -86,7 +86,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     buildLayout: function() {
       this.getChildControl("logo");
-      this.getChildControl("platform");
 
       this._add(new qx.ui.core.Spacer(20));
 
@@ -104,6 +103,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         flex: 1
       });
 
+      if (osparc.utils.Utils.isInZ43()) {
+        this.getChildControl("z43-manual");
+      }
       this.getChildControl("user-manual");
       this.getChildControl("feedback");
       this.getChildControl("theme-switch");
@@ -115,33 +117,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       switch (id) {
         case "logo": {
           control = osparc.component.widget.LogoOnOff.getInstance();
-          const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
-            alignY: "middle"
-          }));
-          logoContainer.add(control);
-          const logoPlatformContainer = this.getChildControl("logo-platform-container");
-          logoPlatformContainer.add(logoContainer, {
-            height: "100%"
-          });
-          break;
-        }
-        case "platform": {
-          control = new qx.ui.basic.Label().set({
-            font: "text-9"
-          });
-          osparc.utils.LibVersions.getPlatformName()
-            .then(platformName => control.setValue(platformName.toUpperCase()));
-          const logoPlatformContainer = this.getChildControl("logo-platform-container");
-          logoPlatformContainer.add(control, {
-            bottom: 3,
-            right: 0
-          });
-          break;
-        }
-        case "logo-platform-container":
-          control = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
           this._add(control);
           break;
+        }
         case "dashboard-button":
           control = new qx.ui.form.Button(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/14");
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
@@ -161,6 +139,13 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignY: "middle"
           }));
+          this._add(control);
+          break;
+        case "z43-manual":
+          control = new osparc.ui.form.LinkButton(this.tr("Z43 manual"), "https://osparc.git.speag.com/z43-manual").set({
+            appearance: "link-button",
+            font: "text-14"
+          });
           this._add(control);
           break;
         case "user-manual":
