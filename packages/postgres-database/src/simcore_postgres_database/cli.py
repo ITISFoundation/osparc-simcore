@@ -23,7 +23,7 @@ from alembic.config import Config as AlembicConfig
 from tenacity import Retrying, after_log, wait_fixed
 
 from simcore_postgres_database.models import *
-from simcore_postgres_database.utils import build_url, raise_if_not_responsive
+from simcore_postgres_database.utils import build_url, raise_if_not_responsive, hide_url_pass, hide_dict_pass
 
 alembic_version = tuple([int(v) for v in __alembic_version__.split(".")[0:3]])
 
@@ -195,17 +195,17 @@ def discover(**cli_inputs) -> Optional[Dict]:
             cfg.update(cli_cfg)  # CLI always overrides
             url = build_url(**cfg)
 
-            click.echo(f"ping {test.__name__}: {url} ...")
+            click.echo(f"ping {test.__name__}: {hide_url_pass(url)} ...")
             raise_if_not_responsive(url, verbose=False)
 
             print("Saving config ")
-            click.echo(f"Saving config at {discovered_cache}: {cfg}")
+            click.echo(f"Saving config at {discovered_cache}: {hide_dict_pass(cfg)}")
             with open(discovered_cache, "wt") as fh:
                 json.dump(cfg, fh, sort_keys=True, indent=4)
 
             print("Saving config at ")
             click.secho(
-                f"{test.__name__} succeeded: {url} is online",
+                f"{test.__name__} succeeded: {hide_url_pass(url)} is online",
                 blink=False,
                 bold=True,
                 fg="green",
@@ -228,7 +228,7 @@ def info():
     click.echo("Using alembic {}.{}.{}".format(*alembic_version))
 
     cfg = _load_cache()
-    click.echo(f"Saved config: {cfg} @ {discovered_cache}")
+    click.echo(f"Saved config: {hide_dict_pass(cfg)} @ {discovered_cache}")
     config = _get_alembic_config_from_cache(cfg)
     if config:
         click.echo("Revisions history ------------")
