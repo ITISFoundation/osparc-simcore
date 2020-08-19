@@ -132,12 +132,6 @@ qx.Theme.define("osparc.theme.Font", {
       color: "text"
     },
 
-    "text-8": {
-      size: 8,
-      family: ["Roboto"],
-      color: "text"
-    },
-
     "text-8-italic": {
       size: 8,
       family: ["Roboto"],
