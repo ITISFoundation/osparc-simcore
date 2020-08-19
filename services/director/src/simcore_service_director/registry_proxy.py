@@ -3,12 +3,14 @@ import asyncio
 import enum
 import json
 import logging
+import re
 from typing import Dict, List, Tuple
 
 from aiohttp import BasicAuth, ClientSession, client_exceptions, web
+from yarl import URL
+
 from simcore_service_director import config, exceptions
 from simcore_service_director.cache_request_decorator import cache_requests
-from yarl import URL
 
 from .config import APP_CLIENT_SESSION_KEY
 
@@ -171,6 +173,11 @@ async def _list_repositories(app: web.Application) -> List[str]:
     return repos_list
 
 
+VERSION_REG = re.compile(
+    r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
+)
+
+
 async def list_image_tags(app: web.Application, image_key: str) -> List[str]:
     _logger.debug("listing image tags in %s", image_key)
     image_tags: List = []
@@ -179,7 +186,7 @@ async def list_image_tags(app: web.Application, image_key: str) -> List[str]:
     while True:
         tags, headers = await registry_request(app, path)
         if tags["tags"]:
-            image_tags.extend(tags["tags"])
+            image_tags.extend([tag for tag in tags["tags"] if VERSION_REG.match(tag)])
         if "Link" not in headers:
             break
         path = str(headers["Link"]).split(";")[0].strip("<>")

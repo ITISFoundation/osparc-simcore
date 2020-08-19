@@ -88,7 +88,7 @@ qx.Class.define("osparc.data.StudyParametrizer", {
         store.getGroupsMe()
           .then(groupMe => {
             const templatePrimaryStudyData = osparc.data.model.Study.deepCloneStudyObject(primaryStudyData);
-            templatePrimaryStudyData["accessRights"][groupMe.gid] = osparc.component.export.Permissions.getOwnerAccessRight();
+            templatePrimaryStudyData["accessRights"][groupMe.gid] = osparc.component.export.StudyPermissions.getOwnerAccessRight();
             const params = {
               url: {
                 "study_id": this.__studyId

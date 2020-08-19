@@ -42,25 +42,6 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
     this.setButtonText(this.tr("Publish"));
   },
 
-  statics: {
-    createWindow: function(winText, shareResourceWidget) {
-      const window = new qx.ui.window.Window(winText).set({
-        appearance: "service-window",
-        layout: new qx.ui.layout.Grow(),
-        autoDestroy: true,
-        contentPadding: 10,
-        width: 400,
-        height: 300,
-        showMaximize: false,
-        showMinimize: false,
-        modal: true
-      });
-      window.add(shareResourceWidget);
-      window.center();
-      return window;
-    }
-  },
-
   properties: {
     headerText: {
       check: "String",
@@ -83,10 +64,6 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
     __studyId: null,
     __shareWith: null,
     __formData: null,
-
-    createWindow: function() {
-      return this.self().createWindow(this.tr("Publish as Template"), this);
-    },
 
     __buildLayout: function() {
       const shareWith = this.__shareWith = new osparc.component.export.ShareWith();

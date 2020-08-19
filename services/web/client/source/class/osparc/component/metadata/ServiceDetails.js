@@ -14,44 +14,53 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *    const serviceInfo = new osparc.component.metadata.ServiceInfo(selectedService);
- *    this.add(serviceInfo);
+ *    const serviceDetails = new osparc.component.metadata.ServiceDetails(selectedService);
+ *    this.add(serviceDetails);
  * </pre>
  */
 
-qx.Class.define("osparc.component.metadata.ServiceInfo", {
+qx.Class.define("osparc.component.metadata.ServiceDetails", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param metadata {Object} Service metadata
+    * @param serviceData {Object} Service metadata
     */
-  construct: function(metadata) {
+  construct: function(serviceData) {
     this.base(arguments);
 
-    this.set({
-      padding: 5,
-      backgroundColor: "background-main"
-    });
     this._setLayout(new qx.ui.layout.VBox(8));
 
-    this.__metadata = metadata;
+    this.set({
+      service: serviceData,
+      padding: 5,
+      backgroundColor: "material-button-background"
+    });
+  },
 
-    this.__createServiceInfoView();
+  properties: {
+    service: {
+      check: "Object",
+      nullable: false,
+      apply: "_applyService",
+      event: "changeService"
+    }
   },
 
   members: {
-    __metadata: null,
+    __detailsView: null,
 
-    setService: function(metadata) {
-      this._removeAll();
-      if (metadata) {
-        this.__metadata = metadata;
-        this.__createServiceInfoView();
+    _applyService: function(service) {
+      if (this.__detailsView) {
+        this._remove(this.__detailsView);
+      }
+
+      if (service) {
+        this.__createServiceDetailsView();
       }
     },
 
-    __createServiceInfoView: function() {
-      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(8).set({
+    __createServiceDetailsView: function() {
+      const detailsView = this.__detailsView = new qx.ui.container.Composite(new qx.ui.layout.VBox(8).set({
         alignY: "middle"
       }));
 
@@ -60,9 +69,9 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
       hBox.add(this.__createThumbnail(), {
         flex: 1
       });
-      container.add(hBox);
+      detailsView.add(hBox);
 
-      container.add(this.__createDescription());
+      detailsView.add(this.__createDescription());
 
       const rawMetadata = this.__createRawMetadata();
       const more = new osparc.desktop.PanelView(this.tr("raw metadata"), rawMetadata).set({
@@ -70,13 +79,15 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
       });
       more.setCollapsed(true);
       more.getChildControl("title").setFont("text-12");
-      container.add(more);
+      detailsView.add(more, {
+        flex: 1
+      });
 
-      this._add(container);
+      this._add(detailsView);
     },
 
     __createThumbnail: function() {
-      return new osparc.component.widget.Thumbnail(this.__metadata.thumbnail || "@FontAwesome5Solid/flask/50", 300, 180);
+      return new osparc.component.widget.Thumbnail(this.getService().thumbnail || "@FontAwesome5Solid/flask/50", 300, 180);
     },
 
     __createExtraInfo: function() {
@@ -96,13 +107,13 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
     __createTitle: function() {
       const titleContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
-      const title = new qx.ui.basic.Label(this.__metadata.name).set({
+      const title = new qx.ui.basic.Label(this.getService().name).set({
         font: "title-16",
         rich: true
       });
       titleContainer.add(title);
 
-      const version = new qx.ui.basic.Label("v" + this.__metadata.version).set({
+      const version = new qx.ui.basic.Label("v" + this.getService().version).set({
         rich: true
       });
       titleContainer.add(version);
@@ -115,7 +126,7 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
       container.add(new qx.ui.basic.Label(this.tr("Contact")).set({
         font: "title-12"
       }));
-      container.add(new qx.ui.basic.Label(this.__metadata.contact));
+      container.add(new qx.ui.basic.Label(this.getService().contact));
       return container;
     },
 
@@ -124,8 +135,8 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
       container.add(new qx.ui.basic.Label(this.tr("Authors")).set({
         font: "title-12"
       }));
-      for (let i in this.__metadata.authors) {
-        const author = this.__metadata.authors[i];
+      for (let i in this.getService().authors) {
+        const author = this.getService().authors[i];
         const authorLine = `${author.name} · ${author.affiliation} · ${author.email}`;
         container.add(new qx.ui.basic.Label(authorLine));
       }
@@ -133,13 +144,13 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
     },
 
     __createBadges: function() {
-      if ("badges" in this.__metadata) {
+      if ("badges" in this.getService()) {
         const badges = new osparc.ui.markdown.Markdown().set({
           noMargin: false
         });
         let markdown = "";
-        for (let i in this.__metadata.badges) {
-          const badge = this.__metadata.badges[i];
+        for (let i in this.getService().badges) {
+          const badge = this.getService().badges[i];
           markdown += `[![${badge.name}](${badge.image})](${badge.url}) `;
         }
         badges.setValue(markdown);
@@ -152,13 +163,13 @@ qx.Class.define("osparc.component.metadata.ServiceInfo", {
       const description = new osparc.ui.markdown.Markdown().set({
         noMargin: false
       });
-      description.setValue(this.__metadata.description || "");
+      description.setValue(this.getService().description || "");
       return description;
     },
 
     __createRawMetadata: function() {
       const container = new qx.ui.container.Scroll();
-      container.add(new osparc.component.widget.JsonTreeWidget(this.__metadata, "serviceDescriptionSettings"));
+      container.add(new osparc.component.widget.JsonTreeWidget(this.getService(), "serviceDescriptionSettings"));
       return container;
     }
   }

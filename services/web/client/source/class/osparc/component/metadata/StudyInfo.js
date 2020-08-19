@@ -7,17 +7,16 @@
  */
 
 /**
- * Widget that contains the StudyDetails of the given study metadata.
- *
- * It also provides a button that opens a window with the same information.
+ *  Widget placed in the Study Editor that contains the StudyDetails of the given study.
+ * and a button that opens a the StudyDetailsEditor.
  *
  * *Example*
  *
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *    const serviceInfo = new osparc.component.metadata.ServiceInfo(selectedService);
- *    this.add(serviceInfo);
+ *    const studyInfo = new osparc.component.metadata.StudyInfo(study);
+ *    this.add(studyInfo);
  * </pre>
  */
 
@@ -64,7 +63,7 @@ qx.Class.define("osparc.component.metadata.StudyInfo", {
       const title = this.tr("Study Details Editor");
       const studyDetails = new osparc.component.metadata.StudyDetailsEditor(this.__study.serializeStudy(), false, width);
       studyDetails.showOpenButton(false);
-      const win = osparc.component.metadata.StudyDetailsEditor.popUpInWindow(title, studyDetails, width, height);
+      const win = osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
       [
         "updateStudy"
       ].forEach(event => studyDetails.addListener(event, () => {
