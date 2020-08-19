@@ -18,7 +18,6 @@ director:
 socketio:
   enabled: True
 db:
-  init_tables: False
   postgres:
     database: simcoredb
     endpoint: postgres:5432
