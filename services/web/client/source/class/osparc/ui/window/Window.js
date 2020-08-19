@@ -46,5 +46,32 @@ qx.Class.define("osparc.ui.window.Window", {
       check: "Boolean",
       init: false
     }
+  },
+
+  statics: {
+    popUpInWindow: function(widget, title = "", width = 400, height = 400) {
+      const win = new osparc.ui.window.Window(title).set({
+        layout: new qx.ui.layout.VBox(10),
+        autoDestroy: true,
+        contentPadding: 10,
+        showMinimize: false,
+        showMaximize: false,
+        resizable: true,
+        width: width,
+        height: height,
+        modal: true,
+        clickAwayClose: true
+      });
+
+      const scroll = new qx.ui.container.Scroll();
+      scroll.add(widget);
+      win.add(scroll, {
+        flex: 1
+      });
+
+      win.center();
+      win.open();
+      return win;
+    }
   }
 });

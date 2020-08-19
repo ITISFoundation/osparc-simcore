@@ -18,34 +18,18 @@
 qx.Class.define("osparc.dashboard.ClassifiersEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(studyData) {
+  construct: function(studyData, isStudy = true) {
     this.base(arguments);
 
-    this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+    if (isStudy) {
+      this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+    } else {
+      this.__studyData = osparc.utils.Utils.deepCloneObject(studyData);
+    }
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__buildLayout();
-  },
-
-  statics: {
-    popUpInWindow: function(title, classifiersEditor, width = 400, height = 400) {
-      const win = new osparc.ui.window.Window(title).set({
-        layout: new qx.ui.layout.Grow(),
-        autoDestroy: true,
-        contentPadding: 10,
-        width,
-        height,
-        showMaximize: false,
-        showMinimize: false,
-        modal: true,
-        clickAwayClose: true
-      });
-      win.add(classifiersEditor);
-      win.center();
-      win.open();
-      return win;
-    }
   },
 
   events: {
@@ -78,23 +62,45 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
     __saveClassifiers: function(saveBtn) {
       saveBtn.setFetching(true);
 
-      this.__studyData["classifiers"] = this.__classifiersTree.getCheckedClassifierIDs();
-      const params = {
-        url: {
-          "projectId": this.__studyData["uuid"]
-        },
-        data: this.__studyData
-      };
-      osparc.data.Resources.fetch("studies", "put", params)
-        .then(() => {
-          this.fireDataEvent("updateClassifiers", this.__studyData["uuid"]);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
-          saveBtn.setFetching(false);
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
-          console.error(err);
-        });
+      if ("uuid" in this.__studyData) {
+        this.__studyData["classifiers"] = this.__classifiersTree.getCheckedClassifierIDs();
+        const params = {
+          url: {
+            "projectId": this.__studyData["uuid"]
+          },
+          data: this.__studyData
+        };
+        osparc.data.Resources.fetch("studies", "put", params)
+          .then(() => {
+            this.fireDataEvent("updateClassifiers", this.__studyData["uuid"]);
+            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
+            saveBtn.setFetching(false);
+          })
+          .catch(err => {
+            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
+            console.error(err);
+          });
+      } else {
+        const params = {
+          url: osparc.data.Resources.getServiceUrl(
+            this.__studyData["key"],
+            this.__studyData["version"]
+          ),
+          data: {
+            "classifiers": this.__classifiersTree.getCheckedClassifierIDs()
+          }
+        };
+        osparc.data.Resources.fetch("services", "patch", params)
+          .then(() => {
+            this.fireDataEvent("updateClassifiers", this.__studyData["key"]);
+            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
+            saveBtn.setFetching(false);
+          })
+          .catch(err => {
+            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
+            console.error(err);
+          });
+      }
     }
   }
 });

@@ -302,8 +302,25 @@ qx.Class.define("osparc.store.Store", {
     },
 
     /**
+     * @param {String} serviceKey
+     * @param {String} serviceVersion
+     * @param {Boolean} reload
+     */
+    getService: function(serviceKey, serviceVersion, reload = false) {
+      return new Promise((resolve, reject) => {
+        const params = {
+          url: osparc.data.Resources.getServiceUrl(serviceKey, serviceVersion)
+        };
+        osparc.data.Resources.getOne("services", params, !reload)
+          .then(serviceData => {
+            resolve(serviceData);
+          });
+      });
+    },
+
+    /**
      * This functions does the needed processing in order to have a working list of services and DAGs.
-     * @param {Boolean} reload ?
+     * @param {Boolean} reload
      */
     getServicesDAGs: function(reload = false) {
       return new Promise((resolve, reject) => {
@@ -322,6 +339,39 @@ qx.Class.define("osparc.store.Store", {
             osparc.utils.Services.servicesToCache(servicesObj, true);
             this.fireDataEvent("servicesRegistered", servicesObj);
             resolve(osparc.utils.Services.servicesCached);
+          });
+      });
+    },
+
+    getUnaccessibleServices: function(studyData) {
+      return new Promise((resolve, reject) => {
+        const unaccessibleServices = [];
+        const nodes = Object.values(studyData.workbench);
+        nodes.forEach(node => {
+          const idx = unaccessibleServices.findIndex(unaccessibleSrv => unaccessibleSrv.key === node.key && unaccessibleSrv.version === node.version);
+          if (idx === -1) {
+            unaccessibleServices.push({
+              key: node["key"],
+              version: node["version"]
+            });
+          }
+        });
+        this.getServicesDAGs()
+          .then(services => {
+            nodes.forEach(node => {
+              if (osparc.utils.Services.getFromObject(services, node.key, node.version)) {
+                const idx = unaccessibleServices.findIndex(unaccessibleSrv => unaccessibleSrv.key === node.key && unaccessibleSrv.version === node.version);
+                if (idx !== -1) {
+                  unaccessibleServices.splice(idx, 1);
+                }
+              }
+            });
+          })
+          .catch(err => {
+            console.error("failed getting services", err);
+          })
+          .finally(() => {
+            resolve(unaccessibleServices);
           });
       });
     },

@@ -87,14 +87,19 @@ qx.Class.define("osparc.component.sweeper.Parameters", {
     },
 
     __initTable: function() {
-      const model = this.__model;
       const cols = this.__cols;
+
+      const model = this.__model;
       model.setColumnEditable(cols["id"].col, false);
       model.setColumnEditable(cols["label"].col, true);
       model.setColumnEditable(cols["low"].col, true);
       model.setColumnEditable(cols["high"].col, true);
       model.setColumnEditable(cols["nSteps"].col, true);
       model.setColumnEditable(cols["distribution"].col, false);
+
+      const columnModel = this.getTableColumnModel();
+      columnModel.setDataCellRenderer(cols["low"].col, new qx.ui.table.cellrenderer.Number());
+      columnModel.setDataCellRenderer(cols["high"].col, new qx.ui.table.cellrenderer.Number());
 
       this.getSelectionModel().setSelectionMode(qx.ui.table.selection.Model.SINGLE_SELECTION);
     },
