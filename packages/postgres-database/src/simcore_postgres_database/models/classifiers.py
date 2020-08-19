@@ -36,7 +36,7 @@ group_classifiers = sa.Table(
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        unique=True # Every Group can ONLY have one set of classifiers
+        unique=True,  # Every Group can ONLY have one set of classifiers
     ),
     sa.PrimaryKeyConstraint("id", name="group_classifiers_pkey"),
 )

@@ -14,7 +14,6 @@ import sys
 from pathlib import Path
 
 from eralchemy import render_er
-
 from simcore_postgres_database.models import *  # registers all schemas in metadata
 from simcore_postgres_database.models.base import metadata
 
