@@ -27,6 +27,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # in the image will be those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
+
 # --------------------------------------------
 FROM base as build
 
@@ -52,18 +53,9 @@ RUN pip --no-cache-dir --quiet install .[migration]
 
 
 # --------------------------------------------
-
 FROM base as production
 
 ENV PYTHONOPTIMIZE=TRUE
-
-WORKDIR /home/scu
-
-USER ${SC_USER_NAME}
-
-# bring installed package without build tools
-COPY --from=build ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-
 
 # testing defaults
 ENV POSTGRES_USER=scu \
@@ -71,5 +63,12 @@ ENV POSTGRES_USER=scu \
   POSTGRES_HOST=postgres \
   POSTGRES_PORT=5432 \
   POSTGRES_DB=simcoredb
+
+WORKDIR /home/scu
+
+USER ${SC_USER_NAME}
+
+# bring installed package without build tools
+COPY --from=build ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 ENTRYPOINT [ "sc-pg" , "service"]
