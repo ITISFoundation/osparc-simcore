@@ -6,7 +6,7 @@
 """
 from .models.api_keys import api_keys
 from .models.comp_pipeline import comp_pipeline
-from .models.comp_tasks import comp_tasks
+from .models.comp_tasks import comp_tasks, DB_CHANNEL_NAME
 from .models.confirmations import ConfirmationAction, confirmations
 from .models.groups import GroupType, groups, user_to_groups
 from .models.projects import ProjectType, projects
@@ -27,6 +27,7 @@ __all__ = [
     "ConfirmationAction",
     "tokens",
     "comp_tasks",
+    "DB_CHANNEL_NAME",
     "comp_pipeline",
     "tags",
     "study_tags",

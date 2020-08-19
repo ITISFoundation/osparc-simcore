@@ -12,6 +12,7 @@ from uuid import uuid4
 import aio_pika
 import pytest
 from mock import call
+from pytest_simcore.postgres_service import postgres_db
 
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
@@ -35,6 +36,8 @@ core_services = ["postgres", "redis", "rabbit"]
 
 ops_services = []
 
+import sqlalchemy as sa
+
 
 @pytest.fixture
 def client(
@@ -43,11 +46,11 @@ def client(
     app_config,  ## waits until swarm with *_services are up
     rabbit_config: Config,
     rabbit_service,  ## waits until rabbit is responsive
+    postgres_db: sa.engine.Engine,
 ):
     assert app_config["rest"]["version"] == API_VERSION
 
     app_config["storage"]["enabled"] = False
-    app_config["db"]["init_tables"] = True  # inits postgres_service
     app_config[CONFIG_SECTION_NAME] = rabbit_config.dict()
 
     # fake config

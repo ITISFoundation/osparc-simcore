@@ -113,7 +113,7 @@ def wait_for_services() -> None:
     assert len(running_services), "no services started!"
     assert len(services) == len(
         running_services
-    ), f"Some services are missing:\nexpected: {services}\ngot: {running_services}"
+    ), f"Some services are missing or unexpected:\nexpected: {len(services)} {services}\ngot: {len(running_services)} {[service.name for service in running_services]}"
     # now check they are in running mode
     for service in running_services:
         task = None

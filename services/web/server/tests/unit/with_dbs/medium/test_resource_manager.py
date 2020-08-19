@@ -6,6 +6,9 @@
 from asyncio import sleep
 from copy import deepcopy
 
+
+from typing import Callable
+
 import pytest
 import socketio
 import socketio.exceptions
@@ -38,12 +41,11 @@ SIO_VERSION = tuple(int(digit) for digit in socketio.__version__.split("."))
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, postgres_service, mock_orphaned_services):
+def client(loop, aiohttp_client, app_cfg, postgres_db, mock_orphaned_services):
     cfg = deepcopy(app_cfg)
 
     assert cfg["rest"]["version"] == API_VERSION
     assert cfg["rest"]["enabled"]
-    cfg["db"]["init_tables"] = True  # inits postgres_service
     cfg["projects"]["enabled"] = True
     cfg["director"]["enabled"] = True
     cfg[config.CONFIG_SECTION_NAME][
@@ -125,11 +127,7 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
     resp = await client.post(url, json=client_session_id)
     await assert_status(resp, web.HTTPNoContent)
 
-
 # ------------------------ TESTS -------------------------------
-from typing import Callable
-
-
 async def test_anonymous_websocket_connection(
     client_session_id: str,
     socketio_url: Callable,

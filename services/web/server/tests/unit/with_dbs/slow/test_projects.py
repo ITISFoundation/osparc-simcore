@@ -87,7 +87,7 @@ def client(
     loop,
     aiohttp_client,
     app_cfg,
-    postgres_service,
+    postgres_db,
     mocked_director_subsystem,
     mock_orphaned_services,
 ):
@@ -96,7 +96,6 @@ def client(
     # config app
     cfg = deepcopy(app_cfg)
     port = cfg["main"]["port"]
-    cfg["db"]["init_tables"] = True  # inits tables of postgres_service upon startup
     cfg["projects"]["enabled"] = True
     cfg["director"]["enabled"] = True
     cfg["resource_manager"][
@@ -1313,6 +1312,7 @@ async def test_open_shared_project_2_users_locked(
     expected: ExpectedResponse,
     aiohttp_client,
     mocker,
+    disable_gc_manual_guest_users,
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
     mock_project_state_updated_handler = mocker.Mock()

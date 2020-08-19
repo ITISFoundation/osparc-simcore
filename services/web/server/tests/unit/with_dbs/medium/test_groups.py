@@ -9,10 +9,10 @@ from typing import Dict, List
 
 import pytest
 from aiohttp import web
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, create_user
 
 from _helpers import standard_role_response
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import LoggedUser, create_user
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.groups import setup_groups
@@ -34,14 +34,12 @@ API_VERSION = "v0"
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, postgres_service):
+def client(loop, aiohttp_client, app_cfg, postgres_db):
     cfg = deepcopy(app_cfg)
 
     port = cfg["main"]["port"]
 
     assert cfg["rest"]["version"] == API_VERSION
-
-    cfg["db"]["init_tables"] = True  # inits postgres_service
 
     # fake config
     app = create_safe_application(cfg)

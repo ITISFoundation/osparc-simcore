@@ -350,10 +350,283 @@
           }
         }
       }
+    },
+    "/v0/services": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "List Services",
+        "operationId": "list_services_v0_services_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "exclusiveMinimum": 0.0,
+              "type": "integer"
+            },
+            "name": "user_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Services V0 Services Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceOut"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/services/{service_key}/{service_version}": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Get Service",
+        "operationId": "get_service_v0_services__service_key___service_version__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Key",
+              "pattern": "^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$",
+              "type": "string"
+            },
+            "name": "service_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "service_version",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            },
+            "name": "user_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Modify Service",
+        "operationId": "modify_service_v0_services__service_key___service_version__patch",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Key",
+              "pattern": "^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$",
+              "type": "string"
+            },
+            "name": "service_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "service_version",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            },
+            "name": "user_id",
+            "in": "query"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AccessEnum": {
+        "title": "AccessEnum",
+        "enum": [
+          "ReadAndWrite",
+          "Invisible",
+          "ReadOnly"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
+      "Author": {
+        "title": "Author",
+        "required": [
+          "name",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "description": "Name of the author",
+            "example": "Jim Knopf"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string",
+            "description": "Email address",
+            "format": "email",
+            "example": [
+              "sun@sense.eight",
+              "deleen@minbar.bab"
+            ]
+          },
+          "affiliation": {
+            "title": "Affiliation",
+            "type": "string",
+            "description": "Affiliation of the author",
+            "example": [
+              "Sense8",
+              "Babylon 5"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "Badge": {
+        "title": "Badge",
+        "required": [
+          "name",
+          "image",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "description": "Name of the subject",
+            "example": [
+              "travis-ci",
+              "coverals.io",
+              "github.io"
+            ]
+          },
+          "image": {
+            "title": "Image",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "description": "Url to the badge",
+            "format": "uri",
+            "example": [
+              "https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master",
+              "https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master",
+              "https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation"
+            ]
+          },
+          "url": {
+            "title": "Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "description": "Link to the status",
+            "format": "uri",
+            "example": [
+              "https://travis-ci.org/ITISFoundation/osparc-simcore 'State of CI: build, test and pushing images'",
+              "https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master 'Test coverage'",
+              "https://itisfoundation.github.io/"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
       "Connection": {
         "title": "Connection",
         "type": "object",
@@ -606,12 +879,7 @@
             "title": "Inputaccess",
             "type": "object",
             "additionalProperties": {
-              "enum": [
-                "ReadAndWrite",
-                "Invisible",
-                "ReadOnly"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/AccessEnum"
             }
           },
           "inputNodes": {
@@ -684,6 +952,425 @@
           }
         }
       },
+      "SelectBox": {
+        "title": "SelectBox",
+        "required": [
+          "structure"
+        ],
+        "type": "object",
+        "properties": {
+          "structure": {
+            "title": "Structure",
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Structure"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ServiceGroupAccessRights": {
+        "title": "ServiceGroupAccessRights",
+        "type": "object",
+        "properties": {
+          "execute_access": {
+            "title": "Execute Access",
+            "type": "boolean",
+            "description": "defines whether the group can execute the service",
+            "default": false
+          },
+          "write_access": {
+            "title": "Write Access",
+            "type": "boolean",
+            "description": "defines whether the group can modify the service",
+            "default": false
+          }
+        }
+      },
+      "ServiceIn": {
+        "title": "ServiceIn",
+        "required": [
+          "name",
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "access_rights": {
+            "title": "Access Rights",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ServiceGroupAccessRights"
+            },
+            "description": "service access rights per group id"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "description": "short, human readable name for the node",
+            "example": "Fast Counter"
+          },
+          "thumbnail": {
+            "title": "Thumbnail",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "description": "url to the thumbnail",
+            "format": "uri",
+            "example": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "description": "human readable description of the purpose of the node",
+            "example": [
+              "Our best node type",
+              "The mother of all nodes, makes your numbers shine!"
+            ]
+          }
+        }
+      },
+      "ServiceInput": {
+        "title": "ServiceInput",
+        "required": [
+          "displayOrder",
+          "label",
+          "description",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "displayOrder": {
+            "title": "Displayorder",
+            "type": "number",
+            "description": "use this to numerically sort the properties for display",
+            "example": [
+              1,
+              -0.2
+            ]
+          },
+          "label": {
+            "title": "Label",
+            "type": "string",
+            "description": "short name for the property",
+            "example": "Age"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "description": "description of the property",
+            "example": "Age in seconds since 1970"
+          },
+          "type": {
+            "title": "Type",
+            "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "type": "string",
+            "description": "data type expected on this input glob matching for data type is allowed",
+            "example": [
+              "number",
+              "boolean",
+              "data:*/*",
+              "data:text/*",
+              "data:[image/jpeg,image/png]",
+              "data:application/json",
+              "data:application/json;schema=https://my-schema/not/really/schema.json",
+              "data:application/vnd.ms-excel",
+              "data:text/plain",
+              "data:application/hdf5",
+              "data:application/edu.ucdavis@ceclancy.xyz"
+            ]
+          },
+          "fileToKeyMap": {
+            "title": "Filetokeymap",
+            "type": "object",
+            "description": "Place the data associated with the named keys in files",
+            "example": [
+              {
+                "dir/input1.txt": "key_1",
+                "dir33/input2.txt": "key2"
+              }
+            ]
+          },
+          "defaultValue": {
+            "title": "Defaultvalue",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "example": [
+              "Dog",
+              true
+            ]
+          },
+          "widget": {
+            "title": "Widget",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Widget"
+              }
+            ],
+            "description": "custom widget to use instead of the default one determined from the data-type"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ServiceOut": {
+        "title": "simcore node",
+        "required": [
+          "name",
+          "description",
+          "key",
+          "version",
+          "type",
+          "authors",
+          "contact",
+          "inputs",
+          "outputs"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "description": "short, human readable name for the node",
+            "example": "Fast Counter"
+          },
+          "thumbnail": {
+            "title": "Thumbnail",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "description": "url to the thumbnail",
+            "format": "uri",
+            "example": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "description": "human readable description of the purpose of the node",
+            "example": [
+              "Our best node type",
+              "The mother of all nodes, makes your numbers shine!"
+            ]
+          },
+          "key": {
+            "title": "Key",
+            "pattern": "^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$",
+            "type": "string",
+            "description": "distinctive name for the node based on the docker registry path",
+            "example": [
+              "simcore/services/comp/itis/sleeper",
+              "simcore/services/dynamic/3dviewer"
+            ]
+          },
+          "version": {
+            "title": "Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string",
+            "description": "service version number",
+            "example": [
+              "1.0.0",
+              "0.0.1"
+            ]
+          },
+          "integration-version": {
+            "title": "Integration-Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string",
+            "description": "integration version number",
+            "example": "1.0.0"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ServiceType"
+          },
+          "badges": {
+            "title": "Badges",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Badge"
+            }
+          },
+          "authors": {
+            "title": "Authors",
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Author"
+            }
+          },
+          "contact": {
+            "title": "Contact",
+            "type": "string",
+            "description": "email to correspond to the authors about the node",
+            "format": "email",
+            "example": [
+              "lab@net.flix"
+            ]
+          },
+          "inputs": {
+            "title": "Inputs",
+            "type": "object",
+            "description": "definition of the inputs of this node"
+          },
+          "outputs": {
+            "title": "Outputs",
+            "type": "object",
+            "description": "definition of the outputs of this node"
+          },
+          "access_rights": {
+            "title": "Access Rights",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ServiceGroupAccessRights"
+            },
+            "description": "service access rights per group id"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ServiceProperty": {
+        "title": "ServiceProperty",
+        "required": [
+          "displayOrder",
+          "label",
+          "description",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "displayOrder": {
+            "title": "Displayorder",
+            "type": "number",
+            "description": "use this to numerically sort the properties for display",
+            "example": [
+              1,
+              -0.2
+            ]
+          },
+          "label": {
+            "title": "Label",
+            "type": "string",
+            "description": "short name for the property",
+            "example": "Age"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "description": "description of the property",
+            "example": "Age in seconds since 1970"
+          },
+          "type": {
+            "title": "Type",
+            "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "type": "string",
+            "description": "data type expected on this input glob matching for data type is allowed",
+            "example": [
+              "number",
+              "boolean",
+              "data:*/*",
+              "data:text/*",
+              "data:[image/jpeg,image/png]",
+              "data:application/json",
+              "data:application/json;schema=https://my-schema/not/really/schema.json",
+              "data:application/vnd.ms-excel",
+              "data:text/plain",
+              "data:application/hdf5",
+              "data:application/edu.ucdavis@ceclancy.xyz"
+            ]
+          },
+          "fileToKeyMap": {
+            "title": "Filetokeymap",
+            "type": "object",
+            "description": "Place the data associated with the named keys in files",
+            "example": [
+              {
+                "dir/input1.txt": "key_1",
+                "dir33/input2.txt": "key2"
+              }
+            ]
+          },
+          "defaultValue": {
+            "title": "Defaultvalue",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "example": [
+              "Dog",
+              true
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "ServiceType": {
+        "title": "ServiceType",
+        "enum": [
+          "computational",
+          "dynamic"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
+      "Structure": {
+        "title": "Structure",
+        "required": [
+          "key",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TextArea": {
+        "title": "TextArea",
+        "required": [
+          "minHeight"
+        ],
+        "type": "object",
+        "properties": {
+          "minHeight": {
+            "title": "Minheight",
+            "exclusiveMinimum": 0.0,
+            "type": "integer",
+            "description": "minimum Height of the textarea"
+          }
+        },
+        "additionalProperties": false
+      },
       "ValidationError": {
         "title": "ValidationError",
         "required": [
@@ -709,6 +1396,40 @@
             "type": "string"
           }
         }
+      },
+      "Widget": {
+        "title": "Widget",
+        "required": [
+          "type",
+          "details"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/WidgetType"
+          },
+          "details": {
+            "title": "Details",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TextArea"
+              },
+              {
+                "$ref": "#/components/schemas/SelectBox"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "WidgetType": {
+        "title": "WidgetType",
+        "enum": [
+          "TextArea",
+          "SelectBox"
+        ],
+        "type": "string",
+        "description": "An enumeration."
       }
     }
   }

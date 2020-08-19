@@ -7,7 +7,6 @@ To decide where a task should be routed to, the current worker will
 use a look ahead function to check the type of upcoming task and
 schedule it accordingly.
 """
-import traceback
 from typing import Tuple
 from celery import Celery, states
 from simcore_sdk.config.rabbit import Config as RabbitConfig
@@ -17,7 +16,6 @@ from .utils import wrap_async_call, is_gpu_node, start_as_mpi_node
 from .celery_log_setup import get_task_logger
 from .utils import assemble_celery_app
 from .core import task_required_resources
-from .exceptions import DatabaseError
 
 log = get_task_logger(__name__)
 
@@ -40,26 +38,17 @@ def dispatch_comp_task(user_id: str, project_id: str, node_id: str) -> None:
         return
 
     # query comp_tasks for the thing you need and see if it is false
-    try:
-        required_resources = wrap_async_call(task_required_resources(node_id))
-    except Exception:  # pylint: disable=broad-except
-        log.error(
-            "%s\nThe above exception ocurred because it could not be "
-            "determined if task requires GPU or MPI for node_id %s",
-            traceback.format_exc(),
-            node_id,
-        )
+
+    required_resources = wrap_async_call(task_required_resources(node_id))
+    if required_resources is None:
         return
 
     if required_resources["requires_mpi"]:
         _dispatch_to_mpi_queue(user_id, project_id, node_id)
-        return
-
-    if required_resources["requires_gpu"]:
+    elif required_resources["requires_gpu"]:
         _dispatch_to_gpu_queue(user_id, project_id, node_id)
-        return
-
-    _dispatch_to_cpu_queue(user_id, project_id, node_id)
+    else:
+        _dispatch_to_cpu_queue(user_id, project_id, node_id)
 
 
 def _dispatch_to_cpu_queue(user_id: str, project_id: str, node_id: str) -> None:
@@ -91,15 +80,20 @@ def shared_task_dispatch(
             project_id,
             node_id,
         )
-        next_task_nodes = wrap_async_call(
+        next_task_nodes, error = wrap_async_call(
             run_sidecar(celery_request.request.id, user_id, project_id, node_id)
         )
-        celery_request.update_state(state=states.SUCCESS)
 
+        if error:
+            celery_request.update_state(state=states.FAILURE)
+            log.exception(next_task_nodes)
+            return
+
+        celery_request.update_state(state=states.SUCCESS)
         if next_task_nodes:
             for _node_id in next_task_nodes:
                 dispatch_comp_task(user_id, project_id, _node_id)
-    except (DatabaseError, Exception):  # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         celery_request.update_state(state=states.FAILURE)
         log.exception("Uncaught exception")
 

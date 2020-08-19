@@ -32,19 +32,16 @@ from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.users import setup_users
 
-
 API_VERSION = "v0"
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, postgres_service):
+def client(loop, aiohttp_client, app_cfg, postgres_db):
     cfg = deepcopy(app_cfg)
 
     port = cfg["main"]["port"]
 
     assert cfg["rest"]["version"] == API_VERSION
-
-    cfg["db"]["init_tables"] = True  # inits postgres_service
 
     # fake config
     app = create_safe_application(cfg)
