@@ -51,7 +51,7 @@ transfer-images-to-registry: ## transfer images to registry
 	# @docker tag itisfoundation/jupyter-base-notebook:2.13.0 registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
 	# @docker push registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
 	# completed transfer of images
-	curl registry:5000/v2/_catalog
+	curl -s registry:5000/v2/_catalog | jq '.repositories'
 
 PUBLISHED_PORT = $(shell docker inspect $(shell docker service ls --format "{{ .Name }}" | grep postgres) --format "{{(index .Endpoint.Ports 0).PublishedPort}}")
 .PHONY: inject-templates-in-db
