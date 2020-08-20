@@ -132,9 +132,9 @@ async def remove_users_manually_marked_as_guests(
             continue
         logger.info("Will try to remove resources for guest '%s'", guest_user_id)
         # get all projects for this user and then remove with remove_resources_if_guest_user
-        user_project_uuids = await app[APP_PROJECT_DBAPI].list_all_projects_by_uuid_for_user(
-            user_id=guest_user_id
-        )
+        user_project_uuids = await app[
+            APP_PROJECT_DBAPI
+        ].list_all_projects_by_uuid_for_user(user_id=guest_user_id)
         logger.info(
             "Project uuids, to clean, for user '%s': '%s'",
             guest_user_id,
@@ -145,6 +145,11 @@ async def remove_users_manually_marked_as_guests(
             await remove_resources_if_guest_user(
                 app=app, project_uuid=project_uuid, user_id=guest_user_id,
             )
+
+        # if there are not projects, just remove the user
+        await remove_resources_if_guest_user(
+            app=app, project_uuid=None, user_id=guest_user_id,
+        )
 
 
 async def remove_orphaned_services(
@@ -203,14 +208,14 @@ async def remove_resources_if_guest_user(
         logger.debug("User is not GUEST, skipping removal of its project resources")
         return
 
-    logger.debug(
-        "Removing project '%s' from the database", project_uuid,
-    )
-
-    try:
-        await delete_project_from_db(app, project_uuid, user_id)
-    except ProjectNotFoundError:
-        logging.warning("Project '%s' not found, skipping removal", project_uuid)
+    if project_uuid is not None:
+        try:
+            logger.debug(
+                "Removing project '%s' from the database", project_uuid,
+            )
+            await delete_project_from_db(app, project_uuid, user_id)
+        except ProjectNotFoundError:
+            logging.warning("Project '%s' not found, skipping removal", project_uuid)
 
     # when manually changing a user to GUEST, it might happen that it has more then one project
     try:
