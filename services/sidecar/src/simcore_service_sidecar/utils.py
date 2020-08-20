@@ -79,28 +79,29 @@ def is_gpu_node() -> bool:
     meaning that the `VRAM` label was added to it."""
 
     async def async_is_gpu_node() -> bool:
-        docker = aiodocker.Docker()
+        async with aiodocker.Docker() as docker:
+            spec_config = {
+                "Cmd": "nvidia-smi",
+                "Image": "nvidia/cuda:10.0-base",
+                "AttachStdin": False,
+                "AttachStdout": False,
+                "AttachStderr": False,
+                "Tty": False,
+                "OpenStdin": False,
+            }
+            try:
+                await docker.containers.run(
+                    config=spec_config, name=f"sidecar_{os.getpid()}_test_gpu"
+                )
+                return True
+            except aiodocker.exceptions.DockerError as e:
+                logger.warning("is_gpu_node DockerError during check: %s", str(e))
 
-        spec_config = {
-            "Cmd": "nvidia-smi",
-            "Image": "nvidia/cuda:10.0-base",
-            "AttachStdin": False,
-            "AttachStdout": False,
-            "AttachStderr": False,
-            "Tty": False,
-            "OpenStdin": False,
-            "HostConfig": {"AutoRemove": True},
-        }
-        try:
-            await docker.containers.run(
-                config=spec_config, name=f"sidecar_{os.getpid()}_test_gpu"
-            )
-            return True
-        except aiodocker.exceptions.DockerError:
-            pass
-        return False
+            return False
 
-    return wrap_async_call(async_is_gpu_node())
+    has_gpu = wrap_async_call(async_is_gpu_node())
+    logger.info("Node gpus support result %s", has_gpu)
+    return has_gpu
 
 
 def start_as_mpi_node() -> bool:
