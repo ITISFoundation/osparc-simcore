@@ -1451,6 +1451,7 @@ async def test_open_shared_project_at_same_time(
     user_role: UserRole,
     expected: ExpectedResponse,
     aiohttp_client,
+    disable_gc_manual_guest_users,
 ):
     NUMBER_OF_ADDITIONAL_CLIENTS = 20
     # log client 1
