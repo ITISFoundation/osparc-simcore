@@ -57,7 +57,9 @@ async def pg_engine(loop, make_engine) -> Engine:
     sync_engine.dispose()
 
 
-async def test_operations_on_group_classifiers(pg_engine: Engine, classifiers_bundle: Dict):
+async def test_operations_on_group_classifiers(
+    pg_engine: Engine, classifiers_bundle: Dict
+):
     # NOTE: mostly for TDD
     async with pg_engine.acquire() as conn:
 
