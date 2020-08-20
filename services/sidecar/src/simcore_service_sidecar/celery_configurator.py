@@ -16,6 +16,7 @@ from .utils import wrap_async_call, is_gpu_node, start_as_mpi_node
 from .celery_log_setup import get_task_logger
 from .utils import assemble_celery_app
 from .core import task_required_resources
+from .boot_mode import BootMode, set_boot_mode, get_boot_mode
 
 log = get_task_logger(__name__)
 
@@ -100,7 +101,7 @@ def shared_task_dispatch(
 
 def configure_cpu_mode() -> Tuple[RabbitConfig, Celery]:
     """Will configure and return a celery app targetting CPU mode nodes."""
-    log.info("Initializing celery app in CPU MODE ...")
+    log.info("Initializing celery app...")
     app = _celery_app_cpu
 
     # pylint: disable=unused-variable,unused-argument
@@ -112,12 +113,14 @@ def configure_cpu_mode() -> Tuple[RabbitConfig, Celery]:
     def pipeline(self, user_id: str, project_id: str, node_id: str = None) -> None:
         shared_task_dispatch(self, user_id, project_id, node_id)
 
+    set_boot_mode(BootMode.CPU)
+    log.info("Initialized celery app in %s ", get_boot_mode())
     return (_rabbit_config, app)
 
 
 def configure_gpu_mode() -> Tuple[RabbitConfig, Celery]:
     """Will configure and return a celery app targetting GPU mode nodes."""
-    log.info("Initializing celery app in GPU MODE ...")
+    log.info("Initializing celery app...")
     app = _celery_app_gpu
 
     # pylint: disable=unused-variable
@@ -125,12 +128,14 @@ def configure_gpu_mode() -> Tuple[RabbitConfig, Celery]:
     def pipeline(self, user_id: str, project_id: str, node_id: str = None) -> None:
         shared_task_dispatch(self, user_id, project_id, node_id)
 
+    set_boot_mode(BootMode.GPU)
+    log.info("Initialized celery app in %s", get_boot_mode())
     return (_rabbit_config, app)
 
 
 def configure_mpi_node() -> Tuple[RabbitConfig, Celery]:
     """Will configure and return a celery app targetting GPU mode nodes."""
-    log.info("Initializing celery app in MPI MODE ...")
+    log.info("Initializing celery app...")
     app = _celery_app_mpi
 
     # pylint: disable=unused-variable
@@ -138,6 +143,8 @@ def configure_mpi_node() -> Tuple[RabbitConfig, Celery]:
     def pipeline(self, user_id: str, project_id: str, node_id: str = None) -> None:
         shared_task_dispatch(self, user_id, project_id, node_id)
 
+    set_boot_mode(BootMode.MPI)
+    log.info("Initialized celery app in %s", get_boot_mode())
     return (_rabbit_config, app)
 
 

@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from simcore_service_sidecar.boot_mode import set_boot_mode, BootMode
+
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 # imports the fixtures for the integration tests
@@ -34,3 +36,9 @@ def python_sample_script(mock_dir: Path) -> Path:
     file_path = mock_dir / "osparc_python_sample.py"
     assert file_path.exists()
     return file_path
+
+
+@pytest.fixture()
+def mock_boot_mode():
+    """by default only CPU is mocked which is enough"""
+    set_boot_mode(BootMode.CPU)
