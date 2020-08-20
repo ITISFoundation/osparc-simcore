@@ -9,7 +9,6 @@ import json.decoder
 import logging
 import os
 import sys
-import time
 from copy import deepcopy
 from logging.config import fileConfig
 from pathlib import Path
@@ -17,13 +16,18 @@ from typing import Dict, Optional
 
 import alembic.command
 import click
-import docker
 from alembic import __version__ as __alembic_version__
 from alembic.config import Config as AlembicConfig
 from tenacity import Retrying, after_log, wait_fixed
 
+import docker
 from simcore_postgres_database.models import *
-from simcore_postgres_database.utils import build_url, raise_if_not_responsive, hide_url_pass, hide_dict_pass
+from simcore_postgres_database.utils import (
+    build_url,
+    hide_dict_pass,
+    hide_url_pass,
+    raise_if_not_responsive,
+)
 
 alembic_version = tuple([int(v) for v in __alembic_version__.split(".")[0:3]])
 
@@ -244,8 +248,8 @@ def clean():
 
 
 @main.command()
-def service():
-    """ migration service program (use only in that case)"""
+def upgrade_and_close():
+    """ Used in migration service program to discover, upgrade and close"""
 
     for attempt in Retrying(wait=wait_fixed(5), after=after_log(log, logging.ERROR)):
         with attempt:
@@ -260,9 +264,7 @@ def service():
     except Exception:
         log.exception("Unable to upgrade")
 
-    print("Started ...")
-    while True:
-        time.sleep(10000)
+    click.echo("I did my job here. Bye!")
 
 
 # Bypasses alembic CLI into a reduced version  ------------

@@ -70,5 +70,6 @@ USER ${SC_USER_NAME}
 
 # bring installed package without build tools
 COPY --from=build ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --chown=scu:scu services/migration/docker services/migration/docker
 
-ENTRYPOINT [ "sc-pg" , "service"]
+ENTRYPOINT [ "/bin/sh", "services/migration/docker/entrypoint.sh" ]
