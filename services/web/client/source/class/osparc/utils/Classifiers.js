@@ -52,40 +52,44 @@ qx.Class.define("osparc.utils.Classifiers", {
                   return;
                 }
                 classifierss.forEach(({classifiers}) => {
-                  // Converts the classifiers to a tree-shaped object
-                  const buildTree = (classifierId, currentPath, currentNode) => {
-                    const pathName = currentPath.shift();
-                    if (currentPath.length) {
-                      currentNode[pathName] = currentNode[pathName] || {};
-                      buildTree(classifierId, currentPath, currentNode[pathName]);
-                    } else {
-                      currentNode[pathName] = classifiers[classifierId];
-                    }
-                  };
-                  // Converts the treefied classifiers to a Qooxdoo's VirtualTree friendly format
-                  const virtualTree = currentNode => Object.entries(currentNode).map(([key, value]) => {
-                    if (value.classifier) {
-                      return {
-                        label: value["display_name"],
-                        data: value
-                      };
-                    }
-                    return {
-                      label: qx.lang.String.firstUp(key),
-                      children: virtualTree(currentNode[key])
-                    };
-                  });
                   const keys = Object.keys(classifiers);
                   if (keys.length) {
                     // Tree-ify
                     const tree = {};
-                    keys.forEach(key => buildTree(key, classifiers[key].classifier.split("::"), tree));
-                    rootData.children.push(...virtualTree(tree));
+                    keys.forEach(key => this.__buildTree(classifiers, key, classifiers[key].classifier.split("::"), tree));
+                    rootData.children.push(...this.__virtualTree(tree));
                   }
                 });
                 resolve(rootData);
               });
           });
+      });
+    },
+
+    // Converts the classifiers to a tree-shaped object
+    __buildTree: function(classifiers, classifierId, currentPath, currentNode) {
+      const pathName = currentPath.shift();
+      if (currentPath.length) {
+        currentNode[pathName] = currentNode[pathName] || {};
+        this.__buildTree(classifiers, classifierId, currentPath, currentNode[pathName]);
+      } else {
+        currentNode[pathName] = classifiers[classifierId];
+      }
+    },
+
+    // Converts the treefied classifiers to a Qooxdoo's VirtualTree friendly format
+    __virtualTree: function(currentNode) {
+      return Object.entries(currentNode).map(([key, value]) => {
+        if (value.classifier) {
+          return {
+            label: value["display_name"],
+            data: value
+          };
+        }
+        return {
+          label: qx.lang.String.firstUp(key),
+          children: this.__virtualTree(currentNode[key])
+        };
       });
     },
 
