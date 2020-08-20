@@ -55,10 +55,6 @@
  * They will try to get them from the cache if they exist there. If not, they will issue the call to get them from the server.
  */
 
-/**
- * @asset(dev/classifiers.json)
- */
-
 qx.Class.define("osparc.data.Resources", {
   extend: qx.core.Object,
 
