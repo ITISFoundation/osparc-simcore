@@ -40,6 +40,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
     depends_on:
       - postgres
+      - director
     networks:
       - default
 
@@ -104,6 +105,9 @@ services:
     env_file:
       - ../.env
     depends_on:
+      - storage
+      - catalog
+      - director
       - postgres
       - rabbit
       - redis
