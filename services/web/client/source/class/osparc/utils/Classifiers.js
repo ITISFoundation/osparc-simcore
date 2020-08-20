@@ -28,7 +28,7 @@ qx.Class.define("osparc.utils.Classifiers", {
       return new Promise((resolve, reject) => {
         const rootData = {
           label: "root",
-          children: {}
+          children: []
         };
         osparc.store.Store.getInstance().getGroupsOrganizations()
           .then(orgs => {
@@ -80,7 +80,7 @@ qx.Class.define("osparc.utils.Classifiers", {
                     // Tree-ify
                     const tree = {};
                     keys.forEach(key => buildTree(key, classifiers[key].classifier.split("::"), tree));
-                    rootData.children = virtualTree(tree);
+                    rootData.children.push(...virtualTree(tree));
                   }
                 });
                 resolve(rootData);
