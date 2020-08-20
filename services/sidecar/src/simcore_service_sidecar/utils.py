@@ -97,7 +97,6 @@ def is_gpu_node() -> bool:
             except aiodocker.exceptions.DockerError as e:
                 logger.warning("is_gpu_node DockerError during check: %s", str(e))
 
-            # TODO: try to docker rm the container afterwards
             return False
 
     has_gpu = wrap_async_call(async_is_gpu_node())
