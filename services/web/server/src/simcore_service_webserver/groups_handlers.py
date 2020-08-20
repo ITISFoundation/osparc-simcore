@@ -2,6 +2,7 @@
 
 import json
 import logging
+from typing import Dict
 
 from aiohttp import web
 
@@ -188,3 +189,13 @@ async def delete_group_user(request: web.Request):
         raise web.HTTPNotFound(reason=f"User {the_user_id_in_group} not found")
     except UserInsufficientRightsError:
         raise web.HTTPForbidden()
+
+
+# groups/{gid}/classifiers --------------------------------------------
+@login_required
+@permission_required("groups.*")
+async def get_group_classifiers(request: web.Request):
+    gid = request.match_info["gid"]
+
+    bundle: Dict = await groups_api.get_group_classifier(request.app, gid)
+    return bundle
