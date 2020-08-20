@@ -5,14 +5,12 @@
 """
 
 import sqlalchemy as sa
-
-from sqlalchemy.sql import func, expression
 from sqlalchemy.dialects.postgresql import ARRAY
-
-
-# NOTE: using func.now() instead of python datetime ensure the time is computed server side
+from sqlalchemy.sql import expression, func
 
 from .base import metadata
+
+# NOTE: using func.now() instead of python datetime ensure the time is computed server side
 
 
 services_meta_data = sa.Table(

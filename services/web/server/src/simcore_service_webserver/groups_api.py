@@ -9,7 +9,7 @@ from sqlalchemy import and_, literal_column
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
-from .db_models import GroupType, groups, user_to_groups, users
+from .db_models import GroupType, group_classifiers, groups, user_to_groups, users
 from .groups_exceptions import (
     GroupNotFoundError,
     GroupsException,
@@ -309,3 +309,14 @@ async def delete_user_in_group(
                 )
             )
         )
+
+
+async def get_group_classifier(app: web.Application, gid: int) -> Dict:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        bundle = await conn.scalar(
+            sa.select([group_classifiers.c.bundle]).where(
+                group_classifiers.c.gid == gid
+            )
+        )
+        return bundle or {}
