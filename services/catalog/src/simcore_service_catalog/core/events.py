@@ -32,7 +32,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
             # FIXME: check director service is in place and ready. Hand-shake??
             # TEMP: added a dependency and waits 3 secs
             import asyncio
-            await asyncio.wait(3)
+            await asyncio.sleep(3)
             await start_registry_sync_task(app)
 
     return start_app
