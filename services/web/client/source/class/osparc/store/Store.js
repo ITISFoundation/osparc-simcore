@@ -132,6 +132,9 @@ qx.Class.define("osparc.store.Store", {
      * @param {String} idField Key used for the id field. This field has to be unique among all elements of that resource.
      */
     update: function(resource, data, idField = "uuid") {
+      if (data === undefined) {
+        return;
+      }
       const stored = this.get(resource);
       if (Array.isArray(stored)) {
         if (Array.isArray(data)) {
