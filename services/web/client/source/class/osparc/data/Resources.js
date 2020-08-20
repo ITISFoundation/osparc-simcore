@@ -342,6 +342,21 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * CLASSIFIERS
+       * Gets the json object containing sample classifiers
+       */
+      "classifiers": {
+        useCache: true,
+        idField: "classifiers",
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/groups/{gid}/classifiers"
+          }
+        }
+      },
+
+      /*
        * PASSWORD
        */
       "password": {
@@ -523,22 +538,6 @@ qx.Class.define("osparc.data.Resources", {
           get: {
             method: "GET",
             url: "/resource/statics.json",
-            isJsonFile: true
-          }
-        }
-      },
-
-      /*
-       * CLASSIFIERS
-       * Gets the json file containing sample classifiers.
-       */
-      "classifiersFrontend": {
-        useCache: true,
-        idField: "classifiersFrontend",
-        endpoints: {
-          get: {
-            method: "GET",
-            url: "/resource/dev/classifiers.json",
             isJsonFile: true
           }
         }

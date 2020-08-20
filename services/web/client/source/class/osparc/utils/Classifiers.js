@@ -24,48 +24,69 @@ qx.Class.define("osparc.utils.Classifiers", {
   type: "static",
 
   statics: {
-    getClassifiersFrontendAsTree: function() {
-      return osparc.data.Resources.get("classifiersFrontend")
-        .then(({classifiers}) => {
-          // Converts the classifiers to a tree-shaped object
-          const buildTree = (classifierId, currentPath, currentNode) => {
-            const pathName = currentPath.shift();
-            if (currentPath.length) {
-              currentNode[pathName] = currentNode[pathName] || {};
-              buildTree(classifierId, currentPath, currentNode[pathName]);
-            } else {
-              currentNode[pathName] = classifiers[classifierId];
+    getClassifiersAsTree: function() {
+      return new Promise((resolve, reject) => {
+        const rootData = {
+          label: "root",
+          children: {}
+        };
+        osparc.store.Store.getInstance().getGroupsOrganizations()
+          .then(orgs => {
+            if (orgs.length === 0) {
+              reject();
+              return;
             }
-          };
-          // Converts the treefied classifiers to a Qooxdoo's VirtualTree friendly format
-          const virtualTree = currentNode => Object.entries(currentNode).map(([key, value]) => {
-            if (value.classifier) {
-              return {
-                label: value["display_name"],
-                data: value
+            const classifierPromises = [];
+            orgs.forEach(org => {
+              const params = {
+                url: {
+                  "gid": org["gid"]
+                }
               };
-            }
-            return {
-              label: key.charAt(0).toUpperCase() + key.slice(1),
-              children: virtualTree(currentNode[key])
-            };
+              classifierPromises.push(osparc.data.Resources.get("classifiers", params));
+            });
+            Promise.all(classifierPromises)
+              .then(classifierss => {
+                if (classifierss.length === 0) {
+                  reject();
+                  return;
+                }
+                classifierss.forEach(({classifiers}) => {
+                  // Converts the classifiers to a tree-shaped object
+                  const buildTree = (classifierId, currentPath, currentNode) => {
+                    const pathName = currentPath.shift();
+                    if (currentPath.length) {
+                      currentNode[pathName] = currentNode[pathName] || {};
+                      buildTree(classifierId, currentPath, currentNode[pathName]);
+                    } else {
+                      currentNode[pathName] = classifiers[classifierId];
+                    }
+                  };
+                  // Converts the treefied classifiers to a Qooxdoo's VirtualTree friendly format
+                  const virtualTree = currentNode => Object.entries(currentNode).map(([key, value]) => {
+                    if (value.classifier) {
+                      return {
+                        label: value["display_name"],
+                        data: value
+                      };
+                    }
+                    return {
+                      label: qx.lang.String.firstUp(key),
+                      children: virtualTree(currentNode[key])
+                    };
+                  });
+                  const keys = Object.keys(classifiers);
+                  if (keys.length) {
+                    // Tree-ify
+                    const tree = {};
+                    keys.forEach(key => buildTree(key, classifiers[key].classifier.split("::"), tree));
+                    rootData.children = virtualTree(tree);
+                  }
+                });
+                resolve(rootData);
+              });
           });
-          const keys = Object.keys(classifiers);
-          if (keys.length) {
-            // Tree-ify
-            const tree = {};
-            keys.forEach(key => buildTree(key, classifiers[key].classifier.split("::"), tree));
-            return {
-              label: "root",
-              children: virtualTree(tree)
-            };
-          }
-          return null;
-        })
-        .catch(err => {
-          console.error(err);
-          return null;
-        });
+      });
     },
 
     getLeafClassifiers: function(classifiers, leaves = []) {

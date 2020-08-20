@@ -22,7 +22,7 @@ qx.Class.define("osparc.component.filter.ClassifiersFilter", {
     __tree: null,
 
     __createClassifiersTree: function(checkedClassifiers) {
-      osparc.utils.Classifiers.getClassifiersFrontendAsTree()
+      osparc.utils.Classifiers.getClassifiersAsTree()
         .then(classifiers => {
           if (classifiers) {
             this.__tree = new osparc.ui.tree.CheckboxTree(classifiers);
