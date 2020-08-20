@@ -24,8 +24,8 @@ qx.Class.define("osparc.utils.Classifiers", {
   type: "static",
 
   statics: {
-    getClassifiersAsTree: function() {
-      return osparc.data.Resources.get("classifiers")
+    getClassifiersFrontendAsTree: function() {
+      return osparc.data.Resources.get("classifiersFrontend")
         .then(({classifiers}) => {
           // Converts the classifiers to a tree-shaped object
           const buildTree = (classifierId, currentPath, currentNode) => {

@@ -532,8 +532,9 @@ qx.Class.define("osparc.data.Resources", {
        * CLASSIFIERS
        * Gets the json file containing sample classifiers.
        */
-      "classifiers": {
+      "classifiersFrontend": {
         useCache: true,
+        idField: "classifiersFrontend",
         endpoints: {
           get: {
             method: "GET",
