@@ -19,7 +19,7 @@ DEPENDENCIES_LABEL_KEY: str = "simcore.service.dependencies"
 NUMBER_OF_RETRIEVED_REPOS: int = 50
 NUMBER_OF_RETRIEVED_TAGS: int = 50
 
-_logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class ServiceType(enum.Enum):
@@ -50,7 +50,7 @@ async def _basic_auth_registry_request(
     try:
         async with getattr(session, method.lower())(url, auth=auth) as response:
             if response.status == 404:
-                _logger.exception("path to registry not found: %s", url)
+                logger.exception("path to registry not found: %s", url)
                 raise exceptions.ServiceNotAvailableError(str(path))
             if response.status == 401:
                 # basic mode failed, test with other auth mode
@@ -58,7 +58,7 @@ async def _basic_auth_registry_request(
                     url, method, response.headers, session
                 )
             elif response.status > 399:
-                _logger.exception(
+                logger.exception(
                     "Unknown error while accessing registry: %s", str(response)
                 )
                 raise exceptions.RegistryConnectionError(str(response))
@@ -69,7 +69,7 @@ async def _basic_auth_registry_request(
 
             return (resp_data, resp_headers)
     except client_exceptions.ClientError as exc:
-        _logger.exception("Unknown error while accessing registry: %s", str(exc))
+        logger.exception("Unknown error while accessing registry: %s", str(exc))
         raise exceptions.DirectorException(
             f"Unknown error while accessing registry: {str(exc)}"
         )
@@ -118,10 +118,10 @@ async def _auth_registry_request(
                 url, headers=headers
             ) as resp_wtoken:
                 if resp_wtoken.status == 404:
-                    _logger.exception("path to registry not found: %s", url)
+                    logger.exception("path to registry not found: %s", url)
                     raise exceptions.ServiceNotAvailableError(str(url))
                 if resp_wtoken.status > 399:
-                    _logger.exception(
+                    logger.exception(
                         "Unknown error while accessing with token authorized registry: %s",
                         str(resp_wtoken),
                     )
@@ -133,10 +133,10 @@ async def _auth_registry_request(
         # basic authentication should not be since we tried already...
         async with getattr(session, method.lower())(url, auth=auth) as resp_wbasic:
             if resp_wbasic.status == 404:
-                _logger.exception("path to registry not found: %s", url)
+                logger.exception("path to registry not found: %s", url)
                 raise exceptions.ServiceNotAvailableError(str(url))
             if resp_wbasic.status > 399:
-                _logger.exception(
+                logger.exception(
                     "Unknown error while accessing with token authorized registry: %s",
                     str(resp_wbasic),
                 )
@@ -158,7 +158,7 @@ async def registry_request(
 
 
 async def _list_repositories(app: web.Application) -> List[str]:
-    _logger.debug("listing repositories")
+    logger.debug("listing repositories")
     # if there are more repos, the Link will be available in the response headers until none available
     path = f"/v2/_catalog?n={NUMBER_OF_RETRIEVED_REPOS}"
     repos_list: List = []
@@ -169,7 +169,7 @@ async def _list_repositories(app: web.Application) -> List[str]:
         if "Link" not in headers:
             break
         path = str(headers["Link"]).split(";")[0].strip("<>")
-    _logger.debug("listed %s repositories", len(repos_list))
+    logger.debug("listed %s repositories", len(repos_list))
     return repos_list
 
 
@@ -179,7 +179,7 @@ VERSION_REG = re.compile(
 
 
 async def list_image_tags(app: web.Application, image_key: str) -> List[str]:
-    _logger.debug("listing image tags in %s", image_key)
+    logger.debug("listing image tags in %s", image_key)
     image_tags: List = []
     # get list of image tags
     path = f"/v2/{image_key}/tags/list?n={NUMBER_OF_RETRIEVED_TAGS}"
@@ -190,12 +190,12 @@ async def list_image_tags(app: web.Application, image_key: str) -> List[str]:
         if "Link" not in headers:
             break
         path = str(headers["Link"]).split(";")[0].strip("<>")
-    _logger.debug("Found %s image tags in %s", len(image_tags), image_key)
+    logger.debug("Found %s image tags in %s", len(image_tags), image_key)
     return image_tags
 
 
 async def get_image_labels(app: web.Application, image: str, tag: str) -> Dict:
-    _logger.debug("getting image labels of %s:%s", image, tag)
+    logger.debug("getting image labels of %s:%s", image, tag)
     path = f"/v2/{image}/manifests/{tag}"
     request_result, _ = await registry_request(app, path)
     v1_compatibility_key = json.loads(request_result["history"][0]["v1Compatibility"])
@@ -203,7 +203,7 @@ async def get_image_labels(app: web.Application, image: str, tag: str) -> Dict:
         "container_config", v1_compatibility_key["config"]
     )
     labels = container_config["Labels"]
-    _logger.debug("retrieved labels of image %s:%s: %s", image, tag, request_result)
+    logger.debug("retrieved labels of image %s:%s: %s", image, tag, request_result)
     return labels
 
 
@@ -245,7 +245,7 @@ async def get_repo_details(app: web.Application, image_key: str) -> List[Dict]:
 
 
 async def list_services(app: web.Application, service_type: ServiceType) -> List[Dict]:
-    _logger.debug("getting list of services")
+    logger.debug("getting list of services")
     repos = await _list_repositories(app)
     # get the services repos
     prefixes = []
@@ -254,7 +254,7 @@ async def list_services(app: web.Application, service_type: ServiceType) -> List
     if service_type in [ServiceType.COMPUTATIONAL, ServiceType.ALL]:
         prefixes.append(_get_prefix(ServiceType.COMPUTATIONAL))
     repos = [x for x in repos if str(x).startswith(tuple(prefixes))]
-    _logger.debug("retrieved list of repos : %s", repos)
+    logger.debug("retrieved list of repos : %s", repos)
 
     # only list as service if it actually contains the necessary labels
     tasks = [get_repo_details(app, repo) for repo in repos]
@@ -264,7 +264,7 @@ async def list_services(app: web.Application, service_type: ServiceType) -> List
         if repo_details and isinstance(repo_details, list):
             services.extend(repo_details)
         elif isinstance(repo_details, Exception):
-            _logger.error("Exception occured while listing services %s", repo_details)
+            logger.error("Exception occured while listing services %s", repo_details)
     return services
 
 
@@ -303,7 +303,7 @@ def get_service_first_name(image_key: str) -> str:
     else:
         return "invalid service"
 
-    _logger.debug(
+    logger.debug(
         "retrieved service name from repo %s : %s", image_key, service_name_suffixes
     )
     return service_name_suffixes.split("/")[0]
@@ -319,7 +319,49 @@ def get_service_last_names(image_key: str) -> str:
     else:
         return "invalid service"
     service_last_name = str(service_name_suffixes).replace("/", "_")
-    _logger.debug(
+    logger.debug(
         "retrieved service last name from repo %s : %s", image_key, service_last_name
     )
     return service_last_name
+
+
+async def get_service_extras(
+    app: web.Application, image_key: str, image_tag: str
+) -> Dict[str, str]:
+    result = {}
+    labels = await get_image_labels(app, image_key, image_tag)
+    logger.debug("Compiling service extras from labels %s", labels)
+
+    # check physical node requirements
+    # all nodes require "CPU"
+    result["node_requirements"] = ["CPU"]
+    # check if the service requires GPU support
+
+    def validate_kind(entry_to_validate, kind_name):
+        for element in (
+            entry_to_validate.get("value", {})
+            .get("Reservations", {})
+            .get("GenericResources", [])
+        ):
+            if element.get("DiscreteResourceSpec", {}).get("Kind") == kind_name:
+                return True
+        return False
+
+    if config.SERVICE_RUNTIME_SETTINGS in labels:
+        service_settings = json.loads(labels[config.SERVICE_RUNTIME_SETTINGS])
+        for entry in service_settings:
+            if entry.get("name") == "Resources" and validate_kind(entry, "VRAM"):
+                result["node_requirements"].append("GPU")
+            if entry.get("name") == "Resources" and validate_kind(entry, "MPI"):
+                result["node_requirements"].append("MPI")
+
+    # get org labels
+    result.update(
+        {
+            sl: labels[dl]
+            for dl, sl in config.ORG_LABELS_TO_SCHEMA_LABELS.items()
+            if dl in labels
+        }
+    )
+
+    return result
