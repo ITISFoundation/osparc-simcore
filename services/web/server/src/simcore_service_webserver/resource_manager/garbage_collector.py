@@ -9,7 +9,6 @@
 import asyncio
 import logging
 from itertools import chain
-from typing import Dict, List
 
 from aiohttp import web
 
@@ -66,6 +65,26 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
     """
     logger.info("collecting garbage...")
 
+    # Removes disconnected user resources
+    # Triggers signal to close possible pending opened projects
+    # Removes disconnected GUEST users after they finished their sessions
+    await remove_disconnected_user_resources(registry, app)
+
+    # Users manually marked for removal:
+    # if a user was manually marked as GUEST it needs to be
+    # removed together with all the associated projects
+    await remove_users_manually_marked_as_guests(app)
+
+    # For various reasons, some services remain pending after
+    # the projects are closed or the user was disconencted.
+    # This will close and remove all these services from
+    # the cluster, thus freeing important resources.
+    await remove_orphaned_services(registry, app)
+
+
+async def remove_disconnected_user_resources(
+    registry: RedisResourceRegistry, app: web.Application
+) -> None:
     # alive_keys = currently "active" users
     # dead_keys = users considered as "inactive"
     # these keys hold references to more then one websocket connection ids
@@ -131,29 +150,14 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
                     project_uuid=resource_value,
                     user_id=int(dead_key["user_id"]),
                 )
-    # Users manually marked for removal:
-    # if a user was manually marked as GUEST it needs to be
-    # removed together with all the associated projects
-    await remove_users_manually_marked_as_guests(
-        app=app, alive_keys=alive_keys, dead_keys=dead_keys
-    )
-
-    # For various reasons, some services remain pending after
-    # the projects are closed or the user was disconencted.
-    # This will close and remove all these services from
-    # the cluster, thus freeing important resources.
-    await remove_orphaned_services(registry, app)
 
 
-async def remove_users_manually_marked_as_guests(
-    app: web.Application,
-    alive_keys: List[Dict[str, str]],
-    dead_keys: List[Dict[str, str]],
-) -> None:
+async def remove_users_manually_marked_as_guests(app: web.Application) -> None:
     """
     Removes all the projects associated with GUEST users in the system.
     If the user defined a TEMPLATE, this one also gets removed.
     """
+    alive_keys, dead_keys = await registry.get_all_resource_keys()
 
     user_ids_to_ignore = set()
     for entry in chain(alive_keys, dead_keys):
