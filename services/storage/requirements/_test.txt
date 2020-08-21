@@ -30,7 +30,7 @@ cryptography==3.0         # via paramiko
 deprecated==1.2.10        # via -r requirements/_base.txt, blackfynn
 distro==1.5.0             # via docker-compose
 docker-compose==1.26.2    # via pytest-docker
-docker[ssh]==4.3.0        # via docker-compose
+docker[ssh]==4.3.1        # via docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via -r requirements/_base.txt, blackfynn, coveralls, docker-compose
 docutils==0.15.2          # via -r requirements/_base.txt, botocore
@@ -39,7 +39,7 @@ idna-ssl==1.1.0           # via -r requirements/_base.txt, aiohttp
 idna==2.10                # via -r requirements/_base.txt, idna-ssl, requests, yarl
 importlib-metadata==1.7.0  # via -r requirements/_base.txt, jsonschema, pluggy, pytest
 isodate==0.6.0            # via -r requirements/_base.txt, openapi-core
-isort==4.3.21             # via pylint
+isort==5.4.2              # via pylint
 jmespath==0.10.0          # via -r requirements/_base.txt, boto3, botocore
 jsonschema==3.2.0         # via -r requirements/_base.txt, docker-compose, openapi-spec-validator
 lazy-object-proxy==1.4.3  # via -r requirements/_base.txt, astroid, openapi-core
@@ -51,7 +51,7 @@ numpy==1.19.1             # via pandas
 openapi-core==0.12.0      # via -r requirements/_base.txt
 openapi-spec-validator==0.2.9  # via -r requirements/_base.txt, openapi-core
 packaging==20.4           # via pytest, pytest-sugar
-pandas==1.1.0             # via -r requirements/_test.in
+pandas==1.1.1             # via -r requirements/_test.in
 paramiko==2.7.1           # via docker
 pluggy==0.13.1            # via pytest
 prometheus-client==0.8.0  # via -r requirements/_base.txt
@@ -61,7 +61,7 @@ psycopg2-binary==2.8.5    # via -r requirements/_base.txt, aiopg, sqlalchemy
 ptvsd==4.3.2              # via -r requirements/_test.in
 py==1.9.0                 # via pytest
 pycparser==2.20           # via cffi
-pylint==2.5.3             # via -r requirements/_test.in
+pylint==2.6.0             # via -r requirements/_test.in
 pynacl==1.4.0             # via paramiko
 pyparsing==2.4.7          # via packaging
 pyrsistent==0.16.0        # via -r requirements/_base.txt, jsonschema
