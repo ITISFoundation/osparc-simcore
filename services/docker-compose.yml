@@ -38,6 +38,7 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+      - BACKGROUND_TASK_REST_TIME=${CATALOG_BACKGROUND_TASK_REST_TIME:-60}
     depends_on:
       - postgres
       - director
