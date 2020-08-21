@@ -15,7 +15,7 @@ import pytest
 import socketio
 from aiohttp import web
 from mock import call
-from socketio.exceptions import ConnectionError
+from socketio.exceptions import ConnectionError as SocketConnectionError
 
 from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -933,7 +933,7 @@ async def test_get_active_project(
     try:
         sio = await socketio_client(client_id1)
         assert sio.sid
-    except ConnectionError:
+    except SocketConnectionError:
         if expected == web.HTTPOk:
             pytest.fail("socket io connection should not fail")
 
@@ -966,7 +966,7 @@ async def test_get_active_project(
     try:
         sio = await socketio_client(client_id2)
         assert sio.sid
-    except ConnectionError:
+    except SocketConnectionError:
         if expected == web.HTTPOk:
             pytest.fail("socket io connection should not fail")
     # get active projects -> empty
@@ -1010,7 +1010,7 @@ async def test_delete_multiple_opened_project_forbidden(
     client_session_id1 = client_session_id()
     try:
         sio1 = await socketio_client(client_session_id1)
-    except ConnectionError:
+    except SocketConnectionError:
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
@@ -1020,7 +1020,7 @@ async def test_delete_multiple_opened_project_forbidden(
     client_session_id2 = client_session_id()
     try:
         sio2 = await socketio_client(client_session_id2)
-    except ConnectionError:
+    except SocketConnectionError:
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")
     await _delete_project(client, user_project, expected_forbidden)
@@ -1211,7 +1211,7 @@ async def _connect_websocket(
             for event, handler in events.items():
                 sio.on(event, handler=handler)
         return sio
-    except ConnectionError:
+    except SocketConnectionError:
         if check_connection:
             pytest.fail("socket io connection should not fail")
 
