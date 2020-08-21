@@ -1,6 +1,8 @@
 import logging
 import multiprocessing
 import os
+from pathlib import Path
+
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 
 SERVICES_MAX_NANO_CPUS: int = min(
@@ -14,6 +16,16 @@ SERVICES_TIMEOUT_SECONDS: int = int(
     os.environ.get("SIDECAR_SERVICES_TIMEOUT_SECONDS", 20 * 60)
 )
 SWARM_STACK_NAME: str = os.environ.get("SWARM_STACK_NAME", "simcore")
+
+SIDECAR_INPUT_FOLDER: Path = Path(
+    os.environ.get("SIDECAR_INPUT_FOLDER", Path.home() / "input")
+)
+SIDECAR_OUTPUT_FOLDER: Path = Path(
+    os.environ.get("SIDECAR_OUTPUT_FOLDER", Path.home() / "output")
+)
+SIDECAR_LOG_FOLDER: Path = Path(
+    os.environ.get("SIDECAR_LOG_FOLDER", Path.home() / "log")
+)
 
 SIDECAR_DOCKER_VOLUME_INPUT: str = os.environ.get(
     "SIDECAR_DOCKER_VOLUME_INPUT", f"{SWARM_STACK_NAME}_input"
@@ -59,4 +71,3 @@ REDIS_CONNECTION_STRING: str = "redis://{host}:{password}/0".format(
 REDLOCK_REFRESH_INTERVAL_SECONDS: float = max(
     float(os.environ.get("REDLOCK_REFRESH_INTERVAL_SECONDS", "5.0")), 1.0
 )  # enforce at least 1 second
-
