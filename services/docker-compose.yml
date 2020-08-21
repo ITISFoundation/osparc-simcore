@@ -166,6 +166,8 @@ services:
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - SIDECAR_LOGLEVEL=${LOG_LEVEL:-WARNING}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
     depends_on:
       - rabbit
       - postgres
