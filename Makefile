@@ -474,7 +474,7 @@ endif
 
 ## CLEAN -------------------------------
 
-.PHONY: clean clean-images clean-venv clean-all clean-ps
+.PHONY: clean clean-images clean-venv clean-all clean-more
 
 _git_clean_args := -dxf -e .vscode -e TODO.md -e .venv
 _running_containers = $(shell docker ps -aq)
@@ -495,8 +495,11 @@ clean: .check-clean ## cleans all unversioned files in project and temp files cr
 	# Cleaning web/client
 	@$(MAKE_C) services/web/client clean-files
 
-clean-ps: ## stops and deletes running containers
-	$(if $(_running_containers), docker rm -f $(_running_containers),)
+clean-more: ## cleans containers and unused volumes
+	# stops and deletes running containers
+	@$(if $(_running_containers), docker rm -f $(_running_containers),)
+	# pruning unused volumes
+	docker volume prune --force
 
 clean-images: ## removes all created images
 	# Cleaning all service images
@@ -507,7 +510,7 @@ clean-images: ## removes all created images
 	# Cleaning postgres maintenance
 	@$(MAKE_C) packages/postgres-database/docker clean
 
-clean-all: clean clean-ps clean-images # Deep clean including .venv and produced images
+clean-all: clean clean-more clean-images # Deep clean including .venv and produced images
 	-rm -rf .venv
 
 
