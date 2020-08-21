@@ -160,11 +160,13 @@ shell:
 #
 SWARM_HOSTS            = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),null,/dev/null))
 docker-compose-configs = $(wildcard services/docker-compose*.yml)
+CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 
 .stack-simcore-development.yml: .env $(docker-compose-configs)
 	# Creating config for stack with 'local/{service}:development' to $@
-	@export DOCKER_REGISTRY=local;       \
+	@export DOCKER_REGISTRY=local \
 	export DOCKER_IMAGE_TAG=development; \
+	export DEV_PC_CPU_COUNT=${CPU_COUNT}; \
 	docker-compose -f services/docker-compose.yml -f services/docker-compose.local.yml -f services/docker-compose.devel.yml --log-level=ERROR config > $@
 
 .stack-simcore-production.yml: .env $(docker-compose-configs)
@@ -227,6 +229,8 @@ down: ## Stops and removes stack
 	-$(MAKE_C) services/web/client down
 	# Removing generated docker compose configurations, i.e. .stack-*
 	-$(shell rm $(wildcard .stack-*))
+	# Removing local registry if any
+	-$(shell docker rm --force $(local_registry))
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
@@ -385,6 +389,27 @@ postgres-upgrade: ## initalize or upgrade postgres db to latest state
 	@$(MAKE_C) packages/postgres-database/docker build
 	@$(MAKE_C) packages/postgres-database/docker upgrade
 
+local_registry=registry
+.PHONY: local-registry
+local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
+	# add registry to host file
+	@echo 127.0.0.1 $(local_registry) >> /etc/hosts
+	# allow docker engine to use local insecure registry
+	@echo {\"insecure-registries\": [\"$(local_registry):5000\"]} >> /etc/docker/daemon.json
+	@service docker restart
+	# start registry on port 5000...
+	@docker run --detach \
+							--init \
+							--publish 5000:5000 \
+							--volume $(local_registry):/var/lib/registry \
+							--name $(local_registry) \
+							registry:2
+	# set up environment variables to use local registry on port 5000 without any security (take care!)...
+	@echo REGISTRY_AUTH=False >> .env
+	@echo REGISTRY_SSL=False >> .env
+	@echo REGISTRY_URL=$(local_registry):5000 >> .env
+	@echo DIRECTOR_REGISTRY_CACHING=False >> .env
+	# add registry 172.17.0.1 as extra_host to containers that need access to the registry (e.g. director)
 
 
 ## INFO -------------------------------

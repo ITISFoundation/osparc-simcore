@@ -75,7 +75,7 @@ qx.Class.define("osparc.ui.message.Loading", {
     __maxButton: null,
 
     __buildLayout: function(showMaximize) {
-      const image = new osparc.ui.basic.OSparcLogo().set({
+      const image = new osparc.ui.basic.Logo().set({
         width: 200,
         height: 120
       });

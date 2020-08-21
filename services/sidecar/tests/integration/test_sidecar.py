@@ -304,13 +304,13 @@ async def test_run_services(
     pipeline_cfg: Dict,
     user_id: int,
     mocker,
+    mock_boot_mode,
 ):
     """
 
     :param osparc_service: Fixture defined in pytest-simcore.docker_registry. Uses parameters service_repo, service_tag
     :type osparc_service: Dict[str, str]
     """
-
     incoming_data = []
 
     async def rabbit_message_handler(message: aio_pika.IncomingMessage):
@@ -324,7 +324,9 @@ async def test_run_services(
     from simcore_service_sidecar import cli
 
     # runs None first
-    next_task_nodes = await cli.run_sidecar(job_id, user_id, pipeline.project_id, None)
+    next_task_nodes, _ = await cli.run_sidecar(
+        job_id, user_id, pipeline.project_id, None
+    )
     await asyncio.sleep(5)
     assert not incoming_data
 
@@ -333,7 +335,7 @@ async def test_run_services(
 
     for node_id in next_task_nodes:
         job_id += 1
-        next_tasks = await cli.run_sidecar(
+        next_tasks, _ = await cli.run_sidecar(
             job_id, user_id, pipeline.project_id, node_id
         )
         if next_tasks:

@@ -32,29 +32,6 @@ qx.Class.define("osparc.dashboard.OrganizationEditor", {
     newOrg ? this.getChildControl("create") : this.getChildControl("save");
   },
 
-  statics: {
-    popUpInWindow: function(title, organizationEditor, width = 300, height = 200) {
-      const win = new osparc.ui.window.Window(title).set({
-        autoDestroy: true,
-        layout: new qx.ui.layout.VBox(),
-        showMinimize: false,
-        showMaximize: false,
-        resizable: true,
-        contentPadding: 10,
-        width: width,
-        height: height,
-        modal: true
-      });
-      win.add(organizationEditor);
-      win.center();
-      win.open();
-      organizationEditor.addListener("cancel", () => {
-        win.close();
-      });
-      return win;
-    }
-  },
-
   properties: {
     gid: {
       check: "Number",

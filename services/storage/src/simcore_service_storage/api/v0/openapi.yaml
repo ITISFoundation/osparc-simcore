@@ -1961,6 +1961,15 @@ paths:
                       type: array
                       items:
                         type: integer
+                    classifiers:
+                      type: array
+                      description: Contains the reference to the project classifiers
+                      items:
+                        type: string
+                      example: 'some:id:to:a:classifier'
+                    dev:
+                      type: object
+                      description: object used for development purposes only
                 destination:
                   title: simcore project
                   description: Description of a simcore project
@@ -2193,6 +2202,15 @@ paths:
                       type: array
                       items:
                         type: integer
+                    classifiers:
+                      type: array
+                      description: Contains the reference to the project classifiers
+                      items:
+                        type: string
+                      example: 'some:id:to:a:classifier'
+                    dev:
+                      type: object
+                      description: object used for development purposes only
                 nodes_map:
                   type: object
                   description: maps source and destination node uuids
@@ -2435,6 +2453,15 @@ paths:
                     type: array
                     items:
                       type: integer
+                  classifiers:
+                    type: array
+                    description: Contains the reference to the project classifiers
+                    items:
+                      type: string
+                    example: 'some:id:to:a:classifier'
+                  dev:
+                    type: object
+                    description: object used for development purposes only
         default:
           description: Unexpected error
           content:
@@ -2777,6 +2804,15 @@ components:
           type: array
           items:
             type: integer
+        classifiers:
+          type: array
+          description: Contains the reference to the project classifiers
+          items:
+            type: string
+          example: 'some:id:to:a:classifier'
+        dev:
+          type: object
+          description: object used for development purposes only
   responses:
     OK_NoContent_204:
       description: 'everything is OK, but there is no content to return'

@@ -159,16 +159,18 @@ async function dashboardOpenFirstTemplate(page, templateName) {
 async function __filterStudiesByText(page, studyName) {
   console.log("Filtering by", studyName);
 
-  await utils.waitAndClick(page, '[osparc-test-id="studyFiltersTextFld"]')
-  await page.type('[osparc-test-id="studyFiltersTextFld"]', studyName)
+  await utils.waitAndClick(page, '[osparc-test-id="sideSearchFiltersTextFld"]')
+  await utils.clearInput(page, '[osparc-test-id="sideSearchFiltersTextFld"]')
+  await page.type('[osparc-test-id="sideSearchFiltersTextFld"]', studyName)
   await page.keyboard.press('Enter')
 }
 
 async function __filterTemplatesByText(page, templateName) {
   console.log("Filtering by", templateName);
 
-  await utils.waitAndClick(page, '[osparc-test-id="exploreFiltersTextFld"]')
-  await page.type('[osparc-test-id="exploreFiltersTextFld"]', templateName)
+  await utils.waitAndClick(page, '[osparc-test-id="sideSearchFiltersTextFld"]')
+  await utils.clearInput(page, '[osparc-test-id="sideSearchFiltersTextFld"]')
+  await page.type('[osparc-test-id="sideSearchFiltersTextFld"]', templateName)
   await page.keyboard.press('Enter')
 }
 

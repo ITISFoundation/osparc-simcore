@@ -210,6 +210,24 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
+  /groups/{gid}/classifiers:
+    parameters:
+      - name: gid
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - group
+      summary: Gets classifiers bundle for this group
+      operationId: get_group_classifiers
+      responses:
+        "200":
+          description: got a bundle with all information about classifiers
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
 components:
   responses:
     DefaultErrorResponse:

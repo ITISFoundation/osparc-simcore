@@ -18,10 +18,6 @@ from . import config, docker_utils, exceptions, registry_proxy
 from .config import APP_CLIENT_SESSION_KEY
 from .system_utils import get_system_extra_hosts_raw
 
-SERVICE_RUNTIME_SETTINGS: str = "simcore.service.settings"
-SERVICE_REVERSE_PROXY_SETTINGS: str = "simcore.service.reverse-proxy-settings"
-SERVICE_RUNTIME_BOOTSETTINGS: str = "simcore.service.bootsettings"
-
 log = logging.getLogger(__name__)
 
 
@@ -63,6 +59,44 @@ def _check_setting_correctness(setting: Dict) -> None:
         raise exceptions.DirectorException("Invalid setting in %s" % setting)
 
 
+def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
+    mounts = list()
+    for s in settings:
+        log.debug("Retrieved mount settings %s", s)
+        mount = dict()
+        mount["ReadOnly"] = True
+        if "ReadOnly" in s and s["ReadOnly"] in ["false", "False", False]:
+            mount["ReadOnly"] = False
+
+        for field in ["Source", "Target", "Type"]:
+            if field in s:
+                mount[field] = s[field]
+            else:
+                log.warning(
+                    "Mount settings have wrong format. Required keys [Source, Target, Type]"
+                )
+                continue
+
+        log.debug("Append mount settings %s", mount)
+        mounts.append(mount)
+
+    return mounts
+
+
+def _parse_env_settings(settings: List[str]) -> Dict:
+    envs = dict()
+    for s in settings:
+        log.debug("Retrieved env settings %s", s)
+        if "=" in s:
+            parts = s.split("=")
+            if len(parts) == 2:
+                envs.update({parts[0]: parts[1]})
+
+        log.debug("Parsed env settings %s", s)
+
+    return envs
+
+
 async def _read_service_settings(
     app: web.Application, key: str, tag: str, settings_name: str
 ) -> Dict:
@@ -90,10 +124,10 @@ async def _create_docker_service_params(
 ) -> Dict:
     # pylint: disable=too-many-statements
     service_parameters_labels = await _read_service_settings(
-        app, service_key, service_tag, SERVICE_RUNTIME_SETTINGS
+        app, service_key, service_tag, config.SERVICE_RUNTIME_SETTINGS
     )
     reverse_proxy_settings = await _read_service_settings(
-        app, service_key, service_tag, SERVICE_REVERSE_PROXY_SETTINGS
+        app, service_key, service_tag, config.SERVICE_REVERSE_PROXY_SETTINGS
     )
     service_name = registry_proxy.get_service_last_names(service_key) + "_" + node_uuid
     log.debug("Converting labels to docker runtime parameters")
@@ -115,6 +149,7 @@ async def _create_docker_service_params(
             "node_id": node_uuid,
             "swarm_stack_name": config.SWARM_STACK_NAME,
         },
+        "Mounts": [],
     }
 
     if (
@@ -253,6 +288,20 @@ async def _create_docker_service_params(
             docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
         elif param["type"] == "Constraints":  # REST-API compatible
             docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
+        elif param["name"] == "env":
+            log.debug("Found env parameter %s", param["value"])
+            env_settings = _parse_env_settings(param["value"])
+            if env_settings:
+                docker_params["task_template"]["ContainerSpec"]["Env"].update(
+                    env_settings
+                )
+        elif param["name"] == "mount":
+            log.debug("Found mount parameter %s", param["value"])
+            mount_settings = _parse_mount_settings(param["value"])
+            if mount_settings:
+                docker_params["task_template"]["ContainerSpec"]["Mounts"].append(
+                    mount_settings
+                )
 
     # attach the service to the swarm network dedicated to services
     try:
@@ -440,13 +489,14 @@ async def _get_service_state(
         # only keep the ones with the right service ID (we're being a bit picky maybe)
         tasks = [x for x in tasks if x["ServiceID"] == service["ID"]]
 
-        # we are only interested in the last task which has index 0
+        # we are only interested in the last task which has been created last
         if tasks:
-            last_task = tasks[0]
+            sorted_tasks = sorted(tasks, key=lambda task: task["UpdatedAt"])
+            last_task = sorted_tasks[-1]
             task_state = last_task["Status"]["State"]
             log.debug("%s %s", service["ID"], task_state)
 
-            last_task_state = ServiceState.STARTING # default
+            last_task_state = ServiceState.STARTING  # default
             last_task_error_msg = (
                 last_task["Status"]["Err"] if "Err" in last_task["Status"] else ""
             )
@@ -612,7 +662,7 @@ async def _start_docker_service(
         published_port, target_port = await _get_docker_image_port_mapping(service)
         # now pass boot parameters
         service_boot_parameters_labels = await _read_service_settings(
-            app, service_key, service_tag, SERVICE_RUNTIME_BOOTSETTINGS
+            app, service_key, service_tag, config.SERVICE_RUNTIME_BOOTSETTINGS
         )
         service_entrypoint = _get_service_entrypoint(service_boot_parameters_labels)
         if published_port:
@@ -776,7 +826,7 @@ async def _get_node_details(
     # get boot parameters
     results = await asyncio.gather(
         _read_service_settings(
-            app, service_key, service_tag, SERVICE_RUNTIME_BOOTSETTINGS
+            app, service_key, service_tag, config.SERVICE_RUNTIME_BOOTSETTINGS
         ),
         _get_service_basepath_from_docker_service(service),
         _get_service_state(client, service),
@@ -942,34 +992,3 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
                 "DYNAMIC",
                 "SUCCESS",
             )
-
-
-async def generate_service_extras(
-    app: web.Application, image_key: str, image_tag: str
-) -> Dict:
-    result = {}
-    labels = await registry_proxy.get_image_labels(app, image_key, image_tag)
-    log.debug("Compiling service extras from labels %s", labels)
-
-    # check physical node requirements
-    # all nodes require "CPU"
-    result["node_requirements"] = ["CPU"]
-    # check if the service requires GPU support
-
-    def validate_vram(entry_to_validate):
-        for element in (
-            entry_to_validate.get("value", {})
-            .get("Reservations", {})
-            .get("GenericResources", [])
-        ):
-            if element.get("DiscreteResourceSpec", {}).get("Kind") == "VRAM":
-                return True
-        return False
-
-    if SERVICE_RUNTIME_SETTINGS in labels:
-        service_settings = json.loads(labels[SERVICE_RUNTIME_SETTINGS])
-        for entry in service_settings:
-            if entry.get("name") == "Resources" and validate_vram(entry):
-                result["node_requirements"].append("GPU")
-
-    return result

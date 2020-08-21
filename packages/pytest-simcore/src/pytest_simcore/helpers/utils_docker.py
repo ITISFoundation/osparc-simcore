@@ -4,6 +4,7 @@ import socket
 import subprocess
 import tempfile
 from pathlib import Path
+from pprint import pformat
 from typing import Dict, List, Optional, Union
 
 import docker
@@ -121,3 +122,19 @@ def run_docker_compose_config(
         temp_dir.unlink()
 
     return config
+
+
+def save_docker_infos(destination_path: Path):
+    client = docker.from_env()
+    all_containers = client.containers.list()
+    # ensure the parent dir exists
+    destination_path.mkdir(parents=True, exist_ok=True)
+    # get the services logs
+    for cont in all_containers:
+        service_file = destination_path / f"{cont.name}.logs"
+        service_file.write_text(
+            pformat(
+                cont.logs(timestamps=True, stdout=True, stderr=True).decode(), width=200
+            ),
+        )
+    print("\n\twrote docker log files in ", destination_path)

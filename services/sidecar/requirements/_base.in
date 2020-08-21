@@ -16,3 +16,4 @@ networkx
 packaging
 pydantic
 tenacity
+aioredlock

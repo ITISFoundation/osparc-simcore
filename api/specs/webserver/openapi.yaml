@@ -115,6 +115,9 @@ paths:
   /groups/{gid}/users/{uid}:
     $ref: "./openapi-groups.yaml#/paths/~1groups~1{gid}~1users~1{uid}"
 
+  /groups/{gid}/classifiers:
+    $ref: "./openapi-groups.yaml#/paths/~1groups~1{gid}~1classifiers"
+
   # DATA STORAGE SERVICES ----------------------------------------------------------
 
   /storage/locations:
@@ -136,9 +139,6 @@ paths:
     $ref: "./openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1datasets"
 
   # SERVICES ------------------------------------------------------------------------
-  /services:
-    $ref: "./openapi-services.yaml#/paths/~1services"
-
   /computation/pipeline/{project_id}:
     $ref: "./openapi-services.yaml#/paths/~1computation~1pipeline~1{project_id}"
 
@@ -203,6 +203,10 @@ paths:
     $ref: "./openapi-catalog.yaml#/paths/~1catalog~1dags"
   /catalog/dags/{dag_id}:
     $ref: "./openapi-catalog.yaml#/paths/~1catalog~1dags~1{dag_id}"
+  /catalog/services:
+    $ref: "./openapi-catalog.yaml#/paths/~1catalog~1services"
+  /catalog/services/{service_key}/{service_version}:
+    $ref: "./openapi-catalog.yaml#/paths/~1catalog~1services~1{service_key}~1{service_version}"
 
 components:
   responses:

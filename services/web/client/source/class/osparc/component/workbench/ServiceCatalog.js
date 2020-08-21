@@ -129,7 +129,8 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       this.__allServicesObj = {};
 
       const services = this.__serviceBrowser = new osparc.component.service.ServiceList("serviceCatalog").set({
-        width: 568
+        width: 568,
+        backgroundColor: "background-main"
       });
       const scrolledServices = new qx.ui.container.Scroll().set({
         height: 260
@@ -162,7 +163,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
         enabled: false
       });
       infoBtn.addListener("execute", function() {
-        this.__showServiceInfo();
+        this.__showServiceDetails();
       }, this);
       infoPart.add(infoBtn);
       toolbar.add(infoPart);
@@ -288,10 +289,10 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       return osparc.utils.Services.getFromArray(this.__allServicesList, serviceKey, serviceVersion);
     },
 
-    __showServiceInfo: function() {
-      const win = new osparc.component.metadata.ServiceInfoWindow(this.__getSelectedService());
-      win.center();
-      win.open();
+    __showServiceDetails: function() {
+      const serviceDetails = new osparc.component.metadata.ServiceDetails(this.__getSelectedService());
+      const title = qx.locale.Manager.tr("Service information") + " · " + serviceDetails.getService().name;
+      osparc.ui.window.Window.popUpInWindow(serviceDetails, title, 700, 800);
     },
 
     __onCancel: function() {

@@ -10,7 +10,7 @@
 -r _test.txt
 
 # installs this repo's packages
--e ../postgres-database/
+-e ../postgres-database/[migration]
 -e ../s3wrapper/
 -e ../service-library/
 -e ../pytest-simcore/

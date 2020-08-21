@@ -30,6 +30,8 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
+      - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
+      - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
@@ -164,9 +166,12 @@ services:
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - SIDECAR_LOGLEVEL=${LOG_LEVEL:-WARNING}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
     depends_on:
       - rabbit
       - postgres
+      - redis
     networks:
       - computational_services_subnet
 
@@ -250,6 +255,7 @@ services:
     init: true
     networks:
       - default
+      - computational_services_subnet
 
   traefik:
     image: traefik:v2.2.1

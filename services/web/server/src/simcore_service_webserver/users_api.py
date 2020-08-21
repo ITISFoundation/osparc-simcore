@@ -1,4 +1,5 @@
 import logging
+from collections import deque
 from typing import Any, Dict, List
 
 import sqlalchemy as sa
@@ -103,6 +104,17 @@ async def is_user_guest(app: web.Application, user_id: int) -> bool:
         return False
 
     return bool(UserRole(user["role"]) == UserRole.GUEST)
+
+
+async def get_guest_user_ids(app: web.Application) -> List[int]:
+    engine = app[APP_DB_ENGINE_KEY]
+    result = deque()
+    async with engine.acquire() as conn:
+        async for row in conn.execute(
+            sa.select([users.c.id]).where(users.c.role == UserRole.GUEST)
+        ):
+            result.append(row[0])
+        return list(result)
 
 
 async def delete_user(app: web.Application, user_id: int) -> None:

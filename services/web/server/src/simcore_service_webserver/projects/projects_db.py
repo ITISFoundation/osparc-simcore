@@ -7,6 +7,7 @@
 
 import logging
 import uuid as uuidlib
+from collections import deque
 from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Mapping, Optional, Set, Union
@@ -324,7 +325,11 @@ OR prj_owner = {user_id})
         return api_projects
 
     async def _get_project(
-        self, user_id: int, project_uuid: str, exclude_foreign: Optional[List] = None
+        self,
+        user_id: int,
+        project_uuid: str,
+        exclude_foreign: Optional[List] = None,
+        include_templates: Optional[bool] = False,
     ) -> Dict:
         exclude_foreign = exclude_foreign or []
         async with self.engine.acquire() as conn:
@@ -335,8 +340,9 @@ OR prj_owner = {user_id})
             query = f"""
 SELECT *
 FROM projects
-WHERE projects.type != 'TEMPLATE'
-AND uuid = '{project_uuid}'
+WHERE
+{"" if include_templates else "projects.type != 'TEMPLATE' AND"}
+uuid = '{project_uuid}'
 AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
 OR prj_owner = {user_id})
 """
@@ -442,7 +448,7 @@ OR prj_owner = {user_id})
         return template_prj
 
     async def update_user_project(
-        self, project_data: Dict, user_id: int, project_uuid: str
+        self, project_data: Dict, user_id: int, project_uuid: str, include_templates: Optional[bool] = False
     ):
         """ updates a project from a user
 
@@ -451,7 +457,7 @@ OR prj_owner = {user_id})
 
         async with self.engine.acquire() as conn:
             row = await self._get_project(
-                user_id, project_uuid, exclude_foreign=["tags"]
+                user_id, project_uuid, exclude_foreign=["tags"], include_templates=include_templates
             )
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
             _check_project_permissions(row, user_id, user_groups, "write")
@@ -488,7 +494,7 @@ OR prj_owner = {user_id})
 
     async def delete_user_project(self, user_id: int, project_uuid: str):
         log.info("Deleting project %s for user %s", project_uuid, user_id)
-        project = await self._get_project(user_id, project_uuid)
+        project = await self._get_project(user_id, project_uuid, include_templates=True)
         async with self.engine.acquire() as conn:
             # if we have delete access we delete the project
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
@@ -561,6 +567,15 @@ OR prj_owner = {user_id})
                 result.update(set(row.values()))
 
             return result
+
+    async def list_all_projects_by_uuid_for_user(self, user_id: int) -> List[str]:
+        result = deque()
+        async with self.engine.acquire() as conn:
+            async for row in conn.execute(
+                sa.select([projects.c.uuid]).where(projects.c.prj_owner == user_id)
+            ):
+                result.append(row[0])
+            return list(result)
 
 
 def setup_projects_db(app: web.Application):

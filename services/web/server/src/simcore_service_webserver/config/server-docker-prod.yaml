@@ -68,10 +68,6 @@ catalog:
   host: ${CATALOG_HOST}
   port: 8000
   version: v0
-application_proxy:
-  enabled: False
-reverse_proxy:
-  enabled: False
 rest:
   version: v0
 projects:

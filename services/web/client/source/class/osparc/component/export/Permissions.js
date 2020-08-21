@@ -15,85 +15,50 @@
 
 ************************************************************************ */
 
-/**
- * Widget for modifying Study permissions. This is the way for sharing studies
- * - Creates a copy of study data
- * - It allows changing study's access right, so that the study owners can:
- *   - Share it with Organizations and/or Organization Members (Collaborators)
- *   - Make other Collaborators Owner
- *   - Remove collaborators
- */
-
 qx.Class.define("osparc.component.export.Permissions", {
   extend: qx.ui.core.Widget,
+  type: "abstract",
 
   /**
-    * @param studyData {Object} Object containing the serialized Study Data
+    * @param serializedData {Object} Object containing the Serialized Data
     */
-  construct: function(studyData) {
+  construct: function(serializedData) {
     this.base(arguments);
 
-    this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+    this.__serializedData = serializedData;
 
-    this._setLayout(new qx.ui.layout.VBox(15));
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__buildLayout();
 
     this.__getMyFriends();
   },
 
-  events: {
-    "updateStudy": "qx.event.type.Data"
-  },
-
   statics: {
-    getCollaboratorAccessRight: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": false
-      };
+    canDelete: function(accessRights) {
+      let canDelete = accessRights.getDelete ? accessRights.getDelete() : false;
+      canDelete = !canDelete && accessRights.getWrite_access ? accessRights.getWrite_access() : false;
+      return canDelete;
     },
 
-    getOwnerAccessRight: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": true
-      };
+    canWrite: function(accessRights) {
+      let canWrite = accessRights.getWrite ? accessRights.getWrite() : false;
+      canWrite = !canWrite && accessRights.getWrite_access ? accessRights.getWrite_access() : false;
+      return canWrite;
     },
 
-    removeCollaborator: function(studyData, gid) {
-      return delete studyData["accessRights"][gid];
-    },
-
-    createWindow: function(winText, shareResourceWidget) {
-      const window = new osparc.ui.window.Window(winText).set({
-        layout: new qx.ui.layout.Grow(),
-        autoDestroy: true,
-        contentPadding: 10,
-        width: 400,
-        height: 300,
-        showMaximize: false,
-        showMinimize: false,
-        modal: true,
-        clickAwayClose: true
-      });
-      window.add(shareResourceWidget);
-      window.center();
-      return window;
+    canView: function(accessRights) {
+      let canView = accessRights.getRead ? accessRights.getRead() : false;
+      canView = !canView && accessRights.getExecute_access ? accessRights.getExecute_access() : false;
+      return canView;
     }
   },
 
   members: {
-    __studyData: null,
+    __serializedData: null,
     __organizationsAndMembers: null,
     __collaboratorsModel: null,
     __myFrieds: null,
-
-    createWindow: function() {
-      return this.self().createWindow(this.tr("Share with people and organizations"), this);
-    },
 
     __buildLayout: function() {
       const addCollaborator = this.__createAddCollaborator();
@@ -107,7 +72,7 @@ qx.Class.define("osparc.component.export.Permissions", {
 
     __createAddCollaborator: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      vBox.setVisibility(this.__isUserOwner() ? "visible" : "excluded");
+      vBox.setVisibility(this._isUserOwner() ? "visible" : "excluded");
 
       const label = new qx.ui.basic.Label().set({
         value: this.tr("Add Collaborators and Organizations")
@@ -121,7 +86,7 @@ qx.Class.define("osparc.component.export.Permissions", {
         flex: 1
       });
 
-      const organizationsAndMembers = this.__organizationsAndMembers = new osparc.component.filter.OrganizationsAndMembers("asfd");
+      const organizationsAndMembers = this.__organizationsAndMembers = new osparc.component.filter.OrganizationsAndMembers("orgAndMembPerms");
       hBox.add(organizationsAndMembers, {
         flex: 1
       });
@@ -130,7 +95,7 @@ qx.Class.define("osparc.component.export.Permissions", {
         allowGrowY: false
       });
       addCollaboratorBtn.addListener("execute", () => {
-        this.__addCollaborator();
+        this._addCollaborator();
       }, this);
       hBox.add(addCollaboratorBtn);
 
@@ -169,11 +134,11 @@ qx.Class.define("osparc.component.export.Permissions", {
             });
           item.addListener("promoteCollaborator", e => {
             const orgMember = e.getData();
-            this.__promoteCollaborator(orgMember);
+            this._promoteCollaborator(orgMember);
           });
           item.addListener("removeCollaborator", e => {
             const orgMember = e.getData();
-            this.__deleteCollaborator(orgMember);
+            this._deleteCollaborator(orgMember);
           });
         }
       });
@@ -209,7 +174,7 @@ qx.Class.define("osparc.component.export.Permissions", {
     __reloadOrganizationsAndMembers: function() {
       this.__organizationsAndMembers.reset();
 
-      const aceessRights = this.__studyData["accessRights"];
+      const aceessRights = this.__getAccessRights();
       const myFriends = this.__myFrieds;
       for (const gid of Object.keys(myFriends)) {
         const myFriend = myFriends[gid];
@@ -223,7 +188,7 @@ qx.Class.define("osparc.component.export.Permissions", {
     __reloadCollaboratorsList: function() {
       this.__collaboratorsModel.removeAll();
 
-      const aceessRights = this.__studyData["accessRights"];
+      const aceessRights = this.__getAccessRights();
       Object.keys(aceessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__myFrieds, gid)) {
           const collaborator = this.__myFrieds[gid];
@@ -232,7 +197,7 @@ qx.Class.define("osparc.component.export.Permissions", {
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
           collaborator["accessRights"] = aceessRights[gid];
-          if (this.__isUserOwner()) {
+          if (this._isUserOwner()) {
             collaborator["showOptions"] = true;
           }
           const collaboratorModel = qx.data.marshal.Json.createModel(collaborator);
@@ -245,87 +210,24 @@ qx.Class.define("osparc.component.export.Permissions", {
       });
     },
 
-    __isUserOwner: function() {
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const aceessRights = this.__studyData["accessRights"];
-      if (myGid in aceessRights) {
-        return aceessRights[myGid]["delete"];
-      }
-      return false;
+    __getAccessRights: function() {
+      return this.__serializedData["accessRights"] || this.__serializedData["access_rights"];
     },
 
-    __addCollaborator: function() {
-      const gids = this.__organizationsAndMembers.getSelectedGIDs();
-      if (gids.length === 0) {
-        return;
-      }
-
-      gids.forEach(gid => {
-        this.__studyData["accessRights"][gid] = this.self().getCollaboratorAccessRight();
-      });
-      const params = {
-        url: {
-          "projectId": this.__studyData["uuid"]
-        },
-        data: this.__studyData
-      };
-      osparc.data.Resources.fetch("studies", "put", params)
-        .then(() => {
-          this.fireDataEvent("updateStudy", this.__studyData["uuid"]);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator(s) successfully added"));
-          this.__reloadOrganizationsAndMembers();
-          this.__reloadCollaboratorsList();
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went adding collaborator(s)"), "ERROR");
-          console.error(err);
-        });
+    _isUserOwner: function() {
+      throw new Error("Abstract method called!");
     },
 
-    __promoteCollaborator: function(collaborator) {
-      this.__studyData["accessRights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
-      const params = {
-        url: {
-          "projectId": this.__studyData["uuid"]
-        },
-        data: this.__studyData
-      };
-      osparc.data.Resources.fetch("studies", "put", params)
-        .then(() => {
-          this.fireDataEvent("updateStudy", this.__studyData["uuid"]);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully made Owner"));
-          this.__reloadOrganizationsAndMembers();
-          this.__reloadCollaboratorsList();
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Collaborator Owner"), "ERROR");
-          console.error(err);
-        });
+    _addCollaborator: function() {
+      throw new Error("Abstract method called!");
     },
 
-    __deleteCollaborator: function(collaborator) {
-      const success = this.self().removeCollaborator(this.__studyData, collaborator["gid"]);
-      if (!success) {
-        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
-      }
+    _promoteCollaborator: function(collaborator) {
+      throw new Error("Abstract method called!");
+    },
 
-      const params = {
-        url: {
-          "projectId": this.__studyData["uuid"]
-        },
-        data: this.__studyData
-      };
-      osparc.data.Resources.fetch("studies", "put", params)
-        .then(() => {
-          this.fireDataEvent("updateStudy", this.__studyData["uuid"]);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully removed"));
-          this.__reloadOrganizationsAndMembers();
-          this.__reloadCollaboratorsList();
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
-          console.error(err);
-        });
+    _deleteCollaborator: function(collaborator) {
+      throw new Error("Abstract method called!");
     }
   }
 });

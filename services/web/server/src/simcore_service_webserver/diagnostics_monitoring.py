@@ -45,9 +45,9 @@ def middleware_factory(app_name: str) -> Coroutine:
             resp = await handler(request)
             log_exception = None
 
-            # fmt: off
-            assert isinstance(resp, web.StreamResponse), "Forgot envelope middleware?"  # nsec
-            # fmt: om
+            assert isinstance(  # nosec
+                resp, web.StreamResponse
+            ), "Forgot envelope middleware?"
 
         except web.HTTPServerError as exc:
             # Transforms exception into response object and log exception

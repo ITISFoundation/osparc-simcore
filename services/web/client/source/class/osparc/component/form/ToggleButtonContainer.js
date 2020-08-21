@@ -83,7 +83,7 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
     },
 
     setLastSelectedIndex: function(idx) {
-      if (idx >= 0 && idx < this.getChildren().length-1) {
+      if (idx >= 0 && idx < this.getChildren().length) {
         this.__lastSelectedIdx = idx;
       }
     },

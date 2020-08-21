@@ -156,15 +156,6 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
-    isServiceInList: function(listOfServices, serveiceKey) {
-      for (let i=0; i<listOfServices.length; i++) {
-        if (listOfServices[i].key === serveiceKey) {
-          return true;
-        }
-      }
-      return false;
-    },
-
     getNodeMetaData: function(key, version) {
       let metaData = null;
       if (key && version) {
@@ -190,6 +181,7 @@ qx.Class.define("osparc.utils.Services", {
           email: "maiz@itis.swiss"
         }],
         contact: "maiz@itis.swiss",
+        owner: "maiz@itis.swiss",
         inputs: {},
         outputs: {
           outFile: {
@@ -198,6 +190,9 @@ qx.Class.define("osparc.utils.Services", {
             description: "Chosen File",
             type: "data:*/*"
           }
+        },
+        "access_rights": {
+          "1": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
         }
       };
     },
@@ -214,8 +209,12 @@ qx.Class.define("osparc.utils.Services", {
           email: "maiz@itis.swiss"
         }],
         contact: "maiz@itis.swiss",
+        owner: "maiz@itis.swiss",
         inputs: {},
-        outputs: {}
+        outputs: {},
+        "access_rights": {
+          "1": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
+        }
       };
     },
 
@@ -241,16 +240,6 @@ qx.Class.define("osparc.utils.Services", {
       const categories = this.__getCategories();
       Object.values(services).forEach(serviceWVersion => {
         Object.values(serviceWVersion).forEach(service => {
-          service["uuid"] = service["key"];
-          service["prjOwner"] = service["contact"];
-          service["thumbnail"] = "@FontAwesome5Solid/paw/50";
-          service["accessRights"] = {
-            "1": {
-              "read": true,
-              "write": true,
-              "delete": false
-            }
-          };
           if (Object.prototype.hasOwnProperty.call(categories, service["key"])) {
             service["category"] = categories[service["key"]]["category"];
           } else {
@@ -260,7 +249,7 @@ qx.Class.define("osparc.utils.Services", {
       });
     },
 
-    __getCategories: function(services) {
+    __getCategories: function() {
       return {
         "simcore/services/frontend/file-picker": {
           "category": "Data"

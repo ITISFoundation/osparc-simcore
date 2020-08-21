@@ -27,7 +27,7 @@ MAX_TIME_TO_DEPLOY_SECS = 60
 MAX_TIME_TO_RESTART_SERVICE = 10
 
 
-@pytest.fixture("module")
+@pytest.fixture(scope="module")
 def deployed_simcore_stack(make_up_prod: Dict, docker_client: DockerClient) -> List[Service]:
     # NOTE: the goal here is NOT to test time-to-deplopy but
     # rather guaranteing that the framework is fully deployed before starting
