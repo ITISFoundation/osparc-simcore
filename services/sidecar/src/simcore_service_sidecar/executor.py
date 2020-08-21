@@ -232,9 +232,9 @@ class Executor:
                 "Init": True,
                 "AutoRemove": False,
                 "Binds": [
-                    f"{config.SIDECAR_DOCKER_VOLUME_INPUT}:/input",
-                    f"{config.SIDECAR_DOCKER_VOLUME_OUTPUT}:/output",
-                    f"{config.SIDECAR_DOCKER_VOLUME_LOG}:/log",
+                    f"{self.shared_folders.input_folder}:/input/{self.task.job_id}"
+                    f"{self.shared_folders.output_folder}:/output/{self.task.job_id}"
+                    f"{self.shared_folders.log_folder}:/log/{self.task.job_id}"
                 ],
             },
         }
