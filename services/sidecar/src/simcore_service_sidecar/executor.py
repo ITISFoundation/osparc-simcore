@@ -33,9 +33,9 @@ class TaskSharedVolumes:
     @classmethod
     def from_task(cls, task: aiopg.sa.result.RowProxy):
         return cls(
-            Path.home() / f"input/{task.job_id}",
-            Path.home() / f"output/{task.job_id}",
-            Path.home() / f"log/{task.job_id}",
+            config.SIDECAR_INPUT_FOLDER / f"{task.job_id}",
+            config.SIDECAR_OUTPUT_FOLDER / f"{task.job_id}",
+            config.SIDECAR_LOG_FOLDER / f"{task.job_id}",
         )
 
     def create(self) -> None:
