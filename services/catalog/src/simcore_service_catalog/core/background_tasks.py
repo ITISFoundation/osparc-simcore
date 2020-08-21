@@ -29,7 +29,6 @@ from ..db.repositories.services import ServicesRepository
 from ..models.domain.service import (
     ServiceAccessRightsAtDB,
     ServiceDockerData,
-    ServiceKeyVersion,
     ServiceMetaDataAtDB,
 )
 
