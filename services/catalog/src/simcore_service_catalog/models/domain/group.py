@@ -2,6 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 from pydantic.types import PositiveInt
+
 from ...db.tables import GroupType
 
 
