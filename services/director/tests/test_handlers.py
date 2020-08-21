@@ -155,6 +155,45 @@ async def test_services_by_key_version_get(
     _check_services(created_services, retrieved_services)
 
 
+async def test_services_extras_by_key_version_get(
+    client, push_services, api_version_prefix
+):  # pylint: disable=W0613, W0621
+    web_response = await client.get(
+        f"/{api_version_prefix}/service_extras/whatever/someversion"
+    )
+    assert web_response.status == 400
+    web_response = await client.get(
+        f"/{api_version_prefix}/service_extras/simcore/services/dynamic/something/someversion"
+    )
+    assert web_response.status == 404
+    web_response = await client.get(
+        f"/{api_version_prefix}/service_extras/simcore/services/dynamic/something/1.5.2"
+    )
+    assert web_response.status == 404
+
+    created_services = push_services(3, 2)
+    assert len(created_services) == 5
+
+    for created_service in created_services:
+        service_description = created_service["service_description"]
+        # note that it is very important to remove the safe="/" from quote!!!!
+        key, version = [
+            quote(service_description[key], safe="") for key in ("key", "version")
+        ]
+        url = f"/{api_version_prefix}/service_extras/{key}/{version}"
+        web_response = await client.get(url)
+
+        assert (
+            web_response.status == 200
+        ), await web_response.text()  # here the error is actually json.
+        assert web_response.content_type == "application/json"
+        service_extras_enveloped = await web_response.json()
+
+        assert isinstance(service_extras_enveloped["data"], dict)
+        service_extras = service_extras_enveloped["data"]
+        assert created_service["service_extras"] == service_extras
+
+
 async def _start_get_stop_services(
     client, push_services, user_id, project_id, api_version_prefix
 ):

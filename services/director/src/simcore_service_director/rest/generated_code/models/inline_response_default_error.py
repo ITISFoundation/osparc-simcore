@@ -14,27 +14,27 @@ class InlineResponseDefaultError(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, errors: List[object]=None, message: str=None, status: int=None):
+    def __init__(self, message: str=None, errors: List[object]=None, status: int=None):
         """InlineResponseDefaultError - a model defined in OpenAPI
 
-        :param errors: The errors of this InlineResponseDefaultError.
         :param message: The message of this InlineResponseDefaultError.
+        :param errors: The errors of this InlineResponseDefaultError.
         :param status: The status of this InlineResponseDefaultError.
         """
         self.openapi_types = {
-            'errors': List[object],
             'message': str,
+            'errors': List[object],
             'status': int
         }
 
         self.attribute_map = {
-            'errors': 'errors',
             'message': 'message',
+            'errors': 'errors',
             'status': 'status'
         }
 
-        self._errors = errors
         self._message = message
+        self._errors = errors
         self._status = status
 
     @classmethod
@@ -45,27 +45,6 @@ class InlineResponseDefaultError(Model):
         :return: The inline_response_default_error of this InlineResponseDefaultError.
         """
         return util.deserialize_model(dikt, cls)
-
-    @property
-    def errors(self):
-        """Gets the errors of this InlineResponseDefaultError.
-
-
-        :return: The errors of this InlineResponseDefaultError.
-        :rtype: List[object]
-        """
-        return self._errors
-
-    @errors.setter
-    def errors(self, errors):
-        """Sets the errors of this InlineResponseDefaultError.
-
-
-        :param errors: The errors of this InlineResponseDefaultError.
-        :type errors: List[object]
-        """
-
-        self._errors = errors
 
     @property
     def message(self):
@@ -91,6 +70,27 @@ class InlineResponseDefaultError(Model):
             raise ValueError("Invalid value for `message`, must not be `None`")
 
         self._message = message
+
+    @property
+    def errors(self):
+        """Gets the errors of this InlineResponseDefaultError.
+
+
+        :return: The errors of this InlineResponseDefaultError.
+        :rtype: List[object]
+        """
+        return self._errors
+
+    @errors.setter
+    def errors(self, errors):
+        """Sets the errors of this InlineResponseDefaultError.
+
+
+        :param errors: The errors of this InlineResponseDefaultError.
+        :type errors: List[object]
+        """
+
+        self._errors = errors
 
     @property
     def status(self):
