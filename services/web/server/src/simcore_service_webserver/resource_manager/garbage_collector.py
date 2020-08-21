@@ -33,6 +33,42 @@ from .registry import RedisResourceRegistry, get_registry
 logger = logging.getLogger(__name__)
 
 
+def setup(app: web.Application):
+    app.cleanup_ctx.append(setup_garbage_collector_task)
+
+
+async def setup_garbage_collector_task(app: web.Application):
+    app[APP_GARBAGE_COLLECTOR_KEY] = app.loop.create_task(garbage_collector_task(app))
+    yield
+    task = app[APP_GARBAGE_COLLECTOR_KEY]
+    task.cancel()
+    await task
+
+
+async def garbage_collector_task(app: web.Application):
+    keep_alive = True
+
+    while keep_alive:
+        logger.info("Starting garbage collector...")
+        try:
+            registry = get_registry(app)
+            interval = get_garbage_collector_interval(app)
+            while True:
+                await collect_garbage(registry, app)
+                await asyncio.sleep(interval)
+
+        except asyncio.CancelledError:
+            keep_alive = False
+            logger.info("Garbage collection task was cancelled, it will not restart!")
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(
+                "There was an error during garbage collection, restarting...",
+                exc_info=True,
+            )
+            # will wait 5 seconds before restarting to avoid restart loops
+            await asyncio.sleep(5)
+
+
 async def collect_garbage(registry: RedisResourceRegistry, app: web.Application):
     """
     Garbage collection has the task of removing trash from the system. The trash 
@@ -270,42 +306,6 @@ async def remove_guest_user_with_all_its_resources(
 
     await remove_all_projects_for_user(app=app, user_id=user_id)
     await remove_user(app=app, user_id=user_id)
-
-
-async def garbage_collector_task(app: web.Application):
-    keep_alive = True
-
-    while keep_alive:
-        logger.info("Starting garbage collector...")
-        try:
-            registry = get_registry(app)
-            interval = get_garbage_collector_interval(app)
-            while True:
-                await collect_garbage(registry, app)
-                await asyncio.sleep(interval)
-
-        except asyncio.CancelledError:
-            keep_alive = False
-            logger.info("Garbage collection task was cancelled, it will not restart!")
-        except Exception:  # pylint: disable=broad-except
-            logger.warning(
-                "There was an error during garbage collection, restarting...",
-                exc_info=True,
-            )
-            # will wait 5 seconds before restarting to avoid restart loops
-            await asyncio.sleep(5)
-
-
-async def setup_garbage_collector_task(app: web.Application):
-    app[APP_GARBAGE_COLLECTOR_KEY] = app.loop.create_task(garbage_collector_task(app))
-    yield
-    task = app[APP_GARBAGE_COLLECTOR_KEY]
-    task.cancel()
-    await task
-
-
-def setup(app: web.Application):
-    app.cleanup_ctx.append(setup_garbage_collector_task)
 
 
 # TODO: tests for garbage collector
