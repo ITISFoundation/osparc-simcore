@@ -54,20 +54,24 @@ async def _basic_auth_registry_request(
     session = app[APP_CLIENT_SESSION_KEY]
     try:
         async with getattr(session, method.lower())(url, auth=auth) as response:
-            if response.status == HTTPStatus.NOT_FOUND:
-                logger.exception("path to registry not found: %s", url)
-                raise exceptions.ServiceNotAvailableError(str(path))
-            elif response.status == HTTPStatus.UNAUTHORIZED:
-                logger.debug("Registry responded 401: %s", await response.text())
+
+            if response.status == HTTPStatus.UNAUTHORIZED:
+                logger.debug("Registry unauthorized request: %s", await response.text())
                 # basic mode failed, test with other auth mode
                 resp_data, resp_headers = await _auth_registry_request(
                     url, method, response.headers, session
                 )
+
+            elif response.status == HTTPStatus.NOT_FOUND:
+                logger.exception("Path to registry not found: %s", url)
+                raise exceptions.ServiceNotAvailableError(str(path))
+
             elif response.status > 399:
                 logger.exception(
                     "Unknown error while accessing registry: %s", str(response)
                 )
                 raise exceptions.RegistryConnectionError(str(response))
+
             else:
                 # registry that does not need an auth
                 resp_data = await response.json(content_type=None)
