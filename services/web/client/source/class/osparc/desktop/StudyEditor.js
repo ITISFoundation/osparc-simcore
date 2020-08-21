@@ -284,6 +284,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__loggerView.setCurrentNodeId();
         return;
       }
+      if (this.__nodesTree) {
+        this.__nodesTree.setCurrentNodeId(nodeId);
+      }
       if (this.__nodeView) {
         this.__nodeView.restoreIFrame();
       }

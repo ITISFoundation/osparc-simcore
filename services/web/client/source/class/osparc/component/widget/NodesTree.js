@@ -64,6 +64,9 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     __toolBar: null,
     __tree: null,
     __exportButton: null,
+    __openButton: null,
+    __deleteButton: null,
+    __currentNodeId: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -81,6 +84,10 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    setCurrentNodeId: function(nodeId) {
+      this.__currentNodeId = nodeId;
     },
 
     __getToolbarButtons: function(toolbar) {
@@ -105,7 +112,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         toolbar.add(exportButton);
       }
 
-      const openButton = new qx.ui.toolbar.Button(this.tr("Open"), "@FontAwesome5Solid/edit/"+iconSize);
+      const openButton = this.__openButton = new qx.ui.toolbar.Button(this.tr("Open"), "@FontAwesome5Solid/edit/"+iconSize);
       openButton.addListener("execute", e => {
         const study = osparc.store.Store.getInstance().getCurrentStudy();
         const selectedItem = this.__getSelection();
@@ -124,7 +131,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       osparc.utils.Utils.setIdToWidget(renameButton, "renameServiceBtn");
       toolbar.add(renameButton);
 
-      const deleteButton = new qx.ui.toolbar.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/"+iconSize);
+      const deleteButton = this.__deleteButton = new qx.ui.toolbar.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/"+iconSize);
       deleteButton.addListener("execute", e => {
         this.__deleteNode();
       }, this);
@@ -193,10 +200,13 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               this.__openItem(item.getModel().getNodeId());
             }, this);
             item.addListener("tap", e => {
-              this.fireDataEvent("changeSelectedNode", item.getModel().getNodeId());
+              const nodeId = item.getModel().getNodeId();
+              this.fireDataEvent("changeSelectedNode", nodeId);
               if (this.__exportButton) {
                 this.__exportButton.setEnabled((Boolean(item.getLevel()) && item.getModel().getIsContainer()));
               }
+              this.__deleteButton.setEnabled(item.getLevel() !== 0 && this.__currentNodeId !== nodeId);
+              this.__openButton.setEnabled(this.__currentNodeId !== nodeId);
             }, this);
           }
         });
