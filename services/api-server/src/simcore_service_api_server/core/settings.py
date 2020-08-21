@@ -87,7 +87,6 @@ class AppSettings(BaseSettings):
         except AttributeError as err:
             raise ValueError(f"{value.upper()} is not a valid level") from err
 
-
     @property
     def loglevel(self) -> int:
         return getattr(logging, self.log_level_name)
