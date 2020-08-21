@@ -266,6 +266,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
             store.getInaccessibleServices(minStudyData)
               .then(inaccessibleServices => {
                 if (inaccessibleServices.length) {
+                  this._hideLoadingPage();
                   const msg = osparc.utils.Study.getInaccessibleServicesMsg(inaccessibleServices);
                   throw new Error(msg);
                 }
@@ -289,26 +290,38 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         });
     },
 
-    __createStudy: function(minStudyData, templateId) {
+    __createStudyFromTemplate: function(templateData) {
       if (!this.__checkLoggedIn()) {
         return;
       }
 
-      this._showLoadingPage(this.tr("Creating ") + (minStudyData.name || this.tr("Study")));
+      this._showLoadingPage(this.tr("Creating ") + (templateData.name || this.tr("Study")));
 
-      const params = {
-        url: {
-          templateId: templateId
-        },
-        data: minStudyData
-      };
-      osparc.data.Resources.fetch("studies", "postFromTemplate", params)
-        .then(studyData => {
-          this._hideLoadingPage();
-          this.__startStudy(studyData["uuid"]);
-        })
-        .catch(err => {
-          console.error(err);
+      const store = osparc.store.Store.getInstance();
+      store.getInaccessibleServices(templateData)
+        .then(inaccessibleServices => {
+          if (inaccessibleServices.length) {
+            this._hideLoadingPage();
+            const msg = osparc.utils.Study.getInaccessibleServicesMsg(inaccessibleServices);
+            throw new Error(msg);
+          }
+          const minStudyData = osparc.data.model.Study.createMinimumStudyObject();
+          minStudyData["name"] = templateData.name;
+          minStudyData["description"] = templateData.description;
+          const params = {
+            url: {
+              templateId: templateData.uuid
+            },
+            data: minStudyData
+          };
+          osparc.data.Resources.fetch("studies", "postFromTemplate", params)
+            .then(studyData => {
+              this._hideLoadingPage();
+              this.__startStudy(studyData["uuid"]);
+            })
+            .catch(err => {
+              console.error(err);
+            });
         });
     },
 
@@ -555,17 +568,17 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         this.__createStudyFromService(serviceKey, null);
       } else {
         const matchesId = study => study.uuid === item.getUuid();
-        const studyData = this.__templates.find(matchesId);
-        this.__createStudyBtnClkd(studyData);
+        const templateData = this.__templates.find(matchesId);
+        this.__createStudyFromTemplate(templateData);
       }
       this.resetSelection();
     },
 
-    __createStudyDetailsEditor: function(studyData, winWidth) {
-      const studyDetails = new osparc.component.metadata.StudyDetailsEditor(studyData, true, winWidth);
+    __createStudyDetailsEditor: function(templateData, winWidth) {
+      const studyDetails = new osparc.component.metadata.StudyDetailsEditor(templateData, true, winWidth);
       studyDetails.addListener("updateTemplate", () => this.reloadTemplates(), this);
       studyDetails.addListener("openStudy", () => {
-        this.__createStudyBtnClkd(studyData);
+        this.__createStudyFromTemplate(templateData);
       }, this);
       studyDetails.addListener("updateTags", () => {
         this.__resetTemplatesList(osparc.store.Store.getInstance().getTemplates());
@@ -615,13 +628,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         console.log(studyId);
         this.reloadTemplates();
       });
-    },
-
-    __createStudyBtnClkd: function(templateData) {
-      const minStudyData = osparc.data.model.Study.createMinimumStudyObject();
-      minStudyData["name"] = templateData.name;
-      minStudyData["description"] = templateData.description;
-      this.__createStudy(minStudyData, templateData.uuid);
     },
 
     __deleteTemplate: function(studyData) {
