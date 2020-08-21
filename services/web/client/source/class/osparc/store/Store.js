@@ -352,7 +352,8 @@ qx.Class.define("osparc.store.Store", {
           if (idx === -1) {
             unaccessibleServices.push({
               key: node["key"],
-              version: node["version"]
+              version: node["version"],
+              label: node["label"]
             });
           }
         });

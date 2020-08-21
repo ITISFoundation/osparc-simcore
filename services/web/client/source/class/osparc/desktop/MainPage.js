@@ -192,7 +192,10 @@ qx.Class.define("osparc.desktop.MainPage", {
             .then(unaccessibleServices => {
               if (unaccessibleServices.length) {
                 this.__dashboard.getStudyBrowser().resetSelection();
-                const msg = unaccessibleServices.length + this.tr(" service(s) are not accessible");
+                let msg = this.tr("Service(s) not accessible:<br>");
+                unaccessibleServices.forEach(unaccessibleService => {
+                  msg += `(${unaccessibleService.label}):${unaccessibleService.version}<br>`;
+                });
                 throw new Error(msg);
               }
               this.__showStudyEditor(this.__getStudyEditor());
