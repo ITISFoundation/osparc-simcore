@@ -38,10 +38,7 @@
 qx.Class.define("osparc.component.widget.NodesTree", {
   extend: qx.ui.core.Widget,
 
-  /**
-    * @param study {osparc.data.model.Study} Study owning the widget
-    */
-  construct: function(study) {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox());
