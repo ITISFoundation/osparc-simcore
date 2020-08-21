@@ -1,5 +1,6 @@
 import json
 import logging
+from contextlib import suppress
 from typing import Dict, Optional
 
 import attr
@@ -26,12 +27,11 @@ def setup_director(app: FastAPI) -> None:
 
 
 async def close_director(app: FastAPI) -> None:
-    try:
+    with suppress(AttributeError):
         client: AsyncClient = app.state.director_client
         await client.aclose()
         del app.state.director_client
-    except AttributeError:
-        pass
+
     logger.debug("Director client closed successfully")
 
 
