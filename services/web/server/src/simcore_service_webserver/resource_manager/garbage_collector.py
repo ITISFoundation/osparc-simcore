@@ -33,10 +33,6 @@ from .registry import RedisResourceRegistry, get_registry
 logger = logging.getLogger(__name__)
 
 
-def setup(app: web.Application):
-    app.cleanup_ctx.append(setup_garbage_collector_task)
-
-
 async def setup_garbage_collector_task(app: web.Application):
     app[APP_GARBAGE_COLLECTOR_KEY] = app.loop.create_task(garbage_collector_task(app))
     yield
