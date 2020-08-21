@@ -29,10 +29,9 @@ def create_start_app_handler(app: FastAPI) -> Callable:
         # setup connection to director
         if app.state.settings.director.enabled:
             setup_director(app)
+
             # FIXME: check director service is in place and ready. Hand-shake??
-            # TEMP: added a dependency and waits 3 secs
-            import asyncio
-            await asyncio.sleep(3)
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1728
             await start_registry_sync_task(app)
 
     return start_app
