@@ -1,11 +1,3 @@
-"""The garbage collector runs as an aiohttp background task at pre-defined interval until the aiohttp app is closed.
-
-    Its tasks are to collect resources that are no longer "alive".
-    The tasks are defined as alive when the registry alive key is no longer available (see (registry.py)),
-    thus the corresponding key is deamed as dead, and so are its attached resources if any.
-    The garbage collector shall then close/delete these resources.
-"""
-
 import asyncio
 import logging
 from itertools import chain
