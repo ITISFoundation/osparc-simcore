@@ -73,7 +73,7 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
     # Users manually marked for removal:
     # if a user was manually marked as GUEST it needs to be
     # removed together with all the associated projects
-    await remove_users_manually_marked_as_guests(app)
+    await remove_users_manually_marked_as_guests(registry, app)
 
     # For various reasons, some services remain pending after
     # the projects are closed or the user was disconencted.
@@ -152,7 +152,9 @@ async def remove_disconnected_user_resources(
                 )
 
 
-async def remove_users_manually_marked_as_guests(app: web.Application) -> None:
+async def remove_users_manually_marked_as_guests(
+    registry: RedisResourceRegistry, app: web.Application
+) -> None:
     """
     Removes all the projects associated with GUEST users in the system.
     If the user defined a TEMPLATE, this one also gets removed.
