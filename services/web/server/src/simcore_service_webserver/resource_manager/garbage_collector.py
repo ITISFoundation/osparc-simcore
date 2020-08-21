@@ -91,7 +91,7 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
                 for x in await registry.find_keys((resource_name, resource_value))
                 if x != dead_key
             ]
-            
+
             # it is safe to remove the current websocket entry for this user
             logger.debug("removing resource '%s' for '%s' key", resource_name, dead_key)
             await registry.remove_resource(dead_key, resource_name)
@@ -124,7 +124,7 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
                     app=app,
                 )
 
-                # if this user was a GUEST also remove it from the database 
+                # if this user was a GUEST also remove it from the database
                 # with the only associated project owned
                 await remove_resources_if_guest_user(
                     app=app,
@@ -132,15 +132,15 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
                     user_id=int(dead_key["user_id"]),
                 )
     # Users manually marked for removal:
-    # if a user was manually marked as GUEST it needs to be 
+    # if a user was manually marked as GUEST it needs to be
     # removed together with all the associated projects
     await remove_users_manually_marked_as_guests(
         app=app, alive_keys=alive_keys, dead_keys=dead_keys
     )
 
-    # For various reasons, some services remain pending after 
+    # For various reasons, some services remain pending after
     # the projects are closed or the user was disconencted.
-    # This will close and remove all these services from 
+    # This will close and remove all these services from
     # the cluster, thus freeing important resources.
     await remove_orphaned_services(registry, app)
 
