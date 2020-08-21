@@ -188,14 +188,11 @@ qx.Class.define("osparc.desktop.MainPage", {
             const msg = this.tr("Study is opened");
             throw new Error(msg);
           }
-          store.getUnaccessibleServices(latestStudyData)
-            .then(unaccessibleServices => {
-              if (unaccessibleServices.length) {
+          store.getInaccessibleServices(latestStudyData)
+            .then(inaccessibleServices => {
+              if (inaccessibleServices.length) {
                 this.__dashboard.getStudyBrowser().resetSelection();
-                let msg = this.tr("Service(s) not accessible:<br>");
-                unaccessibleServices.forEach(unaccessibleService => {
-                  msg += `(${unaccessibleService.label}):${unaccessibleService.version}<br>`;
-                });
+                const msg = osparc.utils.Study.getInaccessibleServicesMsg(inaccessibleServices);
                 throw new Error(msg);
               }
               this.__showStudyEditor(this.__getStudyEditor());

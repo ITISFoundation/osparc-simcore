@@ -23,6 +23,13 @@ qx.Class.define("osparc.utils.Study", {
   type: "static",
 
   statics: {
+    getInaccessibleServicesMsg: function(unaccessibleServices) {
+      let msg = this.tr("Service(s) not accessible:<br>");
+      unaccessibleServices.forEach(unaccessibleService => {
+        msg += `- ${unaccessibleService.label}:${unaccessibleService.version}<br>`;
+      });
+      return msg;
+    },
 
     mustache: {
       mustacheRegEx: function() {

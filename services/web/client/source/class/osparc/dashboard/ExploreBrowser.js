@@ -263,20 +263,28 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
                 "y": 50
               }
             };
-            const params = {
-              data: minStudyData
-            };
-            osparc.data.Resources.fetch("studies", "post", params)
-              .then(studyData => {
-                this._hideLoadingPage();
-                this.__startStudy(studyData["uuid"]);
-              })
-              .catch(er => {
-                console.error(er);
+            store.getInaccessibleServices(minStudyData)
+              .then(inaccessibleServices => {
+                if (inaccessibleServices.length) {
+                  const msg = osparc.utils.Study.getInaccessibleServicesMsg(inaccessibleServices);
+                  throw new Error(msg);
+                }
+                const params = {
+                  data: minStudyData
+                };
+                osparc.data.Resources.fetch("studies", "post", params)
+                  .then(studyData => {
+                    this._hideLoadingPage();
+                    this.__startStudy(studyData["uuid"]);
+                  })
+                  .catch(er => {
+                    console.error(er);
+                  });
               });
           }
         })
         .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           console.error(err);
         });
     },
