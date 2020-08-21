@@ -32,7 +32,6 @@ import simcore_service_webserver.utils
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
 from pytest_simcore.helpers.utils_mock import future_with_result
-
 from servicelib.aiopg_utils import DSN
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_config import app_schema as app_schema
@@ -47,7 +46,7 @@ from simcore_service_webserver.groups_api import (
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
-# WEB SERVER FIXTURES ------------------------------------------------
+# DEPLOYED SERVICES FOR TESTSUITE SESSION -----------------------------------
 
 
 @pytest.fixture(scope="session")
@@ -69,18 +68,6 @@ def default_app_cfg(osparc_simcore_root_dir, fake_static_dir):
     # WARNING: changes to this fixture during testing propagates to other tests. Use cfg = deepcopy(cfg_dict)
     # FIXME:  free cfg_dict but deepcopy shall be r/w
     return cfg_dict
-
-
-@pytest.fixture(scope="function")
-def app_cfg(default_app_cfg, aiohttp_unused_port):
-    cfg = deepcopy(default_app_cfg)
-
-    # fills ports on the fly
-    cfg["main"]["port"] = aiohttp_unused_port()
-    cfg["storage"]["port"] = aiohttp_unused_port()
-
-    # this fixture can be safely modified during test since it is renovated on every call
-    return cfg
 
 
 @pytest.fixture(scope="session")
@@ -105,13 +92,35 @@ def docker_compose_file(default_app_cfg):
     os.environ = old
 
 
+# WEB SERVER/CLIENT FIXTURES ------------------------------------------------
+
+
+@pytest.fixture(scope="function")
+def app_cfg(default_app_cfg, aiohttp_unused_port):
+    """ Can be overriden in any test module to configure
+        the app accordingly
+    """
+    cfg = deepcopy(default_app_cfg)
+
+    # fills ports on the fly
+    cfg["main"]["port"] = aiohttp_unused_port()
+    cfg["storage"]["port"] = aiohttp_unused_port()
+
+    # this fixture can be safely modified during test since it is renovated on every call
+    return cfg
+
+
 @pytest.fixture
 def web_server(loop, aiohttp_server, app_cfg, monkeypatch, postgres_db):
     # original APP
     app = create_application(app_cfg)
 
+    from servicelib.application_keys import APP_CONFIG_KEY
+    import json
+    print("Inits webserver with config", json.dumps(app[APP_CONFIG_KEY], indent=2))
+
     # with patched email
-    path_mail(monkeypatch)
+    _path_mail(monkeypatch)
 
     server = loop.run_until_complete(aiohttp_server(app, port=app_cfg["main"]["port"]))
     return server
@@ -125,8 +134,9 @@ def client(loop, aiohttp_client, web_server, mock_orphaned_services):
 
 # SUBSYSTEM MOCKS FIXTURES ------------------------------------------------
 #
-# Add mocks for web-server subsystems here
+# Mocks entirely or part of the calls to the web-server subsystems
 #
+
 
 @pytest.fixture
 def computational_system_mock(mocker):
@@ -136,6 +146,7 @@ def computational_system_mock(mocker):
     )
     mock_fun.return_value.set_result("")
     return mock_fun
+
 
 @pytest.fixture
 async def storage_subsystem_mock(loop, mocker):
@@ -162,6 +173,16 @@ async def storage_subsystem_mock(loop, mocker):
     )
     mock1.return_value.set_result("")
     return mock, mock1
+
+
+@pytest.fixture
+def asyncpg_storage_system_mock(mocker):
+    mocked_method = mocker.patch(
+        "simcore_service_webserver.login.storage.AsyncpgStorage.delete_user",
+        return_value=Future(),
+    )
+    mocked_method.return_value.set_result("")
+    return mocked_method
 
 
 @pytest.fixture
@@ -238,16 +259,6 @@ async def mocked_dynamic_service(loop, client, mocked_director_api):
     return create
 
 
-@pytest.fixture
-def asyncpg_storage_system_mock(mocker):
-    mocked_method = mocker.patch(
-        "simcore_service_webserver.login.storage.AsyncpgStorage.delete_user",
-        return_value=Future(),
-    )
-    mocked_method.return_value.set_result("")
-    return mocked_method
-
-
 # POSTGRES CORE SERVICE ---------------------------------------------------
 
 
@@ -265,7 +276,7 @@ def postgres_service(docker_services, postgres_dsn):
 
     # Wait until service is responsive.
     docker_services.wait_until_responsive(
-        check=lambda: is_postgres_responsive(url), timeout=30.0, pause=0.1,
+        check=lambda: _is_postgres_responsive(url), timeout=30.0, pause=0.1,
     )
 
     return url
@@ -303,7 +314,7 @@ def redis_service(docker_services, docker_ip):
     url = URL(f"redis://{host}:{port}")
 
     docker_services.wait_until_responsive(
-        check=lambda: is_redis_responsive(host, port), timeout=30.0, pause=0.1,
+        check=lambda: _is_redis_responsive(host, port), timeout=30.0, pause=0.1,
     )
     return url
 
@@ -318,7 +329,7 @@ async def redis_client(loop, redis_service):
     await client.wait_closed()
 
 
-def is_redis_responsive(host: str, port: int) -> bool:
+def _is_redis_responsive(host: str, port: int) -> bool:
     r = redis.Redis(host=host, port=port)
     return r.ping() == True
 
@@ -396,7 +407,7 @@ def client_session_id() -> str:
     return create
 
 
-# USER DATA FIXTURES -------------------------------------------------------
+# USER GROUP FIXTURES -------------------------------------------------------
 
 
 @pytest.fixture
@@ -458,7 +469,7 @@ async def all_group(client, logged_user) -> Dict[str, str]:
 # GENERIC HELPER FUNCTIONS ----------------------------------------------------
 
 
-def path_mail(monkeypatch):
+def _path_mail(monkeypatch):
     async def send_mail(*args):
         print("=== EMAIL TO: {}\n=== SUBJECT: {}\n=== BODY:\n{}".format(*args))
 
@@ -467,7 +478,7 @@ def path_mail(monkeypatch):
     )
 
 
-def is_postgres_responsive(url):
+def _is_postgres_responsive(url):
     """Check if something responds to ``url`` """
     try:
         engine = sa.create_engine(url)

@@ -55,11 +55,6 @@ DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
 
 
 @pytest.fixture
-def gc_long_deletion_timeout():
-    DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS = 900
-
-
-@pytest.fixture
 def client(
     loop,
     aiohttp_client,
