@@ -128,6 +128,14 @@ def client(loop, aiohttp_client, web_server, mock_orphaned_services):
 # Add mocks for web-server subsystems here
 #
 
+@pytest.fixture
+def computational_system_mock(mocker):
+    mock_fun = mocker.patch(
+        "simcore_service_webserver.projects.projects_handlers.update_pipeline_db",
+        return_value=Future(),
+    )
+    mock_fun.return_value.set_result("")
+    return mock_fun
 
 @pytest.fixture
 async def storage_subsystem_mock(loop, mocker):
