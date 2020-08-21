@@ -198,15 +198,10 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           configureItem: item => {
             item.addListener("dbltap", () => {
               this.__openItem(item.getModel().getNodeId());
+              this.__selectedItem(item);
             }, this);
             item.addListener("tap", e => {
-              const nodeId = item.getModel().getNodeId();
-              this.fireDataEvent("changeSelectedNode", nodeId);
-              if (this.__exportButton) {
-                this.__exportButton.setEnabled((Boolean(item.getLevel()) && item.getModel().getIsContainer()));
-              }
-              this.__deleteButton.setEnabled(item.getLevel() !== 0 && this.__currentNodeId !== nodeId);
-              this.__openButton.setEnabled(this.__currentNodeId !== nodeId);
+              this.__selectedItem(item);
             }, this);
           }
         });
@@ -270,6 +265,16 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       if (nodeId) {
         this.fireDataEvent("nodeDoubleClicked", nodeId);
       }
+    },
+
+    __selectedItem: function(item) {
+      const nodeId = item.getModel().getNodeId();
+      this.fireDataEvent("changeSelectedNode", nodeId);
+      if (this.__exportButton) {
+        this.__exportButton.setEnabled((Boolean(item.getLevel()) && item.getModel().getIsContainer()));
+      }
+      this.__deleteButton.setEnabled(item.getLevel() !== 0 && this.__currentNodeId !== nodeId);
+      this.__openButton.setEnabled(this.__currentNodeId !== nodeId);
     },
 
     __openItemRenamer: function() {
