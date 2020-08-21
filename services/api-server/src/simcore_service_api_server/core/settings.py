@@ -83,9 +83,10 @@ class AppSettings(BaseSettings):
     def match_logging_level(cls, value) -> str:
         try:
             getattr(logging, value.upper())
-        except AttributeError:
-            raise ValueError(f"{value.upper()} is not a valid level")
-        return value.upper()
+            return value.upper()
+        except AttributeError as err:
+            raise ValueError(f"{value.upper()} is not a valid level") from err
+
 
     @property
     def loglevel(self) -> int:

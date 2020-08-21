@@ -1,6 +1,7 @@
 import base64
 import json
 import logging
+from contextlib import suppress
 from typing import Dict, Optional
 
 import attr
@@ -45,12 +46,10 @@ def setup_webserver(app: FastAPI) -> None:
 
 
 async def close_webserver(app: FastAPI) -> None:
-    try:
+    with suppress(AttributeError):
         client: AsyncClient = app.state.webserver_client
         await client.aclose()
         del app.state.webserver_client
-    except AttributeError:
-        pass
     logger.debug("Webserver closed successfully")
 
 
@@ -115,9 +114,9 @@ class AuthSession:
         url = self._url(path)
         try:
             resp = await self.client.get(url, cookies=self.session_cookies)
-        except Exception:
+        except Exception as err:
             logger.exception("Failed to get %s", url)
-            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
         return self._process(resp)
 
@@ -125,8 +124,8 @@ class AuthSession:
         url = self._url(path)
         try:
             resp = await self.client.put(url, json=body, cookies=self.session_cookies)
-        except Exception:
+        except Exception as err:
             logger.exception("Failed to put %s", url)
-            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
         return self._process(resp)
