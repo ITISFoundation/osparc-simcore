@@ -125,19 +125,23 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
                 )
 
                 # if this user was a GUEST also remove it from the database 
-                # with all the associated projects
+                # with the only associated project owned
                 await remove_resources_if_guest_user(
                     app=app,
                     project_uuid=resource_value,
                     user_id=int(dead_key["user_id"]),
                 )
-
-    # try to remove users which were marked as GUESTS manually
+    # Users manually marked for removal:
+    # if a user was manually marked as GUEST it needs to be 
+    # removed together with all the associated projects
     await remove_users_manually_marked_as_guests(
         app=app, alive_keys=alive_keys, dead_keys=dead_keys
     )
 
-    # remove possible pending contianers
+    # For various reasons, some services remain pending after 
+    # the projects are closed or the user was disconencted.
+    # This will close and remove all these services from 
+    # the cluster, thus freeing important resources.
     await remove_orphaned_services(registry, app)
 
 
