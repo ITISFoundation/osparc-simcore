@@ -3,16 +3,20 @@
 
 import logging
 import os
+from distutils.util import strtobool
 from typing import Dict, Optional
 
 from servicelib.client_session import APP_CLIENT_SESSION_KEY
 
-DEBUG_MODE: bool = os.environ.get("LOGLEVEL", False) in ["true", "True", True]
-
+LOGLEVEL_STR = os.environ.get("LOGLEVEL", "WARNING").upper()
+log_level = getattr(logging, LOGLEVEL_STR)
 logging.basicConfig(
-    level=logging.DEBUG if DEBUG_MODE else logging.WARNING,
-    format="%(levelname)s:%(name)s-%(lineno)d: %(message)s",
+    level=log_level, format="%(levelname)s:%(name)s-%(lineno)d: %(message)s",
 )
+logging.root.setLevel(log_level)
+
+# TODO: debug mode is define by the LOG-LEVEL and not the other way around. I leave it like that for the moment ...
+DEBUG_MODE = log_level == logging.DEBUG
 
 API_VERSION: str = "v0"
 API_ROOT: str = "api"
@@ -27,11 +31,9 @@ ORG_LABELS_TO_SCHEMA_LABELS = {
     "org.label-schema.vcs-url": "vcs_url",
 }
 
-DIRECTOR_REGISTRY_CACHING: bool = os.environ.get("DIRECTOR_REGISTRY_CACHING", True) in [
-    "true",
-    "True",
-    True,
-]
+DIRECTOR_REGISTRY_CACHING: bool = strtobool(
+    os.environ.get("DIRECTOR_REGISTRY_CACHING", "True")
+)
 DIRECTOR_REGISTRY_CACHING_TTL: int = int(
     os.environ.get("DIRECTOR_REGISTRY_CACHING_TTL", 15 * 60)
 )
@@ -52,11 +54,11 @@ TRAEFIK_SIMCORE_ZONE: str = os.environ.get(
 )
 APP_REGISTRY_CACHE_DATA_KEY: str = __name__ + "_registry_cache_data"
 
-REGISTRY_AUTH: bool = os.environ.get("REGISTRY_AUTH", False) in ["true", "True", True]
+REGISTRY_AUTH: bool = strtobool(os.environ.get("REGISTRY_AUTH", "False"))
 REGISTRY_USER: str = os.environ.get("REGISTRY_USER", "")
 REGISTRY_PW: str = os.environ.get("REGISTRY_PW", "")
 REGISTRY_URL: str = os.environ.get("REGISTRY_URL", "")
-REGISTRY_SSL: bool = os.environ.get("REGISTRY_SSL", True) in ["true", "True", True]
+REGISTRY_SSL: bool = strtobool(os.environ.get("REGISTRY_SSL", "True"))
 
 EXTRA_HOSTS_SUFFIX: str = os.environ.get("EXTRA_HOSTS_SUFFIX", "undefined")
 
@@ -95,18 +97,11 @@ SIMCORE_SERVICES_PREFIX: str = os.environ.get(
 )
 
 # monitoring
-MONITORING_ENABLED: bool = os.environ.get("MONITORING_ENABLED", True) in [
-    "true",
-    "True",
-    False,
-]
+# NOTE: keep disabled for unit-testing otherwise mocks will not hold
+MONITORING_ENABLED: bool = strtobool(os.environ.get("MONITORING_ENABLED", "False"))
 
 # tracing
-TRACING_ENABLED: bool = os.environ.get("TRACING_ENABLED", True) in [
-    "true",
-    "True",
-    True,
-]
+TRACING_ENABLED: bool = strtobool(os.environ.get("TRACING_ENABLED", "True"))
 TRACING_ZIPKIN_ENDPOINT: str = os.environ.get(
     "TRACING_ZIPKIN_ENDPOINT", "http://jaeger:9411"
 )

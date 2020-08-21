@@ -23,11 +23,15 @@ def create_start_app_handler(app: FastAPI) -> Callable:
 
         # setup connection to pg db
         if app.state.settings.postgres.enabled:
+            # FIXME: check postgres service is in place and ready. Hand-shake?
             await connect_to_db(app)
 
         # setup connection to director
         if app.state.settings.director.enabled:
             setup_director(app)
+
+            # FIXME: check director service is in place and ready. Hand-shake??
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1728
             await start_registry_sync_task(app)
 
     return start_app

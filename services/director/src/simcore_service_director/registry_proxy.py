@@ -4,6 +4,7 @@ import enum
 import json
 import logging
 import re
+from http import HTTPStatus
 from typing import Dict, List, Tuple
 
 from aiohttp import BasicAuth, ClientSession, client_exceptions, web
@@ -18,6 +19,10 @@ DEPENDENCIES_LABEL_KEY: str = "simcore.service.dependencies"
 
 NUMBER_OF_RETRIEVED_REPOS: int = 50
 NUMBER_OF_RETRIEVED_TAGS: int = 50
+
+VERSION_REG = re.compile(
+    r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
+)
 
 logger = logging.getLogger(__name__)
 
@@ -49,19 +54,24 @@ async def _basic_auth_registry_request(
     session = app[APP_CLIENT_SESSION_KEY]
     try:
         async with getattr(session, method.lower())(url, auth=auth) as response:
-            if response.status == 404:
-                logger.exception("path to registry not found: %s", url)
-                raise exceptions.ServiceNotAvailableError(str(path))
-            if response.status == 401:
+
+            if response.status == HTTPStatus.UNAUTHORIZED:
+                logger.debug("Registry unauthorized request: %s", await response.text())
                 # basic mode failed, test with other auth mode
                 resp_data, resp_headers = await _auth_registry_request(
                     url, method, response.headers, session
                 )
+
+            elif response.status == HTTPStatus.NOT_FOUND:
+                logger.exception("Path to registry not found: %s", url)
+                raise exceptions.ServiceNotAvailableError(str(path))
+
             elif response.status > 399:
                 logger.exception(
                     "Unknown error while accessing registry: %s", str(response)
                 )
                 raise exceptions.RegistryConnectionError(str(response))
+
             else:
                 # registry that does not need an auth
                 resp_data = await response.json(content_type=None)
@@ -106,7 +116,7 @@ async def _auth_registry_request(
             service=auth_details["service"], scope=auth_details["scope"]
         )
         async with session.get(token_url, auth=auth) as token_resp:
-            if not token_resp.status == 200:
+            if not token_resp.status == HTTPStatus.OK:
                 raise exceptions.RegistryConnectionError(
                     "Unknown error while authentifying with registry: {}".format(
                         str(token_resp)
@@ -117,7 +127,7 @@ async def _auth_registry_request(
             async with getattr(session, method.lower())(
                 url, headers=headers
             ) as resp_wtoken:
-                if resp_wtoken.status == 404:
+                if resp_wtoken.status == HTTPStatus.NOT_FOUND:
                     logger.exception("path to registry not found: %s", url)
                     raise exceptions.ServiceNotAvailableError(str(url))
                 if resp_wtoken.status > 399:
@@ -132,7 +142,7 @@ async def _auth_registry_request(
     elif auth_type == "Basic":
         # basic authentication should not be since we tried already...
         async with getattr(session, method.lower())(url, auth=auth) as resp_wbasic:
-            if resp_wbasic.status == 404:
+            if resp_wbasic.status == HTTPStatus.NOT_FOUND:
                 logger.exception("path to registry not found: %s", url)
                 raise exceptions.ServiceNotAvailableError(str(url))
             if resp_wbasic.status > 399:
@@ -152,6 +162,9 @@ async def _auth_registry_request(
 async def registry_request(
     app: web.Application, path: str, method: str = "GET", no_cache: bool = False
 ) -> Tuple[Dict, Dict]:
+    logger.debug(
+        "Request to registry: path=%s, method=%s. no_cache=%s", path, method, no_cache
+    )
     return await cache_requests(_basic_auth_registry_request, no_cache)(
         app, path, method
     )
@@ -171,11 +184,6 @@ async def _list_repositories(app: web.Application) -> List[str]:
         path = str(headers["Link"]).split(";")[0].strip("<>")
     logger.debug("listed %s repositories", len(repos_list))
     return repos_list
-
-
-VERSION_REG = re.compile(
-    r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
-)
 
 
 async def list_image_tags(app: web.Application, image_key: str) -> List[str]:

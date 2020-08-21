@@ -11,7 +11,6 @@ from servicelib.aiopg_utils import (
     DataSourceName,
     PostgresRetryPolicyUponInitialization,
     create_pg_engine,
-    init_pg_tables,
     is_pg_responsive,
     raise_if_not_responsive,
 )
@@ -19,7 +18,6 @@ from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .db_config import CONFIG_SECTION_NAME
-from .db_models import metadata
 
 THIS_MODULE_NAME = __name__.split(".")[-1]
 THIS_SERVICE_NAME = "postgres"
@@ -51,9 +49,6 @@ async def pg_engine(app: web.Application):
     assert engine  # nosec
     app[APP_DB_ENGINE_KEY] = engine
 
-    if cfg["init_tables"]:
-        log.info("Initializing tables for %s", dsn)
-        init_pg_tables(dsn, schema=metadata)
 
     yield  # -------------------
 

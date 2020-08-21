@@ -18,7 +18,6 @@ install() {
     pushd tests/swarm-deploy; pip3 install -r requirements/ci.txt; popd
     make pull-version || ( (make pull-cache || true) && make build-x tag-version)
     make .env
-    echo WEBSERVER_DB_INITTABLES=1 >> .env
     pip list -v
     make info-images
 }
