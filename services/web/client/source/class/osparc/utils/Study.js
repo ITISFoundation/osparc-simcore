@@ -24,7 +24,7 @@ qx.Class.define("osparc.utils.Study", {
 
   statics: {
     getInaccessibleServicesMsg: function(inaccessibleServices) {
-      let msg = this.tr("Service(s) not accessible:<br>");
+      let msg = qx.locale.Manager.tr("Service(s) not accessible:<br>");
       inaccessibleServices.forEach(unaccessibleService => {
         msg += `- ${unaccessibleService.label}:${unaccessibleService.version}<br>`;
       });
