@@ -22,8 +22,6 @@ import aioredlock
 import attr
 from aiohttp import web
 
-import aioredlock
-
 from .config import get_service_deletion_timeout
 from .redis import get_redis_lock
 from .registry import get_registry

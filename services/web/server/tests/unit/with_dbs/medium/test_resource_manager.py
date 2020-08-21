@@ -128,9 +128,6 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
     await assert_status(resp, web.HTTPNoContent)
 
 # ------------------------ TESTS -------------------------------
-from typing import Callable
-
-
 async def test_anonymous_websocket_connection(
     client_session_id: str,
     socketio_url: Callable,

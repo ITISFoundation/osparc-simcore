@@ -56,20 +56,6 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
     }
   },
 
-  properties: {
-    headerText: {
-      check: "String",
-      init: "",
-      event: "changeHeaderText"
-    },
-
-    buttonText: {
-      check: "String",
-      init: "",
-      event: "changeButtonText"
-    }
-  },
-
   events: {
     "finished": "qx.event.type.Data"
   },

@@ -35,11 +35,6 @@ from simcore_service_webserver.users_api import (
     get_guest_user_ids,
     is_user_guest,
 )
-from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
-from simcore_service_webserver.users_api import delete_user, is_user_guest
-
-from .config import APP_GARBAGE_COLLECTOR_KEY, get_garbage_collector_interval
-from .registry import RedisResourceRegistry, get_registry
 
 from .config import APP_GARBAGE_COLLECTOR_KEY, get_garbage_collector_interval
 from .registry import RedisResourceRegistry, get_registry

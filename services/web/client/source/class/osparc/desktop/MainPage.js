@@ -224,9 +224,6 @@ qx.Class.define("osparc.desktop.MainPage", {
         const elements = ev.getData();
         this.__navBar.setPathButtons(elements);
       }, this);
-      this.__studyEditor.addListener("studyIsLocked", () => {
-        this.__showDashboard();
-      }, this);
 
       this.__studyEditor.addListener("studyIsLocked", () => {
         this.__showDashboard();
