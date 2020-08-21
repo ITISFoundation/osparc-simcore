@@ -243,6 +243,7 @@ class Executor:
         )
         # volume paths for car container (w/o prefix)
         result = "FAILURE"
+        log_processor_task = None
         try:
             docker_client: aiodocker.Docker = aiodocker.Docker()
             await self._post_messages(
@@ -326,7 +327,8 @@ class Executor:
                 # clean up the container
                 await container.delete(force=True)
             # stop monitoring logs now
-            log_processor_task.cancel()
+            if log_processor_task:
+                log_processor_task.cancel()
             # instrumentation
             await self.rabbit_mq.post_instrumentation_message(
                 {
@@ -340,7 +342,8 @@ class Executor:
                     "result": result,
                 }
             )
-            await log_processor_task
+            if log_processor_task:
+                await log_processor_task
 
     async def _process_task_output(self):
         """ There will be some files in the /output
