@@ -64,6 +64,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     __openButton: null,
     __deleteButton: null,
     __currentNodeId: null,
+    __toolbarInitMinWidth: null,
 
     _createChildControlImpl: function(id) {
       let control;
