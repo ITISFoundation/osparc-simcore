@@ -51,8 +51,9 @@ FORCE_START_GPU_MODE: str = os.environ.get("START_AS_MODE_GPU")
 TARGET_MPI_NODE_CPU_COUNT: int = int(os.environ.get("TARGET_MPI_NODE_CPU_COUNT", "-1"))
 
 # Redis configuration
-REDIS_CONNECTION_STRING: str = os.environ.get(
-    "REDIS_CONNECTION_STRING", "redis://redis:6379/0"
+REDIS_CONNECTION_STRING: str = "redis://{host}:{password}/0".format(
+    host=os.environ.get("REDIS_HOST", "redis"),
+    password=os.environ.get("REDIS_PORT", "6379"),
 )
 # used by the mpi lock to ensure the lock is acquired and released in time
 REDLOCK_REFRESH_INTERVAL_SECONDS: float = max(
