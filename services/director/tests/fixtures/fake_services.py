@@ -78,9 +78,6 @@ def push_services(loop, docker_registry, tmpdir):
     _clean_registry(registry_url, dependent_images)
 
 
-from random import randint
-
-
 def _build_push_image(
     docker_dir,
     registry_url,
