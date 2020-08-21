@@ -30,6 +30,7 @@ install_insecure_registry() {
     echo REGISTRY_URL=registry:5000
     # disable registry caching to ensure services are fetched
     echo DIRECTOR_REGISTRY_CACHING=False
+    echo DIRECTOR_REGISTRY_CACHING_TTL=0
   } >>.env
 
   # prepare insecure registry access for docker engine
@@ -77,7 +78,7 @@ setup_images() {
   install_insecure_registry
 
   # start simcore and set log-level
-  export LOG_LEVEL=WARNING
+  export LOG_LEVEL=DEBUG
   make up-version
 }
 
