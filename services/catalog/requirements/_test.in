@@ -9,6 +9,7 @@
 # 'services/catalog/tests/unit' dependencies
 jsonschema
 
+
 # testing
 mock
 pytest

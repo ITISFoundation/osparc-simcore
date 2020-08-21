@@ -38,6 +38,13 @@ tests-integration: ## runs integration tests against local+production images
 	export DOCKER_IMAGE_TAG=production; \
 	pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/integration
 
+tests: tests-unit tests-integration
+
+
+.PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
+build build-nc build-devel build-devel-nc build-cache build-cache-nc: openapi-specs ## docker image build in many flavours
+	# building ${APP_NAME} ...
+	@$(MAKE) --directory ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
 .PHONY: run-devel
 run-devel: ## runs app with pg service

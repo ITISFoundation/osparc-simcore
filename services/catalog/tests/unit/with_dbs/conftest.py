@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import Dict
 
 import pytest
-import sqlalchemy as sa
+from fastapi import FastAPI
+from starlette.testclient import TestClient
 
 from fastapi import FastAPI
 from simcore_service_catalog.api.dependencies.director import get_director_session

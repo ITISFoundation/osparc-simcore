@@ -186,6 +186,14 @@ qx.Class.define("osparc.component.export.ShareWith", {
       return [];
     },
 
+    showPrivate: function(show) {
+      this.__privateLayout.setVisibility(show ? "visible" : "excluded");
+    },
+
+    showPublic: function(show) {
+      this.__publicLayout.setVisibility(show ? "visible" : "excluded");
+    },
+
     getSelectedGroups: function() {
       let groupIDs = [];
       const selection = this.__rbManager.getSelection();

@@ -308,14 +308,16 @@ async def test_get_invalid_project(client, logged_user):
 
 
 async def test_update_invalid_project(client, logged_user):
-    url = client.app.router["replace_project"].url_for(project_id="some-fake-id")
+    url = client.app.router["replace_project"].url_for(
+        project_id="some-fake-id")
     resp = await client.get(url)
 
     await assert_status(resp, web.HTTPNotFound)
 
 
 async def test_delete_invalid_project(client, logged_user):
-    url = client.app.router["delete_project"].url_for(project_id="some-fake-id")
+    url = client.app.router["delete_project"].url_for(
+        project_id="some-fake-id")
     resp = await client.delete(url)
 
     await assert_status(resp, web.HTTPNotFound)
