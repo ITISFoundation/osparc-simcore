@@ -145,10 +145,8 @@ async def remove_disconnected_user_resources(
 
                 # if this user was a GUEST also remove it from the database
                 # with the only associated project owned
-                await remove_resources_if_guest_user(
-                    app=app,
-                    project_uuid=resource_value,
-                    user_id=int(dead_key["user_id"]),
+                await remove_guest_user_with_all_its_resources(
+                    app=app, user_id=int(dead_key["user_id"]),
                 )
 
 
@@ -175,25 +173,9 @@ async def remove_users_manually_marked_as_guests(
                 guest_user_id,
             )
             continue
-        logger.info("Will try to remove resources for guest '%s'", guest_user_id)
-        # get all projects for this user and then remove with remove_resources_if_guest_user
-        user_project_uuids = await app[
-            APP_PROJECT_DBAPI
-        ].list_all_projects_by_uuid_for_user(user_id=guest_user_id)
-        logger.info(
-            "Project uuids, to clean, for user '%s': '%s'",
-            guest_user_id,
-            user_project_uuids,
-        )
 
-        for project_uuid in user_project_uuids:
-            await remove_resources_if_guest_user(
-                app=app, project_uuid=project_uuid, user_id=guest_user_id,
-            )
-
-        # if there are not projects, just remove the user
-        await remove_resources_if_guest_user(
-            app=app, project_uuid=None, user_id=guest_user_id,
+        await remove_guest_user_with_all_its_resources(
+            app=app, user_id=guest_user_id,
         )
 
 
@@ -242,33 +224,60 @@ async def remove_orphaned_services(
     logger.info("Finished orphaned services removal")
 
 
-async def remove_resources_if_guest_user(
-    app: web.Application, project_uuid: str, user_id: int
-) -> None:
-    """When a guest user finishes using the platform its Posgtres
-    and S3/MinIO entries need to be removed
+async def remove_all_projects_for_user(app: web.Application, user_id: int) -> None:
     """
-    logger.debug("Will try to remove resources for user '%s' if GUEST", user_id)
-    if not await is_user_guest(app, user_id):
-        logger.debug("User is not GUEST, skipping removal of its project resources")
-        return
+    Goes through all the projects and will try to remove them but first it will check if
+    the project is shared with others. 
+    Based on the given access rights it will deltermine the action to take:
+    - if other users have read access & execute access it will get deleted
+    - if other users have write access the project's owner will be unset, 
+        resulting in the project still being available to others
+    """
 
-    if project_uuid is not None:
+    # TODO: apply access rights enforcement and checks
+    # NEED TO REMOVE ALL THESE FOR THE USER
+
+    # get all projects for this user and then remove with remove_guest_user_with_all_its_resources
+    user_project_uuids = await app[
+        APP_PROJECT_DBAPI
+    ].list_all_projects_by_uuid_for_user(user_id=user_id)
+    logger.info(
+        "Project uuids, to clean, for user '%s': '%s'", user_id, user_project_uuids,
+    )
+
+    for project_uuid in user_project_uuids:
         try:
             logger.debug(
                 "Removing project '%s' from the database", project_uuid,
             )
+            # TODO: ENFORCE THE CHECKS HERE
+            # - fetch the project and its access rithgt
             await delete_project_from_db(app, project_uuid, user_id)
         except ProjectNotFoundError:
             logging.warning("Project '%s' not found, skipping removal", project_uuid)
 
-    # when manually changing a user to GUEST, it might happen that it has more then one project
+
+async def remove_user(app: web.Application, user_id: int) -> None:
+    """Tries to remove a user, if the users still exists a warning message will be displayed"""
     try:
         await delete_user(app, user_id)
     except Exception:  # pylint: disable=broad-except
         logger.warning(
             "User '%s' still has some projects, could not be deleted", user_id
         )
+
+
+async def remove_guest_user_with_all_its_resources(
+    app: web.Application, user_id: int
+) -> None:
+    """Removes a GUUEST user with all its associated projects and S3/MinIO files"""
+    logger.debug("Will try to remove resources for user '%s' if GUEST", user_id)
+    if not await is_user_guest(app, user_id):
+        logger.debug("User is not GUEST, skipping cleanup")
+        return
+
+    await remove_all_projects_for_user(app=app, user_id=user_id)
+    await remove_user(app=app, user_id=user_id)
 
 
 async def garbage_collector_task(app: web.Application):
