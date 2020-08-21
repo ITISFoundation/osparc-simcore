@@ -248,6 +248,19 @@ async def remove_orphaned_services(
     logger.info("Finished orphaned services removal")
 
 
+async def remove_guest_user_with_all_its_resources(
+    app: web.Application, user_id: int
+) -> None:
+    """Removes a GUUEST user with all its associated projects and S3/MinIO files"""
+    logger.debug("Will try to remove resources for user '%s' if GUEST", user_id)
+    if not await is_user_guest(app, user_id):
+        logger.debug("User is not GUEST, skipping cleanup")
+        return
+
+    await remove_all_projects_for_user(app=app, user_id=user_id)
+    await remove_user(app=app, user_id=user_id)
+
+
 async def remove_all_projects_for_user(app: web.Application, user_id: int) -> None:
     """
     Goes through all the projects and will try to remove them but first it will check if
@@ -289,19 +302,6 @@ async def remove_user(app: web.Application, user_id: int) -> None:
         logger.warning(
             "User '%s' still has some projects, could not be deleted", user_id
         )
-
-
-async def remove_guest_user_with_all_its_resources(
-    app: web.Application, user_id: int
-) -> None:
-    """Removes a GUUEST user with all its associated projects and S3/MinIO files"""
-    logger.debug("Will try to remove resources for user '%s' if GUEST", user_id)
-    if not await is_user_guest(app, user_id):
-        logger.debug("User is not GUEST, skipping cleanup")
-        return
-
-    await remove_all_projects_for_user(app=app, user_id=user_id)
-    await remove_user(app=app, user_id=user_id)
 
 
 # TODO: tests for garbage collector
