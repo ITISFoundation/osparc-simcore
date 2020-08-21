@@ -43,38 +43,70 @@ logger = logging.getLogger(__name__)
 
 
 async def collect_garbage(registry: RedisResourceRegistry, app: web.Application):
+    """
+    Garbage collection has the task of removing trash from the system. The trash 
+    can be divided in:
+    
+    - Websockets & Redis (used to keep track of current active connections)
+    - GUEST users (used for temporary access to the system which are created on the fly)
+    - deletion of users. If a user needs to be deleted it is manually marked as GUEST 
+        in the database
+
+    The resources are Redis entries where all information regarding all the
+    websocket identifiers for all opened tabs accross all broser for each user
+    are stored.
+
+    The alive/dead keys are normal Redis keys. To each key and ALIVE key is associated,
+    which has an assigned TTL. The browser will call the `client_heartbeat` websocket
+    endpoint to refresh the TTL, thus declaring that the user (websocket connection) is
+    still active. The `resource_deletion_timeout_seconds` is theTTL of the key.
+
+    The field `garbage_collection_interval_seconds` defines the interval at which this 
+    function will be called.
+    """
     logger.info("collecting garbage...")
+
+    # alive_keys = currently "active" users
+    # dead_keys = users considered as "inactive"
+    # these keys hold references to more then one websocket connection ids
+    # the websocket ids are referred to as resources
     alive_keys, dead_keys = await registry.get_all_resource_keys()
     logger.debug("potential dead keys: %s", dead_keys)
 
-    # check if we find potential stuff to close
+    # clean up all the the websocket ids for the disconnected user
     for dead_key in dead_keys:
-        dead_resources = await registry.get_resources(dead_key)
-        if not dead_resources:
-            # no resource, remove the key then
+        dead_key_resources = await registry.get_resources(dead_key)
+        if not dead_key_resources:
+            # no websocket associated with this user, just removing key
             await registry.remove_key(dead_key)
             continue
-        logger.debug("found the following resources: %s", dead_resources)
-        # find if there are alive entries using these resources
-        for resource_name, resource_value in dead_resources.items():
+
+        logger.debug("Dead key '%s' resources: '%s'", dead_key, dead_key_resources)
+
+        # removing all websocket references for the disconnected user
+        for resource_name, resource_value in dead_key_resources.items():
+            # list of other websocket references to be removed
             other_keys = [
                 x
                 for x in await registry.find_keys((resource_name, resource_value))
                 if x != dead_key
             ]
-            # the resource ref can be closed anyway
-            logger.debug("removing resource entry: %s: %s", dead_key, dead_resources)
+            
+            # it is safe to remove the current websocket entry for this user
+            logger.debug("removing resource '%s' for '%s' key", resource_name, dead_key)
             await registry.remove_resource(dead_key, resource_name)
 
             # check if the resource is still in use in the alive keys
             if not any(elem in alive_keys for elem in other_keys):
-                # remove the resource from the other keys as well
+                # remove the remaining websocket entries
                 remove_tasks = [
                     registry.remove_resource(x, resource_name) for x in other_keys
                 ]
                 if remove_tasks:
                     logger.debug(
-                        "removing resource entry: %s: %s", other_keys, dead_resources
+                        "removing resource entry: %s: %s",
+                        other_keys,
+                        dead_key_resources,
                     )
                     await logged_gather(*remove_tasks, reraise=False)
 
@@ -84,6 +116,7 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
                     resource_value,
                     dead_key,
                 )
+                # inform that the project can be closed on the backend side
                 await emit(
                     event="SIGNAL_PROJECT_CLOSE",
                     user_id=None,
@@ -91,6 +124,8 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
                     app=app,
                 )
 
+                # if this user was a GUEST also remove it from the database 
+                # with all the associated projects
                 await remove_resources_if_guest_user(
                     app=app,
                     project_uuid=resource_value,
@@ -260,3 +295,18 @@ async def setup_garbage_collector_task(app: web.Application):
 
 def setup(app: web.Application):
     app.cleanup_ctx.append(setup_garbage_collector_task)
+
+
+# TODO: tests for garbage collector
+# - a User with more then 2 projects
+# - a user without projects
+# - a user with just 1 project
+#
+#  The user can be:
+# - connected via browser (websocket connection is up)
+# - disconnected (no websocket connection)
+
+# When DELETING the project check:
+# - if the project has multiple owners (it is shared with more then 1 person looking at the access rights),
+#   set the user to NULL, if it is just a VIEWER user, then we do not care and remove it
+# - if the project is not shared (only user primary_gid in access rights) remove it
