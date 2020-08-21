@@ -164,9 +164,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const study = this.getStudy();
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree(study);
-      nodesTree.addListener("addNode", () => {
-        this.__addNode();
-      }, this);
       nodesTree.addListener("removeNode", e => {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
@@ -341,13 +338,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       filePicker.addListener("finished", () => filePickerWin.close(), this);
       filePickerWin.addListener("close", () => showParentWorkbench());
-    },
-
-    __addNode: function() {
-      if (this.__mainPanel.getMainView() !== this.__workbenchUI) {
-        return;
-      }
-      this.__workbenchUI.openServiceCatalog();
     },
 
     __removeNode: function(nodeId) {

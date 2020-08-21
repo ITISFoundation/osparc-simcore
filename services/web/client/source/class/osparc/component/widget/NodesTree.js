@@ -55,7 +55,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
   events: {
     "nodeDoubleClicked": "qx.event.type.Data",
-    "addNode": "qx.event.type.Event",
     "removeNode": "qx.event.type.Data",
     "exportNode": "qx.event.type.Data",
     "changeSelectedNode": "qx.event.type.Data"
@@ -92,13 +91,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     __buildToolbar: function() {
       const iconSize = 14;
       const toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
-
-      const newButton = new qx.ui.toolbar.Button(this.tr("New"), "@FontAwesome5Solid/plus/"+iconSize, new qx.ui.command.Command("Ctrl+N"));
-      newButton.addListener("execute", e => {
-        this.__addNode();
-      }, this);
-      osparc.utils.Utils.setIdToWidget(newButton, "newServiceBtn");
-      toolbar.add(newButton);
 
       toolbar.addSpacer();
 
@@ -250,10 +242,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       }
       let selectedItem = treeSelection.toArray()[0];
       return selectedItem;
-    },
-
-    __addNode: function() {
-      this.fireEvent("addNode");
     },
 
     __exportDAG: function() {
