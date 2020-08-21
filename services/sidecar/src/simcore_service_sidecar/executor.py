@@ -234,7 +234,7 @@ class Executor:
                 "Binds": [
                     f"{self.shared_folders.input_folder}:/input/{self.task.job_id}",
                     f"{self.shared_folders.output_folder}:/output/{self.task.job_id}",
-                    f"{self.shared_folders.log_folder}:/log/{self.task.job_id}"
+                    f"{self.shared_folders.log_folder}:/log/{self.task.job_id}",
                 ],
             },
         }
