@@ -348,7 +348,7 @@ qx.Class.define("osparc.store.Store", {
         const inaccessibleServices = [];
         const nodes = Object.values(studyData.workbench);
         nodes.forEach(node => {
-          const idx = inaccessibleServices.findIndex(unaccessibleSrv => unaccessibleSrv.key === node.key && unaccessibleSrv.version === node.version);
+          const idx = inaccessibleServices.findIndex(inaccessibleSrv => inaccessibleSrv.key === node.key && inaccessibleSrv.version === node.version);
           if (idx === -1) {
             inaccessibleServices.push({
               key: node["key"],
@@ -361,7 +361,7 @@ qx.Class.define("osparc.store.Store", {
           .then(services => {
             nodes.forEach(node => {
               if (osparc.utils.Services.getFromObject(services, node.key, node.version)) {
-                const idx = inaccessibleServices.findIndex(unaccessibleSrv => unaccessibleSrv.key === node.key && unaccessibleSrv.version === node.version);
+                const idx = inaccessibleServices.findIndex(inaccessibleSrv => inaccessibleSrv.key === node.key && inaccessibleSrv.version === node.version);
                 if (idx !== -1) {
                   inaccessibleServices.splice(idx, 1);
                 }
