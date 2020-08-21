@@ -50,25 +50,6 @@ RESOURCE_NAME = "projects"
 API_PREFIX = "/" + API_VERSION
 
 
-@pytest.fixture
-def mocked_director_subsystem(mocker):
-    mock_director_api = {
-        "get_running_interactive_services": mocker.patch(
-            "simcore_service_webserver.director.director_api.get_running_interactive_services",
-            return_value=future_with_result(""),
-        ),
-        "start_service": mocker.patch(
-            "simcore_service_webserver.director.director_api.start_service",
-            return_value=future_with_result(""),
-        ),
-        "stop_service": mocker.patch(
-            "simcore_service_webserver.director.director_api.stop_service",
-            return_value=future_with_result(""),
-        ),
-    }
-    return mock_director_api
-
-
 DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS: int = 3
 DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
 
@@ -182,16 +163,6 @@ async def template_project(
         print("-----> added template project", template_project["name"])
         yield template_project
         print("<----- removed template project", template_project["name"])
-
-
-@pytest.fixture
-def computational_system_mock(mocker):
-    mock_fun = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.update_pipeline_db",
-        return_value=Future(),
-    )
-    mock_fun.return_value.set_result("")
-    return mock_fun
 
 
 @pytest.fixture
