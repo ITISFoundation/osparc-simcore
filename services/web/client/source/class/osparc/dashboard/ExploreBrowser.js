@@ -301,7 +301,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       store.getInaccessibleServices(templateData)
         .then(inaccessibleServices => {
           if (inaccessibleServices.length) {
-            this._hideLoadingPage();
             const msg = osparc.utils.Study.getInaccessibleServicesMsg(inaccessibleServices);
             throw new Error(msg);
           }
@@ -322,6 +321,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
             .catch(err => {
               console.error(err);
             });
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          this._hideLoadingPage();
+          return;
         });
     },
 
