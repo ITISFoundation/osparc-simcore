@@ -60,4 +60,3 @@ REDLOCK_REFRESH_INTERVAL_SECONDS: float = max(
     float(os.environ.get("REDLOCK_REFRESH_INTERVAL_SECONDS", "5.0")), 1.0
 )  # enforce at least 1 second
 
-
