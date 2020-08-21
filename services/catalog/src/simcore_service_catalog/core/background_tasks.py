@@ -116,6 +116,8 @@ async def _create_service_default_access_rights(
                 owner_gid = possible_gid
     if not owner_gid:
         logger.warning("service %s:%s has no owner", service.key, service.version)
+    else:
+        reader_gids.append(owner_gid)
 
     # we add the owner with full rights, unless it's everyone
     access_rights = [
