@@ -11,7 +11,6 @@ director:
   port: 8001
   version: v0
 db:
-  init_tables: False
   postgres:
     database: simcoredb
     endpoint: postgres:5432

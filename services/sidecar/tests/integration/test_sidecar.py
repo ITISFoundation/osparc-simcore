@@ -128,11 +128,11 @@ def _assert_incoming_data_logs(
         assert instrumentation_messages[task][1]["result"] == "SUCCESS"
 
         # the sidecar should have a fixed amount of logs
-        assert sidecar_logs[task]
+        assert sidecar_logs[task], f"No sidecar logs for {task}"
         # the tasks should have a variable amount of logs
-        assert tasks_logs[task]
+        assert tasks_logs[task], f"No logs from {task}"
         # the progress should at least have the progress 1.0 log
-        assert progress_logs[task]
+        assert progress_logs[task], f"No progress of {task}"
         assert 1.0 in progress_logs[task]
 
     return (sidecar_logs, tasks_logs, progress_logs)

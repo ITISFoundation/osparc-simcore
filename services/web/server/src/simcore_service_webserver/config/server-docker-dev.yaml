@@ -22,7 +22,6 @@ catalog:
   port: 8000
   version: v0
 db:
-  init_tables: False
   postgres:
     database: ${POSTGRES_DB}
     endpoint: ${POSTGRES_ENDPOINT}

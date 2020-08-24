@@ -72,7 +72,6 @@ def create_environ(*, skip_host_environ: bool = False) -> Dict[str, str]:
     # as docker-compose does: i.e. x = ${VARIABLE:default}.
     #
     # Instead, the variable has to be defined here ------------
-    environ.setdefault("WEBSERVER_DB_INITTABLES", "0")
     environ.setdefault("SMTP_USERNAME", "None")
     environ.setdefault("SMTP_PASSWORD", "None")
     environ.setdefault("SMTP_TLS_ENABLED", "0")

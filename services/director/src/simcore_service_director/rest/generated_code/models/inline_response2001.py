@@ -5,7 +5,7 @@ from datetime import date, datetime
 from typing import List, Dict, Type
 
 from .base_model_ import Model
-from .inline_response2001_data import InlineResponse2001Data
+from .simcore_node import SimcoreNode
 from .. import util
 
 
@@ -15,14 +15,14 @@ class InlineResponse2001(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: List[InlineResponse2001Data]=None, error: object=None):
+    def __init__(self, data: List[SimcoreNode]=None, error: object=None):
         """InlineResponse2001 - a model defined in OpenAPI
 
         :param data: The data of this InlineResponse2001.
         :param error: The error of this InlineResponse2001.
         """
         self.openapi_types = {
-            'data': List[InlineResponse2001Data],
+            'data': List[SimcoreNode],
             'error': object
         }
 
@@ -49,7 +49,7 @@ class InlineResponse2001(Model):
 
 
         :return: The data of this InlineResponse2001.
-        :rtype: List[InlineResponse2001Data]
+        :rtype: List[SimcoreNode]
         """
         return self._data
 
@@ -59,7 +59,7 @@ class InlineResponse2001(Model):
 
 
         :param data: The data of this InlineResponse2001.
-        :type data: List[InlineResponse2001Data]
+        :type data: List[SimcoreNode]
         """
         if data is None:
             raise ValueError("Invalid value for `data`, must not be `None`")

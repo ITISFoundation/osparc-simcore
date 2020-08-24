@@ -1,6 +1,6 @@
 import asyncio
 import logging
-import os
+import uuid
 from typing import Awaitable, List
 
 import aiodocker
@@ -13,6 +13,7 @@ from simcore_postgres_database.sidecar_models import SUCCESS, comp_pipeline, com
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 from simcore_service_sidecar import config
 from simcore_service_sidecar.mpi_lock import acquire_mpi_lock
+
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +92,7 @@ def is_gpu_node() -> bool:
             }
             try:
                 await docker.containers.run(
-                    config=spec_config, name=f"sidecar_{os.getpid()}_test_gpu"
+                    config=spec_config, name=f"sidecar_{uuid.uuid4()}_test_gpu"
                 )
                 return True
             except aiodocker.exceptions.DockerError as e:

@@ -45,14 +45,9 @@ def prepare_all_services(
     return services
 
 
-@pytest.fixture(scope="module")
-def create_db_on_start(devel_environ: Dict[str, str]):
-    devel_environ["WEBSERVER_DB_INITTABLES"] = "1"
-
 
 @pytest.fixture(scope="module")
 def make_up_prod(
-    create_db_on_start,
     prepare_all_services: Dict,
     simcore_docker_compose: Dict,
     ops_docker_compose: Dict,

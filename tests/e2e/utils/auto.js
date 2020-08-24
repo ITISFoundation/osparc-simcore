@@ -38,7 +38,7 @@ async function logOut(page) {
 
   await page.waitForSelector('[osparc-test-id="userMenuMainBtn"]', {
     visible: true,
-    timeout: 1000
+    timeout: 2000
   });
   await utils.waitAndClick(page, '[osparc-test-id="userMenuMainBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuLogoutBtn"]');

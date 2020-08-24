@@ -32,6 +32,7 @@ SERVICES_LIST := \
 	api-server \
 	catalog \
 	director \
+	migration \
 	sidecar \
 	storage \
 	webserver
@@ -204,10 +205,15 @@ up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Dep
 	$(MAKE_C) services/web/client follow-dev-logs
 
 
-up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable)
+up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable or target=<service-name> to deploy a single service)
+ifeq ($(target),)
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy -c $< $(SWARM_STACK_NAME)
 	$(MAKE) .deploy-ops
+else
+	# deploys ONLY $(target) service
+	docker-compose -f $< up --detach $(target)
+endif
 
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Deploy stack $(SWARM_STACK_NAME)
@@ -389,6 +395,7 @@ postgres-upgrade: ## initalize or upgrade postgres db to latest state
 	@$(MAKE_C) packages/postgres-database/docker build
 	@$(MAKE_C) packages/postgres-database/docker upgrade
 
+
 local_registry=registry
 .PHONY: local-registry
 local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
@@ -473,7 +480,7 @@ endif
 
 ## CLEAN -------------------------------
 
-.PHONY: clean clean-images clean-venv clean-all clean-ps
+.PHONY: clean clean-images clean-venv clean-all clean-more
 
 _git_clean_args := -dxf -e .vscode -e TODO.md -e .venv
 _running_containers = $(shell docker ps -aq)
@@ -494,8 +501,11 @@ clean: .check-clean ## cleans all unversioned files in project and temp files cr
 	# Cleaning web/client
 	@$(MAKE_C) services/web/client clean-files
 
-clean-ps: ## stops and deletes running containers
-	$(if $(_running_containers), docker rm -f $(_running_containers),)
+clean-more: ## cleans containers and unused volumes
+	# stops and deletes running containers
+	@$(if $(_running_containers), docker rm -f $(_running_containers),)
+	# pruning unused volumes
+	docker volume prune --force
 
 clean-images: ## removes all created images
 	# Cleaning all service images
@@ -506,7 +516,7 @@ clean-images: ## removes all created images
 	# Cleaning postgres maintenance
 	@$(MAKE_C) packages/postgres-database/docker clean
 
-clean-all: clean clean-ps clean-images # Deep clean including .venv and produced images
+clean-all: clean clean-more clean-images # Deep clean including .venv and produced images
 	-rm -rf .venv
 
 
