@@ -302,7 +302,7 @@ class Executor:
             container_data = await container.show()
             if container_data["State"]["ExitCode"] > 0:
                 raise exceptions.SidecarException(
-                    f"{docker_image} completed with error code {container_data['State']['ExitCode']}: {container_data['State']['Error']}"
+                    f"{docker_image} completed with error code {container_data['State']['ExitCode']}:\n {container_data['State']['Error']}\n:Last logs:\n{container.logs(stdout=True, stderr=True, tail=10)}"
                 )
             # ensure progress 1.0 is sent
             await self._post_messages(LogType.PROGRESS, "1.0")
