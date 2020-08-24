@@ -6,30 +6,30 @@ from pathlib import Path
 from typing import Dict, Optional
 
 import aiodocker
-from aiodocker.volumes import DockerVolume
 import aiopg
 import attr
-from celery.utils.log import get_task_logger
 from packaging import version
 from tenacity import retry, stop_after_attempt
 
+from celery.utils.log import get_task_logger
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_sdk import node_data, node_ports
 from simcore_sdk.node_ports.dbmanager import DBManager
 
 from . import config, exceptions
+from .boot_mode import get_boot_mode
 from .log_parser import LogType, monitor_logs_task
 from .rabbitmq import RabbitMQ
-from .boot_mode import get_boot_mode
+from .utils import get_volume_mount_point
 
 log = get_task_logger(__name__)
 
 
 @attr.s(auto_attribs=True)
 class TaskSharedVolumes:
-    input_folder: Path = None
-    output_folder: Path = None
-    log_folder: Path = None
+    input_folder: Optional[Path] = None
+    output_folder: Optional[Path] = None
+    log_folder: Optional[Path] = None
 
     @classmethod
     def from_task(cls, task: aiopg.sa.result.RowProxy):
@@ -216,33 +216,13 @@ class Executor:
         ]
         env_vars.append(f"SC_COMP_SERVICES_SCHEDULED_AS={get_boot_mode().value}")
 
-        async def _get_volume_mount_point(volume_name: str) -> str:
-            try:
-                docker_client: aiodocker.Docker = aiodocker.Docker()
-                volume_attributes = await DockerVolume(
-                    docker_client, volume_name
-                ).show()
-                VOLUME_MOUNTPOINT = "Mountpoint"
-                if VOLUME_MOUNTPOINT in volume_attributes:
-                    return volume_attributes[VOLUME_MOUNTPOINT]
-
-            except aiodocker.exceptions.DockerError:
-                log.exception(
-                    "Unknown error while trying to run %s with parameters %s",
-                    docker_image,
-                    docker_container_config,
-                )
-            raise exceptions.SidecarException(
-                f"Could not find mountpoint to {volume_name}. If you are running Windows without WSL2, you're out of luck. Else this is a real bigger issue!"
-            )
-
-        host_input_path = await _get_volume_mount_point(
+        host_input_path = await get_volume_mount_point(
             config.SIDECAR_DOCKER_VOLUME_INPUT
         )
-        host_output_path = await _get_volume_mount_point(
+        host_output_path = await get_volume_mount_point(
             config.SIDECAR_DOCKER_VOLUME_OUTPUT
         )
-        host_log_path = await _get_volume_mount_point(config.SIDECAR_DOCKER_VOLUME_LOG)
+        host_log_path = await get_volume_mount_point(config.SIDECAR_DOCKER_VOLUME_LOG)
 
         docker_container_config = {
             "Env": env_vars,

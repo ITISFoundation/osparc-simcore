@@ -6,6 +6,7 @@ from typing import Awaitable, List
 import aiodocker
 import aiopg
 import networkx as nx
+from aiodocker import DockerVolume
 from sqlalchemy import and_
 
 from celery import Celery
@@ -14,6 +15,7 @@ from simcore_sdk.config.rabbit import Config as RabbitConfig
 from simcore_service_sidecar import config
 from simcore_service_sidecar.mpi_lock import acquire_mpi_lock
 
+from .exceptions import SidecarException
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +110,7 @@ def is_gpu_node() -> bool:
 def start_as_mpi_node() -> bool:
     """
     Checks if this node can be a taraget to start as an MPI node.
-    If it can it will try to grab a Redlock, ensure it is the only service who can be 
+    If it can it will try to grab a Redlock, ensure it is the only service who can be
     started as MPI.
     """
     import subprocess
@@ -134,3 +136,20 @@ def assemble_celery_app(task_default_queue: str, rabbit_config: RabbitConfig) ->
     )
     app.conf.task_default_queue = task_default_queue
     return app
+
+
+async def get_volume_mount_point(volume_name: str) -> str:
+    try:
+        docker_client: aiodocker.Docker = aiodocker.Docker()
+        volume_attributes = await DockerVolume(docker_client, volume_name).show()
+        VOLUME_MOUNTPOINT = "Mountpoint"
+        if VOLUME_MOUNTPOINT in volume_attributes:
+            return volume_attributes[VOLUME_MOUNTPOINT]
+
+    except aiodocker.exceptions.DockerError:
+        logger.exception(
+            "Unknown error while accessing docker volume %s", volume_name,
+        )
+    raise SidecarException(
+        f"Could not find mountpoint to {volume_name}. If you are running Windows without WSL2, you're out of luck. Else this is a real bigger issue!"
+    )
