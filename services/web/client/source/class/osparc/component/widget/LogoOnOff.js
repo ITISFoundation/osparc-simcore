@@ -40,7 +40,8 @@ qx.Class.define("osparc.component.widget.LogoOnOff", {
 
     const offLogo = new qx.ui.basic.Image("osparc/osparc-red.svg").set({
       width: 92,
-      height: 32,
+      height: 41,
+      paddingTop: 9,
       scale: true
     });
     this.add(offLogo);
