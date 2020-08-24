@@ -90,7 +90,9 @@ class RabbitMQ(BaseModel):
         log.debug("Closing connection...")
         await self.connection.close()
 
-    async def _post_message(self, exchange: aio_pika.Exchange, data: Dict[str, str]):
+    async def _post_message(
+        self, exchange: aio_pika.Exchange, data: Dict[str, Union[str, Any]]
+    ):
         await exchange.publish(
             aio_pika.Message(body=json.dumps(data).encode()), routing_key=""
         )
