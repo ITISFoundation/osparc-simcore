@@ -13,7 +13,6 @@ director:
 socketio:
   enabled: True
 db:
-  init_tables: False
   postgres:
     database: test
     user: admin

@@ -14,31 +14,31 @@ class InlineResponse200Data(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, api_version: str=None, name: str=None, status: str=None, version: str=None):
+    def __init__(self, name: str=None, status: str=None, api_version: str=None, version: str=None):
         """InlineResponse200Data - a model defined in OpenAPI
 
-        :param api_version: The api_version of this InlineResponse200Data.
         :param name: The name of this InlineResponse200Data.
         :param status: The status of this InlineResponse200Data.
+        :param api_version: The api_version of this InlineResponse200Data.
         :param version: The version of this InlineResponse200Data.
         """
         self.openapi_types = {
-            'api_version': str,
             'name': str,
             'status': str,
+            'api_version': str,
             'version': str
         }
 
         self.attribute_map = {
-            'api_version': 'api_version',
             'name': 'name',
             'status': 'status',
+            'api_version': 'api_version',
             'version': 'version'
         }
 
-        self._api_version = api_version
         self._name = name
         self._status = status
+        self._api_version = api_version
         self._version = version
 
     @classmethod
@@ -49,27 +49,6 @@ class InlineResponse200Data(Model):
         :return: The inline_response_200_data of this InlineResponse200Data.
         """
         return util.deserialize_model(dikt, cls)
-
-    @property
-    def api_version(self):
-        """Gets the api_version of this InlineResponse200Data.
-
-
-        :return: The api_version of this InlineResponse200Data.
-        :rtype: str
-        """
-        return self._api_version
-
-    @api_version.setter
-    def api_version(self, api_version):
-        """Sets the api_version of this InlineResponse200Data.
-
-
-        :param api_version: The api_version of this InlineResponse200Data.
-        :type api_version: str
-        """
-
-        self._api_version = api_version
 
     @property
     def name(self):
@@ -112,6 +91,27 @@ class InlineResponse200Data(Model):
         """
 
         self._status = status
+
+    @property
+    def api_version(self):
+        """Gets the api_version of this InlineResponse200Data.
+
+
+        :return: The api_version of this InlineResponse200Data.
+        :rtype: str
+        """
+        return self._api_version
+
+    @api_version.setter
+    def api_version(self, api_version):
+        """Sets the api_version of this InlineResponse200Data.
+
+
+        :param api_version: The api_version of this InlineResponse200Data.
+        :type api_version: str
+        """
+
+        self._api_version = api_version
 
     @property
     def version(self):

@@ -10,10 +10,10 @@ aiofiles==0.5.0           # via -r requirements/_base.in
 aiohttp==3.6.2            # via -r requirements/../../../packages/service-library/requirements/_base.in, -r requirements/_base.in, aiobotocore, aiozipkin
 aioitertools==0.7.0       # via aiobotocore
 aiopg[sa]==1.0.0          # via -r requirements/../../../packages/service-library/requirements/_base.in, -r requirements/_base.in
-aiozipkin==0.6.0          # via -r requirements/../../../packages/service-library/requirements/_base.in
+aiozipkin==0.7.0          # via -r requirements/../../../packages/service-library/requirements/_base.in
 async-timeout==3.0.1      # via aiohttp
 attrs==19.3.0             # via -r requirements/../../../packages/service-library/requirements/_base.in, aiohttp, jsonschema, openapi-core
-blackfynn==3.6.3          # via -r requirements/_base.in
+blackfynn==4.0.0          # via -r requirements/_base.in
 boto3==1.12.32            # via -r requirements/_base.in, blackfynn
 botocore==1.15.32         # via aiobotocore, boto3, s3transfer
 certifi==2020.6.20        # via requests
@@ -24,19 +24,19 @@ docopt==0.6.2             # via blackfynn
 docutils==0.15.2          # via botocore
 future==0.18.2            # via blackfynn
 idna-ssl==1.1.0           # via aiohttp
-idna==2.9                 # via idna-ssl, requests, yarl
-importlib-metadata==1.6.1  # via jsonschema
+idna==2.10                # via idna-ssl, requests, yarl
+importlib-metadata==1.7.0  # via jsonschema
 isodate==0.6.0            # via openapi-core
 jmespath==0.10.0          # via boto3, botocore
 jsonschema==3.2.0         # via -r requirements/../../../packages/service-library/requirements/_base.in, openapi-spec-validator
 lazy-object-proxy==1.4.3  # via -r requirements/../../../packages/service-library/requirements/_base.in, openapi-core
-marshmallow==3.6.1        # via -r requirements/_base.in
+marshmallow==3.7.1        # via -r requirements/_base.in
 multidict==4.7.6          # via aiohttp, yarl
 openapi-core==0.12.0      # via -r requirements/../../../packages/service-library/requirements/_base.in
-openapi-spec-validator==0.2.8  # via openapi-core
+openapi-spec-validator==0.2.9  # via openapi-core
 prometheus-client==0.8.0  # via -r requirements/../../../packages/service-library/requirements/_base.in
-protobuf==3.12.2          # via blackfynn
-psutil==5.7.0             # via blackfynn
+protobuf==3.13.0          # via blackfynn
+psutil==5.7.2             # via blackfynn
 psycopg2-binary==2.8.5    # via -r requirements/../../../packages/service-library/requirements/_base.in, aiopg, sqlalchemy
 pyrsistent==0.16.0        # via jsonschema
 python-dateutil==2.8.1    # via blackfynn, botocore
@@ -52,13 +52,13 @@ strict-rfc3339==0.7       # via openapi-core
 tenacity==6.2.0           # via -r requirements/../../../packages/service-library/requirements/_base.in, -r requirements/_base.in
 trafaret-config==2.0.2    # via -r requirements/_base.in
 trafaret==2.0.2           # via -r requirements/../../../packages/service-library/requirements/_base.in, -r requirements/_base.in, trafaret-config
-typing-extensions==3.7.4.2  # via aiohttp, aioitertools
-ujson==3.0.0              # via -r requirements/../../../packages/service-library/requirements/_base.in
-urllib3==1.25.9           # via botocore, requests
+typing-extensions==3.7.4.2  # via aiohttp, aioitertools, yarl
+ujson==3.1.0              # via -r requirements/../../../packages/service-library/requirements/_base.in
+urllib3==1.25.10          # via botocore, requests
 websocket-client==0.57.0  # via blackfynn
 werkzeug==1.0.1           # via -r requirements/../../../packages/service-library/requirements/_base.in
 wrapt==1.12.1             # via aiobotocore, deprecated
-yarl==1.4.2               # via -r requirements/../../../packages/postgres-database/requirements/_base.in, aiohttp
+yarl==1.5.1               # via -r requirements/../../../packages/postgres-database/requirements/_base.in, aiohttp
 zipp==3.1.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:

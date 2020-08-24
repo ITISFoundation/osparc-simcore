@@ -1,3 +1,7 @@
+import re
+from copy import deepcopy
+from typing import Dict, Union
+
 import sqlalchemy as sa
 from sqlalchemy.engine import Engine
 from yarl import URL
@@ -47,3 +51,20 @@ def raise_if_not_responsive(dsn: URL, *, verbose=False):
         conn.close()
     finally:
         engine.dispose()
+
+
+url_pass_re = re.compile(r":(\w+)@")
+
+
+def hide_url_pass(url: Union[str, URL]) -> str:
+    return url_pass_re.sub(":********@", str(url))
+
+
+def hide_dict_pass(data: Dict) -> Dict:
+    data_clone = deepcopy(data)
+    for key in data_clone:
+        if "pass" in key:
+            data_clone[key] = "*" * 8
+        elif "url" == key:
+            data_clone[key] = hide_url_pass(data[key])
+    return data_clone
