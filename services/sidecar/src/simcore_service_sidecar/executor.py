@@ -219,7 +219,9 @@ class Executor:
         async def _get_volume_mount_point(volume_name: str) -> str:
             try:
                 docker_client: aiodocker.Docker = aiodocker.Docker()
-                volume_attributes = await DockerVolume(docker_client, volume_name).show()
+                volume_attributes = await DockerVolume(
+                    docker_client, volume_name
+                ).show()
                 VOLUME_MOUNTPOINT = "Mountpoint"
                 if VOLUME_MOUNTPOINT in volume_attributes:
                     return volume_attributes[VOLUME_MOUNTPOINT]
@@ -231,11 +233,15 @@ class Executor:
                     docker_container_config,
                 )
             raise exceptions.SidecarException(
-                    f"Could not find mountpoint to {volume_name}. If you are running Windows without WSL2, you're out of luck. Else this is a real bigger issue!"
-                )
+                f"Could not find mountpoint to {volume_name}. If you are running Windows without WSL2, you're out of luck. Else this is a real bigger issue!"
+            )
 
-        host_input_path = await _get_volume_mount_point(config.SIDECAR_DOCKER_VOLUME_INPUT)
-        host_output_path = await _get_volume_mount_point(config.SIDECAR_DOCKER_VOLUME_OUTPUT)
+        host_input_path = await _get_volume_mount_point(
+            config.SIDECAR_DOCKER_VOLUME_INPUT
+        )
+        host_output_path = await _get_volume_mount_point(
+            config.SIDECAR_DOCKER_VOLUME_OUTPUT
+        )
         host_log_path = await _get_volume_mount_point(config.SIDECAR_DOCKER_VOLUME_LOG)
 
         docker_container_config = {
