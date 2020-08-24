@@ -297,9 +297,9 @@ async def _create_docker_service_params(
                 )
         elif param["name"] == "mount":
             log.debug("Found mount parameter %s", param["value"])
-            mount_settings = _parse_mount_settings(param["value"])
+            mount_settings: List[Dict] = _parse_mount_settings(param["value"])
             if mount_settings:
-                docker_params["task_template"]["ContainerSpec"]["Mounts"].append(
+                docker_params["task_template"]["ContainerSpec"]["Mounts"].extend(
                     mount_settings
                 )
 
