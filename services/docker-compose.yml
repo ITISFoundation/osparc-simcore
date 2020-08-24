@@ -38,8 +38,10 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+      - BACKGROUND_TASK_REST_TIME=${CATALOG_BACKGROUND_TASK_REST_TIME:-60}
     depends_on:
       - postgres
+      - director
     networks:
       - default
 
@@ -104,6 +106,9 @@ services:
     env_file:
       - ../.env
     depends_on:
+      - storage
+      - catalog
+      - director
       - postgres
       - rabbit
       - redis
@@ -217,6 +222,21 @@ services:
       - default
       - computational_services_subnet
 
+  migration:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    environment:
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+    depends_on:
+      - postgres
+    networks:
+      - default
+
   postgres:
     image: postgres:10.11
     init: true
@@ -250,6 +270,7 @@ services:
         "-c",
         "tcp_keepalives_count=5",
       ]
+
   redis:
     image: redis:5.0-alpine
     init: true

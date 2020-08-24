@@ -148,8 +148,14 @@ shell: ## runs shell in production container
 # SUBTASKS
 #
 
-.PHONY: _check_venv_active
-_check_venv_active:
+.PHONY: _check_python_version _check_venv_active
+
+_check_python_version:
+	# Checking that runs with correct python version
+	@python3 -c "import sys; assert sys.version_info[:2]==(3,6), f'Expected python 3.6, got {sys.version_info}'"
+
+
+_check_venv_active: _check_python_version
 	# checking whether virtual environment was activated
 	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
 

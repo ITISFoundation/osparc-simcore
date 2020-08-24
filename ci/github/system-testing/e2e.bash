@@ -30,6 +30,9 @@ install_insecure_registry() {
     echo REGISTRY_URL=registry:5000
     # disable registry caching to ensure services are fetched
     echo DIRECTOR_REGISTRY_CACHING=False
+    echo DIRECTOR_REGISTRY_CACHING_TTL=0
+    # shorten time to sync services from director since registry comes later
+    echo CATALOG_BACKGROUND_TASK_REST_TIME=1
   } >>.env
 
   # prepare insecure registry access for docker engine
@@ -122,12 +125,6 @@ setup_database() {
   docker ps --filter "ancestor=$IMAGE_NAME"
   docker inspect "$(docker ps --filter "ancestor=$IMAGE_NAME" -q)"
 
-  # Cleaning up volumes
-  docker volume prune --force
-
-  # migrates tables
-  make pg-db-tables
-
   # Injects project template
   make inject-templates-in-db
   popd
@@ -154,11 +151,11 @@ recover_artifacts() {
   # get docker logs.
   # WARNING: dumping long logs might take hours!!
   mkdir simcore_logs
-  (docker service logs --timestamps --tail=300 --details simcore_webserver >simcore_logs/webserver.log 2>&1) || true
-  (docker service logs --timestamps --tail=200 --details simcore_director >simcore_logs/director.log 2>&1) || true
-  (docker service logs --timestamps --tail=200 --details simcore_storage >simcore_logs/storage.log 2>&1) || true
-  (docker service logs --timestamps --tail=200 --details simcore_sidecar >simcore_logs/sidecar.log 2>&1) || true
-  (docker service logs --timestamps --tail=200 --details simcore_catalog >simcore_logs/catalog.log 2>&1) || true
+  (docker service logs --timestamps --tail=300 --details ${SWARM_STACK_NAME}_webserver >simcore_logs/webserver.log 2>&1) || true
+  (docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_director >simcore_logs/director.log 2>&1) || true
+  (docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_storage >simcore_logs/storage.log 2>&1) || true
+  (docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_sidecar >simcore_logs/sidecar.log 2>&1) || true
+  (docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_catalog >simcore_logs/catalog.log 2>&1) || true
 }
 
 clean_up() {

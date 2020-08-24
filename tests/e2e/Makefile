@@ -30,19 +30,6 @@ install: ## install testing framework
 	@pushd "$(abspath $(CURDIR)/../../packages/postgres-database)"; pip install -r requirements/prod.txt; popd
 
 
-.PHONY: pg-db-tables
-pg-db-tables: ## inits pg database tables
-	# Cleaning up tables
-	sc-pg clean
-	-sc-pg info
-	# Discovering database
-	sc-pg discover -u scu -p adminadmin -d simcoredb
-	# Upgrading database
-	sc-pg upgrade
-	sc-pg info
-	sc-pg clean
-
-
 registry-up: ## deploys the insecure docker registry in the simcore network
 	docker stack deploy -c docker-compose.yml registry
 
@@ -64,7 +51,7 @@ transfer-images-to-registry: ## transfer images to registry
 	# @docker tag itisfoundation/jupyter-base-notebook:2.13.0 registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
 	# @docker push registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
 	# completed transfer of images
-	curl registry:5000/v2/_catalog
+	curl -s registry:5000/v2/_catalog | jq '.repositories'
 
 PUBLISHED_PORT = $(shell docker inspect $(shell docker service ls --format "{{ .Name }}" | grep postgres) --format "{{(index .Endpoint.Ports 0).PublishedPort}}")
 .PHONY: inject-templates-in-db
@@ -79,5 +66,7 @@ inject-templates-in-db: ## inject project templates
 
 .PHONY: test
 test: ## test the platform
+	# tests
 	npm test
+	# tests whether tutorial run
 	npm run tutorials http://127.0.0.1:9081
