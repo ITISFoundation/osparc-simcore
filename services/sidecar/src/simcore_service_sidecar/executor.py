@@ -205,6 +205,7 @@ class Executor:
             raise
 
     async def _run_container(self):
+        # pylint: disable=too-many-statements
         start_time = time.perf_counter()
         container = None
         docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
