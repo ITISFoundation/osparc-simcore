@@ -2,7 +2,7 @@ import functools
 import inspect
 import logging
 from enum import Enum
-from typing import Dict, List, Optional, Callable
+from typing import Callable, Dict, List, Optional
 
 from aiohttp import web
 

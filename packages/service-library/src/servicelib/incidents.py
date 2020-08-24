@@ -2,7 +2,6 @@ from typing import Any, Callable, Generic, List, Optional, TypeVar
 
 import attr
 
-
 # UTILS ---
 
 ItemT = TypeVar("ItemT")

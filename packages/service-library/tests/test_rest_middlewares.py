@@ -4,6 +4,7 @@
 
 import pytest
 from aiohttp import web
+
 from servicelib import openapi
 from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.rest_middlewares import (

@@ -5,11 +5,11 @@
 import sys
 from pathlib import Path
 
+import pytest
 import yaml
+
 import servicelib
 from servicelib.openapi import create_openapi_specs
-
-import pytest
 
 
 @pytest.fixture(scope="session")

@@ -83,19 +83,17 @@ async def logged_gather(
     """
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
-
     error = None
     for i, value in enumerate(results):
         if isinstance(value, Exception):
             log.warning(
                 "Error in %i-th concurrent task %s: %s",
-                i+1,
+                i + 1,
                 str(tasks[i]),
                 str(value),
             )
             if not error:
                 error = value
-
 
     if reraise and error:
         # WARNING: Notice that ONLY THE FIRST exception is raised.
