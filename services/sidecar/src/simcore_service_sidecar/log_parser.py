@@ -1,13 +1,15 @@
 import asyncio
 import logging
 import re
+import tempfile
 from enum import Enum
 from pathlib import Path
-import aiodocker
-from typing import Awaitable, Callable, Tuple, Union
+from typing import Awaitable, Callable, Optional, Tuple, Union
 
+import aiodocker
 import aiofiles
 from aiodocker.containers import DockerContainer
+from aiofile import AIOFile, Writer
 
 from . import exceptions
 
@@ -58,16 +60,19 @@ async def parse_line(line: str) -> Tuple[LogType, str]:
 
 
 async def monitor_logs_task(
-    log_file_or_container: Union[Path, DockerContainer],
+    mon_log_file_or_container: Union[Path, DockerContainer],
     log_cb: Awaitable[Callable[[LogType, str], None]],
+    out_log_file: Optional[Path] = None,
 ) -> None:
     try:
-        if isinstance(log_file_or_container, Path):
-            log.debug("start monitoring log in %s", log_file_or_container)
-            await _monitor_log_file(log_file_or_container, log_cb)
-        elif isinstance(log_file_or_container, DockerContainer):
-            log.debug("start monitoring docker logs of %s", log_file_or_container)
-            await _monitor_docker_container(log_file_or_container, log_cb)
+        if isinstance(mon_log_file_or_container, Path):
+            log.debug("start monitoring log in %s", mon_log_file_or_container)
+            await _monitor_log_file(mon_log_file_or_container, log_cb)
+        elif isinstance(mon_log_file_or_container, DockerContainer):
+            log.debug("start monitoring docker logs of %s", mon_log_file_or_container)
+            await _monitor_docker_container(
+                mon_log_file_or_container, log_cb, out_log_file
+            )
         else:
             raise exceptions.SidecarException("Invalid log type")
 
@@ -77,14 +82,23 @@ async def monitor_logs_task(
 
 
 async def _monitor_docker_container(
-    container: DockerContainer, log_cb: Awaitable[Callable[[LogType, str], None]]
+    container: DockerContainer,
+    log_cb: Awaitable[Callable[[LogType, str], None]],
+    out_log_file: Optional[Path],
 ) -> None:
     # Avoids raising UnboundLocalError: local variable 'log_type' referenced before assignment
     log_type, parsed_line = LogType.INSTRUMENTATION, "Undefined"
+    log_file = out_log_file
+    if not out_log_file:
+        log_file = tempfile.mkstemp(".dat")
+
     try:
-        async for line in container.log(stdout=True, stderr=True, follow=True):
-            log_type, parsed_line = await parse_line(line)
-            await log_cb(log_type, parsed_line)
+        async with AIOFile(log_file, "w+") as afp:
+            writer = Writer(afp)
+            async for line in container.log(stdout=True, stderr=True, follow=True):
+                log_type, parsed_line = await parse_line(line)
+                await log_cb(log_type, parsed_line)
+                await writer(f"{log_type.name}: {parsed_line}")
     except aiodocker.exceptions.DockerError as e:
         log_type, parsed_line = await parse_line(
             f"Could not recover logs because: {str(e)}"
