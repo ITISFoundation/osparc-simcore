@@ -53,8 +53,8 @@ async def update_pipeline(request: web.Request) -> web.Response:
     try:
         project = await get_project_for_user(request.app, project_id, user_id)
         await update_pipeline_db(request.app, project_id, project["workbench"])
-    except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason=f"Project {project_id} not found")
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Project {project_id} not found") from exc
 
     raise web.HTTPNoContent()
 
@@ -72,8 +72,8 @@ async def start_pipeline(request: web.Request) -> web.Response:
     try:
         project = await get_project_for_user(request.app, project_id, user_id)
         await update_pipeline_db(request.app, project_id, project["workbench"])
-    except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason=f"Project {project_id} not found")
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Project {project_id} not found") from exc
 
     # commit the tasks to celery
     _ = get_celery(request.app).send_task(
