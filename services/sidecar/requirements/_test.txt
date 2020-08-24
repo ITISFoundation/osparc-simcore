@@ -6,6 +6,7 @@
 #
 aio-pika==6.6.1           # via -r requirements/_base.txt
 aiodocker==0.19.1         # via -r requirements/_base.txt
+aiofile==3.0.0            # via -r requirements/_base.txt
 aiofiles==0.5.0           # via -r requirements/_base.txt
 aiohttp==3.6.2            # via -r requirements/_base.txt, aiodocker, pytest-aiohttp
 aiopg==1.0.0              # via -r requirements/_base.txt, -r requirements/_test.in
@@ -17,6 +18,7 @@ astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via -r requirements/_base.txt, aiohttp, aioredis
 attrs==19.3.0             # via -r requirements/_base.txt, aiohttp, aioredlock, pytest
 billiard==3.6.3.0         # via -r requirements/_base.txt, celery
+caio==0.5.3               # via -r requirements/_base.txt, aiofile
 celery==4.4.7             # via -r requirements/_base.txt
 certifi==2020.6.20        # via requests
 chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, requests

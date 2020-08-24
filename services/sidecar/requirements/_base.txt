@@ -6,6 +6,7 @@
 #
 aio-pika==6.6.1           # via -r requirements/_base.in
 aiodocker==0.19.1         # via -r requirements/_base.in
+aiofile==3.0.0            # via -r requirements/_base.in
 aiofiles==0.5.0           # via -r requirements/_base.in
 aiohttp==3.6.2            # via aiodocker
 aiopg==1.0.0              # via -r requirements/_base.in
@@ -16,6 +17,7 @@ amqp==2.6.1               # via kombu
 async-timeout==3.0.1      # via aiohttp, aioredis
 attrs==19.3.0             # via aiohttp, aioredlock
 billiard==3.6.3.0         # via celery
+caio==0.5.3               # via aiofile
 celery==4.4.7             # via -r requirements/_base.in
 chardet==3.0.4            # via aiohttp
 click==7.1.2              # via -r requirements/_base.in
