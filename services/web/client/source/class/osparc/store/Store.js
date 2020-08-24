@@ -218,7 +218,7 @@ qx.Class.define("osparc.store.Store", {
           .then(study => {
             osparc.data.Resources.fetch("studies", "state", params)
               .then(state => {
-                study["locked"] = state["locked"];
+                study["state"] = state;
                 if (idx === -1) {
                   studiesWStateCache.push(study);
                 } else {
