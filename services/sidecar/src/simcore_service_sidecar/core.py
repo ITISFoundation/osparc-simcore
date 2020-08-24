@@ -63,7 +63,7 @@ async def task_required_resources(node_id: str) -> Union[Dict[str, bool], None]:
 async def _try_get_task_from_db(
     db_connection: aiopg.sa.SAConnection,
     graph: nx.DiGraph,
-    job_request_id: int,
+    job_request_id: str,
     project_id: str,
     node_id: str,
 ) -> Optional[aiopg.sa.result.RowProxy]:
@@ -137,10 +137,10 @@ async def inspect(
     # pylint: disable=too-many-arguments
     db_engine: aiopg.sa.Engine,
     rabbit_mq: RabbitMQ,
-    job_request_id: int,
+    job_request_id: str,
     user_id: str,
     project_id: str,
-    node_id: str,
+    node_id: Optional[str],
 ) -> Optional[List[str]]:
     log.debug(
         "ENTERING inspect with user %s pipeline:node %s: %s",
