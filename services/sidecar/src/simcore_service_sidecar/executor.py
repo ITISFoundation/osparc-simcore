@@ -46,7 +46,7 @@ class TaskSharedVolumes:
             self.log_folder,
         ]:
             if folder.exists():
-                shutil.rmtree(folder)
+                shutil.rmtree(str(folder))
             folder.mkdir(parents=True, exist_ok=True)
 
 
@@ -118,7 +118,7 @@ class Executor:
                 # the filename is not necessarily the name of the port, might be mapped
                 mapped_filename = Path(path).name
                 input_ports[port.key] = str(port_value)
-                final_path = Path(self.shared_folders.input_folder, mapped_filename)
+                final_path = self.shared_folders.input_folder / mapped_filename
                 shutil.copy(str(path), str(final_path))
                 log.debug(
                     "DOWNLOAD successfull from %s to %s via %s",
@@ -418,7 +418,7 @@ class Executor:
         await self._post_messages(
             LogType.LOG, "[sidecar]Uploading logs...",
         )
-        if self.shared_folders.log_folder.exists():
+        if self.shared_folders.log_folder and self.shared_folders.log_folder.exists():
             await node_data.data_manager.push(
                 self.shared_folders.log_folder, rename_to="logs"
             )
