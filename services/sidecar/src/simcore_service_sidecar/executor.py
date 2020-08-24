@@ -3,9 +3,10 @@ import logging
 import shutil
 import time
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 import aiodocker
+from aiodocker.volumes import DockerVolume
 import aiopg
 import attr
 from celery.utils.log import get_task_logger
@@ -215,6 +216,34 @@ class Executor:
         ]
         env_vars.append(f"SC_COMP_SERVICES_SCHEDULED_AS={get_boot_mode().value}")
 
+        async def _get_volume_mount_point(volume_name: str) -> str:
+            try:
+                docker_client: aiodocker.Docker = aiodocker.Docker()
+                volume_attributes = await DockerVolume(
+                    docker_client, volume_name
+                ).show()
+                VOLUME_MOUNTPOINT = "Mountpoint"
+                if VOLUME_MOUNTPOINT in volume_attributes:
+                    return volume_attributes[VOLUME_MOUNTPOINT]
+
+            except aiodocker.exceptions.DockerError:
+                log.exception(
+                    "Unknown error while trying to run %s with parameters %s",
+                    docker_image,
+                    docker_container_config,
+                )
+            raise exceptions.SidecarException(
+                f"Could not find mountpoint to {volume_name}. If you are running Windows without WSL2, you're out of luck. Else this is a real bigger issue!"
+            )
+
+        host_input_path = await _get_volume_mount_point(
+            config.SIDECAR_DOCKER_VOLUME_INPUT
+        )
+        host_output_path = await _get_volume_mount_point(
+            config.SIDECAR_DOCKER_VOLUME_OUTPUT
+        )
+        host_log_path = await _get_volume_mount_point(config.SIDECAR_DOCKER_VOLUME_LOG)
+
         docker_container_config = {
             "Env": env_vars,
             "Cmd": "run",
@@ -232,9 +261,11 @@ class Executor:
                 "Init": True,
                 "AutoRemove": False,
                 "Binds": [
-                    f"{self.shared_folders.input_folder}:/input/{self.task.job_id}",
-                    f"{self.shared_folders.output_folder}:/output/{self.task.job_id}",
-                    f"{self.shared_folders.log_folder}:/log/{self.task.job_id}",
+                    # NOTE: the docker engine is mounted, so only named volumes are usable. Therefore for a selective
+                    # subfolder mount we need to get the path as seen from the host computer (see https://github.com/ITISFoundation/osparc-simcore/issues/1723)
+                    f"{host_input_path}/{self.task.job_id}:/input/{self.task.job_id}",
+                    f"{host_output_path}/{self.task.job_id}:/output/{self.task.job_id}",
+                    f"{host_log_path}/{self.task.job_id}:/log/{self.task.job_id}",
                 ],
             },
         }
