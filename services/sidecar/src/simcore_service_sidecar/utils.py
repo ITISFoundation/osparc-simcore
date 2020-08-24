@@ -7,7 +7,8 @@ import aiodocker
 import aiopg
 import networkx as nx
 from aiodocker.volumes import DockerVolume
-from sqlalchemy import and_
+from aiopg.sa import SAConnection
+from sqlalchemy import Table, and_
 
 from celery import Celery
 from simcore_postgres_database.sidecar_models import SUCCESS, comp_pipeline, comp_tasks
@@ -33,9 +34,9 @@ def find_entry_point(g: nx.DiGraph) -> List:
 
 
 async def is_node_ready(
-    task: comp_tasks,
+    task: Table,
     graph: nx.DiGraph,
-    db_connection: aiopg.sa.SAConnection,
+    db_connection: SAConnection,
     _logger: logging.Logger,
 ) -> bool:
     query = comp_tasks.select().where(
@@ -64,7 +65,7 @@ async def is_node_ready(
     return True
 
 
-def execution_graph(pipeline: comp_pipeline) -> nx.DiGraph:
+def execution_graph(pipeline: Table) -> nx.DiGraph:
     d = pipeline.dag_adjacency_list
     G = nx.DiGraph()
 

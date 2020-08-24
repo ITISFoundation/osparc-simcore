@@ -69,6 +69,7 @@ class Executor:
             self.task.node_id,
             self.task.internal_id,
         )
+
         try:
             await self.preprocess()
             await self.process()
