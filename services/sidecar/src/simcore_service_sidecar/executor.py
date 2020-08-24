@@ -134,7 +134,7 @@ class Executor:
     async def _process_task_inputs(self) -> Dict:
         log.debug("Inputs parsing...")
 
-        input_ports = dict()
+        input_ports: Dict = {}
         try:
             PORTS = await self._get_node_ports()
         except node_ports.exceptions.NodeNotFound:
