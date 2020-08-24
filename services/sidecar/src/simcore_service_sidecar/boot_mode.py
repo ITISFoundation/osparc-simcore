@@ -1,6 +1,7 @@
 # pylint: disable=global-statement
 
 from enum import Enum
+from typing import Optional
 
 
 class BootMode(Enum):
@@ -9,10 +10,10 @@ class BootMode(Enum):
     MPI = "MPI"
 
 
-_sidecar_boot_mode: BootMode = None
+_sidecar_boot_mode: Optional[BootMode] = None
 
 
-def get_boot_mode() -> BootMode:
+def get_boot_mode() -> Optional[BootMode]:
     global _sidecar_boot_mode
     return _sidecar_boot_mode
 
