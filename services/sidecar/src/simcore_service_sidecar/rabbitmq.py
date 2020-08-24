@@ -67,7 +67,7 @@ class RabbitMQ(BaseModel):
         self.connection.add_reconnect_callback(_reconnect_callback)
 
         log.debug("Creating channel")
-        self.channel = await self.connection.channel(publisher_confirms=False)
+        self.channel = self.connection.channel(publisher_confirms=False)
         self.channel.add_close_callback(_channel_close_callback)
 
         log.debug("Declaring %s exchange", self.config.channels["log"])
