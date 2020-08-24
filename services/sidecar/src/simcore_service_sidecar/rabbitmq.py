@@ -130,7 +130,7 @@ class RabbitMQ(BaseModel):
         )
 
     async def post_instrumentation_message(
-        self, instrumentation_data: Dict[str, str],
+        self, instrumentation_data: Dict,
     ):
         await self._post_message(
             self.instrumentation_exchange, data=instrumentation_data,

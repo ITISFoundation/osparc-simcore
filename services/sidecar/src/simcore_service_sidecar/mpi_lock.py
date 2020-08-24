@@ -12,13 +12,13 @@ How it works:
 
 import asyncio
 import datetime
-from typing import Any, Callable
-from aioredlock import Aioredlock, LockError, Lock
-from threading import Thread
-from typing import Tuple
-from simcore_service_sidecar import config
-
 import logging
+from threading import Thread
+from typing import Any, Callable, Optional, Tuple
+
+from aioredlock import Aioredlock, Lock, LockError
+
+from simcore_service_sidecar import config
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ async def retry_for_result(
 
 def start_background_lock_extender(
     lock_manager: Aioredlock, lock: Lock, loop: asyncio.BaseEventLoop
-) -> asyncio.Future:
+) -> None:
     """Will periodically extend the duration of the lock"""
 
     async def extender_worker(lock_manager: Aioredlock):
@@ -67,7 +67,7 @@ def thread_worker(
 
 async def try_to_acquire_lock(
     lock_manager: Aioredlock, resource_name: str
-) -> Tuple[bool, Lock]:
+) -> Optional[Tuple[bool, Lock]]:
     # Try to acquire the lock:
     try:
         return await lock_manager.lock(

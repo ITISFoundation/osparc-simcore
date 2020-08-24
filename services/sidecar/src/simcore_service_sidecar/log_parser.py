@@ -90,10 +90,12 @@ async def _monitor_docker_container(
     log_type, parsed_line = LogType.INSTRUMENTATION, "Undefined"
     log_file = out_log_file
     if not out_log_file:
-        log_file = tempfile.mkstemp(".dat")
+        temporary_file = tempfile.NamedTemporaryFile(delete=False, suffix=".dat")
+        temporary_file.close()
+        log_file = Path(temporary_file.name)
 
     try:
-        async with AIOFile(log_file, "w+") as afp:
+        async with AIOFile(str(log_file), "w+") as afp:
             writer = Writer(afp)
             async for line in container.log(stdout=True, stderr=True, follow=True):
                 log_type, parsed_line = await parse_line(line)
@@ -104,6 +106,10 @@ async def _monitor_docker_container(
             f"Could not recover logs because: {str(e)}"
         )
         await log_cb(log_type, parsed_line)
+    finally:
+        # clean up
+        if not out_log_file and log_file:
+            log_file.unlink()
 
 
 async def _monitor_log_file(
