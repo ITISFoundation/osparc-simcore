@@ -1,34 +1,33 @@
 import json
 import logging
 import socket
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
+
+import tenacity
 
 import aio_pika
-import tenacity
 from pydantic import BaseModel  # pylint: disable=no-name-in-module
-
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 
 log = logging.getLogger(__file__)
 
 
-def _close_callback(exc: Optional[BaseException]):
+def _close_callback(sender: Any, exc: Optional[BaseException]):
     if exc:
-        log.error("Rabbit connection closed with exception: %s", exc)
+        log.error("Rabbit connection closed with exception from %s:\n %s", sender, exc)
     else:
-        log.info("Rabbit connection closed")
+        log.info("Rabbit connection closed from %s", sender)
 
 
 def _reconnect_callback():
     log.warning("Rabbit connection reconnected")
 
-
-def _channel_close_callback(exc: Optional[BaseException]):
+def _channel_close_callback(sender: Any, exc: Optional[BaseException]):
     if exc:
-        log.error("Rabbit channel closed with exception: %s", exc)
+        log.error("Rabbit channel closed with exceptionfrom %s:\n %s", sender, exc)
     else:
-        log.info("Rabbit channel closed")
+        log.info("Rabbit channel closed from %s", sender)
 
 
 class RabbitMQ(BaseModel):
