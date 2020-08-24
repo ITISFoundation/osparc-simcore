@@ -1,5 +1,6 @@
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
 
 import pytest
 from aiohttp import web
