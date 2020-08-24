@@ -4,14 +4,14 @@ import uuid
 from typing import Awaitable, List
 
 import aiodocker
-import aiopg
+from aiopg.sa.result import RowProxy
 import networkx as nx
 from aiodocker.volumes import DockerVolume
 from aiopg.sa import SAConnection
-from sqlalchemy import Table, and_
+from sqlalchemy import and_
 
 from celery import Celery
-from simcore_postgres_database.sidecar_models import SUCCESS, comp_pipeline, comp_tasks
+from simcore_postgres_database.sidecar_models import SUCCESS, comp_tasks
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 from simcore_service_sidecar import config
 from simcore_service_sidecar.mpi_lock import acquire_mpi_lock
@@ -34,7 +34,7 @@ def find_entry_point(g: nx.DiGraph) -> List:
 
 
 async def is_node_ready(
-    task: Table,
+    task: RowProxy,
     graph: nx.DiGraph,
     db_connection: SAConnection,
     _logger: logging.Logger,
@@ -65,7 +65,7 @@ async def is_node_ready(
     return True
 
 
-def execution_graph(pipeline: Table) -> nx.DiGraph:
+def execution_graph(pipeline: RowProxy) -> nx.DiGraph:
     d = pipeline.dag_adjacency_list
     G = nx.DiGraph()
 
