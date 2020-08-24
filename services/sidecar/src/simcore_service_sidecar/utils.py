@@ -6,7 +6,7 @@ from typing import Awaitable, List
 import aiodocker
 import aiopg
 import networkx as nx
-from aiodocker import DockerVolume
+from aiodocker.volumes import DockerVolume
 from sqlalchemy import and_
 
 from celery import Celery
