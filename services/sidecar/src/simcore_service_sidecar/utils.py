@@ -142,14 +142,13 @@ async def get_volume_mount_point(volume_name: str) -> str:
     try:
         docker_client: aiodocker.Docker = aiodocker.Docker()
         volume_attributes = await DockerVolume(docker_client, volume_name).show()
-        VOLUME_MOUNTPOINT = "Mountpoint"
-        if VOLUME_MOUNTPOINT in volume_attributes:
-            return volume_attributes[VOLUME_MOUNTPOINT]
+        return volume_attributes["Mountpoint"]
 
-    except aiodocker.exceptions.DockerError:
-        logger.exception(
-            "Unknown error while accessing docker volume %s", volume_name,
-        )
-    raise SidecarException(
-        f"Could not find mountpoint to {volume_name}. If you are running Windows without WSL2, you're out of luck. Else this is a real bigger issue!"
-    )
+    except aiodocker.exceptions.DockerError as err:
+        raise SidecarException(
+            f"Error while retrieving docker volume {volume_name}"
+        ) from err
+    except KeyError as err:
+        raise SidecarException(
+            f"docker volume {volume_name} does not contain Mountpoint"
+        ) from err
