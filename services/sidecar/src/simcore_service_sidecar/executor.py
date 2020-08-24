@@ -285,9 +285,9 @@ class Executor:
                 config=docker_container_config
             )
             # start monitoring logs
+            log_file = self.shared_folders.log_folder / "log.dat"
             if self.integration_version == version.parse("0.0.0"):
                 # touch output file, so it's ready for the container (v0)
-                log_file = self.shared_folders.log_folder / "log.dat"
                 log_file.touch()
 
                 log_processor_task = fire_and_forget_task(
@@ -295,7 +295,7 @@ class Executor:
                 )
             else:
                 log_processor_task = fire_and_forget_task(
-                    monitor_logs_task(container, self._post_messages)
+                    monitor_logs_task(container, self._post_messages, log_file)
                 )
             # start the container
             await container.start()
