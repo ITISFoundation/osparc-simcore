@@ -23,9 +23,10 @@ def _close_callback(sender: Any, exc: Optional[BaseException]):
 def _reconnect_callback():
     log.warning("Rabbit connection reconnected")
 
+
 def _channel_close_callback(sender: Any, exc: Optional[BaseException]):
     if exc:
-        log.error("Rabbit channel closed with exceptionfrom %s:\n %s", sender, exc)
+        log.error("Rabbit channel closed with exception from %s:\n %s", sender, exc)
     else:
         log.info("Rabbit channel closed from %s", sender)
 
