@@ -1,7 +1,8 @@
 import json
 import logging
 import socket
-from typing import Dict, List, Optional, Union
+from asyncio.futures import CancelledError
+from typing import Any, Dict, List, Optional, Union
 
 import aio_pika
 import tenacity
@@ -13,22 +14,31 @@ from simcore_sdk.config.rabbit import Config as RabbitConfig
 log = logging.getLogger(__file__)
 
 
-def _close_callback(exc: Optional[BaseException]):
+def _close_callback(sender: Any, exc: Optional[BaseException]):
     if exc:
-        log.error("Rabbit connection closed with exception: %s", exc)
+        if isinstance(exc, CancelledError):
+            log.info("Rabbit connection was cancelled", exc_info=True)
+        else:
+            log.error(
+                "Rabbit connection closed with exception from %s:",
+                sender,
+                exc_info=True,
+            )
     else:
-        log.info("Rabbit connection closed")
+        log.info("Rabbit connection closed from %s", sender)
 
 
 def _reconnect_callback():
     log.warning("Rabbit connection reconnected")
 
 
-def _channel_close_callback(exc: Optional[BaseException]):
+def _channel_close_callback(sender: Any, exc: Optional[BaseException]):
     if exc:
-        log.error("Rabbit channel closed with exception: %s", exc)
+        log.error(
+            "Rabbit channel closed with exception from %s:", sender, exc_info=True
+        )
     else:
-        log.info("Rabbit channel closed")
+        log.info("Rabbit channel closed from %s", sender)
 
 
 class RabbitMQ(BaseModel):
@@ -80,7 +90,9 @@ class RabbitMQ(BaseModel):
         log.debug("Closing connection...")
         await self.connection.close()
 
-    async def _post_message(self, exchange: aio_pika.Exchange, data: Dict[str, str]):
+    async def _post_message(
+        self, exchange: aio_pika.Exchange, data: Dict[str, Union[str, Any]]
+    ):
         await exchange.publish(
             aio_pika.Message(body=json.dumps(data).encode()), routing_key=""
         )
@@ -118,7 +130,7 @@ class RabbitMQ(BaseModel):
         )
 
     async def post_instrumentation_message(
-        self, instrumentation_data: Dict[str, str],
+        self, instrumentation_data: Dict,
     ):
         await self._post_message(
             self.instrumentation_exchange, data=instrumentation_data,

@@ -3,39 +3,40 @@ import logging
 import shutil
 import time
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 import aiodocker
 import aiopg
 import attr
-from celery.utils.log import get_task_logger
 from packaging import version
 from tenacity import retry, stop_after_attempt
 
+from celery.utils.log import get_task_logger
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_sdk import node_data, node_ports
 from simcore_sdk.node_ports.dbmanager import DBManager
 
 from . import config, exceptions
+from .boot_mode import get_boot_mode
 from .log_parser import LogType, monitor_logs_task
 from .rabbitmq import RabbitMQ
-from .boot_mode import get_boot_mode
+from .utils import get_volume_mount_point
 
 log = get_task_logger(__name__)
 
 
 @attr.s(auto_attribs=True)
 class TaskSharedVolumes:
-    input_folder: Path = None
-    output_folder: Path = None
-    log_folder: Path = None
+    input_folder: Optional[Path] = None
+    output_folder: Optional[Path] = None
+    log_folder: Optional[Path] = None
 
     @classmethod
     def from_task(cls, task: aiopg.sa.result.RowProxy):
         return cls(
-            Path.home() / f"input/{task.job_id}",
-            Path.home() / f"output/{task.job_id}",
-            Path.home() / f"log/{task.job_id}",
+            config.SIDECAR_INPUT_FOLDER / f"{task.job_id}",
+            config.SIDECAR_OUTPUT_FOLDER / f"{task.job_id}",
+            config.SIDECAR_LOG_FOLDER / f"{task.job_id}",
         )
 
     def create(self) -> None:
@@ -45,7 +46,7 @@ class TaskSharedVolumes:
             self.log_folder,
         ]:
             if folder.exists():
-                shutil.rmtree(folder)
+                shutil.rmtree(str(folder))
             folder.mkdir(parents=True, exist_ok=True)
 
 
@@ -68,6 +69,7 @@ class Executor:
             self.task.node_id,
             self.task.internal_id,
         )
+
         try:
             await self.preprocess()
             await self.process()
@@ -116,7 +118,7 @@ class Executor:
                 # the filename is not necessarily the name of the port, might be mapped
                 mapped_filename = Path(path).name
                 input_ports[port.key] = str(port_value)
-                final_path = Path(self.shared_folders.input_folder, mapped_filename)
+                final_path = self.shared_folders.input_folder / mapped_filename
                 shutil.copy(str(path), str(final_path))
                 log.debug(
                     "DOWNLOAD successfull from %s to %s via %s",
@@ -132,7 +134,7 @@ class Executor:
     async def _process_task_inputs(self) -> Dict:
         log.debug("Inputs parsing...")
 
-        input_ports = dict()
+        input_ports: Dict = {}
         try:
             PORTS = await self._get_node_ports()
         except node_ports.exceptions.NodeNotFound:
@@ -204,6 +206,7 @@ class Executor:
             raise
 
     async def _run_container(self):
+        # pylint: disable=too-many-statements
         start_time = time.perf_counter()
         container = None
         docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
@@ -214,6 +217,14 @@ class Executor:
             for name in ["input", "output", "log",]
         ]
         env_vars.append(f"SC_COMP_SERVICES_SCHEDULED_AS={get_boot_mode().value}")
+
+        host_input_path = await get_volume_mount_point(
+            config.SIDECAR_DOCKER_VOLUME_INPUT
+        )
+        host_output_path = await get_volume_mount_point(
+            config.SIDECAR_DOCKER_VOLUME_OUTPUT
+        )
+        host_log_path = await get_volume_mount_point(config.SIDECAR_DOCKER_VOLUME_LOG)
 
         docker_container_config = {
             "Env": env_vars,
@@ -232,9 +243,11 @@ class Executor:
                 "Init": True,
                 "AutoRemove": False,
                 "Binds": [
-                    f"{config.SIDECAR_DOCKER_VOLUME_INPUT}:/input",
-                    f"{config.SIDECAR_DOCKER_VOLUME_OUTPUT}:/output",
-                    f"{config.SIDECAR_DOCKER_VOLUME_LOG}:/log",
+                    # NOTE: the docker engine is mounted, so only named volumes are usable. Therefore for a selective
+                    # subfolder mount we need to get the path as seen from the host computer (see https://github.com/ITISFoundation/osparc-simcore/issues/1723)
+                    f"{host_input_path}/{self.task.job_id}:/input/{self.task.job_id}",
+                    f"{host_output_path}/{self.task.job_id}:/output/{self.task.job_id}",
+                    f"{host_log_path}/{self.task.job_id}:/log/{self.task.job_id}",
                 ],
             },
         }
@@ -243,6 +256,7 @@ class Executor:
         )
         # volume paths for car container (w/o prefix)
         result = "FAILURE"
+        log_processor_task = None
         try:
             docker_client: aiodocker.Docker = aiodocker.Docker()
             await self._post_messages(
@@ -253,9 +267,9 @@ class Executor:
                 config=docker_container_config
             )
             # start monitoring logs
+            log_file = self.shared_folders.log_folder / "log.dat"
             if self.integration_version == version.parse("0.0.0"):
                 # touch output file, so it's ready for the container (v0)
-                log_file = self.shared_folders.log_folder / "log.dat"
                 log_file.touch()
 
                 log_processor_task = fire_and_forget_task(
@@ -263,7 +277,7 @@ class Executor:
                 )
             else:
                 log_processor_task = fire_and_forget_task(
-                    monitor_logs_task(container, self._post_messages)
+                    monitor_logs_task(container, self._post_messages, log_file)
                 )
             # start the container
             await container.start()
@@ -301,7 +315,7 @@ class Executor:
             container_data = await container.show()
             if container_data["State"]["ExitCode"] > 0:
                 raise exceptions.SidecarException(
-                    f"{docker_image} completed with error code {container_data['State']['ExitCode']}: {container_data['State']['Error']}"
+                    f"{docker_image} completed with error code {container_data['State']['ExitCode']}:\n {container_data['State']['Error']}\n:Last logs:\n{container.logs(stdout=True, stderr=True, tail=10)}"
                 )
             # ensure progress 1.0 is sent
             await self._post_messages(LogType.PROGRESS, "1.0")
@@ -326,7 +340,8 @@ class Executor:
                 # clean up the container
                 await container.delete(force=True)
             # stop monitoring logs now
-            log_processor_task.cancel()
+            if log_processor_task:
+                log_processor_task.cancel()
             # instrumentation
             await self.rabbit_mq.post_instrumentation_message(
                 {
@@ -340,7 +355,8 @@ class Executor:
                     "result": result,
                 }
             )
-            await log_processor_task
+            if log_processor_task:
+                await log_processor_task
 
     async def _process_task_output(self):
         """ There will be some files in the /output
@@ -402,7 +418,7 @@ class Executor:
         await self._post_messages(
             LogType.LOG, "[sidecar]Uploading logs...",
         )
-        if self.shared_folders.log_folder.exists():
+        if self.shared_folders.log_folder and self.shared_folders.log_folder.exists():
             await node_data.data_manager.push(
                 self.shared_folders.log_folder, rename_to="logs"
             )

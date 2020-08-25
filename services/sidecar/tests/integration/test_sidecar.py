@@ -15,7 +15,7 @@ import sqlalchemy as sa
 from yarl import URL
 
 from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
-from simcore_service_sidecar import config
+from simcore_service_sidecar import config, utils
 
 SIMCORE_S3_ID = 0
 
@@ -42,10 +42,24 @@ def user_id() -> int:
 
 
 @pytest.fixture
+async def mock_sidecar_get_volume_mount_point(monkeypatch):
+    async def mock_get_volume_mount_point(volume_name: str) -> str:
+        return volume_name
+
+    monkeypatch.setattr(utils, "get_volume_mount_point", mock_get_volume_mount_point)
+
+    # test the monkeypatching
+    fake_name = "blahblah"
+    x = await utils.get_volume_mount_point(fake_name)
+    assert x == fake_name
+
+
+@pytest.fixture
 def sidecar_config(
     postgres_dsn: Dict[str, str],
     docker_registry: str,
     rabbit_config: config.RabbitConfig,
+    mock_sidecar_get_volume_mount_point,
 ) -> None:
     # NOTE: in integration tests the sidecar runs bare-metal which means docker volume cannot be used.
     config.SIDECAR_DOCKER_VOLUME_INPUT = Path.home() / "input"
