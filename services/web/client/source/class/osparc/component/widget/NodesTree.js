@@ -110,7 +110,9 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         toolbar.add(exportButton);
       }
 
-      const openButton = this.__openButton = new qx.ui.toolbar.Button(this.tr("Open"), "@FontAwesome5Solid/edit/"+iconSize);
+      const openButton = this.__openButton = new qx.ui.toolbar.Button(this.tr("Open"), "@FontAwesome5Solid/edit/"+iconSize).set({
+        enabled: false
+      });
       openButton.addListener("execute", e => {
         const study = osparc.store.Store.getInstance().getCurrentStudy();
         const selectedItem = this.__getSelection();
@@ -129,7 +131,9 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       osparc.utils.Utils.setIdToWidget(renameButton, "renameServiceBtn");
       toolbar.add(renameButton);
 
-      const deleteButton = this.__deleteButton = new qx.ui.toolbar.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/"+iconSize);
+      const deleteButton = this.__deleteButton = new qx.ui.toolbar.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/"+iconSize).set({
+        enabled: false
+      });
       deleteButton.addListener("execute", e => {
         this.__deleteNode();
       }, this);
