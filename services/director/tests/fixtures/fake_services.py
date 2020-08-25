@@ -8,7 +8,6 @@ import random
 from io import BytesIO
 from pathlib import Path
 
-import aiodocker
 import pytest
 import requests
 from aiodocker.docker import Docker
@@ -99,7 +98,7 @@ async def _build_push_image(
     *,
     bad_json_format=False,
 ):  # pylint: disable=R0913
-    docker = aiodocker.Docker()
+    docker = Docker()
     # crate image
     service_description = _create_service_description(service_type, name, tag)
     docker_labels = _create_docker_labels(service_description, bad_json_format)
@@ -203,7 +202,7 @@ CMD while true; do sleep 10; done
     tar_obj = utils.mktar_from_dockerfile(f)
 
     # build docker base image
-    docker = aiodocker.Docker()
+    docker = Docker()
     base_docker_image = await docker.images.build(
         fileobj=tar_obj, encoding="gzip", rm=True, labels=labels, tag=tag
     )
