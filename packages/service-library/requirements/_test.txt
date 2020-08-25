@@ -24,9 +24,9 @@ docker-compose==1.26.2    # via pytest-docker
 docker[ssh]==4.3.0        # via docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
-idna-ssl==1.1.0           # via -r requirements/_base.txt, aiohttp
+idna-ssl==1.1.0           # via -r requirements/_base.txt
 idna==2.10                # via -r requirements/_base.txt, idna-ssl, requests, yarl
-importlib-metadata==1.7.0  # via -r requirements/_base.txt, jsonschema, pluggy, pytest
+importlib-metadata==1.7.0  # via -r requirements/_base.txt
 isodate==0.6.0            # via -r requirements/_base.txt, openapi-core
 isort==4.3.21             # via pylint
 jsonschema==3.2.0         # via -r requirements/_base.txt, docker-compose, openapi-spec-validator
@@ -43,7 +43,7 @@ prometheus-client==0.8.0  # via -r requirements/_base.txt
 psycopg2-binary==2.8.5    # via -r requirements/_base.txt, aiopg, sqlalchemy
 py==1.9.0                 # via pytest
 pycparser==2.20           # via cffi
-pylint==2.5.3             # via -r requirements/_test.in
+pylint==2.6.0             # via -r requirements/_test.in
 pynacl==1.4.0             # via paramiko
 pyparsing==2.4.7          # via packaging
 pyrsistent==0.16.0        # via -r requirements/_base.txt, jsonschema
@@ -66,8 +66,7 @@ termcolor==1.1.0          # via pytest-sugar
 texttable==1.6.2          # via docker-compose
 toml==0.10.1              # via pylint
 trafaret==2.0.2           # via -r requirements/_base.txt
-typed-ast==1.4.1          # via astroid
-typing-extensions==3.7.4.2  # via -r requirements/_base.txt, aiohttp, yarl
+typing-extensions==3.7.4.2  # via -r requirements/_base.txt
 ujson==3.1.0              # via -r requirements/_base.txt
 urllib3==1.25.10          # via requests
 wcwidth==0.2.5            # via pytest
