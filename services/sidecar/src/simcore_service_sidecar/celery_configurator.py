@@ -7,16 +7,17 @@ To decide where a task should be routed to, the current worker will
 use a look ahead function to check the type of upcoming task and
 schedule it accordingly.
 """
-from typing import Tuple
+from typing import Optional, Tuple
+
 from celery import Celery, states
 from simcore_sdk.config.rabbit import Config as RabbitConfig
+
 from . import config
-from .cli import run_sidecar
-from .utils import wrap_async_call, is_gpu_node, start_as_mpi_node
+from .boot_mode import BootMode, get_boot_mode, set_boot_mode
 from .celery_log_setup import get_task_logger
-from .utils import assemble_celery_app
+from .cli import run_sidecar
 from .core import task_required_resources
-from .boot_mode import BootMode, set_boot_mode, get_boot_mode
+from .utils import assemble_celery_app, is_gpu_node, start_as_mpi_node, wrap_async_call
 
 log = get_task_logger(__name__)
 
@@ -71,7 +72,7 @@ def _dispatch_to_mpi_queue(user_id: str, project_id: str, node_id: str) -> None:
 
 
 def shared_task_dispatch(
-    celery_request, user_id: str, project_id: str, node_id: str = None
+    celery_request, user_id: str, project_id: str, node_id: Optional[str] = None
 ) -> None:
     """This is the original task which is run by either MPI, GPU or CPU node"""
     try:
@@ -106,11 +107,15 @@ def configure_cpu_mode() -> Tuple[RabbitConfig, Celery]:
 
     # pylint: disable=unused-variable,unused-argument
     @app.task(name="comp.task", bind=True, ignore_result=True)
-    def entrypoint(self, user_id: str, project_id: str, node_id: str = None) -> None:
+    def entrypoint(
+        self, user_id: str, project_id: str, node_id: Optional[str] = None
+    ) -> None:
         shared_task_dispatch(self, user_id, project_id, node_id)
 
     @app.task(name="comp.task.cpu", bind=True)
-    def pipeline(self, user_id: str, project_id: str, node_id: str = None) -> None:
+    def pipeline(
+        self, user_id: str, project_id: str, node_id: Optional[str] = None
+    ) -> None:
         shared_task_dispatch(self, user_id, project_id, node_id)
 
     set_boot_mode(BootMode.CPU)
@@ -125,7 +130,9 @@ def configure_gpu_mode() -> Tuple[RabbitConfig, Celery]:
 
     # pylint: disable=unused-variable
     @app.task(name="comp.task.gpu", bind=True)
-    def pipeline(self, user_id: str, project_id: str, node_id: str = None) -> None:
+    def pipeline(
+        self, user_id: str, project_id: str, node_id: Optional[str] = None
+    ) -> None:
         shared_task_dispatch(self, user_id, project_id, node_id)
 
     set_boot_mode(BootMode.GPU)
@@ -140,7 +147,9 @@ def configure_mpi_node() -> Tuple[RabbitConfig, Celery]:
 
     # pylint: disable=unused-variable
     @app.task(name="comp.task.mpi", bind=True)
-    def pipeline(self, user_id: str, project_id: str, node_id: str = None) -> None:
+    def pipeline(
+        self, user_id: str, project_id: str, node_id: Optional[str] = None
+    ) -> None:
         shared_task_dispatch(self, user_id, project_id, node_id)
 
     set_boot_mode(BootMode.MPI)

@@ -1,6 +1,9 @@
 import logging
 import multiprocessing
 import os
+from pathlib import Path
+from typing import Optional
+
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 
 SERVICES_MAX_NANO_CPUS: int = min(
@@ -14,6 +17,16 @@ SERVICES_TIMEOUT_SECONDS: int = int(
     os.environ.get("SIDECAR_SERVICES_TIMEOUT_SECONDS", 20 * 60)
 )
 SWARM_STACK_NAME: str = os.environ.get("SWARM_STACK_NAME", "simcore")
+
+SIDECAR_INPUT_FOLDER: Path = Path(
+    os.environ.get("SIDECAR_INPUT_FOLDER", Path.home() / "input")
+)
+SIDECAR_OUTPUT_FOLDER: Path = Path(
+    os.environ.get("SIDECAR_OUTPUT_FOLDER", Path.home() / "output")
+)
+SIDECAR_LOG_FOLDER: Path = Path(
+    os.environ.get("SIDECAR_LOG_FOLDER", Path.home() / "log")
+)
 
 SIDECAR_DOCKER_VOLUME_INPUT: str = os.environ.get(
     "SIDECAR_DOCKER_VOLUME_INPUT", f"{SWARM_STACK_NAME}_input"
@@ -42,10 +55,9 @@ logging.getLogger("sqlalchemy.engine").setLevel(SIDECAR_LOGLEVEL)
 logging.getLogger("sqlalchemy.pool").setLevel(SIDECAR_LOGLEVEL)
 
 RABBIT_CONFIG = RabbitConfig()
-
 # sidecar celery starting mode overwrite
-FORCE_START_CPU_MODE: str = os.environ.get("START_AS_MODE_CPU")
-FORCE_START_GPU_MODE: str = os.environ.get("START_AS_MODE_GPU")
+FORCE_START_CPU_MODE: Optional[str] = os.environ.get("START_AS_MODE_CPU")
+FORCE_START_GPU_MODE: Optional[str] = os.environ.get("START_AS_MODE_GPU")
 
 # if a node has this amount of CPUs it will be a candidate an MPI candidate
 TARGET_MPI_NODE_CPU_COUNT: int = int(os.environ.get("TARGET_MPI_NODE_CPU_COUNT", "-1"))
@@ -59,4 +71,3 @@ REDIS_CONNECTION_STRING: str = "redis://{host}:{password}/0".format(
 REDLOCK_REFRESH_INTERVAL_SECONDS: float = max(
     float(os.environ.get("REDLOCK_REFRESH_INTERVAL_SECONDS", "5.0")), 1.0
 )  # enforce at least 1 second
-
