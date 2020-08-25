@@ -40,7 +40,7 @@ pluggy==0.13.1            # via pytest
 psycopg2-binary==2.8.5    # via -r requirements/_migration.txt, aiopg, sqlalchemy
 py==1.9.0                 # via pytest
 pycparser==2.20           # via cffi
-pylint==2.5.3             # via -r requirements/_test.in
+pylint==2.6.0             # via -r requirements/_test.in
 pynacl==1.4.0             # via paramiko
 pyparsing==2.4.7          # via packaging
 pyrsistent==0.16.0        # via jsonschema
