@@ -14,6 +14,7 @@ GROUPS_SCHEMA_TO_DB = {
     "description": "description",
     "thumbnail": "thumbnail",
     "accessRights": "access_rights",
+    "inclusionRules": "inclusion_rules",
 }
 
 
