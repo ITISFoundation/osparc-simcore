@@ -1,6 +1,6 @@
 import logging
+from typing import Dict
 
-import asyncpg
 from aiohttp import web
 from yarl import URL
 

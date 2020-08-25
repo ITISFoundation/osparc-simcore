@@ -1,5 +1,4 @@
 import logging
-import pdb
 from typing import Dict, List, Optional, Tuple
 
 import sqlalchemy as sa
