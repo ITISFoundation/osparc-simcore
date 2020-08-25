@@ -27,7 +27,7 @@ async def run_services(
     started_services = []
 
     async def push_start_services(number_comp, number_dyn, dependant=False):
-        pushed_services = push_services(
+        pushed_services = await push_services(
             number_comp, number_dyn, inter_dependent_services=dependant
         )
         assert len(pushed_services) == (number_comp + number_dyn)

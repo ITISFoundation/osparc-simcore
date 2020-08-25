@@ -377,12 +377,14 @@ async def standard_groups(client, logged_user: Dict) -> List[Dict[str, str]]:
         "label": "SPARC",
         "description": "Stimulating Peripheral Activity to Relieve Conditions",
         "thumbnail": "https://commonfund.nih.gov/sites/default/files/sparc-image-homepage500px.png",
+        "inclusionRules": {"email": r"@(sparc)+\.(io|com)$"},
     }
     team_black_group = {
         "gid": "5",  # this will be replaced
         "label": "team Black",
         "description": "THE incredible black team",
         "thumbnail": None,
+        "inclusionRules": {"email": r"@(black)+\.(io|com)$"},
     }
     async with NewUser(
         {"name": f"{logged_user['name']}_admin", "role": "USER"}, client.app

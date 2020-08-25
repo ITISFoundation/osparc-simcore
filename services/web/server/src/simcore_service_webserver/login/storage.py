@@ -1,6 +1,7 @@
 import enum
 from datetime import datetime
 from logging import getLogger
+from typing import Dict
 
 import asyncpg
 
@@ -25,7 +26,7 @@ class AsyncpgStorage:
             data = await sql.find_one(conn, self.user_tbl, with_data)
             return data
 
-    async def create_user(self, data) -> asyncpg.Record:
+    async def create_user(self, data: Dict) -> asyncpg.Record:
         data.setdefault("created_at", datetime.utcnow())
         async with self.pool.acquire() as conn:
             data["id"] = await sql.insert(conn, self.user_tbl, data)
