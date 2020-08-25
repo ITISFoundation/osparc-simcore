@@ -231,11 +231,11 @@ async def get_user_name(app: web.Application, user_id: int) -> Dict[str, str]:
         return dict(first_name=parts[0], last_name=parts[1])
 
 
-async def get_user_email(app: web.Application, user_id: int) -> str:
+async def get_user(app: web.Application, user_id: int) -> Dict:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
-        user_name = await conn.scalar(
-            sa.select([users.c.email]).where(users.c.id == user_id)
-        )
-
-        return user_name
+        result = await conn.execute(sa.select([users]).where(users.c.id == user_id))
+        row: RowProxy = await result.fetchone()
+        if not row:
+            raise UserNotFoundError(uid=user_id)
+        return dict(row)

@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Dict, List, Optional, Tuple
 
 import sqlalchemy as sa
@@ -22,7 +23,7 @@ from .groups_utils import (
     convert_groups_schema_to_db,
     convert_user_in_group_to_schema,
 )
-from .users_api import get_user_email
+from .users_api import get_user
 from .users_exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -185,7 +186,7 @@ async def list_users_in_group(
 
 
 async def auto_add_user_to_groups(app: web.Application, user_id: int) -> None:
-    user_email: str = await get_user_email(app, user_id)
+    user: Dict = await get_user(app, user_id)
     # auto add user to the groups with the right rules
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
@@ -193,10 +194,13 @@ async def auto_add_user_to_groups(app: web.Application, user_id: int) -> None:
         query = sa.select([groups]).where(groups.c.inclusion_rules != {})
         possible_gids = set()
         async for row in conn.execute(query):
-            email_rules: List[str] = row[groups.c.inclusion_rules].get("emails")
-            for suffix in email_rules:
-                if user_email.endswith(suffix):
+            inclusion_rules = row[groups.c.inclusion_rules]
+            for prop, rule_pattern in inclusion_rules.items():
+                if not prop in user:
+                    continue
+                if re.search(rule_pattern, user[prop]):
                     possible_gids.add(row[groups.c.gid])
+
         # now add the user to these groups if possible
         for gid in possible_gids:
             await conn.execute(
