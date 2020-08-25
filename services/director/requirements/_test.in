@@ -18,6 +18,7 @@ pytest-sugar
 # fixtures
 openapi-spec-validator~=0.2  # TODO: this library is limiting jsonschema<3
 python-dotenv
+docker
 
 # tools
 pylint
