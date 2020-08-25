@@ -2,7 +2,20 @@ name: Github-CI Push/PR
 
 on:
   push:
+    branches:
+      - "*"
+    tags-ignore:
+      - "*"
+    paths-ignore:
+      - "*.md"
+      - "*.png"
+      - "*.svg"
+      - "docs/**"
+      - ".vscode/**"
+      - ".vscode-template/**"
   pull_request:
+    branches:
+      - "*"
     paths-ignore:
       - "*.md"
       - "*.png"
@@ -1176,17 +1189,3 @@ jobs:
         env:
           TAG_PREFIX: master-github
         run: ./ci/deploy/dockerhub-deploy.bash
-      - name: deploy staging
-        if: github.ref == 'refs/heads/staging'
-        env:
-          TAG_PREFIX: staging-github
-        run: ./ci/deploy/dockerhub-deploy.bash
-      # TODO: here we need a incoming webhook for mattermost (ask admin for it) (https://docs.mattermost.com/developer/webhooks-incoming.html)
-      # - name: mattermost notification
-      #   uses: tferreira/matterfy@releases/v1
-      #   if: always()
-      #   with:
-      #     type: ${{ job.status }}
-      #     job_name: '*Simcore build state*'
-      #     channel: '${{ secrets.MATTERMOST_CHANNEL }}'
-      #     url: ${{ secrets.MATTERMOST_URL }}
