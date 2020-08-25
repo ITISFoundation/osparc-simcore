@@ -6,6 +6,7 @@ from aiohttp import web
 from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
 from sqlalchemy import and_, literal_column
+from sqlalchemy.dialects.postgresql import insert
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
@@ -21,6 +22,7 @@ from .groups_utils import (
     convert_groups_schema_to_db,
     convert_user_in_group_to_schema,
 )
+from .users_api import get_user_email
 from .users_exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -180,6 +182,31 @@ async def list_users_in_group(
             convert_user_in_group_to_schema(row) async for row in conn.execute(query)
         ]
         return users_list
+
+
+async def auto_add_user_to_groups(app: web.Application, user_id: int) -> None:
+    user_email: str = await get_user_email(app, user_id)
+    # auto add user to the groups with the right rules
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        # get the groups where there are inclusion rules and see if they apply
+        query = sa.select([groups]).where(groups.c.inclusion_rules != {})
+        possible_gids = set()
+        async for row in conn.execute(query):
+            email_rules: List[str] = row[groups.c.inclusion_rules].get("emails")
+            for suffix in email_rules:
+                if user_email.endswith(suffix):
+                    possible_gids.add(row[groups.c.gid])
+        # now add the user to these groups if possible
+        for gid in possible_gids:
+            await conn.execute(
+                # pylint: disable=no-value-for-parameter
+                insert(user_to_groups)
+                .values(
+                    uid=user_id, gid=gid, access_rights=DEFAULT_GROUP_READ_ACCESS_RIGHTS
+                )
+                .on_conflict_do_nothing()  # in case the user was already added
+            )
 
 
 async def add_user_in_group(

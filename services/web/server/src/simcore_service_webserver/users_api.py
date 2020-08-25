@@ -229,3 +229,13 @@ async def get_user_name(app: web.Application, user_id: int) -> Dict[str, str]:
         )
         parts = user_name.split(".") + [""]
         return dict(first_name=parts[0], last_name=parts[1])
+
+
+async def get_user_email(app: web.Application, user_id: int) -> str:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        user_name = await conn.scalar(
+            sa.select([users.c.email]).where(users.c.id == user_id)
+        )
+
+        return user_name
