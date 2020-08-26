@@ -18,7 +18,7 @@
 /**
  * Built-in service used for selecting a single file from storage and make it available in the workflow
  *
- *   It consists of a VBox containing a FilesTree, Add button and Select button:
+ *   It consists of a widget containing a FilesTree, Add button and Select button:
  * - FilesTree will be populated with data provided by storage service (simcore.S3 and datcore)
  * - Add button will open a dialogue where the selected file will be upload to S3
  * - Select button puts the file in the output of the FilePicker node so that connected nodes can access it.

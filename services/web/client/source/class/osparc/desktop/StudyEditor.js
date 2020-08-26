@@ -318,7 +318,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __openFilePicker: function(node) {
-      const filePicker = new osparc.file.FilePicker(node, this.getStudy().getUuid());
+      const filePicker = new osparc.file.FilePicker(node);
       const win = osparc.ui.window.Window.popUpInWindow(filePicker, node.getLabel(), 570, 450);
       filePicker.addListener("finished", () => win.close(), this);
     },
