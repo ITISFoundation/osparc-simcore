@@ -172,8 +172,11 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __getOutputFile: function() {
-      const outputs = this.getNode().getOutputs();
-      return outputs["outFile"];
+      const outputs = Object.values(this.getNode().getOutputs());
+      if (outputs.length) {
+        return outputs[0];
+      }
+      return null;
     },
 
     __setOutputFile: function(store, dataset, path, label) {
