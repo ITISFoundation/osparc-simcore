@@ -5,16 +5,16 @@ import time
 from pathlib import Path
 from typing import Dict, Optional
 
+import attr
+
 import aiodocker
 import aiopg
-import attr
-from packaging import version
-from tenacity import retry, stop_after_attempt
-
 from celery.utils.log import get_task_logger
+from packaging import version
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_sdk import node_data, node_ports
 from simcore_sdk.node_ports.dbmanager import DBManager
+from tenacity import retry, stop_after_attempt
 
 from . import config, exceptions
 from .boot_mode import get_boot_mode
@@ -49,6 +49,15 @@ class TaskSharedVolumes:
                 shutil.rmtree(str(folder))
             folder.mkdir(parents=True, exist_ok=True)
 
+    def delete(self) -> None:
+        for folder in [
+            self.input_folder,
+            self.output_folder,
+            self.log_folder,
+        ]:
+            if folder.exists():
+                shutil.rmtree(str(folder))
+
 
 @attr.s(auto_attribs=True)
 class Executor:
@@ -80,12 +89,16 @@ class Executor:
         except (aiodocker.exceptions.DockerError, exceptions.SidecarException) as e:
             await self._post_messages(LogType.LOG, f"[sidecar]...task failed: {str(e)}")
             raise
+        finally:
+            await self.cleanup()
 
     async def preprocess(self):
         await self._post_messages(LogType.LOG, "[sidecar]Preprocessing...")
         log.debug("Pre-Processing...")
         self.shared_folders = TaskSharedVolumes.from_task(self.task)
         self.shared_folders.create()
+        host_name = config.SIDECAR_HOST_HOSTNAME_PATH.read_text()
+        await self._post_messages(LogType.LOG, f"[sidecar]Running on {host_name}")
         results = await logged_gather(self._process_task_inputs(), self._pull_image())
         await self._write_input_file(results[0])
         log.debug("Pre-Processing Pipeline DONE")
@@ -102,6 +115,14 @@ class Executor:
         await self._process_task_output()
         await self._process_task_log()
         log.debug("Post-Processing DONE")
+
+    async def cleanup(self):
+        log.debug("Cleaning...")
+        await self._post_messages(LogType.LOG, "[sidecar]Cleaning...")
+        if self.shared_folders:
+            self.shared_folders.delete()
+        await self._post_messages(LogType.LOG, "[sidecar]Cleaning completed")
+        log.debug("Cleaning DONE")
 
     async def _get_node_ports(self):
         if self.db_manager is None:
