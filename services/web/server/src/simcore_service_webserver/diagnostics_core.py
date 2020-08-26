@@ -64,8 +64,9 @@ def is_sensing_enabled(app: web.Application):
     enabled = time_elapsed_since_setup > app[kSTART_SENSING_DELAY_SECS]
     if enabled:
         log.debug(
-            "Diagnostics starts sensing after waiting %s secs since submodule init",
-            app[kSTART_SENSING_DELAY_SECS]
+            "Diagnostics starts sensing after waiting %3.2f secs [> %3.2f secs] since submodule init",
+            time_elapsed_since_setup,
+            app[kSTART_SENSING_DELAY_SECS],
         )
     return enabled
 

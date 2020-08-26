@@ -81,7 +81,7 @@ def setup_diagnostics(
     # Time to start sensinng (secs) for diagnostics since this modules inits
     #
     app[kSTART_SENSING_DELAY_SECS] = start_sensing_delay
-
+    log.info("start_sensing_delay = %3.2f secs ", start_sensing_delay)
 
     # -------
 
