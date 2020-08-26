@@ -12,13 +12,14 @@ from aiohttp import web
 
 from _helpers import standard_role_response
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, create_user
+from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.groups import setup_groups
 from simcore_service_webserver.groups_api import (
     DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
     DEFAULT_GROUP_READ_ACCESS_RIGHTS,
+    auto_add_user_to_groups,
 )
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.rest import setup_rest
@@ -516,3 +517,33 @@ async def test_group_access_rights(
     url = client.app.router["delete_group"].url_for(gid=str(assigned_group["gid"]))
     resp = await client.delete(url)
     data, error = await assert_status(resp, web.HTTPForbidden)
+
+
+@pytest.mark.parametrize(*standard_role_response())
+async def test_add_user_gets_added_to_group(
+    client, standard_groups: List[Dict[str, str]], user_role, expected
+):
+    emails = [
+        "good@sparc.io",
+        "bad@bad.com",
+        "bad@osparc.com",
+        "good@black.com",
+        "bad@blanco.com",
+    ]
+    for email in emails:
+        user = await log_client_in(
+            client,
+            user_data={"role": user_role.name, "email": email},
+            enable_check=user_role != UserRole.ANONYMOUS,
+        )
+        await auto_add_user_to_groups(client.app, user["id"])
+
+        url = client.app.router["list_groups"].url_for()
+        assert str(url) == f"{PREFIX}"
+
+        resp = await client.get(url)
+        data, error = await assert_status(
+            resp, web.HTTPOk if user_role == UserRole.GUEST else expected.ok
+        )
+        if not error:
+            assert len(data["organizations"]) == (0 if "bad" in email else 1)

@@ -5,13 +5,17 @@
 import json
 import logging
 import random
+from io import BytesIO
 from pathlib import Path
 
-import docker
 import pytest
 import requests
+from aiodocker.docker import Docker
+from aiodocker.exceptions import DockerError
 
 _logger = logging.getLogger(__name__)
+
+import asyncio
 
 
 @pytest.fixture(scope="function")
@@ -22,7 +26,7 @@ def push_services(loop, docker_registry, tmpdir):
     list_of_pushed_images_tags = []
     dependent_images = []
 
-    def build_push_images(
+    async def build_push_images(
         number_of_computational_services,
         number_of_interactive_services,
         inter_dependent_services=False,
@@ -32,7 +36,7 @@ def push_services(loop, docker_registry, tmpdir):
         try:
             dependent_image = None
             if inter_dependent_services:
-                dependent_image = _build_push_image(
+                dependent_image = await _build_push_image(
                     tmp_dir,
                     registry_url,
                     "computational",
@@ -43,30 +47,36 @@ def push_services(loop, docker_registry, tmpdir):
                 )
                 dependent_images.append(dependent_image)
 
+            images_to_build = []
+
             for image_index in range(0, number_of_computational_services):
-                image = _build_push_image(
-                    tmp_dir,
-                    registry_url,
-                    "computational",
-                    "test",
-                    version + str(image_index),
-                    dependent_image,
-                    bad_json_format=bad_json_format,
+                images_to_build.append(
+                    _build_push_image(
+                        tmp_dir,
+                        registry_url,
+                        "computational",
+                        "test",
+                        version + str(image_index),
+                        dependent_image,
+                        bad_json_format=bad_json_format,
+                    )
                 )
-                list_of_pushed_images_tags.append(image)
 
             for image_index in range(0, number_of_interactive_services):
-                image = _build_push_image(
-                    tmp_dir,
-                    registry_url,
-                    "dynamic",
-                    "test",
-                    version + str(image_index),
-                    dependent_image,
-                    bad_json_format=bad_json_format,
+                images_to_build.append(
+                    _build_push_image(
+                        tmp_dir,
+                        registry_url,
+                        "dynamic",
+                        "test",
+                        version + str(image_index),
+                        dependent_image,
+                        bad_json_format=bad_json_format,
+                    )
                 )
-                list_of_pushed_images_tags.append(image)
-        except docker.errors.APIError:
+            results = await asyncio.gather(*images_to_build)
+            list_of_pushed_images_tags.extend(results)
+        except DockerError:
             _logger.exception("Unexpected docker API error")
             raise
 
@@ -78,7 +88,7 @@ def push_services(loop, docker_registry, tmpdir):
     _clean_registry(registry_url, dependent_images)
 
 
-def _build_push_image(
+async def _build_push_image(
     docker_dir,
     registry_url,
     service_type,
@@ -86,9 +96,9 @@ def _build_push_image(
     tag,
     dependent_image=None,
     *,
-    bad_json_format=False
+    bad_json_format=False,
 ):  # pylint: disable=R0913
-    docker_client = docker.from_env()
+    docker = Docker()
     # crate image
     service_description = _create_service_description(service_type, name, tag)
     docker_labels = _create_docker_labels(service_description, bad_json_format)
@@ -141,16 +151,15 @@ def _build_push_image(
     docker_labels["org.label-schema.vcs-ref"] = service_extras["vcs_ref"]
     docker_labels["org.label-schema.vcs-url"] = service_extras["vcs_url"]
 
-    image = _create_base_image(docker_dir, docker_labels)
-    # tag image
     image_tag = registry_url + "/{key}:{version}".format(
         key=service_description["key"], version=tag
     )
-    assert image.tag(image_tag) is True
+    await _create_base_image(docker_labels, image_tag)
+
     # push image to registry
-    docker_client.images.push(image_tag)
+    await docker.images.push(image_tag)
     # remove image from host
-    docker_client.images.remove(image_tag)
+    # docker.images.remove(image_tag)
     return {
         "service_description": service_description,
         "docker_labels": docker_labels,
@@ -181,16 +190,21 @@ def _clean_registry(registry_url, list_of_images):
         response = requests.delete(url, headers=request_headers)
 
 
-def _create_base_image(base_dir, labels):
-    # create a basic dockerfile
-    docker_file = base_dir / "Dockerfile"
-    with docker_file.open("w") as file_pointer:
-        file_pointer.write("FROM alpine\nCMD while true; do sleep 10; done\n")
-    assert docker_file.exists() == True
+from aiodocker import utils
+
+
+async def _create_base_image(labels, tag):
+    dockerfile = """
+FROM alpine
+CMD while true; do sleep 10; done
+    """
+    f = BytesIO(dockerfile.encode("utf-8"))
+    tar_obj = utils.mktar_from_dockerfile(f)
+
     # build docker base image
-    docker_client = docker.from_env()
-    base_docker_image = docker_client.images.build(
-        path=str(base_dir), rm=True, labels=labels
+    docker = Docker()
+    base_docker_image = await docker.images.build(
+        fileobj=tar_obj, encoding="gzip", rm=True, labels=labels, tag=tag
     )
     return base_docker_image[0]
 

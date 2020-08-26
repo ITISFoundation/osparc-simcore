@@ -34,6 +34,7 @@ groups = sa.Table(
     sa.Column("description", sa.String, nullable=False),
     sa.Column("type", sa.Enum(GroupType), nullable=False, server_default="STANDARD"),
     sa.Column("thumbnail", sa.String, nullable=True),
+    sa.Column("inclusion_rules", JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")),
     sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
     sa.Column(
         "modified",
