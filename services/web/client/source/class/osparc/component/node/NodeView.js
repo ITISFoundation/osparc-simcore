@@ -42,6 +42,38 @@ qx.Class.define("osparc.component.node.NodeView", {
   },
 
   members: {
+    __checkSettingsVisibility: function() {
+      const isSettingsGroupShowable = this.isSettingsGroupShowable();
+      this._settingsLayout.setVisibility(isSettingsGroupShowable ? "visible" : "excluded");
+    },
+
+    __iFrameChanged: function() {
+      this._iFrameLayout.removeAll();
+
+      const loadingPage = this.getNode().getLoadingPage();
+      const iFrame = this.getNode().getIFrame();
+      const src = iFrame.getSource();
+      if (src === null || src === "about:blank") {
+        this._iFrameLayout.add(loadingPage, {
+          flex: 1
+        });
+      } else {
+        this._iFrameLayout.add(iFrame, {
+          flex: 1
+        });
+      }
+    },
+
+    // overridden
+    isSettingsGroupShowable: function() {
+      const node = this.getNode();
+      if (node && ("getPropsForm" in node) && node.getPropsForm()) {
+        return node.getPropsForm().hasVisibleInputs();
+      }
+      return false;
+    },
+
+    // overridden
     _addSettings: function() {
       this._settingsLayout.removeAll();
       this._mapperLayout.removeAll();
@@ -68,36 +100,7 @@ qx.Class.define("osparc.component.node.NodeView", {
       });
     },
 
-    __checkSettingsVisibility: function() {
-      const isSettingsGroupShowable = this.isSettingsGroupShowable();
-      this._settingsLayout.setVisibility(isSettingsGroupShowable ? "visible" : "excluded");
-    },
-
-    isSettingsGroupShowable: function() {
-      const node = this.getNode();
-      if (node && ("getPropsForm" in node) && node.getPropsForm()) {
-        return node.getPropsForm().hasVisibleInputs();
-      }
-      return false;
-    },
-
-    __iFrameChanged: function() {
-      this._iFrameLayout.removeAll();
-
-      const loadingPage = this.getNode().getLoadingPage();
-      const iFrame = this.getNode().getIFrame();
-      const src = iFrame.getSource();
-      if (src === null || src === "about:blank") {
-        this._iFrameLayout.add(loadingPage, {
-          flex: 1
-        });
-      } else {
-        this._iFrameLayout.add(iFrame, {
-          flex: 1
-        });
-      }
-    },
-
+    // overridden
     _addIFrame: function() {
       this._iFrameLayout.removeAll();
 
@@ -131,6 +134,7 @@ qx.Class.define("osparc.component.node.NodeView", {
       });
     },
 
+    // overridden
     _openEditAccessLevel: function() {
       const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
       settingsEditorLayout.add(this.getNode().getPropsFormEditor());
@@ -138,6 +142,7 @@ qx.Class.define("osparc.component.node.NodeView", {
       osparc.ui.window.Window.popUpInWindow(settingsEditorLayout, title, 800, 600);
     },
 
+    // overridden
     _applyNode: function(node) {
       if (node.isContainer()) {
         console.error("Only non-group nodes are supported");

@@ -56,7 +56,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __pane2: null,
     __title: null,
     __toolbar: null,
-    __mainView: null,
+    _mainView: null,
     __inputsView: null,
     __outputsView: null,
     __inputNodesLayout: null,
@@ -99,7 +99,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __cleanLayout: function() {
-      this.__mainView.removeAll();
+      this._mainView.removeAll();
     },
 
     __buildSideView: function(isInput) {
@@ -193,7 +193,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __buildMainView: function() {
-      const mainView = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const mainView = this._mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
       this._mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
@@ -248,9 +248,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     _addToMainView: function(view, options = {}) {
       if (view.hasChildren()) {
-        this.__mainView.add(view, options);
-      } else if (qx.ui.core.Widget.contains(this.__mainView, view)) {
-        this.__mainView.remove(view);
+        this._mainView.add(view, options);
+      } else if (qx.ui.core.Widget.contains(this._mainView, view)) {
+        this._mainView.remove(view);
       }
     },
 
