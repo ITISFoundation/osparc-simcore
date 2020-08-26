@@ -58,6 +58,11 @@ qx.Class.define("osparc.file.FilePicker2", {
       this._mainView.add(filePicker, {
         flex: 1
       });
+
+      const filesTree = filePicker.getFilesTree();
+      filesTree.set({
+        selectionMode: "multi"
+      });
     },
 
     // overridden

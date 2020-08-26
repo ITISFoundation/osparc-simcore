@@ -143,6 +143,10 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
+    getFilesTree: function() {
+      return this.__filesTree;
+    },
+
     uploadPendingFiles: function(files) {
       if (files.length > 0) {
         if (files.length > 1) {
