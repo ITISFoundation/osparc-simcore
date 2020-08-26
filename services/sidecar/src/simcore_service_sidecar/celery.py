@@ -15,10 +15,18 @@ log = get_task_logger(__name__)
 
 
 @worker_shutting_down.connect
-def worker_shutting_down_handler(sig, how, exitcode, **kwargs):
+def worker_shutting_down_handler(
+    # pylint: disable=unused-argument
+    sig,
+    how,
+    exitcode,
+    **kwargs
+):
+    # NOTE: this function shall be adapted when we switch to python 3.7+
     log.info("detected worker_shutting_down signal(%s, %s, %s)", sig, how, exitcode)
     tasks = asyncio.Task.all_tasks()
     for task in tasks:
+        # pylint: disable=protected-access
         if task._coro.__name__ == run_sidecar.__name__:
             log.warning("canceling task....................")
             task.cancel()

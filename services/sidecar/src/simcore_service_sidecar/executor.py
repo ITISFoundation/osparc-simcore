@@ -88,7 +88,7 @@ class Executor:
                 LogType.LOG, "[sidecar]...task completed successfully."
             )
         except asyncio.CancelledError as exc:
-            await self._post_messages(LogType.LOG, f"[sidecar]...task cancelled")
+            await self._post_messages(LogType.LOG, "[sidecar]...task cancelled")
             raise
         except (aiodocker.exceptions.DockerError, exceptions.SidecarException) as exc:
             await self._post_messages(
@@ -235,7 +235,7 @@ class Executor:
             raise
 
     async def _run_container(self):
-        # pylint: disable=too-many-statements
+        # pylint: disable=too-many-statements, too-many-branches
         start_time = time.perf_counter()
         container = None
         docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
