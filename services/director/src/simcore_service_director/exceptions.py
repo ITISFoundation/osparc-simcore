@@ -33,8 +33,7 @@ class GenericDockerError(DirectorException):
     """Generic docker library error"""
 
     def __init__(self, msg: str, original_exception: Exception):
-        msg = msg + (": %s" % original_exception)
-        super().__init__(msg)
+        super().__init__(msg + ": {original_exception}")
         self.original_exception = original_exception
 
 
