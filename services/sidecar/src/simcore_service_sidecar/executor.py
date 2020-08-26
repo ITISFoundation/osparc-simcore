@@ -58,7 +58,7 @@ class TaskSharedVolumes:
         ]:
             if folder.exists():
 
-                def log_error(fnc, path, excinfo):
+                def log_error(_, path, excinfo):
                     log.warning(
                         "Failed to remove %s [reason: %s]. Should consider pruning files in host later",
                         path,

@@ -346,7 +346,7 @@ async def test_run_services(
 
     await rabbit_queue.consume(rabbit_message_handler, exclusive=True, no_ack=True)
 
-    job_id = "1"
+    job_id = 1
 
     from simcore_service_sidecar import cli
 
