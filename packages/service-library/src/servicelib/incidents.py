@@ -25,12 +25,16 @@ class LimitedOrderedStack(Generic[ItemT]):
     _items: List[ItemT] = attr.ib(init=False, default=attr.Factory(list))
     _hits: int = attr.ib(init=False, default=0)
 
-    def __len__(self):
+    def __len__(self) -> int:
         # called also for __bool__
         return len(self._items)
 
+    def clear(self) -> None:
+        self._items.clear()
+        self._hits = 0
+
     @property
-    def hits(self):
+    def hits(self) -> int:
         return self._hits
 
     @property

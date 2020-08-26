@@ -12,12 +12,7 @@ from prometheus_client.registry import CollectorRegistry
 
 from servicelib.monitor_services import add_instrumentation
 
-from .diagnostics_core import (
-    DelayWindowProbe,
-    kLATENCY_PROBE,
-    kPLUGIN_START_TIME,
-    START_SENSING_DELAY_SECS,
-)
+from .diagnostics_core import DelayWindowProbe, is_sensing_enabled, kLATENCY_PROBE
 
 log = logging.getLogger(__name__)
 
@@ -78,15 +73,11 @@ def middleware_factory(app_name: str) -> Coroutine:
             if log_exception:
                 exc_name: str = log_exception.__class__.__name__
 
-
             # Probes request latency
-            elapsed_time = time.time() - request.app[kPLUGIN_START_TIME]
-
             # NOTE: sockets connection is long
             # FIXME: tmp by hand, add filters directly in probe
-            if (
-                not str(request.path).startswith("/socket.io")
-                and elapsed_time > START_SENSING_DELAY_SECS
+            if not str(request.path).startswith("/socket.io") and is_sensing_enabled(
+                request.app
             ):
                 request.app[kLATENCY_PROBE].observe(resp_time_secs)
 
