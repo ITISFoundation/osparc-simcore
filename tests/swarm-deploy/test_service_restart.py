@@ -95,6 +95,9 @@ def test_graceful_restart_services(
         https://kkc.github.io/2018/06/06/gracefully-shutdown-docker-container/
         https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
 
+    SEE Gracefully Stopping Docker Containers by DeHamer: https://www.ctl.io/developers/blog/post/gracefully-stopping-docker-containers/
+    SEE Gracefully Shutdown Docker Container by Kakashi: https://kkc.github.io/2018/06/06/gracefully-shutdown-docker-container/
+
     """
     service = next( s for s in deployed_simcore_stack if s.name == service_name )
 
