@@ -39,7 +39,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
   /**
     * @param node {osparc.data.model.Node} Node owning the widget
-  */
+    */
   construct: function(node) {
     this.base(arguments);
 
