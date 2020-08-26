@@ -17,9 +17,12 @@ kMAX_TASK_DELAY = f"{__name__}.max_task_delay"
 
 kLATENCY_PROBE = f"{__name__}.latency_probe"
 
+kPLUGIN_START_TIME = kLATENCY_PROBE = f"{__name__}.plugin_start_time"
+START_SENSING_DELAY_SECS = 60
+
 
 class HealthError(Exception):
-    pass
+    """ Service is set as unhealty """
 
 
 class IncidentsRegistry(LimitedOrderedStack[SlowCallback]):
@@ -30,7 +33,7 @@ class IncidentsRegistry(LimitedOrderedStack[SlowCallback]):
 @attr.s(auto_attribs=True)
 class DelayWindowProbe:
     """
-        Collects a window of delay samples that satisfy 
+        Collects a window of delay samples that satisfy
         some conditions (see observe code)
     """
 

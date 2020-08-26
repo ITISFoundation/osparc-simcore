@@ -4,8 +4,9 @@ from operator import attrgetter
 from typing import Optional
 
 from aiohttp import web
+import time
 
-from servicelib import monitor_slow_callbacks
+# from servicelib import monitor_slow_callbacks
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .diagnostics_core import (
@@ -13,6 +14,7 @@ from .diagnostics_core import (
     kINCIDENTS_REGISTRY,
     kMAX_AVG_RESP_LATENCY,
     kMAX_TASK_DELAY,
+    kPLUGIN_START_TIME,
 )
 from .diagnostics_entrypoints import create_rest_routes
 from .diagnostics_monitoring import setup_monitoring
@@ -77,7 +79,8 @@ def setup_diagnostics(
     registry = IncidentsRegistry(order_by=attrgetter("delay_secs"))
     app[kINCIDENTS_REGISTRY] = registry
 
-    monitor_slow_callbacks.enable(max_task_delay, registry)
+    # DISABLED
+    ##monitor_slow_callbacks.enable(max_task_delay, registry)
 
     # adds middleware and /metrics
     setup_monitoring(app)
@@ -85,3 +88,5 @@ def setup_diagnostics(
     # adds other diagnostic routes: healthcheck, etc
     routes = create_rest_routes(specs=app[APP_OPENAPI_SPECS_KEY])
     app.router.add_routes(routes)
+
+    app[kPLUGIN_START_TIME] = time.time()
