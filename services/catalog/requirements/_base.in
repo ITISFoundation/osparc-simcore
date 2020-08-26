@@ -22,3 +22,4 @@ httpx
 
 # other
 tenacity
+attrs<20,>=19   # from pytest-docker==0.8.0

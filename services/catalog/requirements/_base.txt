@@ -9,6 +9,7 @@ aiopg[sa]==1.0.0          # via -r requirements/_base.in
 aniso8601==7.0.0          # via graphene
 async-exit-stack==1.0.1   # via -r requirements/_base.in, fastapi
 async-generator==1.10     # via -r requirements/_base.in, fastapi
+attrs==19.3.0             # via -r requirements/_base.in
 certifi==2020.6.20        # via httpx, requests
 chardet==3.0.4            # via httpx, requests
 click==7.1.2              # via uvicorn
