@@ -47,8 +47,7 @@ qx.Class.define("osparc.file.FilePicker", {
       node
     });
 
-    const filePickerLayout = new qx.ui.layout.VBox(5);
-    this._setLayout(filePickerLayout);
+    this._setLayout(new qx.ui.layout.VBox(5));
 
     const reloadButton = this._createChildControlImpl("reloadButton");
     reloadButton.addListener("execute", function() {
