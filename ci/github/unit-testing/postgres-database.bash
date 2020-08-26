@@ -13,7 +13,7 @@ test() {
     pytest \
       --color=yes \
       --durations=10 \
-      --cov=servicelib \
+      --cov=simcore_postgres_database \
       --cov-append \
       --cov-report=term-missing \
       --cov-report=xml \
