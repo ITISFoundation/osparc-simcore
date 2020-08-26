@@ -16,8 +16,8 @@ kMAX_AVG_RESP_LATENCY = f"{__name__}.max_avg_response_latency"
 kMAX_TASK_DELAY = f"{__name__}.max_task_delay"
 
 kLATENCY_PROBE = f"{__name__}.latency_probe"
+kPLUGIN_START_TIME = f"{__name__}.plugin_start_time"
 
-kPLUGIN_START_TIME = kLATENCY_PROBE = f"{__name__}.plugin_start_time"
 START_SENSING_DELAY_SECS = 60
 
 
@@ -62,7 +62,6 @@ def assert_healthy_app(app: web.Application) -> None:
 
         raises DiagnosticError if any incient detected
     """
-
     # CRITERIA 1:
     incidents: Optional[IncidentsRegistry] = app.get(kINCIDENTS_REGISTRY)
     if incidents:
