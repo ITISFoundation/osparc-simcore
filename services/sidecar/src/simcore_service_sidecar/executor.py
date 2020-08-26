@@ -57,7 +57,15 @@ class TaskSharedVolumes:
             self.log_folder,
         ]:
             if folder.exists():
-                shutil.rmtree(str(folder))
+
+                def log_error(fnc, path, excinfo):
+                    log.warning(
+                        "Failed to remove %s [reason: %s]. Should consider pruning files in host later",
+                        path,
+                        excinfo,
+                    )
+
+                shutil.rmtree(str(folder), onerror=log_error)
 
 
 @attr.s(auto_attribs=True)
@@ -87,7 +95,7 @@ class Executor:
             await self._post_messages(
                 LogType.LOG, "[sidecar]...task completed successfully."
             )
-        except asyncio.CancelledError as exc:
+        except asyncio.CancelledError:
             await self._post_messages(LogType.LOG, "[sidecar]...task cancelled")
             raise
         except (aiodocker.exceptions.DockerError, exceptions.SidecarException) as exc:
@@ -173,7 +181,8 @@ class Executor:
             return input_ports
 
         await self._post_messages(
-            LogType.LOG, "[sidecar]Downloading inputs...",
+            LogType.LOG,
+            "[sidecar]Downloading inputs...",
         )
         await logged_gather(
             *[
@@ -243,7 +252,11 @@ class Executor:
         # NOTE: Env/Binds for log folder is only necessary for integraion "0"
         env_vars = [
             f"{name.upper()}_FOLDER=/{name}/{self.task.job_id}"
-            for name in ["input", "output", "log",]
+            for name in [
+                "input",
+                "output",
+                "log",
+            ]
         ]
         env_vars.append(f"SC_COMP_SERVICES_SCHEDULED_AS={get_boot_mode().value}")
 
@@ -395,17 +408,18 @@ class Executor:
                 await log_processor_task
 
     async def _process_task_output(self):
-        """ There will be some files in the /output
+        """There will be some files in the /output
 
-                - Maybe a output.json (should contain key value for simple things)
-                - other files: should be named by the key in the output port
+            - Maybe a output.json (should contain key value for simple things)
+            - other files: should be named by the key in the output port
 
-            Files will be pushed to S3 with reference in db. output.json will be parsed
-            and the db updated
+        Files will be pushed to S3 with reference in db. output.json will be parsed
+        and the db updated
         """
         log.debug("Processing outputs...")
         await self._post_messages(
-            LogType.LOG, "[sidecar]Uploading outputs...",
+            LogType.LOG,
+            "[sidecar]Uploading outputs...",
         )
         try:
             PORTS = await self._get_node_ports()
@@ -452,7 +466,8 @@ class Executor:
     async def _process_task_log(self):
         log.debug("Processing Logs...")
         await self._post_messages(
-            LogType.LOG, "[sidecar]Uploading logs...",
+            LogType.LOG,
+            "[sidecar]Uploading logs...",
         )
         if self.shared_folders.log_folder and self.shared_folders.log_folder.exists():
             await node_data.data_manager.push(
@@ -463,11 +478,17 @@ class Executor:
     async def _post_messages(self, log_type: LogType, message: str):
         if log_type == LogType.LOG:
             await self.rabbit_mq.post_log_message(
-                self.user_id, self.task.project_id, self.task.node_id, message,
+                self.user_id,
+                self.task.project_id,
+                self.task.node_id,
+                message,
             )
         elif log_type == LogType.PROGRESS:
             await self.rabbit_mq.post_progress_message(
-                self.user_id, self.task.project_id, self.task.node_id, message,
+                self.user_id,
+                self.task.project_id,
+                self.task.node_id,
+                message,
             )
 
     async def _error_message_to_ui_and_logs(self, error_message):
