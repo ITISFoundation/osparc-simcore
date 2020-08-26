@@ -4,6 +4,7 @@ from operator import attrgetter
 from typing import Optional
 
 from aiohttp import web
+import time
 
 from servicelib import monitor_slow_callbacks
 from servicelib.application_setup import ModuleCategory, app_module_setup
@@ -13,6 +14,8 @@ from .diagnostics_core import (
     kINCIDENTS_REGISTRY,
     kMAX_AVG_RESP_LATENCY,
     kMAX_TASK_DELAY,
+    kPLUGIN_START_TIME,
+    kSTART_SENSING_DELAY_SECS
 )
 from .diagnostics_entrypoints import create_rest_routes
 from .diagnostics_monitoring import setup_monitoring
@@ -34,8 +37,10 @@ def setup_diagnostics(
     slow_duration_secs: Optional[float] = None,
     max_task_delay: Optional[float] = None,
     max_avg_response_latency: Optional[float] = None,
+    start_sensing_delay: Optional[float] = 60
 ):
     # NOTE: keep all environs getters inside setup so they can be patched easier for testing
+
 
     #
     # Any task blocked more than slow_duration_secs is logged as WARNING
@@ -73,6 +78,14 @@ def setup_diagnostics(
     log.info("max_avg_response_latency = %3.2f secs ", max_avg_response_latency)
 
     #
+    # Time to start sensinng (secs) for diagnostics since this modules inits
+    #
+    app[kSTART_SENSING_DELAY_SECS] = start_sensing_delay
+    log.info("start_sensing_delay = %3.2f secs ", start_sensing_delay)
+
+    # -------
+
+    #
     # TODO: redesign ... too convoluted!!
     registry = IncidentsRegistry(order_by=attrgetter("delay_secs"))
     app[kINCIDENTS_REGISTRY] = registry
@@ -85,3 +98,5 @@ def setup_diagnostics(
     # adds other diagnostic routes: healthcheck, etc
     routes = create_rest_routes(specs=app[APP_OPENAPI_SPECS_KEY])
     app.router.add_routes(routes)
+
+    app[kPLUGIN_START_TIME] = time.time()

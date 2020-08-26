@@ -15,16 +15,12 @@ import pytest
 import socketio
 from aiohttp import web
 from mock import call
-from socketio.exceptions import ConnectionError
+from socketio.exceptions import ConnectionError as SocketConnectionError
 
-from _helpers import (
-    ExpectedResponse,
-    HTTPLocked,
-    future_with_result,
-    standard_role_response,
-)
+from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
+from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
+from pytest_simcore.helpers.utils_mock import future_with_result
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
@@ -54,32 +50,8 @@ RESOURCE_NAME = "projects"
 API_PREFIX = "/" + API_VERSION
 
 
-@pytest.fixture
-def mocked_director_subsystem(mocker):
-    mock_director_api = {
-        "get_running_interactive_services": mocker.patch(
-            "simcore_service_webserver.director.director_api.get_running_interactive_services",
-            return_value=future_with_result(""),
-        ),
-        "start_service": mocker.patch(
-            "simcore_service_webserver.director.director_api.start_service",
-            return_value=future_with_result(""),
-        ),
-        "stop_service": mocker.patch(
-            "simcore_service_webserver.director.director_api.stop_service",
-            return_value=future_with_result(""),
-        ),
-    }
-    return mock_director_api
-
-
 DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS: int = 3
 DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
-
-
-@pytest.fixture
-def gc_long_deletion_timeout():
-    DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS = 900
 
 
 @pytest.fixture
@@ -186,16 +158,6 @@ async def template_project(
         print("-----> added template project", template_project["name"])
         yield template_project
         print("<----- removed template project", template_project["name"])
-
-
-@pytest.fixture
-def computational_system_mock(mocker):
-    mock_fun = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.update_pipeline_db",
-        return_value=Future(),
-    )
-    mock_fun.return_value.set_result("")
-    return mock_fun
 
 
 @pytest.fixture
@@ -937,7 +899,7 @@ async def test_get_active_project(
     try:
         sio = await socketio_client(client_id1)
         assert sio.sid
-    except ConnectionError:
+    except SocketConnectionError:
         if expected == web.HTTPOk:
             pytest.fail("socket io connection should not fail")
 
@@ -970,7 +932,7 @@ async def test_get_active_project(
     try:
         sio = await socketio_client(client_id2)
         assert sio.sid
-    except ConnectionError:
+    except SocketConnectionError:
         if expected == web.HTTPOk:
             pytest.fail("socket io connection should not fail")
     # get active projects -> empty
@@ -1014,7 +976,7 @@ async def test_delete_multiple_opened_project_forbidden(
     client_session_id1 = client_session_id()
     try:
         sio1 = await socketio_client(client_session_id1)
-    except ConnectionError:
+    except SocketConnectionError:
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
@@ -1024,7 +986,7 @@ async def test_delete_multiple_opened_project_forbidden(
     client_session_id2 = client_session_id()
     try:
         sio2 = await socketio_client(client_session_id2)
-    except ConnectionError:
+    except SocketConnectionError:
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")
     await _delete_project(client, user_project, expected_forbidden)
@@ -1215,7 +1177,7 @@ async def _connect_websocket(
             for event, handler in events.items():
                 sio.on(event, handler=handler)
         return sio
-    except ConnectionError:
+    except SocketConnectionError:
         if check_connection:
             pytest.fail("socket io connection should not fail")
 

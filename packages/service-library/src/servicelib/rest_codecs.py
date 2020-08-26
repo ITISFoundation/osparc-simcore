@@ -1,8 +1,9 @@
 """ rest - json data encoders/decodes
 
 """
-import attr
 import json
+
+import attr
 
 
 class DataEncoder(json.JSONEncoder):

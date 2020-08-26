@@ -101,12 +101,12 @@ async def create_projects(request: web.Request):
         # This is a new project and every new graph needs to be reflected in the pipeline db
         await update_pipeline_db(request.app, project["uuid"], project["workbench"])
 
-    except ValidationError:
-        raise web.HTTPBadRequest(reason="Invalid project data")
-    except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason="Project not found")
-    except ProjectInvalidRightsError:
-        raise web.HTTPUnauthorized
+    except ValidationError as exc:
+        raise web.HTTPBadRequest(reason="Invalid project data") from exc
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason="Project not found") from exc
+    except ProjectInvalidRightsError as exc:
+        raise web.HTTPUnauthorized from exc
 
     else:
         raise web.HTTPCreated(text=json.dumps(project), content_type="application/json")
@@ -169,12 +169,12 @@ async def get_project(request: web.Request):
         )
 
         return {"data": project}
-    except ProjectInvalidRightsError:
+    except ProjectInvalidRightsError as exc:
         raise web.HTTPForbidden(
             reason=f"You do not have sufficient rights to read project {project_uuid}"
-        )
-    except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
+        ) from exc
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
 @login_required
@@ -233,15 +233,15 @@ async def replace_project(request: web.Request):
             request.app, project_uuid, new_project["workbench"], replace_pipeline
         )
 
-    except ValidationError:
-        raise web.HTTPBadRequest
+    except ValidationError as exc:
+        raise web.HTTPBadRequest from exc
 
-    except ProjectInvalidRightsError:
+    except ProjectInvalidRightsError as exc:
         raise web.HTTPForbidden(
             reason="You do not have sufficient rights to save the project"
-        )
-    except ProjectNotFoundError:
-        raise web.HTTPNotFound
+        ) from exc
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound from exc
 
     return {"data": new_project}
 
@@ -277,12 +277,12 @@ async def delete_project(request: web.Request):
             raise web.HTTPForbidden(reason=message)
 
         await projects_api.delete_project(request, project_uuid, user_id)
-    except ProjectInvalidRightsError:
+    except ProjectInvalidRightsError as err:
         raise web.HTTPForbidden(
             reason="You do not have sufficient rights to delete this project"
-        )
-    except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
+        ) from err
+    except ProjectNotFoundError as err:
+        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from err
 
     raise web.HTTPNoContent(content_type="application/json")
 
@@ -325,10 +325,10 @@ async def open_project(request: web.Request) -> web.Response:
                         if other_users:
                             return other_users
                         await rt.add("project_id", project_uuid)
-                except aioredlock.LockError:
+                except aioredlock.LockError as exc:
                     # TODO: this lock is not a good solution for long term
                     # maybe a project key in redis might improve spped of checking
-                    raise HTTPLocked(reason="Project is locked")
+                    raise HTTPLocked(reason="Project is locked") from exc
 
         other_users = await try_add_project()
         if other_users:
@@ -348,8 +348,8 @@ async def open_project(request: web.Request) -> web.Response:
             request.app, project, project_state
         )
         return web.json_response({"data": project})
-    except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
 @login_required
@@ -393,8 +393,8 @@ async def close_project(request: web.Request) -> web.Response:
         fire_and_forget_task(_close_project_task())
 
         raise web.HTTPNoContent(content_type="application/json")
-    except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
 @login_required
@@ -449,8 +449,8 @@ async def get_active_project(request: web.Request) -> web.Response:
             )
 
         return web.json_response({"data": project})
-    except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason="Project not found")
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason="Project not found") from exc
 
 
 @login_required
@@ -482,8 +482,8 @@ async def create_node(request: web.Request) -> web.Response:
             )
         }
         return web.json_response({"data": data}, status=web.HTTPCreated.status_code)
-    except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
 @login_required
@@ -508,8 +508,8 @@ async def get_node(request: web.Request) -> web.Response:
             request, project_uuid, user_id, node_uuid
         )
         return web.json_response({"data": node_details})
-    except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
 @login_required
@@ -535,8 +535,8 @@ async def delete_node(request: web.Request) -> web.Response:
         )
 
         raise web.HTTPNoContent(content_type="application/json")
-    except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
 @login_required

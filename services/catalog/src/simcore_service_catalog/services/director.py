@@ -1,15 +1,14 @@
 import json
 import logging
+from contextlib import suppress
 from typing import Dict, Optional
 
 import attr
 from fastapi import FastAPI, HTTPException
 from httpx import AsyncClient, Response, StatusCode
-
 from starlette import status
 
 from ..core.settings import DirectorSettings
-
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +27,11 @@ def setup_director(app: FastAPI) -> None:
 
 
 async def close_director(app: FastAPI) -> None:
-    try:
+    with suppress(AttributeError):
         client: AsyncClient = app.state.director_client
         await client.aclose()
         del app.state.director_client
-    except AttributeError:
-        pass
+
     logger.debug("Director client closed successfully")
 
 
@@ -98,9 +96,9 @@ class AuthSession:
         url = self._url(path)
         try:
             resp = await self.client.get(url)
-        except Exception:
+        except Exception as err:
             logger.exception("Failed to get %s", url)
-            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
         return self._process(resp)
 
@@ -108,8 +106,8 @@ class AuthSession:
         url = self._url(path)
         try:
             resp = await self.client.put(url, json=body)
-        except Exception:
+        except Exception as err:
             logger.exception("Failed to put %s", url)
-            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
         return self._process(resp)

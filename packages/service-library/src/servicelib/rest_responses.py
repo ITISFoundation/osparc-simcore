@@ -1,14 +1,13 @@
 """ Utils to check, convert and compose server responses for the RESTApi
 
 """
-from typing import Dict, Mapping, Tuple, Optional, List
+from typing import Dict, List, Mapping, Optional, Tuple
 
 import attr
 from aiohttp import web
 
-from .rest_models import LogMessageType
-from .rest_codecs import jsonify, json
-from .rest_models import ErrorItemType, ErrorType
+from .rest_codecs import json, jsonify
+from .rest_models import ErrorItemType, ErrorType, LogMessageType
 
 ENVELOPE_KEYS = ("data", "error")
 JSON_CONTENT_TYPE = "application/json"

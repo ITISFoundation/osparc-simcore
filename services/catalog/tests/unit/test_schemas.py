@@ -6,8 +6,8 @@
 import json
 
 import pytest
-
 import simcore_postgres_database.models.direct_acyclic_graphs as orm
+
 from simcore_service_catalog.db import tables
 from simcore_service_catalog.models.domain.dag import DAGAtDB
 from simcore_service_catalog.models.schemas.dag import DAGIn, DAGOut

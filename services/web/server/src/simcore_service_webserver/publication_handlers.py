@@ -78,8 +78,8 @@ async def service_submission(request: web.Request):
             },
             attachments=attachments,
         )
-    except Exception:
+    except Exception as exc:
         log.exception("Error while sending the 'new service submission' mail.")
-        raise web.HTTPServiceUnavailable()
+        raise web.HTTPServiceUnavailable() from exc
 
     raise web.HTTPNoContent(content_type="application/json")

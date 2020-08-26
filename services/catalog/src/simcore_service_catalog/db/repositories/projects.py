@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 import sqlalchemy as sa
@@ -6,8 +7,6 @@ from pydantic import ValidationError
 from ...models.domain.service import ServiceKeyVersion
 from ..tables import ProjectType, projects
 from ._base import BaseRepository
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +24,10 @@ class ProjectsRepository(BaseRepository):
             for node in project_workbench:
                 service = project_workbench[node]
                 try:
-                    if "file-picker" in service["key"] or "nodes-group" in service["key"]:
+                    if (
+                        "file-picker" in service["key"]
+                        or "nodes-group" in service["key"]
+                    ):
                         # these 2 are not going to pass the validation tests, they are frontend only nodes.
                         continue
                     list_of_published_services.append(ServiceKeyVersion(**service))
