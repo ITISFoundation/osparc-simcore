@@ -169,8 +169,8 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
-    getFilePicker: function() {
-      return {
+    __getFilePickers: function() {
+      return [{
         key: "simcore/services/frontend/file-picker",
         version: "1.0.0",
         type: "dynamic",
@@ -194,7 +194,37 @@ qx.Class.define("osparc.utils.Services", {
         "access_rights": {
           "1": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
         }
-      };
+      },
+      {
+        key: "simcore/services/frontend/file-picker",
+        version: "2.0.0",
+        type: "dynamic",
+        name: "File Picker",
+        description: "File Picker",
+        authors: [{
+          name: "Odei Maiz",
+          email: "maiz@itis.swiss"
+        }],
+        contact: "maiz@itis.swiss",
+        owner: "maiz@itis.swiss",
+        inputs: {},
+        outputs: {
+          "outFile_0": {
+            displayOrder: 0,
+            label: "File",
+            description: "Chosen File",
+            type: "data:*/*"
+          }
+        },
+        "access_rights": {
+          "1": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
+        }
+      }];
+    },
+
+    getFilePicker: function(version = "1.0.0") {
+      const filePickers = this.__getFilePickers();
+      return filePickers.find(filePicker => filePicker.version === version);
     },
 
     getNodesGroup: function() {
@@ -219,10 +249,8 @@ qx.Class.define("osparc.utils.Services", {
     },
 
     getBuiltInServices: function() {
-      const builtInServices = [
-        this.getFilePicker(),
-        this.getNodesGroup()
-      ];
+      const builtInServices = this.__getFilePickers();
+      builtInServices.push(this.getNodesGroup());
       return builtInServices;
     },
 
