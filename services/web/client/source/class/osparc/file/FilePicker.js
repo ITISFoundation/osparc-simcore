@@ -49,46 +49,9 @@ qx.Class.define("osparc.file.FilePicker", {
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    const reloadButton = this._createChildControlImpl("reloadButton");
-    reloadButton.addListener("execute", function() {
-      this.__filesTree.resetCache();
-      this.__initResources();
-    }, this);
+    this.__buildLayout();
 
-    const filesTree = this.__filesTree = this._createChildControlImpl("filesTree");
-    filesTree.addListener("selectionChanged", this.__selectionChanged, this);
-    filesTree.addListener("itemSelected", this.__itemSelected, this);
-    filesTree.addListener("filesAddedToTree", this.__checkSelectedFileIsListed, this);
-
-    const toolbar = new qx.ui.toolbar.ToolBar();
-    const mainButtons = this.__mainButtons = new qx.ui.toolbar.Part();
-    toolbar.addSpacer();
-    toolbar.add(mainButtons);
-
-    this._add(toolbar);
-
-    const filesAdd = this.__filesAdder = this._createChildControlImpl("filesAdd");
-    filesAdd.addListener("fileAdded", e => {
-      const fileMetadata = e.getData();
-      if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
-        this.__setOutputFile(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
-      }
-      this.__filesTree.resetCache();
-      this.__initResources();
-    }, this);
-
-    const selectBtn = this.__selectBtn = this._createChildControlImpl("selectButton");
-    selectBtn.setEnabled(false);
-    selectBtn.addListener("execute", function() {
-      this.__itemSelected();
-    }, this);
-
-    if (this.__isOutputFileSelected()) {
-      const outFile = this.__getOutputFile();
-      this.__filesTree.loadFilePath(outFile.value);
-    } else {
-      this.__initResources();
-    }
+    this.__init();
   },
 
   properties: {
@@ -137,6 +100,51 @@ qx.Class.define("osparc.file.FilePicker", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __buildLayout: function() {
+      const reloadButton = this._createChildControlImpl("reloadButton");
+      reloadButton.addListener("execute", function() {
+        this.__filesTree.resetCache();
+        this.__initResources();
+      }, this);
+
+      const filesTree = this.__filesTree = this._createChildControlImpl("filesTree");
+      filesTree.addListener("selectionChanged", this.__selectionChanged, this);
+      filesTree.addListener("itemSelected", this.__itemSelected, this);
+      filesTree.addListener("filesAddedToTree", this.__checkSelectedFileIsListed, this);
+
+      const toolbar = new qx.ui.toolbar.ToolBar();
+      const mainButtons = this.__mainButtons = new qx.ui.toolbar.Part();
+      toolbar.addSpacer();
+      toolbar.add(mainButtons);
+
+      this._add(toolbar);
+
+      const filesAdd = this.__filesAdder = this._createChildControlImpl("filesAdd");
+      filesAdd.addListener("fileAdded", e => {
+        const fileMetadata = e.getData();
+        if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
+          this.__setOutputFile(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
+        }
+        this.__filesTree.resetCache();
+        this.__initResources();
+      }, this);
+
+      const selectBtn = this.__selectBtn = this._createChildControlImpl("selectButton");
+      selectBtn.setEnabled(false);
+      selectBtn.addListener("execute", function() {
+        this.__itemSelected();
+      }, this);
+    },
+
+    __init: function() {
+      if (this.__isOutputFileSelected()) {
+        const outFile = this.__getOutputFile();
+        this.__filesTree.loadFilePath(outFile.value);
+      } else {
+        this.__initResources();
+      }
     },
 
     uploadPendingFiles: function(files) {
