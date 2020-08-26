@@ -16,7 +16,7 @@ qx.Class.define("osparc.component.service.NodeStatusUI", {
     this.__icon = this.getChildControl("icon");
 
     if (node.isFilePicker()) {
-      this.__setupFilepicker();
+      this.__setupFilePicker();
     } else {
       this.__setupInteractive();
     }
@@ -106,7 +106,7 @@ qx.Class.define("osparc.component.service.NodeStatusUI", {
       });
     },
 
-    __setupFilepicker: function() {
+    __setupFilePicker: function() {
       const node = this.__node;
       this.__node.getStatus().bind("progress", this.__icon, "source", {
         converter: progress => {
@@ -127,8 +127,9 @@ qx.Class.define("osparc.component.service.NodeStatusUI", {
       this.__node.getStatus().bind("progress", this.__label, "value", {
         converter: progress => {
           if (progress === 100) {
-            const outInfo = node.getOutputValues().outFile;
-            if (outInfo) {
+            const outInfos = Object.values(node.getOutputValues());
+            if (outInfos.length === 1) {
+              const outInfo = outInfos[0];
               if ("label" in outInfo) {
                 return outInfo.label;
               }
