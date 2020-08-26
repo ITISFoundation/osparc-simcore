@@ -322,7 +322,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const filePicker = new osparc.file.FilePicker(node);
         const win = osparc.ui.window.Window.popUpInWindow(filePicker, node.getLabel(), 570, 450);
         filePicker.addListener("finished", () => win.close(), this);
-        return;
+      } else if (node.getVersion() === "2.0.0") {
+        const nodeView = new osparc.file.FilePicker2(node);
+        this.showInMainView(nodeView, node.getNodeId());
+        nodeView.populateLayout();
       }
     },
 
