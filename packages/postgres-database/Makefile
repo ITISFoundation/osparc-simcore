@@ -97,3 +97,10 @@ up-pg up-prod: $(docker-compose-configs) ## starts pg server
 
 down-pg down-prod: $(docker-compose-configs) ## stops pg server
 	docker-compose -f tests/docker-compose.yml  $(if $(findstring -prod,$@),-f tests/docker-compose.prod.yml,) down
+
+
+
+.PHONY: erd-doc
+erd-doc: install-dev ## entity relationship diagram (ERD) defined under ``simcore_postgres_database.models``
+	pip install eralchemy
+	python scripts/create_erd.py
