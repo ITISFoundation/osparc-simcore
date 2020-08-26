@@ -320,6 +320,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __openFilePicker: function(node) {
       if (node.getVersion() === "1.0.0") {
         const filePicker = new osparc.file.FilePicker(node);
+        filePicker.buildLayout();
+        filePicker.init();
         const win = osparc.ui.window.Window.popUpInWindow(filePicker, node.getLabel(), 570, 450);
         filePicker.addListener("finished", () => win.close(), this);
       } else if (node.getVersion() === "2.0.0") {

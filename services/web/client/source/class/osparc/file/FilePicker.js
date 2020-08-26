@@ -46,12 +46,6 @@ qx.Class.define("osparc.file.FilePicker", {
     this.set({
       node
     });
-
-    this._setLayout(new qx.ui.layout.VBox(5));
-
-    this.__buildLayout();
-
-    this.__init();
   },
 
   properties: {
@@ -102,7 +96,9 @@ qx.Class.define("osparc.file.FilePicker", {
       return control || this.base(arguments, id);
     },
 
-    __buildLayout: function() {
+    buildLayout: function() {
+      this._setLayout(new qx.ui.layout.VBox(5));
+
       const reloadButton = this._createChildControlImpl("reloadButton");
       reloadButton.addListener("execute", function() {
         this.__filesTree.resetCache();
@@ -138,7 +134,7 @@ qx.Class.define("osparc.file.FilePicker", {
       }, this);
     },
 
-    __init: function() {
+    init: function() {
       if (this.__isOutputFileSelected()) {
         const outFile = this.__getOutputFile();
         this.__filesTree.loadFilePath(outFile.value);
