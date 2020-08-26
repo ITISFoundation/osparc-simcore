@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import shutil
@@ -86,9 +87,16 @@ class Executor:
             await self._post_messages(
                 LogType.LOG, "[sidecar]...task completed successfully."
             )
-        except (aiodocker.exceptions.DockerError, exceptions.SidecarException) as e:
-            await self._post_messages(LogType.LOG, f"[sidecar]...task failed: {str(e)}")
+        except asyncio.CancelledError as exc:
+            await self._post_messages(LogType.LOG, f"[sidecar]...task cancelled")
             raise
+        except (aiodocker.exceptions.DockerError, exceptions.SidecarException) as exc:
+            await self._post_messages(
+                LogType.LOG, f"[sidecar]...task failed: {str(exc)}"
+            )
+            raise exceptions.SidecarException(
+                f"Error while executing task {self.task}"
+            ) from exc
         finally:
             await self.cleanup()
 
@@ -318,6 +326,7 @@ class Executor:
             # wait until the container finished, either success or fail or timeout
             container_data = await container.show()
             while container_data["State"]["Running"]:
+                await asyncio.sleep(2)
                 # reload container data
                 container_data = await container.show()
                 if (
@@ -348,12 +357,18 @@ class Executor:
                 docker_image,
                 docker_container_config,
             )
+            raise
         except aiodocker.exceptions.DockerError:
             log.exception(
                 "Unknown error while trying to run %s with parameters %s",
                 docker_image,
                 docker_container_config,
             )
+            raise
+        except asyncio.CancelledError:
+            log.warning("Container run was cancelled")
+            raise
+
         finally:
             stop_time = time.perf_counter()
             log.info("Running %s took %sseconds", docker_image, stop_time - start_time)

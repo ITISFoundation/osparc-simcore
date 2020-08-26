@@ -2,7 +2,7 @@ import traceback
 from datetime import datetime
 from typing import Dict, List, Optional, Union
 
-import aiodocker
+import asyncio
 import networkx as nx
 from aiopg.sa import Engine, SAConnection
 from aiopg.sa.result import RowProxy
@@ -174,12 +174,15 @@ async def inspect(
     run_result = SUCCESS
     next_task_nodes = []
     try:
-        sidecar = Executor(
+        executor = Executor(
             db_engine=db_engine, rabbit_mq=rabbit_mq, task=task, user_id=user_id,
         )
-        await sidecar.run()
+        await executor.run()
         next_task_nodes = list(graph.successors(node_id))
-    except (aiodocker.exceptions.DockerError, exceptions.SidecarException):
+    except asyncio.CancelledError:
+        run_result = FAILED
+        log.warning("Task has been cancelled")
+    except exceptions.SidecarException:
         run_result = FAILED
         log.exception("Error during execution")
 

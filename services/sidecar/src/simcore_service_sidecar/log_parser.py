@@ -101,6 +101,7 @@ async def _monitor_docker_container(
                 log_type, parsed_line = await parse_line(line)
                 await log_cb(log_type, parsed_line)
                 await writer(f"{log_type.name}: {parsed_line}")
+                await asyncio.sleep(1)
     except aiodocker.exceptions.DockerError as e:
         log_type, parsed_line = await parse_line(
             f"Could not recover logs because: {str(e)}"
