@@ -249,8 +249,10 @@ qx.Class.define("osparc.utils.Services", {
     },
 
     getBuiltInServices: function() {
-      const builtInServices = this.__getFilePickers();
-      builtInServices.push(this.getNodesGroup());
+      const builtInServices = [
+        ...this.__getFilePickers(),
+        ...[this.getNodesGroup()]
+      ];
       return builtInServices;
     },
 
