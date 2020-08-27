@@ -61,6 +61,7 @@ def write_statics_file(directory: Path) -> None:
 
     # create statics field
     statics = {}
+    # TODO: build with pydantic and validate data before serializing
     statics["stackName"] = os.environ.get("SWARM_STACK_NAME")
     statics["buildDate"] = os.environ.get("BUILD_DATE")
     statics["manualMainURL"] = os.environ.get("WEBSERVER_MANUAL_MAIN_URL")
