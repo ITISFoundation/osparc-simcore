@@ -135,7 +135,6 @@ qx.Class.define("osparc.utils.LibVersions", {
           }
           return platformName;
         });
-    },
-
+    }
   }
 });

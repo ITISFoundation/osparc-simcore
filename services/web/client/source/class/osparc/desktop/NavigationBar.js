@@ -113,7 +113,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     _createChildControlImpl: function(id) {
-      const store_statics = osparc.store.Store.getInstance().getStatics();
+      const storeStatics = osparc.store.Store.getInstance().getStatics();
       let control;
       switch (id) {
         case "logo": {
@@ -143,9 +143,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this._add(control);
           break;
         case "z43-manual":
-          if (store_statics)
-          {
-            control = new osparc.ui.form.LinkButton(this.tr("Z43 manual"), store_statics.manualExtraURL).set({
+          if (storeStatics){
+            control = new osparc.ui.form.LinkButton(this.tr("Z43 manual"), storeStatics.manualExtraURL).set({
               appearance: "link-button",
               font: "text-14"
             });
@@ -153,9 +152,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           }
           break;
         case "user-manual":
-          if (store_statics)
-          {
-            control = new osparc.ui.form.LinkButton(this.tr("User manual"), store_statics.manualMainURL).set({
+          if (storeStatics){
+            control = new osparc.ui.form.LinkButton(this.tr("User manual"), storeStatics.manualMainURL).set({
               appearance: "link-button",
               font: "text-14"
             });
