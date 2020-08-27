@@ -46,7 +46,7 @@ async def _delete_tmps(app: web.Application):
 
 async def index(request: web.Request):
     """
-        Serves boot application under index
+    Serves boot application under index
     """
     log.debug("index.request:\n %s", request)
 
@@ -64,7 +64,9 @@ def write_statics_file(directory: Path) -> None:
     # TODO: build with pydantic and validate data before serializing
     statics["stackName"] = os.environ.get("SWARM_STACK_NAME")
     statics["buildDate"] = os.environ.get("BUILD_DATE")
-    statics["manualMainURL"] = os.environ.get("WEBSERVER_MANUAL_MAIN_URL")
+    statics["manualMainURL"] = os.environ.get(
+        "WEBSERVER_MANUAL_MAIN_URL", "http://docs.osparc.io/"
+    )
     statics["manualExtraURL"] = os.environ.get("WEBSERVER_MANUAL_EXTRA_URL")
     with open(directory / "statics.json", "wt") as fh:
         json.dump(statics, fh)

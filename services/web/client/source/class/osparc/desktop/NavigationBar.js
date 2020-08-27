@@ -113,6 +113,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     _createChildControlImpl: function(id) {
+      const store_statics = osparc.store.Store.getInstance().getStatics();
       let control;
       switch (id) {
         case "logo": {
@@ -142,18 +143,24 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this._add(control);
           break;
         case "z43-manual":
-          control = new osparc.ui.form.LinkButton(this.tr("Z43 manual"), osparc.utils.LibVersions.getExtraManualUrl()).set({
-            appearance: "link-button",
-            font: "text-14"
-          });
-          this._add(control);
+          if (store_statics)
+          {
+            control = new osparc.ui.form.LinkButton(this.tr("Z43 manual"), store_statics.manualExtraURL).set({
+              appearance: "link-button",
+              font: "text-14"
+            });
+            this._add(control);
+          }
           break;
         case "user-manual":
-          control = new osparc.ui.form.LinkButton(this.tr("User manual"), osparc.utils.LibVersions.getMainManualUrl()).set({
-            appearance: "link-button",
-            font: "text-14"
-          });
-          this._add(control);
+          if (store_statics)
+          {
+            control = new osparc.ui.form.LinkButton(this.tr("User manual"), store_statics.manualMainURL).set({
+              appearance: "link-button",
+              font: "text-14"
+            });
+            this._add(control);
+          }
           break;
         case "feedback":
           control = new osparc.ui.form.LinkButton(this.tr("Give us feedback"), this.self().FEEDBACK_FORM_URL).set({
