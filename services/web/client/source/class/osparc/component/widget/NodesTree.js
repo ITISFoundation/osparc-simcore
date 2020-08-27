@@ -38,10 +38,7 @@
 qx.Class.define("osparc.component.widget.NodesTree", {
   extend: qx.ui.core.Widget,
 
-  /**
-    * @param study {osparc.data.model.Study} Study owning the widget
-    */
-  construct: function(study) {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox());
@@ -55,7 +52,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
   events: {
     "nodeDoubleClicked": "qx.event.type.Data",
-    "addNode": "qx.event.type.Event",
     "removeNode": "qx.event.type.Data",
     "exportNode": "qx.event.type.Data",
     "changeSelectedNode": "qx.event.type.Data"
@@ -65,6 +61,10 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     __toolBar: null,
     __tree: null,
     __exportButton: null,
+    __openButton: null,
+    __deleteButton: null,
+    __currentNodeId: null,
+    __toolbarInitMinWidth: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -84,6 +84,10 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       return control || this.base(arguments, id);
     },
 
+    setCurrentNodeId: function(nodeId) {
+      this.__currentNodeId = nodeId;
+    },
+
     __getToolbarButtons: function(toolbar) {
       const toolBarChildren = toolbar.getChildren();
       return toolBarChildren.filter(toolBarChild => toolBarChild instanceof qx.ui.toolbar.Button);
@@ -93,19 +97,10 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       const iconSize = 14;
       const toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
 
-      const newButton = new qx.ui.toolbar.Button(this.tr("New"), "@FontAwesome5Solid/plus/"+iconSize, new qx.ui.command.Command("Ctrl+N"));
-      newButton.addListener("execute", e => {
-        this.__addNode();
-      }, this);
-      osparc.utils.Utils.setIdToWidget(newButton, "newServiceBtn");
-      toolbar.add(newButton);
-
       toolbar.addSpacer();
 
       if (osparc.data.Permissions.getInstance().canDo("study.node.export")) {
-        const exportButton = this.__exportButton = new qx.ui.toolbar.Button(this.tr("Export"), "@FontAwesome5Solid/share/"+iconSize).set({
-          enabled: false
-        });
+        const exportButton = this.__exportButton = new qx.ui.toolbar.Button(this.tr("Export"), "@FontAwesome5Solid/share/"+iconSize);
         exportButton.addListener("execute", () => {
           this.__exportDAG();
         }, this);
@@ -113,7 +108,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         toolbar.add(exportButton);
       }
 
-      const openButton = new qx.ui.toolbar.Button(this.tr("Open"), "@FontAwesome5Solid/edit/"+iconSize);
+      const openButton = this.__openButton = new qx.ui.toolbar.Button(this.tr("Open"), "@FontAwesome5Solid/edit/"+iconSize);
       openButton.addListener("execute", e => {
         const study = osparc.store.Store.getInstance().getCurrentStudy();
         const selectedItem = this.__getSelection();
@@ -132,7 +127,9 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       osparc.utils.Utils.setIdToWidget(renameButton, "renameServiceBtn");
       toolbar.add(renameButton);
 
-      const deleteButton = new qx.ui.toolbar.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/"+iconSize);
+      const deleteButton = this.__deleteButton = new qx.ui.toolbar.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/"+iconSize).set({
+        enabled: false
+      });
       deleteButton.addListener("execute", e => {
         this.__deleteNode();
       }, this);
@@ -199,12 +196,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           configureItem: item => {
             item.addListener("dbltap", () => {
               this.__openItem(item.getModel().getNodeId());
+              this.__selectedItem(item);
             }, this);
             item.addListener("tap", e => {
-              this.fireDataEvent("changeSelectedNode", item.getModel().getNodeId());
-              if (this.__exportButton) {
-                this.__exportButton.setEnabled((Boolean(item.getLevel()) && item.getModel().getIsContainer()));
-              }
+              this.__selectedItem(item);
+              this.nodeSelected(item.getModel().getNodeId());
             }, this);
           }
         });
@@ -252,10 +248,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       return selectedItem;
     },
 
-    __addNode: function() {
-      this.fireEvent("addNode");
-    },
-
     __exportDAG: function() {
       const selectedItem = this.__getSelection();
       if (selectedItem) {
@@ -272,6 +264,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       if (nodeId) {
         this.fireDataEvent("nodeDoubleClicked", nodeId);
       }
+    },
+
+    __selectedItem: function(item) {
+      const nodeId = item.getModel().getNodeId();
+      this.fireDataEvent("changeSelectedNode", nodeId);
     },
 
     __openItemRenamer: function() {
@@ -317,10 +314,18 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
     nodeSelected: function(nodeId) {
       const dataModel = this.__tree.getModel();
-      const nodeInTree = this.__getNodeInTree(dataModel, nodeId);
-      if (nodeInTree) {
-        this.__tree.openNodeAndParents(nodeInTree);
-        this.__tree.setSelection(new qx.data.Array([nodeInTree]));
+      const item = this.__getNodeInTree(dataModel, nodeId);
+      if (item) {
+        this.__tree.openNodeAndParents(item);
+        this.__tree.setSelection(new qx.data.Array([item]));
+
+        const study = osparc.store.Store.getInstance().getCurrentStudy();
+        const studyId = study.getUuid();
+        if (this.__exportButton) {
+          this.__exportButton.setEnabled(studyId !== nodeId && item.getIsContainer());
+        }
+        this.__deleteButton.setEnabled(studyId !== nodeId && this.__currentNodeId !== nodeId);
+        this.__openButton.setEnabled(this.__currentNodeId !== nodeId);
       }
     },
 

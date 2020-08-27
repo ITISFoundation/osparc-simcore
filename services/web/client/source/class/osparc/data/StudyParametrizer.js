@@ -72,7 +72,7 @@ qx.Class.define("osparc.data.StudyParametrizer", {
     getActiveParameters: function(studyData, parameters) {
       const activeParams = [...parameters];
 
-      const variableIds = osparc.utils.Utils.mustache.getVariables(studyData);
+      const variableIds = osparc.utils.Study.mustache.getVariables(studyData);
       for (let i=activeParams.length-1; i>=0; i--) {
         if (!variableIds.includes(activeParams[i].id)) {
           activeParams.splice(i, 1);
