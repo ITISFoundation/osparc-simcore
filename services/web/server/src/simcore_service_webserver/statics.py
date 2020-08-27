@@ -63,6 +63,8 @@ def write_statics_file(directory: Path) -> None:
     statics = {}
     statics["stackName"] = os.environ.get("SWARM_STACK_NAME")
     statics["buildDate"] = os.environ.get("BUILD_DATE")
+    statics["manualMainURL"] = os.environ.get("WEBSERVER_MANUAL_MAIN_URL")
+    statics["manualExtraURL"] = os.environ.get("WEBSERVER_MANUAL_EXTRA_URL")
     with open(directory / "statics.json", "wt") as fh:
         json.dump(statics, fh)
 

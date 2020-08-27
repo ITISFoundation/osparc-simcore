@@ -135,6 +135,16 @@ qx.Class.define("osparc.utils.LibVersions", {
           }
           return platformName;
         });
+    },
+
+    getMainManualUrl: function() {
+      return osparc.data.Resources.get("statics")
+      .then(statics => statics.manualMainURL);
+    },
+
+    getExtraManualUrl: function() {
+      return osparc.data.Resources.get("statics")
+      .then(statics => statics.manualExtraURL);
     }
   }
 });

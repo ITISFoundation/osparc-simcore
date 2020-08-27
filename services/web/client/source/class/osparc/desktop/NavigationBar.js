@@ -142,14 +142,14 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this._add(control);
           break;
         case "z43-manual":
-          control = new osparc.ui.form.LinkButton(this.tr("Z43 manual"), "https://itisfoundation.github.io/osparc-manual-z43/").set({
+          control = new osparc.ui.form.LinkButton(this.tr("Z43 manual"), osparc.utils.LibVersions.getExtraManualUrl()).set({
             appearance: "link-button",
             font: "text-14"
           });
           this._add(control);
           break;
         case "user-manual":
-          control = new osparc.ui.form.LinkButton(this.tr("User manual"), "https://docs.osparc.io").set({
+          control = new osparc.ui.form.LinkButton(this.tr("User manual"), osparc.utils.LibVersions.getMainManualUrl()).set({
             appearance: "link-button",
             font: "text-14"
           });
