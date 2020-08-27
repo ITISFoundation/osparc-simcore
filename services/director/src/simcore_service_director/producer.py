@@ -978,7 +978,9 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
                 await client.services.delete(service["Spec"]["Name"])
             log.debug("removed services, now removing network...")
         except aiodocker.exceptions.DockerError as err:
-            raise exceptions.GenericDockerError("Error while removing services", err)
+            raise exceptions.GenericDockerError(
+                "Error while removing services", err
+            ) from err
         # remove network(s)
         await _remove_overlay_network_of_swarm(client, node_uuid)
         log.debug("removed network")

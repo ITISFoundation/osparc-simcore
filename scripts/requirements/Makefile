@@ -44,6 +44,7 @@ touch: ## touches all package requirement inputs
 	$(foreach p,${_input-requirements},touch $(p);)
 
 reqs: _check_py36_version ## updates requirements of all package libraries
+	# Upgrading $(upgrade) requirements
 	$(foreach p,${_input-requirements},touch $(p); $(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
 
 

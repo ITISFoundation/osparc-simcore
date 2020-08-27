@@ -7,7 +7,6 @@ import re
 from pathlib import Path
 
 import pytest
-
 from pytest_simcore.helpers.utils_pylint import assert_pylint_is_passing
 
 

@@ -16,29 +16,27 @@ from simcore_postgres_database.webserver_models import projects, users
 
 
 @pytest.fixture
-def engine(make_engine, loop):
-    async def start():
-        engine = await make_engine()
-        sync_engine = make_engine(False)
-        metadata.drop_all(sync_engine)
-        metadata.create_all(sync_engine)
+async def engine(make_engine, loop):
+    engine = await make_engine()
+    sync_engine = make_engine(False)
+    metadata.drop_all(sync_engine)
+    metadata.create_all(sync_engine)
 
-        async with engine.acquire() as conn:
-            await conn.execute(users.insert().values(**random_user(name="A")))
-            await conn.execute(users.insert().values(**random_user()))
-            await conn.execute(users.insert().values(**random_user()))
+    async with engine.acquire() as conn:
+        await conn.execute(users.insert().values(**random_user(name="A")))
+        await conn.execute(users.insert().values(**random_user()))
+        await conn.execute(users.insert().values(**random_user()))
 
-            await conn.execute(projects.insert().values(**random_project(prj_owner=1)))
-            await conn.execute(projects.insert().values(**random_project(prj_owner=2)))
-            await conn.execute(projects.insert().values(**random_project(prj_owner=3)))
-            with pytest.raises(ForeignKeyViolation):
-                await conn.execute(
-                    projects.insert().values(**random_project(prj_owner=4))
-                )
+        await conn.execute(projects.insert().values(**random_project(prj_owner=1)))
+        await conn.execute(projects.insert().values(**random_project(prj_owner=2)))
+        await conn.execute(projects.insert().values(**random_project(prj_owner=3)))
+        with pytest.raises(ForeignKeyViolation):
+            await conn.execute(projects.insert().values(**random_project(prj_owner=4)))
 
-        return engine
+    yield engine
 
-    return loop.run_until_complete(start())
+    engine.close()
+    await engine.wait_closed()
 
 
 @pytest.mark.skip(reason="sandbox for dev purposes")
