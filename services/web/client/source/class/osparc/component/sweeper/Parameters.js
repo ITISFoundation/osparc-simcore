@@ -58,7 +58,7 @@ qx.Class.define("osparc.component.sweeper.Parameters", {
       },
       "nSteps": {
         col: 4,
-        label: qx.locale.Manager.tr("Steps")
+        label: qx.locale.Manager.tr("#Steps")
       },
       "distribution": {
         col: 5,

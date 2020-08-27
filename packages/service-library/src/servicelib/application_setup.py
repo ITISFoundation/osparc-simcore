@@ -2,7 +2,7 @@ import functools
 import inspect
 import logging
 from enum import Enum
-from typing import Dict, List, Optional, Callable
+from typing import Callable, Dict, List, Optional
 
 from aiohttp import web
 
@@ -45,7 +45,7 @@ def app_module_setup(
 
     See packages/service-library/tests/test_application_setup.py
 
-    :param module_name: typically __name__ 
+    :param module_name: typically __name__
     :param depends: list of module_names that must be called first, defaults to None
     :param config_section: explicit configuration section, defaults to None (i.e. the name of the module, or last entry of the name if dotted)
     :param config_enabled: option in config to enable, defaults to None which is '$(module-section).enabled' (config_section and config_enabled are mutually exclusive)
@@ -123,7 +123,7 @@ def app_module_setup(
                 except KeyError as ee:
                     raise ApplicationSetupError(
                         f"Cannot find required option '{config_enabled}' in app config's section '{ee}'"
-                    )
+                    ) from ee
 
                 if not is_enabled:
                     logger.info(

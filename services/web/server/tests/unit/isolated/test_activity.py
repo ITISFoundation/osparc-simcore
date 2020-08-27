@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 import importlib
-from asyncio import Future
 from pathlib import Path
 
 import pytest
@@ -12,17 +11,12 @@ from aiohttp import web
 from aiohttp.client_exceptions import ClientConnectionError
 
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_mock import future_with_result
 from servicelib.application import create_safe_application
 from simcore_service_webserver.activity import handlers, setup_activity
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
-
-
-def future_with_result(result):
-    f = Future()
-    f.set_result(result)
-    return f
 
 
 @pytest.fixture

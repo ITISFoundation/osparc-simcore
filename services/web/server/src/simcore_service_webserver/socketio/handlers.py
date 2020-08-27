@@ -47,10 +47,10 @@ async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
     try:
         await authenticate_user(sid, app, request)
         await set_user_in_rooms(sid, app, request)
-    except web.HTTPUnauthorized:
-        raise SocketIOConnectionError("authentification failed")
+    except web.HTTPUnauthorized as exc:
+        raise SocketIOConnectionError("authentification failed") from exc
     except Exception as exc:  # pylint: disable=broad-except
-        raise SocketIOConnectionError(f"Unexpected error: {exc}")
+        raise SocketIOConnectionError(f"Unexpected error: {exc}") from exc
 
     # Send service_deletion_timeout to client
     # the interval should be < get_service_deletion_timeout(app) to avoid

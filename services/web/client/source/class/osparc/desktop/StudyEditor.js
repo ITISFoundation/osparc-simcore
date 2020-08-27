@@ -164,9 +164,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const study = this.getStudy();
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree(study);
-      nodesTree.addListener("addNode", () => {
-        this.__addNode();
-      }, this);
       nodesTree.addListener("removeNode", e => {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
@@ -287,6 +284,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__loggerView.setCurrentNodeId();
         return;
       }
+      if (this.__nodesTree) {
+        this.__nodesTree.setCurrentNodeId(nodeId);
+      }
       if (this.__nodeView) {
         this.__nodeView.restoreIFrame();
       }
@@ -329,13 +329,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.showInMainView(nodeView, node.getNodeId());
         nodeView.populateLayout();
       }
-    },
-
-    __addNode: function() {
-      if (this.__mainPanel.getMainView() !== this.__workbenchUI) {
-        return;
-      }
-      this.__workbenchUI.openServiceCatalog();
     },
 
     __removeNode: function(nodeId) {
@@ -445,7 +438,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         osparc.store.Store.getInstance().getStudyWState(iterationStudyId)
           .then(studyData => {
             study.removeIFrames();
-            this.fireDataEvent("startStudy", studyData);
+            this.fireDataEvent("startStudy", studyData.uuid);
           });
       });
     },

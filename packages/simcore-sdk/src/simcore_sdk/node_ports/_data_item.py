@@ -28,4 +28,4 @@ class DataItem(_DataItem):
         return self
 
     def __init__(self, **_kwargs):
-        super(DataItem, self).__init__()
+        super().__init__()

@@ -2,10 +2,10 @@
 
 UNDER DEVELOPMENT
 """
-import attr
 import typing
 import warnings
 
+import attr
 
 warnings.warn("DO NOT USE IN PRODUCTION, STILL UNDER DEVELOPMENT")
 

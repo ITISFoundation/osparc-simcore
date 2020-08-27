@@ -180,9 +180,11 @@ async function waitAndClick(page, id) {
 }
 
 async function clearInput(page, selector) {
-  await page.evaluate(selector => {
-    document.querySelector(selector).value = "";
-  }, selector);
+  await page.waitForSelector(selector);
+  await page.click(selector, {
+    clickCount: 3
+  });
+  await page.type('[osparc-test-id="sideSearchFiltersTextFld"]', "");
 }
 
 function sleep(ms) {

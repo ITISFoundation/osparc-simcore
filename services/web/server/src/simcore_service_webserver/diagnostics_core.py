@@ -1,5 +1,6 @@
 import logging
 import statistics
+import time
 from typing import List, Optional
 
 import attr
@@ -16,10 +17,13 @@ kMAX_AVG_RESP_LATENCY = f"{__name__}.max_avg_response_latency"
 kMAX_TASK_DELAY = f"{__name__}.max_task_delay"
 
 kLATENCY_PROBE = f"{__name__}.latency_probe"
+kPLUGIN_START_TIME = f"{__name__}.plugin_start_time"
+
+kSTART_SENSING_DELAY_SECS = f"{__name__}.start_sensing_delay"
 
 
 class HealthError(Exception):
-    pass
+    """ Service is set as unhealty """
 
 
 class IncidentsRegistry(LimitedOrderedStack[SlowCallback]):
@@ -30,7 +34,7 @@ class IncidentsRegistry(LimitedOrderedStack[SlowCallback]):
 @attr.s(auto_attribs=True)
 class DelayWindowProbe:
     """
-        Collects a window of delay samples that satisfy 
+        Collects a window of delay samples that satisfy
         some conditions (see observe code)
     """
 
@@ -52,6 +56,21 @@ class DelayWindowProbe:
         return 0
 
 
+def is_sensing_enabled(app: web.Application):
+    """ Diagnostics will not activate sensing inmediatly but after some
+        time since the app started
+    """
+    time_elapsed_since_setup = time.time() - app[kPLUGIN_START_TIME]
+    enabled = time_elapsed_since_setup > app[kSTART_SENSING_DELAY_SECS]
+    if enabled:
+        log.debug(
+            "Diagnostics starts sensing after waiting %3.2f secs [> %3.2f secs] since submodule init",
+            time_elapsed_since_setup,
+            app[kSTART_SENSING_DELAY_SECS],
+        )
+    return enabled
+
+
 def assert_healthy_app(app: web.Application) -> None:
     """ Diagnostics function that determins whether
         current application is healthy based on incidents
@@ -59,10 +78,15 @@ def assert_healthy_app(app: web.Application) -> None:
 
         raises DiagnosticError if any incient detected
     """
-
     # CRITERIA 1:
     incidents: Optional[IncidentsRegistry] = app.get(kINCIDENTS_REGISTRY)
     if incidents:
+
+        if not is_sensing_enabled(app):
+            # NOTE: this is the only way to avoid accounting
+            # before sensing is enabled
+            incidents.clear()
+
         max_delay_allowed: float = app[kMAX_TASK_DELAY]
         max_delay: float = incidents.max_delay()
 
