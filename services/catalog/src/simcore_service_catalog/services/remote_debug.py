@@ -26,10 +26,10 @@ def setup_remote_debugging(force_enabled=False, *, boot_mode=None):
             ptvsd.enable_attach(
                 address=("0.0.0.0", REMOTE_DEBUG_PORT),  # nosec
             )  # nosec
-        except ImportError:
+        except ImportError as err:
             raise ValueError(
                 "Cannot enable remote debugging. Please install ptvsd first"
-            )
+            ) from err
 
         logger.info("Remote debugging enabled: listening port %s", REMOTE_DEBUG_PORT)
     else:

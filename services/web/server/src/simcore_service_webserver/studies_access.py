@@ -195,7 +195,7 @@ async def access_study(request: web.Request) -> web.Response:
 
         log.debug("Study %s copied", copied_project_id)
 
-    except Exception:  # pylint: disable=broad-except
+    except Exception as exc:  # pylint: disable=broad-except
         log.exception(
             "Failed while copying project '%s' to '%s'",
             template_project.get("name"),
@@ -203,7 +203,7 @@ async def access_study(request: web.Request) -> web.Response:
         )
         raise web.HTTPInternalServerError(
             reason=compose_error_msg("Unable to copy project.")
-        )
+        ) from exc
 
     try:
         redirect_url = (
@@ -211,13 +211,13 @@ async def access_study(request: web.Request) -> web.Response:
             .url_for()
             .with_fragment("/study/{}".format(copied_project_id))
         )
-    except KeyError:
+    except KeyError as exc:
         log.exception(
             "Cannot redirect to website because route was not registered. Probably qx output was not ready and it was disabled (see statics.py)"
         )
         raise web.HTTPInternalServerError(
             reason=compose_error_msg("Unable to serve front-end.")
-        )
+        ) from exc
 
     response = web.HTTPFound(location=redirect_url)
     if is_anonymous_user:

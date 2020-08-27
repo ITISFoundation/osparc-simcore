@@ -1,8 +1,10 @@
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
 
 import pytest
 from aiohttp import web
+
 from servicelib import openapi
 from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.rest_middlewares import (
