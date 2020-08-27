@@ -450,7 +450,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         osparc.store.Store.getInstance().getStudyWState(iterationStudyId)
           .then(studyData => {
             study.removeIFrames();
-            this.fireDataEvent("startStudy", studyData);
+            this.fireDataEvent("startStudy", studyData.uuid);
           });
       });
     },
