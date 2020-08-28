@@ -1,9 +1,9 @@
-name: Github-CI-Release
+name: Github-CI-Hotfix-Release
 
 on:
   push:
-    branch:
-      - master
+    branches:
+      - hotfix_v*
     tags:
       - v[0-9]+.[0-9]+.[0-9]+
 
@@ -19,7 +19,7 @@ jobs:
     name: deploy release
     runs-on: ubuntu-latest
     env:
-      FROM_TAG_PREFIX: staging-github
+      FROM_TAG_PREFIX: hotfix-github
       TO_TAG_PREFIX: release-github
     steps:
       - uses: actions/checkout@v2

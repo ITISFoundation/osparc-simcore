@@ -48,4 +48,4 @@ do
     fi
 done
 # not found
-error_exit "$LINENO" "no version found!"
+error_exit "$LINENO" "could not find image:${GIT_TAG} with ${GIT_COMMIT_SHA}. Is the image available in the registry?"

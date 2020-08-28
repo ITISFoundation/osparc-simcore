@@ -2,6 +2,8 @@ name: Github-CI-Staging
 
 on:
   push:
+    branch:
+      - master
     tags:
       - FREEZE_[a-zA-Z]+[0-9]+
 
