@@ -473,7 +473,7 @@ qx.Class.define("osparc.store.Store", {
       return new Promise((resolve, reject) => {
         const oldClassifiers = this.getClassifiers();
         if (!reload && oldClassifiers.length) {
-          resolve(this.getClassifiers());
+          resolve(oldClassifiers);
           return;
         }
         osparc.store.Store.getInstance().getGroupsOrganizations()
