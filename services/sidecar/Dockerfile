@@ -10,37 +10,44 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=mguidon
 
+RUN set -eux; \
+  apt-get update; \
+  apt-get install -y gosu; \
+  rm -rf /var/lib/apt/lists/*; \
+  # verify that the binary works
+  gosu nobody true
+
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
-    SC_USER_NAME=scu \
-    SC_BUILD_TARGET=base \
-    SC_BOOT_MODE=default
+  SC_USER_NAME=scu \
+  SC_BUILD_TARGET=base \
+  SC_BOOT_MODE=default
 
 RUN adduser \
-    --uid ${SC_USER_ID} \
-    --disabled-password \
-    --gecos "" \
-    --shell /bin/sh \
-    --home /home/${SC_USER_NAME} \
-    ${SC_USER_NAME}
+  --uid ${SC_USER_ID} \
+  --disabled-password \
+  --gecos "" \
+  --shell /bin/sh \
+  --home /home/${SC_USER_NAME} \
+  ${SC_USER_NAME}
 
 # Sets utf-8 encoding for Python et al
 ENV LANG=C.UTF-8
 # Turns off writing .pyc files; superfluous on an ephemeral container.
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    VIRTUAL_ENV=/home/scu/.venv
+  VIRTUAL_ENV=/home/scu/.venv
 # Ensures that the python and pip executables used
 # in the image will be those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
 # environment variables
 ENV SWARM_STACK_NAME=""\
-    SIDECAR_SERVICES_MAX_NANO_CPUS=4000000000 \
-    SIDECAR_SERVICES_MAX_MEMORY_BYTES=2147483648 \
-    SIDECAR_SERVICES_TIMEOUT_SECONDS=1200 \
-    SIDECAR_INPUT_FOLDER=/home/scu/input \
-    SIDECAR_OUTPUT_FOLDER=/home/scu/output \
-    SIDECAR_LOG_FOLDER=/home/scu/log
+  SIDECAR_SERVICES_MAX_NANO_CPUS=4000000000 \
+  SIDECAR_SERVICES_MAX_MEMORY_BYTES=2147483648 \
+  SIDECAR_SERVICES_TIMEOUT_SECONDS=1200 \
+  SIDECAR_INPUT_FOLDER=/home/scu/input \
+  SIDECAR_OUTPUT_FOLDER=/home/scu/output \
+  SIDECAR_LOG_FOLDER=/home/scu/log
 
 EXPOSE 8080
 
@@ -54,16 +61,16 @@ FROM base as build
 ENV SC_BUILD_TARGET=build
 
 RUN apt-get update &&\
-    apt-get install -y --no-install-recommends \
-    build-essential
+  apt-get install -y --no-install-recommends \
+  build-essential
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN python -m venv ${VIRTUAL_ENV}
 
 RUN pip --no-cache-dir install --upgrade \
-    pip~=20.2.2  \
-    wheel \
-    setuptools
+  pip~=20.2.2  \
+  wheel \
+  setuptools
 
 # copy sidecar and dependencies
 COPY --chown=scu:scu packages /build/packages
@@ -95,7 +102,7 @@ RUN pip --no-cache-dir install -r requirements/prod.txt
 FROM base as production
 
 ENV SC_BUILD_TARGET=production \
-    SC_BOOT_MODE=production
+  SC_BOOT_MODE=production
 ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu

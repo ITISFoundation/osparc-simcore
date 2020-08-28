@@ -6,9 +6,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Awaitable, Callable, Optional, Tuple, Union
 
-import aiodocker
 import aiofiles
 from aiodocker.containers import DockerContainer
+from aiodocker.exceptions import DockerError
 from aiofile import AIOFile, Writer
 
 from . import exceptions
@@ -101,10 +101,8 @@ async def _monitor_docker_container(
                 log_type, parsed_line = await parse_line(line)
                 await log_cb(log_type, parsed_line)
                 await writer(f"{log_type.name}: {parsed_line}")
-    except aiodocker.exceptions.DockerError as e:
-        log_type, parsed_line = await parse_line(
-            f"Could not recover logs because: {str(e)}"
-        )
+    except DockerError as e:
+        log_type, parsed_line = await parse_line(f"Could not recover logs because: {e}")
         await log_cb(log_type, parsed_line)
     finally:
         # clean up

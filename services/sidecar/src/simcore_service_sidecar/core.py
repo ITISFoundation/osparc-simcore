@@ -2,7 +2,7 @@ import traceback
 from datetime import datetime
 from typing import Dict, List, Optional, Union
 
-import aiodocker
+import asyncio
 import networkx as nx
 from aiopg.sa import Engine, SAConnection
 from aiopg.sa.result import RowProxy
@@ -97,7 +97,8 @@ async def _try_get_task_from_db(
         comp_tasks.update()
         .where(
             and_(
-                comp_tasks.c.node_id == node_id, comp_tasks.c.project_id == project_id,
+                comp_tasks.c.node_id == node_id,
+                comp_tasks.c.project_id == project_id,
             )
         )
         .values(job_id=job_request_id, state=RUNNING, start=datetime.utcnow())
@@ -114,7 +115,8 @@ async def _try_get_task_from_db(
 
 
 async def _get_pipeline_from_db(
-    db_connection: SAConnection, project_id: str,
+    db_connection: SAConnection,
+    project_id: str,
 ) -> RowProxy:
     # get the pipeline
     result = await db_connection.execute(
@@ -174,12 +176,19 @@ async def inspect(
     run_result = SUCCESS
     next_task_nodes = []
     try:
-        sidecar = Executor(
-            db_engine=db_engine, rabbit_mq=rabbit_mq, task=task, user_id=user_id,
+        executor = Executor(
+            db_engine=db_engine,
+            rabbit_mq=rabbit_mq,
+            task=task,
+            user_id=user_id,
         )
-        await sidecar.run()
+        await executor.run()
         next_task_nodes = list(graph.successors(node_id))
-    except (aiodocker.exceptions.DockerError, exceptions.SidecarException):
+    except asyncio.CancelledError:
+        run_result = FAILED
+        log.warning("Task has been cancelled")
+        raise
+    except exceptions.SidecarException:
         run_result = FAILED
         log.exception("Error during execution")
 
