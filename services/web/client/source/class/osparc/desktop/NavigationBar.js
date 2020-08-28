@@ -142,7 +142,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this._add(control);
           break;
         case "z43-manual":
-          control = new osparc.ui.form.LinkButton(this.tr("Z43 manual"), "https://osparc.git.speag.com/z43-manual").set({
+          control = new osparc.ui.form.LinkButton(this.tr("Z43 manual"), "https://itisfoundation.github.io/osparc-manual-z43").set({
             appearance: "link-button",
             font: "text-14"
           });
