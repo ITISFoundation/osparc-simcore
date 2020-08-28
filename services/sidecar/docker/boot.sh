@@ -22,7 +22,7 @@ then
   pip install --no-cache-dir -r requirements/dev.txt
   cd - || exit 1
   echo "$INFO" "PIP :"
-  pip list | sed 's/^/    /'  
+  pip list | sed 's/^/    /'
 fi
 
 # RUNNING application ----------------------------------------
@@ -30,13 +30,12 @@ fi
 # default
 CONCURRENCY=1
 POOL=prefork
-
 if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]
 then
   # NOTE: in this case, remote debugging is only available in development mode!
   # FIXME: workaround since PTVSD does not support prefork subprocess debugging: https://github.com/microsoft/ptvsd/issues/943
   POOL=solo
-  watchmedo auto-restart --recursive --pattern="*.py" -- \
+  exec watchmedo auto-restart --recursive --pattern="*.py" -- \
     celery worker \
       --app simcore_service_sidecar.celery:app \
       --concurrency ${CONCURRENCY} \
@@ -49,5 +48,3 @@ else
       --loglevel="${SIDECAR_LOGLEVEL-WARNING}" \
       --pool=${POOL}
 fi
-
-

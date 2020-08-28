@@ -1,9 +1,10 @@
+import asyncio
 import logging
 from typing import List, Optional, Tuple
 
 import click
 
-from .config import RABBIT_CONFIG
+from .config import RABBIT_CONFIG, SIDECAR_LOGLEVEL
 from .core import inspect
 from .db import DBContextManager
 from .rabbitmq import RabbitMQ
@@ -58,6 +59,11 @@ async def run_sidecar(
                     node_id,
                 )
                 return next_task_nodes, None
+    except asyncio.CancelledError as e:
+        log.warning(
+            "Run cancelled", exc_info=True, stack_info=SIDECAR_LOGLEVEL == logging.DEBUG
+        )
+        return None, f"Run cancelled: {str(e)}"
     except Exception as e:  # pylint: disable=broad-except
         error_message = f"run_sidecar caught the following exception: {str(e)}"
         log.exception(error_message)

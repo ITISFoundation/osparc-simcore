@@ -149,6 +149,7 @@ services:
       - output:/home/scu/output
       - log:/home/scu/log
       - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/hostname:/home/scu/hostname:ro
     environment:
       - RABBIT_HOST=${RABBIT_HOST}
       - RABBIT_PORT=${RABBIT_PORT}

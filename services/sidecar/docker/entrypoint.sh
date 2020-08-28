@@ -56,7 +56,7 @@ then
 
         echo "changing $SC_USER_NAME:$SC_USER_NAME ($SC_USER_ID:$SC_USER_ID) to $SC_USER_NAME:$CONT_GROUPNAME ($HOST_USERID:$HOST_GROUPID)"
         usermod --uid "$HOST_USERID" --gid "$HOST_GROUPID" "$SC_USER_NAME"
-        
+
         echo "Changing group properties of files around from $SC_USER_ID to group $CONT_GROUPNAME"
         find / -path /proc -prune -o -group "$SC_USER_ID" -exec chgrp --no-dereference "$CONT_GROUPNAME" {} \;
         # change user property of files already around
@@ -100,8 +100,8 @@ chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_LOG_FOLDER}"
 echo "$INFO Starting $* ..."
 echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
 echo "  local dir : $(ls -al)"
-echo "  input dir : $(ls -al "${SIDECAR_INPUT_FOLDER}")"    
+echo "  input dir : $(ls -al "${SIDECAR_INPUT_FOLDER}")"
 echo "  output dir : $(ls -al "${SIDECAR_OUTPUT_FOLDER}")"
 echo "  log dir : $(ls -al "${SIDECAR_LOG_FOLDER}")"
 
-su --command "$*" "$SC_USER_NAME"
+exec gosu "$SC_USER_NAME" "$@"
