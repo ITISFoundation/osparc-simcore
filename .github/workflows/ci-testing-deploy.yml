@@ -1189,3 +1189,8 @@ jobs:
         env:
           TAG_PREFIX: master-github
         run: ./ci/deploy/dockerhub-deploy.bash
+      - name: deploy hotfix
+        if: contains(github.ref, 'refs/heads/hotfix_v')
+        env:
+          TAG_PREFIX: hotfix-github
+        run: ./ci/deploy/dockerhub-deploy.bash

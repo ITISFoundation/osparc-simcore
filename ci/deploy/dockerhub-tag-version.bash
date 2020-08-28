@@ -48,14 +48,14 @@ make pull-version tag-local
 log_msg "Before push"
 make info-images
 
-# re-tag images to {GIT_TAG}-DATE.GIT_SHA
+# re-tag images to ${TO_TAG_PREFIX}-{GIT_TAG}-DATE.GIT_SHA
 readonly GIT_COMMIT_SHA=$(git show-ref -s "${GIT_TAG}")
-DOCKER_IMAGE_TAG="${TO_TAG_PREFIX}"-$(date --utc +"%Y-%m-%d--%H-%M")."${GIT_COMMIT_SHA}"
+DOCKER_IMAGE_TAG="${TO_TAG_PREFIX}-${GIT_TAG}"-$(date --utc +"%Y-%m-%d--%H-%M")."${GIT_COMMIT_SHA}"
 export DOCKER_IMAGE_TAG
 log_msg "pushing images ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY}"
 make push-version
 
-# push latest image
+# push latest image ${TO_TAG_PREFIX}-latest
 DOCKER_IMAGE_TAG="${TO_TAG_PREFIX}-latest"
 export DOCKER_IMAGE_TAG
 log_msg "pushing images ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY}"
