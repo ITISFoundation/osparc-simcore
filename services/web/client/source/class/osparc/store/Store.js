@@ -115,8 +115,8 @@ qx.Class.define("osparc.store.Store", {
       init: {}
     },
     classifiers: {
-      check: "Object",
-      init: {}
+      check: "Array",
+      init: []
     }
   },
 
@@ -455,6 +455,55 @@ qx.Class.define("osparc.store.Store", {
                   });
                 });
                 resolve(reachableMembers);
+              });
+          });
+      });
+    },
+
+    __getOrgClassifiers: function(orgId) {
+      const params = {
+        url: {
+          "gid": orgId
+        }
+      };
+      return osparc.data.Resources.get("classifiers", params);
+    },
+
+    getAllClassifiers: function(reload = false) {
+      return new Promise((resolve, reject) => {
+        const oldClassifiers = this.getClassifiers();
+        if (!reload && oldClassifiers.length) {
+          resolve(this.getClassifiers());
+          return;
+        }
+        osparc.store.Store.getInstance().getGroupsOrganizations()
+          .then(orgs => {
+            const allClassifiers = [];
+            if (orgs.length === 0) {
+              this.setClassifiers(allClassifiers);
+              resolve(allClassifiers);
+              return;
+            }
+            const classifierPromises = [];
+            orgs.forEach(org => {
+              classifierPromises.push(this.__getOrgClassifiers(org["gid"]));
+            });
+            Promise.all(classifierPromises)
+              .then(classifierss => {
+                if (classifierss.length === 0) {
+                  this.setClassifiers(allClassifiers);
+                  resolve(allClassifiers);
+                  return;
+                }
+                classifierss.forEach(({classifiers}) => {
+                  if (classifiers) {
+                    Object.keys(classifiers).forEach(key => {
+                      allClassifiers.push(classifiers[key]);
+                    });
+                  }
+                });
+                this.setClassifiers(allClassifiers);
+                resolve(allClassifiers);
               });
           });
       });
