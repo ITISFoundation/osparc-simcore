@@ -566,6 +566,30 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       return deleteButton;
     },
 
+    getCurrentClassifiers: function() {
+      const currentClassifiers = {};
+      [
+        this.__templatesContainer,
+        this.__servicesContainer
+      ].forEach(container => {
+        container.getChildren().forEach(userStudyItem => {
+          if (userStudyItem.isVisible()) {
+            if (userStudyItem.getClassifiers) {
+              userStudyItem.getClassifiers().forEach(classifier => {
+                if (classifier in currentClassifiers) {
+                  currentClassifiers[classifier]["nItems"]++;
+                } else {
+                  currentClassifiers[classifier] = {};
+                  currentClassifiers[classifier]["nItems"] = 1;
+                }
+              });
+            }
+          }
+        });
+      });
+      return currentClassifiers;
+    },
+
     __itemClicked: function(item) {
       if (item.isResourceType("service")) {
         const serviceKey = item.getUuid();

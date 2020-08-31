@@ -55,6 +55,7 @@ qx.Class.define("osparc.desktop.MainPage", {
   members: {
     __navBar: null,
     __mainStack: null,
+    __sideSearch: null,
     __dashboard: null,
     __dashboardLayout: null,
     __loadingPage: null,
@@ -107,13 +108,14 @@ qx.Class.define("osparc.desktop.MainPage", {
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard().set({
         width: nStudyItemsPerRow * (studyButtons.ITEM_WIDTH + studyButtons.SPACING) // padding + scrollbar
       });
-      const sideSearch = new osparc.dashboard.SideSearch();
+      const sideSearch = this.__sideSearch = new osparc.dashboard.SideSearch();
       dashboard.bind("selection", sideSearch, "visibility", {
         converter: value => {
           const tabIndex = dashboard.getChildren().indexOf(value[0]);
           return [0, 1].includes(tabIndex) ? "visible" : "hidden";
         }
       });
+      dashboard.addListener("changeSelection", this.__updateClassifiersNItems, this);
       const dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       dashboardLayout.add(sideSearch, {
         flex: 1
@@ -123,6 +125,20 @@ qx.Class.define("osparc.desktop.MainPage", {
         flex: 1
       });
       return dashboardLayout;
+    },
+
+    __updateClassifiersNItems: function() {
+      const selectedTab = this.__dashboard.getSelection()[0];
+      const tabIndex = this.__dashboard.getChildren().indexOf(selectedTab);
+      if (tabIndex === 0) {
+        const studyBrowser = this.__dashboard.getStudyBrowser();
+        const currentClassifiers = studyBrowser.getCurrentClassifiers();
+        this.__sideSearch.getClassifiersFilter().setClassfiersNItems(currentClassifiers);
+      } else if (tabIndex === 1) {
+        const exploreBrowser = this.__dashboard.getExploreBrowser();
+        const currentClassifiers = exploreBrowser.getCurrentClassifiers();
+        this.__sideSearch.getClassifiersFilter().setClassfiersNItems(currentClassifiers);
+      }
     },
 
     __attachHandlers: function() {

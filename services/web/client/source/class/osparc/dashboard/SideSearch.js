@@ -84,6 +84,10 @@ qx.Class.define("osparc.dashboard.SideSearch", {
      */
     getTextFilter: function() {
       return this.__textFilter;
+    },
+
+    getClassifiersFilter: function() {
+      return this.__classifierFilter;
     }
   }
 });

@@ -538,6 +538,25 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return this.__userStudies.find(matchesId);
     },
 
+    getCurrentClassifiers: function() {
+      const currentClassifiers = {};
+      this.__userStudyContainer.getChildren().forEach(userStudyItem => {
+        if (userStudyItem.isVisible()) {
+          if (userStudyItem.getClassifiers) {
+            userStudyItem.getClassifiers().forEach(classifier => {
+              if (classifier in currentClassifiers) {
+                currentClassifiers[classifier]["nItems"]++;
+              } else {
+                currentClassifiers[classifier] = {};
+                currentClassifiers[classifier]["nItems"] = 1;
+              }
+            });
+          }
+        }
+      });
+      return currentClassifiers;
+    },
+
     __itemClicked: function(item, isShiftPressed) {
       const studiesCont = this.__userStudyContainer;
       const selected = item.getValue();

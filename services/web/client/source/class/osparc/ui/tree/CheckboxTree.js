@@ -22,6 +22,7 @@ qx.Class.define("osparc.ui.tree.CheckboxTree", {
           controller.bindDefaultProperties(item, id);
           controller.bindProperty("checked", "checked", null, item, id);
           controller.bindPropertyReverse("checked", "checked", null, item, id);
+          controller.bindProperty("nItems", "nItems", null, item, id);
         },
         configureItem: function(item) {
           item.addListener("checkboxClicked", () => tree.fireDataEvent("checkedChanged", tree.getChecked()));
@@ -76,6 +77,7 @@ qx.Class.define("osparc.ui.tree.CheckboxTree", {
       data.checked = data.checked || false;
       data.children = data.children || [];
       data.children.forEach(child => this.__extendData(child));
+      data.nItems = 0;
     },
     /**
      * Method returning an array of checked elements (model elements).
