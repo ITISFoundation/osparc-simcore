@@ -251,9 +251,11 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       newGHIssueBtn.addListener("execute", this.__openGithubIssueInfoDialog, this);
       menu.add(newGHIssueBtn);
 
-      const newManuscriptIssueBtn = new qx.ui.menu.Button(this.tr("Issue in Manuscript"));
-      newManuscriptIssueBtn.addListener("execute", this.__openManuscriptIssueInfoDialog, this);
-      menu.add(newManuscriptIssueBtn);
+      if (osparc.utils.Utils.isInZ43()) {
+        const newManuscriptIssueBtn = new qx.ui.menu.Button(this.tr("Issue in Manuscript"));
+        newManuscriptIssueBtn.addListener("execute", this.__openManuscriptIssueInfoDialog, this);
+        menu.add(newManuscriptIssueBtn);
+      }
 
       const feedbackAnonBtn = new qx.ui.menu.Button(this.tr("Anoynmous feedback"));
       feedbackAnonBtn.addListener("execute", () => window.open(this.self().FEEDBACK_GFORM_URL));
