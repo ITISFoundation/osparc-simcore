@@ -62,12 +62,8 @@ qx.Class.define("osparc.ui.tree.CheckboxTreeItem", {
           control.addListener("tap", () => this.fireEvent("checkboxClicked"));
           break;
         case "number-items":
-          control = new qx.ui.basic.Label().set({
-            visibility: "visible"
-          });
-          this.bind("showNItems", control, "visibility", {
-            converter: value => value ? "visible" : "excluded"
-          });
+          control = new qx.ui.basic.Label();
+          this.bind("nItems", control, "value");
           break;
       }
       return control || this.base(arguments, id);
