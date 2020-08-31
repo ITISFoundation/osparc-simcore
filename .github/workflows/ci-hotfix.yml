@@ -2,8 +2,6 @@ name: Github-CI-Hotfix-Release
 
 on:
   push:
-    branches:
-      - hotfix_v*
     tags:
       - v[0-9]+.[0-9]+.[0-9]+
 
@@ -15,6 +13,7 @@ env:
 
 jobs:
   deploy:
+    if: contains(github.event.base_ref, 'refs/heads/hotfix_v')
     # only run on staging branch
     name: deploy release
     runs-on: ubuntu-latest
