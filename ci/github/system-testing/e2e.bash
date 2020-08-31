@@ -151,13 +151,13 @@ recover_artifacts() {
   # all screenshots are in tests/e2e/screenshots if any
 
   # get docker logs.
-  # WARNING: dumping long logs might take hours!!
+  # NOTE: dumping logs sometimes hangs. Introducing a timeout
   mkdir simcore_logs
-  (docker service logs --timestamps --tail=300 --details ${SWARM_STACK_NAME}_webserver >simcore_logs/webserver.log 2>&1) || true
-  (docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_director >simcore_logs/director.log 2>&1) || true
-  (docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_storage >simcore_logs/storage.log 2>&1) || true
-  (docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_sidecar >simcore_logs/sidecar.log 2>&1) || true
-  (docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_catalog >simcore_logs/catalog.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=300 --details ${SWARM_STACK_NAME}_webserver >simcore_logs/webserver.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_director  >simcore_logs/director.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_storage   >simcore_logs/storage.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_sidecar   >simcore_logs/sidecar.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_catalog   >simcore_logs/catalog.log 2>&1) || true
 }
 
 clean_up() {
