@@ -22,6 +22,13 @@ qx.Class.define("osparc.ui.tree.CheckboxTreeItem", {
       init: 0,
       event: "changeNItems",
       nullable: false
+    },
+
+    showNItems: {
+      check: "Boolean",
+      init: true,
+      event: "changeShowNItems",
+      nullable: false
     }
   },
 
@@ -58,12 +65,9 @@ qx.Class.define("osparc.ui.tree.CheckboxTreeItem", {
           control = new qx.ui.basic.Label().set({
             visibility: "excluded"
           });
-          this.bind("nItems", control, "value", {
-            onUpdate: (source, target) => {
-              target.setVisibility((source.hasChildren() || source.getNItems() !== null) ? "visible" : "excluded");
-            }
+          this.bind("showNItems", control, "visibility", {
+            converter: value => value ? "visible" : "excluded"
           });
-          // this.setNItems(Math.floor(Math.random()*10));
           break;
       }
       return control || this.base(arguments, id);

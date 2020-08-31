@@ -38,12 +38,12 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
 
   members: {
     __studyData: null,
-    __classifiersTree: null,
+    __classifiersFilter: null,
 
     __buildLayout: function() {
       const studyData = this.__studyData;
       const classifiers = studyData.classifiers && studyData.classifiers ? studyData.classifiers : [];
-      const classifiersTree = this.__classifiersTree = new osparc.component.filter.ClassifiersFilter("classifiersEditor", "sideSearchFilter", classifiers);
+      const classifiersTree = this.__classifiersFilter = new osparc.component.filter.ClassifiersFilter("classifiersEditor", "sideSearchFilter", classifiers);
       this._add(classifiersTree, {
         flex: 1
       });
@@ -63,7 +63,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
       saveBtn.setFetching(true);
 
       if ("uuid" in this.__studyData) {
-        this.__studyData["classifiers"] = this.__classifiersTree.getCheckedClassifierIDs();
+        this.__studyData["classifiers"] = this.__classifiersFilter.getCheckedClassifierIDs();
         const params = {
           url: {
             "projectId": this.__studyData["uuid"]
@@ -87,7 +87,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
             this.__studyData["version"]
           ),
           data: {
-            "classifiers": this.__classifiersTree.getCheckedClassifierIDs()
+            "classifiers": this.__classifiersFilter.getCheckedClassifierIDs()
           }
         };
         osparc.data.Resources.fetch("services", "patch", params)

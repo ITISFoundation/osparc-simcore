@@ -133,11 +133,11 @@ qx.Class.define("osparc.desktop.MainPage", {
       if (tabIndex === 0) {
         const studyBrowser = this.__dashboard.getStudyBrowser();
         const currentClassifiers = studyBrowser.getCurrentClassifiers();
-        this.__sideSearch.getClassifiersFilter().setClassfiersNItems(currentClassifiers);
+        this.__sideSearch.getClassifiersFilter().setClassifiersNItems(currentClassifiers);
       } else if (tabIndex === 1) {
         const exploreBrowser = this.__dashboard.getExploreBrowser();
         const currentClassifiers = exploreBrowser.getCurrentClassifiers();
-        this.__sideSearch.getClassifiersFilter().setClassfiersNItems(currentClassifiers);
+        this.__sideSearch.getClassifiersFilter().setClassifiersNItems(currentClassifiers);
       }
     },
 

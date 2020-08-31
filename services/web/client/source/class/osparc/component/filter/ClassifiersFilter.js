@@ -71,8 +71,8 @@ qx.Class.define("osparc.component.filter.ClassifiersFilter", {
       });
     },
 
-    __setNItemsClassifiers: function(model, nItemsClassfiers) {
-      if (Object.keys(nItemsClassfiers).length === 0) {
+    __setNItemsClassifiers: function(model, nItemsClassifiers) {
+      if (Object.keys(nItemsClassifiers).length === 0) {
         return;
       }
 
@@ -80,20 +80,20 @@ qx.Class.define("osparc.component.filter.ClassifiersFilter", {
       nodes.forEach(node => {
         if ("getData" in node) {
           // this is a leaf
-          if (Object.keys(nItemsClassfiers).includes(node.getData().getClassifier())) {
-            node.setNItems(nItemsClassfiers[node.getData().getClassifier()]["nItems"]);
+          if (Object.keys(nItemsClassifiers).includes(node.getData().getClassifier())) {
+            node.setNItems(nItemsClassifiers[node.getData().getClassifier()]["nItems"]);
           } else {
             node.setNItems(0);
           }
         } else {
           // this is a branch
-          this.__setNItemsClassifiers(node, nItemsClassfiers);
+          this.__setNItemsClassifiers(node, nItemsClassifiers);
         }
       });
     },
 
-    setClassfiersNItems(nItemsClassfiers) {
-      this.__setNItemsClassifiers(this.__tree.getModel(), nItemsClassfiers);
+    setClassifiersNItems(nItemsClassifiers) {
+      this.__setNItemsClassifiers(this.__tree.getModel(), nItemsClassifiers);
     }
   }
 });
