@@ -356,7 +356,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       );
       const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
       contBtn.addListener("execute", () => {
-        window.open("https://z43.manuscript.com/f/cases/new");
+        window.open(osparc.component.widget.NewManuscriptIssue.getNewIssueUrl());
         issueConfirmationWindow.close();
       }, this);
       const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in Manuscript"), "@FontAwesome5Solid/external-link-alt/12");
