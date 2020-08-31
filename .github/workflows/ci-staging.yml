@@ -2,10 +2,8 @@ name: Github-CI-Staging
 
 on:
   push:
-    branch:
-      - master
     tags:
-      - FREEZE_[a-zA-Z]+[0-9]+
+      - staging_[a-zA-Z]+[0-9]+
 
 env:
   # secrets can be set in settings/secrets on github
@@ -15,6 +13,7 @@ env:
 
 jobs:
   deploy:
+    if: github.event.base_ref == 'refs/heads/master'
     name: deploy staging
     runs-on: ubuntu-latest
     env:
@@ -33,4 +32,4 @@ jobs:
       - name: set git tag
         run: echo ::set-env name=GIT_TAG::${GITHUB_REF##*/}
       - name: deploy
-        run: bash -x ci/deploy/dockerhub-tag-version.bash
+        run: ./ci/deploy/dockerhub-tag-version.bash
