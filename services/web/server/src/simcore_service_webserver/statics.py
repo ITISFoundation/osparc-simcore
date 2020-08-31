@@ -79,6 +79,9 @@ def write_statics_file(directory: Path) -> None:
     statics["fogbugzOriginURL"] = os.environ.get("WEBSERVER_FOGBUGZ_URL", "htpps://z43.fogbugz.com")
     statics["fogbugzProjectId"] = os.environ.get("WEBSERVER_FOGBUGZ_PROJECT_ID")
 
+    # Extra url to form (e.g. google forms for fogbugz public submission form)
+    statics["feedbackFormURL"] = os.environ.get("WEBSERVER_FEEDBACK_FORM_URL")
+
     with open(directory / "statics.json", "wt") as fh:
         json.dump(statics, fh)
 
