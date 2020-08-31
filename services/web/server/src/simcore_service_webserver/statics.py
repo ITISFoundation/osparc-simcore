@@ -55,19 +55,30 @@ async def index(request: web.Request):
         return web.Response(text=ofh.read(), content_type="text/html")
 
 
+
 def write_statics_file(directory: Path) -> None:
     # ensures directory exists
     os.makedirs(directory, exist_ok=True)
 
     # create statics field
     statics = {}
+
     # TODO: build with pydantic and validate data before serializing
     statics["stackName"] = os.environ.get("SWARM_STACK_NAME")
     statics["buildDate"] = os.environ.get("BUILD_DATE")
+
+    # Urls to manuals
     statics["manualMainURL"] = os.environ.get(
         "WEBSERVER_MANUAL_MAIN_URL", "http://docs.osparc.io/"
     )
     statics["manualExtraURL"] = os.environ.get("WEBSERVER_MANUAL_EXTRA_URL")
+
+    # Fogbugz tickets
+    # SEE https://support.fogbugz.com/hc/en-us/articles/360011241594-Generating-a-Case-Template-with-bookmarklets
+    # https://<your_fogbugz_URL>.fogbugz.com/f/cases/new?command=new&pg=pgEditBug&ixProject=<project-id>&ixArea=<area_id>&ixCategory=<category_id>&ixPersonAssignedTo=<assigned_user_id>&sTitle=<title_of_case>&sEvent=<body_of text>
+    statics["fogbugzOriginURL"] = os.environ.get("WEBSERVER_FOGBUGZ_URL", "htpps://z43.fogbugz.com")
+    statics["fogbugzProjectId"] = os.environ.get("WEBSERVER_FOGBUGZ_PROJECT_ID")
+
     with open(directory / "statics.json", "wt") as fh:
         json.dump(statics, fh)
 
