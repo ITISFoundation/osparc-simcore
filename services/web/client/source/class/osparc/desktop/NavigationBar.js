@@ -252,9 +252,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       menu.add(newGHIssueBtn);
 
       if (osparc.utils.Utils.isInZ43()) {
-        const newManuscriptIssueBtn = new qx.ui.menu.Button(this.tr("Issue in Manuscript"));
-        newManuscriptIssueBtn.addListener("execute", this.__openManuscriptIssueInfoDialog, this);
-        menu.add(newManuscriptIssueBtn);
+        const newFogbugzIssueBtn = new qx.ui.menu.Button(this.tr("Issue in Fogbugz"));
+        newFogbugzIssueBtn.addListener("execute", this.__openFogbugzIssueInfoDialog, this);
+        menu.add(newFogbugzIssueBtn);
       }
 
       const feedbackAnonBtn = new qx.ui.menu.Button(this.tr("Anonymous feedback"));
@@ -352,16 +352,16 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       issueConfirmationWindow.open();
     },
 
-    __openManuscriptIssueInfoDialog: function() {
+    __openFogbugzIssueInfoDialog: function() {
       const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
-        this.tr("To create an issue in Manuscript, you must have an account in Manuscript and be already logged-in.")
+        this.tr("To create an issue in Fogbugz, you must have an account in Fogbugz and be already logged-in.")
       );
       const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
       contBtn.addListener("execute", () => {
-        window.open(osparc.component.widget.NewManuscriptIssue.getNewIssueUrl());
+        window.open(osparc.component.widget.NewFogbugzIssue.getNewIssueUrl());
         issueConfirmationWindow.close();
       }, this);
-      const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in Manuscript"), "@FontAwesome5Solid/external-link-alt/12");
+      const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in Fogbugz"), "@FontAwesome5Solid/external-link-alt/12");
       loginBtn.addListener("execute", () => window.open("https://z43.manuscript.com/login"), this);
       issueConfirmationWindow.addButton(contBtn);
       issueConfirmationWindow.addButton(loginBtn);

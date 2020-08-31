@@ -19,12 +19,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   const url = osparc.component.widget.NewManuscriptIssue.getNewIssueUrl();
+ *   const url = osparc.component.widget.NewFogbugzIssue.getNewIssueUrl();
  *   window.open(url);
  * </pre>
  */
 
-qx.Class.define("osparc.component.widget.NewManuscriptIssue", {
+qx.Class.define("osparc.component.widget.NewFogbugzIssue", {
   type: "static",
 
   statics: {
@@ -34,7 +34,9 @@ qx.Class.define("osparc.component.widget.NewManuscriptIssue", {
       env += JSON.stringify(osparc.utils.LibVersions.getEnvLibs(), null, 2);
       env += "\n```";
       const body = encodeURIComponent(temp+env);
-      let url = "https://z43.manuscript.com/f/cases/new";
+      let url = "https://z43.fogbugz.com/f/cases/new";
+      url += "?command=new";
+      url += "&ixProject=45";
       url += "&sEvent=" + body;
       return url;
     },
