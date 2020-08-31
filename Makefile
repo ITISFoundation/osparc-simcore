@@ -523,3 +523,44 @@ clean-all: clean clean-more clean-images # Deep clean including .venv and produc
 .PHONY: reset
 reset: ## restart docker daemon (LINUX ONLY)
 	sudo systemctl restart docker
+
+
+# RELEASE --------------------------------------------------------------------------------------------------------------------------------------------
+
+staging_prefix := staging_
+prod_prefix := v
+_git_get_current_branch = $(shell git rev-parse --abbrev-ref HEAD)
+# NOTE: be careful that GNU Make replaces newlines with space which is why this command cannot work using a Make function
+_url_encoded_title = $(if $(findstring -staging, $@),Staging%20$(name),)$(version)
+_url_encoded_tag = $(if $(findstring -staging, $@),$(staging_prefix)$(name),$(prod_prefix))$(version)
+_url_encoded_target = $(if $(git_sha),$(git_sha),$(if $(findstring -hotfix, $@),$(_git_get_current_branch),master))
+define _url_encoded_logs
+$(shell \
+	scripts/url-encoder.bash \
+	"$$(git log \
+		$$(git describe --match="$(if $(findstring -staging, $@),$(staging_prefix),$(prod_prefix))*" --abbrev=0 --tags)..$(if $(git_sha),$(git_sha),HEAD) \
+		--pretty=format:"- %s")"\
+)
+endef
+_git_get_repo_orga_name = $(shell git config --get remote.origin.url | \
+							grep --perl-regexp --only-matching "((?<=git@github\.com:)|(?<=https:\/\/github\.com\/))(.*?)(?=.git)")
+
+.PHONY: .check-master-branch
+.check-master-branch:
+	@if [ "$(_git_get_current_branch)" != "master" ]; then\
+		echo -e "\e[91mcurrent branch is not master branch."; exit 1;\
+	fi
+
+.PHONY: release-staging release-prod
+release-staging release-prod: .check-master-branch
+	# ensure tags are uptodate
+	@git pull --tags
+	@echo "\e[33mOpen the following link to create the $(if $(findstring -staging, $@),staging,production) release:";
+	@echo "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)&body=$(_url_encoded_logs)";
+
+.PHONY: release-hotfix
+release-hotfix:
+	# ensure tags are uptodate
+	@git pull --tags
+	@echo "\e[33mOpen the following link to create the $(if $(findstring -staging, $@),staging,production) release:";
+	@echo "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)&body=$(_url_encoded_logs)";
