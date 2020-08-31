@@ -63,7 +63,7 @@ qx.Class.define("osparc.ui.tree.CheckboxTreeItem", {
           break;
         case "number-items":
           control = new qx.ui.basic.Label().set({
-            visibility: "excluded"
+            visibility: "visible"
           });
           this.bind("showNItems", control, "visibility", {
             converter: value => value ? "visible" : "excluded"
