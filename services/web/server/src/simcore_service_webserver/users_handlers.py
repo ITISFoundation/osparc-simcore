@@ -20,9 +20,9 @@ async def get_my_profile(request: web.Request):
     uid = request[RQT_USERID_KEY]
     try:
         return await users_api.get_user_profile(request.app, uid)
-    except UserNotFoundError:
+    except UserNotFoundError as exc:
         # NOTE: invalid user_id could happen due to timed-cache in AuthorizationPolicy
-        raise web.HTTPNotFound(reason="Could not find profile!")
+        raise web.HTTPNotFound(reason="Could not find profile!") from exc
 
 
 @login_required
@@ -99,5 +99,5 @@ async def delete_token(request: web.Request):
     try:
         await users_api.delete_token(request.app, uid, service_id)
         raise web.HTTPNoContent(content_type="application/json")
-    except TokenNotFoundError:
-        raise web.HTTPNotFound(reason=f"Token for {service_id} not found")
+    except TokenNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Token for {service_id} not found") from exc

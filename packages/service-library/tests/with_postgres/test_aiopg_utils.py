@@ -3,6 +3,7 @@
 # pylint:disable=too-many-arguments
 # pylint:disable=broad-except
 
+import asyncio
 import logging
 import sys
 from copy import deepcopy
@@ -13,7 +14,7 @@ import psycopg2
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
-import asyncio
+
 from servicelib.aiopg_utils import (
     DatabaseError,
     DataSourceName,

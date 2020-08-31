@@ -38,7 +38,7 @@ async def test_list_services_with_bad_json_formatting(
     push_services,
 ):
     # some services
-    created_services = push_services(
+    created_services = await push_services(
         number_of_computational_services=3,
         number_of_interactive_services=2,
         bad_json_format=True,
@@ -65,7 +65,9 @@ async def test_list_computational_services(
     configure_registry_access,
     configure_schemas_location,
 ):
-    push_services(number_of_computational_services=6, number_of_interactive_services=3)
+    await push_services(
+        number_of_computational_services=6, number_of_interactive_services=3
+    )
 
     computational_services = await registry_proxy.list_services(
         aiohttp_mock_app, registry_proxy.ServiceType.COMPUTATIONAL
@@ -80,7 +82,9 @@ async def test_list_interactive_services(
     configure_registry_access,
     configure_schemas_location,
 ):
-    push_services(number_of_computational_services=5, number_of_interactive_services=4)
+    await push_services(
+        number_of_computational_services=5, number_of_interactive_services=4
+    )
     interactive_services = await registry_proxy.list_services(
         aiohttp_mock_app, registry_proxy.ServiceType.DYNAMIC
     )
@@ -94,7 +98,7 @@ async def test_list_of_image_tags(
     configure_registry_access,
     configure_schemas_location,
 ):
-    images = push_services(
+    images = await push_services(
         number_of_computational_services=5, number_of_interactive_services=3
     )
     image_number = {}
@@ -117,7 +121,7 @@ async def test_list_interactive_service_dependencies(
     configure_registry_access,
     configure_schemas_location,
 ):
-    images = push_services(
+    images = await push_services(
         number_of_computational_services=2,
         number_of_interactive_services=2,
         inter_dependent_services=True,
@@ -147,7 +151,7 @@ async def test_get_image_labels(
     configure_registry_access,
     configure_schemas_location,
 ):
-    images = push_services(
+    images = await push_services(
         number_of_computational_services=1, number_of_interactive_services=1
     )
     for image in images:
@@ -213,7 +217,7 @@ async def test_get_image_details(
     configure_registry_access,
     configure_schemas_location,
 ):
-    images = push_services(
+    images = await push_services(
         number_of_computational_services=1, number_of_interactive_services=1
     )
     for image in images:
@@ -231,7 +235,7 @@ async def test_registry_caching(
     configure_registry_access,
     configure_schemas_location,
 ):
-    images = push_services(
+    images = await push_services(
         number_of_computational_services=1, number_of_interactive_services=1
     )
     config.DIRECTOR_REGISTRY_CACHING = True
@@ -266,3 +270,24 @@ async def test_get_services_performance(
             (stop_time - start_time) / len(services),
         )
     )
+
+
+async def test_generate_service_extras(
+    aiohttp_mock_app,
+    push_services,
+    configure_registry_access,
+    configure_schemas_location,
+):
+    images = await push_services(
+        number_of_computational_services=1, number_of_interactive_services=1
+    )
+
+    for image in images:
+        service_description = image["service_description"]
+        service_extras = image["service_extras"]
+
+        extras = await registry_proxy.get_service_extras(
+            aiohttp_mock_app, service_description["key"], service_description["version"]
+        )
+
+        assert extras == service_extras

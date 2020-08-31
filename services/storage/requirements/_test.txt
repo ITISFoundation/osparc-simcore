@@ -10,82 +10,95 @@ aiofiles==0.5.0           # via -r requirements/_base.txt
 aiohttp==3.6.2            # via -r requirements/_base.txt, aiobotocore, aiozipkin, pytest-aiohttp
 aioitertools==0.7.0       # via -r requirements/_base.txt, aiobotocore
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt
-aiozipkin==0.6.0          # via -r requirements/_base.txt
+aiozipkin==0.7.0          # via -r requirements/_base.txt
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via -r requirements/_base.txt, aiohttp
 attrs==19.3.0             # via -r requirements/_base.txt, aiohttp, jsonschema, openapi-core, pytest, pytest-docker
-blackfynn==3.6.3          # via -r requirements/_base.txt
+bcrypt==3.2.0             # via paramiko
+blackfynn==4.0.0          # via -r requirements/_base.txt
 boto3==1.12.32            # via -r requirements/_base.txt, blackfynn
 botocore==1.15.32         # via -r requirements/_base.txt, aiobotocore, boto3, s3transfer
+cached-property==1.5.1    # via docker-compose
 certifi==2020.6.20        # via -r requirements/_base.txt, requests
+cffi==1.14.2              # via bcrypt, cryptography, pynacl
 chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, requests
-codecov==2.1.7            # via -r requirements/_test.in
+codecov==2.1.8            # via -r requirements/_test.in
 configparser==5.0.0       # via -r requirements/_base.txt, blackfynn
-coverage==5.1             # via -r requirements/_test.in, codecov, coveralls, pytest-cov
-coveralls==2.0.0          # via -r requirements/_test.in
+coverage==5.2.1           # via -r requirements/_test.in, codecov, coveralls, pytest-cov
+coveralls==2.1.2          # via -r requirements/_test.in
+cryptography==3.0         # via paramiko
 deprecated==1.2.10        # via -r requirements/_base.txt, blackfynn
-docopt==0.6.2             # via -r requirements/_base.txt, blackfynn, coveralls
+distro==1.5.0             # via docker-compose
+docker-compose==1.26.2    # via pytest-docker
+docker[ssh]==4.3.1        # via docker-compose
+dockerpty==0.4.1          # via docker-compose
+docopt==0.6.2             # via -r requirements/_base.txt, blackfynn, coveralls, docker-compose
 docutils==0.15.2          # via -r requirements/_base.txt, botocore
 future==0.18.2            # via -r requirements/_base.txt, blackfynn
 idna-ssl==1.1.0           # via -r requirements/_base.txt, aiohttp
-idna==2.9                 # via -r requirements/_base.txt, idna-ssl, requests, yarl
-importlib-metadata==1.6.1  # via -r requirements/_base.txt, jsonschema, pluggy, pytest
+idna==2.10                # via -r requirements/_base.txt, idna-ssl, requests, yarl
+importlib-metadata==1.7.0  # via -r requirements/_base.txt, jsonschema, pluggy, pytest
 isodate==0.6.0            # via -r requirements/_base.txt, openapi-core
-isort==4.3.21             # via pylint
+isort==5.4.2              # via pylint
 jmespath==0.10.0          # via -r requirements/_base.txt, boto3, botocore
-jsonschema==3.2.0         # via -r requirements/_base.txt, openapi-spec-validator
+jsonschema==3.2.0         # via -r requirements/_base.txt, docker-compose, openapi-spec-validator
 lazy-object-proxy==1.4.3  # via -r requirements/_base.txt, astroid, openapi-core
-marshmallow==3.6.1        # via -r requirements/_base.txt
+marshmallow==3.7.1        # via -r requirements/_base.txt
 mccabe==0.6.1             # via pylint
 more-itertools==8.4.0     # via pytest
 multidict==4.7.6          # via -r requirements/_base.txt, aiohttp, yarl
-numpy==1.19.0             # via pandas
+numpy==1.19.1             # via pandas
 openapi-core==0.12.0      # via -r requirements/_base.txt
-openapi-spec-validator==0.2.8  # via -r requirements/_base.txt, openapi-core
+openapi-spec-validator==0.2.9  # via -r requirements/_base.txt, openapi-core
 packaging==20.4           # via pytest, pytest-sugar
-pandas==1.0.5             # via -r requirements/_test.in
+pandas==1.1.1             # via -r requirements/_test.in
+paramiko==2.7.1           # via docker
 pluggy==0.13.1            # via pytest
 prometheus-client==0.8.0  # via -r requirements/_base.txt
-protobuf==3.12.2          # via -r requirements/_base.txt, blackfynn
-psutil==5.7.0             # via -r requirements/_base.txt, blackfynn
+protobuf==3.13.0          # via -r requirements/_base.txt, blackfynn
+psutil==5.7.2             # via -r requirements/_base.txt, blackfynn
 psycopg2-binary==2.8.5    # via -r requirements/_base.txt, aiopg, sqlalchemy
 ptvsd==4.3.2              # via -r requirements/_test.in
 py==1.9.0                 # via pytest
-pylint==2.5.3             # via -r requirements/_test.in
+pycparser==2.20           # via cffi
+pylint==2.6.0             # via -r requirements/_test.in
+pynacl==1.4.0             # via paramiko
 pyparsing==2.4.7          # via packaging
 pyrsistent==0.16.0        # via -r requirements/_base.txt, jsonschema
 pytest-aiohttp==0.3.0     # via -r requirements/_test.in
-pytest-cov==2.10.0        # via -r requirements/_test.in
-pytest-docker==0.7.2      # via -r requirements/_test.in
+pytest-cov==2.10.1        # via -r requirements/_test.in
+pytest-docker==0.8.0      # via -r requirements/_test.in
 pytest-instafail==0.4.2   # via -r requirements/_test.in
-pytest-mock==3.1.1        # via -r requirements/_test.in
+pytest-mock==3.2.0        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
-pytest-sugar==0.9.3       # via -r requirements/_test.in
-pytest==5.4.3             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-mock, pytest-sugar
+pytest-sugar==0.9.4       # via -r requirements/_test.in
+pytest==5.4.3             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-instafail, pytest-mock, pytest-sugar
 python-dateutil==2.8.1    # via -r requirements/_base.txt, blackfynn, botocore, pandas
+python-dotenv==0.14.0     # via docker-compose
 pytz==2020.1              # via -r requirements/_base.txt, blackfynn, pandas
-pyyaml==5.3.1             # via -r requirements/_base.txt, openapi-spec-validator, trafaret-config
-requests==2.24.0          # via -r requirements/_base.txt, blackfynn, codecov, coveralls
+pyyaml==5.3.1             # via -r requirements/_base.txt, docker-compose, openapi-spec-validator, trafaret-config
+requests==2.24.0          # via -r requirements/_base.txt, blackfynn, codecov, coveralls, docker, docker-compose
 s3transfer==0.3.3         # via -r requirements/_base.txt, boto3
 semantic-version==2.8.5   # via -r requirements/_base.txt
 semver==2.10.2            # via -r requirements/_base.txt, blackfynn
-six==1.15.0               # via -r requirements/_base.txt, astroid, isodate, jsonschema, openapi-core, openapi-spec-validator, packaging, protobuf, pyrsistent, python-dateutil, tenacity, websocket-client
+six==1.15.0               # via -r requirements/_base.txt, astroid, bcrypt, cryptography, docker, docker-compose, dockerpty, isodate, jsonschema, openapi-core, openapi-spec-validator, packaging, protobuf, pynacl, pyrsistent, python-dateutil, tenacity, websocket-client
 sqlalchemy[postgresql_psycopg2binary]==1.3.18  # via -r requirements/_base.txt, aiopg
 strict-rfc3339==0.7       # via -r requirements/_base.txt, openapi-core
 tenacity==6.2.0           # via -r requirements/_base.txt
 termcolor==1.1.0          # via pytest-sugar
+texttable==1.6.2          # via docker-compose
 toml==0.10.1              # via pylint
 trafaret-config==2.0.2    # via -r requirements/_base.txt
 trafaret==2.0.2           # via -r requirements/_base.txt, trafaret-config
 typed-ast==1.4.1          # via astroid
-typing-extensions==3.7.4.2  # via -r requirements/_base.txt, aiohttp, aioitertools
-ujson==3.0.0              # via -r requirements/_base.txt
-urllib3==1.25.9           # via -r requirements/_base.txt, botocore, requests
+typing-extensions==3.7.4.2  # via -r requirements/_base.txt, aiohttp, aioitertools, yarl
+ujson==3.1.0              # via -r requirements/_base.txt
+urllib3==1.25.10          # via -r requirements/_base.txt, botocore, requests
 wcwidth==0.2.5            # via pytest
-websocket-client==0.57.0  # via -r requirements/_base.txt, blackfynn
+websocket-client==0.57.0  # via -r requirements/_base.txt, blackfynn, docker, docker-compose
 werkzeug==1.0.1           # via -r requirements/_base.txt
 wrapt==1.12.1             # via -r requirements/_base.txt, aiobotocore, astroid, deprecated
-yarl==1.4.2               # via -r requirements/_base.txt, aiohttp
+yarl==1.5.1               # via -r requirements/_base.txt, aiohttp
 zipp==3.1.0               # via -r requirements/_base.txt, importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:

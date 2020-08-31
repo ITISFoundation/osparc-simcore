@@ -83,17 +83,17 @@ async def services_by_key_version_get(
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
 
-async def services_extras_get(
+async def service_extras_by_key_version_get(
     request: web.Request, service_key: str, service_version: str
 ) -> web.Response:
     log.debug(
-        "Client does services_extras_get request %s with service_key %s, service_version %s",
+        "Client does service_extras_by_key_version_get request %s with service_key %s, service_version %s",
         request,
         service_key,
         service_version,
     )
     try:
-        service_extras = await producer.generate_service_extras(
+        service_extras = await registry_proxy.get_service_extras(
             request.app, service_key, service_version
         )
         return web.json_response(data=dict(data=service_extras))

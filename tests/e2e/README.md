@@ -1,11 +1,32 @@
+
+**WARNING**: Be aware that running these tests in your host might risk changing some
+configuration.
+
 ## To run the tests locally
+
+Setting up the test
+
 ```bash
-cd tests/e2e
-npm install
-npm test
-# or
-npm run tutorials -- http://127.0.0.1:9081 --demo
+/bin/bash ci/github/system-testing/e2e.bash clean_up
+docker volume prune
+/bin/bash ci/github/system-testing/e2e.bash install
 ```
+
+Run the test
+```bash
+/bin/bash ci/github/system-testing/e2e.bash test
+# or
+cd tests/e2e
+npm test
+npm run tutorials -- http://127.0.0.1:9081 --demo
+
+```
+
+Trying to cleanup
+```bash
+/bin/bash ci/github/system-testing/e2e.bash clean_up
+```
+
 ## To debug the tests locally with VSCode
 Add the following configuration to your local ``launch.json``:
 ```json
@@ -27,6 +48,7 @@ Add the following configuration to your local ``launch.json``:
 }
 ```
 Now you can run the tests by clicking on the Play button, using that configuration. It should allow you to insert breakpoints and inspect variables.
+
 ## To run the tutorials
 ```bash
 cd tests/e2e

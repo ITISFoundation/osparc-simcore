@@ -6,7 +6,7 @@
 #
 aiohttp==3.6.2            # via -r requirements.in, pytest-aiohttp
 async-timeout==3.0.1      # via aiohttp
-attrs==19.3.0             # via aiohttp, jsonschema, openapi-core, pytest
+attrs==20.1.0             # via aiohttp, jsonschema, openapi-core, pytest
 chardet==3.0.4            # via aiohttp
 coverage==5.2.1           # via -r requirements.in, pytest-cov
 idna-ssl==1.1.0           # via aiohttp
@@ -37,7 +37,7 @@ six==1.15.0               # via isodate, jsonschema, openapi-core, openapi-schem
 strict-rfc3339==0.7       # via openapi-schema-validator
 termcolor==1.1.0          # via pytest-sugar
 toml==0.10.1              # via pytest
-typing-extensions==3.7.4.2  # via aiohttp, yarl
+typing-extensions==3.7.4.3  # via aiohttp, yarl
 werkzeug==1.0.1           # via openapi-core
 yarl==1.5.1               # via aiohttp
 zipp==3.1.0               # via importlib-metadata

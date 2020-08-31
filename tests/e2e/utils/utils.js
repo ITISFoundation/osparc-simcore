@@ -173,14 +173,18 @@ async function waitForValidOutputFile(page) {
 }
 
 async function waitAndClick(page, id) {
-  await page.waitForSelector(id);
+  await page.waitForSelector(id, {
+    timeout: 30000 // default 30s
+  });
   await page.click(id);
 }
 
 async function clearInput(page, selector) {
-  await page.evaluate(selector => {
-    document.querySelector(selector).value = "";
-  }, selector);
+  await page.waitForSelector(selector);
+  await page.click(selector, {
+    clickCount: 3
+  });
+  await page.type('[osparc-test-id="sideSearchFiltersTextFld"]', "");
 }
 
 function sleep(ms) {

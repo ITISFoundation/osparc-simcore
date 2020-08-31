@@ -42,7 +42,7 @@ async def test_registry_caching_task(loop, client, push_services):
     assert not list_of_services
     assert app[registry_cache_task.APP_REGISTRY_CACHE_DATA_KEY] != {}
     # create services in the registry
-    pushed_services = push_services(
+    pushed_services = await push_services(
         number_of_computational_services=1, number_of_interactive_services=1
     )
     # the services shall be updated
@@ -54,7 +54,7 @@ async def test_registry_caching_task(loop, client, push_services):
     )
     assert len(list_of_services) == 2
     # add more
-    pushed_services = push_services(
+    pushed_services = await push_services(
         number_of_computational_services=2,
         number_of_interactive_services=2,
         version="2.0.",

@@ -1,9 +1,10 @@
+import asyncio
 import logging
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import click
 
-from .config import RABBIT_CONFIG
+from .config import RABBIT_CONFIG, SIDECAR_LOGLEVEL
 from .core import inspect
 from .db import DBContextManager
 from .rabbitmq import RabbitMQ
@@ -17,7 +18,9 @@ log = logging.getLogger(__name__)
 @click.option("--user_id", default=0, type=int, help="The user ID")
 @click.option("--project_id", default="0", help="The project ID")
 @click.option("--node_id", default=None, help="The node ID or nothing")
-def main(job_id: str, user_id: str, project_id: str, node_id: str) -> List[str]:
+def main(
+    job_id: str, user_id: str, project_id: str, node_id: str
+) -> Optional[List[str]]:
 
     log.info(
         "STARTING task processing for user %s, project %s, node %s",
@@ -41,12 +44,12 @@ def main(job_id: str, user_id: str, project_id: str, node_id: str) -> List[str]:
 
 
 async def run_sidecar(
-    job_id: str, user_id: str, project_id: str, node_id: str
-) -> Tuple[List[str], str]:
+    job_id: str, user_id: str, project_id: str, node_id: Optional[str]
+) -> Tuple[Optional[List[str]], Optional[str]]:
     try:
         async with DBContextManager() as db_engine:
             async with RabbitMQ(config=RABBIT_CONFIG) as rabbit_mq:
-                next_task_nodes = await inspect(
+                next_task_nodes: Optional[List[str]] = await inspect(
                     db_engine, rabbit_mq, job_id, user_id, project_id, node_id=node_id
                 )
                 log.info(
@@ -56,6 +59,11 @@ async def run_sidecar(
                     node_id,
                 )
                 return next_task_nodes, None
+    except asyncio.CancelledError as e:
+        log.warning(
+            "Run cancelled", exc_info=True, stack_info=SIDECAR_LOGLEVEL == logging.DEBUG
+        )
+        return None, f"Run cancelled: {str(e)}"
     except Exception as e:  # pylint: disable=broad-except
         error_message = f"run_sidecar caught the following exception: {str(e)}"
         log.exception(error_message)

@@ -1,4 +1,5 @@
 import logging
+from typing import Dict
 
 from aiohttp import web
 from yarl import URL
@@ -7,6 +8,7 @@ from servicelib import observer
 from servicelib.rest_utils import extract_and_validate
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
+from ..groups_api import auto_add_user_to_groups
 from ..security_api import check_password, encrypt_password, forget, remember
 from .cfg import APP_LOGIN_CONFIG, cfg, get_storage
 from .config import get_login_config
@@ -67,7 +69,7 @@ async def register(request: web.Request):
 
     await check_registration(email, password, confirm, db)
 
-    user = await db.create_user(
+    user: Dict = await db.create_user(
         {
             "name": username,
             "email": email,
@@ -79,6 +81,8 @@ async def register(request: web.Request):
             "created_ip": get_client_ip(request),  # FIXME: does not get right IP!
         }
     )
+
+    await auto_add_user_to_groups(request.app, user["id"])
 
     if not bool(cfg.REGISTRATION_CONFIRMATION_REQUIRED):
         # user is logged in

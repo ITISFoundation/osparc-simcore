@@ -221,7 +221,7 @@ qx.Class.define("osparc.store.Store", {
           .then(study => {
             osparc.data.Resources.fetch("studies", "state", params)
               .then(state => {
-                study["locked"] = state["locked"];
+                study["state"] = state;
                 if (idx === -1) {
                   studiesWStateCache.push(study);
                 } else {
@@ -268,7 +268,7 @@ qx.Class.define("osparc.store.Store", {
               .then(states => {
                 states.forEach((state, idx) => {
                   const study = studies[idx];
-                  study["locked"] = state["locked"];
+                  study["state"] = state;
                   studiesWStateCache.push(study);
                 });
                 resolve(studiesWStateCache);
@@ -346,16 +346,17 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getUnaccessibleServices: function(studyData) {
+    getInaccessibleServices: function(studyData) {
       return new Promise((resolve, reject) => {
-        const unaccessibleServices = [];
+        const inaccessibleServices = [];
         const nodes = Object.values(studyData.workbench);
         nodes.forEach(node => {
-          const idx = unaccessibleServices.findIndex(unaccessibleSrv => unaccessibleSrv.key === node.key && unaccessibleSrv.version === node.version);
+          const idx = inaccessibleServices.findIndex(inaccessibleSrv => inaccessibleSrv.key === node.key && inaccessibleSrv.version === node.version);
           if (idx === -1) {
-            unaccessibleServices.push({
+            inaccessibleServices.push({
               key: node["key"],
-              version: node["version"]
+              version: node["version"],
+              label: node["label"]
             });
           }
         });
@@ -363,9 +364,9 @@ qx.Class.define("osparc.store.Store", {
           .then(services => {
             nodes.forEach(node => {
               if (osparc.utils.Services.getFromObject(services, node.key, node.version)) {
-                const idx = unaccessibleServices.findIndex(unaccessibleSrv => unaccessibleSrv.key === node.key && unaccessibleSrv.version === node.version);
+                const idx = inaccessibleServices.findIndex(inaccessibleSrv => inaccessibleSrv.key === node.key && inaccessibleSrv.version === node.version);
                 if (idx !== -1) {
-                  unaccessibleServices.splice(idx, 1);
+                  inaccessibleServices.splice(idx, 1);
                 }
               }
             });
@@ -374,7 +375,7 @@ qx.Class.define("osparc.store.Store", {
             console.error("failed getting services", err);
           })
           .finally(() => {
-            resolve(unaccessibleServices);
+            resolve(inaccessibleServices);
           });
       });
     },

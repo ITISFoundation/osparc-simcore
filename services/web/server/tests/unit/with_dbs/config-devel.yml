@@ -10,7 +10,6 @@ catalog:
   version: v0
 db:
   enabled: true
-  init_tables: true
   postgres:
     database: test
     endpoint: 127.0.0.1:5432

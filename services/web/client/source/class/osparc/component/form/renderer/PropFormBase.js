@@ -165,8 +165,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
 
     __createNewParameter: function(fieldKey) {
       const title = this.tr("Create new parameter");
-      const subtitle = this.tr("Do not use whitespaces");
-      const newParamName = new osparc.component.widget.Renamer(null, subtitle, title);
+      const newParamName = new osparc.component.widget.Renamer(null, null, title);
       newParamName.addListener("labelChanged", e => {
         const study = osparc.store.Store.getInstance().getCurrentStudy();
         let newParameterLabel = e.getData()["newLabel"];

@@ -17,12 +17,12 @@ coveralls==2.1.2          # via -r requirements/_test.in
 cryptography==3.0         # via paramiko
 distro==1.5.0             # via docker-compose
 docker-compose==1.26.2    # via pytest-docker
-docker[ssh]==4.3.0        # via docker-compose
+docker[ssh]==4.3.1        # via docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
 idna==2.10                # via requests
 importlib-metadata==1.7.0  # via jsonschema, pluggy, pytest
-isort==4.3.21             # via pylint
+isort==5.4.2              # via pylint
 jsonschema==3.2.0         # via docker-compose
 lazy-object-proxy==1.4.3  # via astroid
 mccabe==0.6.1             # via pylint
@@ -33,7 +33,7 @@ paramiko==2.7.1           # via docker
 pluggy==0.13.1            # via pytest
 py==1.9.0                 # via pytest
 pycparser==2.20           # via cffi
-pylint==2.5.3             # via -r requirements/_test.in
+pylint==2.6.0             # via -r requirements/_test.in
 pynacl==1.4.0             # via paramiko
 pyparsing==2.4.7          # via packaging
 pyrsistent==0.16.0        # via jsonschema

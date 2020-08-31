@@ -15,7 +15,7 @@ import sqlalchemy as sa
 from yarl import URL
 
 from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
-from simcore_service_sidecar import config
+from simcore_service_sidecar import config, utils
 
 SIMCORE_S3_ID = 0
 
@@ -42,15 +42,31 @@ def user_id() -> int:
 
 
 @pytest.fixture
+async def mock_sidecar_get_volume_mount_point(monkeypatch):
+    async def mock_get_volume_mount_point(volume_name: str) -> str:
+        return volume_name
+
+    monkeypatch.setattr(utils, "get_volume_mount_point", mock_get_volume_mount_point)
+
+    # test the monkeypatching
+    fake_name = "blahblah"
+    x = await utils.get_volume_mount_point(fake_name)
+    assert x == fake_name
+
+
+@pytest.fixture
 def sidecar_config(
     postgres_dsn: Dict[str, str],
     docker_registry: str,
     rabbit_config: config.RabbitConfig,
+    mock_sidecar_get_volume_mount_point,
 ) -> None:
     # NOTE: in integration tests the sidecar runs bare-metal which means docker volume cannot be used.
     config.SIDECAR_DOCKER_VOLUME_INPUT = Path.home() / "input"
     config.SIDECAR_DOCKER_VOLUME_OUTPUT = Path.home() / "output"
     config.SIDECAR_DOCKER_VOLUME_LOG = Path.home() / "log"
+
+    config.SIDECAR_HOST_HOSTNAME_PATH = Path("/etc/hostname")
 
     config.DOCKER_REGISTRY = docker_registry
     config.DOCKER_USER = "simcore"
@@ -128,11 +144,11 @@ def _assert_incoming_data_logs(
         assert instrumentation_messages[task][1]["result"] == "SUCCESS"
 
         # the sidecar should have a fixed amount of logs
-        assert sidecar_logs[task]
+        assert sidecar_logs[task], f"No sidecar logs for {task}"
         # the tasks should have a variable amount of logs
-        assert tasks_logs[task]
+        assert tasks_logs[task], f"No logs from {task}"
         # the progress should at least have the progress 1.0 log
-        assert progress_logs[task]
+        assert progress_logs[task], f"No progress of {task}"
         assert 1.0 in progress_logs[task]
 
     return (sidecar_logs, tasks_logs, progress_logs)
@@ -149,7 +165,7 @@ async def pipeline(
     user_id: int,
 ) -> ComputationalPipeline:
     """creates a full pipeline.
-        NOTE: 'pipeline', defined as parametrization
+    NOTE: 'pipeline', defined as parametrization
     """
     from simcore_sdk import node_ports
 
@@ -212,7 +228,10 @@ SLEEPERS_STUDY = (
     "itisfoundation/sleeper",
     "1.0.0",
     {
-        "node_1": {"next": ["node_2", "node_3"], "inputs": {},},
+        "node_1": {
+            "next": ["node_2", "node_3"],
+            "inputs": {},
+        },
         "node_2": {
             "next": ["node_4"],
             "inputs": {
@@ -275,21 +294,29 @@ PYTHON_RUNNER_FACTORY_STUDY = (
     "1.0.0",
     {
         "node_1": {
-            "next": ["node_2",],
+            "next": [
+                "node_2",
+            ],
             "inputs": {
                 "input_1": {"store": SIMCORE_S3_ID, "path": "osparc_python_factory.py"}
             },
         },
         "node_2": {
             "next": [],
-            "inputs": {"input_1": {"nodeUuid": "node_1", "output": "output_1"},},
+            "inputs": {
+                "input_1": {"nodeUuid": "node_1", "output": "output_1"},
+            },
         },
     },
 )
 
 
 @pytest.mark.parametrize(
-    "service_repo, service_tag, pipeline_cfg", [SLEEPERS_STUDY, PYTHON_RUNNER_STUDY,],
+    "service_repo, service_tag, pipeline_cfg",
+    [
+        SLEEPERS_STUDY,
+        PYTHON_RUNNER_STUDY,
+    ],
 )
 async def test_run_services(
     loop,
@@ -353,6 +380,11 @@ async def test_run_services(
         service_repo,
         service_tag,
     )
+
+    # check input/output/log folder is empty
+    assert not list(config.SIDECAR_INPUT_FOLDER.glob("**/*"))
+    assert not list(config.SIDECAR_OUTPUT_FOLDER.glob("**/*"))
+    assert not list(config.SIDECAR_LOG_FOLDER.glob("**/*"))
 
 
 def print_module_variables(module):
