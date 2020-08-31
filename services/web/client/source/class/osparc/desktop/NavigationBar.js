@@ -69,7 +69,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
   },
 
   statics: {
-    FEEDBACK_FORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLSe232bTigsM2zV97Kjp2OhCenl6o9gNGcDFt2kO_dfkIjtQAQ/viewform?usp=sf_link",
+    FEEDBACK_GFORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLSe232bTigsM2zV97Kjp2OhCenl6o9gNGcDFt2kO_dfkIjtQAQ/viewform?usp=sf_link",
     BUTTON_OPTIONS: {
       font: "title-14",
       allowGrowY: false,
@@ -156,8 +156,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this._add(control);
           break;
         case "feedback":
-          control = new osparc.ui.form.LinkButton(this.tr("Give us feedback"), this.self().FEEDBACK_FORM_URL).set({
-            appearance: "link-button",
+          control = this.__createFeedbackMenuBtn();
+          control.set({
+            ...this.self().BUTTON_OPTIONS,
             font: "text-14"
           });
           this._add(control);
@@ -241,6 +242,27 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       }
     },
 
+    __createFeedbackMenuBtn: function() {
+      const menu = new qx.ui.menu.Menu().set({
+        font: "text-14"
+      });
+
+      const newGHIssueBtn = new qx.ui.menu.Button(this.tr("Issue in GitHub"));
+      newGHIssueBtn.addListener("execute", this.__openGithubIssueInfoDialog, this);
+      menu.add(newGHIssueBtn);
+
+      const newManuscriptIssueBtn = new qx.ui.menu.Button(this.tr("Issue in Manuscript"));
+      newManuscriptIssueBtn.addListener("execute", this.__openManuscriptIssueInfoDialog, this);
+      menu.add(newManuscriptIssueBtn);
+
+      const feedbackAnonBtn = new qx.ui.menu.Button(this.tr("Anoynmous feedback"));
+      feedbackAnonBtn.addListener("execute", () => window.open(this.self().FEEDBACK_GFORM_URL));
+      menu.add(feedbackAnonBtn);
+
+      const feedbackBtn = new qx.ui.form.MenuButton(this.tr("Give us feedback"), null, menu);
+      return feedbackBtn;
+    },
+
     __createUserMenuBtn: function() {
       const menu = new qx.ui.menu.Menu().set({
         font: "text-14"
@@ -261,12 +283,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       helpBtn.addListener("execute", () => window.open("https://docs.osparc.io"));
       osparc.utils.Utils.setIdToWidget(helpBtn, "userMenuHelpBtn");
       menu.add(helpBtn);
-
-      const newIssueBtn = new qx.ui.menu.Button(this.tr("Open issue in GitHub"));
-      newIssueBtn.addListener("execute", this.__openIssueInfoDialog, this);
-      osparc.utils.Utils.setIdToWidget(newIssueBtn, "userMenuGithubBtn");
-      menu.add(newIssueBtn);
-
       const aboutBtn = new qx.ui.menu.Button(this.tr("About"));
       aboutBtn.addListener("execute", () => osparc.About.getInstance().open());
       osparc.utils.Utils.setIdToWidget(aboutBtn, "userMenuAboutBtn");
@@ -317,7 +333,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       activityWindow.open();
     },
 
-    __openIssueInfoDialog: function() {
+    __openGithubIssueInfoDialog: function() {
       const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
         this.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")
       );
@@ -328,6 +344,23 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       }, this);
       const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in GitHub"), "@FontAwesome5Solid/external-link-alt/12");
       loginBtn.addListener("execute", () => window.open("https://github.com/login"), this);
+      issueConfirmationWindow.addButton(contBtn);
+      issueConfirmationWindow.addButton(loginBtn);
+      issueConfirmationWindow.addCancelButton();
+      issueConfirmationWindow.open();
+    },
+
+    __openManuscriptIssueInfoDialog: function() {
+      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
+        this.tr("To create an issue in Manuscript, you must have an account in Manuscript and be already logged-in.")
+      );
+      const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
+      contBtn.addListener("execute", () => {
+        window.open("https://z43.manuscript.com/f/cases/new");
+        issueConfirmationWindow.close();
+      }, this);
+      const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in Manuscript"), "@FontAwesome5Solid/external-link-alt/12");
+      loginBtn.addListener("execute", () => window.open("https://z43.manuscript.com/login"), this);
       issueConfirmationWindow.addButton(contBtn);
       issueConfirmationWindow.addButton(loginBtn);
       issueConfirmationWindow.addCancelButton();
