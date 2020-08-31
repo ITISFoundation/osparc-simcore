@@ -29,7 +29,13 @@ qx.Class.define("osparc.component.widget.NewManuscriptIssue", {
 
   statics: {
     getNewIssueUrl: function() {
+      const temp = osparc.component.widget.NewGHIssue.getTemplate();
+      let env = "```json\n";
+      env += JSON.stringify(osparc.utils.LibVersions.getEnvLibs(), null, 2);
+      env += "\n```";
+      const body = encodeURIComponent(temp+env);
       let url = "https://z43.manuscript.com/f/cases/new";
+      url += "&sEvent=" + body;
       return url;
     },
 

@@ -257,7 +257,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         menu.add(newManuscriptIssueBtn);
       }
 
-      const feedbackAnonBtn = new qx.ui.menu.Button(this.tr("Anoynmous feedback"));
+      const feedbackAnonBtn = new qx.ui.menu.Button(this.tr("Anonymous feedback"));
       feedbackAnonBtn.addListener("execute", () => window.open(this.self().FEEDBACK_GFORM_URL));
       menu.add(feedbackAnonBtn);
 
