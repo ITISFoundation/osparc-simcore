@@ -20,3 +20,6 @@ aiodocker
 
 # other
 tenacity
+
+# Limiting constraint from pytest-docker==0.8.0->-r requirements/_test.in (line 18))
+attrs<20,>=19
