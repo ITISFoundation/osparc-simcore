@@ -64,12 +64,10 @@ qx.Class.define("osparc.component.metadata.StudyInfo", {
       const studyDetails = new osparc.component.metadata.StudyDetailsEditor(this.__study.serializeStudy(), false, width);
       studyDetails.showOpenButton(false);
       const win = osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
-      [
-        "updateStudy"
-      ].forEach(event => studyDetails.addListener(event, () => {
         qx.event.message.Bus.getInstance().dispatchByName("updateStudy", this.__study.serializeStudy());
+      studyDetails.addListener("updateStudy", () => {
         win.close();
-      }));
+      });
     }
   }
 });
