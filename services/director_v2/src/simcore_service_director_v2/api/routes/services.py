@@ -21,7 +21,6 @@ router = APIRouter()
 )
 async def list_services(service_type: Optional[ServiceType]):
     print(service_type)
-    pass
 
 
 ServiceKeyPath = Path(

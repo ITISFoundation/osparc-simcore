@@ -18,18 +18,21 @@ def fake_environs(monkeypatch):
     monkeypatch.setenv("POSTGRES_PASSWORD", "test")
     monkeypatch.setenv("POSTGRES_DB", "test")
 
+    monkeypatch.setenv("EXTRA_HOSTS_SUFFIX", "foo")
+
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
     yield os.environ
 
 
 def test_min_environ_for_app_settings(fake_environs):
-    app_settings = AppSettings.create_default()
+    app_settings: AppSettings = AppSettings.create_default()
 
     pprint(app_settings.dict())
 
     assert app_settings.boot_mode == BootModeEnum.production
     assert app_settings.loglevel == logging.DEBUG
+    assert app_settings.extra_hosts_suffix == "foo"
 
     assert app_settings.postgres.dsn == URL(
         "postgresql://test:test@production_postgres:5432/test"

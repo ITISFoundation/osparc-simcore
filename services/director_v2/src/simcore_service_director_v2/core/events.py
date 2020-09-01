@@ -24,7 +24,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
 def create_stop_app_handler(app: FastAPI) -> Callable:
     async def stop_app() -> None:
         try:
-            logger.info("Application stopping")
+            logger.info("Application stopping %s", app)
 
         except Exception:  # pylint: disable=broad-except
             logger.exception("Stopping application")
