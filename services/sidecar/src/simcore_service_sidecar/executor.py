@@ -294,7 +294,9 @@ class Executor:
         }
         return docker_container_config
 
-    async def _start_monitoring(self, container: DockerContainer) -> asyncio.Task:
+    async def _start_monitoring_container(
+        self, container: DockerContainer
+    ) -> asyncio.Future:
         log_file = self.shared_folders.log_folder / "log.dat"
         if self.integration_version == version.parse("0.0.0"):
             # touch output file, so it's ready for the container (v0)
@@ -304,20 +306,16 @@ class Executor:
                 monitor_logs_task(log_file, self._post_messages)
             )
             return log_processor_task
-        else:
-            log_processor_task = fire_and_forget_task(
-                monitor_logs_task(container, self._post_messages, log_file)
-            )
-            return log_processor_task
+        log_processor_task = fire_and_forget_task(
+            monitor_logs_task(container, self._post_messages, log_file)
+        )
+        return log_processor_task
 
     async def _run_container(self):
         start_time = time.perf_counter()
-        container = None
         docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
-        docker_container_config = await self._create_container_config(docker_image)
-        log.debug(
-            "Running image %s with config %s", docker_image, docker_container_config
-        )
+        container_config = await self._create_container_config(docker_image)
+
         # volume paths for car container (w/o prefix)
         result = "FAILURE"
         log_processor_task = None
@@ -328,11 +326,9 @@ class Executor:
                     f"[sidecar]Running {self.task.image['name']}:{self.task.image['tag']}...",
                 )
                 container = await docker_client.containers.create(
-                    config=docker_container_config
+                    config=container_config
                 )
-                # start monitoring logs
-                log_processor_task = await self._start_monitoring(container)
-
+                log_processor_task = await self._start_monitoring_container(container)
                 # start the container
                 await container.start()
                 # indicate container is started
@@ -387,14 +383,14 @@ class Executor:
             log.exception(
                 "Error while running %s with parameters %s",
                 docker_image,
-                docker_container_config,
+                container_config,
             )
             raise
         except DockerError:
             log.exception(
                 "Unknown error while trying to run %s with parameters %s",
                 docker_image,
-                docker_container_config,
+                container_config,
             )
             raise
         except asyncio.CancelledError:
@@ -407,6 +403,7 @@ class Executor:
             # stop monitoring logs now
             if log_processor_task:
                 log_processor_task.cancel()
+                await log_processor_task
             # instrumentation
             await self.rabbit_mq.post_instrumentation_message(
                 {
@@ -420,8 +417,6 @@ class Executor:
                     "result": result,
                 }
             )
-            if log_processor_task:
-                await log_processor_task
 
     async def _process_task_output(self):
         """There will be some files in the /output
