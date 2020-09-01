@@ -292,7 +292,7 @@ class Executor:
         }
         return docker_container_config
 
-    async def _start_monitoring(self, container: DockerContainer) -> None:
+    async def _start_monitoring(self, container: DockerContainer) -> asyncio.Task:
         log_file = self.shared_folders.log_folder / "log.dat"
         if self.integration_version == version.parse("0.0.0"):
             # touch output file, so it's ready for the container (v0)
@@ -301,10 +301,12 @@ class Executor:
             log_processor_task = fire_and_forget_task(
                 monitor_logs_task(log_file, self._post_messages)
             )
+            return log_processor_task
         else:
             log_processor_task = fire_and_forget_task(
                 monitor_logs_task(container, self._post_messages, log_file)
             )
+            return log_processor_task
 
     async def _run_container(self):
         start_time = time.perf_counter()
@@ -327,7 +329,7 @@ class Executor:
                     config=docker_container_config
                 )
                 # start monitoring logs
-                await self._start_monitoring(container)
+                log_processor_task = await self._start_monitoring(container)
 
                 # start the container
                 await container.start()
