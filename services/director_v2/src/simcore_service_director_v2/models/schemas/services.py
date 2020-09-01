@@ -4,6 +4,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from ..constants import SERVICE_IMAGE_NAME_RE, VERSION_RE
+from .image_meta import ImageMetaData
 
 
 class ServiceType(str, Enum):
@@ -80,9 +81,7 @@ class RunningServicesEnveloped(BaseModel):
     data: RunningServicesArray
 
 
-class NodeMeta(BaseModel):
-    TODO: int
 
 
 class ServicesEnveloped(BaseModel):
-    __root__: List[NodeMeta]
+    __root__: List[ImageMetaData]

@@ -1,5 +1,7 @@
 """
-    Implements jsonschema api/specs/common/schemas/node-meta-v0.0.1.json
+    Implemented from jsonschema
+        api/specs/common/schemas/node-meta-v0.0.1.json
+        api/specs/common/schemas/node-meta-v0.0.1-converted.yaml
 
     Schema of metadata injected in docker image labels of services
 """
@@ -50,10 +52,10 @@ class Author(BaseModel):
     email: EmailStr = Field(
         ...,
         description="Email address",
-        example=["sun@sense.eight", "deleen@minbar.bab"],
+        example="sun@sense.eight",
     )
     affiliation: Optional[str] = Field(
-        None, description="Affiliation of the author", example=["Sense8", "Babylon 5"]
+        None, description="Affiliation of the author", example="Sense8"
     )
 
 
@@ -71,45 +73,39 @@ class ImageMetaData(BaseModel):
         None,
         alias="integration-version",
         description="integration version number",
-        example=["1.0.0"],
+        example="1.0.0",
         regex=VERSION_RE,
     )
     version: str = Field(
-        ...,
-        description="service version number",
-        example=["1.0.0", "0.0.1"],
-        regex=VERSION_RE,
+        ..., description="service version number", example="0.0.1", regex=VERSION_RE,
     )
     _type: Type = Field(
-        ..., alias="type", description="service type", example=["computational"]
+        ..., alias="type", description="service type", example="computational"
     )
     name: str = Field(
         ...,
         description="short, human readable name for the node",
-        example=["Fast Counter"],
+        example="Fast Counter",
     )
     thumbnail: Optional[str] = Field(
         None,
         description="url to the thumbnail",
-        example=[
-            "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
-        ],
+        example="https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
     )
     badges: Optional[List[Badge]] = None
     description: str = Field(
         ...,
         description="human readable description of the purpose of the node",
-        example=[
-            "Our best node type",
-            "The mother of all nodes, makes your numbers shine!",
-        ],
+        example="The mother of all nodes, makes your numbers shine!",
     )
     authors: List[Author]
     contact: EmailStr = Field(
         ...,
         description="email to correspond to the authors about the node",
-        example=["lab@net.flix"],
+        example="lab@net.flix",
     )
+
+    # TODO: Implement InputType as model.domain
     inputs: Dict[str, Any] = Field(
         ..., description="definition of the inputs of this node"
     )

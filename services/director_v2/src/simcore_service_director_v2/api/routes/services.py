@@ -1,7 +1,7 @@
-from enum import Enum
+
 from typing import Optional
 
-from fastapi import APIRouter, Path, Query
+from fastapi import APIRouter, Path
 
 from ...models.schemas.services import (
     SERVICE_IMAGE_NAME_RE,
