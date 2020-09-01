@@ -103,10 +103,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         flex: 1
       });
 
-      if (osparc.utils.Utils.isInZ43()) {
-        this.getChildControl("z43-manual");
-      }
-      this.getChildControl("user-manual");
+      this.getChildControl("manual");
       this.getChildControl("feedback");
       this.getChildControl("theme-switch");
       this.getChildControl("user-menu");
@@ -141,16 +138,10 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           }));
           this._add(control);
           break;
-        case "z43-manual":
-          control = new osparc.ui.form.LinkButton(this.tr("Z43 manual"), "https://itisfoundation.github.io/osparc-manual-z43").set({
-            appearance: "link-button",
-            font: "text-14"
-          });
-          this._add(control);
-          break;
-        case "user-manual":
-          control = new osparc.ui.form.LinkButton(this.tr("User manual"), "https://docs.osparc.io").set({
-            appearance: "link-button",
+        case "manual":
+          control = this.__createManualMenuBtn();
+          control.set({
+            ...this.self().BUTTON_OPTIONS,
             font: "text-14"
           });
           this._add(control);
@@ -240,6 +231,39 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           return;
         }
       }
+    },
+
+    __createManualMenuBtn: function() {
+      const manuals = [
+        [this.tr("User manual"), "https://docs.osparc.io"]
+      ];
+      if (osparc.utils.Utils.isInZ43()) {
+        manuals.push([this.tr("Z43 manual"), "https://itisfoundation.github.io/osparc-manual-z43"]);
+      }
+
+      let control = null;
+      if (manuals.length > 1) {
+        const menu = new qx.ui.menu.Menu().set({
+          font: "text-14"
+        });
+
+        manuals.forEach(manual => {
+          const manualBtn = new qx.ui.menu.Button(manual[0]);
+          manualBtn.addListener("execute", () => {
+            window.open(manual[1]);
+          }, this);
+          menu.add(manualBtn);
+        });
+
+        control = new qx.ui.form.MenuButton(this.tr("Manuals"), null, menu);
+      } else {
+        const manual = manuals[0];
+        control = new osparc.ui.form.LinkButton(manual[0], manual[1]).set({
+          appearance: "link-button",
+          font: "text-14"
+        });
+      }
+      return control;
     },
 
     __createFeedbackMenuBtn: function() {
