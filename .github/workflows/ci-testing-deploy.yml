@@ -12,7 +12,6 @@ on:
       - "*.svg"
       - "docs/**"
       - ".vscode/**"
-      - ".vscode-template/**"
   pull_request:
     branches:
       - "*"
