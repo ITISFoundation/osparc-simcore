@@ -34,9 +34,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.Grow());
 
-    this.__studyModel = qx.data.marshal.Json.createModel(studyData);
-    this.__selectedTags = studyData.tags;
-    this.__workbench = studyData.workbench;
+    this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
     this.__stack = new qx.ui.container.Stack();
     this.__displayView = this.__createDisplayView(studyData, isTemplate, winWidth);
@@ -66,10 +64,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     __stack: null,
     __fields: null,
     __openButton: null,
-    __study: null,
-    __studyModel: null,
-    __workbench: null,
-    __selectedTags: null,
+    __studyData: null,
 
     showOpenButton: function(show) {
       this.__openButton.setVisibility(show ? "visible" : "excluded");
@@ -118,14 +113,14 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       const editView = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
 
       this.__fields = {
-        name: new qx.ui.form.TextField(this.__studyModel.getName()).set({
+        name: new qx.ui.form.TextField(this.__studyData.name).set({
           font: "title-16",
           enabled: fieldIsEnabled
         }),
-        description: new qx.ui.form.TextArea(this.__studyModel.getDescription()).set({
+        description: new qx.ui.form.TextArea(this.__studyData.description).set({
           enabled: fieldIsEnabled
         }),
-        thumbnail: new qx.ui.form.TextField(this.__studyModel.getThumbnail()).set({
+        thumbnail: new qx.ui.form.TextField(this.__studyData.thumbnail).set({
           enabled: fieldIsEnabled
         })
       };
@@ -198,13 +193,13 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         appearance: "link-button"
       });
       editButton.addListener("execute", () => {
-        const tagManager = new osparc.component.form.tag.TagManager(this.__selectedTags, editButton, "study", this.__studyModel.getUuid());
+        const tagManager = new osparc.component.form.tag.TagManager(this.__studyData.tags, editButton, "study", this.__studyData.uuid);
         tagManager.addListener("changeSelected", evt => {
-          this.__selectedTags = evt.getData().selected;
+          this.__studyData.tags = evt.getData().selected;
         }, this);
         tagManager.addListener("close", () => {
           this.__renderTags();
-          this.fireDataEvent("updateTags", this.__studyModel.getUuid());
+          this.fireDataEvent("updateTags", this.__studyData.uuid);
         }, this);
       });
       header.add(editButton);
@@ -224,7 +219,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       this.__tagsContainer = this.__tagsContainer || new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       this.__tagsContainer.removeAll();
       this.__tagsContainer.setMarginTop(5);
-      osparc.store.Store.getInstance().getTags().filter(tag => this.__selectedTags.includes(tag.id))
+      osparc.store.Store.getInstance().getTags().filter(tag => this.__studyData.tags.includes(tag.id))
         .forEach(selectedTag => {
           this.__tagsContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
         });
@@ -238,7 +233,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       delete data.resourceType;
       const params = {
         url: {
-          projectId: this.__studyModel.getUuid()
+          projectId: this.__studyData.uuid
         },
         data
       };
@@ -247,9 +242,8 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
           btn.resetIcon();
           btn.getChildControl("icon").getContentElement()
             .removeClass("rotate");
-          this.__studyModel.set(studyData);
           this.setMode("display");
-          this.fireDataEvent(isTemplate ? "updateTemplate" : "updateStudy", studyData.uuid);
+          this.fireDataEvent(isTemplate ? "updateTemplate" : "updateStudy", studyData);
         })
         .catch(err => {
           btn.resetIcon();
@@ -261,11 +255,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __serializeForm: function() {
-      let data = {};
-      data = {
-        ...qx.util.Serializer.toNativeObject(this.__studyModel),
-        workbench: this.__workbench
-      };
+      const data = this.__studyData;
 
       for (let key in this.__fields) {
         data[key] = this.__fields[key].getValue();
@@ -283,7 +273,6 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         }
         data[fieldKey] = clean;
       }, this);
-      data.tags = this.__selectedTags;
       return data;
     },
 
@@ -299,8 +288,8 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __isUserOwner: function() {
-      if (this.__studyModel) {
-        return this.__studyModel.getPrjOwner() === osparc.auth.Data.getInstance().getEmail();
+      if (this.__studyData) {
+        return this.__studyData.prjOwner === osparc.auth.Data.getInstance().getEmail();
       }
       return false;
     }
