@@ -4,32 +4,60 @@ The process of creating staging/release/hotfix versions of code from [Master](ht
 
 ## Description
 
-Each commit on the master branch triggers a CI workflow that build the simcore platform docker images. These docker images are then stored in [dockerhub](https://hub.docker.com/repositories/itisfoundation).
+Each commit on the master branch triggers a CI workflow that builds the simcore platform docker images.
+These docker images are then stored on [dockerhub](https://hub.docker.com/repositories/itisfoundation) registry in the itisfoundation repository.
 Each docker image are named following this pattern:
-  - itisfoundation/[image_name]:master-[CINAME]-latest
-  - itisfoundation/[image_name]:master-[CINAME]-[BUILD_DATE]--[BUILD_TIME].[GIT_SHA]
 
-For example, the ``webserver`` service in master branch with commit ``752ef...`` will be built by ``github`` actions CI on ``2020/08/31`` at ``12:36`` and therefore the image is named as:
-  - ``itisfoundation/webserver:master-github-v2.0.1-2020-08-31--12-36.752ef50f3babb6537580c0e03b85b9a8209bbf10``
-  - ``itisfoundation/webserver:master-github-latest``
+- itisfoundation/[image_name]:master-[CINAME]-latest
+- itisfoundation/[image_name]:master-[CINAME]-[BUILD_DATE]--[BUILD_TIME].[GIT_SHA]
+
+with:
+
+- CINAME the name of the CI
+- BUILD_DATE is the build date
+- BUILD_TIME is the build time
+- GIT_SHA is the git SHA corresponding to the code used for building
+
+see [docs/img/git-release-workflow.svg](docs/img/git-release-workflow.svg)
+
+### Example
+
+The ``webserver`` service in master branch with commit ``752ef...`` will be built by ``github`` actions CI on ``2020/08/31`` at ``12:36`` and therefore the image is named as:
+
+- ``itisfoundation/webserver:master-github-v2.0.1-2020-08-31--12-36.752ef50f3babb6537580c0e03b85b9a8209bbf10``
+- ``itisfoundation/webserver:master-github-latest``
 
 ## Staging process
 
-A staging version of simcore is like a pre-released version, that is marked as such on the master branch by leveraging Github pre-release tagging mechanism. The CI is triggered and will pull the marked docker images, and tag them as staging images.
+A staging version of simcore is like a pre-released version, that is marked as such on the master branch by leveraging Github pre-release tagging mechanism. The CI is triggered and will pull the marked docker images (by using the given git SHA or latest master build), and tag them as staging images.
 Each docker image are renamed as:
+
 - itisfoundation/[image_name]:staging-[CINAME]-latest
 - itisfoundation/[image_name]:staging-[CINAME]-staging_[BUILD_NAMEVERSION]-[BUILD_DATE]--[BUILD_TIME].[GIT_SHA]
 
-For example, just before the review of the ``DAJIA`` sprint we release a staging version ``v1.0.0`, the commit ``752ef...`` from above is tagged as stage and the ``github`` actions CI on ``2020/09/01`` at ``17:30``.
-  - ``itisfoundation/webserver:staging-github-DAJIAv1.0.0-2020-09-01--17-30.752ef50f3babb6537580c0e03b85b9a8209bbf10``
-  - ``itisfoundation/webserver:staging-github-latest``
- 
+with:
+
+- CINAME the name of the CI
+- BUILD_NAMEVERSION is a one word name and a number (e.g. DaJia0, Dajia1, ...)
+- BUILD_DATE is the build date
+- BUILD_TIME is the build time
+- GIT_SHA is the git SHA corresponding to the code used for building
+
+see [docs/img/git-release-workflow.svg](docs/img/git-release-workflow.svg)
+
+### Staging example
+
+Just before the review of the ``DAJIA`` sprint we release a staging version ``v1.0.0`, the commit ``752ef...`` from above is tagged as stage and the ``github`` actions CI on ``2020/09/01`` at ``17:30``.
+
+- ``itisfoundation/webserver:staging-github-stage_DAJIA1-2020-09-01--17-30.752ef50f3babb6537580c0e03b85b9a8209bbf10``
+- ``itisfoundation/webserver:staging-github-latest``
+
 then after the review we do a couple of additions and re-release staging ``DAJIA`` sprint  as `v1.1.0`
-  - ``itisfoundation/webserver:staging-github-DAJIAv1.1.0-2020-09-01--20-30.560eq50f3babb6537580c0e03b85b9a8209bbf10``
-  - ``itisfoundation/webserver:staging-github-latest``
-  
-  
-### Instructions
+
+- ``itisfoundation/webserver:staging-github-stage_DAJIA2-2020-09-01--20-30.560eq50f3babb6537580c0e03b85b9a8209bbf10``
+- ``itisfoundation/webserver:staging-github-latest``
+
+### Instructions to generate a staging release
 
 1. Generate Github release tag
 
@@ -45,17 +73,31 @@ then after the review we do a couple of additions and re-release staging ``DAJIA
 
 ## Release process
 
-A released version of simcore, that is marked as such on the master branch by leveraging Github release tagging mechanism. The CI is triggered and will pull the marked staging docker images, and tag them as release images.
+A released version of simcore, that is marked as such on the master branch by leveraging Github release tagging mechanism. The CI is triggered and will pull the marked staging docker images (by using the given git SHA or the latest staging images), and tag them as release images.
 **NOTE:** A release version is ALWAYS preceded by a staging version. The CI will fail if it does not find the corresponding staging version.
 Each docker build marked as released are tagged as:
+
 - itisfoundation/[image_name]:release-[CINAME]-latest
-- itisfoundation/[image_name]:release-[CINAME]-v[BUILD_VERSION]-[BUILD_DATE]--[BUILD_TIME].GIT_SHA
+- itisfoundation/[image_name]:release-[CINAME]-v[RELEASE_VERSION]-[BUILD_DATE]--[BUILD_TIME].GIT_SHA
 
-As example, the team decides to release to production the lastest staging version of ``DAJIA`` sprint. Next release version, following semantic versioning and previous releases, is `v5.6.0`. The images will be retaged by github actions CI as:
-  - ``itisfoundation/webserver:release-github-v5.6.0-2020-09-02--19-30.560eq50f3babb6537580c0e03b85b9a8209bbf10``
-  - ``itisfoundation/webserver:release-github-latest``
+with:
 
-### Instructions
+- CINAME the name of the CI
+- RELEASE_VERSION is a version number following semantic versioning (e.g. 1.0.0, 1.2.0, 1.2.1, ...)
+- BUILD_DATE is the build date
+- BUILD_TIME is the build time
+- GIT_SHA is the git SHA corresponding to the code used for building
+
+see [docs/img/git-release-workflow.svg](docs/img/git-release-workflow.svg)
+
+### Release example
+
+The team decides to release to production the lastest staging version of ``DAJIA`` sprint. Next release version, following semantic versioning and previous releases, is `v5.6.0`. The images will be retaged by github actions CI as:
+
+- ``itisfoundation/webserver:release-github-v5.6.0-2020-09-02--19-30.560eq50f3babb6537580c0e03b85b9a8209bbf10``
+- ``itisfoundation/webserver:release-github-latest``
+
+### Instructions to generate a release
 
 1. Generate Github release tag
 
@@ -71,12 +113,31 @@ As example, the team decides to release to production the lastest staging versio
 
 ## Hotfix process
 
-A hotfix is **ALWAYS made from an already released version**. 
-Each docker build marked as released are tagged as:
-- itisfoundation/[image_name]:release-[CINAME]-latest
-- itisfoundation/[image_name]:release-[CINAME]-v[BUILD_VERSION]-[BUILD_DATE]--[BUILD_TIME].[GIT_SHA]
+A hotfix is **ALWAYS made from an already released version**. A branch is created from the tagged release version and the fix is implemented. Once it is ready th CI will trigger and build the *hotfix-* labelled docker images. Once ready, the image shall be tagged leveraging Github release mechanism. The CI will trigger again and pull the docker images (based on git SHA or latest hotfix image) and push a new release version.
 
-### Instructions
+Each docker build marked as released are tagged as:
+
+- itisfoundation/[image_name]:release-[CINAME]-latest
+- itisfoundation/[image_name]:release-[CINAME]-v[RELEASE_VERSION]-[BUILD_DATE]--[BUILD_TIME].[GIT_SHA]
+
+with:
+
+- CINAME the name of the CI
+- RELEASE_VERSION is a version number following semantic versioning (e.g. 1.0.0, 1.2.0, 1.2.1, ...)
+- BUILD_DATE is the build date
+- BUILD_TIME is the build time
+- GIT_SHA is the git SHA corresponding to the code used for building
+
+see [docs/img/git-hotfix-workflow.svg](docs/img/git-hotfix-workflow.svg)
+
+### Hotfix example
+
+A bug was found in version 1.2.0 of the simcore stack. The team decides to fix it as it is a fairly simple one. Therefore a hotfix is created and a new release will be created by the CI:
+
+- ``itisfoundation/webserver:release-github-v1.2.1-2020-09-02--19-30.560eq50f3babb6537580c0e03b85b9a8209bbf10``
+- ``itisfoundation/webserver:release-github-latest``
+
+### Instructions to generate a hotfix release
 
 1. Generate Github release tag
 
