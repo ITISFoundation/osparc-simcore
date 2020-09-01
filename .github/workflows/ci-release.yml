@@ -13,7 +13,7 @@ env:
 
 jobs:
   deploy:
-    if: github.event.base_ref == 'refs/heads/master'
+    # if: github.event.base_ref == 'refs/heads/master'
     # only run on staging branch
     name: deploy release
     runs-on: ubuntu-latest
@@ -22,6 +22,8 @@ jobs:
       TO_TAG_PREFIX: release-github
     steps:
       - uses: actions/checkout@v2
+      - name: show environment
+        run: env
       - name: setup docker
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
