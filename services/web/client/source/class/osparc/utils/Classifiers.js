@@ -30,38 +30,16 @@ qx.Class.define("osparc.utils.Classifiers", {
           label: "root",
           children: []
         };
-        osparc.store.Store.getInstance().getGroupsOrganizations()
-          .then(orgs => {
-            if (orgs.length === 0) {
-              reject();
-              return;
+        osparc.store.Store.getInstance().getAllClassifiers()
+          .then(classifiers => {
+            const keys = Object.keys(classifiers);
+            if (keys.length) {
+              // Tree-ify
+              const tree = {};
+              keys.forEach(key => this.__buildTree(classifiers, key, classifiers[key].classifier.split("::"), tree));
+              rootData.children.push(...this.__virtualTree(tree));
             }
-            const classifierPromises = [];
-            orgs.forEach(org => {
-              const params = {
-                url: {
-                  "gid": org["gid"]
-                }
-              };
-              classifierPromises.push(osparc.data.Resources.get("classifiers", params));
-            });
-            Promise.all(classifierPromises)
-              .then(classifierss => {
-                if (classifierss.length === 0) {
-                  reject();
-                  return;
-                }
-                classifierss.forEach(({classifiers}) => {
-                  const keys = Object.keys(classifiers);
-                  if (keys.length) {
-                    // Tree-ify
-                    const tree = {};
-                    keys.forEach(key => this.__buildTree(classifiers, key, classifiers[key].classifier.split("::"), tree));
-                    rootData.children.push(...this.__virtualTree(tree));
-                  }
-                });
-                resolve(rootData);
-              });
+            resolve(rootData);
           });
       });
     },
