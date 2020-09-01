@@ -35,6 +35,13 @@ def osparc_simcore_root_dir(request) -> Path:
 
 
 @pytest.fixture(scope="session")
+def osparc_simcore_services_dir(osparc_simcore_root_dir) -> Path:
+    services_dir = osparc_simcore_root_dir / "services"
+    assert services_dir.exists()
+    return services_dir
+
+
+@pytest.fixture(scope="session")
 def env_devel_file(osparc_simcore_root_dir: Path) -> Path:
     env_devel_fpath = osparc_simcore_root_dir / ".env-devel"
     assert env_devel_fpath.exists()
@@ -73,3 +80,17 @@ def web_client_dir(services_dir: Path) -> Path:
     wbc_dir = services_dir / "web/client"
     assert wbc_dir.exists()
     return wbc_dir
+
+
+@pytest.fixture(scope="session")
+def script_dir(osparc_simcore_root_dir: Path) -> Path:
+    script_dir = osparc_simcore_root_dir / "scripts"
+    assert script_dir.exists()
+    return script_dir
+
+
+@pytest.fixture(scope="session")
+def pylintrc(osparc_simcore_root_dir: Path) -> Path:
+    pylintrc = osparc_simcore_root_dir / ".pylintrc"
+    assert pylintrc.exists()
+    return pylintrc
