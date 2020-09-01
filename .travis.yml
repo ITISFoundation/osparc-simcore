@@ -404,32 +404,35 @@ jobs:
     # deployment to staging environ ----------------------------------------------------------------
     - stage: deployment
       name: staging
-      if: branch = staging
       env:
         - OWNER=${TRAVIS_REPO_SLUG%/*}
-        - TAG_PREFIX=staging
+        - FROM_TAG_PREFIX=master-travis
+        - TO_TAG_PREFIX=staging-travis
+        - GIT_TAG=${TRAVIS_TAG}
       git:
         depth: false
       script: echo "Deploy staging"
       deploy:
         - provider: script
-          script: unbuffer bash ci/deploy/dockerhub-deploy.bash
+          script: unbuffer bash ci/deploy/dockerhub-tag-version.bash
           on:
-            branch: staging
-
+            all_branches: true
+            tags: true
+            condition: $TRAVIS_TAG =~ ^FREEZE_[a-zA-Z]+[0-9]+$
     # deployment to production environ ----------------------------------------------------------------
     - stage: deployment
       name: production/release
       env:
         - OWNER=${TRAVIS_REPO_SLUG%/*}
-        - TAG_PREFIX=staging
+        - FROM_TAG_PREFIX=staging-travis
+        - TO_TAG_PREFIX=release-travis
         - GIT_TAG=${TRAVIS_TAG}
       git:
         depth: false
       script: echo "Deploy production version $TRAVIS_TAG"
       deploy:
         - provider: script
-          script: unbuffer bash ci/deploy/dockerhub-release.bash
+          script: unbuffer bash ci/deploy/dockerhub-tag-version.bash
           on:
             all_branches: true
             tags: true
