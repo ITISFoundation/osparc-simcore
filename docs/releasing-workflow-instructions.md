@@ -47,7 +47,7 @@ see [docs/img/git-release-workflow.svg](docs/img/git-release-workflow.svg)
 
 ### Staging example
 
-Just before the review of the ``DAJIA`` sprint we release a staging version ``v1.0.0`, the commit ``752ef...`` from above is tagged as stage and the ``github`` actions CI on ``2020/09/01`` at ``17:30``.
+Just before the review of the ``DAJIA`` sprint we release a staging version ``v1.0.0``, the commit ``752ef...`` from above is tagged as stage and the ``github`` actions CI on ``2020/09/01`` at ``17:30``.
 
 - ``itisfoundation/webserver:staging-github-stage_DAJIA1-2020-09-01--17-30.752ef50f3babb6537580c0e03b85b9a8209bbf10``
 - ``itisfoundation/webserver:staging-github-latest``
@@ -113,7 +113,7 @@ The team decides to release to production the lastest staging version of ``DAJIA
 
 ## Hotfix process
 
-A hotfix is **ALWAYS made from an already released version**. A branch is created from the tagged release version and the fix is implemented. Once it is ready th CI will trigger and build the *hotfix-* labelled docker images. Once ready, the image shall be tagged leveraging Github release mechanism. The CI will trigger again and pull the docker images (based on git SHA or latest hotfix image) and push a new release version.
+A hotfix is **ALWAYS made from an already released version**. A branch is created from the tagged release version and the fix is implemented. Once it is ready the CI will trigger and build the *hotfix-* labelled docker images. Then, the image shall be tagged leveraging Github release mechanism. The CI will trigger again and pull the docker images (based on git SHA or latest hotfix image) and push a new release version.
 
 Each docker build marked as released are tagged as:
 
