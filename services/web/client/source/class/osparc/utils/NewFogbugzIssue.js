@@ -19,17 +19,17 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   const url = osparc.component.widget.NewFogbugzIssue.getNewIssueUrl();
+ *   const url = osparc.utils.NewFogbugzIssue.getNewIssueUrl();
  *   window.open(url);
  * </pre>
  */
 
-qx.Class.define("osparc.component.widget.NewFogbugzIssue", {
+qx.Class.define("osparc.utils.NewFogbugzIssue", {
   type: "static",
 
   statics: {
     getNewIssueUrl: function() {
-      const temp = osparc.component.widget.NewGHIssue.getTemplate();
+      const temp = osparc.utils.NewFogbugzIssue.getTemplate();
       let env = "```json\n";
       env += JSON.stringify(osparc.utils.LibVersions.getEnvLibs(), null, 2);
       env += "\n```";
