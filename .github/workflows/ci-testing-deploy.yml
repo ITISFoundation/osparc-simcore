@@ -223,6 +223,59 @@ jobs:
           name: unit_director_coverage
           path: codeclimate.unit_director_coverage.json
 
+  unit-test-director-v2:
+    name: Unit-testing director_v2
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
+      - name: setup python environment
+        uses: actions/setup-python@v1.1.1
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v1
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: install
+        run: ./ci/github/unit-testing/director_v2.bash install
+      - name: test
+        run: ./ci/github/unit-testing/director_v2.bash test
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit_tests_director_v2_docker_logs
+          path: ./services/director_v2/test_failures
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_director_v2_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit_director_v2_coverage
+          path: codeclimate.unit_director_v2_coverage.json
+
   unit-test-sidecar:
     name: "[unit] sidecar"
     runs-on: ${{ matrix.os }}
@@ -1182,6 +1235,7 @@ jobs:
       [
         unit-test-catalog,
         unit-test-director,
+        unit-test-director-v2,
         unit-test-sidecar,
         unit-test-service-library,
         unit-test-models-library,
@@ -1208,6 +1262,9 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: unit_director_coverage
+      - uses: actions/download-artifact@v1
+        with:
+          name: unit_director_v2_coverage
       - uses: actions/download-artifact@v1
         with:
           name: unit_sidecar_coverage
@@ -1251,6 +1308,7 @@ jobs:
             unit_api_server_coverage/*.json \
             unit_catalog_coverage/*.json \
             unit_director_coverage/*.json \
+            unit_director_v2_coverage/*.json \
             unit_sidecar_coverage/*.json \
             unit_servicelib_coverage/*.json \
             unit_modelslib_coverage/*.json \
@@ -1282,6 +1340,7 @@ jobs:
         unit-test-api,
         unit-test-catalog,
         unit-test-director,
+        unit-test-director-v2,
         unit-test-sidecar,
         unit-test-frontend,
         unit-test-python-linting,
