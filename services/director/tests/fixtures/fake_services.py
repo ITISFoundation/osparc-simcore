@@ -157,8 +157,9 @@ async def _build_push_image(
     await _create_base_image(docker_labels, image_tag)
 
     # push image to registry
-    async with Docker() as docker:
-        await docker.images.push(image_tag)
+    docker = Docker()
+    await docker.images.push(image_tag)
+    await docker.close()
     # remove image from host
     # docker.images.remove(image_tag)
     return {
@@ -200,11 +201,12 @@ CMD while true; do sleep 10; done
     tar_obj = utils.mktar_from_dockerfile(f)
 
     # build docker base image
-    async with Docker() as docker:
-        base_docker_image = await docker.images.build(
-            fileobj=tar_obj, encoding="gzip", rm=True, labels=labels, tag=tag
-        )
-        return base_docker_image[0]
+    docker = Docker()
+    base_docker_image = await docker.images.build(
+        fileobj=tar_obj, encoding="gzip", rm=True, labels=labels, tag=tag
+    )
+    await docker.close()
+    return base_docker_image[0]
 
 
 def _create_service_description(service_type, name, tag):
