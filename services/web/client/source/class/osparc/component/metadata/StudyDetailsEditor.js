@@ -234,7 +234,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     __saveStudy: function(isTemplate, btn) {
       const data = this.__serializeForm();
       // FIXME: Avoid adding invalid properties to standard entities.
-      delete data.locked;
+      delete data.state;
       delete data.resourceType;
       const params = {
         url: {
