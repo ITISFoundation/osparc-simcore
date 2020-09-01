@@ -33,7 +33,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         description="Manages and maintains a **catalog** of all published components (e.g. macro-algorithms, scripts, etc)",
         version=api_version,
         openapi_url=f"/api/{api_vtag}/openapi.json",
-        docs_url="/dev/docs",
+        docs_url="/doc",
         redoc_url=None,  # default disabled
     )
 
