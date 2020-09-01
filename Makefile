@@ -552,14 +552,14 @@ _git_get_repo_orga_name = $(shell git config --get remote.origin.url | \
 	fi
 
 .PHONY: release-staging release-prod
-release-staging release-prod: .check-master-branch
+release-staging release-prod: .check-master-branch ## Helper to create a staging or production release in Github (usage: make release-staging name=sprint version=1 git_sha=optional or make release-prod version=1.2.3 git_sha=optional)
 	# ensure tags are uptodate
 	@git pull --tags
 	@echo "\e[33mOpen the following link to create the $(if $(findstring -staging, $@),staging,production) release:";
 	@echo "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)&body=$(_url_encoded_logs)";
 
 .PHONY: release-hotfix
-release-hotfix:
+release-hotfix: ## Helper to create a hotfix release in Github (usage: make release-hotfix version=1.2.4 git_sha=optional)
 	# ensure tags are uptodate
 	@git pull --tags
 	@echo "\e[33mOpen the following link to create the $(if $(findstring -staging, $@),staging,production) release:";
