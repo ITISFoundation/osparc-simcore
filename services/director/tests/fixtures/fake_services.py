@@ -2,6 +2,7 @@
 # pylint:disable=redefined-outer-name
 
 
+import asyncio
 import json
 import logging
 import random
@@ -10,12 +11,11 @@ from pathlib import Path
 
 import pytest
 import requests
+from aiodocker import utils
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
 
 _logger = logging.getLogger(__name__)
-
-import asyncio
 
 
 @pytest.fixture(scope="function")
@@ -98,7 +98,7 @@ async def _build_push_image(
     *,
     bad_json_format=False,
 ):  # pylint: disable=R0913
-    docker = Docker()
+
     # crate image
     service_description = _create_service_description(service_type, name, tag)
     docker_labels = _create_docker_labels(service_description, bad_json_format)
@@ -157,7 +157,8 @@ async def _build_push_image(
     await _create_base_image(docker_labels, image_tag)
 
     # push image to registry
-    await docker.images.push(image_tag)
+    async with Docker() as docker:
+        await docker.images.push(image_tag)
     # remove image from host
     # docker.images.remove(image_tag)
     return {
@@ -190,9 +191,6 @@ def _clean_registry(registry_url, list_of_images):
         response = requests.delete(url, headers=request_headers)
 
 
-from aiodocker import utils
-
-
 async def _create_base_image(labels, tag):
     dockerfile = """
 FROM alpine
@@ -202,11 +200,11 @@ CMD while true; do sleep 10; done
     tar_obj = utils.mktar_from_dockerfile(f)
 
     # build docker base image
-    docker = Docker()
-    base_docker_image = await docker.images.build(
-        fileobj=tar_obj, encoding="gzip", rm=True, labels=labels, tag=tag
-    )
-    return base_docker_image[0]
+    async with Docker() as docker:
+        base_docker_image = await docker.images.build(
+            fileobj=tar_obj, encoding="gzip", rm=True, labels=labels, tag=tag
+        )
+        return base_docker_image[0]
 
 
 def _create_service_description(service_type, name, tag):
