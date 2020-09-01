@@ -113,20 +113,14 @@ The team decides to release to production the lastest staging version of ``DAJIA
 
 ## Hotfix process
 
-A hotfix is **ALWAYS made from an already released version**. A branch is created from the tagged release version and the fix is implemented. Once it is ready the CI will trigger and build the *hotfix-* labelled docker images. Then, the image shall be tagged leveraging Github release mechanism. The CI will trigger again and pull the docker images (based on git SHA or latest hotfix image) and push a new release version.
+A hotfix is **ALWAYS made from an already released version**. A branch is created from the tagged release version (must be named hotfix_v*) and the fix is implemented there following usual best practices. On each commit in that branch the CI is triggered and will generate the following images in Dockerhub:
 
-Each docker build marked as released are tagged as:
+- itisfoundation/[image_name]:hotfix-[CINAME]-latest
+- itisfoundation/[image_name]:hotfix-[CINAME]-[BUILD_DATE]--[BUILD_TIME].[GIT_SHA]
 
-- itisfoundation/[image_name]:release-[CINAME]-latest
-- itisfoundation/[image_name]:release-[CINAME]-v[RELEASE_VERSION]-[BUILD_DATE]--[BUILD_TIME].[GIT_SHA]
+Once ready, the release-hotfix process starts by leveraging Github release mechanism. The CI will trigger again and pull the docker images (based on git SHA or latest hotfix image) and push a new release version.
 
-with:
-
-- CINAME the name of the CI
-- RELEASE_VERSION is a version number following semantic versioning (e.g. 1.0.0, 1.2.0, 1.2.1, ...)
-- BUILD_DATE is the build date
-- BUILD_TIME is the build time
-- GIT_SHA is the git SHA corresponding to the code used for building
+Each docker build marked as released are tagged as described in the Release process.
 
 see [docs/img/git-hotfix-workflow.svg](docs/img/git-hotfix-workflow.svg)
 
