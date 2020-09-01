@@ -6,16 +6,18 @@ import time
 from pathlib import Path
 from typing import Dict, Optional
 
-import aiodocker
 import aiopg
 import attr
+from aiodocker import Docker
 from aiodocker.containers import DockerContainer
-from celery.utils.log import get_task_logger
+from aiodocker.exceptions import DockerContainerError, DockerError
 from packaging import version
+from tenacity import retry, stop_after_attempt
+
+from celery.utils.log import get_task_logger
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_sdk import node_data, node_ports
 from simcore_sdk.node_ports.dbmanager import DBManager
-from tenacity import retry, stop_after_attempt
 
 from . import config, exceptions
 from .boot_mode import get_boot_mode
@@ -98,7 +100,7 @@ class Executor:
         except asyncio.CancelledError:
             await self._post_messages(LogType.LOG, "[sidecar]...task cancelled")
             raise
-        except (aiodocker.exceptions.DockerError, exceptions.SidecarException) as exc:
+        except (DockerError, exceptions.SidecarException) as exc:
             await self._post_messages(
                 LogType.LOG, f"[sidecar]...task failed: {str(exc)}"
             )
@@ -215,7 +217,7 @@ class Executor:
             config.DOCKER_PASSWORD,
         )
         try:
-            async with aiodocker.Docker() as docker_client:
+            async with Docker() as docker_client:
                 await self._post_messages(
                     LogType.LOG,
                     f"[sidecar]Pulling {self.task.image['name']}:{self.task.image['tag']}...",
@@ -240,7 +242,7 @@ class Executor:
                         )["integration-version"]
                     )
 
-        except aiodocker.exceptions.DockerError:
+        except DockerError:
             msg = f"Failed to pull image '{docker_image}'"
             log.exception(msg)
             raise
@@ -320,7 +322,7 @@ class Executor:
         result = "FAILURE"
         log_processor_task = None
         try:
-            async with aiodocker.Docker() as docker_client:
+            async with Docker() as docker_client:
                 await self._post_messages(
                     LogType.LOG,
                     f"[sidecar]Running {self.task.image['name']}:{self.task.image['tag']}...",
@@ -381,14 +383,14 @@ class Executor:
                 await self._post_messages(LogType.PROGRESS, "1.0")
                 result = "SUCCESS"
                 log.info("%s completed with successfully!", docker_image)
-        except aiodocker.exceptions.DockerContainerError:
+        except DockerContainerError:
             log.exception(
                 "Error while running %s with parameters %s",
                 docker_image,
                 docker_container_config,
             )
             raise
-        except aiodocker.exceptions.DockerError:
+        except DockerError:
             log.exception(
                 "Unknown error while trying to run %s with parameters %s",
                 docker_image,
