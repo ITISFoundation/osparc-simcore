@@ -6,10 +6,10 @@ import time
 from pathlib import Path
 from typing import Dict, Optional
 
-import attr
-
 import aiodocker
 import aiopg
+import attr
+from aiodocker.containers import DockerContainer
 from celery.utils.log import get_task_logger
 from packaging import version
 from servicelib.utils import fire_and_forget_task, logged_gather
@@ -215,40 +215,37 @@ class Executor:
             config.DOCKER_PASSWORD,
         )
         try:
-            docker_client: aiodocker.Docker = aiodocker.Docker()
-            await self._post_messages(
-                LogType.LOG,
-                f"[sidecar]Pulling {self.task.image['name']}:{self.task.image['tag']}...",
-            )
-            await docker_client.images.pull(
-                docker_image,
-                auth={
-                    "username": config.DOCKER_USER,
-                    "password": config.DOCKER_PASSWORD,
-                },
-            )
-
-            # get integration version
-            image_cfg = await docker_client.images.inspect(docker_image)
-            # NOTE: old services did not have that label
-            if "io.simcore.integration-version" in image_cfg["Config"]["Labels"]:
-                self.integration_version = version.parse(
-                    json.loads(
-                        image_cfg["Config"]["Labels"]["io.simcore.integration-version"]
-                    )["integration-version"]
+            async with aiodocker.Docker() as docker_client:
+                await self._post_messages(
+                    LogType.LOG,
+                    f"[sidecar]Pulling {self.task.image['name']}:{self.task.image['tag']}...",
                 )
+                await docker_client.images.pull(
+                    docker_image,
+                    auth={
+                        "username": config.DOCKER_USER,
+                        "password": config.DOCKER_PASSWORD,
+                    },
+                )
+
+                # get integration version
+                image_cfg = await docker_client.images.inspect(docker_image)
+                # NOTE: old services did not have that label
+                if "io.simcore.integration-version" in image_cfg["Config"]["Labels"]:
+                    self.integration_version = version.parse(
+                        json.loads(
+                            image_cfg["Config"]["Labels"][
+                                "io.simcore.integration-version"
+                            ]
+                        )["integration-version"]
+                    )
 
         except aiodocker.exceptions.DockerError:
             msg = f"Failed to pull image '{docker_image}'"
             log.exception(msg)
             raise
 
-    async def _run_container(self):
-        # pylint: disable=too-many-statements, too-many-branches
-        start_time = time.perf_counter()
-        container = None
-        docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
-
+    async def _create_container_config(self, docker_image: str) -> Dict:
         # NOTE: Env/Binds for log folder is only necessary for integraion "0"
         env_vars = [
             f"{name.upper()}_FOLDER=/{name}/{self.task.job_id}"
@@ -293,6 +290,27 @@ class Executor:
                 ],
             },
         }
+        return docker_container_config
+
+    async def _start_monitoring(self, container: DockerContainer) -> None:
+        log_file = self.shared_folders.log_folder / "log.dat"
+        if self.integration_version == version.parse("0.0.0"):
+            # touch output file, so it's ready for the container (v0)
+            log_file.touch()
+
+            log_processor_task = fire_and_forget_task(
+                monitor_logs_task(log_file, self._post_messages)
+            )
+        else:
+            log_processor_task = fire_and_forget_task(
+                monitor_logs_task(container, self._post_messages, log_file)
+            )
+
+    async def _run_container(self):
+        start_time = time.perf_counter()
+        container = None
+        docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
+        docker_container_config = await self._create_container_config(docker_image)
         log.debug(
             "Running image %s with config %s", docker_image, docker_container_config
         )
@@ -300,70 +318,66 @@ class Executor:
         result = "FAILURE"
         log_processor_task = None
         try:
-            docker_client: aiodocker.Docker = aiodocker.Docker()
-            await self._post_messages(
-                LogType.LOG,
-                f"[sidecar]Running {self.task.image['name']}:{self.task.image['tag']}...",
-            )
-            container = await docker_client.containers.create(
-                config=docker_container_config
-            )
-            # start monitoring logs
-            log_file = self.shared_folders.log_folder / "log.dat"
-            if self.integration_version == version.parse("0.0.0"):
-                # touch output file, so it's ready for the container (v0)
-                log_file.touch()
-
-                log_processor_task = fire_and_forget_task(
-                    monitor_logs_task(log_file, self._post_messages)
+            async with aiodocker.Docker() as docker_client:
+                await self._post_messages(
+                    LogType.LOG,
+                    f"[sidecar]Running {self.task.image['name']}:{self.task.image['tag']}...",
                 )
-            else:
-                log_processor_task = fire_and_forget_task(
-                    monitor_logs_task(container, self._post_messages, log_file)
+                container = await docker_client.containers.create(
+                    config=docker_container_config
                 )
-            # start the container
-            await container.start()
-            # indicate container is started
-            await self.rabbit_mq.post_instrumentation_message(
-                {
-                    "metrics": "service_started",
-                    "user_id": self.user_id,
-                    "project_id": self.task.project_id,
-                    "service_uuid": self.task.node_id,
-                    "service_type": "COMPUTATIONAL",
-                    "service_key": self.task.image["name"],
-                    "service_tag": self.task.image["tag"],
-                }
-            )
+                # start monitoring logs
+                await self._start_monitoring(container)
 
-            # wait until the container finished, either success or fail or timeout
-            container_data = await container.show()
-            while container_data["State"]["Running"]:
-                await asyncio.sleep(2)
-                # reload container data
+                # start the container
+                await container.start()
+                # indicate container is started
+                await self.rabbit_mq.post_instrumentation_message(
+                    {
+                        "metrics": "service_started",
+                        "user_id": self.user_id,
+                        "project_id": self.task.project_id,
+                        "service_uuid": self.task.node_id,
+                        "service_type": "COMPUTATIONAL",
+                        "service_key": self.task.image["name"],
+                        "service_tag": self.task.image["tag"],
+                    }
+                )
+
+                # wait until the container finished, either success or fail or timeout
                 container_data = await container.show()
-                if (
-                    (time.perf_counter() - start_time) > config.SERVICES_TIMEOUT_SECONDS
-                    and config.SERVICES_TIMEOUT_SECONDS > 0
-                ):
-                    log.error(
-                        "Running container timed-out after %ss and will be stopped now\nlogs: %s",
-                        config.SERVICES_TIMEOUT_SECONDS,
-                        container.log(stdout=True, stderr=True),
-                    )
-                    await container.stop()
-                    break
+                while container_data["State"]["Running"]:
+                    await asyncio.sleep(2)
+                    # reload container data
+                    container_data = await container.show()
+                    if (
+                        (time.perf_counter() - start_time)
+                        > config.SERVICES_TIMEOUT_SECONDS
+                        and config.SERVICES_TIMEOUT_SECONDS > 0
+                    ):
+                        log.error(
+                            "Running container timed-out after %ss and will be stopped now\nlogs: %s",
+                            config.SERVICES_TIMEOUT_SECONDS,
+                            container.log(stdout=True, stderr=True),
+                        )
+                        await container.stop()
+                        break
 
-            # reload container data to check the error code with latest info
-            container_data = await container.show()
-            if container_data["State"]["ExitCode"] > 0:
-                raise exceptions.SidecarException(
-                    f"{docker_image} completed with error code {container_data['State']['ExitCode']}:\n {container_data['State']['Error']}\n:Last logs:\n{container.logs(stdout=True, stderr=True, tail=10)}"
-                )
-            # ensure progress 1.0 is sent
-            await self._post_messages(LogType.PROGRESS, "1.0")
-            result = "SUCCESS"
-            log.info("%s completed with successfully!", docker_image)
+                # reload container data to check the error code with latest info
+                container_data = await container.show()
+                if container_data["State"]["ExitCode"] > 0:
+                    exc = exceptions.SidecarException(
+                        f"{docker_image} completed with error code {container_data['State']['ExitCode']}:\n {container_data['State']['Error']}\n:Last logs:\n{container.logs(stdout=True, stderr=True, tail=10)}"
+                    )
+                    # clean up the container
+                    await container.delete(force=True)
+                    raise exc
+                # clean up the container
+                await container.delete(force=True)
+                # ensure progress 1.0 is sent
+                await self._post_messages(LogType.PROGRESS, "1.0")
+                result = "SUCCESS"
+                log.info("%s completed with successfully!", docker_image)
         except aiodocker.exceptions.DockerContainerError:
             log.exception(
                 "Error while running %s with parameters %s",
@@ -385,9 +399,6 @@ class Executor:
         finally:
             stop_time = time.perf_counter()
             log.info("Running %s took %sseconds", docker_image, stop_time - start_time)
-            if container:
-                # clean up the container
-                await container.delete(force=True)
             # stop monitoring logs now
             if log_processor_task:
                 log_processor_task.cancel()
