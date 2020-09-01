@@ -448,7 +448,11 @@ OR prj_owner = {user_id})
         return template_prj
 
     async def update_user_project(
-        self, project_data: Dict, user_id: int, project_uuid: str, include_templates: Optional[bool] = False
+        self,
+        project_data: Dict,
+        user_id: int,
+        project_uuid: str,
+        include_templates: Optional[bool] = False,
     ):
         """ updates a project from a user
 
@@ -457,7 +461,10 @@ OR prj_owner = {user_id})
 
         async with self.engine.acquire() as conn:
             row = await self._get_project(
-                user_id, project_uuid, exclude_foreign=["tags"], include_templates=include_templates
+                user_id,
+                project_uuid,
+                exclude_foreign=["tags"],
+                include_templates=include_templates,
             )
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
             _check_project_permissions(row, user_id, user_groups, "write")
@@ -576,6 +583,21 @@ OR prj_owner = {user_id})
             ):
                 result.append(row[0])
             return list(result)
+
+    async def update_removed_owner_and_access_rights(
+        self, project_data: Dict, project_uuid: str
+    ) -> bool:
+        async with self.engine.acquire() as conn:
+            # update timestamps
+            project_data["lastChangeDate"] = now_str()
+            # now update it
+            result = await conn.execute(
+                # pylint: disable=no-value-for-parameter
+                projects.update()
+                .values(**_convert_to_db_names(project_data))
+                .where(projects.c.uuid == project_uuid)
+            )
+            return result.rowcount == 1
 
 
 def setup_projects_db(app: web.Application):

@@ -18,7 +18,7 @@ from .config import (
     APP_RESOURCE_MANAGER_TASKS_KEY,
     CONFIG_SECTION_NAME,
 )
-from .garbage_collector import setup_garbage_collector_task
+from .garbage_collector import setup_garbage_collector
 from .redis import setup_redis_client
 from .registry import RedisResourceRegistry
 
@@ -39,7 +39,7 @@ def setup(app: web.Application) -> bool:
     app[APP_CLIENT_SOCKET_REGISTRY_KEY] = (
         RedisResourceRegistry(app) if cfg["redis"]["enabled"] else None
     )
-    setup_garbage_collector_task(app)
+    setup_garbage_collector(app)
     return True
 
 

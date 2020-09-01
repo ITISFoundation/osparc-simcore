@@ -351,3 +351,12 @@ async def get_group_classifier(app: web.Application, gid: int) -> Dict:
             )
         )
         return bundle or {}
+
+
+async def get_group_from_gid(app: web.Application, gid: int) -> Dict:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        group = await conn.execute(
+            sa.select([groups]).where(groups.c.gid == gid)
+        )
+        return await group.fetchone()
