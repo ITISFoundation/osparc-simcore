@@ -1,10 +1,7 @@
 from fastapi import APIRouter, Query, status
 
-from ...models.schemas.services import (
-    SERVICE_IMAGE_NAME_RE,
-    VERSION_RE,
-    RunningServicesEnveloped,
-)
+from ...models.constants import SERVICE_IMAGE_NAME_RE, VERSION_RE
+from ...models.schemas.services import RunningServicesEnveloped
 
 router = APIRouter()
 
@@ -38,7 +35,7 @@ async def start_interactive_service(
         ...,
         description="distinctive name for the node based on the docker registry path",
         regex=SERVICE_IMAGE_NAME_RE,
-        examples=[
+        example=[
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
         ],
@@ -47,7 +44,7 @@ async def start_interactive_service(
         ...,
         description="The tag/version of the service",
         regex=VERSION_RE,
-        examples=["1.0.0", "0.0.1"],
+        example=["1.0.0", "0.0.1"],
     ),
     service_uuid: str = Query(..., description="The uuid to assign the service with"),
     service_base_path: str = Query(
