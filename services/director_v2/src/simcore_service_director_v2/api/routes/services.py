@@ -49,7 +49,7 @@ async def get_service_versioned(
 
 
 @router.get(
-    "service_extras/{service_key}/{service_version}",
+    "/{service_key}/{service_version}/extras",
     description="Currently returns the node_requirements an array of resoruces needed for scheduling",
     response_model=ServiceExtrasEnveloped,
 )

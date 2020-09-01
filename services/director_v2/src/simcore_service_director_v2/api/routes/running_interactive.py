@@ -23,7 +23,6 @@ ProjectIdQuery = Query(
 async def list_running_interactive_services(
     user_id: str = UserIdQuery, project_id: str = ProjectIdQuery
 ):
-    print(user_id)
     pass
 
 
