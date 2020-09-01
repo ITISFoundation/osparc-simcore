@@ -22,10 +22,7 @@ def read_reqs(reqs_path: Path):
 readme = (current_dir / "README.md").read_text()
 version = (current_dir / "VERSION").read_text().strip()
 
-install_requirements = read_reqs(current_dir / "requirements" / "_base.txt") + [
-    "simcore-postgres-database"
-]
-
+install_requirements = read_reqs(current_dir / "requirements" / "_base.txt")
 test_requirements = read_reqs(current_dir / "requirements" / "_test.txt")
 
 
@@ -51,7 +48,7 @@ setup(
     extras_require={"test": test_requirements},
     entry_points={
         "console_scripts": [
-            "simcore-service-director_v2 = simcore_service_director_v2.cli:main",
+            "simcore-service-director_v2 = simcore_service_director_v2.__main__:main",
         ],
     },
 )
