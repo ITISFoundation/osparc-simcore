@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from itertools import chain
-from typing import Dict, Set
+from typing import Dict
 
 from aiohttp import web
 
@@ -301,6 +301,7 @@ async def fetch_new_project_owner_from_groups(
         return None
 
 
+# pylint: disable=too-many-branches,too-many-statements
 async def remove_all_projects_for_user(app: web.Application, user_id: int) -> None:
     """
     TODO: out of date, update this...
