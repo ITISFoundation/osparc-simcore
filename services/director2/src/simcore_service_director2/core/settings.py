@@ -5,8 +5,8 @@ from typing import Optional
 from pydantic import BaseSettings, Field, SecretStr, validator
 from yarl import URL
 
-
 # TODO: services/director/src/simcore_service_director/config.py
+
 
 class BootModeEnum(str, Enum):
     debug = "debug-ptvsd"
