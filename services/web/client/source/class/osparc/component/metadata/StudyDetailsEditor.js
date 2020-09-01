@@ -228,9 +228,6 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
 
     __saveStudy: function(isTemplate, btn) {
       const data = this.__serializeForm();
-      // FIXME: Avoid adding invalid properties to standard entities.
-      delete data.state;
-      delete data.resourceType;
       const params = {
         url: {
           projectId: this.__studyData.uuid
@@ -269,7 +266,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         const dirty = data[fieldKey];
         const clean = osparc.wrapper.DOMPurify.getInstance().sanitize(dirty);
         if (dirty && dirty !== clean) {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an issue in the text of ") + fieldKey, "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was some curation in the text of ") + fieldKey, "WARNING");
         }
         data[fieldKey] = clean;
       }, this);
