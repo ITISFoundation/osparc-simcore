@@ -18,8 +18,6 @@ with:
 - BUILD_TIME is the build time
 - GIT_SHA is the git SHA corresponding to the code used for building
 
-see [docs/img/git-release-workflow.svg](docs/img/git-release-workflow.svg)
-
 ### Example
 
 The ``webserver`` service in master branch with commit ``752ef...`` will be built by ``github`` actions CI on ``2020/08/31`` at ``12:36`` and therefore the image is named as:
@@ -42,8 +40,6 @@ with:
 - BUILD_DATE is the build date
 - BUILD_TIME is the build time
 - GIT_SHA is the git SHA corresponding to the code used for building
-
-see [docs/img/git-release-workflow.svg](docs/img/git-release-workflow.svg)
 
 ### Staging example
 
@@ -88,8 +84,6 @@ with:
 - BUILD_TIME is the build time
 - GIT_SHA is the git SHA corresponding to the code used for building
 
-see [docs/img/git-release-workflow.svg](docs/img/git-release-workflow.svg)
-
 ### Release example
 
 The team decides to release to production the lastest staging version of ``DAJIA`` sprint. Next release version, following semantic versioning and previous releases, is `v5.6.0`. The images will be retaged by github actions CI as:
@@ -122,7 +116,7 @@ Once ready, the release-hotfix process starts by leveraging Github release mecha
 
 Each docker build marked as released are tagged as described in the Release process.
 
-see [docs/img/git-hotfix-workflow.svg](docs/img/git-hotfix-workflow.svg)
+see ![img/git-release-workflow.svg](img/git-release-workflow.svg)
 
 ### Hotfix example
 
@@ -146,3 +140,5 @@ A bug was found in version 1.2.0 of the simcore stack. The team decides to fix i
 2. Adjust the list of changes if needed
 3. Press the **Publish release** button
 4. The CI will be automatically triggered and will deploy the staging release
+
+see ![img/git-hotfix-workflow.svg](img/git-hotfix-workflow.svg)
