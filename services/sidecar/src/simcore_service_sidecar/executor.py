@@ -348,8 +348,9 @@ class Executor:
 
                 # wait until the container finished, either success or fail or timeout
                 container_data = await container.show()
+                TIME_TO_NEXT_PERDIODIC_CHECK_SECS = 2
                 while container_data["State"]["Running"]:
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(TIME_TO_NEXT_PERDIODIC_CHECK_SECS)
                     # reload container data
                     container_data = await container.show()
                     if (
