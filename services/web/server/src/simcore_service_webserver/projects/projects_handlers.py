@@ -167,8 +167,8 @@ async def get_project(request: web.Request):
             user_id=user_id,
             include_templates=True,
         )
-
         return {"data": project}
+
     except ProjectInvalidRightsError as exc:
         raise web.HTTPForbidden(
             reason=f"You do not have sufficient rights to read project {project_uuid}"
@@ -224,11 +224,14 @@ async def replace_project(request: web.Request):
             user_id=user_id,
             include_templates=True,
         )
+
         if current_project["accessRights"] != new_project["accessRights"]:
             await check_permission(request, "project.access_rights.update")
+
         new_project = await db.update_user_project(
             new_project, user_id, project_uuid, include_templates=True
         )
+
         await update_pipeline_db(
             request.app, project_uuid, new_project["workbench"], replace_pipeline
         )

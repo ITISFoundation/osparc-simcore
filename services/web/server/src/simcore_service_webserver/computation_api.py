@@ -448,3 +448,4 @@ async def get_task_output(
         comp_task = await result.fetchone()
         if comp_task:
             return comp_task.outputs
+        return None
