@@ -4,6 +4,7 @@ from typing import Optional
 
 from pydantic import BaseSettings, Field, SecretStr, validator
 from yarl import URL
+
 from ..__version__ import api_vtag
 
 MINS = 60

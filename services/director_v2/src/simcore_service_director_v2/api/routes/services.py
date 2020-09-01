@@ -14,9 +14,6 @@ from ...models.schemas.services import (
 router = APIRouter()
 
 
-## TODO: services/director/src/simcore_service_director/api/v0/openapi.yaml
-
-
 @router.get(
     "",
     description="Lists services available in the deployed registry",

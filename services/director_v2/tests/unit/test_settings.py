@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 import logging
 import os
-from pprint import pprint, pformat
+from pprint import pformat, pprint
 
 import pytest
 from yarl import URL

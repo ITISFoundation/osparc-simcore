@@ -3,8 +3,8 @@
 # pylint:disable=redefined-outer-name
 
 from pytest_simcore.helpers.utils_pylint import (
-    assert_pylint_is_passing,
     assert_no_pdb_in_code,
+    assert_pylint_is_passing,
 )
 
 
