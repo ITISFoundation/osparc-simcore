@@ -1,11 +1,11 @@
 #
-# DEVELOPMENT recipes for director2
+# DEVELOPMENT recipes for director_v2
 #
 include ../../scripts/common.Makefile
 
 # Custom variables
 APP_NAME         := $(notdir $(CURDIR))
-APP_CLI_NAME     := simcore-service-director2
+APP_CLI_NAME     := simcore-service-director_v2
 APP_PACKAGE_NAME := $(subst -,_,$(APP_CLI_NAME))
 APP_VERSION      := $(shell cat VERSION)
 SRC_DIR          := $(abspath $(CURDIR)/src/$(APP_PACKAGE_NAME))

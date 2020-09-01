@@ -1,5 +1,5 @@
 #
-# Specifies third-party dependencies for 'services/director2/src'
+# Specifies third-party dependencies for 'services/director_v2/src'
 #
 # NOTE: ALL version constraints MUST be commented
 -r ../../../packages/postgres-database/requirements/_base.in

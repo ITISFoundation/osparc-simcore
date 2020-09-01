@@ -30,7 +30,7 @@ test_requirements = read_reqs(current_dir / "requirements" / "_test.txt")
 
 
 setup(
-    name="simcore-service-director2",
+    name="simcore-service-director_v2",
     version=version,
     author="Sylvain Anderegg (sanderegg), Pedro Crespo (pcrespov)",
     description="Orchestrates the pipeline of services defined by the user",
@@ -51,7 +51,7 @@ setup(
     extras_require={"test": test_requirements},
     entry_points={
         "console_scripts": [
-            "simcore-service-director2 = simcore_service_director2.cli:main",
+            "simcore-service-director_v2 = simcore_service_director_v2.cli:main",
         ],
     },
 )

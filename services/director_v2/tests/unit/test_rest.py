@@ -6,9 +6,9 @@ import pytest
 
 from aiohttp import web
 
-from simcore_service_director2.rest import setup_rest
-from simcore_service_director2.application_config import APP_CONFIG_KEY
-from simcore_service_director2 import __version__
+from simcore_service_director_v2.rest import setup_rest
+from simcore_service_director_v2.application_config import APP_CONFIG_KEY
+from simcore_service_director_v2 import __version__
 
 major_version = __version__.split(".")[0]
 API_VERSION = f"v{major_version}"
@@ -49,7 +49,7 @@ async def test_check_health(client):
     assert data
     assert not error
 
-    assert data["name"] == "simcore_service_director2"
+    assert data["name"] == "simcore_service_director_v2"
     assert data["status"] == "SERVICE_RUNNING"
 
 
