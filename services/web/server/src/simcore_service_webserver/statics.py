@@ -76,7 +76,7 @@ def write_statics_file(directory: Path) -> None:
     # Fogbugz tickets
     # SEE https://support.fogbugz.com/hc/en-us/articles/360011241594-Generating-a-Case-Template-with-bookmarklets
     # https://<your_fogbugz_URL>.fogbugz.com/f/cases/new?command=new&pg=pgEditBug&ixProject=<project-id>&ixArea=<area_id>&ixCategory=<category_id>&ixPersonAssignedTo=<assigned_user_id>&sTitle=<title_of_case>&sEvent=<body_of text>
-    statics["fogbugzOriginURL"] = os.environ.get("WEBSERVER_FOGBUGZ_URL", "htpps://z43.fogbugz.com")
+    statics["fogbugzOriginURL"] = os.environ.get("WEBSERVER_FOGBUGZ_URL", "https://z43.fogbugz.com")
     statics["fogbugzProjectId"] = os.environ.get("WEBSERVER_FOGBUGZ_PROJECT_ID")
 
     # Extra url to form (e.g. google forms for fogbugz public submission form)
