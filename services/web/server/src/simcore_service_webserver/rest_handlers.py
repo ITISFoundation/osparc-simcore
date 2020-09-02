@@ -11,6 +11,7 @@ from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_utils import body_to_dict, extract_and_validate
 
 from . import __version__
+from .settings import APP_SETTINGS_KEY
 
 log = logging.getLogger(__name__)
 
@@ -71,5 +72,6 @@ async def get_config(request: web.Request):
     data = {
         "invitation_required": login_cfg.get("registration_invitation_required", False)
     }
+    data.update( app[APP_SETTINGS_KEY].public_dict() )
 
     return data
