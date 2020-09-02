@@ -251,6 +251,11 @@ qx.Class.define("osparc.data.model.Study", {
         ...params
       })
         .then(data => {
+          // TODO OM: Hacky
+          if ("dev" in data) {
+            data["sweeper"] = data["dev"]["sweeper"];
+            delete data["dev"];
+          }
           this.set({
             ...data,
             creationDate: new Date(data.creationDate),
