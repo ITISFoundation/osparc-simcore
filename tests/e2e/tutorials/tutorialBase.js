@@ -23,6 +23,9 @@ class TutorialBase {
 
   async start() {
     this.createScreenshotsDir();
+
+    setInterval(this.takeScreenshot, 1000);
+
     await this.beforeScript();
     await this.goTo();
 
@@ -37,6 +40,10 @@ class TutorialBase {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);
     }
+  }
+
+  takeScreenshot() {
+    utils.takeScreenshot(this.__page, this.__templateName)
   }
 
   async beforeScript() {
