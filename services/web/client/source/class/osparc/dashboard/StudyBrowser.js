@@ -563,8 +563,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __createStudyDetailsEditor: function(studyData, winWidth) {
       const studyDetails = new osparc.component.metadata.StudyDetailsEditor(studyData, false, winWidth);
       studyDetails.addListener("updateStudy", e => {
-        const studyId = e.getData();
-        this.__reloadUserStudy(studyId, true);
+        const newStudyData = e.getData();
+        this.__reloadUserStudy(newStudyData.uuid, true);
       });
       studyDetails.addListener("openStudy", () => {
         this.__startStudy(studyData["uuid"]);

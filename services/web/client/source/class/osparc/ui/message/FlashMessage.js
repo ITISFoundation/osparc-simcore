@@ -63,7 +63,7 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
     LOG_LEVEL_COLOR_MAP: {
       "INFO": "blue",
       "DEBUG": "yellow",
-      "WARING": "orange",
+      "WARNING": "orange",
       "ERROR": "red"
     }
   },
