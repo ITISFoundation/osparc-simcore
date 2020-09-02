@@ -1,4 +1,4 @@
-name: Github-CI-Release
+name: Github-CI-Hotfix-Release
 
 on:
   push:
@@ -13,17 +13,15 @@ env:
 
 jobs:
   deploy:
-    # if: github.event.base_ref == 'refs/heads/master'
+    if: contains(github.event.base_ref, 'refs/heads/hotfix_v')
     # only run on staging branch
     name: deploy release
     runs-on: ubuntu-latest
     env:
-      FROM_TAG_PREFIX: staging-github
+      FROM_TAG_PREFIX: hotfix-github
       TO_TAG_PREFIX: release-github
     steps:
       - uses: actions/checkout@v2
-      - name: show environment
-        run: env
       - name: setup docker
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
