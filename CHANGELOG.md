@@ -18,7 +18,7 @@ FIXME: Compare shows single commit. SEE https://github.com/ITISFoundation/osparc
 ### Changed
 
 - Speedup testing by splitting webserver (#1711)
-- Refactored garbage collector and added tests (#1724)
+- Refactored garbage collector and added tests ([#1724](https://github.com/ITISFoundation/osparc-simcore/pull/1724))
 
 <!-- ### Deprecated -->
 <!-- ### Removed    -->
