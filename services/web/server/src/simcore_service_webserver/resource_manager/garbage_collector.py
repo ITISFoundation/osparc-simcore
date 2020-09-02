@@ -5,6 +5,7 @@ from typing import Dict
 
 from aiohttp import web
 
+from aiopg.sa.result import RowProxy
 from servicelib.observer import emit
 from servicelib.utils import logged_gather
 from simcore_service_webserver.director.director_api import (
@@ -275,6 +276,147 @@ async def remove_guest_user_with_all_its_resources(
     await remove_user(app=app, user_id=user_id)
 
 
+async def remove_all_projects_for_user(app: web.Application, user_id: int) -> None:
+    """
+    Goes through all the projects and will try to remove them but first it will check if
+    the project is shared with others. 
+    Based on the given access rights it will deltermine the action to take:
+    - if other users have read access & execute access it will get deleted
+    - if other users have write access the project's owner will be changed to a new owner:
+        - if the project is directly shared with a one or more users, one of these 
+            will be picked as the new owner
+        - if the project is not shared with any user but with groups of users, one
+            of the users inside the group (which currently exists) will be picked as
+            the new owner
+    """
+    # recover user's primary_gid
+    try:
+        project_owner: Dict = await get_user(app=app, user_id=user_id)
+    except users_exceptions.UserNotFoundError:
+        logger.warning(
+            "Could not recover user data for user '%s', stopping removal of projects!",
+            user_id,
+        )
+        return
+    user_primary_gid: str = str(project_owner["primary_gid"])
+
+    # fetch all projects for the user
+    user_project_uuids = await app[
+        APP_PROJECT_DBAPI
+    ].list_all_projects_by_uuid_for_user(user_id=user_id)
+    logger.info(
+        "Project uuids, to clean, for user '%s': '%s'", user_id, user_project_uuids,
+    )
+
+    for project_uuid in user_project_uuids:
+        logger.debug(
+            "Removing or transfering project '%s'", project_uuid,
+        )
+        try:
+            project: Dict = await get_project_for_user(
+                app=app,
+                project_uuid=project_uuid,
+                user_id=user_id,
+                include_templates=True,
+            )
+        except web.HTTPNotFound:
+            logger.warning(
+                "Could not recover project data for project_uuid '%s', skipping...",
+                project_uuid,
+            )
+            continue
+
+        new_project_owner_gid = await get_new_project_owner_gid(
+            app=app,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            user_primary_gid=user_primary_gid,
+            project=project,
+        )
+
+        if new_project_owner_gid is None:
+            # when no new owner is found just remove the project
+            logger.info(
+                "The project can be removed as is not shared with write access with other users"
+            )
+            try:
+                await delete_project_from_db(app, project_uuid, user_id)
+            except ProjectNotFoundError:
+                logging.warning(
+                    "Project '%s' not found, skipping removal", project_uuid
+                )
+            continue
+
+        # Try to change the project owner and remove access rights from the current owner
+        await replace_current_owner(
+            app=app,
+            project_uuid=project_uuid,
+            user_primary_gid=user_primary_gid,
+            new_project_owner_gid=new_project_owner_gid,
+            project=project,
+        )
+
+
+async def get_new_project_owner_gid(
+    app: web.Application,
+    project_uuid: str,
+    user_id: int,
+    user_primary_gid: int,
+    project: RowProxy,
+) -> str:
+    """Goes through the access rights and tries to find a new suitable owner.
+    The first viable user is selected as a new owner.
+    In order to become a new owner the user must have write access right.
+    """
+
+    access_rights = project["accessRights"]
+    other_users_access_rights = set(access_rights.keys()) - {user_primary_gid}
+    logger.debug(
+        "Processing other user and groups access rights '%s'",
+        other_users_access_rights,
+    )
+
+    # Selecting a new project owner
+    # divide permissions between types of groups
+    standard_groups = {}  # groups of users, multiple users can be part of this
+    primary_groups = {}  # each individual user has a unique primary group
+    for other_gid in other_users_access_rights:
+        group = await get_group_from_gid(app=app, gid=int(other_gid))
+        # only process for users and groups with write access right
+        if access_rights[other_gid]["write"] is not True:
+            continue
+
+        if group.type == GroupType.STANDARD:
+            standard_groups[other_gid] = access_rights[other_gid]
+        elif group.type == GroupType.PRIMARY:
+            primary_groups[other_gid] = access_rights[other_gid]
+
+    logger.debug(
+        "Possible new owner groups: standard='%s', primary='%s'",
+        standard_groups,
+        primary_groups,
+    )
+
+    new_project_owner_gid = None
+    # the primary group contains the users which which the project was directly shared
+    if len(primary_groups) > 0:
+        # fetch directly from the direct users with which the project is shared with
+        new_project_owner_gid = list(primary_groups.keys())[0]
+    # fallback to the groups search if the user does not exist
+    if len(standard_groups) > 0 and new_project_owner_gid is None:
+        new_project_owner_gid = await fetch_new_project_owner_from_groups(
+            app=app, standard_groups=standard_groups, user_id=user_id,
+        )
+
+    logger.info(
+        "Will move project '%s' to user with gid '%s', if user exists",
+        project_uuid,
+        new_project_owner_gid,
+    )
+
+    return new_project_owner_gid
+
+
 async def fetch_new_project_owner_from_groups(
     app: web.Application, standard_groups: Dict, user_id: int
 ) -> int:
@@ -301,145 +443,47 @@ async def fetch_new_project_owner_from_groups(
         return None
 
 
-# pylint: disable=too-many-branches,too-many-statements
-async def remove_all_projects_for_user(app: web.Application, user_id: int) -> None:
-    """
-    TODO: out of date, update this...
-    Goes through all the projects and will try to remove them but first it will check if
-    the project is shared with others. 
-    Based on the given access rights it will deltermine the action to take:
-    - if other users have read access & execute access it will get deleted
-    - if other users have write access the project's owner will be unset, 
-        resulting in the project still being available to others
-    """
-
-    user_project_uuids = await app[
-        APP_PROJECT_DBAPI
-    ].list_all_projects_by_uuid_for_user(user_id=user_id)
-    logger.info(
-        "Project uuids, to clean, for user '%s': '%s'", user_id, user_project_uuids,
-    )
-
+async def replace_current_owner(
+    app: web.Application,
+    project_uuid: str,
+    user_primary_gid: int,
+    new_project_owner_gid: str,
+    project: RowProxy,
+) -> None:
     try:
-        project_owner: Dict = await get_user(app=app, user_id=user_id)
-    except users_exceptions.UserNotFoundError:
+        new_project_owner_id = await get_user_id_from_gid(
+            app=app, primary_gid=int(new_project_owner_gid)
+        )
+    except Exception:  # pylint: disable=broad-except
+        logger.exception(
+            "Could not recover new user id from gid %s", new_project_owner_gid
+        )
+        return
+    # the result might me none
+    if new_project_owner_id is None:
         logger.warning(
-            "Could not recover user data for user '%s', stopping removal of projects!",
-            user_id,
+            "Could not recover a new user id from gid %s", new_project_owner_gid
         )
         return
 
-    user_primary_gid: str = str(project_owner["primary_gid"])
-
-    for project_uuid in user_project_uuids:
-        logger.debug(
-            "Removing project '%s' from the database", project_uuid,
+    # unseting the project owner and saving the project back
+    project["prj_owner"] = int(new_project_owner_id)
+    # removing access rights entry
+    del project["accessRights"][str(user_primary_gid)]
+    project["accessRights"][
+        str(new_project_owner_gid)
+    ] = ProjectAccessRights.OWNER.value
+    logger.error("Syncing back project %s", project)
+    # syncing back project data
+    try:
+        await app[APP_PROJECT_DBAPI].update_removed_owner_and_access_rights(
+            project_data=project, project_uuid=project_uuid,
         )
-
-        try:
-            project: Dict = await get_project_for_user(
-                app=app,
-                project_uuid=project_uuid,
-                user_id=user_id,
-                include_templates=True,
-            )
-        except web.HTTPNotFound:
-            logger.warning(
-                "Could not recover project data for project_uuid '%s', skipping...",
-                project_uuid,
-            )
-            continue
-
-        logger.error("Project data %s", project)
-        access_rights = project["accessRights"]
-        other_users_access_rights = set(access_rights.keys()) - {user_primary_gid}
-        logger.info(
-            "Processing other user access rights %s - %s = %s",
-            set(access_rights.keys()),
-            {user_primary_gid},
-            other_users_access_rights,
+    except Exception:  # pylint: disable=broad-except
+        logger.exception(
+            "Could not remove old owner and replaced it with user %s",
+            new_project_owner_id,
         )
-
-        # TODO: select new project owner at this point
-        # if the other users which have access to the project also have write access
-        # the project will be kept, otherwise it will get deleted
-
-        # divide permissions between types of groups
-        standard_groups = {}  # groups of users, multiple users can be part of this
-        primary_groups = {}  # each individual user has a unique primary group
-        for other_gid in other_users_access_rights:
-            group = await get_group_from_gid(app=app, gid=int(other_gid))
-            if group.type == GroupType.STANDARD:
-                standard_groups[other_gid] = access_rights[other_gid]
-            elif group.type == GroupType.PRIMARY:
-                primary_groups[other_gid] = access_rights[other_gid]
-
-        logger.error(
-            "Divisions standard: '%s', primary: '%s'", standard_groups, primary_groups
-        )
-        # if there is a user in a primary group, use that
-
-        new_project_owner_gid = None
-        # fetch directly from the direct users with which the project is shared with
-        if len(primary_groups) > 0:
-            new_project_owner_gid = list(primary_groups.keys())[0]
-        # fallback to the groups search if the user does not exist
-        if len(standard_groups) > 0 and new_project_owner_gid is None:
-            new_project_owner_gid = await fetch_new_project_owner_from_groups(
-                app=app, standard_groups=standard_groups, user_id=user_id,
-            )
-
-        logger.error(
-            "Will move project '%s' to user with gid '%s'",
-            project_uuid,
-            new_project_owner_gid,
-        )
-
-        if new_project_owner_gid is not None:
-            try:
-                new_project_owner_id = await get_user_id_from_gid(
-                    app=app, primary_gid=int(new_project_owner_gid)
-                )
-            except Exception:  # pylint: disable=broad-except
-                logger.exception(
-                    "Could not recover new user id from gid %s", new_project_owner_gid
-                )
-                continue
-            # the result might me none
-            if new_project_owner_id is None:
-                logger.warning(
-                    "Could not recover a new user id from gid %s", new_project_owner_gid
-                )
-                continue
-
-            # unseting the project owner and saving the project back
-            project["prj_owner"] = int(new_project_owner_id)
-            # removing access rights entry
-            del project["accessRights"][str(user_primary_gid)]
-            project["accessRights"][
-                str(new_project_owner_gid)
-            ] = ProjectAccessRights.OWNER.value
-            logger.error("Syncing back project %s", project)
-            # syncing back project data
-            try:
-                await app[APP_PROJECT_DBAPI].update_removed_owner_and_access_rights(
-                    project_data=project, project_uuid=project_uuid,
-                )
-            except Exception:  # pylint: disable=broad-except
-                logger.exception(
-                    "Could not remove old owner and replaced it with user %s",
-                    new_project_owner_id,
-                )
-        else:
-            logger.info(
-                "The project can be removed as is not shared with write access with other users"
-            )
-            try:
-                await delete_project_from_db(app, project_uuid, user_id)
-            except ProjectNotFoundError:
-                logging.warning(
-                    "Project '%s' not found, skipping removal", project_uuid
-                )
 
 
 async def remove_user(app: web.Application, user_id: int) -> None:
