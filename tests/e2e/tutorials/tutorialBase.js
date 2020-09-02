@@ -24,7 +24,9 @@ class TutorialBase {
   async start() {
     this.createScreenshotsDir();
 
-    setInterval(this.takeScreenshot, 1000);
+    setInterval(async() => {
+      await this.takeScreenshot();
+    } , 1000);
 
     await this.beforeScript();
     await this.goTo();
@@ -40,10 +42,6 @@ class TutorialBase {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);
     }
-  }
-
-  takeScreenshot() {
-    utils.takeScreenshot(this.__page, this.__templateName)
   }
 
   async beforeScript() {
@@ -63,7 +61,7 @@ class TutorialBase {
       console.error(this.__url, "can't be reached", err);
     }
     const domain = utils.getDomain(this.__url);
-    await utils.takeScreenshot(this.__page, this.__templateName + "_landingPage_" + domain);
+    await this.takeScreenshot("landingPage_" + domain);
   }
 
   async openStudyLink(openStudyTimeout = 20000) {
@@ -139,7 +137,7 @@ class TutorialBase {
   }
 
   async openTemplate(waitFor = 1000) {
-    await utils.takeScreenshot(this.__page, this.__templateName + "_dashboardOpenFirstTemplate_before");
+    await this.takeScreenshot("dashboardOpenFirstTemplate_before");
     this.__responsesQueue.addResponseListener("projects?from_template=");
     this.__responsesQueue.addResponseListener("open");
     let resp = null;
@@ -153,7 +151,7 @@ class TutorialBase {
       console.error(`"${this.__templateName}" template could not be started:\n`, err);
     }
     await this.__page.waitFor(waitFor);
-    await utils.takeScreenshot(this.__page, this.__templateName + "_dashboardOpenFirstTemplate_after");
+    await this.takeScreenshot("dashboardOpenFirstTemplate_after");
     return resp;
   }
 
@@ -180,14 +178,14 @@ class TutorialBase {
   }
 
   async runPipeline(waitFor = 25000) {
-    await utils.takeScreenshot(this.__page, this.__templateName + "_runStudy_before");
+    await this.takeScreenshot("runStudy_before");
     await auto.runStudy(this.__page, waitFor);
-    await utils.takeScreenshot(this.__page, this.__templateName + "_runStudy_after");
+    await this.takeScreenshot("runStudy_after");
   }
 
   async openNode(nodePosInTree = 0) {
     await auto.openNode(this.__page, nodePosInTree);
-    await utils.takeScreenshot(this.__page, this.__templateName + '_openNode_' + nodePosInTree);
+    await this.takeScreenshot('openNode_' + nodePosInTree);
   }
 
   async getIframe() {
@@ -212,27 +210,27 @@ class TutorialBase {
   }
 
   async openNodeRetrieveAndRestart(nodePosInTree = 0) {
-    await utils.takeScreenshot(this.__page, "openNodeRetrieveAndRestart_before");
+    await this.takeScreenshot("openNodeRetrieveAndRestart_before");
     await auto.openNode(this.__page, nodePosInTree);
     await this.retrieve();
     await auto.clickRestart(this.__page);
-    await utils.takeScreenshot("openNodeRetrieveAndRestart_after");
+    await this.takeScreenshot("openNodeRetrieveAndRestart_after");
   }
 
   async checkResults(expecedNFiles = 1) {
-    await utils.takeScreenshot(this.__page, this.__templateName + "_checkResults_before");
+    await this.takeScreenshot("checkResults_before");
     try {
       await auto.checkDataProducedByNode(this.__page, expecedNFiles);
     }
     catch(err) {
       console.error("Failed checking Data Produced By Node", err);
     }
-    await utils.takeScreenshot(this.__page, this.__templateName + "_checkResults_after");
+    await this.takeScreenshot("checkResults_after");
   }
 
   async removeStudy() {
     await auto.toDashboard(this.__page);
-    await utils.takeScreenshot(this.__page, this.__templateName + "_dashboardDeleteFirstStudy_before");
+    await this.takeScreenshot("dashboardDeleteFirstStudy_before");
     this.__responsesQueue.addResponseListener("projects/");
     await auto.dashboardDeleteFirstStudy(this.__page, this.__templateName);
     try {
@@ -241,7 +239,7 @@ class TutorialBase {
     catch(err) {
       console.error("Failed deleting study", err);
     }
-    await utils.takeScreenshot(this.__page, this.__templateName + "_dashboardDeleteFirstStudy_after");
+    await this.takeScreenshot("dashboardDeleteFirstStudy_after");
   }
 
   async logOut() {
@@ -257,7 +255,11 @@ class TutorialBase {
   }
 
   async takeScreenshot(screenshotTitle) {
-    await utils.takeScreenshot(this.__page, this.__templateName + '_' + screenshotTitle);
+    let title = this.__templateName;
+    if (screenshotTitle) {
+      title += '_' + screenshotTitle;
+    }
+    await utils.takeScreenshot(this.__page, title);
   }
 }
 
