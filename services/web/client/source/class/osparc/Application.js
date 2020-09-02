@@ -135,7 +135,9 @@ qx.Class.define("osparc.Application", {
           if (osparc.utils.Utils.isInZ43()) {
             document.title += " Z43";
           }
-          document.title += ` (${platformName})`;
+          if (platformName) {
+            document.title += ` (${platformName})`;
+          }
         });
     },
 
