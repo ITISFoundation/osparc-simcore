@@ -46,7 +46,11 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       alignY: "middle"
     }));
 
-    this.__serverStatics = osparc.store.Store.getInstance().getStatics();
+    osparc.data.Resources.get("statics")
+      .then(statics => {
+        this.__serverStatics = statics;
+        this.buildLayout();
+      });
 
     this.set({
       paddingLeft: 10,
