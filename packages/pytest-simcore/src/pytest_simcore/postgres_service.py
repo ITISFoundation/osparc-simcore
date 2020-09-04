@@ -57,28 +57,48 @@ def postgres_engine(
 
 
 @pytest.fixture(scope="module")
+def migration_downgrade_disabled() -> bool:
+    """ Override to enable migration downgrade step in postgres_db teardown """
+    return True
+
+
+@pytest.fixture(scope="module")
 def postgres_db(
-    postgres_dsn: Dict, postgres_engine: sa.engine.Engine
+    postgres_dsn: Dict,
+    postgres_engine: sa.engine.Engine,
+    migration_downgrade_disabled: bool,
 ) -> sa.engine.Engine:
-    # migrate the database
+
+    # upgrades database from zero
     kwargs = postgres_dsn.copy()
     pg_cli.discover.callback(**kwargs)
     pg_cli.upgrade.callback("head")
+
     yield postgres_engine
 
-    pg_cli.downgrade.callback("base")
-    pg_cli.clean.callback()
+    if not migration_downgrade_disabled:
+        # NOTE: After discussion with ANE, this step delays tests and do not bring much as a fixture
+        # therefore it is added as optional
 
-    # FIXME: deletes all because downgrade is not reliable!
-    metadata.drop_all(postgres_engine)
+        pg_cli.downgrade.callback("base")
+        pg_cli.clean.callback()
+        # FIXME: migration downgrade fails to remove all tables!!, added drop_all as tmp fix
+        metadata.drop_all(postgres_engine)
+
+    else:
+        metadata.drop_all(postgres_engine)
 
 
 @pytest.fixture(scope="module")
 def postgres_session(postgres_db: sa.engine.Engine) -> sa.orm.session.Session:
-    Session = sessionmaker(postgres_db)
-    session = Session()
+    from sqlalchemy.orm.session import Session
+
+    Session_cls = sessionmaker(postgres_db)
+    session: Session = Session_cls()
+
     yield session
-    session.close()
+
+    session.close()  # pylint: disable=no-member
 
 
 @tenacity.retry(
