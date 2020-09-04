@@ -199,6 +199,7 @@ jobs:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-director-${{ hashFiles('services/director/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-director-
             ${{ runner.os }}-pip-
             ${{ runner.os }}-
       - name: install
