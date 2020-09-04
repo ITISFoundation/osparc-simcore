@@ -60,7 +60,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install api
@@ -94,7 +94,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install
@@ -141,7 +141,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install
@@ -194,7 +194,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install
@@ -241,7 +241,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install
@@ -287,7 +287,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install
@@ -325,7 +325,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install
@@ -359,7 +359,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install
@@ -406,7 +406,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install
@@ -453,7 +453,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install
@@ -500,7 +500,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install
@@ -548,7 +548,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install webserver
@@ -596,7 +596,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install webserver
@@ -644,7 +644,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install webserver
@@ -692,7 +692,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install webserver
@@ -776,7 +776,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install
@@ -839,7 +839,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install
@@ -902,7 +902,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install
@@ -965,7 +965,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: install
@@ -1015,7 +1015,7 @@ jobs:
         name: getting cached data python
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - uses: actions/cache@v2
