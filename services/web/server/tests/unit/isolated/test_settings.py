@@ -21,3 +21,8 @@ def test_settings_constructs(monkeypatch):
 
     assert 'app_name' in settings.public_dict()
     assert 'api_version' in settings.public_dict()
+
+    # avoids display of sensitive info
+    assert not any( "pass" in key for key in settings.public_dict().keys() )
+    assert not any( "token" in key for key in settings.public_dict().keys() )
+    assert not any( "secret" in key for key in settings.public_dict().keys() )
