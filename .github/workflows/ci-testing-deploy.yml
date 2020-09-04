@@ -197,7 +197,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
+          key: ${{ runner.os }}-pip-director-${{ hashFiles('services/director/requirements/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
             ${{ runner.os }}-
