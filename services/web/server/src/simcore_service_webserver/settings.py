@@ -8,13 +8,19 @@ from typing import Dict, Optional
 from aiohttp import web
 from pydantic import BaseSettings
 
-APP_SETTINGS_KEY = f"{__name__ }.build_time_settings"
+from .__version__ import app_name, api_version
+
+APP_SETTINGS_KEY = f"{__name__ }.app_settings"
 
 log = logging.getLogger(__name__)
 
 
-class BuildTimeSettings(BaseSettings):
-    # All these settings are defined in the Dockerfile at build-image time
+class ApplicationSettings(BaseSettings):
+    # settings defined by the code
+    app_name: str = app_name
+    api_version: str = api_version
+
+    # settings defined when docker image is built
     vcs_url: Optional[str] = None
     vcs_ref: Optional[str] = None
     build_date: Optional[str] = None
@@ -43,5 +49,5 @@ class BuildTimeSettings(BaseSettings):
 
 
 def setup_settings(app: web.Application):
-    app[APP_SETTINGS_KEY] = BuildTimeSettings()
+    app[APP_SETTINGS_KEY] = ApplicationSettings()
     log.info("Captured app settings:\n%s", app[APP_SETTINGS_KEY].json(indent=2))
