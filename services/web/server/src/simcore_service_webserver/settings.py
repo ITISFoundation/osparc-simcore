@@ -42,8 +42,7 @@ class ApplicationSettings(BaseSettings):
     def public_dict(self) -> Dict:
         """ Data publicaly available  """
         return self.dict(
-            include={"vcs_url", "vcs_ref", "build_date"},
-            exclude_unset=True,
+            include={"vcs_url", "vcs_ref", "build_date", "app_name", "api_version"},
             exclude_none=True,
         )
 
