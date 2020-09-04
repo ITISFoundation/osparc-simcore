@@ -2,12 +2,15 @@
 TODO: pydantic settings comming soon and replacing trafaret
 
 """
+import logging
+from typing import Dict, Optional
+
 from aiohttp import web
 from pydantic import BaseSettings
-from pprint import pprint
-from typing import Dict
 
 APP_SETTINGS_KEY = f"{__name__ }.build_time_settings"
+
+log = logging.getLogger(__name__)
 
 
 class BuildTimeSettings(BaseSettings):
@@ -33,7 +36,7 @@ class BuildTimeSettings(BaseSettings):
     def public_dict(self) -> Dict:
         """ Data publicaly available  """
         return self.dict(
-            include=["vsc_url", "vsc_ref", "build_date"],
+            include={"vsc_url", "vsc_ref", "build_date"},
             exclude_unset=True,
             exclude_none=True,
         )

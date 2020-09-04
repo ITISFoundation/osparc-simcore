@@ -65,7 +65,7 @@ def write_statics_file(app: web.Application, directory: Path) -> None:
     statics = {}
     statics["stackName"] = os.environ.get("SWARM_STACK_NAME")
     statics["buildDate"] = app[APP_SETTINGS_KEY].build_date
-    statics.udpate(app[APP_SETTINGS_KEY].public_dict())
+    statics.update(app[APP_SETTINGS_KEY].public_dict())
 
     with open(directory / "statics.json", "wt") as fh:
         json.dump(statics, fh)
