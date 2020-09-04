@@ -63,6 +63,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install api
         run: ./ci/github/unit-testing/api.bash install
       - name: test
@@ -97,6 +98,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/api-server.bash install
       - name: test
@@ -144,6 +146,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/catalog.bash install
       - name: test
@@ -197,6 +200,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/director.bash install
       - name: test
@@ -244,6 +248,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/sidecar.bash install
       - name: test
@@ -290,6 +295,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/frontend.bash install
       - name: test
@@ -328,6 +334,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/python-linting.bash install
       - name: test
@@ -362,6 +369,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/postgres-database.bash install
       - name: test
@@ -409,6 +417,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/service-library.bash install
       - name: test
@@ -456,6 +465,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/simcore-sdk.bash install
       - name: test
@@ -503,6 +513,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/storage.bash install
       - name: test
@@ -551,6 +562,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -599,6 +611,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -647,6 +660,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -695,6 +709,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -779,6 +794,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
       - name: test
@@ -842,6 +858,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/sidecar.bash install
       - name: test
@@ -905,6 +922,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/simcore-sdk.bash install
       - name: test
@@ -968,6 +986,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/system-testing/swarm-deploy.bash install
       - name: test
@@ -1018,6 +1037,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - uses: actions/cache@v2
         name: getting cached data node
         with:
