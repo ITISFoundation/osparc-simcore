@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from typing import List, Optional, Tuple
-from aiormq.base import task
 
 import click
 
