@@ -51,18 +51,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-api-${{ hashFiles('api/tests/requirements.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-api-
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install api
         run: ./ci/github/unit-testing/api.bash install
       - name: test
@@ -85,18 +87,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-api-server-${{ hashFiles('services/api-server/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-api-server-
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/api-server.bash install
       - name: test
@@ -132,18 +136,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-catalog-${{ hashFiles('services/catalog/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-catalog-
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/catalog.bash install
       - name: test
@@ -185,18 +191,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-director-${{ hashFiles('services/director/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-director-
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/director.bash install
       - name: test
@@ -232,18 +240,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-sidecar-${{ hashFiles('services/sidecar/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-sidecar-
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/sidecar.bash install
       - name: test
@@ -283,13 +293,6 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
       - name: install
         run: ./ci/github/unit-testing/frontend.bash install
       - name: test
@@ -316,18 +319,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-linting-${{ hashFiles('ci/helpers/install_pylint.bash') }}
           restore-keys: |
+            ${{ runner.os }}-pip-linting-
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/python-linting.bash install
       - name: test
@@ -350,18 +355,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-postgres-database-${{ hashFiles('packages/postgres-database/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-postgres-database-
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/postgres-database.bash install
       - name: test
@@ -397,18 +404,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-service-library-${{ hashFiles('packages/service-library/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-service-library-
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/service-library.bash install
       - name: test
@@ -444,18 +453,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-simcore-sdk${{ hashFiles('packages/simcore-sdk/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-simcore-sdk
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/simcore-sdk.bash install
       - name: test
@@ -491,18 +502,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-storage-${{ hashFiles('services/storage/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-storage-
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/storage.bash install
       - name: test
@@ -539,18 +552,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-webserver-
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -587,18 +602,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-webserver-
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -635,18 +652,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-webserver-
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -683,18 +702,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-webserver-
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -767,18 +788,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-webserver-
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
       - name: test
@@ -830,18 +853,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-sidecar-${{ hashFiles('services/sidecar/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-sidecar-
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/sidecar.bash install
       - name: test
@@ -893,18 +918,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-simcore-sdk-${{ hashFiles('packages/simcore-sdk/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-simcore-sdk-
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/integration-testing/simcore-sdk.bash install
       - name: test
@@ -956,18 +983,20 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-swarm-deploy-${{ hashFiles('tests/swarm-deploy/requirements/ci.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-swarm-deploy-
             ${{ runner.os }}-pip-
+            ${{ runner.os }}-
       - name: install
         run: ./ci/github/system-testing/swarm-deploy.bash install
       - name: test
@@ -1003,7 +1032,7 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo ::set-env name=DOCKER_BUILDX::1
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - uses: actions/setup-node@v1
@@ -1011,14 +1040,16 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data python
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-swarm-e2e-${{ hashFiles('tests/e2e/requirements/requirements.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-swarm-e2e-
             ${{ runner.os }}-pip-
-      - uses: actions/cache@v1
+            ${{ runner.os }}-
+      - uses: actions/cache@v2
         name: getting cached data node
         with:
           path: ~/.npm
