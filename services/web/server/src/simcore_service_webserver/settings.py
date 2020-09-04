@@ -15,8 +15,8 @@ log = logging.getLogger(__name__)
 
 class BuildTimeSettings(BaseSettings):
     # All these settings are defined in the Dockerfile at build-image time
-    vsc_url: Optional[str] = None
-    vsc_ref: Optional[str] = None
+    vcs_url: Optional[str] = None
+    vcs_ref: Optional[str] = None
     build_date: Optional[str] = None
     build_target: Optional[str] = None
 
@@ -36,7 +36,7 @@ class BuildTimeSettings(BaseSettings):
     def public_dict(self) -> Dict:
         """ Data publicaly available  """
         return self.dict(
-            include={"vsc_url", "vsc_ref", "build_date"},
+            include={"vcs_url", "vcs_ref", "build_date"},
             exclude_unset=True,
             exclude_none=True,
         )
