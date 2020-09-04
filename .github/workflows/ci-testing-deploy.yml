@@ -56,7 +56,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -90,7 +90,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -137,7 +137,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -190,7 +190,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -237,7 +237,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -283,7 +283,7 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -321,7 +321,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -355,7 +355,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -402,7 +402,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -449,7 +449,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -496,7 +496,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -544,7 +544,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -592,7 +592,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -640,7 +640,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -688,7 +688,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -772,7 +772,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -835,7 +835,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -898,7 +898,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -961,7 +961,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data
         with:
           path: ~/.cache/pip
@@ -1011,14 +1011,14 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data python
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         name: getting cached data node
         with:
           path: ~/.npm
