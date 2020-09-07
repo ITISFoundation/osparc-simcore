@@ -24,9 +24,6 @@ async def test_rabbitmq(
     mock_close_channel_cb = mocker.patch(
         "simcore_service_sidecar.rabbitmq._channel_close_callback"
     )
-    mock_reconnect_cb = mocker.patch(
-        "simcore_service_sidecar.rabbitmq._reconnect_callback"
-    )
 
     user_id: str = "some user id"
     project_id: str = "some project id"
@@ -56,7 +53,6 @@ async def test_rabbitmq(
 
     mock_close_channel_cb.assert_called_once()
     mock_close_connection_cb.assert_called_once()
-    mock_reconnect_cb.assert_not_called()
 
     # if this fails the above sleep did not work
     assert len(incoming_data) == 3
