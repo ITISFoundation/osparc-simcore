@@ -191,7 +191,7 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function __addZerosAtTheBeggining(input) {
+function __addZeros(input) {
   return String(input).padStart(2, "0");
 }
 
@@ -222,8 +222,8 @@ function createScreenshotsDir() {
 }
 async function takeScreenshot(page, captureName) {
   const d = new Date();
-  const date = __addZerosAtTheBeggining(d.getMonth()+1) +"-"+ __addZerosAtTheBeggining(d.getDate());
-  const time = __addZerosAtTheBeggining(d.getHours()) +":"+ __addZerosAtTheBeggining(d.getMinutes()) +":"+ __addZerosAtTheBeggining(d.getSeconds());
+  const date = __addZeros(d.getMonth()+1) +"-"+ __addZeros(d.getDate());
+  const time = __addZeros(d.getHours()) +"-"+ __addZeros(d.getMinutes()) +"-"+ __addZeros(d.getSeconds());
   const timeStamp = date +"_"+ time;
   captureName = captureName.replace("undefined", "");
   const path = 'screenshots/'+timeStamp+'_'+captureName+'.jpg';
