@@ -18,12 +18,14 @@ class TutorialBase {
     this.__browser = null;
     this.__page = null;
     this.__responsesQueue = null;
+
+    this.__interval = null;
   }
 
   async start() {
     utils.createScreenshotsDir();
 
-    setInterval(async() => {
+    this.__interval = setInterval(async() => {
       await this.takeScreenshot();
     }, 2000);
 
@@ -248,6 +250,7 @@ class TutorialBase {
   }
 
   async close() {
+    clearInterval(this.__interval);
     await this.__browser.close();
   }
 
