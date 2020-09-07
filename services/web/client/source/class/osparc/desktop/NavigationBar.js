@@ -69,7 +69,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
   },
 
   statics: {
-    FEEDBACK_FORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLSe232bTigsM2zV97Kjp2OhCenl6o9gNGcDFt2kO_dfkIjtQAQ/viewform?usp=sf_link",
+    FEEDBACK_GFORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLSe232bTigsM2zV97Kjp2OhCenl6o9gNGcDFt2kO_dfkIjtQAQ/viewform?usp=sf_link",
     BUTTON_OPTIONS: {
       font: "title-14",
       allowGrowY: false,
@@ -103,10 +103,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         flex: 1
       });
 
-      if (osparc.utils.Utils.isInZ43()) {
-        this.getChildControl("z43-manual");
-      }
-      this.getChildControl("user-manual");
+      this.getChildControl("manual");
       this.getChildControl("feedback");
       this.getChildControl("theme-switch");
       this.getChildControl("user-menu");
@@ -141,23 +138,18 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           }));
           this._add(control);
           break;
-        case "z43-manual":
-          control = new osparc.ui.form.LinkButton(this.tr("Z43 manual"), "https://itisfoundation.github.io/osparc-manual-z43").set({
-            appearance: "link-button",
-            font: "text-14"
-          });
-          this._add(control);
-          break;
-        case "user-manual":
-          control = new osparc.ui.form.LinkButton(this.tr("User manual"), "https://docs.osparc.io").set({
-            appearance: "link-button",
+        case "manual":
+          control = this.__createManualMenuBtn();
+          control.set({
+            ...this.self().BUTTON_OPTIONS,
             font: "text-14"
           });
           this._add(control);
           break;
         case "feedback":
-          control = new osparc.ui.form.LinkButton(this.tr("Give us feedback"), this.self().FEEDBACK_FORM_URL).set({
-            appearance: "link-button",
+          control = this.__createFeedbackMenuBtn();
+          control.set({
+            ...this.self().BUTTON_OPTIONS,
             font: "text-14"
           });
           this._add(control);
@@ -241,6 +233,62 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       }
     },
 
+    __createManualMenuBtn: function() {
+      const manuals = [
+        [this.tr("User manual"), "https://docs.osparc.io"]
+      ];
+      if (osparc.utils.Utils.isInZ43()) {
+        manuals.push([this.tr("Z43 manual"), "https://itisfoundation.github.io/osparc-manual-z43"]);
+      }
+
+      let control = null;
+      if (manuals.length > 1) {
+        const menu = new qx.ui.menu.Menu().set({
+          font: "text-14"
+        });
+
+        manuals.forEach(manual => {
+          const manualBtn = new qx.ui.menu.Button(manual[0]);
+          manualBtn.addListener("execute", () => {
+            window.open(manual[1]);
+          }, this);
+          menu.add(manualBtn);
+        });
+
+        control = new qx.ui.form.MenuButton(this.tr("Manuals"), null, menu);
+      } else {
+        const manual = manuals[0];
+        control = new osparc.ui.form.LinkButton(manual[0], manual[1]).set({
+          appearance: "link-button",
+          font: "text-14"
+        });
+      }
+      return control;
+    },
+
+    __createFeedbackMenuBtn: function() {
+      const menu = new qx.ui.menu.Menu().set({
+        font: "text-14"
+      });
+
+      const newGHIssueBtn = new qx.ui.menu.Button(this.tr("Issue in GitHub"));
+      newGHIssueBtn.addListener("execute", this.__openGithubIssueInfoDialog, this);
+      menu.add(newGHIssueBtn);
+
+      if (osparc.utils.Utils.isInZ43()) {
+        const newFogbugzIssueBtn = new qx.ui.menu.Button(this.tr("Issue in Fogbugz"));
+        newFogbugzIssueBtn.addListener("execute", this.__openFogbugzIssueInfoDialog, this);
+        menu.add(newFogbugzIssueBtn);
+      }
+
+      const feedbackAnonBtn = new qx.ui.menu.Button(this.tr("Anonymous feedback"));
+      feedbackAnonBtn.addListener("execute", () => window.open(this.self().FEEDBACK_GFORM_URL));
+      menu.add(feedbackAnonBtn);
+
+      const feedbackBtn = new qx.ui.form.MenuButton(this.tr("Give us feedback"), null, menu);
+      return feedbackBtn;
+    },
+
     __createUserMenuBtn: function() {
       const menu = new qx.ui.menu.Menu().set({
         font: "text-14"
@@ -261,12 +309,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       helpBtn.addListener("execute", () => window.open("https://docs.osparc.io"));
       osparc.utils.Utils.setIdToWidget(helpBtn, "userMenuHelpBtn");
       menu.add(helpBtn);
-
-      const newIssueBtn = new qx.ui.menu.Button(this.tr("Open issue in GitHub"));
-      newIssueBtn.addListener("execute", this.__openIssueInfoDialog, this);
-      osparc.utils.Utils.setIdToWidget(newIssueBtn, "userMenuGithubBtn");
-      menu.add(newIssueBtn);
-
       const aboutBtn = new qx.ui.menu.Button(this.tr("About"));
       aboutBtn.addListener("execute", () => osparc.About.getInstance().open());
       osparc.utils.Utils.setIdToWidget(aboutBtn, "userMenuAboutBtn");
@@ -317,17 +359,34 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       activityWindow.open();
     },
 
-    __openIssueInfoDialog: function() {
+    __openGithubIssueInfoDialog: function() {
       const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
         this.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")
       );
       const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
       contBtn.addListener("execute", () => {
-        window.open(osparc.component.widget.NewGHIssue.getNewIssueUrl());
+        window.open(osparc.utils.NewGHIssue.getNewIssueUrl());
         issueConfirmationWindow.close();
       }, this);
       const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in GitHub"), "@FontAwesome5Solid/external-link-alt/12");
       loginBtn.addListener("execute", () => window.open("https://github.com/login"), this);
+      issueConfirmationWindow.addButton(contBtn);
+      issueConfirmationWindow.addButton(loginBtn);
+      issueConfirmationWindow.addCancelButton();
+      issueConfirmationWindow.open();
+    },
+
+    __openFogbugzIssueInfoDialog: function() {
+      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
+        this.tr("To create an issue in Fogbugz, you must have an account in Fogbugz and be already logged-in.")
+      );
+      const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
+      contBtn.addListener("execute", () => {
+        window.open(osparc.utils.NewFogbugzIssue.getNewIssueUrl());
+        issueConfirmationWindow.close();
+      }, this);
+      const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in Fogbugz"), "@FontAwesome5Solid/external-link-alt/12");
+      loginBtn.addListener("execute", () => window.open("https://z43.manuscript.com/login"), this);
       issueConfirmationWindow.addButton(contBtn);
       issueConfirmationWindow.addButton(loginBtn);
       issueConfirmationWindow.addCancelButton();
