@@ -12,7 +12,7 @@ from aiodocker import Docker
 from aiodocker.containers import DockerContainer
 from aiodocker.exceptions import DockerContainerError, DockerError
 from packaging import version
-from tenacity import retry, stop_after_attempt
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_random
 
 from celery.utils.log import get_task_logger
 from servicelib.utils import fire_and_forget_task, logged_gather
@@ -207,7 +207,12 @@ class Executor:
             file_name.write_text(json.dumps(inputs))
             log.debug("Writing input file DONE")
 
-    @retry(reraise=True, stop=stop_after_attempt(3))
+    @retry(
+        reraise=True,
+        wait=wait_random(min=1, max=3),
+        stop=stop_after_attempt(3),
+        before_sleep=before_sleep_log(log, logging.WARNING),
+    )
     async def _pull_image(self):
         docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
         log.debug(
@@ -216,36 +221,28 @@ class Executor:
             config.DOCKER_USER,
             config.DOCKER_PASSWORD,
         )
-        try:
-            async with Docker() as docker_client:
-                await self._post_messages(
-                    LogType.LOG,
-                    f"[sidecar]Pulling {self.task.image['name']}:{self.task.image['tag']}...",
-                )
-                await docker_client.images.pull(
-                    docker_image,
-                    auth={
-                        "username": config.DOCKER_USER,
-                        "password": config.DOCKER_PASSWORD,
-                    },
-                )
+        async with Docker() as docker_client:
+            await self._post_messages(
+                LogType.LOG,
+                f"[sidecar]Pulling {self.task.image['name']}:{self.task.image['tag']}...",
+            )
+            await docker_client.images.pull(
+                docker_image,
+                auth={
+                    "username": config.DOCKER_USER,
+                    "password": config.DOCKER_PASSWORD,
+                },
+            )
 
-                # get integration version
-                image_cfg = await docker_client.images.inspect(docker_image)
-                # NOTE: old services did not have that label
-                if "io.simcore.integration-version" in image_cfg["Config"]["Labels"]:
-                    self.integration_version = version.parse(
-                        json.loads(
-                            image_cfg["Config"]["Labels"][
-                                "io.simcore.integration-version"
-                            ]
-                        )["integration-version"]
-                    )
-
-        except DockerError:
-            msg = f"Failed to pull image '{docker_image}'"
-            log.exception(msg)
-            raise
+            # get integration version
+            image_cfg = await docker_client.images.inspect(docker_image)
+            # NOTE: old services did not have that label
+            if "io.simcore.integration-version" in image_cfg["Config"]["Labels"]:
+                self.integration_version = version.parse(
+                    json.loads(
+                        image_cfg["Config"]["Labels"]["io.simcore.integration-version"]
+                    )["integration-version"]
+                )
 
     async def _create_container_config(self, docker_image: str) -> Dict:
         # NOTE: Env/Binds for log folder is only necessary for integraion "0"
@@ -367,8 +364,9 @@ class Executor:
                 # reload container data to check the error code with latest info
                 container_data = await container.show()
                 if container_data["State"]["ExitCode"] > 0:
+                    logs = await container.log(stdout=True, stderr=True, tail=10)
                     exc = exceptions.SidecarException(
-                        f"{docker_image} completed with error code {container_data['State']['ExitCode']}:\n {container_data['State']['Error']}\n:Last logs:\n{container.logs(stdout=True, stderr=True, tail=10)}"
+                        f"{docker_image} completed with error code {container_data['State']['ExitCode']}:\n {container_data['State']['Error']}\n:Last logs:\n{logs}"
                     )
                     # clean up the container
                     await container.delete(force=True)
