@@ -7,9 +7,10 @@ To decide where a task should be routed to, the current worker will
 use a look ahead function to check the type of upcoming task and
 schedule it accordingly.
 """
+from pprint import pformat
 from typing import Optional, Tuple
 
-from celery import Celery, Task, states
+from celery import Celery, states
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 
 from . import config
@@ -99,29 +100,26 @@ def shared_task_dispatch(
             dispatch_comp_task(user_id, project_id, _node_id)
 
 
-from pprint import pformat
+def _on_task_failure_handler(
+    self, exc, task_id, args, kwargs, einfo
+):  # pylint: disable=unused-argument, too-many-arguments
+    log.error(
+        "Error while executing task %s with args=%s, kwargs=%s",
+        task_id,
+        args if args else "none",
+        pformat(kwargs) if kwargs else "none",
+    )
 
 
-class BaseTask(Task):
-    autoretry_for = (Exception,)
-    retry_kwargs = {"max_retries": 3, "countdown": 2}
-
-    def on_failure(self, exc, task_id, args, kwargs, einfo):
-
-        log.error(
-            "Error while executing task %s with args=%s, kwargs=%s",
-            task_id,
-            args if args else "none",
-            pformat(kwargs) if kwargs else "none",
-        )
-
-    def on_success(self, retval, task_id, args, kwargs):
-        log.info(
-            "Task %s completed successfully with args=%s, kwargs=%s",
-            task_id,
-            args if args else "none",
-            pformat(kwargs) if kwargs else "none",
-        )
+def _on_task_success_handler(
+    self, retval, task_id, args, kwargs
+):  # pylint: disable=unused-argument
+    log.info(
+        "Task %s completed successfully with args=%s, kwargs=%s",
+        task_id,
+        args if args else "none",
+        pformat(kwargs) if kwargs else "none",
+    )
 
 
 def configure_cpu_mode() -> Tuple[RabbitConfig, Celery]:
@@ -131,16 +129,26 @@ def configure_cpu_mode() -> Tuple[RabbitConfig, Celery]:
 
     # pylint: disable=unused-variable,unused-argument
     @app.task(
-        base=BaseTask,
         name="comp.task",
         bind=True,
+        autoretry_for=(Exception,),
+        retry_kwargs={"max_retries": 3, "countdown": 2},
+        on_failure=_on_task_failure_handler,
+        on_success=_on_task_success_handler,
     )
     def entrypoint(
         self, *, user_id: str, project_id: str, node_id: Optional[str] = None
     ) -> None:
         shared_task_dispatch(self, user_id, project_id, node_id)
 
-    @app.task(base=BaseTask, name="comp.task.cpu", bind=True)
+    @app.task(
+        name="comp.task.cpu",
+        bind=True,
+        autoretry_for=(Exception,),
+        retry_kwargs={"max_retries": 3, "countdown": 2},
+        on_failure=_on_task_failure_handler,
+        on_success=_on_task_success_handler,
+    )
     def pipeline(
         self, user_id: str, project_id: str, node_id: Optional[str] = None
     ) -> None:
@@ -157,7 +165,14 @@ def configure_gpu_mode() -> Tuple[RabbitConfig, Celery]:
     app = _celery_app_gpu
 
     # pylint: disable=unused-variable
-    @app.task(base=BaseTask, name="comp.task.gpu", bind=True)
+    @app.task(
+        name="comp.task.gpu",
+        bind=True,
+        autoretry_for=(Exception,),
+        retry_kwargs={"max_retries": 3, "countdown": 2},
+        on_failure=_on_task_failure_handler,
+        on_success=_on_task_success_handler,
+    )
     def pipeline(
         self, user_id: str, project_id: str, node_id: Optional[str] = None
     ) -> None:
@@ -174,7 +189,14 @@ def configure_mpi_node() -> Tuple[RabbitConfig, Celery]:
     app = _celery_app_mpi
 
     # pylint: disable=unused-variable
-    @app.task(base=BaseTask, name="comp.task.mpi", bind=True)
+    @app.task(
+        name="comp.task.mpi",
+        bind=True,
+        autoretry_for=(Exception,),
+        retry_kwargs={"max_retries": 3, "countdown": 2},
+        on_failure=_on_task_failure_handler,
+        on_success=_on_task_success_handler,
+    )
     def pipeline(
         self, user_id: str, project_id: str, node_id: Optional[str] = None
     ) -> None:

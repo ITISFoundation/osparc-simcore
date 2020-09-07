@@ -80,7 +80,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(reason=f"Project {project_id} not found") from exc
 
     # commit the tasks to celery
-    _ = get_celery(request.app).send_task(
+    task = get_celery(request.app).send_task(
         "comp.task", kwargs={"user_id": user_id, "project_id": project_id}
     )
 
