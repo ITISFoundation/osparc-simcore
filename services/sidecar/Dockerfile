@@ -112,9 +112,9 @@ COPY --from=cache --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/sidecar/docker services/sidecar/docker
 
-# NOTE: when the sidecar gets an API, or maybe through rabbitMQ
+# we use the celery API
 HEALTHCHECK --interval=30s \
-  --timeout=20s \
+  --timeout=60s \
   --start-period=20s \
   --retries=3 \
   CMD celery inspect ping -b amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT} -d celery@${HOSTNAME}
@@ -137,5 +137,13 @@ ENV SC_BUILD_TARGET=development
 
 WORKDIR /devel
 RUN chown -R scu:scu ${VIRTUAL_ENV}
+
+# we use the celery API
+HEALTHCHECK --interval=30s \
+  --timeout=60s \
+  --start-period=120s \
+  --retries=3 \
+  CMD celery inspect ping -b amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT} -d celery@${HOSTNAME}
+
 ENTRYPOINT [ "/bin/sh", "services/sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/sidecar/docker/boot.sh"]
