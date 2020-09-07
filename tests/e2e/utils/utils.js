@@ -201,9 +201,10 @@ async function takeScreenshot(page, captureName) {
   const time = __addZerosAtTheBeggining(d.getHours()) +":"+ __addZerosAtTheBeggining(d.getMinutes()) +":"+ __addZerosAtTheBeggining(d.getSeconds());
   const timeStamp = date +"_"+ time;
   captureName = captureName.replace("undefined", "");
+  const path = 'screenshots/'+timeStamp+'_'+captureName+'.jpg';
   await page.screenshot({
     fullPage: true,
-    path: 'screenshots/'+timeStamp+'_'+captureName+'.jpg',
+    path: path,
     type: 'jpeg',
   })
 }
