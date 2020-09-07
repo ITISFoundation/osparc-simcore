@@ -195,7 +195,6 @@ function __addZeros(input) {
   return String(input).padStart(2, "0");
 }
 
-
 function createScreenshotsDir() {
   const fs = require('fs');
   const path = require('path');
@@ -220,6 +219,7 @@ function createScreenshotsDir() {
     }
   });
 }
+
 async function takeScreenshot(page, captureName) {
   const d = new Date();
   const date = __addZeros(d.getMonth()+1) +"-"+ __addZeros(d.getDate());
