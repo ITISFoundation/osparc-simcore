@@ -19,17 +19,17 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   const url = osparc.component.widget.NewGHIssue.getNewIssueUrl();
+ *   const url = osparc.utils.NewGHIssue.getNewIssueUrl();
  *   window.open(url);
  * </pre>
  */
 
-qx.Class.define("osparc.component.widget.NewGHIssue", {
+qx.Class.define("osparc.utils.NewGHIssue", {
   type: "static",
 
   statics: {
     getNewIssueUrl: function() {
-      const temp = osparc.component.widget.NewGHIssue.getTemplate();
+      const temp = osparc.utils.NewGHIssue.getTemplate();
       let env = "```json\n";
       env += JSON.stringify(osparc.utils.LibVersions.getEnvLibs(), null, 2);
       env += "\n```";

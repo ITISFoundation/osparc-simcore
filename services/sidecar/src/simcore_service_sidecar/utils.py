@@ -141,9 +141,9 @@ def assemble_celery_app(task_default_queue: str, rabbit_config: RabbitConfig) ->
 
 async def get_volume_mount_point(volume_name: str) -> str:
     try:
-        docker_client: aiodocker.Docker = aiodocker.Docker()
-        volume_attributes = await DockerVolume(docker_client, volume_name).show()
-        return volume_attributes["Mountpoint"]
+        async with aiodocker.Docker() as docker_client:
+            volume_attributes = await DockerVolume(docker_client, volume_name).show()
+            return volume_attributes["Mountpoint"]
 
     except aiodocker.exceptions.DockerError as err:
         raise SidecarException(

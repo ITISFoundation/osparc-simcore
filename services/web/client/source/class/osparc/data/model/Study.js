@@ -251,11 +251,16 @@ qx.Class.define("osparc.data.model.Study", {
         ...params
       })
         .then(data => {
+          // TODO OM: Hacky
+          if ("dev" in data) {
+            delete data["dev"];
+          }
           this.set({
             ...data,
             creationDate: new Date(data.creationDate),
             lastChangeDate: new Date(data.lastChangeDate),
-            workbench: this.getWorkbench()
+            workbench: this.getWorkbench(),
+            sweeper: this.getSweeper()
           });
           return data;
         });

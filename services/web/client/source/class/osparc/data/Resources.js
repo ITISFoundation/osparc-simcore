@@ -192,7 +192,7 @@ qx.Class.define("osparc.data.Resources", {
        * GROUPS/DAGS
        */
       "dags": {
-        usesCache: true,
+        useCache: true,
         idField: "key",
         endpoints: {
           post: {
@@ -342,7 +342,7 @@ qx.Class.define("osparc.data.Resources", {
        * Gets the json object containing sample classifiers
        */
       "classifiers": {
-        useCache: true,
+        useCache: false,
         idField: "classifiers",
         endpoints: {
           get: {
