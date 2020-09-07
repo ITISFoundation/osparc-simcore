@@ -89,7 +89,6 @@ migrate: $(DOT_ENV_FILE) ## basic migration update (use ONLY for development pur
 
 
 
-
 .PHONY: up-pg down-pg up-prod down-prod
 docker-compose-configs = $(wildcard tests/docker-compose*.yml)
 up-pg up-prod: $(docker-compose-configs) ## starts pg server
@@ -97,3 +96,12 @@ up-pg up-prod: $(docker-compose-configs) ## starts pg server
 
 down-pg down-prod: $(docker-compose-configs) ## stops pg server
 	docker-compose -f tests/docker-compose.yml  $(if $(findstring -prod,$@),-f tests/docker-compose.prod.yml,) down
+
+
+
+.PHONY: auto-doc
+auto-doc: install-dev ## Creates entity relationship diagram (ERD) defined under ``simcore_postgres_database.models``
+	# installing doc dependencies (install-doc)
+	pip install eralchemy
+	# running script
+	python scripts/create_erd.py
