@@ -43,7 +43,6 @@ async def run_sidecar(
         project_id,
         node_id,
     )
-    raise SidecarException(msg="some error happened here")
     async with DBContextManager() as db_engine:
         async with RabbitMQ(config=RABBIT_CONFIG) as rabbit_mq:
             next_task_nodes: Optional[List[str]] = await inspect(
