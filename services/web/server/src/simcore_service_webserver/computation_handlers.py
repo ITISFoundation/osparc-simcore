@@ -85,7 +85,10 @@ async def start_pipeline(request: web.Request) -> web.Response:
     )
 
     log.debug(
-        "Task (user_id=%s, project_id=%s) submitted for execution.", user_id, project_id
+        "Task (task=%s, user_id=%s, project_id=%s) submitted for execution.",
+        task.task_id,
+        user_id,
+        project_id,
     )
 
     # answer the client while task has been spawned
@@ -93,5 +96,6 @@ async def start_pipeline(request: web.Request) -> web.Response:
         # TODO: PC->SAN: some name with task id. e.g. to distinguish two projects with identical pipeline?
         "pipeline_name": "request_data",
         "project_id": project_id,
+        "task_id": task.task_id if task else "failed to start",
     }
     return data
