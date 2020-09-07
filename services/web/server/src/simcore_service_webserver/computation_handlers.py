@@ -24,7 +24,11 @@ log = logging.getLogger(__file__)
 def get_celery(_app: web.Application):
     config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
     rabbit = RabbitConfig(**config)
-    celery = Celery(rabbit.name, broker=rabbit.broker_url, backend=rabbit.backend,)
+    celery = Celery(
+        rabbit.name,
+        broker=rabbit.broker_url,
+        backend=rabbit.backend,
+    )
     return celery
 
 
@@ -61,8 +65,8 @@ async def update_pipeline(request: web.Request) -> web.Response:
 
 @login_required
 async def start_pipeline(request: web.Request) -> web.Response:
-    """ Starts pipeline described in the workbench section of a valid project
-        already at the server side
+    """Starts pipeline described in the workbench section of a valid project
+    already at the server side
     """
     await check_permission(request, "services.pipeline.*")
     await check_permission(request, "project.read")
@@ -77,7 +81,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
 
     # commit the tasks to celery
     _ = get_celery(request.app).send_task(
-        "comp.task", args=(user_id, project_id,), kwargs={}
+        "comp.task", kwargs={"user_id": user_id, "project_id": project_id}
     )
 
     log.debug(

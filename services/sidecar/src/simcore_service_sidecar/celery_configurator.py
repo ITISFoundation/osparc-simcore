@@ -9,7 +9,7 @@ schedule it accordingly.
 """
 from typing import Optional, Tuple
 
-from celery import Celery, states
+from celery import Celery, Task, states
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 
 from . import config
@@ -17,6 +17,7 @@ from .boot_mode import BootMode, get_boot_mode, set_boot_mode
 from .celery_log_setup import get_task_logger
 from .cli import run_sidecar
 from .core import task_required_resources
+from .exceptions import SidecarException
 from .utils import assemble_celery_app, is_gpu_node, start_as_mpi_node, wrap_async_call
 
 log = get_task_logger(__name__)
@@ -55,49 +56,71 @@ def dispatch_comp_task(user_id: str, project_id: str, node_id: str) -> None:
 
 def _dispatch_to_cpu_queue(user_id: str, project_id: str, node_id: str) -> None:
     _celery_app_cpu.send_task(
-        "comp.task.cpu", args=(user_id, project_id, node_id), kwargs={}
+        "comp.task.cpu",
+        kwargs={"user_id": user_id, "project_id": project_id, "node_id": node_id},
     )
 
 
 def _dispatch_to_gpu_queue(user_id: str, project_id: str, node_id: str) -> None:
     _celery_app_gpu.send_task(
-        "comp.task.gpu", args=(user_id, project_id, node_id), kwargs={}
+        "comp.task.gpu",
+        kwargs={"user_id": user_id, "project_id": project_id, "node_id": node_id},
     )
 
 
 def _dispatch_to_mpi_queue(user_id: str, project_id: str, node_id: str) -> None:
     _celery_app_mpi.send_task(
-        "comp.task.mpi", args=(user_id, project_id, node_id), kwargs={}
+        "comp.task.mpi",
+        kwargs={"user_id": user_id, "project_id": project_id, "node_id": node_id},
     )
 
 
 def shared_task_dispatch(
     celery_request, user_id: str, project_id: str, node_id: Optional[str] = None
 ) -> None:
-    """This is the original task which is run by either MPI, GPU or CPU node"""
-    try:
+    log.info(
+        "Will dispatch to appropriate queue %s, %s, %s",
+        user_id,
+        project_id,
+        node_id,
+    )
+    next_task_nodes, error = wrap_async_call(
+        run_sidecar(celery_request.request.id, user_id, project_id, node_id)
+    )
+
+    if error:
+        raise SidecarException(
+            msg=f"Error dispatching tasks fro node {node_id}: {error}"
+        )
+
+    celery_request.update_state(state=states.SUCCESS)
+    if next_task_nodes:
+        for _node_id in next_task_nodes:
+            dispatch_comp_task(user_id, project_id, _node_id)
+
+
+from pprint import pformat
+
+
+class BaseTask(Task):
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+
+        log.error(
+            "Error while executing task %s with args=%s, kwargs=%s",
+            task_id,
+            args if args else "none",
+            pformat(kwargs) if kwargs else "none",
+        )
+        return super().on_failure(exc, task_id, args, kwargs, einfo)
+
+    def on_success(self, retval, task_id, args, kwargs):
         log.info(
-            "Will dispatch to appropriate queue %s, %s, %s",
-            user_id,
-            project_id,
-            node_id,
+            "Task %s completed successfully with args=%s, kwargs=%s",
+            task_id,
+            args if args else "none",
+            pformat(kwargs) if kwargs else "none",
         )
-        next_task_nodes, error = wrap_async_call(
-            run_sidecar(celery_request.request.id, user_id, project_id, node_id)
-        )
-
-        if error:
-            celery_request.update_state(state=states.FAILURE)
-            log.exception(next_task_nodes)
-            return
-
-        celery_request.update_state(state=states.SUCCESS)
-        if next_task_nodes:
-            for _node_id in next_task_nodes:
-                dispatch_comp_task(user_id, project_id, _node_id)
-    except Exception:  # pylint: disable=broad-except
-        celery_request.update_state(state=states.FAILURE)
-        log.exception("Uncaught exception")
+        return super().on_success(retval, task_id, args, kwargs)
 
 
 def configure_cpu_mode() -> Tuple[RabbitConfig, Celery]:
@@ -106,13 +129,19 @@ def configure_cpu_mode() -> Tuple[RabbitConfig, Celery]:
     app = _celery_app_cpu
 
     # pylint: disable=unused-variable,unused-argument
-    @app.task(name="comp.task", bind=True, ignore_result=True)
+    @app.task(
+        base=BaseTask,
+        name="comp.task",
+        bind=True,
+        autoretry_for=(Exception,),
+        retry_kwargs={"max_retries": 5, "countdown": 2},
+    )
     def entrypoint(
-        self, user_id: str, project_id: str, node_id: Optional[str] = None
+        self, *, user_id: str, project_id: str, node_id: Optional[str] = None
     ) -> None:
         shared_task_dispatch(self, user_id, project_id, node_id)
 
-    @app.task(name="comp.task.cpu", bind=True)
+    @app.task(base=BaseTask, name="comp.task.cpu", bind=True)
     def pipeline(
         self, user_id: str, project_id: str, node_id: Optional[str] = None
     ) -> None:
@@ -129,7 +158,7 @@ def configure_gpu_mode() -> Tuple[RabbitConfig, Celery]:
     app = _celery_app_gpu
 
     # pylint: disable=unused-variable
-    @app.task(name="comp.task.gpu", bind=True)
+    @app.task(base=BaseTask, name="comp.task.gpu", bind=True)
     def pipeline(
         self, user_id: str, project_id: str, node_id: Optional[str] = None
     ) -> None:
@@ -146,7 +175,7 @@ def configure_mpi_node() -> Tuple[RabbitConfig, Celery]:
     app = _celery_app_mpi
 
     # pylint: disable=unused-variable
-    @app.task(name="comp.task.mpi", bind=True)
+    @app.task(base=BaseTask, name="comp.task.mpi", bind=True)
     def pipeline(
         self, user_id: str, project_id: str, node_id: Optional[str] = None
     ) -> None:
