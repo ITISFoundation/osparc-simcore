@@ -22,13 +22,15 @@ class TutorialBase {
     this.__interval = null;
   }
 
-  async start() {
+  initScreenshoter() {
     utils.createScreenshotsDir();
 
     this.__interval = setInterval(async() => {
       await this.takeScreenshot();
     }, 2000);
+  }
 
+  async start() {
     await this.beforeScript();
     await this.goTo();
 
