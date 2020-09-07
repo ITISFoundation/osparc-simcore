@@ -1,3 +1,5 @@
+const pathLib = require('path');
+
 const SCREENSHOTS_DIR = "../screenshots/";
 
 function parseCommandLineArguments(args) {
@@ -194,14 +196,13 @@ function __addZeros(input) {
 
 function createScreenshotsDir() {
   const fs = require('fs');
-  if (!fs.existsSync(SCREENSHOTS_DIR)) {
-    fs.mkdirSync(SCREENSHOTS_DIR);
+  const screenshotsDir = pathLib.join(__dirname, SCREENSHOTS_DIR);
+  if (!fs.existsSync(screenshotsDir)) {
+    fs.mkdirSync(screenshotsDir);
   }
 }
 
 async function takeScreenshot(page, captureName) {
-  const pathLib = require('path');
-
   const d = new Date();
   const date = __addZeros(d.getMonth()+1) +"-"+ __addZeros(d.getDate());
   const time = __addZeros(d.getHours()) +"-"+ __addZeros(d.getMinutes()) +"-"+ __addZeros(d.getSeconds());
