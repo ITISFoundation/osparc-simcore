@@ -135,6 +135,7 @@ def configure_cpu_mode() -> Tuple[RabbitConfig, Celery]:
         retry_kwargs={"max_retries": 3, "countdown": 2},
         on_failure=_on_task_failure_handler,
         on_success=_on_task_success_handler,
+        track_started=True,
     )
     def entrypoint(
         self, *, user_id: str, project_id: str, node_id: Optional[str] = None
@@ -148,6 +149,7 @@ def configure_cpu_mode() -> Tuple[RabbitConfig, Celery]:
         retry_kwargs={"max_retries": 3, "countdown": 2},
         on_failure=_on_task_failure_handler,
         on_success=_on_task_success_handler,
+        track_started=True,
     )
     def pipeline(
         self, user_id: str, project_id: str, node_id: Optional[str] = None
@@ -172,6 +174,7 @@ def configure_gpu_mode() -> Tuple[RabbitConfig, Celery]:
         retry_kwargs={"max_retries": 3, "countdown": 2},
         on_failure=_on_task_failure_handler,
         on_success=_on_task_success_handler,
+        track_started=True,
     )
     def pipeline(
         self, user_id: str, project_id: str, node_id: Optional[str] = None
@@ -196,6 +199,7 @@ def configure_mpi_node() -> Tuple[RabbitConfig, Celery]:
         retry_kwargs={"max_retries": 3, "countdown": 2},
         on_failure=_on_task_failure_handler,
         on_success=_on_task_success_handler,
+        track_started=True,
     )
     def pipeline(
         self, user_id: str, project_id: str, node_id: Optional[str] = None
