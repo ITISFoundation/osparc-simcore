@@ -495,17 +495,3 @@ async def remove_user(app: web.Application, user_id: int) -> None:
             "User '%s' still has some projects, could not be deleted", user_id
         )
 
-
-# TODO: tests for garbage collector
-# - a User with more then 2 projects
-# - a user without projects
-# - a user with just 1 project
-#
-#  The user can be:
-# - connected via browser (websocket connection is up)
-# - disconnected (no websocket connection)
-
-# When DELETING the project check:
-# - if the project has multiple owners (it is shared with more then 1 person looking at the access rights),
-#   set the user to NULL, if it is just a VIEWER user, then we do not care and remove it
-# - if the project is not shared (only user primary_gid in access rights) remove it
