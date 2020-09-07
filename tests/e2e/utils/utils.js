@@ -204,6 +204,7 @@ function createScreenshotsDir() {
 
 async function takeScreenshot(page, captureName) {
   const pathLib = require('path');
+
   const d = new Date();
   const date = __addZeros(d.getMonth()+1) +"-"+ __addZeros(d.getDate());
   const time = __addZeros(d.getHours()) +"-"+ __addZeros(d.getMinutes()) +"-"+ __addZeros(d.getSeconds());
