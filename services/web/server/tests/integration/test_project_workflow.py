@@ -41,9 +41,7 @@ core_services = [
     "redis",
 ]
 
-ops_services = [
-    #    'adminer'
-]
+ops_services = []  # + ["adminer"]
 
 
 @pytest.fixture
@@ -122,7 +120,7 @@ def fake_project_data(fake_data_dir: Path) -> Dict:
 
 @pytest.fixture
 async def logged_user(client):  # , role: UserRole):
-    """ adds a user in db and logs in with client
+    """adds a user in db and logs in with client
 
     NOTE: role fixture is defined as a parametrization below
     """
@@ -150,9 +148,9 @@ def computational_system_mock(mocker):
 @pytest.fixture
 async def storage_subsystem_mock(loop, mocker):
     """
-        Patches client calls to storage service
+    Patches client calls to storage service
 
-        Patched functions are exposed within projects but call storage subsystem
+    Patched functions are exposed within projects but call storage subsystem
     """
     # requests storage to copy data
     mock = mocker.patch(

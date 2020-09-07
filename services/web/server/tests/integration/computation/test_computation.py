@@ -42,14 +42,14 @@ core_services = ["director", "rabbit", "postgres", "sidecar", "storage"]
 
 ops_services = [
     "minio",
-    #    'adminer',
-    #    'portainer'
-]
+]  # + ["adminer", "portainer"]
 
 
 @pytest.fixture
 def client(
-    loop, aiohttp_client, app_config,  ## waits until swarm with *_services are up
+    loop,
+    aiohttp_client,
+    app_config,  ## waits until swarm with *_services are up
 ):
     assert app_config["rest"]["version"] == API_VERSION
 

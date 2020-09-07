@@ -57,16 +57,9 @@ def postgres_engine(
 
 
 @pytest.fixture(scope="module")
-def migration_downgrade_disabled() -> bool:
-    """ Override to enable migration downgrade step in postgres_db teardown """
-    return True
-
-
-@pytest.fixture(scope="module")
 def postgres_db(
     postgres_dsn: Dict,
     postgres_engine: sa.engine.Engine,
-    migration_downgrade_disabled: bool,
 ) -> sa.engine.Engine:
 
     # upgrades database from zero
@@ -76,17 +69,18 @@ def postgres_db(
 
     yield postgres_engine
 
-    if not migration_downgrade_disabled:
-        # NOTE: After discussion with ANE, this step delays tests and do not bring much as a fixture
-        # therefore it is added as optional
+    # downgrades database to zero ---
+    #
+    # NOTE: This step CANNOT be avoided since it would leave the db in an invalid state
+    # E.g. 'alembic_version' table is not deleted and keeps head version or routines
+    # like 'notify_comp_tasks_changed' remain undeleted
+    #
+    pg_cli.downgrade.callback("base")
+    pg_cli.clean.callback()  # just cleans discover cache
 
-        pg_cli.downgrade.callback("base")
-        pg_cli.clean.callback()
-        # FIXME: migration downgrade fails to remove all tables!!, added drop_all as tmp fix
-        metadata.drop_all(postgres_engine)
-
-    else:
-        metadata.drop_all(postgres_engine)
+    # FIXME: migration downgrade fails to remove User types SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
+    # Added drop_all as tmp fix
+    metadata.drop_all(postgres_engine)
 
 
 @pytest.fixture(scope="module")
