@@ -143,7 +143,12 @@ async def list_projects(request: web.Request):
             projects_api.validate_project(request.app, project)
             validated_projects.append(project)
         except ValidationError:
-            log.exception("Skipping invalid project from list")
+            log.warning(
+                "Invalid project with id='%s' in database."
+                "Skipping project from listed response."
+                "RECOMMENDED db data diagnose and cleanup",
+                project.get("uuid", "undefined"),
+            )
             continue
 
     return {"data": validated_projects}
@@ -152,9 +157,7 @@ async def list_projects(request: web.Request):
 @login_required
 @permission_required("project.read")
 async def get_project(request: web.Request):
-    """ Returns all projects accessible to a user (not necesarly owned)
-
-    """
+    """Returns all projects accessible to a user (not necesarly owned)"""
     # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
     user_id = request[RQT_USERID_KEY]
     from .projects_api import get_project_for_user
@@ -180,7 +183,7 @@ async def get_project(request: web.Request):
 @login_required
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def replace_project(request: web.Request):
-    """ Implements PUT /projects
+    """Implements PUT /projects
 
      In a PUT request, the enclosed entity is considered to be a modified version of
      the resource stored on the origin server, and the client is requesting that the
@@ -410,7 +413,10 @@ async def state_project(request: web.Request) -> web.Response:
 
     # check that project exists
     await get_project_for_user(
-        request.app, project_uuid=project_uuid, user_id=user_id, include_templates=True,
+        request.app,
+        project_uuid=project_uuid,
+        user_id=user_id,
+        include_templates=True,
     )
     with managed_resource(user_id, None, request.app) as rt:
         users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
