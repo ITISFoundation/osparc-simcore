@@ -104,13 +104,13 @@ async def rabbit_exchange(
         INSTRUMENTATION_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
     )
     assert instrumentation_exchange
-    yield logs_exchange, instrumentation_exchange
+    return logs_exchange, instrumentation_exchange
 
 
 @pytest.fixture(scope="function")
 async def rabbit_queue(
     rabbit_channel: aio_pika.Channel,
-    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange, aio_pika.Exchange],
+    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
 ) -> aio_pika.Queue:
     (logs_exchange, instrumentation_exchange) = rabbit_exchange
     # declare queue
@@ -118,7 +118,6 @@ async def rabbit_queue(
     assert queue
     # Binding queue to exchange
     await queue.bind(logs_exchange)
-    await queue.bind(progress_exchange)
     await queue.bind(instrumentation_exchange)
     yield queue
 
