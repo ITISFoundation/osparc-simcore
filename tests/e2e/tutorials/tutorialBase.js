@@ -59,6 +59,7 @@ class TutorialBase {
     }
     catch(err) {
       console.error(this.__url, "can't be reached", err);
+      throw(err);
     }
     const domain = utils.getDomain(this.__url);
     await this.takeScreenshot("landingPage_" + domain);
@@ -75,6 +76,7 @@ class TutorialBase {
     }
     catch(err) {
       console.error(this.__templateName, "could not be started", err);
+      throw(err);
     }
     return resp;
   }
@@ -90,18 +92,19 @@ class TutorialBase {
   async login() {
     this.__responsesQueue.addResponseListener("projects?type=template");
     this.__responsesQueue.addResponseListener("catalog/dags");
-    this.__responsesQueue.addResponseListener("services");
+    this.__responsesQueue.addResponseListener("catalog/services");
     await auto.logIn(this.__page, this.__user, this.__pass);
     try {
       const resp = await this.__responsesQueue.waitUntilResponse("projects?type=template");
       const templates = resp["data"];
-      console.log("Templates received", templates.length);
+      console.log("Templates received:", templates.length);
       templates.forEach(template => {
         console.log(" - ", template.name);
       });
     }
     catch(err) {
       console.error("Templates could not be fetched", err);
+      throw(err);
     }
     try {
       const resp = await this.__responsesQueue.waitUntilResponse("catalog/dags");
@@ -113,14 +116,16 @@ class TutorialBase {
     }
     catch(err) {
       console.error("DAGs could not be fetched", err);
+      throw(err);
     }
     try {
-      const resp = await this.__responsesQueue.waitUntilResponse("services");
+      const resp = await this.__responsesQueue.waitUntilResponse("catalog/services");
       const services = resp["data"];
       console.log("Services received:", services.length);
     }
     catch(err) {
       console.error("Services could not be fetched", err);
+      throw(err);
     }
   }
 
@@ -149,6 +154,7 @@ class TutorialBase {
     }
     catch(err) {
       console.error(`"${this.__templateName}" template could not be started:\n`, err);
+      throw(err);
     }
     await this.__page.waitFor(waitFor);
     await this.takeScreenshot("dashboardOpenFirstTemplate_after");
@@ -201,6 +207,7 @@ class TutorialBase {
     }
     catch(err) {
       console.error(err);
+      throw(err);
     }
   }
 
@@ -224,6 +231,7 @@ class TutorialBase {
     }
     catch(err) {
       console.error("Failed checking Data Produced By Node", err);
+      throw(err);
     }
     await this.takeScreenshot("checkResults_after");
   }
@@ -238,6 +246,7 @@ class TutorialBase {
     }
     catch(err) {
       console.error("Failed deleting study", err);
+      throw(err);
     }
     await this.takeScreenshot("dashboardDeleteFirstStudy_after");
   }
