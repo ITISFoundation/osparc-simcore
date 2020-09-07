@@ -134,7 +134,7 @@ def configure_cpu_mode() -> Tuple[RabbitConfig, Celery]:
         name="comp.task",
         bind=True,
         autoretry_for=(Exception,),
-        retry_kwargs={"max_retries": 5, "countdown": 2},
+        retry_kwargs={"max_retries": 5, "countdown": 2, "retry_backof": True},
     )
     def entrypoint(
         self, *, user_id: str, project_id: str, node_id: Optional[str] = None
