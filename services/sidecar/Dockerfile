@@ -135,12 +135,6 @@ FROM build as development
 
 ENV SC_BUILD_TARGET=development
 
-HEALTHCHECK --interval=30s \
-  --timeout=20s \
-  --start-period=120s \
-  --retries=3 \
-  CMD celery inspect ping -b amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT} -d celery@${HOSTNAME}
-
 WORKDIR /devel
 RUN chown -R scu:scu ${VIRTUAL_ENV}
 ENTRYPOINT [ "/bin/sh", "services/sidecar/docker/entrypoint.sh" ]
