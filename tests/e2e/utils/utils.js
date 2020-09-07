@@ -1,4 +1,4 @@
-
+const SCREENSHOTS_DIR = "../screenshots/";
 
 function parseCommandLineArguments(args) {
   //
@@ -197,36 +197,22 @@ function __addZeros(input) {
 
 function createScreenshotsDir() {
   const fs = require('fs');
-  const path = require('path');
-
-  const screenshotDir = '../screenshots/';
-  if (!fs.existsSync(screenshotDir)) {
-    fs.mkdirSync(screenshotDir);
+  if (!fs.existsSync(SCREENSHOTS_DIR)) {
+    fs.mkdirSync(SCREENSHOTS_DIR);
   }
-
-  fs.readdir(screenshotDir, (err, files) => {
-    if (err) {
-      console.log(err);
-      throw err
-    }
-    for (const file of files) {
-      fs.unlink(path.join(screenshotDir, file), err => {
-        if (err) {
-          console.log(err);
-          throw err;
-        }
-      });
-    }
-  });
 }
 
 async function takeScreenshot(page, captureName) {
+  const pathLib = require('path');
   const d = new Date();
   const date = __addZeros(d.getMonth()+1) +"-"+ __addZeros(d.getDate());
   const time = __addZeros(d.getHours()) +"-"+ __addZeros(d.getMinutes()) +"-"+ __addZeros(d.getSeconds());
   const timeStamp = date +"_"+ time;
   captureName = captureName.replace("undefined", "");
-  const path = 'screenshots/'+timeStamp+'_'+captureName+'.jpg';
+  let filename = timeStamp+"_"+captureName+".jpg";
+  filename = filename.replace(":", "-");
+  const path = pathLib.join(__dirname, SCREENSHOTS_DIR, filename);
+
   await page.screenshot({
     fullPage: true,
     path: path,
