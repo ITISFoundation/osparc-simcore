@@ -251,6 +251,7 @@ class TutorialBase {
 
   async close() {
     clearInterval(this.__interval);
+    await utils.sleep(2000);
     await this.__browser.close();
   }
 
