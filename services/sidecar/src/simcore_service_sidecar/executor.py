@@ -12,7 +12,6 @@ from aiodocker import Docker
 from aiodocker.containers import DockerContainer
 from aiodocker.exceptions import DockerContainerError, DockerError
 from packaging import version
-from tenacity import before_sleep_log, retry, stop_after_attempt, wait_random
 
 from celery.utils.log import get_task_logger
 from servicelib.utils import fire_and_forget_task, logged_gather
@@ -207,12 +206,6 @@ class Executor:
             file_name.write_text(json.dumps(inputs))
             log.debug("Writing input file DONE")
 
-    @retry(
-        reraise=True,
-        wait=wait_random(min=1, max=3),
-        stop=stop_after_attempt(3),
-        before_sleep=before_sleep_log(log, logging.WARNING),
-    )
     async def _pull_image(self):
         docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
         log.debug(
