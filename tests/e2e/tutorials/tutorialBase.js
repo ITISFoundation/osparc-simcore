@@ -1,4 +1,3 @@
-const fs = require('fs');
 const assert = require('assert');
 
 const startPuppe = require('../utils/startPuppe');
@@ -22,11 +21,11 @@ class TutorialBase {
   }
 
   async start() {
-    this.createScreenshotsDir();
+    utils.createScreenshotsDir();
 
     setInterval(async() => {
       await this.takeScreenshot();
-    } , 1000);
+    }, 2000);
 
     await this.beforeScript();
     await this.goTo();
@@ -34,13 +33,6 @@ class TutorialBase {
     const needsRegister = await this.registerIfNeeded();
     if (!needsRegister) {
       await this.login();
-    }
-  }
-
-  createScreenshotsDir() {
-    const dir = 'screenshots';
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir);
     }
   }
 
@@ -92,7 +84,7 @@ class TutorialBase {
   async login() {
     this.__responsesQueue.addResponseListener("projects?type=template");
     this.__responsesQueue.addResponseListener("catalog/dags");
-    this.__responsesQueue.addResponseListener("catalog/services");
+    this.__responsesQueue.addResponseListener("services");
     await auto.logIn(this.__page, this.__user, this.__pass);
     try {
       const resp = await this.__responsesQueue.waitUntilResponse("projects?type=template");
@@ -119,7 +111,7 @@ class TutorialBase {
       throw(err);
     }
     try {
-      const resp = await this.__responsesQueue.waitUntilResponse("catalog/services");
+      const resp = await this.__responsesQueue.waitUntilResponse("services");
       const services = resp["data"];
       console.log("Services received:", services.length);
     }

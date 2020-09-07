@@ -195,6 +195,31 @@ function __addZerosAtTheBeggining(input) {
   return String(input).padStart(2, "0");
 }
 
+
+function createScreenshotsDir() {
+  const fs = require('fs');
+  const path = require('path');
+
+  const screenshotDir = '../screenshots/';
+  if (!fs.existsSync(screenshotDir)) {
+    fs.mkdirSync(screenshotDir);
+  }
+
+  fs.readdir(screenshotDir, (err, files) => {
+    if (err) {
+      console.log(err);
+      throw err
+    }
+    for (const file of files) {
+      fs.unlink(path.join(screenshotDir, file), err => {
+        if (err) {
+          console.log(err);
+          throw err;
+        }
+      });
+    }
+  });
+}
 async function takeScreenshot(page, captureName) {
   const d = new Date();
   const date = __addZerosAtTheBeggining(d.getMonth()+1) +"-"+ __addZerosAtTheBeggining(d.getDate());
@@ -235,6 +260,7 @@ module.exports = {
   waitAndClick,
   clearInput,
   sleep,
+  createScreenshotsDir,
   takeScreenshot,
   extractWorkbenchData,
   parseCommandLineArguments
