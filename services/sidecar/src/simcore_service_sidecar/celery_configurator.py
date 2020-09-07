@@ -103,6 +103,9 @@ from pprint import pformat
 
 
 class BaseTask(Task):
+    autoretry_for = (Exception,)
+    retry_kwargs = {"max_retries": 3, "countdown": 2}
+
     def on_failure(self, exc, task_id, args, kwargs, einfo):
 
         log.error(
@@ -111,7 +114,6 @@ class BaseTask(Task):
             args if args else "none",
             pformat(kwargs) if kwargs else "none",
         )
-        return super().on_failure(exc, task_id, args, kwargs, einfo)
 
     def on_success(self, retval, task_id, args, kwargs):
         log.info(
@@ -120,7 +122,6 @@ class BaseTask(Task):
             args if args else "none",
             pformat(kwargs) if kwargs else "none",
         )
-        return super().on_success(retval, task_id, args, kwargs)
 
 
 def configure_cpu_mode() -> Tuple[RabbitConfig, Celery]:
@@ -133,8 +134,6 @@ def configure_cpu_mode() -> Tuple[RabbitConfig, Celery]:
         base=BaseTask,
         name="comp.task",
         bind=True,
-        autoretry_for=(Exception,),
-        retry_kwargs={"max_retries": 5, "countdown": 2, "retry_backof": True},
     )
     def entrypoint(
         self, *, user_id: str, project_id: str, node_id: Optional[str] = None
