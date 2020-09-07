@@ -1,11 +1,9 @@
-import asyncio
 import logging
 from typing import List, Optional, Tuple
 
 import click
-from simcore_service_sidecar.exceptions import SidecarException
 
-from .config import RABBIT_CONFIG, SIDECAR_LOGLEVEL
+from .config import RABBIT_CONFIG
 from .core import inspect
 from .db import DBContextManager
 from .rabbitmq import RabbitMQ
