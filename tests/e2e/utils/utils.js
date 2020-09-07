@@ -1,10 +1,7 @@
 const SCREENSHOTS_DIR = "../screenshots/";
 
 function parseCommandLineArguments(args) {
-  //
   // node $tutorial.js [url] [user] [password] [--demo]
-  //
-  //
 
   if (args.length < 1) {
     console.log('More arguments expected:  $tutorial.js [url] [user] [password] [--demo]');
