@@ -165,7 +165,8 @@ qx.Class.define("osparc.data.Permissions", {
           "user.organizations.create",
           "study.nodestree.uuid.read",
           "study.filestree.uuid.read",
-          "study.logger.debug.read"
+          "study.logger.debug.read",
+          "statics.read"
         ],
         "admin": []
       };
