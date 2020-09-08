@@ -94,6 +94,7 @@ def shared_task_dispatch(
             msg=f"Error dispatching tasks fro node {node_id}: {error}"
         )
 
+    # this needs to be done here since the tasks are created recursively and the state might not be upgraded yet
     celery_request.update_state(state=states.SUCCESS)
     if next_task_nodes:
         for _node_id in next_task_nodes:
