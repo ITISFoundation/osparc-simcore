@@ -173,7 +173,7 @@ async def inspect(
 
     # now proceed actually running the task (we do that after the db session has been closed)
     # try to run the task, return empyt list of next nodes if anything goes wrong
-    run_result = SUCCESS
+    run_result = FAILED
     next_task_nodes = []
     try:
         executor = Executor(
@@ -184,12 +184,11 @@ async def inspect(
         )
         await executor.run()
         next_task_nodes = list(graph.successors(node_id))
+        run_result = SUCCESS
     except asyncio.CancelledError:
-        run_result = FAILED
         log.warning("Task has been cancelled")
         raise
     except exceptions.SidecarException:
-        run_result = FAILED
         log.exception("Error during execution")
 
     finally:
