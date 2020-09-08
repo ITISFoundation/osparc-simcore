@@ -200,6 +200,7 @@ function createScreenshotsDir() {
   if (!fs.existsSync(screenshotsDir)) {
     fs.mkdirSync(screenshotsDir);
   }
+  console.log("Screenshots directory:", screenshotsDir);
 }
 
 async function takeScreenshot(page, captureName) {
