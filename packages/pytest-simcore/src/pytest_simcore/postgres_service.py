@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import os
-from typing import Dict
+from typing import Dict, List
 import logging
 
 import pytest
@@ -17,6 +17,53 @@ from simcore_postgres_database.models.base import metadata
 from .helpers.utils_docker import get_service_published_port
 
 log = logging.getLogger(__name__)
+
+TEMPLATE_DB_NAME = "template_simcore_db"  # this name is used elsewere
+
+
+def execute_queries(
+    postgres_engine: sa.engine.Engine, sql_statements: List[str], ignore_errors=False
+) -> None:
+    """runs the queries in the list in order"""
+    with postgres_engine.connect() as con:
+        for statement in sql_statements:
+            try:
+                con.execution_options(autocommit=True).execute(statement)
+            except Exception as e:  # pylint: disable=broad-except
+                log.error("Ignoring PSQL exception %s", str(e))
+
+
+def create_template_db(postgres_dsn: Dict, postgres_engine: sa.engine.Engine) -> None:
+    # create a template db, the removal is necessary to allow for the usage of --keep-docker-up
+    queries = [
+        # disconnect existing users
+        f"""
+        SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity 
+        WHERE pg_stat_activity.datname = '{postgres_dsn["database"]}' AND pid <> pg_backend_pid();
+        """,
+        # drop template database
+        f"ALTER DATABASE {TEMPLATE_DB_NAME} is_template false;",
+        f"DROP DATABASE {TEMPLATE_DB_NAME};",
+        # create template database
+        """
+        CREATE DATABASE {template_db} WITH TEMPLATE {original_db} OWNER {db_user};
+        """.format(
+            template_db=TEMPLATE_DB_NAME,
+            original_db=postgres_dsn["database"],
+            db_user=postgres_dsn["user"],
+        ),
+    ]
+    execute_queries(postgres_engine, queries, ignore_errors=True)
+
+
+def drop_template_db(postgres_engine: sa.engine.Engine) -> None:
+    # remove the template db
+    queries = [
+        # drop template database
+        f"ALTER DATABASE {TEMPLATE_DB_NAME} is_template false;",
+        f"DROP DATABASE {TEMPLATE_DB_NAME};",
+    ]
+    execute_queries(postgres_engine, queries)
 
 
 @pytest.fixture(scope="module")
@@ -64,7 +111,12 @@ def postgres_db(
     kwargs = postgres_dsn.copy()
     pg_cli.discover.callback(**kwargs)
     pg_cli.upgrade.callback("head")
+
+    create_template_db(postgres_dsn, postgres_engine)
+
     yield postgres_engine
+
+    drop_template_db(postgres_engine)
 
     pg_cli.downgrade.callback("base")
     pg_cli.clean.callback()
