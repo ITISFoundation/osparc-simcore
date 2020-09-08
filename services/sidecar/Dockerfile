@@ -113,9 +113,9 @@ COPY --from=cache --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/sidecar/docker services/sidecar/docker
 
 # we use the celery API
-HEALTHCHECK --interval=30s \
+HEALTHCHECK --interval=60s \
   --timeout=60s \
-  --start-period=20s \
+  --start-period=30s \
   --retries=3 \
   CMD celery inspect ping -b amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT} -d celery@${HOSTNAME}
 
@@ -139,7 +139,7 @@ WORKDIR /devel
 RUN chown -R scu:scu ${VIRTUAL_ENV}
 
 # we use the celery API
-HEALTHCHECK --interval=30s \
+HEALTHCHECK --interval=60s \
   --timeout=60s \
   --start-period=120s \
   --retries=3 \
