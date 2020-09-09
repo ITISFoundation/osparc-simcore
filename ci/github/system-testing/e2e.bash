@@ -33,6 +33,8 @@ install_insecure_registry() {
     echo DIRECTOR_REGISTRY_CACHING_TTL=0
     # shorten time to sync services from director since registry comes later
     echo CATALOG_BACKGROUND_TASK_REST_TIME=1
+    # ensure sidecars are started as CPU nodes
+    echo SIDECAR_FORCE_CPU_NODE=1
   } >>.env
 
   # prepare insecure registry access for docker engine
