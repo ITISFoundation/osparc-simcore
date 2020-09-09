@@ -74,13 +74,17 @@ uninstall_insecure_registry() {
 }
 
 setup_images() {
-  echo "--------------- getting simcore docker images..."
+  echo "--------------- preparing docker images..."
   make pull-version || ( (make pull-cache || true) && make build-x tag-version)
   make info-images
 
+}
+
+setup_and_run_stack() {
   # configure simcore for testing with a private registry
   install_insecure_registry
 
+  echo "--------------- starting swarm ..."
   # start simcore and set log-level
   export LOG_LEVEL=WARNING
   make up-version
@@ -135,29 +139,32 @@ setup_database() {
 install() {
   ## shortcut
   setup_images
+  setup_and_run_stack
   setup_environment
   setup_registry
   setup_database
 }
 
 test() {
+  sleep 5
   pushd tests/e2e
   make test
   popd
-
 }
 
-recover_artifacts() {
+dump_docker_logs() {
   # all screenshots are in tests/e2e/screenshots if any
 
   # get docker logs.
   # NOTE: dumping logs sometimes hangs. Introducing a timeout
-  mkdir simcore_logs
+  mkdir --parents simcore_logs
   (timeout 30 docker service logs --timestamps --tail=300 --details ${SWARM_STACK_NAME}_webserver >simcore_logs/webserver.log 2>&1) || true
   (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_director  >simcore_logs/director.log 2>&1) || true
   (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_storage   >simcore_logs/storage.log 2>&1) || true
   (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_sidecar   >simcore_logs/sidecar.log 2>&1) || true
   (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_catalog   >simcore_logs/catalog.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_migration >simcore_logs/migration.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_postgres >simcore_logs/postgres.log 2>&1) || true
 }
 
 clean_up() {
