@@ -4,8 +4,8 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 #
 #  USAGE:
 #     cd sercices/director_v2
-#     docker build -f Dockerfile -t director_v2:prod --target production ../../
-#     docker run director_v2:prod
+#     docker build -f Dockerfile -t director-v2 :prod --target production ../../
+#     docker run director-v2 :prod
 #
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 

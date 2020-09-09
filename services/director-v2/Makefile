@@ -1,5 +1,5 @@
 #
-# DEVELOPMENT recipes for director_v2
+# DEVELOPMENT recipes for director-v2
 #
 include ../../scripts/common.Makefile
 

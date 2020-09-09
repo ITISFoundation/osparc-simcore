@@ -2,9 +2,9 @@
 
 [![image-size]](https://microbadger.com/images/itisfoundation/director_v2. "More on itisfoundation/director_v2.:staging-latest image")
 
-[![image-badge]](https://microbadger.com/images/itisfoundation/director_v2 "More on director_v2 image in registry")
-[![image-version]](https://microbadger.com/images/itisfoundation/director_v2 "More on director_v2 image in registry")
-[![image-commit]](https://microbadger.com/images/itisfoundation/director_v2 "More on director_v2 image in registry")
+[![image-badge]](https://microbadger.com/images/itisfoundation/director_v2 "More on director-v2  image in registry")
+[![image-version]](https://microbadger.com/images/itisfoundation/director_v2 "More on director-v2  image in registry")
+[![image-commit]](https://microbadger.com/images/itisfoundation/director_v2 "More on director-v2  image in registry")
 
 Director service in simcore stack
 
@@ -32,6 +32,6 @@ Then
 make run-devel
 ```
 
-The latter will start the director_v2 service in development-mode together with a postgres db initialized with test data. Open the following sites and use the test credentials ``user=key, password=secret`` to manually test the API:
+The latter will start the director-v2  service in development-mode together with a postgres db initialized with test data. Open the following sites and use the test credentials ``user=key, password=secret`` to manually test the API:
 
 - http://127.0.0.1:8000/doc: swagger type of documentation
