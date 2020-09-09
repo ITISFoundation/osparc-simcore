@@ -2,10 +2,10 @@
 
 # Needed utility methods:
 # - [x] create user
-# - [ ] change role for user (eg: USER -> TESTER -> GUEST)
+# - [x] change role for user (eg: USER -> TESTER -> GUEST)
 # - [x] create project for user
-# - [ ] create group
-# - [ ] add existing users to a group
+# - [x] create group
+# - [x] add existing users to a group
 # - [ ] share projects with a specific user or a group of users
 # - [x] function to assert the presence of projects in the database
 # - [x] function to assert the presence of users in the database
@@ -14,7 +14,7 @@
 # - [x] [T1] while a GUEST user is connected GC will not remove none of its projects nor the user itself
 # - [x] [T2] GUEST users with one opened project closes browser tab regularly (GC cleans everything)
 # - [x] [T3] USER disconnects and GC will not remove its projects (templates and other types of projects)
-# - [ ] [T4] USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
+# - [x] [T4] USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
 #       USER "u1" creates a project and shares it with "g1";
 #       USER "u1" is manually marked as "GUEST";
 #       EXPECTED: one of the users in the "g1" will become the new owner of the project and "u1" will be deleted
@@ -60,6 +60,7 @@ from simcore_service_webserver.users import setup_users
 from simcore_service_webserver.resource_manager.registry import get_registry
 from simcore_service_webserver.db_models import users, projects
 from simcore_service_webserver.groups_api import list_user_groups
+from simcore_service_webserver.groups_api import create_user_group, add_user_in_group
 
 from utils import get_fake_project
 
@@ -226,14 +227,17 @@ async def login_guest_user(client):
     return await log_client_in(client=client, user_data={"role": UserRole.GUEST.name})
 
 
-async def new_project(client, user):
+async def new_project(client, user, access_rights=None):
     """returns a project for the given user"""
-    return await create_project(client.app, empty_project_data(), user["id"])
+    project_data = empty_project_data()
+    if access_rights is not None:
+        project_data["accessRights"] = access_rights
+    return await create_project(client.app, project_data, user["id"])
 
 
-async def get_template_project(client, logged_user):
+async def get_template_project(client, user, access_rights=None):
     """returns a tempalte shared with all"""
-    _, _, all_group = await list_user_groups(client.app, logged_user["id"])
+    _, _, all_group = await list_user_groups(client.app, user["id"])
 
     # the information comes from a file, randomize it
     project_data = get_fake_project()
@@ -242,8 +246,35 @@ async def get_template_project(client, logged_user):
     project_data["accessRights"] = {
         str(all_group["gid"]): {"read": True, "write": False, "delete": False}
     }
+    if access_rights is not None:
+        project_data["accessRights"].update(access_rights)
 
-    return await create_project(client.app, project_data, logged_user["id"])
+    return await create_project(client.app, project_data, user["id"])
+
+
+async def get_group(client, user):
+    """Creates a group for a given user"""
+    return await create_user_group(
+        app=client.app,
+        user_id=user["id"],
+        new_group={"label": uuid4(), "description": uuid4(), "thumbnail": None},
+    )
+
+
+async def invite_user_to_group(client, owner, invitee, group):
+    """Invite a user to a group on which the owner has writes over"""
+    await add_user_in_group(
+        client.app, owner["id"], group["gid"], new_user_id=invitee["id"],
+    )
+
+
+async def change_user_role(
+    db_engine: aiopg.sa.Engine, user: Dict, role: UserRole
+) -> None:
+    async with db_engine.acquire() as conn:
+        await conn.execute(
+            users.update().where(users.c.id == int(user["id"])).values(role=role.value)
+        )
 
 
 async def connect_to_socketio(client, user, socketio_client):
@@ -282,23 +313,41 @@ def assert_dicts_match_by_common_keys(first_dict, second_dict) -> True:
     return True
 
 
+async def query_user_from_db(db_engine: aiopg.sa.Engine, user: Dict):
+    """Retruns a user from the db"""
+    async with db_engine.acquire() as conn:
+        user_result = await conn.execute(
+            users.select().where(users.c.id == int(user["id"]))
+        )
+        return await user_result.first()
+
+
+async def query_project_from_db(db_engine: aiopg.sa.Engine, user_project: Dict):
+    async with db_engine.acquire() as conn:
+        project_result = await conn.execute(
+            projects.select().where(projects.c.uuid == user_project["uuid"])
+        )
+        return await project_result.first()
+
+
 async def assert_user_in_database(
     db_engine: aiopg.sa.Engine, logged_user: Dict
 ) -> True:
-    async with db_engine.acquire() as conn:
-        # query for a specific user by id?
-        user_result = await conn.execute(
-            users.select().where(users.c.id == int(logged_user["id"]))
-        )
-        user = await user_result.first()
+    user = await query_user_from_db(db_engine, logged_user)
+    user_as_dict = dict(user)
 
-        user_as_dict = dict(user)
+    # some values need to be transformed
+    user_as_dict["role"] = user_as_dict["role"].value
+    user_as_dict["status"] = user_as_dict["status"].value
 
-        # some values need to be transformed
-        user_as_dict["role"] = user_as_dict["role"].value
-        user_as_dict["status"] = user_as_dict["status"].value
+    assert assert_dicts_match_by_common_keys(user_as_dict, logged_user) is True
 
-        assert_dicts_match_by_common_keys(user_as_dict, logged_user)
+    return True
+
+
+async def assert_user_not_in_database(db_engine: aiopg.sa.Engine, user: Dict) -> True:
+    user = await query_user_from_db(db_engine, user)
+    assert user is None
 
     return True
 
@@ -306,14 +355,40 @@ async def assert_user_in_database(
 async def assert_project_in_database(
     db_engine: aiopg.sa.Engine, user_project: Dict
 ) -> True:
-    async with db_engine.acquire() as conn:
-        project_result = await conn.execute(
-            projects.select().where(projects.c.uuid == user_project["uuid"])
-        )
-        project = await project_result.first()
-        project_as_dict = dict(project)
+    project = await query_project_from_db(db_engine, user_project)
+    project_as_dict = dict(project)
 
-        assert_dicts_match_by_common_keys(project_as_dict, user_project)
+    assert assert_dicts_match_by_common_keys(project_as_dict, user_project) is True
+
+    return True
+
+
+async def assert_user_is_owner_of_project(
+    db_engine: aiopg.sa.Engine, owner_user: Dict, owner_project: Dict
+) -> True:
+    user = await query_user_from_db(db_engine, owner_user)
+    project = await query_project_from_db(db_engine, owner_project)
+
+    project_access_rights_gids = set(project.access_rights.keys())
+    assert str(user.primary_gid) in project_access_rights_gids
+
+    return True
+
+
+async def assert_one_owner_for_project(
+    db_engine: aiopg.sa.Engine, project: Dict, possible_owners: List[Dict]
+) -> True:
+    assert len(possible_owners) > 1
+    q_owners = [await query_user_from_db(db_engine, owner) for owner in possible_owners]
+    q_project = await query_project_from_db(db_engine, project)
+
+    project_access_rights_gids = set(q_project.access_rights.keys())
+    project_group_ownership_per_other_users = sorted(
+        [str(x.primary_gid) in project_access_rights_gids for x in q_owners]
+    )
+
+    expected_result = sorted([True] + [False] * (len(possible_owners) - 1))
+    assert expected_result == project_group_ownership_per_other_users
 
     return True
 
@@ -426,9 +501,47 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     await assert_projects_and_users_are_present()
 
 
-# - [ ] [T4] USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
-#       USER "u1" creates a project and shares it with "g1";
-#       USER "u1" is manually marked as "GUEST";
-#       EXPECTED: one of the users in the "g1" will become the new owner of the project and "u1" will be deleted
-async def test_t4(simcore_services):
-    pass
+async def test_t4_project_shared_with_group_transferred_to_user_in_groups_on_owner_removal(
+    simcore_services,
+    client,
+    socketio_client,
+    db_engine,
+    assert_users_count,
+    assert_projects_count,
+):
+    """
+    USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
+    USER "u1" creates a project and shares it with "g1";
+    USER "u1" is manually marked as "GUEST";
+    EXPECTED: one of the users in the "g1" will become the new owner of the project and "u1" will be deleted
+    """
+    u1 = await login_user(client)
+    u2 = await login_user(client)
+    u3 = await login_user(client)
+
+    # creating g1 and inviting u2 and u3
+    g1 = await get_group(client, u1)
+    await invite_user_to_group(client, owner=u1, invitee=u2, group=g1)
+    await invite_user_to_group(client, owner=u1, invitee=u3, group=g1)
+
+    # u1 creates project and shares it with g1
+    project = await new_project(
+        client,
+        u1,
+        access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
+    )
+
+    # mark u1 as guest
+    await change_user_role(db_engine, u1, UserRole.GUEST)
+
+    assert await assert_users_count(3) is True
+    assert await assert_projects_count(1) is True
+    assert await assert_user_is_owner_of_project(db_engine, u1, project) is True
+
+    # await for the GC to pass
+    await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
+
+    # expected outcome: u1 was deleted, one of the users in g1 is the new owner
+    assert await assert_user_not_in_database(db_engine, u1) is True
+    assert await assert_one_owner_for_project(db_engine, project, [u2, u3]) is True
+
