@@ -21,15 +21,15 @@ from .security_api import check_permission
 log = logging.getLogger(__file__)
 
 
-def get_celery(_app: web.Application):
+def get_celery(_app: web.Application) -> Celery:
     config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
     rabbit = RabbitConfig(**config)
-    celery = Celery(
+    celery_app = Celery(
         rabbit.name,
         broker=rabbit.broker_url,
         backend=rabbit.backend,
     )
-    return celery
+    return celery_app
 
 
 async def _process_request(request):
@@ -73,9 +73,11 @@ async def start_pipeline(request: web.Request) -> web.Response:
 
     user_id, project_id = await _process_request(request)
 
+    # FIXME: if start is already ongoing. Do not re-start!
     try:
         project = await get_project_for_user(request.app, project_id, user_id)
         await update_pipeline_db(request.app, project_id, project["workbench"])
+
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_id} not found") from exc
 

@@ -11,6 +11,7 @@ from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_utils import body_to_dict, extract_and_validate
 
 from . import __version__
+from .settings import APP_SETTINGS_KEY
 
 log = logging.getLogger(__name__)
 
@@ -53,14 +54,14 @@ async def check_action(request: web.Request):
 
 async def get_config(request: web.Request):
     """
-        This entrypoint aims to provide an extra configuration mechanism for
-        the front-end app.
+    This entrypoint aims to provide an extra configuration mechanism for
+    the front-end app.
 
-        Some of the server configuration can be forwarded to the front-end here
+    Some of the server configuration can be forwarded to the front-end here
 
-        Example use case: the front-end app is served to the client. Then the user wants to
-        register but the server has been setup to require an invitation. This option is setup
-        at runtime and the front-end can only get it upon request to /config
+    Example use case: the front-end app is served to the client. Then the user wants to
+    register but the server has been setup to require an invitation. This option is setup
+    at runtime and the front-end can only get it upon request to /config
     """
     await extract_and_validate(request)
 
@@ -71,5 +72,6 @@ async def get_config(request: web.Request):
     data = {
         "invitation_required": login_cfg.get("registration_invitation_required", False)
     }
+    data.update(request.app[APP_SETTINGS_KEY].public_dict())
 
     return data

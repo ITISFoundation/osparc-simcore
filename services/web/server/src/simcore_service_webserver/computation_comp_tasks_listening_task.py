@@ -28,9 +28,12 @@ async def listen(app: web.Application):
     db_engine: Engine = app[APP_DB_ENGINE_KEY]
     async with db_engine.acquire() as conn:
         await conn.execute(listen_query)
+
         while True:
             msg = await conn.connection.notifies.get()
-            log.debug("DB comp_tasks.outputs Update: <- %s", msg.payload)
+
+            # Changes on comp_tasks.outputs of non-frontend task
+            log.debug("DB comp_tasks.outputs updated: <- %s", msg.payload)
             node = json.loads(msg.payload)
             node_data = node["data"]
             task_output = node_data["outputs"]
@@ -53,7 +56,7 @@ async def listen(app: web.Application):
                 continue
             the_project_owner = the_project["prj_owner"]
 
-            # update the project
+            # Update the project
             try:
                 node_data = await projects_api.update_project_node_outputs(
                     app, the_project_owner, project_id, node_id, data=task_output
@@ -70,8 +73,9 @@ async def listen(app: web.Application):
                     project_id,
                 )
                 continue
-            # notify the client(s), the owner + any one with read writes
-            clients = [the_project_owner]
+
+            # Notify the client(s), the owner + any one with read writes
+            clients_ids = [the_project_owner]
             for gid, access_rights in the_project["access_rights"].items():
                 if not access_rights["read"]:
                     continue
@@ -79,13 +83,17 @@ async def listen(app: web.Application):
                 async for user in conn.execute(
                     select([user_to_groups.c.uid]).where(user_to_groups.c.gid == gid)
                 ):
-                    clients.append(user["uid"])
+                    clients_ids.append(user["uid"])
 
-            messages = {"nodeUpdated": {"Node": node_id, "Data": node_data}}
-
-            await logged_gather(
-                *[post_messages(app, client, messages) for client in clients], False
-            )
+            posts_tasks = [
+                post_messages(
+                    app,
+                    uid,
+                    messages={"nodeUpdated": {"Node": node_id, "Data": node_data}},
+                )
+                for uid in clients_ids
+            ]
+            await logged_gather(*posts_tasks, False)
 
 
 async def comp_tasks_listening_task(app: web.Application) -> None:

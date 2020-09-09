@@ -11,8 +11,8 @@ from uuid import uuid4
 
 import aio_pika
 import pytest
+import sqlalchemy as sa
 from mock import call
-from pytest_simcore.postgres_service import postgres_db
 
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
@@ -35,8 +35,6 @@ API_VERSION = "v0"
 core_services = ["postgres", "redis", "rabbit"]
 
 ops_services = []
-
-import sqlalchemy as sa
 
 
 @pytest.fixture

@@ -99,8 +99,12 @@ def is_gpu_node() -> bool:
                     config=spec_config, name=f"sidecar_{uuid.uuid4()}_test_gpu"
                 )
                 return True
-            except aiodocker.exceptions.DockerError as e:
-                logger.warning("is_gpu_node DockerError during check: %s", str(e))
+            except aiodocker.exceptions.DockerError as err:
+                logger.debug(
+                    "is_gpu_node DockerError while check-run %s: %s",
+                    spec_config,
+                    err
+                )
 
             return False
 
