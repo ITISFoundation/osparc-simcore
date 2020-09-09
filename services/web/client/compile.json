@@ -28,7 +28,8 @@
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
-        "osparc.theme.ThemeLight"
+        "osparc.theme.ThemeLight",
+        "osparc.theme.ThemeBlue"
       ],
       "bootPath": "source/boot"
     },
@@ -40,7 +41,8 @@
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
-        "osparc.theme.OSparcLight"
+        "osparc.theme.ThemeLight",
+        "osparc.theme.ThemeBlue"
       ],
       "bootPath": "source/boot"
     },
