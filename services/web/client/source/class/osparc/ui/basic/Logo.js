@@ -30,9 +30,23 @@ qx.Class.define("osparc.ui.basic.Logo", {
       alignX: "center"
     });
 
+    osparc.data.Resources.get("statics")
+      .then(statics => {
+        this.set({
+          source: "osparc/s4l_logo.png"
+        });
+      });
+
     const themeManager = qx.theme.manager.Meta.getInstance();
     themeManager.addListener("changeTheme", () => {
       this.setSource(osparc.utils.Utils.getLogoPath());
+
+      osparc.data.Resources.get("statics")
+        .then(statics => {
+          this.set({
+            source: "osparc/s4l_logo.png"
+          });
+        });
     }, this);
   }
 });
