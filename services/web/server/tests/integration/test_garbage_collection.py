@@ -21,7 +21,7 @@
 # - [x] [T5] USER "u1" creates a project and shares it with "u2" and "u3";
 #       USER "u1" is manually marked as "GUEST";
 #       EXPECTED: one of "u2" or "u3" will become the new owner of the project and "u1" will be deleted
-# - [ ] [T6] same as T4 => afterwards the new owner either "u2" or "u3" will be manually marked as "GUEST";
+# - [x] [T6] same as T4 => afterwards the new owner either "u2" or "u3" will be manually marked as "GUEST";
 #       EXPECTED: the GUEST user will be delted and the project will pass to tha last member of "g1"
 # - [ ] [T7] same as T6 => afterwards the last user will be marked as "GUEST";
 #       EXPECTED: the last user will be removed and the project will be removed
@@ -377,7 +377,6 @@ async def assert_user_is_owner_of_project(
 async def assert_one_owner_for_project(
     db_engine: aiopg.sa.Engine, project: Dict, possible_owners: List[Dict]
 ) -> True:
-    assert len(possible_owners) > 1
     q_owners = [await query_user_from_db(db_engine, owner) for owner in possible_owners]
     q_project = await query_project_from_db(db_engine, project)
 
@@ -494,7 +493,7 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     await assert_projects_and_users_are_present()
 
 
-async def test_t4_project_shared_with_group_transferred_to_user_in_groups_on_owner_removal(
+async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owner_removal(
     simcore_services,
     client,
     socketio_client,
@@ -580,3 +579,75 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
     # expected outcome: u1 was deleted, one of the users in g1 is the new owner
     assert await assert_user_not_in_database(db_engine, u1) is True
     assert await assert_one_owner_for_project(db_engine, project, [u2, u3]) is True
+
+
+async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on_owner_removal(
+    simcore_services,
+    client,
+    socketio_client,
+    db_engine,
+    assert_users_count,
+    assert_projects_count,
+):
+    """
+    USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
+    USER "u1" creates a project and shares it with "g1";
+    USER "u1" is manually marked as "GUEST";
+    EXPECTED: one of the users in the "g1" will become the new owner of the project and "u1" will be deleted
+    the new owner either "u2" or "u3" will be manually marked as "GUEST";
+    EXPECTED: the GUEST user will be delted and the project will pass to tha last member of "g1"
+    """
+    u1 = await login_user(client)
+    u2 = await login_user(client)
+    u3 = await login_user(client)
+
+    # creating g1 and inviting u2 and u3
+    g1 = await get_group(client, u1)
+    await invite_user_to_group(client, owner=u1, invitee=u2, group=g1)
+    await invite_user_to_group(client, owner=u1, invitee=u3, group=g1)
+
+    # u1 creates project and shares it with g1
+    project = await new_project(
+        client,
+        u1,
+        access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
+    )
+
+    # mark u1 as guest
+    await change_user_role(db_engine, u1, UserRole.GUEST)
+
+    assert await assert_users_count(3) is True
+    assert await assert_projects_count(1) is True
+    assert await assert_user_is_owner_of_project(db_engine, u1, project) is True
+
+    await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
+
+    # expected outcome: u1 was deleted, one of the users in g1 is the new owner
+    assert await assert_user_not_in_database(db_engine, u1) is True
+    assert await assert_one_owner_for_project(db_engine, project, [u2, u3]) is True
+
+    # find new owner and mark hims as GUEST
+    q_u2 = await query_user_from_db(db_engine, u2)
+    q_u3 = await query_user_from_db(db_engine, u3)
+    q_project = await query_project_from_db(db_engine, project)
+
+    new_owner = None
+    remaining_others = []
+    for user in [q_u2, q_u3]:
+        if user.id == q_project.prj_owner:
+            new_owner = user
+        else:
+            remaining_others.append(user)
+
+    assert new_owner is not None  # expected to a new owner between the 2 other users
+    # mark new owner as guest
+    await change_user_role(db_engine, new_owner, UserRole.GUEST)
+
+    await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
+
+    # expected outcome: the new_owner will be deleted and one of the remainint_others wil be the new owner
+    assert await assert_user_not_in_database(db_engine, new_owner) is True
+    assert (
+        await assert_one_owner_for_project(db_engine, project, remaining_others) is True
+    )
+
