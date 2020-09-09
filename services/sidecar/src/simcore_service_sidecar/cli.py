@@ -32,7 +32,7 @@ def main(
 
 async def run_sidecar(
     job_id: str, user_id: str, project_id: str, node_id: Optional[str]
-) -> Tuple[Optional[List[str]], Optional[str]]:
+) -> Optional[List[str]]:
 
     log.info(
         "STARTING task %s processing for user %s, project %s, node %s",
@@ -53,4 +53,4 @@ async def run_sidecar(
                 project_id,
                 node_id,
             )
-            return next_task_nodes, None
+            return next_task_nodes

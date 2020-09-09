@@ -85,14 +85,9 @@ def shared_task_dispatch(
         project_id,
         node_id,
     )
-    next_task_nodes, error = wrap_async_call(
+    next_task_nodes = wrap_async_call(
         run_sidecar(celery_request.request.id, user_id, project_id, node_id)
     )
-
-    if error:
-        raise SidecarException(
-            msg=f"Error dispatching tasks fro node {node_id}: {error}"
-        )
 
     # this needs to be done here since the tasks are created recursively and the state might not be upgraded yet
     celery_request.update_state(state=states.SUCCESS)
