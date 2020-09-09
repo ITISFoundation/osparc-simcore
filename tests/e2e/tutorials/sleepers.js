@@ -18,6 +18,7 @@ async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, user, pass, newUser, templateName, enableDemoMode);
 
   try {
+    tutorial.initScreenshoter();
     await tutorial.start();
     await tutorial.openTemplate(1000);
 

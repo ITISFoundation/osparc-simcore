@@ -1,10 +1,9 @@
+const pathLib = require('path');
 
+const SCREENSHOTS_DIR = "../screenshots/";
 
 function parseCommandLineArguments(args) {
-  //
   // node $tutorial.js [url] [user] [password] [--demo]
-  //
-  //
 
   if (args.length < 1) {
     console.log('More arguments expected:  $tutorial.js [url] [user] [password] [--demo]');
@@ -191,19 +190,32 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function __addZerosAtTheBeggining(input) {
+function __addZeros(input) {
   return String(input).padStart(2, "0");
+}
+
+function createScreenshotsDir() {
+  const fs = require('fs');
+  const screenshotsDir = pathLib.join(__dirname, SCREENSHOTS_DIR);
+  if (!fs.existsSync(screenshotsDir)) {
+    fs.mkdirSync(screenshotsDir);
+  }
+  console.log("Screenshots directory:", screenshotsDir);
 }
 
 async function takeScreenshot(page, captureName) {
   const d = new Date();
-  const date = __addZerosAtTheBeggining(d.getMonth()+1) +"-"+ __addZerosAtTheBeggining(d.getDate());
-  const time = __addZerosAtTheBeggining(d.getHours()) +":"+ __addZerosAtTheBeggining(d.getMinutes()) +":"+ __addZerosAtTheBeggining(d.getSeconds());
+  const date = __addZeros(d.getMonth()+1) +"-"+ __addZeros(d.getDate());
+  const time = __addZeros(d.getHours()) +"-"+ __addZeros(d.getMinutes()) +"-"+ __addZeros(d.getSeconds());
   const timeStamp = date +"_"+ time;
   captureName = captureName.replace("undefined", "");
+  let filename = timeStamp+"_"+captureName+".jpg";
+  filename = filename.replace(":", "-");
+  const path = pathLib.join(__dirname, SCREENSHOTS_DIR, filename);
+
   await page.screenshot({
     fullPage: true,
-    path: 'screenshots/'+timeStamp+'_'+captureName+'.jpg',
+    path: path,
     type: 'jpeg',
   })
 }
@@ -234,6 +246,7 @@ module.exports = {
   waitAndClick,
   clearInput,
   sleep,
+  createScreenshotsDir,
   takeScreenshot,
   extractWorkbenchData,
   parseCommandLineArguments
