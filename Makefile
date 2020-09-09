@@ -66,7 +66,7 @@ export DOCKER_REGISTRY  ?= itisfoundation
 ifeq ($(IS_WSL),)
 ETC_HOSTNAME = .fake_hostname_file
 export ETC_HOSTNAME
-host = $(shell echo $$(hostname) > $(ETC_HOSTNAME))
+host := $(shell echo $$(hostname) > $(ETC_HOSTNAME))
 endif
 
 
