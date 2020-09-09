@@ -80,6 +80,10 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/webserver:cache
         - ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
       target: ${BUILD_TARGET:?build_target_required}
+      args:
+        - BUILD_DATE=${BUILD_DATE}
+        - VCS_URL=${VCS_URL}
+        - VCS_REF=${VCS_REF}
       labels:
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"

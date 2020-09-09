@@ -1,5 +1,7 @@
 const utils = require("./utils")
 const responses = require('./responsesQueue');
+require('log-timestamp');
+
 
 async function register(page, user, pass) {
   await utils.waitAndClick(page, '[osparc-test-id="loginCreateAccountBtn"]');

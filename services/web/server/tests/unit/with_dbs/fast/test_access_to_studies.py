@@ -28,6 +28,7 @@ from simcore_service_webserver.projects.projects_api import delete_project_from_
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
+from simcore_service_webserver.settings import setup_settings
 from simcore_service_webserver.statics import setup_statics
 from simcore_service_webserver.studies_access import setup_studies_access
 from simcore_service_webserver.users import setup_users
@@ -77,6 +78,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_db, qx_client_outdir, monkeyp
 
     app = create_safe_application(cfg)
 
+    setup_settings(app)
     setup_statics(app)
     setup_db(app)
     setup_session(app)
@@ -98,7 +100,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_db, qx_client_outdir, monkeyp
 
 @pytest.fixture
 async def logged_user(client):  # , role: UserRole):
-    """ adds a user in db and logs in with client
+    """adds a user in db and logs in with client
 
     NOTE: role fixture is defined as a parametrization below
     """

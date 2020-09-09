@@ -16,6 +16,7 @@ from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.resources import resources
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
+from simcore_service_webserver.settings import setup_settings
 
 
 @pytest.fixture
@@ -43,7 +44,9 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
         "main": server_kwargs,
         "rest": {"enabled": True, "version": api_version_prefix},
     }
+
     # activates only security+restAPI sub-modules
+    setup_settings(app)
     setup_security(app)
     setup_rest(app)
 

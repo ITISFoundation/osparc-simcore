@@ -318,7 +318,7 @@ push-version: tag-version
 
 ## ENVIRONMENT -------------------------------
 
-.PHONY: devenv devenv-all
+.PHONY: devenv devenv-all node-env
 
 .venv:
 	python3 -m venv $@
@@ -336,6 +336,15 @@ devenv-all: devenv ## sets up extra development tools (everything else besides p
 	@$(MAKE_C) services/web/client upgrade
 	# Building tools
 	@$(MAKE_C) scripts/json-schema-to-openapi-schema
+
+
+node_modules: package.json
+	# checking npm installed
+	@npm --version
+	# installing package.json
+	npm install --package-lock
+
+nodenv: node_modules ## builds node_modules local environ (TODO)
 
 
 .env: .env-devel ## creates .env file from defaults in .env-devel

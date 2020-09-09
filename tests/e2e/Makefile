@@ -41,17 +41,17 @@ registry-down: ## bring the docker registry down
 wait-for-services: ## wait for simcore services to be up
 	@python utils/wait_for_services.py
 
+
 .PHONY: transfer-images-to-registry
 transfer-images-to-registry: ## transfer images to registry
+	# pushing sleeper image
 	@docker pull itisfoundation/sleeper:1.0.0
 	@docker tag itisfoundation/sleeper:1.0.0 registry:5000/simcore/services/comp/itis/sleeper:1.0.0
 	@docker push registry:5000/simcore/services/comp/itis/sleeper:1.0.0
-
-	# @docker pull itisfoundation/jupyter-base-notebook:2.13.0
-	# @docker tag itisfoundation/jupyter-base-notebook:2.13.0 registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
-	# @docker push registry:5000/simcore/services/dynamic/jupyter-base-notebook:2.13.0
 	# completed transfer of images
 	curl -s registry:5000/v2/_catalog | jq '.repositories'
+	curl -s http://registry:5000/v2/simcore/services/comp/itis/sleeper/tags/list?n=50 | jq '.'
+
 
 PUBLISHED_PORT = $(shell docker inspect $(shell docker service ls --format "{{ .Name }}" | grep postgres) --format "{{(index .Endpoint.Ports 0).PublishedPort}}")
 .PHONY: inject-templates-in-db
@@ -64,8 +64,9 @@ inject-templates-in-db: ## inject project templates
 		--dbname simcoredb \
 		--command "\copy projects from 'tutorials/sleepers_project_template_sql.csv' csv header;";
 
+
 .PHONY: test
-test: ## test the platform
+test: ## test the platformå
 	# tests
 	npm test
 	# tests whether tutorial run

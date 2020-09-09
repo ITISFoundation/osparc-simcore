@@ -9,6 +9,7 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 #  REQUIRED: client_qx:build image ready
 
+
 LABEL maintainer=pcrespov
 
 RUN set -eux; \
@@ -116,10 +117,17 @@ RUN pip --no-cache-dir --quiet install -r requirements/prod.txt
 #
 FROM base as production
 
+ARG BUILD_DATE
+ARG VCS_URL
+ARG VCS_REF
+
 ENV SC_BUILD_TARGET=production \
     SC_BOOT_MODE=production \
     SC_HEALTHCHECK_INTERVAL=30 \
-    SC_HEALTHCHECK_RETRY=3
+    SC_HEALTHCHECK_RETRY=3 \
+    SC_BUILD_DATE=${BUILD_DATE} \
+    SC_VCS_URL=${VCS_URL} \
+    SC_VCS_REF=${VCS_REF}
 
 ENV PYTHONOPTIMIZE=TRUE
 
