@@ -204,6 +204,12 @@ services:
     networks:
       - default
       - computational_services_subnet
+    healthcheck:
+      test: rabbitmqctl node_health_check
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 30s
 
   migration:
     image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}
