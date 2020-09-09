@@ -115,7 +115,7 @@ COPY --chown=scu:scu services/sidecar/docker services/sidecar/docker
 # we use the celery API
 HEALTHCHECK --interval=60s \
   --timeout=60s \
-  --start-period=15s \
+  --start-period=30s \
   --retries=3 \
   CMD celery inspect ping -b amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT} -d celery@${HOSTNAME}
 
