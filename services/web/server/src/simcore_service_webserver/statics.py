@@ -62,31 +62,7 @@ def write_statics_file(app: web.Application, directory: Path) -> None:
     os.makedirs(directory, exist_ok=True)
 
     # create statics field
-    statics = {}
-
-    # TODO: build with pydantic and validate data before serializing
-    statics["stackName"] = os.environ.get("SWARM_STACK_NAME")
-    statics["buildDate"] = os.environ.get("BUILD_DATE")
-
-    # Urls to manuals
-    statics["manualMainURL"] = os.environ.get(
-        "WEBSERVER_MANUAL_MAIN_URL", "http://docs.osparc.io/"
-    )
-    statics["manualExtraURL"] = os.environ.get("WEBSERVER_MANUAL_EXTRA_URL")
-
-    # Fogbugz tickets
-    # SEE https://support.fogbugz.com/hc/en-us/articles/360011241594-Generating-a-Case-Template-with-bookmarklets
-    # https://<your_fogbugz_URL>.fogbugz.com/f/cases/new?command=new&pg=pgEditBug&ixProject=<project-id>&ixArea=<area_id>&ixCategory=<category_id>&ixPersonAssignedTo=<assigned_user_id>&sTitle=<title_of_case>&sEvent=<body_of text>
-    statics["fogbugzOriginURL"] = os.environ.get("WEBSERVER_FOGBUGZ_URL", "https://z43.fogbugz.com")
-    statics["fogbugzProjectId"] = os.environ.get("WEBSERVER_FOGBUGZ_PROJECT_ID")
-
-    # Extra url to form (e.g. google forms for fogbugz public submission form)
-    statics["feedbackFormURL"] = os.environ.get("WEBSERVER_FEEDBACK_FORM_URL")
-
-
-    statics["buildDate"] = app[APP_SETTINGS_KEY].build_date
-    statics.update(app[APP_SETTINGS_KEY].public_dict())
-
+    statics = app[APP_SETTINGS_KEY].to_client_statics()
     with open(directory / "statics.json", "wt") as fh:
         json.dump(statics, fh)
 
