@@ -18,7 +18,6 @@ from .boot_mode import BootMode, get_boot_mode, set_boot_mode
 from .celery_log_setup import get_task_logger
 from .cli import run_sidecar
 from .core import task_required_resources
-from .exceptions import SidecarException
 from .utils import assemble_celery_app, is_gpu_node, start_as_mpi_node, wrap_async_call
 
 log = get_task_logger(__name__)
