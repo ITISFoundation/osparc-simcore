@@ -155,3 +155,5 @@ prof/
 
 # Copies
 services/**/.codeclimate.yml
+# WSL
+.fake_hostname_file

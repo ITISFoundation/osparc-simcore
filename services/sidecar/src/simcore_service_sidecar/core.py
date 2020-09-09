@@ -71,14 +71,11 @@ async def _try_get_task_from_db(
     # Use SELECT FOR UPDATE TO lock the row
     result = await db_connection.execute(
         query=comp_tasks.select(for_update=True).where(
-            and_(
-                comp_tasks.c.node_id == node_id,
-                comp_tasks.c.project_id == project_id,
-                comp_tasks.c.job_id == None,
-                comp_tasks.c.state == UNKNOWN,
-            )
+                (comp_tasks.c.node_id == node_id) &
+                (comp_tasks.c.project_id == project_id) &
+                ((comp_tasks.c.job_id == None) &
+                (comp_tasks.c.state == UNKNOWN)) | (comp_tasks.c.state == FAILED)),
         )
-    )
     task: RowProxy = await result.fetchone()
 
     if not task:
@@ -133,6 +130,21 @@ async def _get_pipeline_from_db(
     log.debug("found pipeline %s", pipeline)
     return pipeline
 
+async def _set_task_status(db_engine: Engine, project_id: str, node_id: str, run_result):
+    async with db_engine.acquire() as connection:
+        await connection.execute(
+            # FIXME: E1120:No value for argument 'dml' in method call
+            # pylint: disable=E1120
+            comp_tasks.update()
+            .where(
+                and_(
+                    comp_tasks.c.node_id == node_id,
+                    comp_tasks.c.project_id == project_id,
+                )
+            )
+            .values(state=run_result, end=datetime.utcnow())
+        )
+
 
 async def inspect(
     # pylint: disable=too-many-arguments
@@ -173,7 +185,7 @@ async def inspect(
 
     # now proceed actually running the task (we do that after the db session has been closed)
     # try to run the task, return empyt list of next nodes if anything goes wrong
-    run_result = SUCCESS
+    run_result = FAILED
     next_task_nodes = []
     try:
         executor = Executor(
@@ -184,27 +196,13 @@ async def inspect(
         )
         await executor.run()
         next_task_nodes = list(graph.successors(node_id))
+        run_result = SUCCESS
     except asyncio.CancelledError:
-        run_result = FAILED
         log.warning("Task has been cancelled")
         raise
-    except exceptions.SidecarException:
-        run_result = FAILED
-        log.exception("Error during execution")
 
     finally:
-        async with db_engine.acquire() as connection:
-            await connection.execute(
-                # FIXME: E1120:No value for argument 'dml' in method call
-                # pylint: disable=E1120
-                comp_tasks.update()
-                .where(
-                    and_(
-                        comp_tasks.c.node_id == node_id,
-                        comp_tasks.c.project_id == project_id,
-                    )
-                )
-                .values(state=run_result, end=datetime.utcnow())
-            )
+        await _set_task_status(db_engine, project_id, node_id, run_result)
+
 
     return next_task_nodes

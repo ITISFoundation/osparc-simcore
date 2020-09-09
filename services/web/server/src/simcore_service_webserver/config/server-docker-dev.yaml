@@ -44,7 +44,6 @@ rabbit:
   user: ${RABBIT_USER}
   password: ${RABBIT_PASSWORD}
   channels:
-    progress: "comp.backend.channels.progress"
     log: "comp.backend.channels.log"
     instrumentation: "comp.backend.channels.instrumentation"
 activity:

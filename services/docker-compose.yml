@@ -149,7 +149,7 @@ services:
       - output:/home/scu/output
       - log:/home/scu/log
       - /var/run/docker.sock:/var/run/docker.sock
-      - /etc/hostname:/home/scu/hostname:ro
+      - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment:
       - RABBIT_HOST=${RABBIT_HOST}
       - RABBIT_PORT=${RABBIT_PORT}
@@ -172,6 +172,7 @@ services:
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - SIDECAR_LOGLEVEL=${LOG_LEVEL:-WARNING}
+      - START_AS_MODE_CPU=${SIDECAR_FORCE_CPU_NODE:-0}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
     depends_on:
