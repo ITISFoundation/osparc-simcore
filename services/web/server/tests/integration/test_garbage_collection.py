@@ -6,7 +6,7 @@
 # - [x] create project for user
 # - [x] create group
 # - [x] add existing users to a group
-# - [ ] share projects with a specific user or a group of users
+# - [x] share projects with a specific user or a group of users
 # - [x] function to assert the presence of projects in the database
 # - [x] function to assert the presence of users in the database
 
@@ -18,7 +18,7 @@
 #       USER "u1" creates a project and shares it with "g1";
 #       USER "u1" is manually marked as "GUEST";
 #       EXPECTED: one of the users in the "g1" will become the new owner of the project and "u1" will be deleted
-# - [ ] [T5] USER "u1" creates a project and shares it with "u2" and "u3";
+# - [x] [T5] USER "u1" creates a project and shares it with "u2" and "u3";
 #       USER "u1" is manually marked as "GUEST";
 #       EXPECTED: one of "u2" or "u3" will become the new owner of the project and "u1" will be deleted
 # - [ ] [T6] same as T4 => afterwards the new owner either "u2" or "u3" will be manually marked as "GUEST";
@@ -369,8 +369,7 @@ async def assert_user_is_owner_of_project(
     user = await query_user_from_db(db_engine, owner_user)
     project = await query_project_from_db(db_engine, owner_project)
 
-    project_access_rights_gids = set(project.access_rights.keys())
-    assert str(user.primary_gid) in project_access_rights_gids
+    assert user.id == project.prj_owner
 
     return True
 
@@ -382,13 +381,7 @@ async def assert_one_owner_for_project(
     q_owners = [await query_user_from_db(db_engine, owner) for owner in possible_owners]
     q_project = await query_project_from_db(db_engine, project)
 
-    project_access_rights_gids = set(q_project.access_rights.keys())
-    project_group_ownership_per_other_users = sorted(
-        [str(x.primary_gid) in project_access_rights_gids for x in q_owners]
-    )
-
-    expected_result = sorted([True] + [False] * (len(possible_owners) - 1))
-    assert expected_result == project_group_ownership_per_other_users
+    assert q_project.prj_owner in set([x.id for x in q_owners])
 
     return True
 
@@ -538,10 +531,52 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_groups_on_own
     assert await assert_projects_count(1) is True
     assert await assert_user_is_owner_of_project(db_engine, u1, project) is True
 
-    # await for the GC to pass
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
     # expected outcome: u1 was deleted, one of the users in g1 is the new owner
     assert await assert_user_not_in_database(db_engine, u1) is True
     assert await assert_one_owner_for_project(db_engine, project, [u2, u3]) is True
 
+
+async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
+    simcore_services,
+    client,
+    socketio_client,
+    db_engine,
+    assert_users_count,
+    assert_projects_count,
+):
+    """
+    [T5] USER "u1" creates a project and shares it with "u2" and "u3";
+    USER "u1" is manually marked as "GUEST";
+    EXPECTED: one of "u2" or "u3" will become the new owner of the project and "u1" will be deleted
+    """
+    u1 = await login_user(client)
+    u2 = await login_user(client)
+    u3 = await login_user(client)
+
+    q_u2 = await query_user_from_db(db_engine, u2)
+    q_u3 = await query_user_from_db(db_engine, u3)
+
+    # u1 creates project and shares it with g1
+    project = await new_project(
+        client,
+        u1,
+        access_rights={
+            str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
+            str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
+        },
+    )
+
+    # mark u1 as guest
+    await change_user_role(db_engine, u1, UserRole.GUEST)
+
+    assert await assert_users_count(3) is True
+    assert await assert_projects_count(1) is True
+    assert await assert_user_is_owner_of_project(db_engine, u1, project) is True
+
+    await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
+
+    # expected outcome: u1 was deleted, one of the users in g1 is the new owner
+    assert await assert_user_not_in_database(db_engine, u1) is True
+    assert await assert_one_owner_for_project(db_engine, project, [u2, u3]) is True
