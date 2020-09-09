@@ -62,11 +62,7 @@ def write_statics_file(app: web.Application, directory: Path) -> None:
     os.makedirs(directory, exist_ok=True)
 
     # create statics field
-    statics = {}
-    statics["stackName"] = os.environ.get("SWARM_STACK_NAME")
-    statics["buildDate"] = app[APP_SETTINGS_KEY].build_date
-    statics.update(app[APP_SETTINGS_KEY].public_dict())
-
+    statics = app[APP_SETTINGS_KEY].to_client_statics()
     with open(directory / "statics.json", "wt") as fh:
         json.dump(statics, fh)
 
