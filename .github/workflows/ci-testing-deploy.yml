@@ -1014,7 +1014,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        node: [10]
+        node: [14]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
