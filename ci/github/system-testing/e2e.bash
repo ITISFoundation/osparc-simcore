@@ -161,6 +161,10 @@ recover_artifacts() {
 clean_up() {
   echo "--------------- listing services running..."
   docker service ls
+  echo "--------------- listing service details..."
+  docker service ps --no-trunc $(docker service ls --quiet)
+  echo "--------------- listing container details..."
+  docker container ps -a
   echo "--------------- listing images available..."
   docker images
   echo "--------------- switching off..."
