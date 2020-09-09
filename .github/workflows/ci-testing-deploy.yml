@@ -277,7 +277,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        node: [10]
+        node: [14]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
