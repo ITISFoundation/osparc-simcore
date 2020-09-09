@@ -14,11 +14,13 @@ FIXME: Compare shows single commit. SEE https://github.com/ITISFoundation/osparc
 - Started this *human-readable* CHANGELOG
 - ``migration`` service that discovers postgres service and upgrades main database [#1714](https://github.com/ITISFoundation/osparc-simcore/pull/1714)
 - Every group can register official classifiers for studies and services. Diplayed as a tree in UI [#1670](https://github.com/ITISFoundation/osparc-simcore/pull/1670), [#1719](https://github.com/ITISFoundation/osparc-simcore/pull/1719) , [#1722](https://github.com/ITISFoundation/osparc-simcore/pull/1722)
+- GC tests are run in isolation with a template database [#1724](https://github.com/ITISFoundation/osparc-simcore/pull/1724)
 
 ### Changed
 
 - Speedup testing by splitting webserver [#1711](https://github.com/ITISFoundation/osparc-simcore/pull/1711)
 - Refactored garbage collector and added tests [#1724](https://github.com/ITISFoundation/osparc-simcore/pull/1724)
+- Logs are now displayed during testing [#1724](https://github.com/ITISFoundation/osparc-simcore/pull/1724)
 
 <!-- ### Deprecated -->
 <!-- ### Removed    -->
