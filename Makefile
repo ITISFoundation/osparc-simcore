@@ -63,7 +63,7 @@ export DOCKER_IMAGE_TAG ?= latest
 export DOCKER_REGISTRY  ?= itisfoundation
 
 # NOTE: this is only for WSL1 as /etc/hostname is not accessible there
-ifeq ($(IS_WSL),)
+ifeq ($(IS_WSL),WSL)
 ETC_HOSTNAME = .fake_hostname_file
 export ETC_HOSTNAME
 host := $(shell echo $$(hostname) > $(ETC_HOSTNAME))
