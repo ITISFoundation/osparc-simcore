@@ -71,11 +71,14 @@ async def _try_get_task_from_db(
     # Use SELECT FOR UPDATE TO lock the row
     result = await db_connection.execute(
         query=comp_tasks.select(for_update=True).where(
-                (comp_tasks.c.node_id == node_id) &
-                (comp_tasks.c.project_id == project_id) &
-                ((comp_tasks.c.job_id == None) &
-                (comp_tasks.c.state == UNKNOWN)) | (comp_tasks.c.state == FAILED)),
-        )
+            (comp_tasks.c.node_id == node_id)
+            & (comp_tasks.c.project_id == project_id)
+            & (
+                ((comp_tasks.c.job_id == None) & (comp_tasks.c.state == UNKNOWN))
+                | (comp_tasks.c.state == FAILED)
+            )
+        ),
+    )
     task: RowProxy = await result.fetchone()
 
     if not task:
