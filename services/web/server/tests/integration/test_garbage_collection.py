@@ -103,9 +103,14 @@ def execute_queries(
 
 
 @pytest.fixture(autouse=True)
-def __drop_and_recreate_postgres__(postgres_dsn, drop_db_engine: sa.engine.Engine):
+def __drop_and_recreate_postgres__(
+    postgres_dsn: Dict, drop_db_engine: sa.engine.Engine, postgres_db
+) -> None:
     """It is possible to drop the application database by ussing another one like
-    the posgtres database. The db will be recrated from the previously created template"""
+    the posgtres database. The db will be recrated from the previously created template
+    
+    The postgres_db fixture is required for the template database to be created.
+    """
 
     queries = [
         # terminate existing connections to the database
@@ -339,6 +344,7 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
 
 
 async def test_t2_cleanup_resources_after_browser_is_closed(
+    simcore_services,
     client,
     socketio_client,
     db_engine,
@@ -376,7 +382,12 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
 
 
 async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
-    client, socketio_client, db_engine, assert_users_count, assert_projects_count,
+    simcore_services,
+    client,
+    socketio_client,
+    db_engine,
+    assert_users_count,
+    assert_projects_count,
 ):
     """ after a USER disconnects the GC will remove none of its projects or templates nor the user itself """
     number_of_projects = 5
@@ -413,3 +424,11 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
     await assert_projects_and_users_are_present()
+
+
+# - [ ] [T4] USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
+#       USER "u1" creates a project and shares it with "g1";
+#       USER "u1" is manually marked as "GUEST";
+#       EXPECTED: one of the users in the "g1" will become the new owner of the project and "u1" will be deleted
+async def test_t4(simcore_services):
+    pass
