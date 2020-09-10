@@ -1,35 +1,5 @@
 # pylint:disable=redefined-outer-name,unused-argument,too-many-arguments
 
-# Needed utility methods:
-# - [x] create user
-# - [x] change role for user (eg: USER -> TESTER -> GUEST)
-# - [x] create project for user
-# - [x] create group
-# - [x] add existing users to a group
-# - [x] share projects with a specific user or a group of users
-# - [x] function to assert the presence of projects in the database
-# - [x] function to assert the presence of users in the database
-
-# Tests to implement:
-# - [x] [T1] while a GUEST user is connected GC will not remove none of its projects nor the user itself
-# - [x] [T2] GUEST users with one opened project closes browser tab regularly (GC cleans everything)
-# - [x] [T3] USER disconnects and GC will not remove its projects (templates and other types of projects)
-# - [x] [T4] USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
-#       USER "u1" creates a project and shares it with "g1";
-#       USER "u1" is manually marked as "GUEST";
-#       EXPECTED: one of the users in the "g1" will become the new owner of the project and "u1" will be deleted
-# - [x] [T5] USER "u1" creates a project and shares it with "u2" and "u3";
-#       USER "u1" is manually marked as "GUEST";
-#       EXPECTED: one of "u2" or "u3" will become the new owner of the project and "u1" will be deleted
-# - [x] [T6] same as T4 => afterwards the new owner either "u2" or "u3" will be manually marked as "GUEST";
-#       EXPECTED: the GUEST user will be delted and the project will pass to tha last member of "g1"
-# - [x] [T7] same as T6 => afterwards the last user will be marked as "GUEST";
-#       EXPECTED: the last user will be removed and the project will be removed
-# - [x] [T8] same as T5 => afterwards afterwards the new owner either "u2" or "u3" will be manually marked as "GUEST";
-#       EXPECTED: the GUEST user will be delted and the project will pass to tha last member of "g1"
-# - [x] [T9] same as T8 => afterwards the last user will be marked as "GUEST";
-#       EXPECTED: the last user will be removed and the project will be removed
-
 
 from copy import deepcopy
 from typing import Coroutine, Dict, List
