@@ -11,5 +11,9 @@ DOCKER_COMPOSE_SHA256SUM="13e50875393decdb047993c3c0192b0a3825613e6dfc0fa271efed
 curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 
-# https://superuser.com/a/1465221
-echo "$DOCKER_COMPOSE_SHA256SUM  /usr/local/bin/docker-compose" | sha256sum -c
+# checks it runs
+/usr/local/bin/docker-compose --version
+
+# To create new DOCKER_COMPOSE_SHA256SUM = sha256sum /usr/local/bin/docker-compose
+# SEE https://superuser.com/a/1465221
+echo "$DOCKER_COMPOSE_SHA256SUM  /usr/local/bin/docker-compose" | sha256sum --check
