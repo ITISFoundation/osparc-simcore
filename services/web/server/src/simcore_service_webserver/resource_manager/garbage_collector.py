@@ -266,7 +266,7 @@ async def remove_orphaned_services(
 async def remove_guest_user_with_all_its_resources(
     app: web.Application, user_id: int
 ) -> None:
-    """Removes a GUUEST user with all its associated projects and S3/MinIO files"""
+    """Removes a GUEST user with all its associated projects and S3/MinIO files"""
     logger.debug("Will try to remove resources for user '%s' if GUEST", user_id)
     if not await is_user_guest(app, user_id):
         logger.debug("User is not GUEST, skipping cleanup")
