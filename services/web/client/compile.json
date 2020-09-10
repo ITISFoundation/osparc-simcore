@@ -52,8 +52,7 @@
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
-        "osparc.theme.ThemeLight",
-        "osparc.theme.ThemeBlue"
+        "osparc.theme.ThemeLight"
       ],
       "bootPath": "source/boot"
     },
