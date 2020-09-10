@@ -64,11 +64,11 @@ qx.Class.define("osparc.desktop.MainPage", {
       const navBar = new osparc.desktop.NavigationBar();
 
       navBar.addListener("dashboardPressed", () => {
-        const dashboardBtn = navBar.getDashboardButton();
         if (!osparc.data.Permissions.getInstance().canDo("studies.user.create", true)) {
           return;
         }
         if (this.__studyEditor) {
+          const dashboardBtn = navBar.getDashboardButton();
           dashboardBtn.setFetching(true);
           this.__studyEditor.updateStudyDocument(false)
             .then(() => {
