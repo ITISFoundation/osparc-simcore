@@ -265,6 +265,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (studyItem) {
             studyItem.setState(state);
           }
+          osparc.store.Store.getInstance().setStudyWState(studyId, state);
         }
       }, this);
 
