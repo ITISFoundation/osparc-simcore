@@ -383,6 +383,8 @@ async def get_new_project_owner_gid(
     for other_gid in other_users_access_rights:
         group = await get_group_from_gid(app=app, gid=int(other_gid))
         # only process for users and groups with write access right
+        if group is None:
+            continue
         if access_rights[other_gid]["write"] is not True:
             continue
 

@@ -808,3 +808,84 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
     # expected outcome: the last user will be removed and the project will be removed
     assert await assert_users_count(db_engine, 0) is True
     assert await assert_projects_count(db_engine, 0) is True
+
+
+async def test_t10_owner_and_all_shared_users_marked_as_guests(
+    simcore_services, client, db_engine
+):
+    """
+    USER "u1" creates a project and shares it with "u2" and "u3";
+    USER "u1", "u2" and "u3" are manually marked as "GUEST";
+    EXPECTED: the project and all the users are removed
+    """
+    u1 = await login_user(client)
+    u2 = await login_user(client)
+    u3 = await login_user(client)
+
+    q_u2 = await query_user_from_db(db_engine, u2)
+    q_u3 = await query_user_from_db(db_engine, u3)
+
+    # u1 creates project and shares it with g1
+    project = await new_project(
+        client,
+        u1,
+        access_rights={
+            str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
+            str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
+        },
+    )
+
+    # mark all users as guest
+    await change_user_role(db_engine, u1, UserRole.GUEST)
+    await change_user_role(db_engine, u2, UserRole.GUEST)
+    await change_user_role(db_engine, u3, UserRole.GUEST)
+
+    assert await assert_users_count(db_engine, 3) is True
+    assert await assert_projects_count(db_engine, 1) is True
+    assert await assert_user_is_owner_of_project(db_engine, u1, project) is True
+
+    await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
+
+    assert await assert_users_count(db_engine, 0) is True
+    assert await assert_projects_count(db_engine, 0) is True
+
+
+# todo: [t11] all users in the group are marked as guests (together with the owner), nothing shall remain
+async def test_t11_owner_and_all_users_in_group_marked_as_guests(
+    simcore_services, client, db_engine
+):
+    """
+    USER "u1" creates a group and invites "u2" and "u3";
+    USER "u1" creates a project and shares it with the group
+    USER "u1", "u2" and "u3" are manually marked as "GUEST"
+    EXPECTED: the project and all the users are removed
+    """
+    u1 = await login_user(client)
+    u2 = await login_user(client)
+    u3 = await login_user(client)
+
+    # creating g1 and inviting u2 and u3
+    g1 = await get_group(client, u1)
+    await invite_user_to_group(client, owner=u1, invitee=u2, group=g1)
+    await invite_user_to_group(client, owner=u1, invitee=u3, group=g1)
+
+    # u1 creates project and shares it with g1
+    project = await new_project(
+        client,
+        u1,
+        access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
+    )
+
+    # mark all users as guest
+    await change_user_role(db_engine, u1, UserRole.GUEST)
+    await change_user_role(db_engine, u2, UserRole.GUEST)
+    await change_user_role(db_engine, u3, UserRole.GUEST)
+
+    assert await assert_users_count(db_engine, 3) is True
+    assert await assert_projects_count(db_engine, 1) is True
+    assert await assert_user_is_owner_of_project(db_engine, u1, project) is True
+
+    await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
+
+    assert await assert_users_count(db_engine, 0) is True
+    assert await assert_projects_count(db_engine, 0) is True
