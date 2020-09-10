@@ -9,7 +9,6 @@
   "dependencies": {
     "jest": "^25.5.4",
     "jest-puppeteer": "^4.4.0",
-    "log-timestamp": "^0.3.0",
     "puppeteer": "^5.2.1"
   },
   "devDependencies": {},
