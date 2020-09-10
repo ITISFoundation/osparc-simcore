@@ -2,7 +2,7 @@
 
 
 from copy import deepcopy
-from typing import Coroutine, Dict, List
+from typing import Dict, List
 import aiopg
 import aioredis
 import sqlalchemy as sa
@@ -349,7 +349,7 @@ async def assert_one_owner_for_project(
 
 
 async def test_t1_while_guest_is_connected_no_resources_are_removed(
-    client, socketio_client, db_engine, redis_client,
+    client, socketio_client, db_engine, redis_client
 ):
     """while a GUEST user is connected GC will not remove none of its projects nor the user itself"""
     logged_guest_user = await login_guest_user(client)
@@ -366,7 +366,7 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
 
 
 async def test_t2_cleanup_resources_after_browser_is_closed(
-    simcore_services, client, socketio_client, db_engine, redis_client,
+    simcore_services, client, socketio_client, db_engine, redis_client
 ):
     """ after a GUEST users with one opened project closes browser tab regularly (GC cleans everything) """
     logged_guest_user = await login_guest_user(client)
@@ -398,7 +398,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
 
 
 async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
-    simcore_services, client, socketio_client, db_engine,
+    simcore_services, client, socketio_client, db_engine
 ):
     """ after a USER disconnects the GC will remove none of its projects or templates nor the user itself """
     number_of_projects = 5
@@ -439,7 +439,7 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
 
 
 async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owner_removal(
-    simcore_services, client, socketio_client, db_engine,
+    simcore_services, client, db_engine
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -478,10 +478,10 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
 
 
 async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
-    simcore_services, client, socketio_client, db_engine,
+    simcore_services, client, db_engine
 ):
     """
-    [T5] USER "u1" creates a project and shares it with "u2" and "u3";
+    USER "u1" creates a project and shares it with "u2" and "u3";
     USER "u1" is manually marked as "GUEST";
     EXPECTED: one of "u2" or "u3" will become the new owner of the project and "u1" will be deleted
     """
@@ -517,7 +517,7 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
 
 
 async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on_owner_removal(
-    simcore_services, client, socketio_client, db_engine,
+    simcore_services, client, db_engine
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -583,7 +583,7 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
 
 
 async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_last_and_all_is_removed(
-    simcore_services, client, socketio_client, db_engine,
+    simcore_services, client, db_engine
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -662,10 +662,10 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
 
 
 async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_until_one_user_remains(
-    simcore_services, client, socketio_client, db_engine,
+    simcore_services, client, db_engine
 ):
     """
-    [T5] USER "u1" creates a project and shares it with "u2" and "u3";
+    USER "u1" creates a project and shares it with "u2" and "u3";
     USER "u1" is manually marked as "GUEST";
     EXPECTED: one of "u2" or "u3" will become the new owner of the project and "u1" will be deleted
     same as T5 => afterwards afterwards the new owner either "u2" or "u3" will be manually marked as "GUEST";
@@ -730,10 +730,10 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
 
 
 async def test_t9_project_shared_with_other_users_transferred_between_them_and_then_removed(
-    simcore_services, client, socketio_client, db_engine,
+    simcore_services, client, db_engine
 ):
     """
-    [T5] USER "u1" creates a project and shares it with "u2" and "u3";
+    USER "u1" creates a project and shares it with "u2" and "u3";
     USER "u1" is manually marked as "GUEST";
     EXPECTED: one of "u2" or "u3" will become the new owner of the project and "u1" will be deleted
     same as T5 => afterwards afterwards the new owner either "u2" or "u3" will be manually marked as "GUEST";
