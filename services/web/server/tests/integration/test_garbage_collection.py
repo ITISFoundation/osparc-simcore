@@ -850,7 +850,6 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
     assert await assert_projects_count(db_engine, 0) is True
 
 
-# todo: [t11] all users in the group are marked as guests (together with the owner), nothing shall remain
 async def test_t11_owner_and_all_users_in_group_marked_as_guests(
     simcore_services, client, db_engine
 ):
