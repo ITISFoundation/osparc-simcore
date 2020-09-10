@@ -28,8 +28,19 @@
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
-        "osparc.theme.ThemeLight",
-        "osparc.theme.ThemeBlue"
+        "osparc.theme.ThemeLight"
+      ],
+      "bootPath": "source/boot"
+    },
+    {
+      "class": "osparc.Application",
+      "theme": "osparc.theme.ThemeBlue",
+      "name": "s4l",
+      "title": "Sim4Life",
+      "default": true,
+      "include": [
+        "iconfont.material.Load",
+        "iconfont.fontawesome5.Load"
       ],
       "bootPath": "source/boot"
     },
