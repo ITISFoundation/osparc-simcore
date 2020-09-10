@@ -476,7 +476,7 @@ async def replace_current_owner(
     logger.error("Syncing back project %s", project)
     # syncing back project data
     try:
-        await app[APP_PROJECT_DBAPI].update_removed_owner_and_access_rights(
+        await app[APP_PROJECT_DBAPI].update_project_without_enforcing_checks(
             project_data=project, project_uuid=project_uuid,
         )
     except Exception:  # pylint: disable=broad-except

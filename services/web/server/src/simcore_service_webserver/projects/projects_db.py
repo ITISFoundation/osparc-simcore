@@ -594,9 +594,11 @@ class ProjectDBAPI:
                 result.append(row[0])
             return list(result)
 
-    async def update_removed_owner_and_access_rights(
+    async def update_project_without_enforcing_checks(
         self, project_data: Dict, project_uuid: str
     ) -> bool:
+        """The garbage collector needs to alter the row without passing through the 
+        permissions layer."""
         async with self.engine.acquire() as conn:
             # update timestamps
             project_data["lastChangeDate"] = now_str()
