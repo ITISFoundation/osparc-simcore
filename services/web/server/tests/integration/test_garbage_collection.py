@@ -525,7 +525,7 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
     USER "u1" is manually marked as "GUEST";
     EXPECTED: one of the users in the "g1" will become the new owner of the project and "u1" will be deleted
     the new owner either "u2" or "u3" will be manually marked as "GUEST";
-    EXPECTED: the GUEST user will be delted and the project will pass to tha last member of "g1"
+    EXPECTED: the GUEST user will be deleted and the project will pass to the last member of "g1"
     """
     u1 = await login_user(client)
     u2 = await login_user(client)
@@ -591,7 +591,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     USER "u1" is manually marked as "GUEST";
     EXPECTED: one of the users in the "g1" will become the new owner of the project and "u1" will be deleted
     the new owner either "u2" or "u3" will be manually marked as "GUEST";
-    EXPECTED: the GUEST user will be delted and the project will pass to tha last member of "g1"
+    EXPECTED: the GUEST user will be deleted and the project will pass to the last member of "g1"
     afterwards the last user will be marked as "GUEST";
     EXPECTED: the last user will be removed and the project will be removed
     """
@@ -669,7 +669,7 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
     USER "u1" is manually marked as "GUEST";
     EXPECTED: one of "u2" or "u3" will become the new owner of the project and "u1" will be deleted
     same as T5 => afterwards afterwards the new owner either "u2" or "u3" will be manually marked as "GUEST";
-    EXPECTED: the GUEST user will be delted and the project will pass to tha last member of "g1"
+    EXPECTED: the GUEST user will be deleted and the project will pass to the last member of "g1"
     """
     u1 = await login_user(client)
     u2 = await login_user(client)
@@ -737,7 +737,7 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
     USER "u1" is manually marked as "GUEST";
     EXPECTED: one of "u2" or "u3" will become the new owner of the project and "u1" will be deleted
     same as T5 => afterwards afterwards the new owner either "u2" or "u3" will be manually marked as "GUEST";
-    EXPECTED: the GUEST user will be delted and the project will pass to tha last member of "g1"
+    EXPECTED: the GUEST user will be deleted and the project will pass to the last member of "g1"
     same as T8 => afterwards the last user will be marked as "GUEST";
     EXPECTED: the last user will be removed and the project will be removed
     """
