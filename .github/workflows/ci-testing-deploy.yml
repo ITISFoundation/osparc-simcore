@@ -1087,7 +1087,7 @@ jobs:
           path: tests/e2e/screenshots
       - name: cleanup
         if: always()
-        run: ./ci/github/system-testing/swarm-deploy.bash clean_up
+        run: ./ci/github/system-testing/e2e.bash clean_up
 
   coverage:
     needs:
