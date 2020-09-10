@@ -63,8 +63,8 @@ qx.Class.define("osparc.desktop.MainPage", {
     __createNavigationBar: function() {
       const navBar = new osparc.desktop.NavigationBar();
 
-      const dashboardBtn = navBar.getDashboardButton();
-      dashboardBtn.addListener("execute", () => {
+      navBar.addListener("dashboardPressed", () => {
+        const dashboardBtn = navBar.getDashboardButton();
         if (!osparc.data.Permissions.getInstance().canDo("studies.user.create", true)) {
           return;
         }

@@ -62,7 +62,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
   },
 
   events: {
-    "nodeSelected": "qx.event.type.Data"
+    "nodeSelected": "qx.event.type.Data",
+    "dashboardPressed": "qx.event.type.Event"
   },
 
   properties: {
@@ -126,6 +127,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/14");
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
           control.set(this.self().BUTTON_OPTIONS);
+          control.addListener("execute", () => {
+            this.fireEvent("dashboardPressed");
+          }, this);
           this._add(control);
           break;
         case "dashboard-label":
