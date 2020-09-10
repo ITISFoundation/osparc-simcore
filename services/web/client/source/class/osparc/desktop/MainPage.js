@@ -63,15 +63,20 @@ qx.Class.define("osparc.desktop.MainPage", {
     __createNavigationBar: function() {
       const navBar = new osparc.desktop.NavigationBar();
 
-      navBar.addListener("dashboardPressed", () => {
+      const dashboardBtn = navBar.getDashboardButton();
+      dashboardBtn.addListener("execute", () => {
         if (!osparc.data.Permissions.getInstance().canDo("studies.user.create", true)) {
           return;
         }
         if (this.__studyEditor) {
+          dashboardBtn.setFetching(true);
           this.__studyEditor.updateStudyDocument(false)
             .then(() => {
               this.__studyEditor.closeStudy();
               this.__showDashboard();
+            })
+            .finally(() => {
+              dashboardBtn.setFetching(false);
             });
         } else {
           this.__showDashboard();
