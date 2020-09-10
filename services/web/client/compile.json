@@ -37,7 +37,6 @@
       "theme": "osparc.theme.ThemeBlue",
       "name": "s4l",
       "title": "Sim4Life",
-      "default": true,
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load"
