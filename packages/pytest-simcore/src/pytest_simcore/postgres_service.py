@@ -32,7 +32,10 @@ def execute_queries(
             try:
                 con.execution_options(autocommit=True).execute(statement)
             except Exception as e:  # pylint: disable=broad-except
-                log.error("Ignoring PSQL exception %s", str(e))
+                # when running tests initially the TEMPLATE_DB_NAME dose not exist and will cause an error
+                # which can safely be ignored. The debug message is here to catch future errors which and
+                # avoid time wasting
+                log.debug("SQL error which can be ignored %s", str(e))
 
 
 def create_template_db(postgres_dsn: Dict, postgres_engine: sa.engine.Engine) -> None:
