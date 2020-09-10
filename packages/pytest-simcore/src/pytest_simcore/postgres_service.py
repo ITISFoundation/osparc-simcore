@@ -22,7 +22,9 @@ TEMPLATE_DB_NAME = "template_simcore_db"  # this name is used elsewere
 
 
 def execute_queries(
-    postgres_engine: sa.engine.Engine, sql_statements: List[str], ignore_errors=False
+    postgres_engine: sa.engine.Engine,
+    sql_statements: List[str],
+    ignore_errors: bool = False,
 ) -> None:
     """runs the queries in the list in order"""
     with postgres_engine.connect() as con:
@@ -105,8 +107,7 @@ def postgres_engine(
 
 @pytest.fixture(scope="module")
 def postgres_db(
-    postgres_dsn: Dict,
-    postgres_engine: sa.engine.Engine,
+    postgres_dsn: Dict, postgres_engine: sa.engine.Engine,
 ) -> sa.engine.Engine:
 
     # upgrades database from zero
