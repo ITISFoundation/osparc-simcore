@@ -105,9 +105,11 @@ def postgres_engine(
 
 @pytest.fixture(scope="module")
 def postgres_db(
-    postgres_dsn: Dict, postgres_engine: sa.engine.Engine
+    postgres_dsn: Dict,
+    postgres_engine: sa.engine.Engine,
 ) -> sa.engine.Engine:
-    # migrate the database
+
+    # upgrades database from zero
     kwargs = postgres_dsn.copy()
     pg_cli.discover.callback(**kwargs)
     pg_cli.upgrade.callback("head")
@@ -118,19 +120,30 @@ def postgres_db(
 
     drop_template_db(postgres_engine)
 
+    # downgrades database to zero ---
+    #
+    # NOTE: This step CANNOT be avoided since it would leave the db in an invalid state
+    # E.g. 'alembic_version' table is not deleted and keeps head version or routines
+    # like 'notify_comp_tasks_changed' remain undeleted
+    #
     pg_cli.downgrade.callback("base")
-    pg_cli.clean.callback()
+    pg_cli.clean.callback()  # just cleans discover cache
 
-    # FIXME: deletes all because downgrade is not reliable!
+    # FIXME: migration downgrade fails to remove User types SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
+    # Added drop_all as tmp fix
     metadata.drop_all(postgres_engine)
 
 
 @pytest.fixture(scope="module")
 def postgres_session(postgres_db: sa.engine.Engine) -> sa.orm.session.Session:
-    Session = sessionmaker(postgres_db)
-    session = Session()
+    from sqlalchemy.orm.session import Session
+
+    Session_cls = sessionmaker(postgres_db)
+    session: Session = Session_cls()
+
     yield session
-    session.close()
+
+    session.close()  # pylint: disable=no-member
 
 
 @tenacity.retry(

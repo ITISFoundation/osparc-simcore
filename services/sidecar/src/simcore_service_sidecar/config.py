@@ -43,7 +43,7 @@ SIDECAR_HOST_HOSTNAME_PATH: Path = Path(
 )
 
 SIDECAR_LOGLEVEL: str = getattr(
-    logging, os.environ.get("SIDECAR_LOGLEVEL", "WARNING").upper(), logging.WARNING
+    logging, os.environ.get("SIDECAR_LOGLEVEL", "WARNING").upper(), logging.DEBUG
 )
 
 DOCKER_REGISTRY: str = os.environ.get("REGISTRY_URL", "masu.speag.com")
