@@ -256,7 +256,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         studyItem.setState(state);
       }
 
-      osparc.store.Store.getInstance().setStudyWState(studyId, state);
+      osparc.store.Store.getInstance().setStudyState(studyId, state);
     },
 
     __attachEventHandlers: function() {
