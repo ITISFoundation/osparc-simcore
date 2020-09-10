@@ -133,7 +133,8 @@ async function dashboardNewStudy(page) {
 
 async function toDashboard(page) {
   console.log("To Dashboard");
-  await utils.waitAndClick(page, '[osparc-test-id="dashboardBtn"]')
+  await utils.waitAndClick(page, '[osparc-test-id="dashboardBtn"]');
+  await page.waitFor(2000);
 }
 
 async function dashboardOpenFirstTemplate(page, templateName) {
