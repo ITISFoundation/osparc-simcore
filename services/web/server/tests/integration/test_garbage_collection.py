@@ -112,32 +112,6 @@ async def __delete_all_redis_keys__(loop, redis_service):
     # do nothing on teadown
 
 
-@pytest.fixture
-async def assert_users_count(db_engine: aiopg.sa.Engine) -> Coroutine:
-    """returns an awaitable to invoke with the expected number of users"""
-
-    async def awaitable(expected_users) -> True:
-        async with db_engine.acquire() as conn:
-            users_count = await conn.scalar(users.count())
-            assert users_count == expected_users
-            return True
-
-    return awaitable
-
-
-@pytest.fixture
-async def assert_projects_count(db_engine: aiopg.sa.Engine) -> Coroutine:
-    """returns an awaitable to invoke with the expected number of projects"""
-
-    async def awaitable(expected_users) -> True:
-        async with db_engine.acquire() as conn:
-            projects_count = await conn.scalar(projects.count())
-            assert projects_count == expected_users
-            return True
-
-    return awaitable
-
-
 # needed to be overwritten here because postgres_db & postgres_session are module scoped.... in pytest-simcore
 @pytest.yield_fixture(scope="module")
 def loop(request):
@@ -275,6 +249,22 @@ async def disconnect_user_from_socketio(client, sio_connection_data):
     assert not await socket_registry.find_resources(resource_key, "socket_id")
 
 
+async def assert_users_count(db_engine: aiopg.sa.Engine, expected_users: int) -> True:
+    async with db_engine.acquire() as conn:
+        users_count = await conn.scalar(users.count())
+        assert users_count == expected_users
+        return True
+
+
+async def assert_projects_count(
+    db_engine: aiopg.sa.Engine, expected_projects: int
+) -> True:
+    async with db_engine.acquire() as conn:
+        projects_count = await conn.scalar(projects.count())
+        assert projects_count == expected_projects
+        return True
+
+
 def assert_dicts_match_by_common_keys(first_dict, second_dict) -> True:
     common_keys = set(first_dict.keys()) & set(second_dict.keys())
     for key in common_keys:
@@ -359,19 +349,14 @@ async def assert_one_owner_for_project(
 
 
 async def test_t1_while_guest_is_connected_no_resources_are_removed(
-    client,
-    socketio_client,
-    db_engine,
-    redis_client,
-    assert_users_count,
-    assert_projects_count,
+    client, socketio_client, db_engine, redis_client,
 ):
     """while a GUEST user is connected GC will not remove none of its projects nor the user itself"""
     logged_guest_user = await login_guest_user(client)
     empty_guest_user_project = await new_project(client, logged_guest_user)
 
-    assert await assert_users_count(1) is True
-    assert await assert_projects_count(1) is True
+    assert await assert_users_count(db_engine, 1) is True
+    assert await assert_projects_count(db_engine, 1) is True
 
     await connect_to_socketio(client, logged_guest_user, socketio_client)
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
@@ -381,19 +366,13 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
 
 
 async def test_t2_cleanup_resources_after_browser_is_closed(
-    simcore_services,
-    client,
-    socketio_client,
-    db_engine,
-    redis_client,
-    assert_users_count,
-    assert_projects_count,
+    simcore_services, client, socketio_client, db_engine, redis_client,
 ):
     """ after a GUEST users with one opened project closes browser tab regularly (GC cleans everything) """
     logged_guest_user = await login_guest_user(client)
     empty_guest_user_project = await new_project(client, logged_guest_user)
-    assert await assert_users_count(1) is True
-    assert await assert_projects_count(1) is True
+    assert await assert_users_count(db_engine, 1) is True
+    assert await assert_projects_count(db_engine, 1) is True
 
     sio_connection_data = await connect_to_socketio(
         client, logged_guest_user, socketio_client
@@ -419,12 +398,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
 
 
 async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
-    simcore_services,
-    client,
-    socketio_client,
-    db_engine,
-    assert_users_count,
-    assert_projects_count,
+    simcore_services, client, socketio_client, db_engine,
 ):
     """ after a USER disconnects the GC will remove none of its projects or templates nor the user itself """
     number_of_projects = 5
@@ -446,8 +420,9 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
         for template in user_template_projects:
             assert await assert_project_in_database(db_engine, template) is True
 
-    assert await assert_users_count(1) is True
-    assert await assert_projects_count(number_of_projects + number_of_templates) is True
+    assert await assert_users_count(db_engine, 1) is True
+    expected_count = number_of_projects + number_of_templates
+    assert await assert_projects_count(db_engine, expected_count) is True
 
     # connect the user and wait for gc
     sio_connection_data = await connect_to_socketio(
@@ -464,12 +439,7 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
 
 
 async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owner_removal(
-    simcore_services,
-    client,
-    socketio_client,
-    db_engine,
-    assert_users_count,
-    assert_projects_count,
+    simcore_services, client, socketio_client, db_engine,
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -496,8 +466,8 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     # mark u1 as guest
     await change_user_role(db_engine, u1, UserRole.GUEST)
 
-    assert await assert_users_count(3) is True
-    assert await assert_projects_count(1) is True
+    assert await assert_users_count(db_engine, 3) is True
+    assert await assert_projects_count(db_engine, 1) is True
     assert await assert_user_is_owner_of_project(db_engine, u1, project) is True
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
@@ -508,12 +478,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
 
 
 async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
-    simcore_services,
-    client,
-    socketio_client,
-    db_engine,
-    assert_users_count,
-    assert_projects_count,
+    simcore_services, client, socketio_client, db_engine,
 ):
     """
     [T5] USER "u1" creates a project and shares it with "u2" and "u3";
@@ -540,8 +505,8 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
     # mark u1 as guest
     await change_user_role(db_engine, u1, UserRole.GUEST)
 
-    assert await assert_users_count(3) is True
-    assert await assert_projects_count(1) is True
+    assert await assert_users_count(db_engine, 3) is True
+    assert await assert_projects_count(db_engine, 1) is True
     assert await assert_user_is_owner_of_project(db_engine, u1, project) is True
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
@@ -552,12 +517,7 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
 
 
 async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on_owner_removal(
-    simcore_services,
-    client,
-    socketio_client,
-    db_engine,
-    assert_users_count,
-    assert_projects_count,
+    simcore_services, client, socketio_client, db_engine,
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -586,8 +546,8 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
     # mark u1 as guest
     await change_user_role(db_engine, u1, UserRole.GUEST)
 
-    assert await assert_users_count(3) is True
-    assert await assert_projects_count(1) is True
+    assert await assert_users_count(db_engine, 3) is True
+    assert await assert_projects_count(db_engine, 1) is True
     assert await assert_user_is_owner_of_project(db_engine, u1, project) is True
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
@@ -623,12 +583,7 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
 
 
 async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_last_and_all_is_removed(
-    simcore_services,
-    client,
-    socketio_client,
-    db_engine,
-    assert_users_count,
-    assert_projects_count,
+    simcore_services, client, socketio_client, db_engine,
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -659,8 +614,8 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     # mark u1 as guest
     await change_user_role(db_engine, u1, UserRole.GUEST)
 
-    assert await assert_users_count(3) is True
-    assert await assert_projects_count(1) is True
+    assert await assert_users_count(db_engine, 3) is True
+    assert await assert_projects_count(db_engine, 1) is True
     assert await assert_user_is_owner_of_project(db_engine, u1, project) is True
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
@@ -702,17 +657,12 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
     # expected outcome: the last user will be removed and the project will be removed
-    assert await assert_users_count(0) is True
-    assert await assert_projects_count(0) is True
+    assert await assert_users_count(db_engine, 0) is True
+    assert await assert_projects_count(db_engine, 0) is True
 
 
 async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_until_one_user_remains(
-    simcore_services,
-    client,
-    socketio_client,
-    db_engine,
-    assert_users_count,
-    assert_projects_count,
+    simcore_services, client, socketio_client, db_engine,
 ):
     """
     [T5] USER "u1" creates a project and shares it with "u2" and "u3";
@@ -741,8 +691,8 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
     # mark u1 as guest
     await change_user_role(db_engine, u1, UserRole.GUEST)
 
-    assert await assert_users_count(3) is True
-    assert await assert_projects_count(1) is True
+    assert await assert_users_count(db_engine, 3) is True
+    assert await assert_projects_count(db_engine, 1) is True
     assert await assert_user_is_owner_of_project(db_engine, u1, project) is True
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
@@ -775,17 +725,12 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
     assert (
         await assert_one_owner_for_project(db_engine, project, remaining_others) is True
     )
-    assert await assert_users_count(1) is True
-    assert await assert_projects_count(1) is True
+    assert await assert_users_count(db_engine, 1) is True
+    assert await assert_projects_count(db_engine, 1) is True
 
 
 async def test_t9_project_shared_with_other_users_transferred_between_them_and_then_removed(
-    simcore_services,
-    client,
-    socketio_client,
-    db_engine,
-    assert_users_count,
-    assert_projects_count,
+    simcore_services, client, socketio_client, db_engine,
 ):
     """
     [T5] USER "u1" creates a project and shares it with "u2" and "u3";
@@ -816,8 +761,8 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
     # mark u1 as guest
     await change_user_role(db_engine, u1, UserRole.GUEST)
 
-    assert await assert_users_count(3) is True
-    assert await assert_projects_count(1) is True
+    assert await assert_users_count(db_engine, 3) is True
+    assert await assert_projects_count(db_engine, 1) is True
     assert await assert_user_is_owner_of_project(db_engine, u1, project) is True
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
@@ -850,8 +795,8 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
     assert (
         await assert_one_owner_for_project(db_engine, project, remaining_others) is True
     )
-    assert await assert_users_count(1) is True
-    assert await assert_projects_count(1) is True
+    assert await assert_users_count(db_engine, 1) is True
+    assert await assert_projects_count(db_engine, 1) is True
 
     # only 1 user is left as the owner mark him as GUEST
     for user in remaining_others:
@@ -861,5 +806,5 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
     # expected outcome: the last user will be removed and the project will be removed
-    assert await assert_users_count(0) is True
-    assert await assert_projects_count(0) is True
+    assert await assert_users_count(db_engine, 0) is True
+    assert await assert_projects_count(db_engine, 0) is True
