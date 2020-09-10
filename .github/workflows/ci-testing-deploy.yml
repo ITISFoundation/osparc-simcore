@@ -277,7 +277,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        node: [10]
+        node: [14]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1014,7 +1014,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        node: [10]
+        node: [14]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1058,6 +1058,8 @@ jobs:
             ${{ runner.os }}-node-
       - name: setup images
         run: ./ci/github/system-testing/e2e.bash setup_images
+      - name: setup and start swarm
+        run: ./ci/github/system-testing/e2e.bash setup_and_run_stack
       - name: setup environment
         run: ./ci/github/system-testing/e2e.bash setup_environment
       - name: setup registry
@@ -1070,7 +1072,7 @@ jobs:
       - name: recover docker logs
         id: logs_recovery
         if: always()
-        run: ./ci/github/system-testing/e2e.bash recover_artifacts
+        run: ./ci/github/system-testing/e2e.bash dump_docker_logs
       - name: upload docker logs
         if: always()
         uses: actions/upload-artifact@v2

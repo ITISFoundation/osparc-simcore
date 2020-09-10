@@ -53,8 +53,7 @@ async def _basic_auth_registry_request(
 
     session = app[APP_CLIENT_SESSION_KEY]
     try:
-        async with getattr(session, method.lower())(url, auth=auth) as response:
-
+        async with session.request(method.lower(), url, auth=auth) as response:
             if response.status == HTTPStatus.UNAUTHORIZED:
                 logger.debug("Registry unauthorized request: %s", await response.text())
                 # basic mode failed, test with other auth mode

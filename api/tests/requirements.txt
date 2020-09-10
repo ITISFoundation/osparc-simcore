@@ -6,7 +6,7 @@
 #
 aiohttp==3.6.2            # via -r requirements.in, pytest-aiohttp
 async-timeout==3.0.1      # via aiohttp
-attrs==20.1.0             # via aiohttp, jsonschema, openapi-core, pytest
+attrs==20.2.0             # via aiohttp, jsonschema, openapi-core, pytest
 chardet==3.0.4            # via aiohttp
 coverage==5.2.1           # via -r requirements.in, pytest-cov
 idna-ssl==1.1.0           # via aiohttp
@@ -16,13 +16,13 @@ iniconfig==1.0.1          # via pytest
 isodate==0.6.0            # via openapi-core, openapi-schema-validator
 jsonschema==3.2.0         # via openapi-schema-validator, openapi-spec-validator
 lazy-object-proxy==1.5.1  # via openapi-core
-more-itertools==8.4.0     # via openapi-core, pytest
+more-itertools==8.5.0     # via openapi-core, pytest
 multidict==4.7.6          # via aiohttp, yarl
 openapi-core==0.13.4      # via -r requirements.in
 openapi-schema-validator==0.1.1  # via openapi-core
 openapi-spec-validator==0.2.9  # via openapi-core
 packaging==20.4           # via pytest, pytest-sugar
-parse==1.16.0             # via openapi-core
+parse==1.17.0             # via openapi-core
 pluggy==0.13.1            # via pytest
 py==1.9.0                 # via pytest
 pyparsing==2.4.7          # via packaging

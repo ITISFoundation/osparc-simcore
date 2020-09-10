@@ -18,7 +18,6 @@ CONFIG_SCHEMA = T.Dict(
         "password": T.String(),
         "channels": T.Dict(
             {
-                "progress": T.String(),
                 "log": T.String(),
                 "instrumentation": T.String(),
                 T.Key(
@@ -45,7 +44,6 @@ class Config(BaseSettings):
     host: str = "rabbit"
     port: int = 5672
     channels: Dict[str, Union[str, Dict]] = {
-        "progress": "comp.backend.channels.progress",
         "log": "comp.backend.channels.log",
         "instrumentation": "comp.backend.channels.instrumentation",
         "celery": {"result_backend": "rpc://"},
