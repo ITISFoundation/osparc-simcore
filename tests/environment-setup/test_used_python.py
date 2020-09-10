@@ -73,7 +73,7 @@ def pip_in_dockerfiles(osparc_simcore_root_dir: Path) -> List[Tuple[Path, str]]:
                 "->",
                 version,
             )
-        res.append((dockerfile_path, version))
+            res.append((dockerfile_path, version))
 
     assert res
     return res
