@@ -124,7 +124,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           break;
         }
         case "dashboard-button":
-          control = new qx.ui.form.Button(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/14");
+          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/14");
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
           control.set(this.self().BUTTON_OPTIONS);
           control.addListener("execute", () => {
@@ -176,6 +176,10 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    getDashboardButton: function() {
+      return this.__dashboardBtn;
     },
 
     setPathButtons: function(nodeIds) {
