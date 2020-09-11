@@ -262,6 +262,9 @@ class TutorialBase {
   }
 
   async takeScreenshot(screenshotTitle) {
+    if (this.__demo) {
+      return;
+    }
     let title = this.__templateName;
     if (screenshotTitle) {
       title += '_' + screenshotTitle;
