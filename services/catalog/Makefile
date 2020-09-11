@@ -55,6 +55,8 @@ up-adjacent: .env down-adjacent ## creates and starts adjacent services and migr
 	@sc-pg upgrade
 
 down-adjacent: docker-compose-adjacent.yml ## stops pg fixture
+	# cleanup discover cache
+	-@sc-pg clean
 	# stopping extra services
 	-@docker-compose -f docker-compose-adjacent.yml down
 
