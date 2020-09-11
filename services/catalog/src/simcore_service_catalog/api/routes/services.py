@@ -17,7 +17,7 @@ from ...models.domain.service import (
     ServiceUpdate,
 )
 from ..dependencies.database import get_repository
-from ..dependencies.director import AuthSession, get_director_session
+from ..dependencies.director import DirectorApi, get_director_api
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 @router.get("", response_model=List[ServiceOut])
 async def list_services(
     user_id: PositiveInt,
-    director_client: AuthSession = Depends(get_director_session),
+    director_client: DirectorApi = Depends(get_director_api),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
 ):
@@ -109,7 +109,7 @@ async def get_service(
     user_id: int,
     service_key: constr(regex=KEY_RE),
     service_version: constr(regex=VERSION_RE),
-    director_client: AuthSession = Depends(get_director_session),
+    director_client: DirectorApi = Depends(get_director_api),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
 ):
@@ -175,7 +175,7 @@ async def modify_service(
     service_key: constr(regex=KEY_RE),
     service_version: constr(regex=VERSION_RE),
     updated_service: ServiceUpdate,
-    director_client: AuthSession = Depends(get_director_session),
+    director_client: DirectorApi = Depends(get_director_api),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
 ):

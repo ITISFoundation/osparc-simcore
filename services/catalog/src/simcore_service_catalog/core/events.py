@@ -27,9 +27,9 @@ def create_start_app_handler(app: FastAPI) -> Callable:
             await connect_to_db(app)
 
         # setup connection to director
-        if app.state.settings.director.enabled:
-            setup_director(app)
+        setup_director(app)
 
+        if app.state.settings.director.enabled:
             # FIXME: check director service is in place and ready. Hand-shake??
             # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1728
             await start_registry_sync_task(app)

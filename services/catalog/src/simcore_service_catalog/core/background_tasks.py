@@ -23,7 +23,7 @@ from pydantic.types import PositiveInt
 
 from simcore_service_catalog.db.repositories.projects import ProjectsRepository
 
-from ..api.dependencies.director import get_director_session
+from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.services import ServicesRepository
 from ..models.domain.service import (
@@ -41,7 +41,7 @@ ServiceVersion = str
 async def _list_registry_services(
     app: FastAPI,
 ) -> Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData]:
-    client = get_director_session(app)
+    client = get_director_api(app)
     data = await client.get("/services")
     services: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData] = {}
     for x in data:
@@ -83,7 +83,7 @@ async def _create_service_default_access_rights(
 
     async def _is_old_service(app: FastAPI, service: ServiceDockerData) -> bool:
         # get service build date
-        client = get_director_session(app)
+        client = get_director_api(app)
         data = await client.get(
             f"/service_extras/{quote_plus(service.key)}/{service.version}"
         )
