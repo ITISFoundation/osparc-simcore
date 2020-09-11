@@ -1,12 +1,12 @@
 #
-# Specifies dependencies required to run 'services/director_v2/test'
+# Specifies dependencies required to run 'services/director-v2/test'
 #  both for unit and integration tests!!
 #
 
 # frozen specs
 -r _base.txt
 
-# 'services/director_v2/tests/unit' dependencies
+# 'services/director-v2/tests/unit' dependencies
 
 
 # testing

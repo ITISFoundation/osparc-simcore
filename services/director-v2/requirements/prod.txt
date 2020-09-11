@@ -1,4 +1,4 @@
-# Shortcut to install 'services/director_v2' for production
+# Shortcut to install 'services/director-v2' for production
 #
 # - As ci.txt but w/o tests
 #

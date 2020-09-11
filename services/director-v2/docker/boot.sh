@@ -23,7 +23,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
 
-  cd services/director_v2 || exit 1
+  cd services/director-v2 || exit 1
   pip --quiet --no-cache-dir install -r requirements/dev.txt
   cd - || exit 1
   echo "$INFO" "PIP :"
@@ -40,5 +40,5 @@ then
   # this way we can have reload in place as well
   exec uvicorn simcore_service_director_v2.__main__:the_app --reload --host 0.0.0.0
 else
-  exec simcore-service-director_v2
+  exec simcore-service-director-v2
 fi

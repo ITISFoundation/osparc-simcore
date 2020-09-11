@@ -3,7 +3,7 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 #
 #  USAGE:
-#     cd sercices/director_v2
+#     cd sercices/director-v2
 #     docker build -f Dockerfile -t director-v2 :prod --target production ../../
 #     docker run director-v2 :prod
 #
@@ -73,7 +73,7 @@ WORKDIR /build
 
 # install base 3rd party dependencies
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
-COPY  --chown=scu:scu services/director_v2/requirements/_base.txt .
+COPY  --chown=scu:scu services/director-v2/requirements/_base.txt .
 RUN pip --no-cache-dir install -r _base.txt
 
 
@@ -81,16 +81,16 @@ RUN pip --no-cache-dir install -r _base.txt
 # CI in master buils & pushes this target to speed-up image build
 #
 #  + /build
-#    + services/director_v2 [scu:scu] WORKDIR
+#    + services/director-v2 [scu:scu] WORKDIR
 #
 FROM build as cache
 
 ENV SC_BUILD_TARGET cache
 
 COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/director_v2 /build/services/director_v2
+COPY --chown=scu:scu services/director-v2 /build/services/director-v2
 
-WORKDIR /build/services/director_v2
+WORKDIR /build/services/director-v2
 
 RUN pip3 --no-cache-dir install -r requirements/prod.txt &&\
       pip3 --no-cache-dir list -v
@@ -101,7 +101,7 @@ RUN pip3 --no-cache-dir install -r requirements/prod.txt &&\
 # Runs as scu (non-root user)
 #
 #  + /home/scu     $HOME = WORKDIR
-#    + services/director_v2 [scu:scu]
+#    + services/director-v2 [scu:scu]
 #
 FROM base as production
 
@@ -116,18 +116,18 @@ WORKDIR /home/scu
 COPY --chown=scu:scu --from=cache  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Copies booting scripts
-COPY --chown=scu:scu services/director_v2/docker services/director_v2/docker
-RUN chmod +x services/director_v2/docker/*.sh
+COPY --chown=scu:scu services/director-v2/docker services/director-v2/docker
+RUN chmod +x services/director-v2/docker/*.sh
 
 
 HEALTHCHECK --interval=30s \
       --timeout=20s \
       --start-period=30s \
       --retries=3 \
-      CMD ["python3", "services/director_v2/docker/healthcheck.py", "http://localhost:8000/"]
+      CMD ["python3", "services/director-v2/docker/healthcheck.py", "http://localhost:8000/"]
 
-ENTRYPOINT [ "/bin/sh", "services/director_v2/docker/entrypoint.sh" ]
-CMD ["/bin/sh", "services/director_v2/docker/boot.sh"]
+ENTRYPOINT [ "/bin/sh", "services/director-v2/docker/entrypoint.sh" ]
+CMD ["/bin/sh", "services/director-v2/docker/boot.sh"]
 
 
 # --------------------------Development stage -------------------
@@ -141,11 +141,11 @@ CMD ["/bin/sh", "services/director_v2/docker/boot.sh"]
 FROM build as development
 
 ENV SC_BUILD_TARGET=development \
-      SC_DEVEL_MOUNT=/devel/services/director_v2
+      SC_DEVEL_MOUNT=/devel/services/director-v2
 
 WORKDIR /devel
 
 RUN chown -R scu:scu ${VIRTUAL_ENV}
 
-ENTRYPOINT ["/bin/sh", "services/director_v2/docker/entrypoint.sh"]
-CMD ["/bin/sh", "services/director_v2/docker/boot.sh"]
+ENTRYPOINT ["/bin/sh", "services/director-v2/docker/entrypoint.sh"]
+CMD ["/bin/sh", "services/director-v2/docker/boot.sh"]
