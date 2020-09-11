@@ -77,10 +77,6 @@ class AuthSession:
             session_cookies=session_cookies,
         )
 
-    def _url(self, path: str) -> str:
-        # after httpx upgrade
-        return f"/{path.lstrip('/')}"
-
     @classmethod
     def _process(cls, resp: Response) -> Optional[Dict]:
         # enveloped answer
@@ -112,7 +108,7 @@ class AuthSession:
     # TODO: add ping to healthcheck
 
     async def get(self, path: str) -> Optional[Dict]:
-        url = self._url(path)
+        url = path.lstrip('/')
         try:
             resp = await self.client.get(url, cookies=self.session_cookies)
         except Exception as err:
@@ -122,7 +118,7 @@ class AuthSession:
         return self._process(resp)
 
     async def put(self, path: str, body: Dict) -> Optional[Dict]:
-        url = self._url(path)
+        url = path.lstrip('/')
         try:
             resp = await self.client.put(url, json=body, cookies=self.session_cookies)
         except Exception as err:
