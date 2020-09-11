@@ -44,6 +44,17 @@
       "bootPath": "source/boot"
     },
     {
+      "class": "osparc.Application",
+      "theme": "osparc.theme.ThemePurple",
+      "name": "tis",
+      "title": "TI Solutions",
+      "include": [
+        "iconfont.material.Load",
+        "iconfont.fontawesome5.Load"
+      ],
+      "bootPath": "source/boot"
+    },
+    {
       "class": "explorer.Application",
       "theme": "osparc.theme.ThemeDark",
       "name": "explorer",
