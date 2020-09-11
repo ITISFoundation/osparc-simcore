@@ -48,7 +48,9 @@ tests-integration: ## runs integration tests against local+production images
 
 
 # DEVELOPMENT ########
-EXTRA_REGISTRY:=127.0.0.1:5000
+
+# NOTE: add '127.0.0.1 registry' to /etc/host (needs sudo)
+EXTRA_REGISTRY:=registry:5000
 
 .env:
 	cp .env-devel $@
@@ -61,8 +63,6 @@ up-extra: .env down # starts pg stack fixture
 	docker-compose -f docker-compose-extra.yml config
 	# starting database stack as defined in  ...
 	docker-compose -f docker-compose-extra.yml up --detach
-	# check registry
-	curl -s $(EXTRA_REGISTRY)/_catalog | jq '.'
 
 
 down down-extra:  ## stops extra stack
@@ -81,7 +81,7 @@ run-prod: .env up-extra
 
 
 .PHONY: transfer-images-to-registry
-transfer-images-to-registry: ## transfer images to registry (add '127.0.0.1 registry' to /etc/host)
+transfer-images-to-registry: ## transfer images to registry
 	# pushing sleeper image
 	@docker pull itisfoundation/sleeper:1.0.0
 	@docker tag itisfoundation/sleeper:1.0.0 $(EXTRA_REGISTRY)/simcore/services/comp/itis/sleeper:1.0.0
