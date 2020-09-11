@@ -43,7 +43,7 @@ qx.Class.define("osparc.ui.basic.Logo", {
     }, this);
   },
 
-  methofs: {
+  members: {
     __resetSource: function(statics) {
       let sourcePath = osparc.utils.Utils.getLogoPath();
       if (statics && ("product" in statics)) {
