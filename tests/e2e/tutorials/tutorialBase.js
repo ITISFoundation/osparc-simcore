@@ -179,7 +179,13 @@ class TutorialBase {
     await auto.restoreIFrame(this.__page);
   }
 
+  async clickLoggerTitle() {
+    await auto.clickLoggerTitle(this.__page);
+  }
+
   async runPipeline(waitFor = 25000) {
+    await this.clickLoggerTitle();
+
     await this.takeScreenshot("runStudy_before");
     await auto.runStudy(this.__page, waitFor);
     await this.takeScreenshot("runStudy_after");

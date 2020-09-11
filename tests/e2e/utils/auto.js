@@ -177,6 +177,11 @@ async function __filterTemplatesByText(page, templateName) {
   await page.keyboard.press('Enter')
 }
 
+async function clickLoggerTitle(page) {
+  console.log("Click LoggerTitle");
+  await utils.waitAndClick(page, '[osparc-test-id="loggerTitleLabel"]')
+}
+
 async function runStudy(page, waitFor = 0) {
   console.log("Running study");
 
@@ -338,6 +343,7 @@ module.exports = {
   dashboardEditFristStudyThumbnail,
   dashboardNewStudy,
   dashboardOpenFirstTemplate,
+  clickLoggerTitle,
   runStudy,
   dashboardDeleteFirstStudy,
   toDashboard,
