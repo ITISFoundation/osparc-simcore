@@ -23,7 +23,7 @@ class ResponsesQueue {
     console.log("-- Expected response added to queue", url);
     page.on("request", function callback(req) {
       if (req.url().includes(url)) {
-        console.log((new Date).toUTCString(), "-- Queued request sent", req.method(), req.url());
+        console.log("-- Queued request sent", req.method(), req.url());
         page.removeListener("request", callback);
         const index = reqQueue.indexOf(url);
         if (index > -1) {
@@ -42,7 +42,7 @@ class ResponsesQueue {
     const that = this;
     page.on("response", function callback(resp) {
       if (resp.url().includes(url)) {
-        console.log((new Date).toUTCString(), "-- Queued response received", resp.url(), ":");
+        console.log("-- Queued response received", resp.url(), ":");
         console.log(resp.status());
         if (resp.status() === 204) {
           that.__respReceivedQueue[url] = "ok";
@@ -77,7 +77,7 @@ class ResponsesQueue {
     page.on("response", function callback(resp) {
       if (resp.url().includes(url) && resp.status() === 200) {
         resp.json().then(data => {
-          console.log((new Date).toUTCString(), "-- Queued services status response received", resp.url(), ":");
+          console.log("-- Queued services status response received", resp.url(), ":");
           const status = data["data"]["service_state"];
           console.log("Status:", status);
           const stopListening = [
@@ -107,7 +107,7 @@ class ResponsesQueue {
     }
     console.log("-- Slept for", sleptFor/1000, "s waiting for", url);
     if (sleptFor >= timeout) {
-      throw("-- Timeout reached." + new Date().toUTCString());
+      throw("-- Timeout reached.");
     }
     if (Object.prototype.hasOwnProperty.call(this.__respReceivedQueue, url)) {
       const resp = this.__respReceivedQueue[url];
