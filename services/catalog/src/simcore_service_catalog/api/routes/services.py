@@ -1,8 +1,9 @@
 import logging
 import urllib.parse
-from typing import List, Set, Tuple
+from typing import List, Optional, Set, Tuple
 
-from fastapi import APIRouter, Depends, HTTPException, status
+# FIXME: too many DB calls
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import ValidationError, constr
 from pydantic.types import PositiveInt
 
@@ -22,8 +23,6 @@ from ..dependencies.director import AuthSession, get_director_session
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# FIXME: too many DB calls
-
 
 @router.get("", response_model=List[ServiceOut])
 async def list_services(
@@ -31,6 +30,7 @@ async def list_services(
     director_client: AuthSession = Depends(get_director_session),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
+    x_simcore_products_name: Optional[str] = Header(None),
 ):
     # get user groups
     user_groups = await groups_repository.list_user_groups(user_id)
@@ -44,14 +44,18 @@ async def list_services(
     executable_services: Set[Tuple[str, str]] = {
         (service.key, service.version)
         for service in await services_repo.list_services(
-            gids=[group.gid for group in user_groups], execute_access=True
+            gids=[group.gid for group in user_groups],
+            execute_access=True,
+            product_name=x_simcore_products_name,
         )
     }
     # get the writable services
     writable_services: Set[Tuple[str, str]] = {
         (service.key, service.version)
         for service in await services_repo.list_services(
-            gids=[group.gid for group in user_groups], write_access=True
+            gids=[group.gid for group in user_groups],
+            write_access=True,
+            product_name=x_simcore_products_name,
         )
     }
     # get the services from the registry and filter them out
@@ -72,12 +76,12 @@ async def list_services(
             access_rights: List[
                 ServiceAccessRightsAtDB
             ] = await services_repo.get_service_access_rights(
-                service.key, service.version
+                service.key, service.version, product_name=x_simcore_products_name
             )
             service.access_rights = {rights.gid: rights for rights in access_rights}
 
             # access is allowed, override some of the values with what is in the db
-            service_in_db = await services_repo.get_service(
+            service_in_db: ServiceMetaDataAtDB = await services_repo.get_service(
                 service.key, service.version
             )
             service = service.copy(

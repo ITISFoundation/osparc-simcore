@@ -14,13 +14,18 @@ from ._base import BaseRepository
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_PRODUCT_NAME = "osparc"
 
+# SELECT *
+# FROM services_access_rights
+# WHERE 'https://osparc.io' ILIKE '%' || name || '%';
 class ServicesRepository(BaseRepository):
     async def list_services(
         self,
         gids: Optional[List[int]] = None,
         execute_access: Optional[bool] = None,
         write_access: Optional[bool] = None,
+        product_name: Optional[str] = None,
     ) -> List[ServiceMetaDataAtDB]:
         services_in_db = []
 
@@ -38,6 +43,7 @@ class ServicesRepository(BaseRepository):
                         if execute_access
                         else True,
                         services_access_rights.c.write_access if write_access else True,
+                        product_name if product_name else DEFAULT_PRODUCT_NAME,
                     )
                 )
             )
@@ -55,6 +61,7 @@ class ServicesRepository(BaseRepository):
         gids: Optional[List[int]] = None,
         execute_access: Optional[bool] = None,
         write_access: Optional[bool] = None,
+        product_name: Optional[str] = None,
     ) -> Optional[ServiceMetaDataAtDB]:
         query = sa.select([services_meta_data]).where(
             (services_meta_data.c.key == key)
@@ -75,6 +82,7 @@ class ServicesRepository(BaseRepository):
                         if execute_access
                         else True,
                         services_access_rights.c.write_access if write_access else True,
+                        product_name if product_name else DEFAULT_PRODUCT_NAME,
                     )
                 )
             )
@@ -123,12 +131,16 @@ class ServicesRepository(BaseRepository):
         return updated_service
 
     async def get_service_access_rights(
-        self, key: str, version: str
+        self,
+        key: str,
+        version: str,
+        product_name: Optional[str] = None,
     ) -> List[ServiceAccessRightsAtDB]:
         services_in_db = []
         query = sa.select([services_access_rights]).where(
             (services_access_rights.c.key == key)
             & (services_access_rights.c.version == version)
+            & (services_access_rights.c.product_name == product_name)
         )
         async for row in self.connection.execute(query):
             if row:
@@ -148,6 +160,7 @@ class ServicesRepository(BaseRepository):
                     services_access_rights.c.key,
                     services_access_rights.c.version,
                     services_access_rights.c.gid,
+                    services_access_rights.c.product_name,
                 ],
                 set_=rights.dict(by_alias=True, exclude_unset=True),
             )
@@ -173,5 +186,6 @@ class ServicesRepository(BaseRepository):
                     (services_access_rights.c.key == rights.key)
                     & (services_access_rights.c.version == rights.version)
                     & (services_access_rights.c.gid == rights.gid)
+                    & (services_access_rights.c.product_name == rights.product_name)
                 )
             )
