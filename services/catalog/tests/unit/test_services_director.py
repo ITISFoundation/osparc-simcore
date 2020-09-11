@@ -35,9 +35,11 @@ def minimal_app(loop, devel_environ) -> FastAPI:
 
 
 @pytest.fixture
-def mocked_director_api(minimal_app):
+def mocked_director_service_api(minimal_app):
     with respx.mock(
-        base_url=minimal_app.state.settings.director.base_url
+        base_url=minimal_app.state.settings.director.base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,
     ) as respx_mock:
         respx_mock.get(
             "/v0/services", content={"data": ["one", "two"]}, alias="list_services"
@@ -46,7 +48,7 @@ def mocked_director_api(minimal_app):
         yield respx_mock
 
 
-async def test_director_client_setup(minimal_app, mocked_director_api):
+async def test_director_client_setup(minimal_app, mocked_director_service_api):
 
     # gets director client as used in handlers
     director_api = get_director_api(minimal_app)
@@ -58,7 +60,13 @@ async def test_director_client_setup(minimal_app, mocked_director_api):
     data = await director_api.get("/services")
 
     # director entry-point has hit
-    assert mocked_director_api["list_services"].called
+    assert mocked_director_service_api["list_services"].called
 
     # returns un-enveloped response
     assert data == ["one", "two"]
+
+
+#async def test_resilience_to_failing_director_service(
+#    minimal_app, mocked_director_service_api
+#):
+#    pass
