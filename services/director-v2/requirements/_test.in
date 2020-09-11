@@ -23,6 +23,7 @@ Faker
 # migration due to pytest_simcore.postgres_service2
 alembic
 docker
+respx
 
 # tools
 pylint
