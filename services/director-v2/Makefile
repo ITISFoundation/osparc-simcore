@@ -5,7 +5,7 @@ include ../../scripts/common.Makefile
 
 # Custom variables
 APP_NAME         := $(notdir $(CURDIR))
-APP_CLI_NAME     := simcore-service-director_v2
+APP_CLI_NAME     := simcore-service-director-v2
 APP_PACKAGE_NAME := $(subst -,_,$(APP_CLI_NAME))
 APP_VERSION      := $(shell cat VERSION)
 SRC_DIR          := $(abspath $(CURDIR)/src/$(APP_PACKAGE_NAME))
@@ -48,30 +48,48 @@ tests-integration: ## runs integration tests against local+production images
 
 
 # DEVELOPMENT ########
+EXTRA_REGISTRY:=127.0.0.1:5000
+
 .env:
 	cp .env-devel $@
 
-docker-compose-db.ignore.yml: docker-compose-db.yml .env
+
+.PHONY: up-extra down down-extra run-devel
+
+up-extra: .env down # starts pg stack fixture
 	# resolving $@ under environ $<
-	docker-compose -f $< config > $@
-
-
-
-.PHONY: up-db down down-db run-devel
-
-up-db: docker-compose-db.ignore.yml down # starts pg stack fixture
+	docker-compose -f docker-compose-extra.yml config
 	# starting database stack as defined in  ...
-	docker-compose -f $< up --detach
+	docker-compose -f docker-compose-extra.yml up --detach
+	# check registry
+	curl -s $(EXTRA_REGISTRY)/_catalog | jq '.'
 
-down down-db: docker-compose-db.ignore.yml ## stops pg stack fixture
+
+down down-extra:  ## stops extra stack
 	# stopping extra services
-	-@docker-compose -f $< down
+	-@docker-compose -f docker-compose-extra.yml down
 
-run-devel: .env up-db  ## starts db and start service in host
+run-devel: .env up-extra  ## starts app with extra stack
 	# start app (within $<) in devel mode
 	uvicorn $(APP_PACKAGE_NAME).__main__:the_app \
 		--reload --reload-dir $(SRC_DIR) \
 		--port=8000 --host=0.0.0.0
+
+run-prod: .env up-extra
+	# start app (within $<) in prod mode
+	$(APP_CLI_NAME)
+
+
+.PHONY: transfer-images-to-registry
+transfer-images-to-registry: ## transfer images to registry (add '127.0.0.1 registry' to /etc/host)
+	# pushing sleeper image
+	@docker pull itisfoundation/sleeper:1.0.0
+	@docker tag itisfoundation/sleeper:1.0.0 $(EXTRA_REGISTRY)/simcore/services/comp/itis/sleeper:1.0.0
+	@docker push $(EXTRA_REGISTRY)/simcore/services/comp/itis/sleeper:1.0.0
+	# completed transfer of images
+	curl -s $(EXTRA_REGISTRY)/v2/_catalog | jq '.repositories'
+	curl -s $(EXTRA_REGISTRY)/v2/simcore/services/comp/itis/sleeper/tags/list?n=50 | jq '.'
+
 
 
 # BUILD #####################
