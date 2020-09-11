@@ -169,7 +169,8 @@ async def _ensure_registry_insync_with_db(
     missing_services_in_db = set(services_in_registry.keys()) - services_in_db
     if missing_services_in_db:
         logger.debug(
-            "missing services in db:\n%s", pformat(missing_services_in_db),
+            "missing services in db:\n%s",
+            pformat(missing_services_in_db),
         )
         # update db (rationale: missing services are shared with everyone for now)
         await _create_services_in_db(

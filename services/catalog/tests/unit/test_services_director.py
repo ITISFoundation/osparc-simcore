@@ -5,16 +5,16 @@
 import pytest
 import respx
 from fastapi import FastAPI
+from starlette.testclient import TestClient
 
 from simcore_service_catalog.api.dependencies.director import get_director_api
+from simcore_service_catalog.core.application import init_app
 from simcore_service_catalog.core.settings import (
     AppSettings,
     DirectorSettings,
     PostgresSettings,
 )
-from simcore_service_catalog.core.application import init_app
 from simcore_service_catalog.services.director import DirectorApi
-from starlette.testclient import TestClient
 
 
 @pytest.fixture

@@ -42,9 +42,6 @@ def installed_package_dir() -> Path:
     return dirpath
 
 
-
-
-
 # FAKE DATA ------
 
 

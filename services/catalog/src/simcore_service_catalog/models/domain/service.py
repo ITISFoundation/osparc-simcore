@@ -178,7 +178,9 @@ class ServiceKeyVersion(BaseModel):
         ],
     )
     version: constr(regex=VERSION_RE) = Field(
-        ..., description="service version number", example=["1.0.0", "0.0.1"],
+        ...,
+        description="service version number",
+        example=["1.0.0", "0.0.1"],
     )
 
 
@@ -218,7 +220,10 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
         example="1.0.0",
     )
     service_type: ServiceType = Field(
-        ..., alias="type", description="service type", example="computational",
+        ...,
+        alias="type",
+        description="service type",
+        example="computational",
     )
 
     badges: Optional[List[Badge]] = Field(None)
@@ -247,7 +252,8 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
 
 class ServiceGroupAccessRights(BaseModel):
     execute_access: bool = Field(
-        False, description="defines whether the group can execute the service",
+        False,
+        description="defines whether the group can execute the service",
     )
     write_access: bool = Field(
         False, description="defines whether the group can modify the service"
