@@ -127,6 +127,7 @@ async def _create_service_default_access_rights(
             gid=gid,
             execute_access=True,
             write_access=(gid == owner_gid),
+            product_name=app.state.settings.access_rights_default_product_name,
         )
         for gid in set(reader_gids)
     ]

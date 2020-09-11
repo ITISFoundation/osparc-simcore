@@ -14,11 +14,7 @@ from ._base import BaseRepository
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_PRODUCT_NAME = "osparc"
 
-# SELECT *
-# FROM services_access_rights
-# WHERE 'https://osparc.io' ILIKE '%' || name || '%';
 class ServicesRepository(BaseRepository):
     async def list_services(
         self,
@@ -43,7 +39,9 @@ class ServicesRepository(BaseRepository):
                         if execute_access
                         else True,
                         services_access_rights.c.write_access if write_access else True,
-                        product_name if product_name else DEFAULT_PRODUCT_NAME,
+                        (services_access_rights.c.product_name == product_name)
+                        if product_name
+                        else True,
                     )
                 )
             )
@@ -82,7 +80,9 @@ class ServicesRepository(BaseRepository):
                         if execute_access
                         else True,
                         services_access_rights.c.write_access if write_access else True,
-                        product_name if product_name else DEFAULT_PRODUCT_NAME,
+                        (services_access_rights.c.product_name == product_name)
+                        if product_name
+                        else True,
                     )
                 )
             )
@@ -131,10 +131,7 @@ class ServicesRepository(BaseRepository):
         return updated_service
 
     async def get_service_access_rights(
-        self,
-        key: str,
-        version: str,
-        product_name: Optional[str] = None,
+        self, key: str, version: str, product_name: str,
     ) -> List[ServiceAccessRightsAtDB]:
         services_in_db = []
         query = sa.select([services_access_rights]).where(
