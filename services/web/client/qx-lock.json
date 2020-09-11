@@ -10,8 +10,8 @@
     },
     {
       "library_name": "qx-osparc-theme",
-      "library_version": "0.5.5",
-      "path": "qx_packages/ITISFoundation_qx-osparc-theme_v0_5_5",
+      "library_version": "0.5.6",
+      "path": "qx_packages/ITISFoundation_qx-osparc-theme_v0_5_6",
       "uri": "ITISFoundation/qx-osparc-theme",
       "repo_name": "ITISFoundation/qx-osparc-theme",
       "repo_tag": "v0.5.5"
