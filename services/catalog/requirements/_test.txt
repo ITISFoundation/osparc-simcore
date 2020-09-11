@@ -7,13 +7,13 @@
 aiofiles==0.5.0           # via -r requirements/_base.txt, fastapi
 aiohttp==3.6.2            # via pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt
-alembic==1.4.2            # via -r requirements/_test.in
+alembic==1.4.3            # via -r requirements/_test.in
 aniso8601==7.0.0          # via -r requirements/_base.txt, graphene
 astroid==2.4.2            # via pylint
 async-exit-stack==1.0.1   # via -r requirements/_base.txt, fastapi
 async-generator==1.10     # via -r requirements/_base.txt, fastapi
 async-timeout==3.0.1      # via aiohttp
-attrs==19.3.0             # via -r requirements/_base.txt, aiohttp, jsonschema, pytest, pytest-docker
+attrs==19.3.0             # via aiohttp, jsonschema, pytest, pytest-docker
 bcrypt==3.2.0             # via paramiko
 cached-property==1.5.1    # via docker-compose
 certifi==2020.6.20        # via -r requirements/_base.txt, httpx, requests
@@ -41,12 +41,12 @@ graphql-relay==2.0.1      # via -r requirements/_base.txt, graphene
 h11==0.9.0                # via -r requirements/_base.txt, httpcore, uvicorn
 httpcore==0.10.2          # via -r requirements/_base.txt, httpx
 httptools==0.1.1          # via -r requirements/_base.txt, uvicorn
-httpx==0.14.3             # via -r requirements/_base.txt
+httpx==0.14.3             # via -r requirements/_base.txt, respx
 idna-ssl==1.1.0           # via aiohttp
 idna==2.10                # via -r requirements/_base.txt, email-validator, idna-ssl, requests, rfc3986, yarl
 immutables==0.14          # via -r requirements/_base.txt, contextvars
 importlib-metadata==1.7.0  # via jsonschema, pluggy, pytest
-isort==5.5.1              # via pylint
+isort==5.5.2              # via pylint
 itsdangerous==1.1.0       # via -r requirements/_base.txt, fastapi
 jinja2==2.11.2            # via -r requirements/_base.txt, fastapi
 jsonschema==3.2.0         # via -r requirements/_test.in, docker-compose
@@ -83,6 +83,7 @@ python-editor==1.0.4      # via alembic
 python-multipart==0.0.5   # via -r requirements/_base.txt, fastapi
 pyyaml==5.3.1             # via -r requirements/_base.txt, docker-compose, fastapi
 requests==2.24.0          # via -r requirements/_base.txt, codecov, coveralls, docker, docker-compose, fastapi
+respx==0.12.1             # via -r requirements/_test.in
 rfc3986[idna2008]==1.4.0  # via -r requirements/_base.txt, httpx
 rx==1.6.1                 # via -r requirements/_base.txt, graphql-core
 six==1.15.0               # via -r requirements/_base.txt, astroid, bcrypt, cryptography, docker, docker-compose, dockerpty, graphene, graphql-core, graphql-relay, jsonschema, packaging, promise, pynacl, pyrsistent, python-dateutil, python-multipart, tenacity, websocket-client

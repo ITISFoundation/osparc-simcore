@@ -21,5 +21,4 @@ aiopg[sa]
 httpx
 
 # other
-attrs<20,>=19 # from pytest-docker==0.8.0
 tenacity
