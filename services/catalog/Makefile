@@ -39,33 +39,34 @@ tests-integration: ## runs integration tests against local+production images
 
 # DEVELOPMENT ########
 
-
 .env:
 	cp .env-devel $@
 
-docker-compose.yml:
-	cp $(CURDIR)/tests/unit/with_dbs/docker-compose.yml $@
 
+.PHONY: run-devel up-adjacent down-adjacent
 
-.PHONY: run-devel down up-pg
+up-adjacent: .env down-adjacent ## creates and starts adjacent services and migrates postgres database
+	# starting all adjacent services
+	docker-compose -f docker-compose-adjacent.yml up --detach
+	# discovering postgres services
+	@export $(shell grep -v '^#' .env | xargs) && sc-pg discover
+	@sc-pg info
+	# upgrading postgres database to HEAD version
+	@sc-pg upgrade
 
-up-pg: docker-compose.yml down-pg
-	# starting pg database ...
-	docker-compose -f $< up --detach
-
-down-pg: docker-compose.yml ## stops pg fixture
+down-adjacent: docker-compose-adjacent.yml ## stops pg fixture
 	# stopping extra services
-	-@docker-compose -f $< down
+	-@docker-compose -f docker-compose-adjacent.yml down
 
 
-run-devel run-prod: .env up-pg ## runs app with pg service
-	# starting service ...
+run-devel run-prod: .env up-adjacent ## runs app with services defined in docker-compose.yml
+	# starting catalog app (under $<) with adjacent services
 	@$(if $(findstring -devel,$@),\
-		echo "development mode (with reload upon change)"; \
-		echo "start app (under $<)..."; \
+		echo "development mode (with reload upon change)";\
 		uvicorn simcore_service_catalog.__main__:the_app \
 			--reload --reload-dir $(SRC_DIR) \
-			--port=8000 --host=0.0.0.0;,\
+			--port=8000 --host=0.0.0.0;\
+		,\
 		echo "production mode"; \
 		simcore-service-catalog; \
 	)

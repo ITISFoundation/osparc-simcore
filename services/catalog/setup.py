@@ -60,7 +60,7 @@ setup(
     extras_require={"test": test_requirements},
     entry_points={
         "console_scripts": [
-            "simcore-service-catalog = simcore_service_catalog.__main__:main",
+            "simcore-service-catalog=simcore_service_catalog.__main__:main",
         ],
     },
 )
