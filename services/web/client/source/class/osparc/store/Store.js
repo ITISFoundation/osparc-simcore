@@ -204,6 +204,14 @@ qx.Class.define("osparc.store.Store", {
       }
     },
 
+    setStudyState: function(studyId, state) {
+      const studiesWStateCache = this.getStudies();
+      const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
+      if (idx !== -1) {
+        studiesWStateCache[idx]["state"] = state;
+      }
+    },
+
     getStudyWState: function(studyId, reload = false) {
       return new Promise((resolve, reject) => {
         const studiesWStateCache = this.getStudies();
