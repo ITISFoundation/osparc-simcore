@@ -1,39 +1,40 @@
 # pylint:disable=redefined-outer-name,unused-argument,too-many-arguments
 
 
+import asyncio
+import logging
 from copy import deepcopy
 from typing import Dict, List
+from uuid import uuid4
+
 import aiopg
 import aioredis
-import sqlalchemy as sa
 import pytest
-from uuid import uuid4
-import asyncio
-
 from pytest_simcore.helpers.utils_login import log_client_in
-from pytest_simcore.helpers.utils_projects import (
-    create_project,
-    empty_project_data,
-)
+from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
 from servicelib.application import create_safe_application
+from utils import get_fake_project
+
 from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.db_models import projects, users
 from simcore_service_webserver.director import setup_director
+from simcore_service_webserver.groups_api import (
+    add_user_in_group,
+    create_user_group,
+    list_user_groups,
+)
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.resource_manager import setup_resource_manager
+from simcore_service_webserver.resource_manager.registry import get_registry
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_sockets
 from simcore_service_webserver.users import setup_users
-from simcore_service_webserver.resource_manager.registry import get_registry
-from simcore_service_webserver.db_models import users, projects
-from simcore_service_webserver.groups_api import list_user_groups
-from simcore_service_webserver.groups_api import create_user_group, add_user_in_group
 
-from utils import get_fake_project
-
+log = logging.getLogger(__name__)
 
 core_services = ["postgres", "redis", "storage"]
 ops_services = ["minio", "adminer"]
@@ -54,51 +55,9 @@ async def db_engine(postgres_dsn: Dict) -> aiopg.sa.Engine:
     return await aiopg.sa.create_engine(dsn)
 
 
-@pytest.fixture
-def drop_db_engine(postgres_dsn: Dict) -> sa.engine.Engine:
-    postgres_dsn_copy = postgres_dsn.copy()  # make a copy to change these parameters
-    postgres_dsn_copy["database"] = "postgres"
-    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        **postgres_dsn_copy
-    )
-    return sa.create_engine(dsn, isolation_level="AUTOCOMMIT")
-
-
-def execute_queries(
-    drop_db_engine: sa.engine.Engine, sql_statements: List[str]
-) -> None:
-    """runs the queries in the list in order and returns their results in the same order"""
-    with drop_db_engine.connect() as con:
-        for statement in sql_statements:
-            con.execution_options(autocommit=True).execute(statement)
-
-
 @pytest.fixture(autouse=True)
-def __drop_and_recreate_postgres__(
-    postgres_dsn: Dict, drop_db_engine: sa.engine.Engine, postgres_db
-) -> None:
-    """It is possible to drop the application database by ussing another one like
-    the posgtres database. The db will be recrated from the previously created template
-    
-    The postgres_db fixture is required for the template database to be created.
-    """
-
-    queries = [
-        # terminate existing connections to the database
-        f"""
-        SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity 
-        WHERE pg_stat_activity.datname = '{postgres_dsn["database"]}';
-        """,
-        # drop database
-        f"DROP DATABASE {postgres_dsn['database']};",
-        # create from template database
-        f"CREATE DATABASE {postgres_dsn['database']} TEMPLATE template_simcore_db;",
-    ]
-
-    execute_queries(drop_db_engine, queries)
-
+def __drop_and_recreate_postgres__(database_from_template_before_each_function) -> None:
     yield
-    # do nothing on teadown
 
 
 @pytest.fixture(autouse=True)
@@ -121,7 +80,9 @@ def loop(request):
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_config, postgres_db, mock_orphaned_services):
+def client(
+    loop, aiohttp_client, app_config, postgres_with_template_db, mock_orphaned_services
+):
     cfg = deepcopy(app_config)
 
     assert cfg["rest"]["version"] == API_VERSION
