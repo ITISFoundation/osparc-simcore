@@ -40,7 +40,7 @@ def upgrade():
         "INSERT INTO products (name, urls, frontend) VALUES ('osparc', '{\"osparc.io\"}', 'osparc')"
     )
     op.add_column(
-        "services_access_rights", sa.Column("product_name", sa.String(), nullable=False)
+        "services_access_rights", sa.Column("product_name", sa.String(), nullable=False, server_default="osparc")
     )
     op.create_foreign_key(
         "fk_services_name_products",
