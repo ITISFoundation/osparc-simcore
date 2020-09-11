@@ -71,14 +71,6 @@ async def __delete_all_redis_keys__(loop, redis_service):
     # do nothing on teadown
 
 
-# needed to be overwritten here because postgres_db & postgres_session are module scoped.... in pytest-simcore
-@pytest.yield_fixture(scope="module")
-def loop(request):
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
 @pytest.fixture
 def client(
     loop, aiohttp_client, app_config, postgres_with_template_db, mock_orphaned_services

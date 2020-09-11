@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import logging
+import asyncio
 import os
 from typing import Dict, List
 
@@ -68,6 +69,13 @@ def drop_template_db(postgres_engine: sa.engine.Engine) -> None:
         f"DROP DATABASE {TEMPLATE_DB_TO_RESTORE};",
     ]
     execute_queries(postgres_engine, queries)
+
+
+@pytest.yield_fixture(scope="module")
+def loop(request):
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 
 @pytest.fixture(scope="module")
