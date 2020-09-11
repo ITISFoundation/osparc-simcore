@@ -13,7 +13,7 @@ from starlette.testclient import TestClient
 from yarl import URL
 
 from simcore_service_catalog.api.dependencies.database import get_repository
-from simcore_service_catalog.api.dependencies.director import get_director_session
+from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.api.routes import services
 from simcore_service_catalog.db.repositories.groups import GroupsRepository
 from simcore_service_catalog.db.repositories.services import ServicesRepository
@@ -102,11 +102,11 @@ async def director_mockup(
             if url == "/services":
                 return [s.dict(by_alias=True) for s in registry_services]
 
-    app.dependency_overrides[get_director_session] = FakeDirector
+    app.dependency_overrides[get_director_api] = FakeDirector
 
     yield
 
-    app.dependency_overrides[get_director_session] = None
+    app.dependency_overrides[get_director_api] = None
 
 
 @pytest.fixture()
