@@ -25,28 +25,37 @@ qx.Class.define("osparc.ui.basic.Logo", {
     this.base(arguments);
 
     this.set({
-      source: osparc.utils.Utils.getLogoPath(),
       scale: true,
       alignX: "center"
     });
 
     osparc.data.Resources.get("statics")
       .then(statics => {
-        this.set({
-          source: "osparc/s4l_logo.png"
-        });
+        this.__resetSource(statics);
       });
 
     const themeManager = qx.theme.manager.Meta.getInstance();
     themeManager.addListener("changeTheme", () => {
-      this.setSource(osparc.utils.Utils.getLogoPath());
-
       osparc.data.Resources.get("statics")
         .then(statics => {
-          this.set({
-            source: "osparc/s4l_logo.png"
-          });
+          this.__resetSource(statics);
         });
     }, this);
+  },
+
+  methofs: {
+    __resetSource: function(statics) {
+      let sourcePath = osparc.utils.Utils.getLogoPath();
+      if (statics && ("product" in statics)) {
+        if (statics["product"] === "s4l") {
+          sourcePath = "osparc/s4l_logo.png";
+        } else if (statics["product"] === "ti-solutions") {
+          sourcePath = "osparc/ti-solutions.svg";
+        }
+      }
+      this.set({
+        source: sourcePath
+      });
+    }
   }
 });
