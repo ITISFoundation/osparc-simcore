@@ -78,7 +78,8 @@ class AuthSession:
         )
 
     def _url(self, path: str) -> str:
-        return f"/{self.vtag}/{path.lstrip('/')}"
+        # after httpx upgrade
+        return f"/{path.lstrip('/')}"
 
     @classmethod
     def _process(cls, resp: Response) -> Optional[Dict]:

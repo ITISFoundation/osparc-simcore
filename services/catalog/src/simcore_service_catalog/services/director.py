@@ -57,7 +57,8 @@ class AuthSession:
         )
 
     def _url(self, path: str) -> str:
-        return f"/{self.vtag}/{path.lstrip('/')}"
+        # after httpx upgrade
+        return f"/{path.lstrip('/')}"
 
     @classmethod
     def _process(cls, resp: Response) -> Optional[Dict]:
@@ -95,7 +96,7 @@ class AuthSession:
     async def get(self, path: str) -> Optional[Dict]:
         url = self._url(path)
         try:
-            resp = await self.client.get(url)
+            resp = await self.client.get(path)
         except Exception as err:
             logger.exception("Failed to get %s", url)
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
