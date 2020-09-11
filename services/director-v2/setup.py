@@ -41,7 +41,9 @@ setup(
     license="MIT license",
     python_requires="~=3.6",
     packages=find_packages(where="src"),
-    package_dir={"": "src",},
+    package_dir={
+        "": "src",
+    },
     install_requires=install_requirements,
     test_suite="tests",
     tests_require=test_requirements,

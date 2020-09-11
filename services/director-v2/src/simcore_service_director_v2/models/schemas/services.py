@@ -56,7 +56,9 @@ class RunningServiceType(BaseModel):
         regex=SERVICE_IMAGE_NAME_RE,
     )
     service_version: str = Field(
-        ..., description="semantic version number", regex=VERSION_RE,
+        ...,
+        description="semantic version number",
+        regex=VERSION_RE,
     )
     service_host: str = Field(..., description="service host name within the network")
     service_port: int = Field(
@@ -79,8 +81,6 @@ class RunningServicesArray(BaseModel):
 
 class RunningServicesEnveloped(BaseModel):
     data: RunningServicesArray
-
-
 
 
 class ServicesEnveloped(BaseModel):

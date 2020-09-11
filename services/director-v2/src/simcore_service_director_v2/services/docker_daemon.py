@@ -1,10 +1,9 @@
 import logging
 
 import aiodocker
-from asyncio_extras import async_contextmanager # Lt's try to avoid this??
+from asyncio_extras import async_contextmanager  # Lt's try to avoid this??
 
 log = logging.getLogger(__name__)
-
 
 
 @async_contextmanager

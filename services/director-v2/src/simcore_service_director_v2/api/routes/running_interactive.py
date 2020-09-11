@@ -6,7 +6,10 @@ from ...models.schemas.services import RunningServicesEnveloped
 router = APIRouter()
 
 
-UserIdQuery = Query(..., description="The ID of the user that starts the service",)
+UserIdQuery = Query(
+    ...,
+    description="The ID of the user that starts the service",
+)
 ProjectIdQuery = Query(
     ..., description="The ID of the project in which the service starts"
 )

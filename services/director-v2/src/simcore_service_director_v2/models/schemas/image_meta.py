@@ -77,7 +77,10 @@ class ImageMetaData(BaseModel):
         regex=VERSION_RE,
     )
     version: str = Field(
-        ..., description="service version number", example="0.0.1", regex=VERSION_RE,
+        ...,
+        description="service version number",
+        example="0.0.1",
+        regex=VERSION_RE,
     )
     _type: Type = Field(
         ..., alias="type", description="service type", example="computational"
