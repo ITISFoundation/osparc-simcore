@@ -110,7 +110,7 @@ async def director_mockup(
         async def get(self, url: str):
             if url == "/services":
                 return [s.dict(by_alias=True) for s in registry_services]
-            elif "/service_extras/" in url:
+            if "/service_extras/" in url:
                 return {
                     "build_date": f"{datetime.utcnow().isoformat(timespec='seconds')}Z"
                 }
