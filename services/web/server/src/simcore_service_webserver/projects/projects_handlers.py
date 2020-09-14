@@ -21,7 +21,13 @@ from ..users_api import get_user_name
 from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from .projects_models import Owner, ProjectLocked, ProjectState
+from .projects_models import (
+    Owner,
+    ProjectLocked,
+    ProjectRunningState,
+    ProjectState,
+    RunningState,
+)
 from .projects_utils import project_uses_available_services
 
 OVERRIDABLE_DOCUMENT_KEYS = [
@@ -438,11 +444,13 @@ async def state_project(request: web.Request) -> web.Response:
             await get_user_name(request.app, uid) for uid in set(users_of_project)
         ]
         assert len(usernames) <= 1  # currently not possible to have more than 1
+        running_state = ProjectRunningState(value=RunningState.not_started)
         project_state = ProjectState(
             locked={
                 "value": len(usernames) > 0,
                 "owner": Owner(**usernames[0]) if len(usernames) > 0 else None,
-            }
+            },
+            state=running_state,
         )
 
         return web.json_response({"data": project_state.dict()})
