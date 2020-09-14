@@ -22,8 +22,8 @@ build build-kit build-x: ## builds a node image able to run puppeteer
 	)
 
 .PHONY: shell
-shell: ## runs bash in the image to allow manual testing
-	@docker run -it $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) bash
+shell:  guard-URL guard-USER guard-PASSWORD ## runs bash in the image to allow manual testing
+	@docker run --env URL=$(URL) --env USER=$(USER) --env PASSWORD=$(PASSWORD) -it $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) bash
 
 .PHONY: push
 push: ## publish the image
@@ -41,5 +41,13 @@ test-local: guard-URL guard-USER guard-PASSWORD ## test e2e sleepers scenario by
 	@docker run --volume $(OSPARC_ROOT_DIR)/tests/e2e:/osparc-simcore/tests/e2e -it $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) bash -c "npm i /osparc-simcore/tests/e2e/; node /osparc-simcore/tests/e2e/tutorials/sleepers.js $(URL) $(USER) $(PASSWORD)"
 
 .PHONY: test-ci
-test-ci: guard-URL guard-USER guard-PASSWORD ## test e2e sleepers scenario by clone osparc-simcore and running the sleepers tutorial (needs URL, USER and PASSWORD)
-	@docker run -it $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) bash -c "git clone https://github.com/ITISFoundation/osparc-simcore.git; npm i osparc-simcore/tests/e2e/; node osparc-simcore/tests/e2e/tutorials/sleepers.js $(URL) $(USER) $(PASSWORD)"
+test-ci test-ci-staging test-ci-release: guard-URL guard-USER guard-PASSWORD ## test e2e sleepers scenario by clone osparc-simcore and running the sleepers tutorial (needs URL, USER and PASSWORD)
+	@docker run -it $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) bash -c \
+		"git clone https://github.com/ITISFoundation/osparc-simcore.git; \
+		$(if $(or $(findstring -staging,$@), $(findstring -release,$@)),\
+		pushd osparc-simcore; \
+		git checkout $$(git describe --match="$(if $(findstring -staging,$@),staging_*,v*)" --tags --abbrev=0); \
+		popd; \
+		,) \
+		npm i osparc-simcore/tests/e2e/; \
+		node osparc-simcore/tests/e2e/tutorials/sleepers.js $(URL) $(USER) $(PASSWORD)"
