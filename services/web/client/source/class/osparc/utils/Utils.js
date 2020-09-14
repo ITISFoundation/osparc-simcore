@@ -45,7 +45,7 @@ qx.Class.define("osparc.utils.Utils", {
         case "s4l":
           logoPath = "osparc/s4l_logo.png";
           break;
-        case "ti":
+        case "tis":
           logoPath = "osparc/ti-solutions.svg";
           break;
         default: {
