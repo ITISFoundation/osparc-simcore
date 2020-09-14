@@ -76,8 +76,12 @@ async def _reverse_proxy_handler(request: web.Request):
     # forward request
     session = get_client_session(request.app)
 
+    # add product to headers @crespov, here where the product shall come in
+    headers = {"X-Simcore-Products-Name": "osparc"}
+    headers.update(request.headers)
+
     async with session.request(
-        request.method, backend_url, headers=request.headers, data=raw
+        request.method, backend_url, headers=headers, data=raw
     ) as resp:
 
         is_error = resp.status >= 400
