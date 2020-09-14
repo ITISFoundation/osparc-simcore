@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Theme dependant oSparc logo
+ * App/theme dependant logo
  */
 qx.Class.define("osparc.ui.basic.Logo", {
   extend: qx.ui.basic.Image,
@@ -31,20 +31,20 @@ qx.Class.define("osparc.ui.basic.Logo", {
 
     osparc.data.Resources.get("statics")
       .then(statics => {
-        this.__resetSource(statics);
+        this.__resetSourcePath(statics);
       });
 
     const themeManager = qx.theme.manager.Meta.getInstance();
     themeManager.addListener("changeTheme", () => {
       osparc.data.Resources.get("statics")
         .then(statics => {
-          this.__resetSource(statics);
+          this.__resetSourcePath(statics);
         });
     }, this);
   },
 
   members: {
-    __resetSource: function(statics) {
+    __resetSourcePath: function(statics) {
       let sourcePath = osparc.utils.Utils.getLogoPath();
       if (statics && ("product" in statics)) {
         if (statics["product"] === "s4l") {
