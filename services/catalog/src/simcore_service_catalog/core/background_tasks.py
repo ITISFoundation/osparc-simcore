@@ -11,7 +11,6 @@ import asyncio
 import logging
 from asyncio.futures import CancelledError
 from datetime import datetime
-from logging import log
 from pprint import pformat
 from typing import Dict, List, Optional, Set, Tuple
 from urllib.parse import quote_plus
