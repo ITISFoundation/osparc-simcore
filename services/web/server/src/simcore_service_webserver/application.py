@@ -32,6 +32,7 @@ from .tags import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
 from .settings import setup_settings
+from .products import setup_products
 
 log = logging.getLogger(__name__)
 
@@ -57,6 +58,7 @@ def create_application(config: Dict) -> web.Application:
     setup_session(app)
     setup_security(app)
     setup_rest(app)
+    setup_products(app)
     setup_diagnostics(app)
     setup_email(app)
     setup_computation(app)

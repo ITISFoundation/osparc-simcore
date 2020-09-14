@@ -1,3 +1,6 @@
+# Application storage keys
+APP_SETTINGS_KEY = f"{__name__ }.app_settings"
+
 # Request storage keys
 RQ_PRODUCT_KEY = f"{__name__}.product"
 

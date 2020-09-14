@@ -12,14 +12,14 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Set
 
 from aiohttp import web
 
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
-from .settings import APP_SETTINGS_KEY
+from .constants import APP_SETTINGS_KEY, RQ_PRODUCT_KEY
+from .products import FE_APPS
 
 INDEX_RESOURCE_NAME = "statics.index"
 TMPDIR_KEY = f"{__name__}.tmpdir"
@@ -47,6 +47,7 @@ async def _delete_tmps(app: web.Application):
 
 
 async def index(request: web.Request):
+    # DEPRECATED!!
     """
     Serves boot application under index
     """
@@ -55,6 +56,15 @@ async def index(request: web.Request):
     index_path = get_client_outdir(request.app) / "index.html"
     with index_path.open() as ofh:
         return web.Response(text=ofh.read(), content_type="text/html")
+
+
+async def get_frontend_ria(request: web.Request):
+    log.debug("Request from host %s", request.headers["Host"])
+
+    target_product = request[RQ_PRODUCT_KEY]
+
+    log.debug("Serving front-end for product %s", target_product)
+    raise web.HTTPFound(f"/{target_product}/index.html#")
 
 
 def write_statics_file(app: web.Application, directory: Path) -> None:
@@ -69,33 +79,26 @@ def write_statics_file(app: web.Application, directory: Path) -> None:
 
 @app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
 def setup_statics(app: web.Application):
+
     # Serves Front-end Rich Interface Application (RIA)
-    app.router.add_get("/", index, name=INDEX_RESOURCE_NAME)
+    app.router.add_get("/", get_frontend_ria, name=INDEX_RESOURCE_NAME)
 
     # NOTE: source-output and build-output have both the same subfolder structure
-    outdir: Path = get_client_outdir(app)
+    frontend_outdir: Path = get_client_outdir(app)
 
-    # Create statics file
-    write_statics_file(app, outdir / "resource")
+    # Creating static info about server
+    write_statics_file(app, frontend_outdir / "resource")
 
-    required_dirs = ["osparc", "resource", "transpiled"]
-    folders = [x for x in outdir.iterdir() if x.is_dir()]
+    # Creating static routes
+    routes = web.RouteTableDef()
+    static_dirs = FE_APPS + ["resource", "transpiled"]
+    is_dev: bool = app[APP_SETTINGS_KEY].build_target in [None, "development"]
 
-    # Checks integrity of RIA source before serving and warn!
-    for name in required_dirs:
-        folder_names = [path.name for path in folders]
-        if name not in folder_names:
-            log.warning(
-                "Missing folders: expected %s, got %s in %s",
-                required_dirs,
-                folder_names,
-                outdir,
-            )
+    for name in static_dirs:
+        folder = frontend_outdir / name
+        routes.static(f"/{folder.name}", folder, show_index=is_dev)
 
-    # Add static routes
-    folders: Set[Path] = set(folders).union([outdir / name for name in required_dirs])
-    for path in folders:
-        app.router.add_static("/" + path.name, path)
+    app.add_routes(routes)
 
     # cleanup
     app.on_cleanup.append(_delete_tmps)
