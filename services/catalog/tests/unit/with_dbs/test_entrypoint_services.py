@@ -15,11 +15,9 @@ from pydantic.types import PositiveInt
 from starlette.testclient import TestClient
 from yarl import URL
 
-from simcore_service_catalog.api.dependencies.database import get_repository
 from simcore_service_catalog.api.dependencies.director import get_director_session
 from simcore_service_catalog.api.routes import services
 from simcore_service_catalog.db.repositories.groups import GroupsRepository
-from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.domain.group import GroupAtDB, GroupType
 from simcore_service_catalog.models.domain.service import (
     ServiceAccessRightsAtDB,
