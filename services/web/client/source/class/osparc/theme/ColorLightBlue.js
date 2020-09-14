@@ -7,7 +7,7 @@ qx.Theme.define("osparc.theme.ColorLightBlue", {
     "workbench-edge-selected": "#FFFF00",
     "workbench-start-hint": "#AFAFAF",
 
-    "node-selected-background": "#999999",
+    "node-selected-background": "#7195c7",
     "node-title-text": "#232323",
     "node-port-text": "#454545",
 
