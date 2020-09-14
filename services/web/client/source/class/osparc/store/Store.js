@@ -335,7 +335,7 @@ qx.Class.define("osparc.store.Store", {
      */
     getServicesDAGs: function(reload = false) {
       return new Promise((resolve, reject) => {
-        const allServices = osparc.utils.Services.getBuiltInServices();
+        const allServices = [];
         const servicesPromise = osparc.data.Resources.get("services", null, !reload);
         const dagsPromise = osparc.data.Resources.get("dags", null, !reload);
         Promise.all([servicesPromise, dagsPromise])
