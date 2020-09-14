@@ -28,9 +28,7 @@
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
-        "osparc.theme.ThemeLight",
-        "osparc.theme.ThemeLightBlue",
-        "osparc.theme.ThemePurple"
+        "osparc.theme.ThemeLight"
       ],
       "environment": {
         "product.name": "osparc"
