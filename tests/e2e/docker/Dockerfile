@@ -48,8 +48,7 @@ RUN apt-get update && \
 
 SHELL [ "/bin/bash", "-c" ]
 
-ENTRYPOINT [ "bash", "-c" ]
-
+ENTRYPOINT []
 
 ARG BUILD_DATE
 ARG VCS_URL

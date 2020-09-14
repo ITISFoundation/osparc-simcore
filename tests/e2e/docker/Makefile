@@ -38,8 +38,8 @@ guard-%:
 OSPARC_ROOT_DIR := $(realpath $(CURDIR)/../../../)
 .PHONY: test-local
 test-local: guard-URL guard-USER guard-PASSWORD ## test e2e sleepers scenario by using local osparc-simcore and running the sleepers tutorial (needs URL, USER and PASSWORD)
-	@docker run --volume $(OSPARC_ROOT_DIR)/tests/e2e:/osparc-simcore/tests/e2e -it $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) "npm i /osparc-simcore/tests/e2e/; node /osparc-simcore/tests/e2e/tutorials/sleepers.js $(URL) $(USER) $(PASSWORD)"
+	@docker run --volume $(OSPARC_ROOT_DIR)/tests/e2e:/osparc-simcore/tests/e2e -it $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) bash -c "npm i /osparc-simcore/tests/e2e/; node /osparc-simcore/tests/e2e/tutorials/sleepers.js $(URL) $(USER) $(PASSWORD)"
 
 .PHONY: test-ci
 test-ci: guard-URL guard-USER guard-PASSWORD ## test e2e sleepers scenario by clone osparc-simcore and running the sleepers tutorial (needs URL, USER and PASSWORD)
-	@docker run -it $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) "git clone https://github.com/ITISFoundation/osparc-simcore.git; npm i osparc-simcore/tests/e2e/; node osparc-simcore/tests/e2e/tutorials/sleepers.js $(URL) $(USER) $(PASSWORD)"
+	@docker run -it $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) bash -c "git clone https://github.com/ITISFoundation/osparc-simcore.git; npm i osparc-simcore/tests/e2e/; node osparc-simcore/tests/e2e/tutorials/sleepers.js $(URL) $(USER) $(PASSWORD)"
