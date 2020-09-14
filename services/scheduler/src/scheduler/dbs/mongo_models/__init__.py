@@ -12,6 +12,7 @@ instance = MotorAsyncIOInstance()  # pylint: disable=invalid-name
 
 
 async def ensure_indexes():
+    # pylint: disable=import-outside-toplevel,no-member
     from scheduler.dbs.mongo_models.workbench import WorkbenchDiff, WorkbenchUpdate
 
     # this can also be done by providing the module and plying auto discovery

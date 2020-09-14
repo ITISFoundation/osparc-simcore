@@ -30,7 +30,8 @@ class AsyncTaskWrapper:
             )
         finally:
             self.logger.warning(
-                "Worker '%s' exited.", self._worker.__name__,
+                "Worker '%s' exited.",
+                self._worker.__name__,
             )
 
         if should_restart:

@@ -1,6 +1,6 @@
 import uuid
-
 from typing import Dict
+
 from fastapi import HTTPException
 
 from scheduler.api.io_models import ProjectActiveUpdate, ProjectUpdate

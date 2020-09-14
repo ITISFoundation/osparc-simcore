@@ -20,7 +20,9 @@ async def inject_other_data(raw_workbench: Dict[str, Any]) -> Any:
     return raw_workbench
 
 
-def strip_entries_for_scheduling(workbench: Dict[str, Any],) -> Dict[str, Any]:
+def strip_entries_for_scheduling(
+    workbench: Dict[str, Any],
+) -> Dict[str, Any]:
     for node_id, node_values in workbench.items():
         workbench[node_id] = {
             k: v for k, v in node_values.items() if k not in FIELDS_TO_REMOVE

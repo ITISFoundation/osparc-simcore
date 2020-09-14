@@ -1,3 +1,5 @@
+# pylint: disable=no-member,abstract-method
+
 # Make sure all tests run against clean instances of MongoDB
 
 import pytest

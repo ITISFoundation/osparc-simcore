@@ -1,3 +1,5 @@
+# pylint: disable=protected-access,not-async-context-manager
+
 import pytest
 import redislite
 from pymongo_inmemory import MongoClient

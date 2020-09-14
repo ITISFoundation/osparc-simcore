@@ -1,3 +1,5 @@
+# pylint: disable=no-member
+
 import datetime
 from typing import Any, Dict
 
@@ -99,7 +101,8 @@ class WorkbenchUpdate(Document):
         scheduling_diff = WorkbenchDiff(**scheduling_workbench_diff_params)
 
         ui_workbench_diff_param = dict(
-            diff=Delta(ui_deep_diff).dumps(), datetime=current_date,
+            diff=Delta(ui_deep_diff).dumps(),
+            datetime=current_date,
         )
         if self.prev_ui_workbench_diff is not None:
             ui_workbench_diff_param["prev_workbench_diff"] = self.prev_ui_workbench_diff

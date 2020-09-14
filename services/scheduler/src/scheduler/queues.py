@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__ import annotations  # pylint: disable=no-name-in-module
 
 from abc import ABC, abstractmethod
 from typing import Any
