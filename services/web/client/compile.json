@@ -20,11 +20,11 @@
   ],
   "applications": [
     {
+      "default": true,
       "class": "osparc.Application",
       "theme": "osparc.theme.ThemeDark",
       "name": "osparc",
       "title": "oSPARC",
-      "default": true,
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
