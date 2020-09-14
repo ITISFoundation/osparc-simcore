@@ -205,11 +205,12 @@ services:
       - default
       - computational_services_subnet
     healthcheck:
-      test: rabbitmqctl node_health_check
+      # see https://www.rabbitmq.com/monitoring.html#individual-checks for info about health-checks available in rabbitmq
+      test: rabbitmq-diagnostics -q status
       interval: 30s
       timeout: 30s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 15s
 
   migration:
     image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}
