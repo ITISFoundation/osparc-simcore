@@ -52,14 +52,14 @@
     {
       "class": "osparc.Application",
       "theme": "osparc.theme.ThemePurple",
-      "name": "tis",
+      "name": "ti",
       "title": "TI Solutions",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load"
       ],
       "environment": {
-        "product.name": "tis"
+        "product.name": "ti"
       },
       "bootPath": "source/boot"
     },

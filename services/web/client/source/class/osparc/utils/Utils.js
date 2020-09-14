@@ -45,8 +45,8 @@ qx.Class.define("osparc.utils.Utils", {
         case "s4l":
           logoPath = "osparc/s4l_logo.png";
           break;
-        case "tis":
-          logoPath = "osparc/ti-solutions.png";
+        case "ti":
+          logoPath = "osparc/ti-solutions.svg";
           break;
         default: {
           const colorManager = qx.theme.manager.Color.getInstance();
