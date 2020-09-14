@@ -2,6 +2,7 @@
 
 import datetime
 from typing import Any, Dict
+from uuid import UUID
 
 from deepdiff import DeepDiff, Delta
 from umongo import Document, fields, validate
@@ -53,7 +54,7 @@ class WorkbenchUpdate(Document):
     prev_ui_workbench_diff = fields.ReferenceField("WorkbenchDiff")
 
     @classmethod
-    async def entry_for_project_id(cls, project_id: str) -> "WorkbenchUpdate":
+    async def entry_for_project_id(cls, project_id: UUID) -> "WorkbenchUpdate":
         return await cls.find_one({"project_id": project_id})
 
     @classmethod

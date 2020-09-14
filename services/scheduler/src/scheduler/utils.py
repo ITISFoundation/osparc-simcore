@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import traceback
-from typing import Coroutine, Dict
+from typing import Callable, Dict
 
 from structlog import get_logger
 
@@ -9,7 +9,7 @@ from structlog import get_logger
 class AsyncTaskWrapper:
     """Used to handle cleanup of tasks"""
 
-    def __init__(self, worker: Coroutine, logger: logging.Logger):
+    def __init__(self, worker: Callable, logger: logging.Logger):
         self._worker = worker
         self.logger = logger
         self.task = None

@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 import umsgpack
+from aioredis import Redis
 
 from scheduler.dbs.redis import close_redis_pool, make_redis_pool
 
@@ -40,7 +41,7 @@ class AsyncQueue:
     ):
         self._serializer: BaseSerializer = serializer
         self._storage_key = f"{key_prefix}::{name}"
-        self._redis_pool = None
+        self._redis_pool: Redis = None
 
     async def __aenter__(self):
         self._redis_pool = await make_redis_pool()
