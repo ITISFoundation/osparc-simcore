@@ -13,9 +13,10 @@ log = logging.getLogger(__name__)
 
 FE_APPS = [
     "osparc",
-    "s4l",
-    "tis",
+    #"s4l",
+    #"tis",
 ]  # TODO: <--- This is defined by services/web/client/compile.json
+
 DEFAULT_FE_APP = FE_APPS[0]
 PRODUCT_PATH_RE = re.compile(r"^/(" + "|".join(FE_APPS) + r")/index.html")
 
