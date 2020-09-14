@@ -15,8 +15,7 @@ from pydantic.types import PositiveInt
 from starlette.testclient import TestClient
 from yarl import URL
 
-from simcore_service_catalog.api.dependencies.database import get_repository
-from simcore_service_catalog.api.dependencies.director import get_director_api
+import simcore_service_catalog.api.dependencies.director
 from simcore_service_catalog.api.routes import services
 from simcore_service_catalog.db.repositories.groups import GroupsRepository
 from simcore_service_catalog.models.domain.group import GroupAtDB, GroupType
@@ -26,7 +25,6 @@ from simcore_service_catalog.models.domain.service import (
     ServiceOut,
     ServiceType,
 )
-from simcore_service_catalog.services.director import AuthSession
 
 core_services = ["postgres"]
 ops_services = ["adminer"]
@@ -114,15 +112,19 @@ async def director_mockup(
                     "build_date": f"{datetime.utcnow().isoformat(timespec='seconds')}Z"
                 }
 
-    def fake_director_session(*args, **kwargs):
+    def fake_director_api(*args, **kwargs):
         return FakeDirector()
 
     monkeypatch.setattr(
-        AuthSession,
-        "create",
-        fake_director_session,
+        simcore_service_catalog.api.dependencies.director,
+        "get_director_api",
+        fake_director_api,
     )
-    assert isinstance(get_director_session(), FakeDirector)
+
+    # Check mock
+    from simcore_service_catalog.api.dependencies.director import get_director_api
+
+    assert isinstance(get_director_api(), FakeDirector)
     yield
 
 
