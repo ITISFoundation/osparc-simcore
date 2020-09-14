@@ -6,7 +6,7 @@ from typing import Any, Dict
 from deepdiff import DeepDiff, Delta
 from umongo import Document, fields, validate
 
-from scheduler.dbs.mongo_models.init import instance
+from scheduler.dbs.mongo_models.mongo_instance import instance
 from scheduler.dbs.mongo_models.utils import BinaryField
 
 

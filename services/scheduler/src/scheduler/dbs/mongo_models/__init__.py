@@ -6,7 +6,7 @@ from tenacity import retry, stop_after_delay, wait_random_exponential
 from umongo import MotorAsyncIOInstance
 
 from scheduler import config
-from scheduler.dbs.mongo_models.init import instance
+from scheduler.dbs.mongo_models.mongo_instance import instance
 
 
 async def ensure_indexes():
