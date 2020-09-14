@@ -12,17 +12,17 @@ certifi==2020.6.20        # via -r requirements/_base.txt, minio, requests
 cffi==1.14.2              # via bcrypt, cryptography, pynacl
 chardet==3.0.4            # via requests
 configparser==5.0.0       # via -r requirements/_base.txt, minio
-coverage==5.2.1           # via -r requirements/_test.in, coveralls, pytest-cov
+coverage==5.3             # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==2.1.2          # via -r requirements/_test.in
 cryptography==3.1         # via paramiko
 distro==1.5.0             # via docker-compose
-docker-compose==1.26.2    # via pytest-docker
+docker-compose==1.27.2    # via pytest-docker
 docker[ssh]==4.3.1        # via docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
 idna==2.10                # via requests
 importlib-metadata==1.7.0  # via jsonschema, pluggy, pytest
-isort==5.5.1              # via pylint
+isort==5.5.2              # via pylint
 jsonschema==3.2.0         # via docker-compose
 lazy-object-proxy==1.4.3  # via astroid
 mccabe==0.6.1             # via pylint
@@ -36,7 +36,7 @@ pycparser==2.20           # via cffi
 pylint==2.6.0             # via -r requirements/_test.in
 pynacl==1.4.0             # via paramiko
 pyparsing==2.4.7          # via packaging
-pyrsistent==0.16.0        # via jsonschema
+pyrsistent==0.17.3        # via jsonschema
 pytest-cov==2.10.1        # via -r requirements/_test.in
 pytest-docker==0.8.0      # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
@@ -46,7 +46,7 @@ python-dotenv==0.14.0     # via docker-compose
 pytz==2020.1              # via -r requirements/_base.txt, minio
 pyyaml==5.3.1             # via docker-compose
 requests==2.24.0          # via -r requirements/_test.in, coveralls, docker, docker-compose
-six==1.15.0               # via -r requirements/_base.txt, astroid, bcrypt, cryptography, docker, docker-compose, dockerpty, jsonschema, packaging, pynacl, pyrsistent, python-dateutil, websocket-client
+six==1.15.0               # via -r requirements/_base.txt, astroid, bcrypt, cryptography, docker, dockerpty, jsonschema, packaging, pynacl, python-dateutil, websocket-client
 texttable==1.6.3          # via docker-compose
 toml==0.10.1              # via pylint
 typed-ast==1.4.1          # via astroid
