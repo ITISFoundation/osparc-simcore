@@ -38,13 +38,19 @@ qx.Class.define("osparc.component.widget.LogoOnOff", {
   construct: function() {
     this.base(arguments);
 
+    const offLogoContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+      alignX: "center"
+    }));
+    offLogoContainer.add(new qx.ui.core.Spacer(null, 8));
     const offLogo = new qx.ui.basic.Image("osparc/offline.svg").set({
       width: 92,
-      height: 41,
-      paddingTop: 9,
+      height: 35,
       scale: true
     });
-    this.add(offLogo);
+    offLogoContainer.add(offLogo, {
+      flex: 1
+    });
+    this.add(offLogoContainer);
 
     const onLogo = new osparc.ui.basic.LogoWPlatform();
     onLogo.setSize({
