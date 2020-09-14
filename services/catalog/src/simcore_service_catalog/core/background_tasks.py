@@ -11,6 +11,7 @@ import asyncio
 import logging
 from asyncio.futures import CancelledError
 from datetime import datetime
+from logging import log
 from pprint import pformat
 from typing import Dict, List, Optional, Set, Tuple
 from urllib.parse import quote_plus
@@ -18,18 +19,19 @@ from urllib.parse import quote_plus
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from fastapi import FastAPI
+from fastapi.exceptions import HTTPException
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 
-from simcore_service_catalog.db.repositories.projects import ProjectsRepository
-
 from ..api.dependencies.director import get_director_session
 from ..db.repositories.groups import GroupsRepository
+from ..db.repositories.projects import ProjectsRepository
 from ..db.repositories.services import ServicesRepository
 from ..models.domain.service import (
     ServiceAccessRightsAtDB,
     ServiceDockerData,
     ServiceMetaDataAtDB,
+    ServiceType,
 )
 
 logger = logging.getLogger(__name__)
@@ -37,13 +39,17 @@ logger = logging.getLogger(__name__)
 ServiceKey = str
 ServiceVersion = str
 
+from ..services.frontend_services import get_services as get_frontend_services
+
 
 async def _list_registry_services(
     app: FastAPI,
 ) -> Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData]:
     client = get_director_session(app)
     data = await client.get("/services")
-    services: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData] = {}
+    services: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData] = {
+        (s.key, s.version): s for s in get_frontend_services()
+    }
     for x in data:
         try:
             service_data = ServiceDockerData.parse_obj(x)
@@ -84,11 +90,15 @@ async def _create_service_default_access_rights(
     async def _is_old_service(app: FastAPI, service: ServiceDockerData) -> bool:
         # get service build date
         client = get_director_session(app)
-        data = await client.get(
-            f"/service_extras/{quote_plus(service.key)}/{service.version}"
-        )
-        if not data or "build_date" not in data:
-            return True
+        try:
+            data = await client.get(
+                f"/service_extras/{quote_plus(service.key)}/{service.version}"
+            )
+            if not data or "build_date" not in data:
+                return True
+        except HTTPException:
+            logger.error("service %s:%s not found", service.key, service.version)
+            raise
 
         logger.debug("retrieved service extras are %s", data)
 
@@ -99,8 +109,12 @@ async def _create_service_default_access_rights(
     everyone_gid = (await groups_repo.get_everyone_group()).gid
     owner_gid = None
     reader_gids: List[PositiveInt] = []
-    if await _is_old_service(app, service):
-        logger.debug("service %s:%s is old", service.key, service.version)
+
+    def _is_frontend_service(service: ServiceDockerData) -> bool:
+        return "/frontend/" in service.key
+
+    if _is_frontend_service(service) or await _is_old_service(app, service):
+        logger.debug("service %s:%s is old or frontend", service.key, service.version)
         # let's make that one available to everyone
         reader_gids.append(everyone_gid)
 
@@ -170,7 +184,8 @@ async def _ensure_registry_insync_with_db(
     missing_services_in_db = set(services_in_registry.keys()) - services_in_db
     if missing_services_in_db:
         logger.debug(
-            "missing services in db:\n%s", pformat(missing_services_in_db),
+            "missing services in db:\n%s",
+            pformat(missing_services_in_db),
         )
         # update db (rationale: missing services are shared with everyone for now)
         await _create_services_in_db(
@@ -220,6 +235,7 @@ async def sync_registry_task(app: FastAPI) -> None:
         try:
             async with engine.acquire() as conn:
                 logger.debug("syncing services between registry and database...")
+
                 # check that the list of services is in sync with the registry
                 await _ensure_registry_insync_with_db(app, conn)
 
