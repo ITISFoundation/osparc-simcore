@@ -77,7 +77,7 @@ async def _reverse_proxy_handler(request: web.Request):
     session = get_client_session(request.app)
 
     # add product to headers @crespov, here where the product shall come in
-    headers = {"X-Simcore-Product-Name": "osparc"}
+    headers = {"X-Simcore-Products-Name": "osparc"}
     headers.update(request.headers)
 
     async with session.request(
