@@ -18,7 +18,6 @@ from urllib.parse import quote_plus
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from fastapi import FastAPI
-from fastapi.exceptions import HTTPException
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 
