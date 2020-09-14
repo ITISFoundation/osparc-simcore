@@ -12,8 +12,7 @@ from simcore_service_webserver.products import (DEFAULT_FE_APP, FE_APPS,
                                                 discover_product_middleware)
 
 
-def test_frontend_apps_in_sync_with_products(web_client_dir):
-
+def test_every_product_has_a_frontend_app(web_client_dir):
     compile_filepath = web_client_dir / "compile.json"
     frontend_info = json.loads(compile_filepath.read_text())
     #target = next(

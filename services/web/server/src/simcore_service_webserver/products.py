@@ -13,8 +13,8 @@ log = logging.getLogger(__name__)
 
 FE_APPS = [
     "osparc",
-    #"s4l",
-    #"tis",
+    # "s4l",
+    # "tis",
 ]  # TODO: <--- This is defined by services/web/client/compile.json
 
 DEFAULT_FE_APP = FE_APPS[0]
@@ -33,19 +33,17 @@ def discover_product_by_hostname(request: web.Request) -> Optional[str]:
 
 @web.middleware
 async def discover_product_middleware(request, handler):
-    if request.path.startswith(f"/{api_vtag}"):  # API
+
+    # main entrypoint or api
+    if request.path == "/" or request.path.startswith(f"/{api_vtag}"):
         frontend_app = discover_product_by_hostname(request) or DEFAULT_FE_APP
         request[RQ_PRODUCT_KEY] = frontend_app
-
     else:
-        # /s4/boot.js is called with 'Referer': 'http://localhost:9081/s4l/index.html'
-
-        # if path to index, e.g. /s4l/index.html'
-        match = PRODUCT_PATH_RE.match(request.path)
-        if match:
-            request[RQ_PRODUCT_KEY] = match.group(1)
-        else:
-            request[RQ_PRODUCT_KEY] = DEFAULT_FE_APP
+        # if path has index, e.g. /s4l/index.html' (mostly for dev??)
+        # NOTE: /s4/boot.js is called with 'Referer': 'http://localhost:9081/s4l/index.html'
+        product_match = PRODUCT_PATH_RE.match(request.path)
+        if product_match:
+            request[RQ_PRODUCT_KEY] = product_match.group(1)
 
     response = await handler(request)
 
