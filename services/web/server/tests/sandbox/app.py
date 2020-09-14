@@ -1,57 +1,87 @@
-from aiohttp import web
 import json
 from pathlib import Path
+
+from aiohttp import web
+from aiohttp.web import middleware
 from multidict import MultiDict
 
-client_folder = Path.home() / "devp/osparc-simcore/services/web/client"
+from simcore_service_webserver.__version__ import api_vtag
 
-client_info = json.loads((client_folder / "compile.json").read_text())
 
-target = next(t for t in client_info["targets"] if t["type"] == "source")
-client_outdir = client_folder / target["outputPath"]
+
+# FRONT_END ####################################
+frontend_folder = Path.home() / "devp/osparc-simcore/services/web/client"
+
+frontend_info = json.loads((frontend_folder / "compile.json").read_text())
+
+target = next(
+    t for t in frontend_info["targets"] if t["type"] == frontend_info["defaultTarget"]
+)
+frontend_outdir = frontend_folder / target["outputPath"]
+
+frontend_apps = [feapp["name"] for feapp in frontend_info["applications"]]
+default_frontend_app = next(
+    feapp["name"] for feapp in frontend_info["applications"] if feapp["default"]
+)
+
+
+print("Client")
+print("  - info           : ", frontend_info)
+print("  - outdir         : ", frontend_outdir)
+print("  - feapps         : ", frontend_apps)
+print("  - default feapps : ", default_frontend_app)
+
 
 # ----
+PRODUCT_NAME_HEADER = "X-Simcore-Products-Name"
+RQ_PRODUCT_HEADER_KEY = "Simcore-Products-Name"
 
 routes = web.RouteTableDef()
-client_apps = [ capp["name"] for capp in client_info["applications"]]
 
-default_app_name = next( capp["name"] for capp in client_info["applications"] if capp["default"] )
-
-PRODUCT_NAME_HEADER = "X-Simcore-Products-Name"
-
+(frontend_outdir / "resource" / "statics.json").write_text(
+    json.dumps({"appName": "demo"})
+)
 
 
 #
-import json
-(client_outdir / "resource" / "statics.json").write_text(json.dumps({"appName": "demo"}))
-
-
-
+# http://localhost:9081/
+#
+# http://localhost:9081/osparc/index.html#
+# http://localhost:9081/s4l/index.html#
+# http://localhost:9081/tis/index.html#
 
 #
-# http://localhost:8080/
-#
-# http://localhost:8080/osparc/index.html#
-# http://localhost:8080/s4l/index.html#
-# http://localhost:8080/tis/index.html#
-
-#
-# http://localhost:8080/explorer/index.html#
-# http://localhost:8080/apiviewer/index.html#
-# http://localhost:8080/testtapper/index.html#
+# http://localhost:9081/explorer/index.html#
+# http://localhost:9081/apiviewer/index.html#
+# http://localhost:9081/testtapper/index.html#
 
 
 ## MAIN ENTRYPOINT #############################
 @routes.get("/")
 async def serve_default_app(request):
     # TODO: check url and defined what is the default??
-    print("Request from", request.headers['Host'])
-    target_product = "s4l" # default_app_name
+    print("Request from", request.headers["Host"])
+    target_product = "s4l"  # default_frontend_app
 
+    print("Serving front-end for product", target_product)
     raise web.HTTPFound(f"/{target_product}/index.html#")
 
 
+@middleware
+async def append_product_header_middleware(request, handler):
+    # this is only for api? /v0/ like
+    if request.path.startswith(f"/{api_vtag}"):
+        print(request.path, "<---------------")
+        # match url with products
 
+        # import pdb; pdb.set_trace()
+        # request.host
+        request[RQ_PRODUCT_HEADER_KEY] = default_frontend_app
+
+        # if successful, just
+        # request.headers[PRODUCT_NAME_HEADER] = product_name
+
+    return await handler(request)
 
 ## API ###################################
 @routes.get("/v0/")
@@ -59,33 +89,40 @@ async def get_info(request):
     for key in request.headers:
         print(f"{key:5s}:", request.headers[key])
 
-    #name = request.headers[PRODUCT_NAME_HEADER]
-    #print("Product", name)
+    # name = request.headers[PRODUCT_NAME_HEADER]
+    # print("Product", name)
 
-    return web.json_response( { k:str(v) for k,v in request.headers.items() }, headers=MultiDict({PRODUCT_NAME_HEADER: default_app_name}) )
-
+    return web.json_response(
+        {k: str(v) for k, v in request.headers.items()},
+        headers=MultiDict({PRODUCT_NAME_HEADER: default_frontend_app}),
+    )
 
 
 #####################################
-
-base_path = "http://localhost:8080"
+app_port = 9081
+base_path = f"http://localhost:{app_port}"
 print(f"{base_path}/")
-for name in client_apps:
+for name in frontend_apps:
     print(f"{base_path}/{name}/index.html#")
 
-for name in client_apps + ["resource", "transpiled"]:
-    folder = client_outdir / name
+for name in frontend_apps + [
+    "resource",
+]:  # "transpiled"]:
+    folder = frontend_outdir / name
     assert folder.exists()
+    print("serving", folder)
     routes.static(f"/{folder.name}", folder, show_index=True, follow_symlinks=True)
 
 
-
-
-app = web.Application()
+app = web.Application(
+    middlewares=[
+        append_product_header_middleware,
+    ]
+)
 app.add_routes(routes)
 
-#print(routes, "-"*10)
-#for resource in app.router.resources():
+# print(routes, "-"*10)
+# for resource in app.router.resources():
 #    print(resource)
 
-web.run_app(app)
+web.run_app(app, port=app_port)
