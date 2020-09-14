@@ -1832,6 +1832,13 @@ paths:
                               maximum: 100
                               minimum: 0
                               description: the node progress value
+                            state:
+                              type: string
+                              enum:
+                                - pending
+                                - started
+                                - success
+                                - failed
                             thumbnail:
                               type: string
                               description: url of the latest screenshot of the node
@@ -2073,6 +2080,13 @@ paths:
                               maximum: 100
                               minimum: 0
                               description: the node progress value
+                            state:
+                              type: string
+                              enum:
+                                - pending
+                                - started
+                                - success
+                                - failed
                             thumbnail:
                               type: string
                               description: url of the latest screenshot of the node
@@ -2324,6 +2338,13 @@ paths:
                             maximum: 100
                             minimum: 0
                             description: the node progress value
+                          state:
+                            type: string
+                            enum:
+                              - pending
+                              - started
+                              - success
+                              - failed
                           thumbnail:
                             type: string
                             description: url of the latest screenshot of the node
@@ -2675,6 +2696,13 @@ components:
                   maximum: 100
                   minimum: 0
                   description: the node progress value
+                state:
+                  type: string
+                  enum:
+                    - pending
+                    - started
+                    - success
+                    - failed
                 thumbnail:
                   type: string
                   description: url of the latest screenshot of the node

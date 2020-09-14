@@ -30,7 +30,24 @@ components:
       type: object
       required:
         - locked
+        - state
       properties:
+        state:
+          type: object
+          description: describes the project running state
+          required:
+            - value
+          properties:
+            value:
+              type: string
+              enum:
+                - notstarted
+                - pending
+                - started
+                - running
+                - completed
+                - failed
+                - aborted
         locked:
           type: object
           description: describes the project lock state

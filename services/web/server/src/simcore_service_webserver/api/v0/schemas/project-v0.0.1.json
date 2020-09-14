@@ -139,6 +139,15 @@
               "minimum": 0,
               "description": "the node progress value"
             },
+            "state": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "started",
+                "success",
+                "failed"
+              ]
+            },
             "thumbnail": {
               "type": "string",
               "description": "url of the latest screenshot of the node",
