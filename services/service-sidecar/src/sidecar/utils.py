@@ -1,5 +1,4 @@
 import asyncio
-import re
 import uuid
 from contextlib import asynccontextmanager
 from typing import Tuple
@@ -11,15 +10,15 @@ from sidecar import config
 
 
 class InvalidComposeSpec(Exception):
-    pass
+    """Exception used to signal incorrect docker-compose configuration file"""
 
 
 @asynccontextmanager
 async def write_to_tmp_file(file_contents):
     """Disposes of file on exit"""
     file_path = f"/tmp/{uuid.uuid4()}"
-    async with aiofiles.open(file_path, mode="w") as f:
-        await f.write(file_contents)
+    async with aiofiles.open(file_path, mode="w") as tmp_file:
+        await tmp_file.write(file_contents)
     try:
         yield file_path
     finally:
@@ -54,7 +53,7 @@ def validate_compose_spec(compose_file_content: str) -> None:
     try:
         parsed_compose_spec = yaml.safe_load(compose_file_content)
     except yaml.YAMLError as e:
-        raise InvalidComposeSpec(f"{str(e)}\nProvided yaml is not valid!")
+        raise InvalidComposeSpec(f"{str(e)}\nProvided yaml is not valid!") from e
 
     for service in parsed_compose_spec["services"]:
         service_content = parsed_compose_spec["services"][service]

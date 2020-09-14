@@ -1,12 +1,10 @@
 import logging
-import uuid
 from typing import Any, Dict, List
 
 import aiodocker
 import yaml
 from fastapi import FastAPI, Query, Request, Response
 from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel
 
 from sidecar import config
 from sidecar.storage import store
@@ -41,7 +39,10 @@ async def remove_the_compose_spec():
     if stored_compose_content is None:
         return True, "No started spec to remove was found"
 
-    command = "docker-compose -p {project} -f {file_path} down --remove-orphans -t {stop_and_remove_timeout}"
+    command = (
+        "docker-compose -p {project} -f {file_path} "
+        "down --remove-orphans -t {stop_and_remove_timeout}"
+    )
     result = await write_file_and_run_command(
         file_content=stored_compose_content, command=command
     )
@@ -93,8 +94,8 @@ async def create_docker_compose_configuration_containers_without_starting(
 
 @app.put("/compose/stop", response_class=PlainTextResponse)
 async def stop_containers_without_removing_them(response: Response) -> str:
-    """ Stops the previously started service
-    and returns the docker-compose output """
+    """Stops the previously started service
+    and returns the docker-compose output"""
     stored_compose_content = await store.get()
     if stored_compose_content is None:
         response.status_code = 400
@@ -138,8 +139,8 @@ async def start_or_update_docker_compose_configuration(
 
 @app.delete("/compose", response_class=PlainTextResponse)
 async def remove_docker_compose_configuration(response: Response) -> str:
-    """ Removes the previously started service
-    and returns the docker-compose output """
+    """Removes the previously started service
+    and returns the docker-compose output"""
     finished_without_errors, stdout = await remove_the_compose_spec()
     response.status_code = 200 if finished_without_errors else 400
     return stdout
@@ -153,6 +154,7 @@ async def get_spawned_container_names() -> List[str]:
 
 @app.get("/container/logs")
 async def get_container_logs(
+    # pylint: disable=unused-argument
     response: Response,
     container: str,
     since: int = Query(
