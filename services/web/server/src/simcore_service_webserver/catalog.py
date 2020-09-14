@@ -14,6 +14,7 @@ from servicelib.rest_routing import iter_path_operations
 
 from .__version__ import api_version_prefix
 from .catalog_config import get_client_session, get_config
+from .constants import RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
 
@@ -101,8 +102,12 @@ async def _reverse_proxy_handler(request: web.Request) -> web.Response:
     if request.can_read_body:
         raw: bytes = await request.read()
 
-    # add product to headers @crespov, here where the product shall come in
-    headers = {"X-Simcore-Products-Name": "osparc"}
+    # forward request
+    session = get_client_session(request.app)
+
+    # injects product discovered by middleware in headers
+    # FIXME: tmp with default but should be strict!!
+    headers = {X_PRODUCT_NAME_HEADER: request.get(RQ_PRODUCT_KEY, "osparc")}
     headers.update(request.headers)
     # forward request
     return await _request_catalog(
