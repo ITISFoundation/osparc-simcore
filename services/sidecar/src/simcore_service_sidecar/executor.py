@@ -1,40 +1,44 @@
+import asyncio
 import json
 import logging
 import shutil
 import time
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
-import aiodocker
 import aiopg
 import attr
-from celery.utils.log import get_task_logger
+from aiodocker import Docker
+from aiodocker.containers import DockerContainer
+from aiodocker.exceptions import DockerContainerError, DockerError
 from packaging import version
-from tenacity import retry, stop_after_attempt
 
+from celery.utils.log import get_task_logger
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_sdk import node_data, node_ports
 from simcore_sdk.node_ports.dbmanager import DBManager
 
 from . import config, exceptions
+from .boot_mode import get_boot_mode
 from .log_parser import LogType, monitor_logs_task
 from .rabbitmq import RabbitMQ
+from .utils import get_volume_mount_point
 
 log = get_task_logger(__name__)
 
 
 @attr.s(auto_attribs=True)
 class TaskSharedVolumes:
-    input_folder: Path = None
-    output_folder: Path = None
-    log_folder: Path = None
+    input_folder: Optional[Path] = None
+    output_folder: Optional[Path] = None
+    log_folder: Optional[Path] = None
 
     @classmethod
     def from_task(cls, task: aiopg.sa.result.RowProxy):
         return cls(
-            Path.home() / f"input/{task.job_id}",
-            Path.home() / f"output/{task.job_id}",
-            Path.home() / f"log/{task.job_id}",
+            config.SIDECAR_INPUT_FOLDER / f"{task.job_id}",
+            config.SIDECAR_OUTPUT_FOLDER / f"{task.job_id}",
+            config.SIDECAR_LOG_FOLDER / f"{task.job_id}",
         )
 
     def create(self) -> None:
@@ -44,8 +48,25 @@ class TaskSharedVolumes:
             self.log_folder,
         ]:
             if folder.exists():
-                shutil.rmtree(folder)
+                shutil.rmtree(str(folder))
             folder.mkdir(parents=True, exist_ok=True)
+
+    def delete(self) -> None:
+        for folder in [
+            self.input_folder,
+            self.output_folder,
+            self.log_folder,
+        ]:
+            if folder.exists():
+
+                def log_error(_, path, excinfo):
+                    log.warning(
+                        "Failed to remove %s [reason: %s]. Should consider pruning files in host later",
+                        path,
+                        excinfo,
+                    )
+
+                shutil.rmtree(str(folder), onerror=log_error)
 
 
 @attr.s(auto_attribs=True)
@@ -67,6 +88,7 @@ class Executor:
             self.task.node_id,
             self.task.internal_id,
         )
+
         try:
             await self.preprocess()
             await self.process()
@@ -74,15 +96,26 @@ class Executor:
             await self._post_messages(
                 LogType.LOG, "[sidecar]...task completed successfully."
             )
-        except (aiodocker.exceptions.DockerError, exceptions.SidecarException) as e:
-            await self._post_messages(LogType.LOG, f"[sidecar]...task failed: {str(e)}")
+        except asyncio.CancelledError:
+            await self._post_messages(LogType.LOG, "[sidecar]...task cancelled")
             raise
+        except (DockerError, exceptions.SidecarException) as exc:
+            await self._post_messages(
+                LogType.LOG, f"[sidecar]...task failed: {str(exc)}"
+            )
+            raise exceptions.SidecarException(
+                f"Error while executing task {self.task}"
+            ) from exc
+        finally:
+            await self.cleanup()
 
     async def preprocess(self):
         await self._post_messages(LogType.LOG, "[sidecar]Preprocessing...")
         log.debug("Pre-Processing...")
         self.shared_folders = TaskSharedVolumes.from_task(self.task)
         self.shared_folders.create()
+        host_name = config.SIDECAR_HOST_HOSTNAME_PATH.read_text()
+        await self._post_messages(LogType.LOG, f"[sidecar]Running on {host_name}")
         results = await logged_gather(self._process_task_inputs(), self._pull_image())
         await self._write_input_file(results[0])
         log.debug("Pre-Processing Pipeline DONE")
@@ -100,6 +133,14 @@ class Executor:
         await self._process_task_log()
         log.debug("Post-Processing DONE")
 
+    async def cleanup(self):
+        log.debug("Cleaning...")
+        await self._post_messages(LogType.LOG, "[sidecar]Cleaning...")
+        if self.shared_folders:
+            self.shared_folders.delete()
+        await self._post_messages(LogType.LOG, "[sidecar]Cleaning completed")
+        log.debug("Cleaning DONE")
+
     async def _get_node_ports(self):
         if self.db_manager is None:
             # Keeps single db engine: simcore_sdk.node_ports.dbmanager_{id}
@@ -115,7 +156,7 @@ class Executor:
                 # the filename is not necessarily the name of the port, might be mapped
                 mapped_filename = Path(path).name
                 input_ports[port.key] = str(port_value)
-                final_path = Path(self.shared_folders.input_folder, mapped_filename)
+                final_path = self.shared_folders.input_folder / mapped_filename
                 shutil.copy(str(path), str(final_path))
                 log.debug(
                     "DOWNLOAD successfull from %s to %s via %s",
@@ -131,7 +172,7 @@ class Executor:
     async def _process_task_inputs(self) -> Dict:
         log.debug("Inputs parsing...")
 
-        input_ports = dict()
+        input_ports: Dict = {}
         try:
             PORTS = await self._get_node_ports()
         except node_ports.exceptions.NodeNotFound:
@@ -141,7 +182,8 @@ class Executor:
             return input_ports
 
         await self._post_messages(
-            LogType.LOG, "[sidecar]Downloading inputs...",
+            LogType.LOG,
+            "[sidecar]Downloading inputs...",
         )
         await logged_gather(
             *[
@@ -164,7 +206,6 @@ class Executor:
             file_name.write_text(json.dumps(inputs))
             log.debug("Writing input file DONE")
 
-    @retry(reraise=True, stop=stop_after_attempt(3))
     async def _pull_image(self):
         docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
         log.debug(
@@ -173,8 +214,7 @@ class Executor:
             config.DOCKER_USER,
             config.DOCKER_PASSWORD,
         )
-        try:
-            docker_client: aiodocker.Docker = aiodocker.Docker()
+        async with Docker() as docker_client:
             await self._post_messages(
                 LogType.LOG,
                 f"[sidecar]Pulling {self.task.image['name']}:{self.task.image['tag']}...",
@@ -197,22 +237,28 @@ class Executor:
                     )["integration-version"]
                 )
 
-        except aiodocker.exceptions.DockerError:
-            msg = f"Failed to pull image '{docker_image}'"
-            log.exception(msg)
-            raise
-
-    async def _run_container(self):
-        start_time = time.perf_counter()
-        container = None
-        docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
-
+    async def _create_container_config(self, docker_image: str) -> Dict:
         # NOTE: Env/Binds for log folder is only necessary for integraion "0"
+        env_vars = [
+            f"{name.upper()}_FOLDER=/{name}/{self.task.job_id}"
+            for name in [
+                "input",
+                "output",
+                "log",
+            ]
+        ]
+        env_vars.append(f"SC_COMP_SERVICES_SCHEDULED_AS={get_boot_mode().value}")
+
+        host_input_path = await get_volume_mount_point(
+            config.SIDECAR_DOCKER_VOLUME_INPUT
+        )
+        host_output_path = await get_volume_mount_point(
+            config.SIDECAR_DOCKER_VOLUME_OUTPUT
+        )
+        host_log_path = await get_volume_mount_point(config.SIDECAR_DOCKER_VOLUME_LOG)
+
         docker_container_config = {
-            "Env": [
-                f"{name.upper()}_FOLDER=/{name}/{self.task.job_id}"
-                for name in ["input", "output", "log"]
-            ],
+            "Env": env_vars,
             "Cmd": "run",
             "Image": docker_image,
             "Labels": {
@@ -228,101 +274,127 @@ class Executor:
                 "Init": True,
                 "AutoRemove": False,
                 "Binds": [
-                    f"{config.SIDECAR_DOCKER_VOLUME_INPUT}:/input",
-                    f"{config.SIDECAR_DOCKER_VOLUME_OUTPUT}:/output",
-                    f"{config.SIDECAR_DOCKER_VOLUME_LOG}:/log",
+                    # NOTE: the docker engine is mounted, so only named volumes are usable. Therefore for a selective
+                    # subfolder mount we need to get the path as seen from the host computer (see https://github.com/ITISFoundation/osparc-simcore/issues/1723)
+                    f"{host_input_path}/{self.task.job_id}:/input/{self.task.job_id}",
+                    f"{host_output_path}/{self.task.job_id}:/output/{self.task.job_id}",
+                    f"{host_log_path}/{self.task.job_id}:/log/{self.task.job_id}",
                 ],
             },
         }
-        log.debug(
-            "Running image %s with config %s", docker_image, docker_container_config
+        return docker_container_config
+
+    async def _start_monitoring_container(
+        self, container: DockerContainer
+    ) -> asyncio.Future:
+        log_file = self.shared_folders.log_folder / "log.dat"
+        if self.integration_version == version.parse("0.0.0"):
+            # touch output file, so it's ready for the container (v0)
+            log_file.touch()
+
+            log_processor_task = fire_and_forget_task(
+                monitor_logs_task(log_file, self._post_messages)
+            )
+            return log_processor_task
+        log_processor_task = fire_and_forget_task(
+            monitor_logs_task(container, self._post_messages, log_file)
         )
+        return log_processor_task
+
+    async def _run_container(self):
+        start_time = time.perf_counter()
+        docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
+        container_config = await self._create_container_config(docker_image)
+
         # volume paths for car container (w/o prefix)
         result = "FAILURE"
+        log_processor_task = None
         try:
-            docker_client: aiodocker.Docker = aiodocker.Docker()
-            await self._post_messages(
-                LogType.LOG,
-                f"[sidecar]Running {self.task.image['name']}:{self.task.image['tag']}...",
-            )
-            container = await docker_client.containers.create(
-                config=docker_container_config
-            )
-            # start monitoring logs
-            if self.integration_version == version.parse("0.0.0"):
-                # touch output file, so it's ready for the container (v0)
-                log_file = self.shared_folders.log_folder / "log.dat"
-                log_file.touch()
-
-                log_processor_task = fire_and_forget_task(
-                    monitor_logs_task(log_file, self._post_messages)
+            async with Docker() as docker_client:
+                await self._post_messages(
+                    LogType.LOG,
+                    f"[sidecar]Running {self.task.image['name']}:{self.task.image['tag']}...",
                 )
-            else:
-                log_processor_task = fire_and_forget_task(
-                    monitor_logs_task(container, self._post_messages)
+                container = await docker_client.containers.create(
+                    config=container_config
                 )
-            # start the container
-            await container.start()
-            # indicate container is started
-            await self.rabbit_mq.post_instrumentation_message(
-                {
-                    "metrics": "service_started",
-                    "user_id": self.user_id,
-                    "project_id": self.task.project_id,
-                    "service_uuid": self.task.node_id,
-                    "service_type": "COMPUTATIONAL",
-                    "service_key": self.task.image["name"],
-                    "service_tag": self.task.image["tag"],
-                }
-            )
+                log_processor_task = await self._start_monitoring_container(container)
+                # start the container
+                await container.start()
+                # indicate container is started
+                await self.rabbit_mq.post_instrumentation_message(
+                    {
+                        "metrics": "service_started",
+                        "user_id": self.user_id,
+                        "project_id": self.task.project_id,
+                        "service_uuid": self.task.node_id,
+                        "service_type": "COMPUTATIONAL",
+                        "service_key": self.task.image["name"],
+                        "service_tag": self.task.image["tag"],
+                    }
+                )
 
-            # wait until the container finished, either success or fail or timeout
-            container_data = await container.show()
-            while container_data["State"]["Running"]:
-                # reload container data
+                # wait until the container finished, either success or fail or timeout
                 container_data = await container.show()
-                if (
-                    (time.perf_counter() - start_time) > config.SERVICES_TIMEOUT_SECONDS
-                    and config.SERVICES_TIMEOUT_SECONDS > 0
-                ):
-                    log.error(
-                        "Running container timed-out after %ss and will be stopped now\nlogs: %s",
-                        config.SERVICES_TIMEOUT_SECONDS,
-                        container.log(stdout=True, stderr=True),
-                    )
-                    await container.stop()
-                    break
+                TIME_TO_NEXT_PERDIODIC_CHECK_SECS = 2
+                while container_data["State"]["Running"]:
+                    await asyncio.sleep(TIME_TO_NEXT_PERDIODIC_CHECK_SECS)
+                    # reload container data
+                    container_data = await container.show()
+                    if (
+                        (time.perf_counter() - start_time)
+                        > config.SERVICES_TIMEOUT_SECONDS
+                        and config.SERVICES_TIMEOUT_SECONDS > 0
+                    ):
+                        log.error(
+                            "Running container timed-out after %ss and will be stopped now\nlogs: %s",
+                            config.SERVICES_TIMEOUT_SECONDS,
+                            container.log(stdout=True, stderr=True),
+                        )
+                        await container.stop()
+                        break
 
-            # reload container data to check the error code with latest info
-            container_data = await container.show()
-            if container_data["State"]["ExitCode"] > 0:
-                raise exceptions.SidecarException(
-                    f"{docker_image} completed with error code {container_data['State']['ExitCode']}: {container_data['State']['Error']}"
-                )
-            # ensure progress 1.0 is sent
-            await self._post_messages(LogType.PROGRESS, "1.0")
-            result = "SUCCESS"
-            log.info("%s completed with successfully!", docker_image)
-        except aiodocker.exceptions.DockerContainerError:
+                # reload container data to check the error code with latest info
+                container_data = await container.show()
+                if container_data["State"]["ExitCode"] > 0:
+                    logs = await container.log(stdout=True, stderr=True, tail=10)
+                    exc = exceptions.SidecarException(
+                        f"{docker_image} completed with error code {container_data['State']['ExitCode']}:\n {container_data['State']['Error']}\n:Last logs:\n{logs}"
+                    )
+                    # clean up the container
+                    await container.delete(force=True)
+                    raise exc
+                # clean up the container
+                await container.delete(force=True)
+                # ensure progress 1.0 is sent
+                await self._post_messages(LogType.PROGRESS, "1.0")
+                result = "SUCCESS"
+                log.info("%s completed with successfully!", docker_image)
+        except DockerContainerError:
             log.exception(
                 "Error while running %s with parameters %s",
                 docker_image,
-                docker_container_config,
+                container_config,
             )
-        except aiodocker.exceptions.DockerError:
+            raise
+        except DockerError:
             log.exception(
                 "Unknown error while trying to run %s with parameters %s",
                 docker_image,
-                docker_container_config,
+                container_config,
             )
+            raise
+        except asyncio.CancelledError:
+            log.warning("Container run was cancelled")
+            raise
+
         finally:
             stop_time = time.perf_counter()
             log.info("Running %s took %sseconds", docker_image, stop_time - start_time)
-            if container:
-                # clean up the container
-                await container.delete(force=True)
             # stop monitoring logs now
-            log_processor_task.cancel()
+            if log_processor_task:
+                log_processor_task.cancel()
+                await log_processor_task
             # instrumentation
             await self.rabbit_mq.post_instrumentation_message(
                 {
@@ -336,20 +408,20 @@ class Executor:
                     "result": result,
                 }
             )
-            await log_processor_task
 
     async def _process_task_output(self):
-        """ There will be some files in the /output
+        """There will be some files in the /output
 
-                - Maybe a output.json (should contain key value for simple things)
-                - other files: should be named by the key in the output port
+            - Maybe a output.json (should contain key value for simple things)
+            - other files: should be named by the key in the output port
 
-            Files will be pushed to S3 with reference in db. output.json will be parsed
-            and the db updated
+        Files will be pushed to S3 with reference in db. output.json will be parsed
+        and the db updated
         """
         log.debug("Processing outputs...")
         await self._post_messages(
-            LogType.LOG, "[sidecar]Uploading outputs...",
+            LogType.LOG,
+            "[sidecar]Uploading outputs...",
         )
         try:
             PORTS = await self._get_node_ports()
@@ -396,9 +468,10 @@ class Executor:
     async def _process_task_log(self):
         log.debug("Processing Logs...")
         await self._post_messages(
-            LogType.LOG, "[sidecar]Uploading logs...",
+            LogType.LOG,
+            "[sidecar]Uploading logs...",
         )
-        if self.shared_folders.log_folder.exists():
+        if self.shared_folders.log_folder and self.shared_folders.log_folder.exists():
             await node_data.data_manager.push(
                 self.shared_folders.log_folder, rename_to="logs"
             )
@@ -407,11 +480,17 @@ class Executor:
     async def _post_messages(self, log_type: LogType, message: str):
         if log_type == LogType.LOG:
             await self.rabbit_mq.post_log_message(
-                self.user_id, self.task.project_id, self.task.node_id, message,
+                self.user_id,
+                self.task.project_id,
+                self.task.node_id,
+                message,
             )
         elif log_type == LogType.PROGRESS:
             await self.rabbit_mq.post_progress_message(
-                self.user_id, self.task.project_id, self.task.node_id, message,
+                self.user_id,
+                self.task.project_id,
+                self.task.node_id,
+                message,
             )
 
     async def _error_message_to_ui_and_logs(self, error_message):

@@ -38,20 +38,20 @@ qx.Class.define("osparc.component.widget.LogoOnOff", {
   construct: function() {
     this.base(arguments);
 
-    const width = 92;
-    const height = 32;
-
     const offLogo = new qx.ui.basic.Image("osparc/osparc-red.svg").set({
-      width,
-      height,
+      width: 92,
+      height: 41,
+      paddingTop: 9,
       scale: true
     });
     this.add(offLogo);
 
-    const onLogo = new osparc.ui.basic.OSparcLogo().set({
-      width,
-      height
+    const onLogo = new osparc.ui.basic.LogoWPlatform();
+    onLogo.setSize({
+      width: 92,
+      height: 50
     });
+    onLogo.setFont("text-9");
     this.add(onLogo);
   },
 

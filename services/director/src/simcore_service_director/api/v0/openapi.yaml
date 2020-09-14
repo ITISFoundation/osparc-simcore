@@ -168,7 +168,7 @@ paths:
                           example: 1.0.0
                         version:
                           type: string
-                          description: semantic version number
+                          description: service version number
                           pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
                           example: 1.0.0
                         type:
@@ -184,7 +184,7 @@ paths:
                           example: Fast Counter
                         thumbnail:
                           type: string
-                          description: url to the thumbanil
+                          description: url to the thumbnail
                           example: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                         badges:
                           type: array
@@ -552,7 +552,7 @@ paths:
                           example: 1.0.0
                         version:
                           type: string
-                          description: semantic version number
+                          description: service version number
                           pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
                           example: 1.0.0
                         type:
@@ -568,7 +568,7 @@ paths:
                           example: Fast Counter
                         thumbnail:
                           type: string
-                          description: url to the thumbanil
+                          description: url to the thumbnail
                           example: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
                         badges:
                           type: array
@@ -906,7 +906,7 @@ paths:
         - users
       summary: Returns the service's details which should be hidden from the user defined as extras.
       description: Currently returns the node_requirements an array of resoruces needed for scheduling.
-      operationId: services_extras_get
+      operationId: service_extras_by_key_version_get
       parameters:
         - in: path
           name: service_key
@@ -952,6 +952,15 @@ paths:
                           enum:
                             - CPU
                             - GPU
+                      service_build_details:
+                        type: object
+                        properties:
+                          build_date:
+                            type: string
+                          vcs_ref:
+                            type: string
+                          vcs_url:
+                            type: string
                   error:
                     nullable: true
                     default: null
@@ -2141,7 +2150,7 @@ components:
                 example: 1.0.0
               version:
                 type: string
-                description: semantic version number
+                description: service version number
                 pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
                 example: 1.0.0
               type:
@@ -2157,7 +2166,7 @@ components:
                 example: Fast Counter
               thumbnail:
                 type: string
-                description: url to the thumbanil
+                description: url to the thumbnail
                 example: 'https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png'
               badges:
                 type: array
@@ -2404,6 +2413,15 @@ components:
                 enum:
                   - CPU
                   - GPU
+            service_build_details:
+              type: object
+              properties:
+                build_date:
+                  type: string
+                vcs_ref:
+                  type: string
+                vcs_url:
+                  type: string
         error:
           nullable: true
           default: null

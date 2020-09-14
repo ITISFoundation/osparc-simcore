@@ -50,6 +50,7 @@ pytest_plugins = [
     "pytest_simcore.postgres_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.websocket_client",
+    "pytest_simcore.simcore_services",
 ]
 
 log = logging.getLogger(__name__)

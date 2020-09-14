@@ -30,14 +30,18 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
+      - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
+      - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+      - BACKGROUND_TASK_REST_TIME=${CATALOG_BACKGROUND_TASK_REST_TIME:-60}
     depends_on:
       - postgres
+      - director
     networks:
       - default
 
@@ -105,7 +109,6 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
-      - BUILD_DATE=${BUILD_DATE:-1970-01-01T01:00:00Z}
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
       - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
       - STORAGE_HOST=${STORAGE_HOST:-storage}
@@ -118,6 +121,9 @@ services:
     env_file:
       - ../.env
     depends_on:
+      - storage
+      - catalog
+      - director
       - postgres
       - rabbit
       - redis
@@ -158,6 +164,7 @@ services:
       - output:/home/scu/output
       - log:/home/scu/log
       - /var/run/docker.sock:/var/run/docker.sock
+      - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment:
       - RABBIT_HOST=${RABBIT_HOST}
       - RABBIT_PORT=${RABBIT_PORT}
@@ -180,6 +187,9 @@ services:
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - SIDECAR_LOGLEVEL=${LOG_LEVEL:-WARNING}
+      - START_AS_MODE_CPU=${SIDECAR_FORCE_CPU_NODE:-0}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
     depends_on:
       - rabbit
       - postgres
@@ -229,6 +239,21 @@ services:
       - default
       - computational_services_subnet
 
+  migration:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    environment:
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+    depends_on:
+      - postgres
+    networks:
+      - default
+
   postgres:
     image: postgres:10.11
     init: true
@@ -262,6 +287,7 @@ services:
         "-c",
         "tcp_keepalives_count=5",
       ]
+
   redis:
     image: redis:5.0-alpine
     init: true

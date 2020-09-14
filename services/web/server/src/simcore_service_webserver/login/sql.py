@@ -44,7 +44,7 @@ def insert_sql(table, data, returning="id"):
     ('INSERT INTO tbl (foo, id) VALUES ($1, $2) RETURNING pk', ['bar', 1])
     """
     keys, values = _split_dict(data)
-    sql = "INSERT INTO {} ({}) VALUES ({}){}".format( # nosec
+    sql = "INSERT INTO {} ({}) VALUES ({}){}".format(  # nosec
         table,
         ", ".join(keys),
         ", ".join(_placeholders(data)),

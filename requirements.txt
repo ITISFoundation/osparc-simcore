@@ -15,10 +15,11 @@
 
 # formatter
 black
-isort==4.3.21
+isort>=4.2.5,<5 # pylint==2.5.3 constraints isort [required: >=4.2.5,<5, installed: 4.3.21]
 # dependency manager
 pip-tools
 # version manager
 bump2version
 # renaming
 rope
+

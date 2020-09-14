@@ -5,7 +5,7 @@ from datetime import date, datetime
 from typing import List, Dict, Type
 
 from .base_model_ import Model
-from .inline_response2001_data import InlineResponse2001Data
+from .inline_response2003_data import InlineResponse2003Data
 from .. import util
 
 
@@ -15,14 +15,14 @@ class InlineResponse201(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: InlineResponse2001Data=None, error: object=None):
+    def __init__(self, data: InlineResponse2003Data=None, error: object=None):
         """InlineResponse201 - a model defined in OpenAPI
 
         :param data: The data of this InlineResponse201.
         :param error: The error of this InlineResponse201.
         """
         self.openapi_types = {
-            'data': InlineResponse2001Data,
+            'data': InlineResponse2003Data,
             'error': object
         }
 
@@ -49,7 +49,7 @@ class InlineResponse201(Model):
 
 
         :return: The data of this InlineResponse201.
-        :rtype: InlineResponse2001Data
+        :rtype: InlineResponse2003Data
         """
         return self._data
 
@@ -59,7 +59,7 @@ class InlineResponse201(Model):
 
 
         :param data: The data of this InlineResponse201.
-        :type data: InlineResponse2001Data
+        :type data: InlineResponse2003Data
         """
         if data is None:
             raise ValueError("Invalid value for `data`, must not be `None`")

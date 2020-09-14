@@ -34,6 +34,10 @@ qx.Class.define("osparc.utils.Utils", {
         (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
     },
 
+    isInZ43: function() {
+      return window.location.hostname.includes("speag");
+    },
+
     getLogoPath: function() {
       const colorManager = qx.theme.manager.Color.getInstance();
       const textColor = colorManager.resolve("text");
@@ -368,36 +372,6 @@ qx.Class.define("osparc.utils.Utils", {
 
     isObject: function(v) {
       return typeof v === "object" && v !== null;
-    },
-
-    mustache: {
-      mustacheRegEx: function() {
-        return /{{([^{}]*)}}/g;
-      },
-
-      getVariables: function(obj) {
-        const variables = new Set();
-        const secondaryStudyDataStr = JSON.stringify(obj);
-        const mustaches = secondaryStudyDataStr.match(osparc.utils.Utils.mustache.mustacheRegEx()) || [];
-        mustaches.forEach(mustache => {
-          const variable = mustache.replace("{{", "").replace("}}", "");
-          variables.add(variable);
-        });
-        return Array.from(variables);
-      },
-
-      replace: function(obj, parameters) {
-        const mustaches = this.self().mustache.getVariables(obj);
-        let objStr = JSON.stringify(obj);
-        mustaches.forEach(mustache => {
-          const paramId = mustache.replace("{{", "").replace("}}", "");
-          const parameter = parameters.find(param => param.id === paramId);
-          if (parameter) {
-            objStr = objStr.replace(mustache, parameter.label);
-          }
-        });
-        return JSON.parse(objStr);
-      }
     }
   }
 });

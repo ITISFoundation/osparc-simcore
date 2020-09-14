@@ -7,17 +7,16 @@
  */
 
 /**
- * Widget that contains the StudyDetails of the given study metadata.
- *
- * It also provides a button that opens a window with the same information.
+ *  Widget placed in the Study Editor that contains the StudyDetails of the given study.
+ * and a button that opens a the StudyDetailsEditor.
  *
  * *Example*
  *
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *    const serviceInfo = new osparc.component.metadata.ServiceInfo(selectedService);
- *    this.add(serviceInfo);
+ *    const studyInfo = new osparc.component.metadata.StudyInfo(study);
+ *    this.add(studyInfo);
  * </pre>
  */
 
@@ -25,7 +24,7 @@ qx.Class.define("osparc.component.metadata.StudyInfo", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param study {Object|osparc.data.model.Study} Study (metadata)
+    * @param study {osparc.data.model.Study} Study model
     */
   construct: function(study) {
     this.base(arguments);
@@ -36,15 +35,20 @@ qx.Class.define("osparc.component.metadata.StudyInfo", {
     });
     this._setLayout(new qx.ui.layout.VBox(8));
 
-    this.__study = study;
-
     this._add(this.__getMoreInfoMenuButton());
-    const windowWidth = 400;
-    this._add(new osparc.component.metadata.StudyDetails(study, windowWidth));
+    this.setStudy(study);
+  },
+
+  properties: {
+    study: {
+      check: "osparc.data.model.Study",
+      apply: "_applyStudy",
+      nullable: false
+    }
   },
 
   members: {
-    __study: null,
+    __studyDetails: null,
 
     __getMoreInfoMenuButton: function() {
       const moreInfoButton = new qx.ui.form.Button(this.tr("More Info")).set({
@@ -58,19 +62,33 @@ qx.Class.define("osparc.component.metadata.StudyInfo", {
       return moreInfoButton;
     },
 
+    _applyStudy: function(newStudy) {
+      if (this.__studyDetails) {
+        this._remove(this.__studyDetails);
+      }
+
+      const windowWidth = 400;
+      const studyDetails = this.__studyDetails = new osparc.component.metadata.StudyDetails(newStudy, windowWidth);
+      this._add(studyDetails);
+    },
+
     __createStudyDetailsEditor: function() {
       const width = 500;
       const height = 500;
       const title = this.tr("Study Details Editor");
-      const studyDetails = new osparc.component.metadata.StudyDetailsEditor(this.__study.serializeStudy(), false, width);
-      studyDetails.showOpenButton(false);
-      const win = osparc.component.metadata.StudyDetailsEditor.popUpInWindow(title, studyDetails, width, height);
-      [
-        "updateStudy"
-      ].forEach(event => studyDetails.addListener(event, () => {
-        qx.event.message.Bus.getInstance().dispatchByName("updateStudy", this.__study.serializeStudy());
+      const studyDetailsEditor = new osparc.component.metadata.StudyDetailsEditor(this.getStudy().serializeStudy(), false, width);
+      studyDetailsEditor.showOpenButton(false);
+      const win = osparc.ui.window.Window.popUpInWindow(studyDetailsEditor, title, width, height);
+      studyDetailsEditor.addListener("updateStudy", e => {
+        const newStudyData = e.getData();
+        this.getStudy().set({
+          name: newStudyData.name,
+          description: newStudyData.description,
+          thumbnail: newStudyData.thumbnail
+        });
+        qx.event.message.Bus.getInstance().dispatchByName("updateStudy", newStudyData.uuid);
         win.close();
-      }));
+      });
     }
   }
 });

@@ -11,6 +11,7 @@ from uuid import uuid4
 
 import aio_pika
 import pytest
+import sqlalchemy as sa
 from mock import call
 
 from servicelib.application import create_safe_application
@@ -43,11 +44,11 @@ def client(
     app_config,  ## waits until swarm with *_services are up
     rabbit_config: Config,
     rabbit_service,  ## waits until rabbit is responsive
+    postgres_db: sa.engine.Engine,
 ):
     assert app_config["rest"]["version"] == API_VERSION
 
     app_config["storage"]["enabled"] = False
-    app_config["db"]["init_tables"] = True  # inits postgres_service
     app_config[CONFIG_SECTION_NAME] = rabbit_config.dict()
 
     # fake config
@@ -105,8 +106,8 @@ async def _publish_messages(
     node_uuid: str,
     user_id: str,
     project_id: str,
-    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange, aio_pika.Exchange],
-) -> Tuple[Dict, Dict]:
+    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
+) -> Tuple[Dict, Dict, Dict]:
     log_messages = [
         _create_rabbit_message("log", node_uuid, user_id, project_id, f"log number {n}")
         for n in range(num_messages)
@@ -117,9 +118,8 @@ async def _publish_messages(
         )
         for n in range(num_messages)
     ]
-
     # send the messages over rabbit
-    logs_exchange, progress_exchange, instrumentation_exchange = rabbit_exchange
+    logs_exchange, instrumentation_exchange = rabbit_exchange
 
     # indicate container is started
     instrumentation_start_message = instrumentation_stop_message = {
@@ -152,7 +152,8 @@ async def _publish_messages(
             ),
             routing_key="",
         )
-        await progress_exchange.publish(
+
+        await logs_exchange.publish(
             aio_pika.Message(
                 body=json.dumps(progress_messages[n]).encode(), content_type="text/json"
             ),
@@ -181,7 +182,12 @@ async def _wait_until(pred: Callable, timeout: int):
 
 
 @pytest.mark.parametrize(
-    "user_role", [(UserRole.GUEST), (UserRole.USER), (UserRole.TESTER),]
+    "user_role",
+    [
+        (UserRole.GUEST),
+        (UserRole.USER),
+        (UserRole.TESTER),
+    ],
 )
 async def test_rabbit_websocket_computation(
     loop,
@@ -191,7 +197,7 @@ async def test_rabbit_websocket_computation(
     socketio_client,
     client_session_id: str,
     mocker,
-    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange, aio_pika.Exchange],
+    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
     node_uuid: str,
     user_id: str,
     project_id: str,
@@ -248,7 +254,7 @@ async def test_rabbit_websocket_computation(
     # publish message with correct user id, project node
     mock_log_handler_fct.reset_mock()
     node_uuid = list(user_project["workbench"])[0]
-    log_messages, progress_messages, instrumenation_messages = await _publish_messages(
+    log_messages, _, _ = await _publish_messages(
         NUMBER_OF_MESSAGES,
         node_uuid,
         logged_user["id"],

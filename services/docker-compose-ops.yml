@@ -21,14 +21,14 @@ version: "3.7"
 
 services:
   adminer:
-    image: adminer
+    image: adminer:4.7.6
     init: true
     environment:
       - ADMINER_DEFAULT_SERVER=postgres
       - ADMINER_DESIGN=nette
       - ADMINER_PLUGINS=json-column
     ports:
-      - 18080:8080
+      - "18080:8080"
     networks:
       - simcore_default
 
@@ -67,6 +67,18 @@ services:
       - REDIS_HOSTS=${REDIS_HOST}
     ports:
       - "18081:8081"
+    networks:
+      - simcore_default
+
+  flower:
+    image: mher/flower:latest
+    init: true
+    restart: always
+    environment:
+      - CELERY_BROKER_URL=amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT}
+      - FLOWER_PORT=5555
+    ports:
+      - "49555:5555"
     networks:
       - simcore_default
 

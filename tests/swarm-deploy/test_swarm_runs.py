@@ -31,6 +31,7 @@ docker_compose_service_names = [
     "api-server",
     "catalog",
     "director",
+    "migration",
     "sidecar",
     "storage",
     "webserver",

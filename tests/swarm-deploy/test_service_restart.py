@@ -27,7 +27,7 @@ MAX_TIME_TO_DEPLOY_SECS = 60
 MAX_TIME_TO_RESTART_SERVICE = 10
 
 
-@pytest.fixture("module")
+@pytest.fixture(scope="module")
 def deployed_simcore_stack(make_up_prod: Dict, docker_client: DockerClient) -> List[Service]:
     # NOTE: the goal here is NOT to test time-to-deplopy but
     # rather guaranteing that the framework is fully deployed before starting
@@ -94,6 +94,9 @@ def test_graceful_restart_services(
         https://hynek.me/articles/docker-signals/
         https://kkc.github.io/2018/06/06/gracefully-shutdown-docker-container/
         https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+
+    SEE Gracefully Stopping Docker Containers by DeHamer: https://www.ctl.io/developers/blog/post/gracefully-stopping-docker-containers/
+    SEE Gracefully Shutdown Docker Container by Kakashi: https://kkc.github.io/2018/06/06/gracefully-shutdown-docker-container/
 
     """
     service = next( s for s in deployed_simcore_stack if s.name == service_name )

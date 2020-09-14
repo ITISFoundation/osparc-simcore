@@ -32,6 +32,7 @@ SERVICES_LIST := \
 	api-server \
 	catalog \
 	director \
+	migration \
 	sidecar \
 	storage \
 	webserver
@@ -61,6 +62,13 @@ export SWARM_STACK_NAME_NO_HYPHEN = $(subst -,_,$(SWARM_STACK_NAME))
 # version tags
 export DOCKER_IMAGE_TAG ?= latest
 export DOCKER_REGISTRY  ?= itisfoundation
+
+# NOTE: this is only for WSL1 as /etc/hostname is not accessible there
+ifeq ($(IS_WSL),WSL)
+ETC_HOSTNAME = $(CURDIR)/.fake_hostname_file
+export ETC_HOSTNAME
+host := $(shell echo $$(hostname) > $(ETC_HOSTNAME))
+endif
 
 
 .PHONY: help
@@ -205,10 +213,15 @@ up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Dep
 	$(MAKE_C) services/web/client follow-dev-logs
 
 
-up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable)
+up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable or target=<service-name> to deploy a single service)
+ifeq ($(target),)
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy -c $< $(SWARM_STACK_NAME)
 	$(MAKE) .deploy-ops
+else
+	# deploys ONLY $(target) service
+	docker-compose -f $< up --detach $(target)
+endif
 
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Deploy stack $(SWARM_STACK_NAME)
@@ -230,6 +243,8 @@ down: ## Stops and removes stack
 	-$(MAKE_C) services/web/client down
 	# Removing generated docker compose configurations, i.e. .stack-*
 	-$(shell rm $(wildcard .stack-*))
+	# Removing local registry if any
+	-$(shell docker rm --force $(local_registry))
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
@@ -304,7 +319,7 @@ push-version: tag-version
 
 ## ENVIRONMENT -------------------------------
 
-.PHONY: devenv devenv-all
+.PHONY: devenv devenv-all node-env
 
 .venv:
 	python3 -m venv $@
@@ -322,6 +337,15 @@ devenv-all: devenv ## sets up extra development tools (everything else besides p
 	@$(MAKE_C) services/web/client upgrade
 	# Building tools
 	@$(MAKE_C) scripts/json-schema-to-openapi-schema
+
+
+node_modules: package.json
+	# checking npm installed
+	@npm --version
+	# installing package.json
+	npm install --package-lock
+
+nodenv: node_modules ## builds node_modules local environ (TODO)
 
 
 .env: .env-devel ## creates .env file from defaults in .env-devel
@@ -389,6 +413,28 @@ postgres-upgrade: ## initalize or upgrade postgres db to latest state
 	@$(MAKE_C) packages/postgres-database/docker upgrade
 
 
+local_registry=registry
+.PHONY: local-registry
+local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
+	# add registry to host file
+	@echo 127.0.0.1 $(local_registry) >> /etc/hosts
+	# allow docker engine to use local insecure registry
+	@echo {\"insecure-registries\": [\"$(local_registry):5000\"]} >> /etc/docker/daemon.json
+	@service docker restart
+	# start registry on port 5000...
+	@docker run --detach \
+							--init \
+							--publish 5000:5000 \
+							--volume $(local_registry):/var/lib/registry \
+							--name $(local_registry) \
+							registry:2
+	# set up environment variables to use local registry on port 5000 without any security (take care!)...
+	@echo REGISTRY_AUTH=False >> .env
+	@echo REGISTRY_SSL=False >> .env
+	@echo REGISTRY_URL=$(local_registry):5000 >> .env
+	@echo DIRECTOR_REGISTRY_CACHING=False >> .env
+	# add registry 172.17.0.1 as extra_host to containers that need access to the registry (e.g. director)
+
 
 ## INFO -------------------------------
 
@@ -451,7 +497,7 @@ endif
 
 ## CLEAN -------------------------------
 
-.PHONY: clean clean-images clean-venv clean-all clean-ps
+.PHONY: clean clean-images clean-venv clean-all clean-more
 
 _git_clean_args := -dxf -e .vscode -e TODO.md -e .venv
 _running_containers = $(shell docker ps -aq)
@@ -472,8 +518,11 @@ clean: .check-clean ## cleans all unversioned files in project and temp files cr
 	# Cleaning web/client
 	@$(MAKE_C) services/web/client clean-files
 
-clean-ps: ## stops and deletes running containers
-	$(if $(_running_containers), docker rm -f $(_running_containers),)
+clean-more: ## cleans containers and unused volumes
+	# stops and deletes running containers
+	@$(if $(_running_containers), docker rm -f $(_running_containers),)
+	# pruning unused volumes
+	docker volume prune --force
 
 clean-images: ## removes all created images
 	# Cleaning all service images
@@ -484,10 +533,51 @@ clean-images: ## removes all created images
 	# Cleaning postgres maintenance
 	@$(MAKE_C) packages/postgres-database/docker clean
 
-clean-all: clean clean-ps clean-images # Deep clean including .venv and produced images
+clean-all: clean clean-more clean-images # Deep clean including .venv and produced images
 	-rm -rf .venv
 
 
 .PHONY: reset
 reset: ## restart docker daemon (LINUX ONLY)
 	sudo systemctl restart docker
+
+
+# RELEASE --------------------------------------------------------------------------------------------------------------------------------------------
+
+staging_prefix := staging_
+prod_prefix := v
+_git_get_current_branch = $(shell git rev-parse --abbrev-ref HEAD)
+# NOTE: be careful that GNU Make replaces newlines with space which is why this command cannot work using a Make function
+_url_encoded_title = $(if $(findstring -staging, $@),Staging%20$(name),)$(version)
+_url_encoded_tag = $(if $(findstring -staging, $@),$(staging_prefix)$(name),$(prod_prefix))$(version)
+_url_encoded_target = $(if $(git_sha),$(git_sha),$(if $(findstring -hotfix, $@),$(_git_get_current_branch),master))
+define _url_encoded_logs
+$(shell \
+	scripts/url-encoder.bash \
+	"$$(git log \
+		$$(git describe --match="$(if $(findstring -staging, $@),$(staging_prefix),$(prod_prefix))*" --abbrev=0 --tags)..$(if $(git_sha),$(git_sha),HEAD) \
+		--pretty=format:"- %s")"\
+)
+endef
+_git_get_repo_orga_name = $(shell git config --get remote.origin.url | \
+							grep --perl-regexp --only-matching "((?<=git@github\.com:)|(?<=https:\/\/github\.com\/))(.*?)(?=.git)")
+
+.PHONY: .check-master-branch
+.check-master-branch:
+	@if [ "$(_git_get_current_branch)" != "master" ]; then\
+		echo -e "\e[91mcurrent branch is not master branch."; exit 1;\
+	fi
+
+.PHONY: release-staging release-prod
+release-staging release-prod: .check-master-branch ## Helper to create a staging or production release in Github (usage: make release-staging name=sprint version=1 git_sha=optional or make release-prod version=1.2.3 git_sha=optional)
+	# ensure tags are uptodate
+	@git pull --tags
+	@echo -e "\e[33mOpen the following link to create the $(if $(findstring -staging, $@),staging,production) release:";
+	@echo -e "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)&body=$(_url_encoded_logs)";
+
+.PHONY: release-hotfix
+release-hotfix: ## Helper to create a hotfix release in Github (usage: make release-hotfix version=1.2.4 git_sha=optional)
+	# ensure tags are uptodate
+	@git pull --tags
+	@echo -e "\e[33mOpen the following link to create the $(if $(findstring -staging, $@),staging,production) release:";
+	@echo -e "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)&body=$(_url_encoded_logs)";

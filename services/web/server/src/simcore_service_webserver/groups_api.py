@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Dict, List, Optional, Tuple
 
 import sqlalchemy as sa
@@ -6,10 +7,11 @@ from aiohttp import web
 from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
 from sqlalchemy import and_, literal_column
+from sqlalchemy.dialects.postgresql import insert
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
-from .db_models import GroupType, groups, user_to_groups, users
+from .db_models import GroupType, group_classifiers, groups, user_to_groups, users
 from .groups_exceptions import (
     GroupNotFoundError,
     GroupsException,
@@ -21,6 +23,7 @@ from .groups_utils import (
     convert_groups_schema_to_db,
     convert_user_in_group_to_schema,
 )
+from .users_api import get_user
 from .users_exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -182,6 +185,34 @@ async def list_users_in_group(
         return users_list
 
 
+async def auto_add_user_to_groups(app: web.Application, user_id: int) -> None:
+    user: Dict = await get_user(app, user_id)
+    # auto add user to the groups with the right rules
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        # get the groups where there are inclusion rules and see if they apply
+        query = sa.select([groups]).where(groups.c.inclusion_rules != {})
+        possible_gids = set()
+        async for row in conn.execute(query):
+            inclusion_rules = row[groups.c.inclusion_rules]
+            for prop, rule_pattern in inclusion_rules.items():
+                if not prop in user:
+                    continue
+                if re.search(rule_pattern, user[prop]):
+                    possible_gids.add(row[groups.c.gid])
+
+        # now add the user to these groups if possible
+        for gid in possible_gids:
+            await conn.execute(
+                # pylint: disable=no-value-for-parameter
+                insert(user_to_groups)
+                .values(
+                    uid=user_id, gid=gid, access_rights=DEFAULT_GROUP_READ_ACCESS_RIGHTS
+                )
+                .on_conflict_do_nothing()  # in case the user was already added
+            )
+
+
 async def add_user_in_group(
     app: web.Application,
     user_id: int,
@@ -309,3 +340,14 @@ async def delete_user_in_group(
                 )
             )
         )
+
+
+async def get_group_classifier(app: web.Application, gid: int) -> Dict:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        bundle = await conn.scalar(
+            sa.select([group_classifiers.c.bundle]).where(
+                group_classifiers.c.gid == gid
+            )
+        )
+        return bundle or {}

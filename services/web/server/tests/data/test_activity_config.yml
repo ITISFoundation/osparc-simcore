@@ -1,4 +1,4 @@
-version: '1.0'
+version: "1.0"
 main:
   client_outdir: /usr/src/app/client
   host: 127.0.0.1
@@ -11,7 +11,6 @@ director:
   port: 8001
   version: v0
 db:
-  init_tables: False
   postgres:
     database: simcoredb
     endpoint: postgres:5432
@@ -24,7 +23,6 @@ db:
 rabbit:
   channels:
     log: comp.backend.channels.log
-    progress: comp.backend.channels.progress
   password: simcore
   user: simcore
 # s3:
@@ -37,7 +35,7 @@ login:
   registration_invitation_required: False
   registration_confirmation_required: True
 smtp:
-  sender: 'OSPARC support <support@osparc.io>'
+  sender: "OSPARC support <support@osparc.io>"
   host: mail.foo.com
   port: 25
   tls: False

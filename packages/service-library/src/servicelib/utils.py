@@ -66,22 +66,38 @@ async def logged_gather(
     *tasks, reraise: bool = True, log: logging.Logger = logger
 ) -> List[Any]:
     """
-        *all* coroutine passed are executed concurrently and once they are all
-        completed, the first error (if any) is reraised or all returned
+        Thin wrapper around asyncio.gather that allows excuting ALL tasks concurently until the end
+        even if any of them fail. Finally, all errors are logged and the first raised (if reraise=True)
+        as asyncio.gather would do with return_exceptions=True
 
-        log: passing the logger gives a chance to identify the origin of the gather call
+        WARNING: Notice that not stopping after the first exception is raised, adds the
+        risk that some tasks might terminate with unhandled exceptions. To avoid this
+        use directly asyncio.gather(*tasks, return_exceptions=True).
+
+    :param reraise: reraises first exception (in order the tasks were passed) concurrent tasks, defaults to True
+    :type reraise: bool, optional
+    :param log: passing the logger gives a chance to identify the origin of the gather call, defaults to current submodule's logger
+    :type log: logging.Logger, optional
+    :return: list of tasks results and errors e.g. [1, 2, ValueError("task3 went wrong"), 33, "foo"]
+    :rtype: List[Any]
     """
     results = await asyncio.gather(*tasks, return_exceptions=True)
-    for value in results:
-        # WARN: note that ONLY THE FIRST exception is raised
+
+    error = None
+    for i, value in enumerate(results):
         if isinstance(value, Exception):
-            if reraise:
-                raise value
-            # Exception is returned, therefore it is not logged as error but as warning
-            # It was user's decision not to reraise them
             log.warning(
-                "Exception occured while running task %s in gather: %s",
-                str(tasks[results.index(value)]),
+                "Error in %i-th concurrent task %s: %s",
+                i + 1,
+                str(tasks[i]),
                 str(value),
             )
+            if not error:
+                error = value
+
+    if reraise and error:
+        # WARNING: Notice that ONLY THE FIRST exception is raised.
+        # The rest is all logged above.
+        raise error
+
     return results

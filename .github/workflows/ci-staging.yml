@@ -1,0 +1,35 @@
+name: Github-CI-Staging
+
+on:
+  push:
+    tags:
+      - staging_[a-zA-Z]+[0-9]+
+
+env:
+  # secrets can be set in settings/secrets on github
+  DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+jobs:
+  deploy:
+    if: github.event.base_ref == 'refs/heads/master'
+    name: deploy staging
+    runs-on: ubuntu-latest
+    env:
+      FROM_TAG_PREFIX: master-github
+      TO_TAG_PREFIX: staging-github
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
+      - name: set owner variable
+        run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
+      - name: set git tag
+        run: echo ::set-env name=GIT_TAG::${GITHUB_REF##*/}
+      - name: deploy
+        run: ./ci/deploy/dockerhub-tag-version.bash

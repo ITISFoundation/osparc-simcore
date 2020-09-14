@@ -81,9 +81,11 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
         return;
       }
       const subtitle = this.getChildControl("contact");
-      if (value.getDelete()) {
+      const isOwner = osparc.component.export.Permissions.canDelete(value);
+      const isCollaborator = osparc.component.export.Permissions.canWrite(value);
+      if (isOwner) {
         subtitle.setValue(this.tr("Owner"));
-      } else if (value.getWrite()) {
+      } else if (isCollaborator) {
         subtitle.setValue(this.tr("Collaborator"));
       } else {
         subtitle.setValue(this.tr("Viewer"));
@@ -106,7 +108,7 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
       });
 
       const accessRights = this.getAccessRights();
-      if (!accessRights.getDelete() && !this.getIsOrganization()) {
+      if (!osparc.component.export.Permissions.canDelete(accessRights) && !this.getIsOrganization()) {
         const makeOwnerButton = new qx.ui.menu.Button(this.tr("Make Owner"));
         makeOwnerButton.addListener("execute", () => {
           this.fireDataEvent("promoteCollaborator", {
@@ -117,7 +119,7 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
         menu.add(makeOwnerButton);
       }
 
-      if (!accessRights.getDelete()) {
+      if (!osparc.component.export.Permissions.canDelete(accessRights)) {
         const removeButton = new qx.ui.menu.Button(this.tr("Remove Collaborator"));
         removeButton.addListener("execute", () => {
           this.fireDataEvent("removeCollaborator", {

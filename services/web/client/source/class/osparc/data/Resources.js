@@ -55,10 +55,6 @@
  * They will try to get them from the cache if they exist there. If not, they will issue the call to get them from the server.
  */
 
-/**
- * @asset(dev/classifiers.json)
- */
-
 qx.Class.define("osparc.data.Resources", {
   extend: qx.core.Object,
 
@@ -74,6 +70,7 @@ qx.Class.define("osparc.data.Resources", {
        */
       "studies": {
         useCache: false,
+        idField: "uuid",
         endpoints: {
           get: {
             method: "GET",
@@ -150,6 +147,7 @@ qx.Class.define("osparc.data.Resources", {
        */
       "templates": {
         useCache: true,
+        idField: "uuid",
         endpoints: {
           get: {
             method: "GET",
@@ -174,10 +172,19 @@ qx.Class.define("osparc.data.Resources", {
        */
       "services": {
         useCache: true,
+        idField: "key",
         endpoints: {
           get: {
             method: "GET",
-            url: statics.API + "/services"
+            url: statics.API + "/catalog/services"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/catalog/services/{serviceKey}/{serviceVersion}"
+          },
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/catalog/services/{serviceKey}/{serviceVersion}"
           }
         }
       },
@@ -185,7 +192,8 @@ qx.Class.define("osparc.data.Resources", {
        * GROUPS/DAGS
        */
       "dags": {
-        usesCache: true,
+        useCache: true,
+        idField: "key",
         endpoints: {
           post: {
             method: "POST",
@@ -248,8 +256,8 @@ qx.Class.define("osparc.data.Resources", {
        * TOKENS
        */
       "tokens": {
-        idField: "service",
         useCache: true,
+        idField: "service",
         endpoints: {
           get: {
             method: "GET",
@@ -329,6 +337,21 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+      /*
+       * CLASSIFIERS
+       * Gets the json object containing sample classifiers
+       */
+      "classifiers": {
+        useCache: false,
+        idField: "classifiers",
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/groups/{gid}/classifiers"
+          }
+        }
+      },
+
       /*
        * PASSWORD
        */
@@ -425,7 +448,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           delete: {
             method: "DELETE",
-            url:  statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
+            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
           }
         }
       },
@@ -511,21 +534,6 @@ qx.Class.define("osparc.data.Resources", {
           get: {
             method: "GET",
             url: "/resource/statics.json",
-            isJsonFile: true
-          }
-        }
-      },
-
-      /*
-       * CLASSIFIERS
-       * Gets the json file containing sample classifiers.
-       */
-      "classifiers": {
-        useCache: true,
-        endpoints: {
-          get: {
-            method: "GET",
-            url: "/resource/dev/classifiers.json",
             isJsonFile: true
           }
         }
@@ -682,6 +690,13 @@ qx.Class.define("osparc.data.Resources", {
     },
     get: function(resource, params, useCache) {
       return this.getInstance().get(resource, params, useCache);
+    },
+
+    getServiceUrl: function(serviceKey, serviceVersion) {
+      return {
+        "serviceKey": encodeURIComponent(serviceKey),
+        "serviceVersion": serviceVersion
+      };
     }
   }
 });

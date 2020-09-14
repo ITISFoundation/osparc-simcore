@@ -22,28 +22,33 @@ qx.Class.define("osparc.component.filter.ClassifiersFilter", {
     __tree: null,
 
     __createClassifiersTree: function(checkedClassifiers) {
-      osparc.utils.Classifiers.getClassifiersAsTree().then(classifiers => {
-        this.__tree = new osparc.ui.tree.CheckboxTree(classifiers);
-        this.__tree.addListener("checkedChanged", e => {
-          this._filterChange(e.getData());
-        });
-        this._removeAll();
-        this._add(this.__tree);
+      osparc.utils.Classifiers.getClassifiersAsTree()
+        .then(classifiers => {
+          if (classifiers && classifiers.children.length) {
+            this.__tree = new osparc.ui.tree.CheckboxTree(classifiers);
+            this.__tree.addListener("checkedChanged", e => {
+              this._filterChange(e.getData());
+            });
+            this._removeAll();
+            this._add(this.__tree);
 
-        if (checkedClassifiers.length) {
-          this.__setCheckedClassifiers(this.__tree.getModel(), checkedClassifiers);
-          this._filterChange(this.__tree.getChecked());
-        }
-      });
+            if (checkedClassifiers.length) {
+              this.__setCheckedClassifiers(this.__tree.getModel(), checkedClassifiers);
+              this._filterChange(this.__tree.getChecked());
+            }
+          }
+        });
     },
 
     getCheckedClassifierIDs: function() {
       const checkedClassifierIDs = [];
-      this.__tree.getChecked().forEach(checkedClassifier => {
-        if (checkedClassifier.children.length === 0) {
-          checkedClassifierIDs.push(checkedClassifier.data.classifier);
-        }
-      });
+      if (this.__tree) {
+        this.__tree.getChecked().forEach(checkedClassifier => {
+          if (checkedClassifier.children.length === 0) {
+            checkedClassifierIDs.push(checkedClassifier.data.classifier);
+          }
+        });
+      }
       return checkedClassifierIDs;
     },
 

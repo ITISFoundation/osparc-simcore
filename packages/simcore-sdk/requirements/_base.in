@@ -9,3 +9,5 @@ psycopg2-binary
 pydantic
 tenacity
 trafaret-config
+
+attrs<20,>=19 # from pytest-docker==0.8.0

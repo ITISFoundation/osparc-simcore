@@ -2,6 +2,7 @@
 
 import json
 import logging
+from typing import Dict
 
 from aiohttp import web
 
@@ -36,8 +37,8 @@ async def get_group(request: web.Request):
     gid = request.match_info["gid"]
     try:
         return await groups_api.get_user_group(request.app, user_id, gid)
-    except GroupNotFoundError:
-        raise web.HTTPNotFound(reason=f"Group {gid} not found")
+    except GroupNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Group {gid} not found") from exc
 
 
 @login_required
@@ -51,8 +52,8 @@ async def create_group(request: web.Request):
         raise web.HTTPCreated(
             text=json.dumps({"data": new_group}), content_type="application/json"
         )
-    except UserNotFoundError:
-        raise web.HTTPNotFound(reason=f"User {user_id} not found")
+    except UserNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"User {user_id} not found") from exc
 
 
 @login_required
@@ -66,10 +67,10 @@ async def update_group(request: web.Request):
         return await groups_api.update_user_group(
             request.app, user_id, gid, new_group_values
         )
-    except GroupNotFoundError:
-        raise web.HTTPNotFound(reason=f"Group {gid} not found")
-    except UserInsufficientRightsError:
-        raise web.HTTPForbidden()
+    except GroupNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Group {gid} not found") from exc
+    except UserInsufficientRightsError as exc:
+        raise web.HTTPForbidden() from exc
 
 
 @login_required
@@ -80,10 +81,10 @@ async def delete_group(request: web.Request):
     try:
         await groups_api.delete_user_group(request.app, user_id, gid)
         raise web.HTTPNoContent()
-    except GroupNotFoundError:
-        raise web.HTTPNotFound(reason=f"Group {gid} not found")
-    except UserInsufficientRightsError:
-        raise web.HTTPForbidden()
+    except GroupNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Group {gid} not found") from exc
+    except UserInsufficientRightsError as exc:
+        raise web.HTTPForbidden() from exc
 
 
 # groups/{gid}/users --------------------------------------------
@@ -94,10 +95,10 @@ async def get_group_users(request: web.Request):
     gid = request.match_info["gid"]
     try:
         return await groups_api.list_users_in_group(request.app, user_id, gid)
-    except GroupNotFoundError:
-        raise web.HTTPNotFound(reason=f"Group {gid} not found")
-    except UserInsufficientRightsError:
-        raise web.HTTPForbidden()
+    except GroupNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Group {gid} not found") from exc
+    except UserInsufficientRightsError as exc:
+        raise web.HTTPForbidden() from exc
 
 
 @login_required
@@ -122,12 +123,12 @@ async def add_group_user(request: web.Request):
             new_user_email=new_user_email,
         )
         raise web.HTTPNoContent()
-    except GroupNotFoundError:
-        raise web.HTTPNotFound(reason=f"Group {gid} not found")
-    except UserInGroupNotFoundError:
-        raise web.HTTPNotFound(reason=f"User not found in group {gid}")
-    except UserInsufficientRightsError:
-        raise web.HTTPForbidden()
+    except GroupNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Group {gid} not found") from exc
+    except UserInGroupNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"User not found in group {gid}") from exc
+    except UserInsufficientRightsError as exc:
+        raise web.HTTPForbidden() from exc
 
 
 @login_required
@@ -140,12 +141,12 @@ async def get_group_user(request: web.Request):
         return await groups_api.get_user_in_group(
             request.app, user_id, gid, the_user_id_in_group
         )
-    except GroupNotFoundError:
-        raise web.HTTPNotFound(reason=f"Group {gid} not found")
-    except UserInGroupNotFoundError:
-        raise web.HTTPNotFound(reason=f"User {the_user_id_in_group} not found")
-    except UserInsufficientRightsError:
-        raise web.HTTPForbidden()
+    except GroupNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Group {gid} not found") from exc
+    except UserInGroupNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"User {the_user_id_in_group} not found") from exc
+    except UserInsufficientRightsError as exc:
+        raise web.HTTPForbidden() from exc
 
 
 @login_required
@@ -163,12 +164,12 @@ async def update_group_user(request: web.Request):
             the_user_id_in_group,
             new_values_for_user_in_group,
         )
-    except GroupNotFoundError:
-        raise web.HTTPNotFound(reason=f"Group {gid} not found")
-    except UserInGroupNotFoundError:
-        raise web.HTTPNotFound(reason=f"User {the_user_id_in_group} not found")
-    except UserInsufficientRightsError:
-        raise web.HTTPForbidden()
+    except GroupNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Group {gid} not found") from exc
+    except UserInGroupNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"User {the_user_id_in_group} not found") from exc
+    except UserInsufficientRightsError as exc:
+        raise web.HTTPForbidden() from exc
 
 
 @login_required
@@ -182,9 +183,19 @@ async def delete_group_user(request: web.Request):
             request.app, user_id, gid, the_user_id_in_group
         )
         raise web.HTTPNoContent()
-    except GroupNotFoundError:
-        raise web.HTTPNotFound(reason=f"Group {gid} not found")
-    except UserInGroupNotFoundError:
-        raise web.HTTPNotFound(reason=f"User {the_user_id_in_group} not found")
-    except UserInsufficientRightsError:
-        raise web.HTTPForbidden()
+    except GroupNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Group {gid} not found") from exc
+    except UserInGroupNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"User {the_user_id_in_group} not found") from exc
+    except UserInsufficientRightsError as exc:
+        raise web.HTTPForbidden() from exc
+
+
+# groups/{gid}/classifiers --------------------------------------------
+@login_required
+@permission_required("groups.*")
+async def get_group_classifiers(request: web.Request):
+    gid = request.match_info["gid"]
+
+    bundle: Dict = await groups_api.get_group_classifier(request.app, gid)
+    return bundle

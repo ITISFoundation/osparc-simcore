@@ -25,7 +25,6 @@ def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> Config:
         host="127.0.0.1",
         port=get_service_published_port("rabbit", devel_environ["RABBIT_PORT"]),
         channels={
-            "progress": "progress_channel",
             "log": "logs_channel",
             "instrumentation": "instrumentation_channel",
             "celery": {"result_backend": ""},
@@ -89,8 +88,9 @@ async def rabbit_channel(
 
 @pytest.fixture(scope="function")
 async def rabbit_exchange(
-    rabbit_config: Config, rabbit_channel: aio_pika.Channel,
-) -> Tuple[aio_pika.Exchange, aio_pika.Exchange, aio_pika.Exchange]:
+    rabbit_config: Config,
+    rabbit_channel: aio_pika.Channel,
+) -> Tuple[aio_pika.Exchange, aio_pika.Exchange]:
 
     # declare log exchange
     LOG_EXCHANGE_NAME: str = rabbit_config.channels["log"]
@@ -98,33 +98,26 @@ async def rabbit_exchange(
         LOG_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
     )
     assert logs_exchange
-    # declare progress exchange
-    PROGRESS_EXCHANGE_NAME: str = rabbit_config.channels["progress"]
-    progress_exchange = await rabbit_channel.declare_exchange(
-        PROGRESS_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
-    )
-    assert progress_exchange
     # declare instrumentation exchange
     INSTRUMENTATION_EXCHANGE_NAME: str = rabbit_config.channels["instrumentation"]
     instrumentation_exchange = await rabbit_channel.declare_exchange(
         INSTRUMENTATION_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
     )
     assert instrumentation_exchange
-    yield logs_exchange, progress_exchange, instrumentation_exchange
+    return logs_exchange, instrumentation_exchange
 
 
 @pytest.fixture(scope="function")
 async def rabbit_queue(
     rabbit_channel: aio_pika.Channel,
-    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange, aio_pika.Exchange],
+    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
 ) -> aio_pika.Queue:
-    (logs_exchange, progress_exchange, instrumentation_exchange) = rabbit_exchange
+    (logs_exchange, instrumentation_exchange) = rabbit_exchange
     # declare queue
     queue = await rabbit_channel.declare_queue(exclusive=True)
     assert queue
     # Binding queue to exchange
     await queue.bind(logs_exchange)
-    await queue.bind(progress_exchange)
     await queue.bind(instrumentation_exchange)
     yield queue
 

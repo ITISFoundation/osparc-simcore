@@ -1,18 +1,22 @@
 import asyncio
 import logging
-import os
+import uuid
 from typing import Awaitable, List
 
 import aiodocker
-import aiopg
+from aiopg.sa.result import RowProxy
 import networkx as nx
+from aiodocker.volumes import DockerVolume
+from aiopg.sa import SAConnection
 from sqlalchemy import and_
 
 from celery import Celery
-from simcore_postgres_database.sidecar_models import SUCCESS, comp_pipeline, comp_tasks
+from simcore_postgres_database.sidecar_models import SUCCESS, comp_tasks
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 from simcore_service_sidecar import config
 from simcore_service_sidecar.mpi_lock import acquire_mpi_lock
+
+from .exceptions import SidecarException
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +34,9 @@ def find_entry_point(g: nx.DiGraph) -> List:
 
 
 async def is_node_ready(
-    task: comp_tasks,
+    task: RowProxy,
     graph: nx.DiGraph,
-    db_connection: aiopg.sa.SAConnection,
+    db_connection: SAConnection,
     _logger: logging.Logger,
 ) -> bool:
     query = comp_tasks.select().where(
@@ -61,7 +65,7 @@ async def is_node_ready(
     return True
 
 
-def execution_graph(pipeline: comp_pipeline) -> nx.DiGraph:
+def execution_graph(pipeline: RowProxy) -> nx.DiGraph:
     d = pipeline.dag_adjacency_list
     G = nx.DiGraph()
 
@@ -79,34 +83,40 @@ def is_gpu_node() -> bool:
     meaning that the `VRAM` label was added to it."""
 
     async def async_is_gpu_node() -> bool:
-        docker = aiodocker.Docker()
+        async with aiodocker.Docker() as docker:
+            spec_config = {
+                "Cmd": "nvidia-smi",
+                "Image": "nvidia/cuda:10.0-base",
+                "AttachStdin": False,
+                "AttachStdout": False,
+                "AttachStderr": False,
+                "Tty": False,
+                "OpenStdin": False,
+                "HostConfig": {"Init": True, "AutoRemove": True},
+            }
+            try:
+                await docker.containers.run(
+                    config=spec_config, name=f"sidecar_{uuid.uuid4()}_test_gpu"
+                )
+                return True
+            except aiodocker.exceptions.DockerError as err:
+                logger.debug(
+                    "is_gpu_node DockerError while check-run %s: %s",
+                    spec_config,
+                    err
+                )
 
-        spec_config = {
-            "Cmd": "nvidia-smi",
-            "Image": "nvidia/cuda:10.0-base",
-            "AttachStdin": False,
-            "AttachStdout": False,
-            "AttachStderr": False,
-            "Tty": False,
-            "OpenStdin": False,
-            "HostConfig": {"AutoRemove": True},
-        }
-        try:
-            await docker.containers.run(
-                config=spec_config, name=f"sidecar_{os.getpid()}_test_gpu"
-            )
-            return True
-        except aiodocker.exceptions.DockerError:
-            pass
-        return False
+            return False
 
-    return wrap_async_call(async_is_gpu_node())
+    has_gpu = wrap_async_call(async_is_gpu_node())
+    logger.info("Node gpus support result %s", has_gpu)
+    return has_gpu
 
 
 def start_as_mpi_node() -> bool:
     """
     Checks if this node can be a taraget to start as an MPI node.
-    If it can it will try to grab a Redlock, ensure it is the only service who can be 
+    If it can it will try to grab a Redlock, ensure it is the only service who can be
     started as MPI.
     """
     import subprocess
@@ -132,3 +142,19 @@ def assemble_celery_app(task_default_queue: str, rabbit_config: RabbitConfig) ->
     )
     app.conf.task_default_queue = task_default_queue
     return app
+
+
+async def get_volume_mount_point(volume_name: str) -> str:
+    try:
+        async with aiodocker.Docker() as docker_client:
+            volume_attributes = await DockerVolume(docker_client, volume_name).show()
+            return volume_attributes["Mountpoint"]
+
+    except aiodocker.exceptions.DockerError as err:
+        raise SidecarException(
+            f"Error while retrieving docker volume {volume_name}"
+        ) from err
+    except KeyError as err:
+        raise SidecarException(
+            f"docker volume {volume_name} does not contain Mountpoint"
+        ) from err

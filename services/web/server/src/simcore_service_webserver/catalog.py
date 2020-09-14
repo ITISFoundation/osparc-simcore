@@ -14,8 +14,8 @@ from servicelib.rest_routing import iter_path_operations
 
 from .__version__ import api_version_prefix
 from .catalog_config import get_client_session, get_config
-from .login.decorators import login_required
-from .security_api import check_permission
+from .login.decorators import RQT_USERID_KEY, login_required
+from .security_decorators import permission_required
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,7 @@ def to_backend_service(rel_url: URL, origin: URL, version_prefix: str) -> URL:
 
 
 @login_required
+@permission_required("services.catalog.*")
 async def _reverse_proxy_handler(request: web.Request):
     """
         - Adds auth layer
@@ -55,14 +56,16 @@ async def _reverse_proxy_handler(request: web.Request):
 
     SEE https://gist.github.com/barrachri/32f865c4705f27e75d3b8530180589fb
     """
-    await check_permission(request, "services.catalog.*")
-
+    user_id = request[RQT_USERID_KEY]
     # path & queries
     backend_url = to_backend_service(
         request.rel_url,
         request.app[f"{__name__}.catalog_origin"],
         request.app[f"{__name__}.catalog_version_prefix"],
     )
+    # FIXME: hack
+    if "/services" in backend_url.path:
+        backend_url = backend_url.update_query({"user_id": user_id})
     logger.debug("Redirecting '%s' -> '%s'", request.url, backend_url)
 
     # body

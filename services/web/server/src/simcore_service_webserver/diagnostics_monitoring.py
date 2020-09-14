@@ -12,7 +12,7 @@ from prometheus_client.registry import CollectorRegistry
 
 from servicelib.monitor_services import add_instrumentation
 
-from .diagnostics_core import DelayWindowProbe, kLATENCY_PROBE
+from .diagnostics_core import DelayWindowProbe, is_sensing_enabled, kLATENCY_PROBE
 
 log = logging.getLogger(__name__)
 
@@ -45,9 +45,9 @@ def middleware_factory(app_name: str) -> Coroutine:
             resp = await handler(request)
             log_exception = None
 
-            # fmt: off
-            assert isinstance(resp, web.StreamResponse), "Forgot envelope middleware?"  # nsec
-            # fmt: om
+            assert isinstance(  # nosec
+                resp, web.StreamResponse
+            ), "Forgot envelope middleware?"
 
         except web.HTTPServerError as exc:
             # Transforms exception into response object and log exception
@@ -63,6 +63,7 @@ def middleware_factory(app_name: str) -> Coroutine:
             # Transforms unhandled exceptions into responses with status 500
             # NOTE: Prevents issue #1025
             resp = web.HTTPInternalServerError(reason=str(exc))
+            resp.__cause__ = exc
             log_exception = exc
 
         finally:
@@ -75,7 +76,9 @@ def middleware_factory(app_name: str) -> Coroutine:
             # Probes request latency
             # NOTE: sockets connection is long
             # FIXME: tmp by hand, add filters directly in probe
-            if not str(request.path).startswith("/socket.io"):
+            if not str(request.path).startswith("/socket.io") and is_sensing_enabled(
+                request.app
+            ):
                 request.app[kLATENCY_PROBE].observe(resp_time_secs)
 
             # prometheus probes

@@ -25,9 +25,9 @@ async def get_my_profile(
     data["role"] = data["role"].upper()
     try:
         profile = Profile.parse_obj(data)
-    except ValidationError:
+    except ValidationError as err:
         logger.exception("webserver invalid response")
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
     return profile
 

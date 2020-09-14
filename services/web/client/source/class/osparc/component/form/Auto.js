@@ -382,6 +382,9 @@ qx.Class.define("osparc.component.form.Auto", {
       if (!s.set) {
         s.set = {};
       }
+      if (s.set.value && typeof s.set.value === "string") {
+        s.set.value = Boolean(s.set.value.toLowerCase() === "true");
+      }
       this.__formCtrl.addBindingOptions(key,
         { // model2target
           converter: function(data) {

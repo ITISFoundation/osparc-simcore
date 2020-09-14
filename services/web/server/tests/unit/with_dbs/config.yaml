@@ -1,4 +1,4 @@
-version: '1.0'
+version: "1.0"
 main:
   client_outdir: ${OSPARC_SIMCORE_REPO_ROOTDIR}/services/web/server/tests/data/static
   host: 127.0.0.1
@@ -12,10 +12,7 @@ director:
   port: 8001
 socketio:
   enabled: True
-application_proxy:
-  enabled: False
 db:
-  init_tables: False
   postgres:
     database: test
     user: admin
@@ -35,7 +32,6 @@ rabbit:
   enabled: False
   channels:
     log: comp.backend.channels.log
-    progress: comp.backend.channels.progress
     instrumentation: comp.backend.channels.instrumentation
   password: simcore
   user: simcore
@@ -46,7 +42,7 @@ rabbit:
 #   endpoint: play.minio.io:9000
 #   secret_key: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG'
 smtp:
-  sender: 'OSPARC support <support@osparc.io>'
+  sender: "OSPARC support <support@osparc.io>"
   host: mail.foo.com
   port: 25
   tls: False
@@ -62,6 +58,6 @@ projects:
   enabled: False
 session:
   # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key())"
-  secret_key: 'tjwiMSLe0Xd9dwMlAVQT9pYY9JEnr7rcH05fkUcukVs='
+  secret_key: "tjwiMSLe0Xd9dwMlAVQT9pYY9JEnr7rcH05fkUcukVs="
 activity:
   enabled: False

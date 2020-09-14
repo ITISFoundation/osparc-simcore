@@ -164,9 +164,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const study = this.getStudy();
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree(study);
-      nodesTree.addListener("addNode", () => {
-        this.__addNode();
-      }, this);
       nodesTree.addListener("removeNode", e => {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
@@ -182,6 +179,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView(study.getWorkbench());
       const loggerPanel = new osparc.desktop.PanelView(this.tr("Logger"), loggerView);
+      osparc.utils.Utils.setIdToWidget(loggerPanel.getTitleLabel(), "loggerTitleLabel");
       this.__sidePanel.addOrReplaceAt(loggerPanel, 2, {
         flex: 1
       });
@@ -287,6 +285,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__loggerView.setCurrentNodeId();
         return;
       }
+      if (this.__nodesTree) {
+        this.__nodesTree.setCurrentNodeId(nodeId);
+      }
       if (this.__nodeView) {
         this.__nodeView.restoreIFrame();
       }
@@ -341,13 +342,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       filePicker.addListener("finished", () => filePickerWin.close(), this);
       filePickerWin.addListener("close", () => showParentWorkbench());
-    },
-
-    __addNode: function() {
-      if (this.__mainPanel.getMainView() !== this.__workbenchUI) {
-        return;
-      }
-      this.__workbenchUI.openServiceCatalog();
     },
 
     __removeNode: function(nodeId) {
@@ -432,10 +426,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __updatePipelineAndRetrieve: function(node, portKey = null) {
-      this.updateStudyDocument(
-        false,
-        this.__retrieveInputs.bind(this, node, portKey)
-      );
+      this.updateStudyDocument(false)
+        .then(() => {
+          this.__retrieveInputs(node, portKey);
+        });
       this.getLogger().debug(null, "Updating pipeline");
     },
 
@@ -449,14 +443,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __showSweeper: function() {
       const study = this.getStudy();
       const sweeper = new osparc.component.sweeper.Sweeper(study);
-      const win = osparc.component.sweeper.Sweeper.popUpInWindow(sweeper);
+      const title = this.tr("Sweeper");
+      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 400, 700);
       sweeper.addListener("iterationSelected", e => {
         win.close();
         const iterationStudyId = e.getData();
         osparc.store.Store.getInstance().getStudyWState(iterationStudyId)
           .then(studyData => {
             study.removeIFrames();
-            this.fireDataEvent("startStudy", studyData);
+            this.fireDataEvent("startStudy", studyData.uuid);
           });
       });
     },
@@ -548,10 +543,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __startPipeline: function() {
       if (!osparc.data.Permissions.getInstance().canDo("study.start", true)) {
-        return false;
+        return;
       }
 
-      return this.updateStudyDocument(true, this.__doStartPipeline);
+      this.updateStudyDocument(true)
+        .then(() => {
+          this.__doStartPipeline();
+        });
     },
 
     __doStartPipeline: function() {
@@ -652,7 +650,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    updateStudyDocument: function(run=false, cbSuccess, cbError) {
+    updateStudyDocument: function(run=false) {
       this.getStudy().setLastChangeDate(new Date());
       const newObj = this.getStudy().serializeStudy();
       const prjUuid = this.getStudy().getUuid();
@@ -664,14 +662,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         },
         data: newObj
       };
-      osparc.data.Resources.fetch("studies", "put", params).then(data => {
-        this.fireDataEvent("studySaved", true);
-        this.__lastSavedStudy = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
-        if (cbSuccess) {
-          cbSuccess.call(this);
-        }
-      }).catch(error => {
-        this.getLogger().error(null, "Error updating pipeline");
+      return new Promise((resolve, reject) => {
+        osparc.data.Resources.fetch("studies", "put", params)
+          .then(data => {
+            this.fireDataEvent("studySaved", true);
+            this.__lastSavedStudy = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
+            resolve();
+          }).catch(error => {
+            this.getLogger().error(null, "Error updating pipeline");
+            reject();
+          });
       });
     },
 

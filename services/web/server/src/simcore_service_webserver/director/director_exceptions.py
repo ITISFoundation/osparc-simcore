@@ -4,7 +4,7 @@ class DirectorException(Exception):
     def __init__(self, msg=None):
         if msg is None:
             msg = "Unexpected error occured in director subpackage"
-        super(DirectorException, self).__init__(msg)
+        super().__init__(msg)
 
 
 class ServiceNotFoundError(DirectorException):
@@ -12,5 +12,5 @@ class ServiceNotFoundError(DirectorException):
 
     def __init__(self, service_uuid):
         msg = "Service with uuid {} not found".format(service_uuid)
-        super(ServiceNotFoundError, self).__init__(msg)
+        super().__init__(msg)
         self.service_uuid = service_uuid

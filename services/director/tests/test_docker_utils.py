@@ -56,3 +56,11 @@ async def test_swarm_has_manager_nodes(loop, docker_swarm):
 
 async def test_swarm_has_worker_nodes(loop, docker_swarm):
     assert (await docker_utils.swarm_has_worker_nodes()) == False
+
+
+async def test_push_services(
+    push_services, configure_registry_access, configure_schemas_location,
+):
+    images = await push_services(
+        number_of_computational_services=3, number_of_interactive_services=3
+    )

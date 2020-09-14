@@ -3,8 +3,6 @@ activity:
   prometheus_api_version: v1
   prometheus_host: http://prometheus
   prometheus_port: 9090
-application_proxy:
-  enabled: false
 catalog:
   enabled: false
   host: catalog
@@ -12,7 +10,6 @@ catalog:
   version: v0
 db:
   enabled: true
-  init_tables: true
   postgres:
     database: test
     endpoint: 127.0.0.1:5432
@@ -45,7 +42,6 @@ rabbit:
     celery:
       result_backend: rpc://
     log: comp.backend.channels.log
-    progress: comp.backend.channels.progress
     instrumentation: comp.backend.channels.instrumentation
   enabled: false
   host: rabbit
@@ -64,8 +60,6 @@ resource_manager:
 rest:
   enabled: true
   version: v0
-reverse_proxy:
-  enabled: false
 session:
   secret_key: "TODO: Replace with a key of at least length 32"
 smtp:

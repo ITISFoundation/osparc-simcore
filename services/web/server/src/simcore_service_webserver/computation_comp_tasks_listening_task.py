@@ -14,7 +14,7 @@ from sqlalchemy.sql import select
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from servicelib.utils import logged_gather
-from simcore_postgres_database.webserver_models import user_to_groups
+from simcore_postgres_database.webserver_models import user_to_groups, DB_CHANNEL_NAME
 
 from .projects import projects_api, projects_exceptions
 from .projects.projects_models import projects
@@ -22,60 +22,18 @@ from .socketio.events import post_messages
 
 log = logging.getLogger(__name__)
 
-DB_PROCEDURE_NAME: str = "notify_comp_tasks_changed"
-DB_TRIGGER_NAME: str = f"{DB_PROCEDURE_NAME}_event"
-DB_CHANNEL_NAME: str = "comp_tasks_output_events"
-
-
-async def register_trigger_function(app: web.Application):
-    db_engine: Engine = app[APP_DB_ENGINE_KEY]
-    # NOTE: an example was found in https://citizen428.net/blog/asynchronous-notifications-in-postgres/
-    notification_fct_query = f"""
-    CREATE OR REPLACE FUNCTION {DB_PROCEDURE_NAME}() RETURNS TRIGGER AS $$
-        DECLARE
-            record RECORD;
-            payload JSON;
-        BEGIN
-            IF (TG_OP = 'DELETE') THEN
-                record = OLD;
-            ELSE
-                record = NEW;
-            END IF;
-
-            payload = json_build_object('table', TG_TABLE_NAME,
-                                        'action', TG_OP,
-                                        'data', row_to_json(record));
-
-            PERFORM pg_notify('{DB_CHANNEL_NAME}', payload::text);
-
-            RETURN NULL;
-        END;
-    $$ LANGUAGE plpgsql;
-    """
-
-    trigger_registration_query = f"""
-    DROP TRIGGER IF EXISTS {DB_TRIGGER_NAME} on comp_tasks;
-    CREATE TRIGGER {DB_TRIGGER_NAME}
-    AFTER UPDATE OF outputs ON comp_tasks
-        FOR EACH ROW
-        WHEN (OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb AND NEW.node_class <> 'FRONTEND')
-        EXECUTE PROCEDURE {DB_PROCEDURE_NAME}();
-    """
-
-    async with db_engine.acquire() as conn:
-        async with conn.begin():
-            await conn.execute(notification_fct_query)
-            await conn.execute(trigger_registration_query)
-
 
 async def listen(app: web.Application):
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
     db_engine: Engine = app[APP_DB_ENGINE_KEY]
     async with db_engine.acquire() as conn:
         await conn.execute(listen_query)
+
         while True:
             msg = await conn.connection.notifies.get()
-            log.debug("DB comp_tasks.outputs Update: <- %s", msg.payload)
+
+            # Changes on comp_tasks.outputs of non-frontend task
+            log.debug("DB comp_tasks.outputs updated: <- %s", msg.payload)
             node = json.loads(msg.payload)
             node_data = node["data"]
             task_output = node_data["outputs"]
@@ -98,7 +56,7 @@ async def listen(app: web.Application):
                 continue
             the_project_owner = the_project["prj_owner"]
 
-            # update the project
+            # Update the project
             try:
                 node_data = await projects_api.update_project_node_outputs(
                     app, the_project_owner, project_id, node_id, data=task_output
@@ -115,8 +73,9 @@ async def listen(app: web.Application):
                     project_id,
                 )
                 continue
-            # notify the client(s), the owner + any one with read writes
-            clients = [the_project_owner]
+
+            # Notify the client(s), the owner + any one with read writes
+            clients_ids = [the_project_owner]
             for gid, access_rights in the_project["access_rights"].items():
                 if not access_rights["read"]:
                     continue
@@ -124,19 +83,22 @@ async def listen(app: web.Application):
                 async for user in conn.execute(
                     select([user_to_groups.c.uid]).where(user_to_groups.c.gid == gid)
                 ):
-                    clients.append(user["uid"])
+                    clients_ids.append(user["uid"])
 
-            messages = {"nodeUpdated": {"Node": node_id, "Data": node_data}}
-
-            await logged_gather(
-                *[post_messages(app, client, messages) for client in clients], False
-            )
+            posts_tasks = [
+                post_messages(
+                    app,
+                    uid,
+                    messages={"nodeUpdated": {"Node": node_id, "Data": node_data}},
+                )
+                for uid in clients_ids
+            ]
+            await logged_gather(*posts_tasks, False)
 
 
 async def comp_tasks_listening_task(app: web.Application) -> None:
     log.info("starting comp_task db listening task...")
     try:
-        await register_trigger_function(app)
         log.info("listening to comp_task events...")
         await listen(app)
     except asyncio.CancelledError:

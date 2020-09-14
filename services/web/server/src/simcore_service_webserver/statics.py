@@ -19,6 +19,8 @@ from aiohttp import web
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
+from .settings import APP_SETTINGS_KEY
+
 INDEX_RESOURCE_NAME = "statics.index"
 TMPDIR_KEY = f"{__name__}.tmpdir"
 
@@ -46,7 +48,7 @@ async def _delete_tmps(app: web.Application):
 
 async def index(request: web.Request):
     """
-        Serves boot application under index
+    Serves boot application under index
     """
     log.debug("index.request:\n %s", request)
 
@@ -55,14 +57,12 @@ async def index(request: web.Request):
         return web.Response(text=ofh.read(), content_type="text/html")
 
 
-def write_statics_file(directory: Path) -> None:
+def write_statics_file(app: web.Application, directory: Path) -> None:
     # ensures directory exists
     os.makedirs(directory, exist_ok=True)
 
     # create statics field
-    statics = {}
-    statics["stackName"] = os.environ.get("SWARM_STACK_NAME")
-    statics["buildDate"] = os.environ.get("BUILD_DATE")
+    statics = app[APP_SETTINGS_KEY].to_client_statics()
     with open(directory / "statics.json", "wt") as fh:
         json.dump(statics, fh)
 
@@ -76,7 +76,7 @@ def setup_statics(app: web.Application):
     outdir: Path = get_client_outdir(app)
 
     # Create statics file
-    write_statics_file(outdir / "resource")
+    write_statics_file(app, outdir / "resource")
 
     required_dirs = ["osparc", "resource", "transpiled"]
     folders = [x for x in outdir.iterdir() if x.is_dir()]

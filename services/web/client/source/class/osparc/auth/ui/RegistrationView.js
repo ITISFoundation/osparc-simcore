@@ -44,7 +44,7 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       // email, pass1 == pass2
       const email = new qx.ui.form.TextField().set({
         required: true,
-        placeholder: this.tr("Introduce your email")
+        placeholder: this.tr("Type your email")
       });
       this.add(email);
       osparc.utils.Utils.setIdToWidget(email, "registrationEmailFld");
@@ -56,7 +56,7 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
 
       const pass1 = new qx.ui.form.PasswordField().set({
         required: true,
-        placeholder: this.tr("Introduce a password")
+        placeholder: this.tr("Type a password")
       });
       osparc.utils.Utils.setIdToWidget(pass1, "registrationPass1Fld");
       this.add(pass1);

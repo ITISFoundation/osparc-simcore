@@ -21,11 +21,15 @@ from .security_api import check_permission
 log = logging.getLogger(__file__)
 
 
-def get_celery(_app: web.Application):
+def get_celery(_app: web.Application) -> Celery:
     config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
     rabbit = RabbitConfig(**config)
-    celery = Celery(rabbit.name, broker=rabbit.broker_url, backend=rabbit.backend,)
-    return celery
+    celery_app = Celery(
+        rabbit.name,
+        broker=rabbit.broker_url,
+        backend=rabbit.backend,
+    )
+    return celery_app
 
 
 async def _process_request(request):
@@ -53,35 +57,40 @@ async def update_pipeline(request: web.Request) -> web.Response:
     try:
         project = await get_project_for_user(request.app, project_id, user_id)
         await update_pipeline_db(request.app, project_id, project["workbench"])
-    except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason=f"Project {project_id} not found")
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Project {project_id} not found") from exc
 
     raise web.HTTPNoContent()
 
 
 @login_required
 async def start_pipeline(request: web.Request) -> web.Response:
-    """ Starts pipeline described in the workbench section of a valid project
-        already at the server side
+    """Starts pipeline described in the workbench section of a valid project
+    already at the server side
     """
     await check_permission(request, "services.pipeline.*")
     await check_permission(request, "project.read")
 
     user_id, project_id = await _process_request(request)
 
+    # FIXME: if start is already ongoing. Do not re-start!
     try:
         project = await get_project_for_user(request.app, project_id, user_id)
         await update_pipeline_db(request.app, project_id, project["workbench"])
-    except ProjectNotFoundError:
-        raise web.HTTPNotFound(reason=f"Project {project_id} not found")
+
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Project {project_id} not found") from exc
 
     # commit the tasks to celery
-    _ = get_celery(request.app).send_task(
-        "comp.task", args=(user_id, project_id,), kwargs={}
+    task = get_celery(request.app).send_task(
+        "comp.task", kwargs={"user_id": user_id, "project_id": project_id}
     )
 
     log.debug(
-        "Task (user_id=%s, project_id=%s) submitted for execution.", user_id, project_id
+        "Task (task=%s, user_id=%s, project_id=%s) submitted for execution.",
+        task.task_id,
+        user_id,
+        project_id,
     )
 
     # answer the client while task has been spawned
@@ -89,5 +98,6 @@ async def start_pipeline(request: web.Request) -> web.Response:
         # TODO: PC->SAN: some name with task id. e.g. to distinguish two projects with identical pipeline?
         "pipeline_name": "request_data",
         "project_id": project_id,
+        "task_id": task.task_id if task else "failed to start",
     }
     return data

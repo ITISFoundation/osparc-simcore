@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def override_openapi_method(app: FastAPI):
     # TODO: test openapi(*) member does not change interface
 
-    def _custom_openapi_method(zelf: FastAPI, openapi_prefix: str = "") -> Dict:
+    def _custom_openapi_method(zelf: FastAPI) -> Dict:
         """ Overrides FastAPI.openapi member function
             returns OAS schema with vendor extensions
         """
@@ -30,8 +30,8 @@ def override_openapi_method(app: FastAPI):
                 openapi_version=zelf.openapi_version,
                 description=desc,
                 routes=zelf.routes,
-                openapi_prefix=openapi_prefix,
                 tags=zelf.openapi_tags,
+                servers=zelf.servers,
             )
 
             add_vendor_extensions(openapi_schema)

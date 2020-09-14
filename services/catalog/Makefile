@@ -60,17 +60,15 @@ down-pg: docker-compose.yml ## stops pg fixture
 
 run-devel run-prod: .env up-pg ## runs app with pg service
 	# starting service ...
-ifeq ($(subst run-,,$@),devel)
-	# development mode (with reload upon change)
-	# start app (under $<)
-	uvicorn simcore_service_catalog.__main__:the_app \
-		--reload --reload-dir $(SRC_DIR) \
-		--port=8000 --host=0.0.0.0
-else
-	# production mode
-	simcore-service-catalog
-endif
-	# stop
+	@$(if $(findstring -devel,$@),\
+		echo "development mode (with reload upon change)"; \
+		echo "start app (under $<)..."; \
+		uvicorn simcore_service_catalog.__main__:the_app \
+			--reload --reload-dir $(SRC_DIR) \
+			--port=8000 --host=0.0.0.0;,\
+		echo "production mode"; \
+		simcore-service-catalog; \
+	)
 
 
 # BUILD #####################
@@ -82,7 +80,7 @@ build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## docker 
 
 
 .PHONY: openapi-specs openapi.json
-openapi-specs: openapi.json
+openapi-specs: openapi.json .env
 openapi.json:
 	# generating openapi specs file
 	python3 -c "import json; from $(APP_PACKAGE_NAME).__main__ import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@

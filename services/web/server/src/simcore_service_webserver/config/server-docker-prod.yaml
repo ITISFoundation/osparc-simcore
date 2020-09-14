@@ -22,8 +22,6 @@ director:
   port: ${DIRECTOR_PORT}
   version: v0
 db:
-  # Default for WEBSERVER_DB_INITTABLES set in cli.py
-  init_tables: ${WEBSERVER_DB_INITTABLES}
   postgres:
     database: ${POSTGRES_DB}
     endpoint: ${POSTGRES_ENDPOINT}
@@ -46,7 +44,6 @@ rabbit:
   user: ${RABBIT_USER}
   password: ${RABBIT_PASSWORD}
   channels:
-    progress: "comp.backend.channels.progress"
     log: "comp.backend.channels.log"
     instrumentation: "comp.backend.channels.instrumentation"
 login:
@@ -68,10 +65,6 @@ catalog:
   host: ${CATALOG_HOST}
   port: 8000
   version: v0
-application_proxy:
-  enabled: False
-reverse_proxy:
-  enabled: False
 rest:
   version: v0
 projects:

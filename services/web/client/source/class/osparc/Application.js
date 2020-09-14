@@ -92,6 +92,8 @@ qx.Class.define("osparc.Application", {
 
       this.__initRouting();
       this.__loadCommonCss();
+
+      this.__updateTabName();
     },
 
     __initRouting: function() {
@@ -127,6 +129,18 @@ qx.Class.define("osparc.Application", {
       }
     },
 
+    __updateTabName: function() {
+      osparc.utils.LibVersions.getPlatformName()
+        .then(platformName => {
+          if (osparc.utils.Utils.isInZ43()) {
+            document.title += " Z43";
+          }
+          if (platformName) {
+            document.title += ` (${platformName})`;
+          }
+        });
+    },
+
     __restart: function() {
       let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
 
@@ -142,7 +156,7 @@ qx.Class.define("osparc.Application", {
         osparc.store.Store.getInstance().invalidate();
 
         osparc.auth.Manager.getInstance().validateToken(data => {
-          if (data.role === "Guest") {
+          if (data.role.toLowerCase() === "guest") {
             // Logout a guest trying to access the Dashboard
             osparc.auth.Manager.getInstance().logout();
           } else {

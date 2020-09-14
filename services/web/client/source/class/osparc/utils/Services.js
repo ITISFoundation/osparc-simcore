@@ -156,15 +156,6 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
-    isServiceInList: function(listOfServices, serveiceKey) {
-      for (let i=0; i<listOfServices.length; i++) {
-        if (listOfServices[i].key === serveiceKey) {
-          return true;
-        }
-      }
-      return false;
-    },
-
     getNodeMetaData: function(key, version) {
       let metaData = null;
       if (key && version) {
@@ -190,6 +181,7 @@ qx.Class.define("osparc.utils.Services", {
           email: "maiz@itis.swiss"
         }],
         contact: "maiz@itis.swiss",
+        owner: "maiz@itis.swiss",
         inputs: {},
         outputs: {
           outFile: {
@@ -198,6 +190,9 @@ qx.Class.define("osparc.utils.Services", {
             description: "Chosen File",
             type: "data:*/*"
           }
+        },
+        "access_rights": {
+          "1": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
         }
       };
     },
@@ -214,8 +209,12 @@ qx.Class.define("osparc.utils.Services", {
           email: "maiz@itis.swiss"
         }],
         contact: "maiz@itis.swiss",
+        owner: "maiz@itis.swiss",
         inputs: {},
-        outputs: {}
+        outputs: {},
+        "access_rights": {
+          "1": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
+        }
       };
     },
 
@@ -239,28 +238,12 @@ qx.Class.define("osparc.utils.Services", {
 
     __addExtraInfo: function(services) {
       const categories = this.__getCategories();
-      const classifiers = this.__getClassifiers();
       Object.values(services).forEach(serviceWVersion => {
         Object.values(serviceWVersion).forEach(service => {
-          service["uuid"] = service["key"];
-          service["prjOwner"] = service["contact"];
-          service["thumbnail"] = "@FontAwesome5Solid/paw/50";
-          service["accessRights"] = {
-            "1": {
-              "read": true,
-              "write": true,
-              "delete": false
-            }
-          };
           if (Object.prototype.hasOwnProperty.call(categories, service["key"])) {
             service["category"] = categories[service["key"]]["category"];
           } else {
             service["category"] = "Unknown";
-          }
-          if (Object.prototype.hasOwnProperty.call(classifiers, service["key"])) {
-            service["classifiers"] = classifiers[service["key"]]["classifiers"];
-          } else {
-            service["classifiers"] = [];
           }
         });
       });
@@ -427,81 +410,6 @@ qx.Class.define("osparc.utils.Services", {
         },
         "simcore/services/frontend/multi-plot": {
           "category": "PostPro"
-        }
-      };
-    },
-
-    __getClassifiers: function() {
-      return {
-        "simcore/services/comp/isolve": {
-          "classifiers": [
-            "topics::z43::s4l",
-            "company::z43::itis"
-          ]
-        },
-        "simcore/services/comp/ti-solutions-optimizer": {
-          "classifiers": [
-            "company::z43::tisolutions"
-          ]
-        },
-        "simcore/services/dynamic/electrode-selector": {
-          "classifiers": [
-            "company::z43::tisolutions"
-          ]
-        },
-        "simcore/services/dynamic/jupyter-base-notebook": {
-          "classifiers": [
-            "topics::jupyter-notebook",
-            "company::z43::itis"
-          ]
-        },
-        "simcore/services/dynamic/jupyter-neuron": {
-          "classifiers": [
-            "topics::python",
-            "topics::jupyter-notebook",
-            "company::z43::itis"
-          ]
-        },
-        "simcore/services/dynamic/jupyter-octave": {
-          "classifiers": [
-            "topics::jupyter-notebook",
-            "topics::octave",
-            "company::z43::itis"
-          ]
-        },
-        "simcore/services/dynamic/jupyter-octave-python-math": {
-          "classifiers": [
-            "topics::jupyter-notebook",
-            "topics::octave",
-            "company::z43::itis"
-          ]
-        },
-        "simcore/services/dynamic/jupyter-scipy-notebook": {
-          "classifiers": [
-            "topics::python",
-            "topics::jupyter-notebook",
-            "company::z43::itis"
-          ]
-        },
-        "simcore/services/dynamic/jupyter-smash": {
-          "classifiers": [
-            "topics::python",
-            "topics::jupyter-notebook",
-            "topics::z43::s4l",
-            "company::z43::itis"
-          ]
-        },
-        "simcore/services/dynamic/osparc-lab": {
-          "classifiers": [
-            "topics::python",
-            "topics::jupyter-notebook",
-            "company::z43::itis"
-          ]
-        },
-        "simcore/services/dynamic/tissue-properties": {
-          "classifiers": [
-            "company::z43::itis"
-          ]
         }
       };
     }

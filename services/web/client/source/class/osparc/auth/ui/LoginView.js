@@ -55,10 +55,12 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     _buildPage: function() {
       this.__form = new qx.ui.form.Form();
 
-      const image = new osparc.ui.basic.OSparcLogo().set({
+      const image = new osparc.ui.basic.LogoWPlatform();
+      image.setSize({
         width: 250,
         height: 150
       });
+      image.setFont("text-18");
       this.add(image);
 
       const email = new qx.ui.form.TextField().set({
@@ -173,7 +175,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const failFun = function(msg) {
         this.__loginBtn.setFetching(false);
         // TODO: can get field info from response here
-        msg = String(msg) || this.tr("Introduced an invalid email or password");
+        msg = String(msg) || this.tr("Typed an invalid email or password");
         [email, pass].forEach(item => {
           item.set({
             invalidMessage: msg,

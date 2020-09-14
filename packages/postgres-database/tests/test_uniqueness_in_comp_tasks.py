@@ -15,24 +15,26 @@ from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
 
 
 @pytest.fixture
-def engine(make_engine, loop):
-    async def start():
-        engine = await make_engine()
-        sync_engine = make_engine(False)
-        metadata.drop_all(sync_engine)
-        metadata.create_all(sync_engine)
+async def engine(loop, make_engine):
 
-        async with engine.acquire() as conn:
-            await conn.execute(
-                comp_pipeline.insert().values(**fake_pipeline(project_id="PA"))
-            )
-            await conn.execute(
-                comp_pipeline.insert().values(**fake_pipeline(project_id="PB"))
-            )
+    engine = await make_engine()
+    sync_engine = make_engine(False)
+    metadata.drop_all(sync_engine)
+    metadata.create_all(sync_engine)
 
-        return engine
+    async with engine.acquire() as conn:
+        await conn.execute(
+            comp_pipeline.insert().values(**fake_pipeline(project_id="PA"))
+        )
+        await conn.execute(
+            comp_pipeline.insert().values(**fake_pipeline(project_id="PB"))
+        )
 
-    return loop.run_until_complete(start())
+    yield engine
+
+    engine.close()
+    await engine.wait_closed()
+
 
 
 async def test_unique_project_node_pairs(engine):

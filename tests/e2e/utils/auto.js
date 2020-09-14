@@ -1,5 +1,7 @@
 const utils = require("./utils")
 const responses = require('./responsesQueue');
+require('log-timestamp');
+
 
 async function register(page, user, pass) {
   await utils.waitAndClick(page, '[osparc-test-id="loginCreateAccountBtn"]');
@@ -38,7 +40,7 @@ async function logOut(page) {
 
   await page.waitForSelector('[osparc-test-id="userMenuMainBtn"]', {
     visible: true,
-    timeout: 1000
+    timeout: 2000
   });
   await utils.waitAndClick(page, '[osparc-test-id="userMenuMainBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuLogoutBtn"]');
@@ -131,7 +133,8 @@ async function dashboardNewStudy(page) {
 
 async function toDashboard(page) {
   console.log("To Dashboard");
-  await utils.waitAndClick(page, '[osparc-test-id="dashboardBtn"]')
+  await utils.waitAndClick(page, '[osparc-test-id="dashboardBtn"]');
+  await page.waitFor(2000);
 }
 
 async function dashboardOpenFirstTemplate(page, templateName) {
@@ -160,6 +163,7 @@ async function __filterStudiesByText(page, studyName) {
   console.log("Filtering by", studyName);
 
   await utils.waitAndClick(page, '[osparc-test-id="sideSearchFiltersTextFld"]')
+  await utils.clearInput(page, '[osparc-test-id="sideSearchFiltersTextFld"]')
   await page.type('[osparc-test-id="sideSearchFiltersTextFld"]', studyName)
   await page.keyboard.press('Enter')
 }
@@ -168,8 +172,14 @@ async function __filterTemplatesByText(page, templateName) {
   console.log("Filtering by", templateName);
 
   await utils.waitAndClick(page, '[osparc-test-id="sideSearchFiltersTextFld"]')
+  await utils.clearInput(page, '[osparc-test-id="sideSearchFiltersTextFld"]')
   await page.type('[osparc-test-id="sideSearchFiltersTextFld"]', templateName)
   await page.keyboard.press('Enter')
+}
+
+async function clickLoggerTitle(page) {
+  console.log("Click LoggerTitle");
+  await utils.waitAndClick(page, '[osparc-test-id="loggerTitleLabel"]')
 }
 
 async function runStudy(page, waitFor = 0) {
@@ -333,6 +343,7 @@ module.exports = {
   dashboardEditFristStudyThumbnail,
   dashboardNewStudy,
   dashboardOpenFirstTemplate,
+  clickLoggerTitle,
   runStudy,
   dashboardDeleteFirstStudy,
   toDashboard,

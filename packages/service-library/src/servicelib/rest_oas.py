@@ -4,11 +4,10 @@
 """
 
 from aiohttp import web
-
 from openapi_core.schema.specs.models import Spec
 
-from .openapi import create_specs
 from .application_keys import APP_OPENAPI_SPECS_KEY
+from .openapi import create_specs
 
 
 def set_specs(app: web.Application, specs: Spec) -> Spec:

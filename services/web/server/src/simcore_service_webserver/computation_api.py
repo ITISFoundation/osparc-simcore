@@ -94,7 +94,7 @@ async def _get_node_extras(
             node_version,
         )
         raise web_exceptions.HTTPNotFound(
-            reason=f"details of service {node_key}:{node_version} could not be found"
+            reason=f"extras of service {node_key}:{node_version} could not be found"
         )
     return node_extras
 

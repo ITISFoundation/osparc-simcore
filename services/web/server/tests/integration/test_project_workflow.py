@@ -15,6 +15,7 @@ from pprint import pprint
 from typing import Dict, List
 
 import pytest
+import sqlalchemy as sa
 from aiohttp import web
 
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -40,9 +41,7 @@ core_services = [
     "redis",
 ]
 
-ops_services = [
-    #    'adminer'
-]
+ops_services = []  # + ["adminer"]
 
 
 @pytest.fixture
@@ -55,7 +54,6 @@ def client(
     assert app_config["rest"]["version"] == API_VERSION
 
     app_config["main"]["testing"] = True
-    app_config["db"]["init_tables"] = True
 
     app_config["storage"]["enabled"] = False
     app_config["rabbit"]["enabled"] = False
@@ -122,7 +120,7 @@ def fake_project_data(fake_data_dir: Path) -> Dict:
 
 @pytest.fixture
 async def logged_user(client):  # , role: UserRole):
-    """ adds a user in db and logs in with client
+    """adds a user in db and logs in with client
 
     NOTE: role fixture is defined as a parametrization below
     """
@@ -150,9 +148,9 @@ def computational_system_mock(mocker):
 @pytest.fixture
 async def storage_subsystem_mock(loop, mocker):
     """
-        Patches client calls to storage service
+    Patches client calls to storage service
 
-        Patched functions are exposed within projects but call storage subsystem
+    Patched functions are exposed within projects but call storage subsystem
     """
     # requests storage to copy data
     mock = mocker.patch(
@@ -225,6 +223,7 @@ async def _request_delete(client, pid):
 
 async def test_workflow(
     client,
+    postgres_db: sa.engine.Engine,
     fake_project_data,
     logged_user,
     primary_group: Dict[str, str],
@@ -243,11 +242,18 @@ async def test_workflow(
     projects = await _request_list(client)
     assert len(projects) == 1
     for key in projects[0].keys():
-        if key not in ("uuid", "prjOwner", "creationDate", "lastChangeDate", "accessRights"):
+        if key not in (
+            "uuid",
+            "prjOwner",
+            "creationDate",
+            "lastChangeDate",
+            "accessRights",
+        ):
             assert projects[0][key] == fake_project_data[key]
     assert projects[0]["prjOwner"] == logged_user["email"]
     assert projects[0]["accessRights"] == {
-        str(primary_group["gid"]): {"read": True, "write": True, "delete": True}}
+        str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
+    }
 
     modified_project = deepcopy(projects[0])
     modified_project["name"] = "some other name"
@@ -258,7 +264,8 @@ async def test_workflow(
     modified_project["workbench"]["ReNamed"]["position"]["x"] = 0
     # share with some group
     modified_project["accessRights"].update(
-        {str(standard_groups[0]["gid"]): {"read": True, "write": True, "delete": False}})
+        {str(standard_groups[0]["gid"]): {"read": True, "write": True, "delete": False}}
+    )
     # modify
     pid = modified_project["uuid"]
     await _request_update(client, modified_project, pid)
@@ -299,16 +306,14 @@ async def test_get_invalid_project(client, logged_user):
 
 
 async def test_update_invalid_project(client, logged_user):
-    url = client.app.router["replace_project"].url_for(
-        project_id="some-fake-id")
+    url = client.app.router["replace_project"].url_for(project_id="some-fake-id")
     resp = await client.get(url)
 
     await assert_status(resp, web.HTTPNotFound)
 
 
 async def test_delete_invalid_project(client, logged_user):
-    url = client.app.router["delete_project"].url_for(
-        project_id="some-fake-id")
+    url = client.app.router["delete_project"].url_for(project_id="some-fake-id")
     resp = await client.delete(url)
 
     await assert_status(resp, web.HTTPNotFound)

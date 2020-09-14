@@ -24,22 +24,27 @@ UPGRADE_OPTION := $(if $(upgrade),upgrade=$(upgrade),)
 MAKE_C := $(MAKE) --no-print-directory --directory
 
 
-.PHONY: touch reqs
+.PHONY: touch reqs _check_py36_version
 # packages/
 _input-requirements = $(shell find ${PACKAGES_DIR} -type f -name _base.in)
 # api tests
-_input-requirements += $(shell find $(REPODIR)/api/tests/ -type f -name *.in)
+_input-requirements += $(shell find $(REPODIR)/api/tests/ -type f -name "*.in")
 # system tests
-_input-requirements += $(shell find $(REPODIR)/tests/ -type f -name *.in)
-
+_input-requirements += $(shell find $(REPODIR)/tests/ -type f -name "*.in")
 
 $(info Found $(_input-requirements))
+
+
+_check_py36_version:
+	# Checking that runs with correct python version
+	@python3 -c "import sys; assert sys.version_info[:2]==(3,6), f'Expected python 3.6, got {sys.version_info}'"
 
 
 touch: ## touches all package requirement inputs
 	$(foreach p,${_input-requirements},touch $(p);)
 
-reqs: ## updates requirements of all package libraries
+reqs: _check_py36_version ## updates requirements of all package libraries
+	# Upgrading $(upgrade) requirements
 	$(foreach p,${_input-requirements},touch $(p); $(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
 
 

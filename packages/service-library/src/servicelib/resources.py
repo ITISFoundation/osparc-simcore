@@ -3,10 +3,11 @@
 See https://setuptools.readthedocs.io/en/latest/pkg_resources.html
 """
 import pathlib
-import pkg_resources
 from pathlib import Path
 from typing import TextIO
+
 import attr
+import pkg_resources
 
 
 @attr.s(frozen=True, auto_attribs=True)

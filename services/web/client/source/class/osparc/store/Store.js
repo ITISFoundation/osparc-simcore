@@ -115,8 +115,8 @@ qx.Class.define("osparc.store.Store", {
       init: {}
     },
     classifiers: {
-      check: "Object",
-      init: {}
+      check: "Array",
+      init: []
     }
   },
 
@@ -132,6 +132,9 @@ qx.Class.define("osparc.store.Store", {
      * @param {String} idField Key used for the id field. This field has to be unique among all elements of that resource.
      */
     update: function(resource, data, idField = "uuid") {
+      if (data === undefined) {
+        return;
+      }
       const stored = this.get(resource);
       if (Array.isArray(stored)) {
         if (Array.isArray(data)) {
@@ -201,6 +204,14 @@ qx.Class.define("osparc.store.Store", {
       }
     },
 
+    setStudyState: function(studyId, state) {
+      const studiesWStateCache = this.getStudies();
+      const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
+      if (idx !== -1) {
+        studiesWStateCache[idx]["state"] = state;
+      }
+    },
+
     getStudyWState: function(studyId, reload = false) {
       return new Promise((resolve, reject) => {
         const studiesWStateCache = this.getStudies();
@@ -218,7 +229,7 @@ qx.Class.define("osparc.store.Store", {
           .then(study => {
             osparc.data.Resources.fetch("studies", "state", params)
               .then(state => {
-                study["locked"] = state["locked"];
+                study["state"] = state;
                 if (idx === -1) {
                   studiesWStateCache.push(study);
                 } else {
@@ -265,7 +276,7 @@ qx.Class.define("osparc.store.Store", {
               .then(states => {
                 states.forEach((state, idx) => {
                   const study = studies[idx];
-                  study["locked"] = state["locked"];
+                  study["state"] = state;
                   studiesWStateCache.push(study);
                 });
                 resolve(studiesWStateCache);
@@ -302,8 +313,25 @@ qx.Class.define("osparc.store.Store", {
     },
 
     /**
+     * @param {String} serviceKey
+     * @param {String} serviceVersion
+     * @param {Boolean} reload
+     */
+    getService: function(serviceKey, serviceVersion, reload = false) {
+      return new Promise((resolve, reject) => {
+        const params = {
+          url: osparc.data.Resources.getServiceUrl(serviceKey, serviceVersion)
+        };
+        osparc.data.Resources.getOne("services", params, !reload)
+          .then(serviceData => {
+            resolve(serviceData);
+          });
+      });
+    },
+
+    /**
      * This functions does the needed processing in order to have a working list of services and DAGs.
-     * @param {Boolean} reload ?
+     * @param {Boolean} reload
      */
     getServicesDAGs: function(reload = false) {
       return new Promise((resolve, reject) => {
@@ -322,6 +350,40 @@ qx.Class.define("osparc.store.Store", {
             osparc.utils.Services.servicesToCache(servicesObj, true);
             this.fireDataEvent("servicesRegistered", servicesObj);
             resolve(osparc.utils.Services.servicesCached);
+          });
+      });
+    },
+
+    getInaccessibleServices: function(studyData) {
+      return new Promise((resolve, reject) => {
+        const inaccessibleServices = [];
+        const nodes = Object.values(studyData.workbench);
+        nodes.forEach(node => {
+          const idx = inaccessibleServices.findIndex(inaccessibleSrv => inaccessibleSrv.key === node.key && inaccessibleSrv.version === node.version);
+          if (idx === -1) {
+            inaccessibleServices.push({
+              key: node["key"],
+              version: node["version"],
+              label: node["label"]
+            });
+          }
+        });
+        this.getServicesDAGs()
+          .then(services => {
+            nodes.forEach(node => {
+              if (osparc.utils.Services.getFromObject(services, node.key, node.version)) {
+                const idx = inaccessibleServices.findIndex(inaccessibleSrv => inaccessibleSrv.key === node.key && inaccessibleSrv.version === node.version);
+                if (idx !== -1) {
+                  inaccessibleServices.splice(idx, 1);
+                }
+              }
+            });
+          })
+          .catch(err => {
+            console.error("failed getting services", err);
+          })
+          .finally(() => {
+            resolve(inaccessibleServices);
           });
       });
     },
@@ -401,6 +463,55 @@ qx.Class.define("osparc.store.Store", {
                   });
                 });
                 resolve(reachableMembers);
+              });
+          });
+      });
+    },
+
+    __getOrgClassifiers: function(orgId) {
+      const params = {
+        url: {
+          "gid": orgId
+        }
+      };
+      return osparc.data.Resources.get("classifiers", params);
+    },
+
+    getAllClassifiers: function(reload = false) {
+      return new Promise((resolve, reject) => {
+        const oldClassifiers = this.getClassifiers();
+        if (!reload && oldClassifiers.length) {
+          resolve(oldClassifiers);
+          return;
+        }
+        osparc.store.Store.getInstance().getGroupsOrganizations()
+          .then(orgs => {
+            const allClassifiers = [];
+            if (orgs.length === 0) {
+              this.setClassifiers(allClassifiers);
+              resolve(allClassifiers);
+              return;
+            }
+            const classifierPromises = [];
+            orgs.forEach(org => {
+              classifierPromises.push(this.__getOrgClassifiers(org["gid"]));
+            });
+            Promise.all(classifierPromises)
+              .then(classifierss => {
+                if (classifierss.length === 0) {
+                  this.setClassifiers(allClassifiers);
+                  resolve(allClassifiers);
+                  return;
+                }
+                classifierss.forEach(({classifiers}) => {
+                  if (classifiers) {
+                    Object.keys(classifiers).forEach(key => {
+                      allClassifiers.push(classifiers[key]);
+                    });
+                  }
+                });
+                this.setClassifiers(allClassifiers);
+                resolve(allClassifiers);
               });
           });
       });
