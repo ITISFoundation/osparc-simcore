@@ -71,7 +71,7 @@ def drop_template_db(postgres_engine: sa.engine.Engine) -> None:
     execute_queries(postgres_engine, queries)
 
 
-@pytest.yield_fixture(scope="module")
+@pytest.fixture(scope="module")
 def loop(request):
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
@@ -104,12 +104,12 @@ def database_from_template_before_each_function(
     """
     Will recrate the db before running each test.
 
-    **Note: must be implemented in the module where the the 
+    **Note: must be implemented in the module where the the
     `postgres_with_template_db` is used and mark autouse=True**
 
     It is possible to drop the application database by ussing another one like
     the posgtres database. The db will be recrated from the previously created template
-    
+
     The postgres_db fixture is required for the template database to be created.
     """
 
@@ -170,7 +170,8 @@ def postgres_engine(
 
 @pytest.fixture(scope="module")
 def postgres_db(
-    postgres_dsn: Dict, postgres_engine: sa.engine.Engine,
+    postgres_dsn: Dict,
+    postgres_engine: sa.engine.Engine,
 ) -> sa.engine.Engine:
 
     # upgrades database from zero
