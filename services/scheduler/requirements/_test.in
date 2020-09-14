@@ -1,0 +1,18 @@
+#
+# Specifies dependencies required to run 'services/api-server/test'
+#  both for unit and integration tests!!
+#
+
+# 'services/api-server/tests/unit' dependencies
+
+# testing
+requests
+pytest
+pytest-asyncio
+pytest-cov
+pytest-mock
+pytest-ordering
+async-asgi-testclient
+nest_asyncio
+pymongo-inmemory  # test against a real instance
+redislite         # test against a real instance

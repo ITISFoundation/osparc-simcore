@@ -1,0 +1,14 @@
+#
+# Specifies third-party dependencies for 'services/service-sidecar/src'
+#
+# NOTE: ALL version constraints MUST be commented
+
+fastapi
+dataclasses==0.6  # version 0.7 is not found
+uvicorn
+
+docker-compose
+aiodocker
+aiofiles
+PyYAML
+environs
