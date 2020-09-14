@@ -31,7 +31,6 @@ from ..models.domain.service import (
     ServiceAccessRightsAtDB,
     ServiceDockerData,
     ServiceMetaDataAtDB,
-    ServiceType,
 )
 
 logger = logging.getLogger(__name__)
