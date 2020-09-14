@@ -4,9 +4,9 @@ from typing import Dict
 from fastapi import HTTPException
 
 from scheduler.api.io_models import ProjectActiveUpdate, ProjectUpdate
-from scheduler.app import app
 from scheduler.core.ingestion import workbench_updated
 from scheduler.dbs.mongo_models.workbench import WorkbenchUpdate
+from scheduler.fastapi_instance import app
 from scheduler.utils import get_tracking_log
 
 
@@ -34,7 +34,11 @@ async def update_project_active(project_active_update: ProjectActiveUpdate) -> D
     )
 
     if workbench_update is None:
-        message = f"Could not find a project for provided project_id '{project_active_update.project_id}''"
+        message = (
+            "Could not find a project for provided project_id '{project_id}''".format(
+                project_id=project_active_update.project_id
+            )
+        )
         raise HTTPException(status_code=400, detail=message)
 
     await workbench_update.set_active(project_active_update.is_active)

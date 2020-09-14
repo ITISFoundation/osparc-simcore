@@ -1,3 +1,4 @@
+# pylint: disable=arguments-differ,unused-argument
 import bson
 from marshmallow import compat as ma_compat
 from marshmallow import fields as ma_fields

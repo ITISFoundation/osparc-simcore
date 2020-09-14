@@ -1,4 +1,4 @@
-# pylint: disable=no-member
+# pylint: disable=no-member,abstract-method
 
 import datetime
 from typing import Any, Dict

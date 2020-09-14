@@ -2,18 +2,17 @@
 import logging
 from typing import List
 
-from fastapi import FastAPI
 from jaeger_client import Config as jaeger_config
 from opentracing.scope_managers.contextvars import ContextVarsScopeManager
 from opentracing_instrumentation.client_hooks import install_all_patches
 from starlette_opentracing import StarletteTracingMiddleWare
 
 from scheduler import config
+from scheduler.fastapi_instance import app
 from scheduler.utils import AsyncTaskWrapper
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
 
 # imports all submodules to ensure service discovery
 from scheduler import api as _  # pylint: disable=unused-import
