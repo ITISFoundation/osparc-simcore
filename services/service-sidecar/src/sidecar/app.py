@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 import aiodocker
 import yaml
@@ -22,7 +22,9 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 
-async def write_file_and_run_command(file_content: str, command: str) -> str:
+async def write_file_and_run_command(
+    file_content: str, command: str
+) -> Tuple[bool, str]:
     """ The command which accepts {file_path} as an argument for string formatting """
     async with write_to_tmp_file(file_content) as file_path:
         return await async_command(
@@ -182,13 +184,13 @@ async def get_container_logs(
     docker = aiodocker.Docker()
 
     try:
-        container = await docker.containers.get(container)
+        container_instance = await docker.containers.get(container)
 
         args = dict(stdout=True, stderr=True)
         if timestamps:
             args["timestamps"] = True
 
-        return await container.log(**args)
+        return await container_instance.log(**args)
     except aiodocker.exceptions.DockerError as e:
         response.status_code = 400
         return e.message
@@ -200,13 +202,13 @@ async def container_inspect(response: Response, container: str) -> Dict[str, Any
 
     if container not in await get_container_names():
         response.status_code = 400
-        return f"No container '{container}' was started"
+        return dict(error=f"No container '{container}' was started")
 
     docker = aiodocker.Docker()
 
     try:
-        container = await docker.containers.get(container)
-        return await container.show()
+        container_instance = await docker.containers.get(container)
+        return await container_instance.show()
     except aiodocker.exceptions.DockerError as e:
         response.status_code = 400
-        return e.message
+        return dict(error=e.message)
