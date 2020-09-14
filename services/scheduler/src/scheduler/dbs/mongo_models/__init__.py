@@ -6,16 +6,14 @@ from tenacity import retry, stop_after_delay, wait_random_exponential
 from umongo import MotorAsyncIOInstance
 
 from scheduler import config
-
-# MongoDB instance to be used by all models
-instance = MotorAsyncIOInstance()  # pylint: disable=invalid-name
+from scheduler.dbs.mongo_models.init import instance
 
 
 async def ensure_indexes():
     # pylint: disable=import-outside-toplevel,no-member
     from scheduler.dbs.mongo_models.workbench import WorkbenchDiff, WorkbenchUpdate
 
-    # this can also be done by providing the module and plying auto discovery
+    # this can also be done by providing the module and applying auto discovery
     await WorkbenchUpdate.ensure_indexes()
     await WorkbenchDiff.ensure_indexes()
 
