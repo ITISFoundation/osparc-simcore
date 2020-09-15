@@ -57,6 +57,7 @@ def dispatch_comp_task(user_id: str, project_id: str, node_id: str) -> None:
 def _dispatch_to_cpu_queue(user_id: str, project_id: str, node_id: str) -> None:
     _celery_app_cpu.send_task(
         "comp.task.cpu",
+        add_to_parent=True,
         kwargs={"user_id": user_id, "project_id": project_id, "node_id": node_id},
     )
 
@@ -64,6 +65,7 @@ def _dispatch_to_cpu_queue(user_id: str, project_id: str, node_id: str) -> None:
 def _dispatch_to_gpu_queue(user_id: str, project_id: str, node_id: str) -> None:
     _celery_app_gpu.send_task(
         "comp.task.gpu",
+        add_to_parent=True,
         kwargs={"user_id": user_id, "project_id": project_id, "node_id": node_id},
     )
 
@@ -71,6 +73,7 @@ def _dispatch_to_gpu_queue(user_id: str, project_id: str, node_id: str) -> None:
 def _dispatch_to_mpi_queue(user_id: str, project_id: str, node_id: str) -> None:
     _celery_app_mpi.send_task(
         "comp.task.mpi",
+        add_to_parent=True,
         kwargs={"user_id": user_id, "project_id": project_id, "node_id": node_id},
     )
 
@@ -79,10 +82,7 @@ def shared_task_dispatch(
     celery_request, user_id: str, project_id: str, node_id: Optional[str] = None
 ) -> None:
     log.info(
-        "Will dispatch to appropriate queue %s, %s, %s",
-        user_id,
-        project_id,
-        node_id,
+        "Will dispatch to appropriate queue %s, %s, %s", user_id, project_id, node_id,
     )
     next_task_nodes = wrap_async_call(
         run_sidecar(celery_request.request.id, user_id, project_id, node_id)
