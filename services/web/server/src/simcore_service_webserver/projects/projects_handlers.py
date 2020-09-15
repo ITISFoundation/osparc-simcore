@@ -29,6 +29,7 @@ from .projects_models import (
     RunningState,
 )
 from .projects_utils import project_uses_available_services
+from ..computation_api import get_pipeline_state, update_pipeline_db
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",

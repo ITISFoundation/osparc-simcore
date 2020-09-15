@@ -6,6 +6,7 @@ from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel
+
 from simcore_postgres_database.webserver_models import ProjectType, projects
 
 
@@ -20,13 +21,12 @@ class ProjectLocked(BaseModel):
 
 
 class RunningState(str, Enum):
-    not_started = "NotStarted"
-    pending = "pending"
-    started = "started"
-    running = "running"
-    completed = "completed"
-    failed = "failed"
-    aborted = "aborted"
+    not_started = "NOT_STARTED"
+    pending = "PENDING"
+    started = "STARTED"
+    retrying = "RETRY"
+    success = "SUCCESS"
+    failure = "FAILURE"
 
 
 class ProjectRunningState(BaseModel):
