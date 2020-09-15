@@ -1087,7 +1087,46 @@ jobs:
           path: tests/e2e/screenshots
       - name: cleanup
         if: always()
-        run: ./ci/github/system-testing/swarm-deploy.bash clean_up
+        run: ./ci/github/system-testing/e2e.bash clean_up
+
+  system-test-environment-setup:
+    name: System-testing environment setup
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - name: set PR default variables
+        # only pushes have access to the docker credentials, use a default
+        if: github.event_name == 'pull_request'
+        run: |
+          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
+          echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
+      - uses: actions/checkout@v2
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-environment-setup-${{ hashFiles('tests/environment-setup/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-environment-setup-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install
+        run: ./ci/github/system-testing/environment-setup.bash install
+      - name: test
+        run: ./ci/github/system-testing/environment-setup.bash test
+      - name: cleanup
+        if: always()
+        run: ./ci/github/system-testing/environment-setup.bash clean_up
 
   coverage:
     needs:

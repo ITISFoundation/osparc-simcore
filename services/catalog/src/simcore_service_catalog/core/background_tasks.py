@@ -18,11 +18,11 @@ from urllib.parse import quote_plus
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from fastapi import FastAPI
-from fastapi.exceptions import HTTPException
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 
-from ..api.dependencies.director import get_director_session
+
+from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.projects import ProjectsRepository
 from ..db.repositories.services import ServicesRepository
@@ -43,7 +43,7 @@ from ..services.frontend_services import get_services as get_frontend_services
 async def _list_registry_services(
     app: FastAPI,
 ) -> Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData]:
-    client = get_director_session(app)
+    client = get_director_api(app)
     data = await client.get("/services")
     services: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData] = {
         (s.key, s.version): s for s in get_frontend_services()
@@ -87,16 +87,12 @@ async def _create_service_default_access_rights(
 
     async def _is_old_service(app: FastAPI, service: ServiceDockerData) -> bool:
         # get service build date
-        client = get_director_session(app)
-        try:
-            data = await client.get(
-                f"/service_extras/{quote_plus(service.key)}/{service.version}"
-            )
-            if not data or "build_date" not in data:
-                return True
-        except HTTPException:
-            logger.error("service %s:%s not found", service.key, service.version)
-            raise
+        client = get_director_api(app)
+        data = await client.get(
+            f"/service_extras/{quote_plus(service.key)}/{service.version}"
+        )
+        if not data or "build_date" not in data:
+            return True
 
         logger.debug("retrieved service extras are %s", data)
 
