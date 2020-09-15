@@ -53,7 +53,7 @@ async def get_project_for_user(
     *,
     include_templates: bool = False,
 ) -> Dict:
-    """ Returns a project accessible to user
+    """Returns a project accessible to user
 
     :raises web.HTTPNotFound: if no match found
     :return: schema-compliant project data
@@ -117,6 +117,8 @@ async def start_project_interactive_services(
     running_services = await director_api.get_running_interactive_services(
         request.app, user_id, project["uuid"]
     )
+    log.debug("Running services %s", running_services)
+
     running_service_uuids = [x["service_uuid"] for x in running_services]
     # now start them if needed
     project_needed_services = {
@@ -125,6 +127,7 @@ async def start_project_interactive_services(
         if _is_node_dynamic(service["key"])
         and service_uuid not in running_service_uuids
     }
+    log.debug("Services to start %s", project_needed_services)
 
     start_service_tasks = [
         director_api.start_service(
@@ -137,7 +140,15 @@ async def start_project_interactive_services(
         )
         for service_uuid, service in project_needed_services.items()
     ]
-    await logged_gather(*start_service_tasks, reraise=True)
+
+    result = await logged_gather(*start_service_tasks, reraise=True)
+    log.debug("Services start result %s", result)
+    for entry in result:
+        if "status" not in entry:
+            continue
+
+        if entry["status"] != 200:
+            log.error("Error while starting dynamic service %s", entry)
 
 
 async def delete_project(request: web.Request, project_uuid: str, user_id: int) -> None:
@@ -276,7 +287,7 @@ async def update_project_node_outputs(
     data: Optional[Dict],
 ) -> Dict:
     """
-        Updates outputs of a given node in a project with 'data'
+    Updates outputs of a given node in a project with 'data'
     """
     log.debug(
         "updating node %s outputs in project %s for user %s with %s",
@@ -315,7 +326,8 @@ async def update_project_node_outputs(
 
 
 async def get_workbench_node_ids_from_project_uuid(
-    app: web.Application, project_uuid: str,
+    app: web.Application,
+    project_uuid: str,
 ) -> Set[str]:
     """Returns a set with all the node_ids from a project's workbench"""
     db = app[APP_PROJECT_DBAPI]
@@ -323,7 +335,8 @@ async def get_workbench_node_ids_from_project_uuid(
 
 
 async def is_node_id_present_in_any_project_workbench(
-    app: web.Application, node_id: str,
+    app: web.Application,
+    node_id: str,
 ) -> bool:
     """If the node_id is presnet in one of the projects' workbenche returns True"""
     db = app[APP_PROJECT_DBAPI]
