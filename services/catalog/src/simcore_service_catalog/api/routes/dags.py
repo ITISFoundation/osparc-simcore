@@ -64,7 +64,8 @@ async def search_dags():
 
 @router.get("/{dag_id}", response_model=DAGOut)
 async def get_dag(
-    dag_id: int, dags_repo: DAGsRepository = Depends(get_repository(DAGsRepository)),
+    dag_id: int,
+    dags_repo: DAGsRepository = Depends(get_repository(DAGsRepository)),
 ):
     dag = await dags_repo.get_dag(dag_id)
     return dag
@@ -123,7 +124,8 @@ async def replace_dag(
     response_description="Successfully deleted",
 )
 async def delete_dag(
-    dag_id: int, dags_repo: DAGsRepository = Depends(get_repository(DAGsRepository)),
+    dag_id: int,
+    dags_repo: DAGsRepository = Depends(get_repository(DAGsRepository)),
 ):
     # If the Delete method immediately removes the resource, it should return an empty response.
     # If the Delete method initiates a long-running operation, it should return the long-running operation.

@@ -62,7 +62,7 @@ help:
 
 .PHONY: devenv
 devenv: ## build development environment (using main services/docker-compose-build.yml)
-	@$(MAKE_C) $@
+	@$(MAKE_C) $(REPO_BASE_DIR) $@
 
 
 .PHONY: clean
