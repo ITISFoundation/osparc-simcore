@@ -1095,7 +1095,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -1127,7 +1127,6 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/system-testing/environment-setup.bash clean_up
-
 
   coverage:
     needs:
