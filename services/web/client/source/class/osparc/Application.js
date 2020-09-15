@@ -141,6 +141,14 @@ qx.Class.define("osparc.Application", {
         });
     },
 
+    __updateFavicon: function() {
+      const link = document.querySelector("link[rel*='icon']") || document.createElement("link");
+      link.type = "image/x-icon";
+      link.rel = "shortcut icon";
+      link.href = "resource/osparc/favicon-osparc.png";
+      document.getElementsByTagName("head")[0].appendChild(link);
+    },
+
     __restart: function() {
       let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
 
