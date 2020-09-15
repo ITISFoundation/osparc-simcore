@@ -214,6 +214,7 @@ async function takeScreenshot(page, captureName) {
   const path = pathLib.join(__dirname, SCREENSHOTS_DIR, filename);
 
   await page.screenshot({
+    fullPage: true,
     path: path,
     type: 'jpeg',
   })
