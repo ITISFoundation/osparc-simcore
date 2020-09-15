@@ -264,14 +264,8 @@ async def _create_docker_service_params(
             docker_params["labels"]["port"] = docker_params["labels"][
                 f"traefik.http.services.{service_name}.loadbalancer.server.port"
             ] = str(param["value"])
-            if config.DEBUG_MODE:
-                # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
-                docker_params["endpoint_spec"]["Ports"] = [
-                    {"TargetPort": int(param["value"]), "PublishedPort": 0}
-                ]
-        elif (
-            config.DEBUG_MODE and param["type"] == "EndpointSpec"
-        ):  # REST-API compatible
+        # REST-API compatible
+        elif param["type"] == "EndpointSpec":
             if "Ports" in param["value"]:
                 if (
                     isinstance(param["value"]["Ports"], list)
@@ -280,8 +274,6 @@ async def _create_docker_service_params(
                     docker_params["labels"]["port"] = docker_params["labels"][
                         f"traefik.http.services.{service_name}.loadbalancer.server.port"
                     ] = str(param["value"]["Ports"][0]["TargetPort"])
-            if config.DEBUG_MODE:
-                docker_params["endpoint_spec"] = param["value"]
 
         # placement constraints
         elif param["name"] == "constraints":  # python-API compatible
@@ -810,7 +802,11 @@ async def start_service(
         node_details = containers_meta_data[0]
         if config.MONITORING_ENABLED:
             service_started(
-                app, user_id, service_key, service_tag, "DYNAMIC",
+                app,
+                user_id,
+                service_key,
+                service_tag,
+                "DYNAMIC",
             )
         # we return only the info of the main service
         return node_details
