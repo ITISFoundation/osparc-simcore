@@ -53,10 +53,11 @@ async def test_middleware_product_discovery(sample_url, expected_product, mocker
     class MockRequest(dict):
         @property
         def path(self):
-            return str(requested_url.path)
+            return requested_url.path
+
         @property
         def host(self):
-            return str(requested_url.origin)
+            return requested_url.host
 
     mock_request = MockRequest()
 

@@ -21,7 +21,7 @@ PRODUCT_PATH_RE = re.compile(r"^/(" + "|".join(FE_APPS) + r")/index.html")
 def discover_product_by_hostname(request: web.Request) -> Optional[str]:
     # TODO: improve!!! Access to db once??
     for fea in FE_APPS:
-        if fea in request.host:
+        if request.host.startswith(fea):
             log.debug("%s discovered", fea)
             return fea
     log.debug("Could not discover FE app")
