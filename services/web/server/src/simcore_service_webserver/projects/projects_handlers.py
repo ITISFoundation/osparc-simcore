@@ -12,7 +12,7 @@ from jsonschema import ValidationError
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog
-from ..computation_api import update_pipeline_db
+from ..computation_api import get_pipeline_state, update_pipeline_db
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from ..security_api import check_permission
@@ -444,7 +444,9 @@ async def state_project(request: web.Request) -> web.Response:
             await get_user_name(request.app, uid) for uid in set(users_of_project)
         ]
         assert len(usernames) <= 1  # currently not possible to have more than 1
-        running_state = ProjectRunningState(value=RunningState.not_started)
+        running_state = ProjectRunningState(
+            value=await get_pipeline_state(request.app, project_uuid)
+        )
         project_state = ProjectState(
             locked={
                 "value": len(usernames) > 0,

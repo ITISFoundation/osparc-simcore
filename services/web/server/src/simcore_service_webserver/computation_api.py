@@ -8,22 +8,26 @@ import logging
 from pprint import pformat
 from typing import Dict, Optional
 
+from aiohttp import web, web_exceptions
+from celery import Celery
+
 import psycopg2.errors
 import sqlalchemy as sa
-from aiohttp import web, web_exceptions
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
-from sqlalchemy import and_
-
-from servicelib.application_keys import APP_DB_ENGINE_KEY
+from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.comp_pipeline import UNKNOWN
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
+from simcore_sdk.config.rabbit import Config as RabbitConfig
 
 # TODO: move this to computation_models
 from simcore_service_webserver.computation_models import to_node_class
+from sqlalchemy import and_
 
+from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
 from .director import director_api
+from .projects.projects_models import RunningState
 
 log = logging.getLogger(__file__)
 
@@ -423,6 +427,39 @@ async def update_pipeline_db(
     await _set_tasks_in_tasks_db(db_engine, project_id, tasks, replace_pipeline)
 
     log.info("Pipeline has been updated for project %s", project_id)
+
+
+def get_celery(_app: web.Application) -> Celery:
+    config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
+    rabbit = RabbitConfig(**config)
+    celery_app = Celery(rabbit.name, broker=rabbit.broker_url, backend=rabbit.backend,)
+    return celery_app
+
+
+async def start_pipeline_computation(
+    app: web.Application, user_id: int, project_id: str
+) -> Optional[str]:
+    # commit the tasks to celery
+    task = get_celery(request.app).send_task(
+        "comp.task", kwargs={"user_id": user_id, "project_id": project_id}
+    )
+    if not task:
+        log.error(
+            "Task for user_id %s, project %s could not be started", user_id, project_id
+        )
+        return
+
+    log.debug(
+        "Task (task=%s, user_id=%s, project_id=%s) submitted for execution.",
+        task.task_id,
+        user_id,
+        project_id,
+    )
+    return task.task_id
+
+
+async def get_pipeline_state(app: web.Application, project_id: str) -> RunningState:
+    return RunningState.not_started
 
 
 async def delete_pipeline_db(app: web.Application, project_id: str) -> None:
