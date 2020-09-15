@@ -264,11 +264,6 @@ async def _create_docker_service_params(
             docker_params["labels"]["port"] = docker_params["labels"][
                 f"traefik.http.services.{service_name}.loadbalancer.server.port"
             ] = str(param["value"])
-            if config.DEBUG_MODE:
-                # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
-                docker_params["endpoint_spec"]["Ports"] = [
-                    {"TargetPort": int(param["value"]), "PublishedPort": 0}
-                ]
         elif (
             config.DEBUG_MODE and param["type"] == "EndpointSpec"
         ):  # REST-API compatible
