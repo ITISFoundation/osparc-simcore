@@ -23,8 +23,8 @@ Then
 ```cmd
 make run-devel
 ```
-will start the service in development-mode together with a postgres db initialized with test data.  The API can be query using
-- http://127.0.0.1:8000/dev/docs: swagger-UI API doc
+will start the service in development-mode together with a postgres db initialized with test data. The API can be query using
+- http://127.0.0.1:8000/api/docs: swagger-UI API doc
 
 
 Finally

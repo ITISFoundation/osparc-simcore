@@ -1,3 +1,6 @@
+#
+# Includes all adjancent services for testing/development purposes
+#
 version: "3.7"
 services:
   postgres:

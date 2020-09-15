@@ -20,16 +20,47 @@
   ],
   "applications": [
     {
+      "default": true,
       "class": "osparc.Application",
       "theme": "osparc.theme.ThemeDark",
       "name": "osparc",
       "title": "oSPARC",
-      "default": true,
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
         "osparc.theme.ThemeLight"
       ],
+      "environment": {
+        "product.name": "osparc"
+      },
+      "bootPath": "source/boot"
+    },
+    {
+      "class": "osparc.Application",
+      "theme": "osparc.theme.ThemeLightBlue",
+      "name": "s4l",
+      "title": "Sim4Life",
+      "include": [
+        "iconfont.material.Load",
+        "iconfont.fontawesome5.Load"
+      ],
+      "environment": {
+        "product.name": "s4l"
+      },
+      "bootPath": "source/boot"
+    },
+    {
+      "class": "osparc.Application",
+      "theme": "osparc.theme.ThemePurple",
+      "name": "tis",
+      "title": "TI Solutions",
+      "include": [
+        "iconfont.material.Load",
+        "iconfont.fontawesome5.Load"
+      ],
+      "environment": {
+        "product.name": "tis"
+      },
       "bootPath": "source/boot"
     },
     {
@@ -40,8 +71,11 @@
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
-        "osparc.theme.OSparcLight"
+        "osparc.theme.ThemeLight"
       ],
+      "environment": {
+        "product.name": "explorer"
+      },
       "bootPath": "source/boot"
     },
     {
