@@ -12,7 +12,7 @@ from .constants import RQ_PRODUCT_KEY
 log = logging.getLogger(__name__)
 
 # TODO: <--- This is defined by services/web/client/compile.json
-FE_APPS = ["osparc", "s4l", "tis", "explorer", "apiviewer", "testtapper"]
+FE_APPS = ["osparc", "s4l", "tis"]
 DEFAULT_FE_APP = FE_APPS[0]
 
 PRODUCT_PATH_RE = re.compile(r"^/(" + "|".join(FE_APPS) + r")/index.html")
