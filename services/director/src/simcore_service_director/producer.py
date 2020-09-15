@@ -265,7 +265,7 @@ async def _create_docker_service_params(
                 f"traefik.http.services.{service_name}.loadbalancer.server.port"
             ] = str(param["value"])
         elif (
-            config.DEBUG_MODE and param["type"] == "EndpointSpec"
+            param["type"] == "EndpointSpec"
         ):  # REST-API compatible
             if "Ports" in param["value"]:
                 if (
@@ -275,8 +275,6 @@ async def _create_docker_service_params(
                     docker_params["labels"]["port"] = docker_params["labels"][
                         f"traefik.http.services.{service_name}.loadbalancer.server.port"
                     ] = str(param["value"]["Ports"][0]["TargetPort"])
-            if config.DEBUG_MODE:
-                docker_params["endpoint_spec"] = param["value"]
 
         # placement constraints
         elif param["name"] == "constraints":  # python-API compatible
