@@ -12,12 +12,15 @@ FIXME: Compare shows single commit. SEE https://github.com/ITISFoundation/osparc
 ### Added
 
 - Started this *human-readable* CHANGELOG
-- ``migration`` service that discovers postgres service and upgrades main database (#1714)
-- Every group can register official classifiers for studies and services. Diplayed as a tree in UI (#1670, #1719, #1722)
+- ``migration`` service that discovers postgres service and upgrades main database [#1714](https://github.com/ITISFoundation/osparc-simcore/pull/1714)
+- Every group can register official classifiers for studies and services. Diplayed as a tree in UI [#1670](https://github.com/ITISFoundation/osparc-simcore/pull/1670), [#1719](https://github.com/ITISFoundation/osparc-simcore/pull/1719) , [#1722](https://github.com/ITISFoundation/osparc-simcore/pull/1722)
+- GC tests are run in isolation with a template database [#1724](https://github.com/ITISFoundation/osparc-simcore/pull/1724)
 
 ### Changed
 
-- Speedup testing by splitting webserver (#1711)
+- Speedup testing by splitting webserver [#1711](https://github.com/ITISFoundation/osparc-simcore/pull/1711)
+- Refactored garbage collector and added tests [#1724](https://github.com/ITISFoundation/osparc-simcore/pull/1724)
+- Logs are now displayed during testing [#1724](https://github.com/ITISFoundation/osparc-simcore/pull/1724)
 
 <!-- ### Deprecated -->
 <!-- ### Removed    -->
@@ -28,45 +31,45 @@ FIXME: Compare shows single commit. SEE https://github.com/ITISFoundation/osparc
 ## [0.0.25] - 2020-08-04
 
 ### Added
-- add traefik endpoint to api-gateway (#1555)
-- Shared project concurrency (frontend) (#1591)
-- Homogenize studies and services (#1569)
+- add traefik endpoint to api-gateway [#1555](https://github.com/ITISFoundation/osparc-simcore/pull/1555)
+- Shared project concurrency (frontend) [#1591](https://github.com/ITISFoundation/osparc-simcore/pull/1591) 
+- Homogenize studies and services [#1569](https://github.com/ITISFoundation/osparc-simcore/pull/1569)
 - UI Fine grained access - project locking and notification
-- Adds support for GPU scheduling of computational services (#1553)
+- Adds support for GPU scheduling of computational services [#1553](https://github.com/ITISFoundation/osparc-simcore/pull/1553)
 
 ### Changed
-- UI/UX improvements (#1657)
-- Improving storage performance (#1659)
-- Theming (#1656)
-- Reduce cardinality of metrics (#1593)
+- UI/UX improvements [#1657](https://github.com/ITISFoundation/osparc-simcore/pull/1657) 
+- Improving storage performance [#1659](https://github.com/ITISFoundation/osparc-simcore/pull/1659)
+- Theming [#1656](https://github.com/ITISFoundation/osparc-simcore/pull/1656)
+- Reduce cardinality of metrics [#1593](https://github.com/ITISFoundation/osparc-simcore/pull/1593) 
 
 ### Fixed
-- Platform stability:  (#1645)
-- Fix, improves and re-activate e2e CI testing (#1594, #1620, #1631, #1600)
-- Fixes defaults (#1640)
-- Upgrade storage service (#1585, #1586)
-- UPgrade catalog service (#1582)
-- Fixes on publish studies handling (#1632)
-- Invalidate cache before starting a study (#1602)
-- Some enhancements and bug fixes (#1608)
-- filter studies by name before deleting them (#1629)
-- Bugfix/apiserver does not need sslheaders (#1564)
-- fix testing if node has gpu support (#1604)
-- /study fails 500 (#1570, #1572)
-- fix codecov reports (#1568)
+- Platform stability: [#1645](https://github.com/ITISFoundation/osparc-simcore/pull/1645)
+- Fix, improves and re-activate e2e CI testing [#1594](https://github.com/ITISFoundation/osparc-simcore/pull/1594), [#1620](https://github.com/ITISFoundation/osparc-simcore/pull/1620), [#1631](https://github.com/ITISFoundation/osparc-simcore/pull/1631), [#1600](https://github.com/ITISFoundation/osparc-simcore/pull/1600)
+- Fixes defaults [#1640](https://github.com/ITISFoundation/osparc-simcore/pull/1640)
+- Upgrade storage service [#1585](https://github.com/ITISFoundation/osparc-simcore/pull/1585), [#1586](https://github.com/ITISFoundation/osparc-simcore/pull/1586)
+- UPgrade catalog service [#1582](https://github.com/ITISFoundation/osparc-simcore/pull/1582) 
+- Fixes on publish studies handling [#1632](https://github.com/ITISFoundation/osparc-simcore/pull/1632)
+- Invalidate cache before starting a study [#1602](https://github.com/ITISFoundation/osparc-simcore/pull/1602)
+- Some enhancements and bug fixes [#1608](https://github.com/ITISFoundation/osparc-simcore/pull/1608)
+- filter studies by name before deleting them [#1629](https://github.com/ITISFoundation/osparc-simcore/pull/1629)
+- Bugfix/apiserver does not need sslheaders [#1564](https://github.com/ITISFoundation/osparc-simcore/pull/1564)
+- fix testing if node has gpu support [#1604](https://github.com/ITISFoundation/osparc-simcore/pull/1604)
+- /study fails 500 [#1570](https://github.com/ITISFoundation/osparc-simcore/pull/1570), [#1572](https://github.com/ITISFoundation/osparc-simcore/pull/1572)
+- fix codecov reports [#1568](https://github.com/ITISFoundation/osparc-simcore/pull/1568)
 
 ### Security
-- Bump yarl from 1.4.2 to 1.5.1 in /packages/postgres-database (#1665)
-- Bump ujson from 3.0.0 to 3.1.0 in /packages/service-library (#1664)
-- Bump pytest-docker from 0.7.2 to 0.8.0 in /packages/service-library (#1647)
-- Bump aiozipkin from 0.6.0 to 0.7.0 in /packages/service-library (#1642)
-- Bump lodash from 4.17.15 to 4.17.19 (#1639)
-- Maintenance/upgrades test tools (#1628)
-- Bugfix/concurent opening projects (#1598)
-- Bugfix/allow reading groups anonymous user (#1615)
-- Bump docker from 4.2.1 to 4.2.2 in /packages/postgres-database (#1605)
-- Bump faker from 4.1.0 to 4.1.1 in /packages/postgres-database (#1573)
-- Maintenance/upgrades and tooling (#1546)
+- Bump yarl from 1.4.2 to 1.5.1 in /packages/postgres-database [#1665](https://github.com/ITISFoundation/osparc-simcore/pull/1665)
+- Bump ujson from 3.0.0 to 3.1.0 in /packages/service-library [#1664](https://github.com/ITISFoundation/osparc-simcore/pull/1664)
+- Bump pytest-docker from 0.7.2 to 0.8.0 in /packages/service-library [#1647](https://github.com/ITISFoundation/osparc-simcore/pull/1647)
+- Bump aiozipkin from 0.6.0 to 0.7.0 in /packages/service-library [#1642](https://github.com/ITISFoundation/osparc-simcore/pull/1642)
+- Bump lodash from 4.17.15 to 4.17.19 [#1639](https://github.com/ITISFoundation/osparc-simcore/pull/1639)
+- Maintenance/upgrades test tools [#1628](https://github.com/ITISFoundation/osparc-simcore/pull/1628)
+- Bugfix/concurent opening projects [#1598](https://github.com/ITISFoundation/osparc-simcore/pull/1598)
+- Bugfix/allow reading groups anonymous user [#1615](https://github.com/ITISFoundation/osparc-simcore/pull/1615)
+- Bump docker from 4.2.1 to 4.2.2 in /packages/postgres-database [#1605](https://github.com/ITISFoundation/osparc-simcore/pull/1605)
+- Bump faker from 4.1.0 to 4.1.1 in /packages/postgres-database [#1573](https://github.com/ITISFoundation/osparc-simcore/pull/1573)
+- Maintenance/upgrades and tooling [#1546](https://github.com/ITISFoundation/osparc-simcore/pull/1546)
 
 
 ---

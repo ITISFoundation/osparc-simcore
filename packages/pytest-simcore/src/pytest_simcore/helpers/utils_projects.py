@@ -10,6 +10,7 @@ import json
 import re
 import uuid as uuidlib
 from typing import Dict
+from simcore_service_webserver.utils import now_str
 
 from aiohttp import web
 
@@ -30,6 +31,19 @@ fake_project_resources = [
     for name in resources.listdir("data")
     if re.match(r"^fake-user-(.+).json", name)
 ]
+
+
+def empty_project_data():
+    return {
+        "uuid": f"project-{uuidlib.uuid4()}",
+        "name": "Empty name",
+        "description": "some description of an empty project",
+        "prjOwner": "I'm the empty project owner, hi!",
+        "creationDate": now_str(),
+        "lastChangeDate": now_str(),
+        "thumbnail": "",
+        "workbench": {},
+    }
 
 
 def load_data(name):
@@ -62,7 +76,7 @@ async def create_project(
     try:
         uuidlib.UUID(project_data["uuid"])
         assert new_project["uuid"] == project_data["uuid"]
-    except ValueError:
+    except (ValueError, AssertionError):
         # in that case the uuid gets replaced
         assert new_project["uuid"] != project_data["uuid"]
         project_data["uuid"] = new_project["uuid"]
@@ -90,7 +104,7 @@ class NewProject:
         clear_all=True,
         user_id=None,
         *,
-        force_uuid=False
+        force_uuid=False,
     ):
         self.params = params
         self.user_id = user_id
