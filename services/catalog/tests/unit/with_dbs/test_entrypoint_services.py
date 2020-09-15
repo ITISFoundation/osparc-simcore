@@ -4,22 +4,24 @@
 # pylint:disable=protected-access
 # pylint:disable=not-an-iterable
 
+import asyncio
+from datetime import datetime
 from random import randint
 from typing import List, Optional
 
 import pytest
 from fastapi import FastAPI
+from pydantic.types import PositiveInt
 from starlette.testclient import TestClient
 from yarl import URL
 
-from simcore_service_catalog.api.dependencies.database import get_repository
-from simcore_service_catalog.api.dependencies.director import get_director_api
+import simcore_service_catalog.api.dependencies.director
 from simcore_service_catalog.api.routes import services
 from simcore_service_catalog.db.repositories.groups import GroupsRepository
-from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.domain.group import GroupAtDB, GroupType
 from simcore_service_catalog.models.domain.service import (
     ServiceAccessRightsAtDB,
+    ServiceDockerData,
     ServiceOut,
     ServiceType,
 )
@@ -58,10 +60,10 @@ def user_groups(user_id: int) -> List[GroupAtDB]:
 
 
 @pytest.fixture(scope="session")
-def registry_services() -> List[ServiceOut]:
+def registry_services() -> List[ServiceDockerData]:
     NUMBER_OF_SERVICES = 5
     return [
-        ServiceOut(
+        ServiceDockerData(
             key="simcore/services/comp/my_comp_service",
             version=f"{v}.{randint(0,20)}.{randint(0,20)}",
             type=ServiceType.computational,
@@ -82,7 +84,11 @@ def db_services(
 ) -> List[ServiceAccessRightsAtDB]:
     return [
         ServiceAccessRightsAtDB(
-            key=s.key, tag=s.version, gid=user_groups[0].gid, execute_access=True
+            key=s.key,
+            version=s.version,
+            gid=user_groups[0].gid,
+            execute_access=True,
+            product_name="osparc",
         )
         for s in registry_services
     ]
@@ -101,36 +107,45 @@ async def director_mockup(
         async def get(self, url: str):
             if url == "/services":
                 return [s.dict(by_alias=True) for s in registry_services]
+            if "/service_extras/" in url:
+                return {
+                    "build_date": f"{datetime.utcnow().isoformat(timespec='seconds')}Z"
+                }
 
-    app.dependency_overrides[get_director_api] = FakeDirector
+    def fake_director_api(*args, **kwargs):
+        return FakeDirector()
 
+    monkeypatch.setattr(
+        simcore_service_catalog.api.dependencies.director,
+        "get_director_api",
+        fake_director_api,
+    )
+
+    # Check mock
+    from simcore_service_catalog.api.dependencies.director import get_director_api
+
+    assert isinstance(get_director_api(), FakeDirector)
     yield
-
-    app.dependency_overrides[get_director_api] = None
 
 
 @pytest.fixture()
 async def db_mockup(
     loop,
+    monkeypatch,
     app: FastAPI,
     user_groups: List[GroupAtDB],
     db_services: List[ServiceAccessRightsAtDB],
 ):
-    class FakeGroupsRepository:
-        async def list_user_groups(self, user_id: int) -> List[GroupAtDB]:
-            return user_groups
+    async def return_list_user_groups(self, user_id: int) -> List[GroupAtDB]:
+        return user_groups
 
-    app.dependency_overrides[get_repository(GroupsRepository)] = FakeGroupsRepository
+    async def return_gid_from_email(*args, **kwargs) -> Optional[PositiveInt]:
+        return user_groups[0].gid
 
-    class FakeServicesRepository:
-        async def list_services(
-            self, gids: Optional[List[int]] = None
-        ) -> List[ServiceAccessRightsAtDB]:
-            return db_services
-
-    app.dependency_overrides[
-        get_repository(ServicesRepository)
-    ] = FakeServicesRepository
+    monkeypatch.setattr(GroupsRepository, "list_user_groups", return_list_user_groups)
+    monkeypatch.setattr(
+        GroupsRepository, "get_user_gid_from_email", return_gid_from_email
+    )
 
 
 async def test_director_mockup(
@@ -139,10 +154,14 @@ async def test_director_mockup(
     assert await services.list_services(user_id) == registry_services
 
 
-@pytest.mark.skip(reason="Not ready, depency injection does not work")
+@pytest.mark.skip(
+    reason="Not ready, depency injection does not work, using monkeypatch. still issue with setting up database"
+)
 def test_list_services(
     director_mockup, db_mockup, app: FastAPI, client: TestClient, user_id: int
 ):
+    asyncio.sleep(10)
+
     url = URL("/v0/services").with_query(user_id=user_id)
     response = client.get(str(url))
     assert response.status_code == 200

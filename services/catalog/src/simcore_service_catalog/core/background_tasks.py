@@ -21,10 +21,10 @@ from fastapi import FastAPI
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 
-from simcore_service_catalog.db.repositories.projects import ProjectsRepository
 
 from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
+from ..db.repositories.projects import ProjectsRepository
 from ..db.repositories.services import ServicesRepository
 from ..models.domain.service import (
     ServiceAccessRightsAtDB,
@@ -37,13 +37,17 @@ logger = logging.getLogger(__name__)
 ServiceKey = str
 ServiceVersion = str
 
+from ..services.frontend_services import get_services as get_frontend_services
+
 
 async def _list_registry_services(
     app: FastAPI,
 ) -> Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData]:
     client = get_director_api(app)
     data = await client.get("/services")
-    services: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData] = {}
+    services: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData] = {
+        (s.key, s.version): s for s in get_frontend_services()
+    }
     for x in data:
         try:
             service_data = ServiceDockerData.parse_obj(x)
@@ -99,8 +103,12 @@ async def _create_service_default_access_rights(
     everyone_gid = (await groups_repo.get_everyone_group()).gid
     owner_gid = None
     reader_gids: List[PositiveInt] = []
-    if await _is_old_service(app, service):
-        logger.debug("service %s:%s is old", service.key, service.version)
+
+    def _is_frontend_service(service: ServiceDockerData) -> bool:
+        return "/frontend/" in service.key
+
+    if _is_frontend_service(service) or await _is_old_service(app, service):
+        logger.debug("service %s:%s is old or frontend", service.key, service.version)
         # let's make that one available to everyone
         reader_gids.append(everyone_gid)
 
@@ -127,6 +135,7 @@ async def _create_service_default_access_rights(
             gid=gid,
             execute_access=True,
             write_access=(gid == owner_gid),
+            product_name=app.state.settings.access_rights_default_product_name,
         )
         for gid in set(reader_gids)
     ]
@@ -220,6 +229,7 @@ async def sync_registry_task(app: FastAPI) -> None:
         try:
             async with engine.acquire() as conn:
                 logger.debug("syncing services between registry and database...")
+
                 # check that the list of services is in sync with the registry
                 await _ensure_registry_insync_with_db(app, conn)
 

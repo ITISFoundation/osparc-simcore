@@ -8,12 +8,18 @@ IFS=$'\n\t'
 # when changing the DOCKER_COMPOSE_VERSION please compute the sha256sum on an ubuntu box (macOS has different checksum)
 DOCKER_COMPOSE_VERSION="1.26.2"
 DOCKER_COMPOSE_SHA256SUM="13e50875393decdb047993c3c0192b0a3825613e6dfc0fa271efed4f5dbdd6eb"
-curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
+DOCKER_COMPOSE_BIN=/usr/local/bin/docker-compose
+curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o $DOCKER_COMPOSE_BIN
+chmod +x $DOCKER_COMPOSE_BIN
 
 # checks it runs
-/usr/local/bin/docker-compose --version
+$DOCKER_COMPOSE_BIN --version
 
-# To create new DOCKER_COMPOSE_SHA256SUM = sha256sum /usr/local/bin/docker-compose
+# location
+where=$(command -v which docker-compose)
+[ "$where" != "$DOCKER_COMPOSE_BIN" ] && echo "WARNING: docker-compose already pre-sintalled in $where "
+
+
+# To create new DOCKER_COMPOSE_SHA256SUM = sha256sum ${DOCKER_COMPOSE_BIN}
 # SEE https://superuser.com/a/1465221
-echo "$DOCKER_COMPOSE_SHA256SUM  /usr/local/bin/docker-compose" | sha256sum --check
+echo "$DOCKER_COMPOSE_SHA256SUM  $DOCKER_COMPOSE_BIN" | sha256sum --check

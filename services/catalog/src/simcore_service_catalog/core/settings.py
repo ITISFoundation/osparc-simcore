@@ -102,6 +102,7 @@ class AppSettings(BaseSettings):
 
     # background task
     background_task_rest_time: PositiveInt = 60
+    access_rights_default_product_name: str = "osparc"
 
     class Config(_CommonConfig):
         env_prefix = ""
