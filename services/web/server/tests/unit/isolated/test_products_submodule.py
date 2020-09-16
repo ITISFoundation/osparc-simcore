@@ -24,9 +24,10 @@ def mock_app():
 
     mock_app = MockApp()
     mock_app[APP_PRODUCTS_KEY] = [
-        Product(name="osparc", host_regex=r"(^osparc[\.-])"),
-        Product(name="s4l", host_regex=r"(^s4l[\.-])|(^sim4life\.)"),
-        Product(name="tis", host_regex=r"(^tis[\.-])|(^ti-solution\.)")
+        # NOTE: try here your product host_regex before adding them in the database!
+        Product(name="osparc", host_regex=r"([\.-]{0,1}osparc[\.-])"),
+        Product(name="s4l", host_regex=r"(^s4l[\.-])|(^sim4life\.)|(^api.s4l[\.-])|(^api.sim4life\.)"),
+        Product(name="tis", host_regex=r"(^tis[\.-])|(^ti-solutions\.)")
     ]
 
     return mock_app

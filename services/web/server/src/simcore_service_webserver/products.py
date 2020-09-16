@@ -1,6 +1,5 @@
 import logging
-import re
-from typing import AnyStr,  Optional, Pattern, List
+from typing import Optional, Pattern, List
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -9,7 +8,7 @@ from pydantic import BaseModel, ValidationError, validator
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .__version__ import api_vtag
-from .constants import APP_DB_ENGINE_KEY, APP_PRODUCTS_KEY, RQ_PRODUCT_KEY
+from .constants import APP_DB_ENGINE_KEY, APP_PRODUCTS_KEY, RQ_PRODUCT_KEY, RQ_PRODUCT_FRONTEND_KEY
 from .db_models import products
 from .statics import FRONTEND_APPS_AVAILABLE
 
@@ -19,17 +18,11 @@ log = logging.getLogger(__name__)
 class Product(BaseModel):
     # pylint:disable=no-self-use
     # pylint:disable=no-self-argument
-
     name: str
     host_regex: Pattern
-    frontend: Optional[str]
 
-
-    @validator("frontend", pre=True, always=True)
-    def default_frontend(cls, v, *, values):
-        if v is None:
-            return values["name"]
-
+    @validator("name", pre=True, always=True)
+    def validate_name(cls, v):
         if v not in FRONTEND_APPS_AVAILABLE:
             raise ValueError(
                 f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
@@ -42,12 +35,12 @@ async def load_products_from_db(app: web.Application):
     app_products = []
 
     with app[APP_DB_ENGINE_KEY].acquire() as conn:
-        stmt = sa.select([products.c.name, products.c.host_regex, products.c.frontend])
+        stmt = sa.select([products.c.name, products.c.host_regex])
         async for row in conn.execute(stmt):
             try:
                 app_products.append(Product(*row))
             except ValidationError as err:
-                log.error("Invalid db row %s: %s . Discarding", row, err)
+                log.error("Discarding invalid product in db %s: %s", row, err)
 
     app[APP_PRODUCTS_KEY] = app_products
 
@@ -63,7 +56,11 @@ def discover_product_by_hostname(request: web.Request) -> Optional[str]:
 async def discover_product_middleware(request, handler):
     # NOTE: RQ_PRODUCT_KEY entry is ONLY for root or API entrypoints
     # NOTE: RQ_PRODUCT_KEY can return None
-    if request.path == "/" or request.path.startswith(f"/{api_vtag}"):
+    if request.path == "/": # root
+        product_name: Optional[str] = discover_product_by_hostname(request)
+        request[RQ_PRODUCT_FRONTEND_KEY] = request[RQ_PRODUCT_KEY] = product_name
+
+    if request.path.startswith(f"/{api_vtag}"): # API entrypoints
         product_name: Optional[str] = discover_product_by_hostname(request)
         request[RQ_PRODUCT_KEY] = product_name
 
