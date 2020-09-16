@@ -5,7 +5,6 @@
 """
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.sql import func
 
 from .base import metadata
@@ -17,13 +16,8 @@ products = sa.Table(
     "products",
     metadata,
     sa.Column("name", sa.String, nullable=False),
-    sa.Column(
-        "urls",
-        ARRAY(sa.String, dimensions=1),
-        nullable=False,
-        server_default="{}",
-    ),
-    sa.Column("frontend", sa.String, nullable=False),
+    sa.Column("host_regex", sa.String, nullable=False),
+    sa.Column("frontend", sa.String, nullable=True),
     sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
     sa.Column(
         "modified",
