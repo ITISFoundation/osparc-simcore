@@ -3,7 +3,7 @@
 """
 import json
 import logging
-from typing import List, Optional, Set
+from typing import Dict, List, Optional, Set
 
 import aioredlock
 from aiohttp import web
@@ -11,6 +11,7 @@ from jsonschema import ValidationError
 
 from servicelib.utils import fire_and_forget_task
 
+from .. import catalog
 from ..computation_api import update_pipeline_db
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
@@ -21,6 +22,7 @@ from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_models import Owner, ProjectLocked, ProjectState
+from .projects_utils import project_uses_available_services
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",
@@ -135,13 +137,19 @@ async def list_projects(request: web.Request):
 
     stop = min(start + count, len(projects_list))
     projects_list = projects_list[start:stop]
-
+    user_available_services: List[Dict] = await catalog.get_services_for_user(
+        request.app, user_id
+    )
+    if not user_available_services:
+        # let's not waste time here
+        return {"data": {}}
     # validate response
     validated_projects = []
     for project in projects_list:
         try:
             projects_api.validate_project(request.app, project)
-            validated_projects.append(project)
+            if await project_uses_available_services(project, user_available_services):
+                validated_projects.append(project)
         except ValidationError:
             log.warning(
                 "Invalid project with id='%s' in database."
@@ -160,6 +168,9 @@ async def get_project(request: web.Request):
     """Returns all projects accessible to a user (not necesarly owned)"""
     # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
     user_id = request[RQT_USERID_KEY]
+    user_available_services: List[Dict] = await catalog.get_services_for_user(
+        request.app, user_id
+    )
     from .projects_api import get_project_for_user
 
     project_uuid = request.match_info.get("project_id")
@@ -170,6 +181,8 @@ async def get_project(request: web.Request):
             user_id=user_id,
             include_templates=True,
         )
+        if not await project_uses_available_services(project, user_available_services):
+            raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
         return {"data": project}
 
     except ProjectInvalidRightsError as exc:
