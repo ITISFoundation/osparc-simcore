@@ -167,6 +167,10 @@ def test_check_serve_root(loop, make_up_prod: Dict, traefik_service: URL):
             return resp
 
         resp = check_root(req)
+        print(resp.geturl())
+        print(resp.info())
+        print(resp.getcode())
+
         charset = resp.info().get_content_charset()
         content = resp.read().decode(charset)
         # TODO: serch osparc-simcore commit id e.g. 'osparc-simcore v817d82e'
