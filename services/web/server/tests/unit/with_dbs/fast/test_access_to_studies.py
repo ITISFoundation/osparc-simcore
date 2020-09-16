@@ -207,7 +207,7 @@ async def test_access_to_forbidden_study(client, unpublished_project):
 
     valid_but_not_sharable = unpublished_project["uuid"]
 
-    resp = await client.get(f"/study/valid_but_not_sharable")
+    resp = await client.get("/study/valid_but_not_sharable")
     content = await resp.text()
 
     assert (
