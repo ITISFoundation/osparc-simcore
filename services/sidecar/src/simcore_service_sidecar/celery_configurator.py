@@ -82,8 +82,12 @@ def shared_task_dispatch(
     celery_request, user_id: str, project_id: str, node_id: Optional[str] = None
 ) -> None:
     log.info(
-        "Will dispatch to appropriate queue %s, %s, %s", user_id, project_id, node_id,
+        "Will dispatch to appropriate queue %s, %s, %s",
+        user_id,
+        project_id,
+        node_id,
     )
+    # request.id is equal the task.id
     next_task_nodes = wrap_async_call(
         run_sidecar(celery_request.request.id, user_id, project_id, node_id)
     )
