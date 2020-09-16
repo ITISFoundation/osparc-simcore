@@ -45,6 +45,7 @@ docopt==0.6.2             # via coveralls, docker-compose
 expiringdict==1.2.1       # via -r requirements/_base.txt
 faker==4.1.2              # via -r requirements/_test.in
 hiredis==1.1.0            # via -r requirements/_base.txt, aioredis
+icdiff==1.9.1             # via pytest-icdiff
 idna-ssl==1.1.0           # via -r requirements/_base.txt, aiohttp
 idna==2.10                # via -r requirements/_base.txt, idna-ssl, requests, yarl
 importlib-metadata==1.7.0  # via -r requirements/_base.txt, jsonschema, kombu, pluggy, pytest
@@ -70,6 +71,7 @@ pamqp==2.3.0              # via -r requirements/_base.txt, aiormq
 paramiko==2.7.1           # via docker
 passlib==1.7.2            # via -r requirements/_base.txt
 pluggy==0.13.1            # via pytest
+pprintpp==0.4.0           # via pytest-icdiff
 prometheus-client==0.8.0  # via -r requirements/_base.txt
 psycopg2-binary==2.8.5    # via -r requirements/_base.txt, aiopg, sqlalchemy
 ptvsd==4.3.2              # via -r requirements/_test.in
@@ -83,11 +85,12 @@ pyrsistent==0.16.0        # via -r requirements/_base.txt, jsonschema
 pytest-aiohttp==0.3.0     # via -r requirements/_test.in
 pytest-cov==2.10.1        # via -r requirements/_test.in
 pytest-docker==0.8.0      # via -r requirements/_test.in
+pytest-icdiff==0.5        # via -r requirements/_test.in
 pytest-instafail==0.4.2   # via -r requirements/_test.in
 pytest-mock==3.2.0        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.4       # via -r requirements/_test.in
-pytest==5.4.3             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-instafail, pytest-mock, pytest-sugar
+pytest==5.4.3             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-icdiff, pytest-instafail, pytest-mock, pytest-sugar
 python-dateutil==2.8.1    # via alembic, faker
 python-dotenv==0.14.0     # via -r requirements/_test.in, docker-compose
 python-editor==1.0.4      # via alembic

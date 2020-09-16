@@ -2,7 +2,7 @@
 
 """
 import logging
-from typing import Dict
+from typing import Dict, List, Optional
 
 from aiohttp import ContentTypeError, web
 from yarl import URL
@@ -35,9 +35,9 @@ async def is_service_responsive(app: web.Application):
 
 
 def to_backend_service(rel_url: URL, origin: URL, version_prefix: str) -> URL:
-    """ Translates relative url to backend catalog service url
+    """Translates relative url to backend catalog service url
 
-        E.g. https://osparc.io/v0/catalog/dags -> http://catalog:8080/v0/dags
+    E.g. https://osparc.io/v0/catalog/dags -> http://catalog:8080/v0/dags
     """
     assert not rel_url.is_absolute()  # nosec
     new_path = rel_url.path.replace(
@@ -46,9 +46,37 @@ def to_backend_service(rel_url: URL, origin: URL, version_prefix: str) -> URL:
     return origin.with_path(new_path).with_query(rel_url.query)
 
 
+async def _request_catalog(
+    app: web.Application,
+    method: str,
+    url: URL,
+    headers: Optional[Dict[str, str]] = None,
+    data: Optional[bytes] = None,
+) -> web.Response:
+    session = get_client_session(app)
+
+    async with session.request(method, url, headers=headers, data=data) as resp:
+
+        is_error = resp.status >= 400
+        # catalog backend sometimes sends error in plan=in text
+        try:
+            payload: Dict = await resp.json()
+        except ContentTypeError:
+            payload = await resp.text()
+            is_error = True
+
+        if is_error:
+            # Only if error, it wraps since catalog service does not return (for the moment) enveloped
+            data = wrap_as_envelope(error=payload)
+        else:
+            data = wrap_as_envelope(data=payload)
+
+        return web.json_response(data, status=resp.status)
+
+
 @login_required
 @permission_required("services.catalog.*")
-async def _reverse_proxy_handler(request: web.Request):
+async def _reverse_proxy_handler(request: web.Request) -> web.Response:
     """
         - Adds auth layer
         - Adds access layer
@@ -73,32 +101,13 @@ async def _reverse_proxy_handler(request: web.Request):
     if request.can_read_body:
         raw: bytes = await request.read()
 
-    # forward request
-    session = get_client_session(request.app)
-
     # add product to headers @crespov, here where the product shall come in
     headers = {"X-Simcore-Products-Name": "osparc"}
     headers.update(request.headers)
-
-    async with session.request(
-        request.method, backend_url, headers=headers, data=raw
-    ) as resp:
-
-        is_error = resp.status >= 400
-        # catalog backend sometimes sends error in plan=in text
-        try:
-            payload: Dict = await resp.json()
-        except ContentTypeError:
-            payload = await resp.text()
-            is_error = True
-
-        if is_error:
-            # Only if error, it wraps since catalog service does not return (for the moment) enveloped
-            data = wrap_as_envelope(error=payload)
-        else:
-            data = wrap_as_envelope(data=payload)
-
-        return web.json_response(data, status=resp.status)
+    # forward request
+    return await _request_catalog(
+        request.app, request.method, backend_url, headers, raw
+    )
 
 
 @app_module_setup(
@@ -131,3 +140,21 @@ def setup_catalog(app: web.Application, *, disable_auth=False):
 
     # reverse proxy to catalog's API
     app.router.add_routes(routes)
+
+
+async def get_services_for_user(
+    app: web.Application, user_id: int, *, only_key_versions: bool
+) -> Optional[List[Dict]]:
+    url = (
+        URL(app[f"{__name__}.catalog_origin"])
+        .with_path(app[f"{__name__}.catalog_version_prefix"] + "/services")
+        .with_query({"user_id": user_id, "details": f"{not only_key_versions}"})
+    )
+
+    headers = {"X-Simcore-Products-Name": "osparc"}
+    session = get_client_session(app)
+    async with session.get(url, headers=headers) as resp:
+        if resp.status >= 400:
+            logger.error("Error while retrieving services for user %s", user_id)
+            return
+        return await resp.json()

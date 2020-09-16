@@ -26,7 +26,7 @@ def services_endpoint(
         assert f"simcore_{service}" in docker_stack["services"]
         if not service in SERVICES_TO_SKIP:
             endpoint = URL(
-                f"http://127.0.0.1:{get_service_published_port(service, 8080)}"
+                f"http://127.0.0.1:{get_service_published_port(service, [8080, 8000])}"
             )
             services_endpoint[service] = endpoint
     return services_endpoint
@@ -52,6 +52,8 @@ async def wait_till_service_responsive(endpoint: URL):
         async with session.get(endpoint.with_path("/v0/")) as resp:
             assert resp.status == 200
             data = await resp.json()
-            assert "data" in data
-            assert "status" in data["data"]
-            assert data["data"]["status"] == "SERVICE_RUNNING"
+            # aiohttp based services are like this:
+            assert "data" in data or ":-)" in data
+            if "data" in data:
+                assert "status" in data["data"]
+                assert data["data"]["status"] == "SERVICE_RUNNING"
