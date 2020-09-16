@@ -18,11 +18,11 @@ from aiohttp import web
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
-from .constants import APP_SETTINGS_KEY, RQ_PRODUCT_KEY, RQ_PRODUCT_FRONTEND_KEY
+from .constants import APP_SETTINGS_KEY, RQ_PRODUCT_FRONTEND_KEY, RQ_PRODUCT_KEY
 
 FRONTEND_APPS_AVAILABLE = {"osparc", "tis", "s4l"}
 FRONTEND_APP_DEFAULT = "osparc"
-
+STATIC_DIRNAMES = FRONTEND_APPS_AVAILABLE | {"resource", "transpiled"}
 INDEX_RESOURCE_NAME = "statics.index"
 TMPDIR_KEY = f"{__name__}.tmpdir"
 
@@ -93,10 +93,9 @@ def setup_statics(app: web.Application):
 
     # Creating static routes
     routes = web.RouteTableDef()
-    static_dirs = FRONTEND_APPS_AVAILABLE | {"resource", "transpiled"}
     is_dev: bool = app[APP_SETTINGS_KEY].build_target in [None, "development"]
 
-    for name in static_dirs:
+    for name in STATIC_DIRNAMES:
         folder = frontend_outdir / name
         routes.static(f"/{folder.name}", folder, show_index=is_dev)
 

@@ -30,7 +30,7 @@ from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.settings import setup_settings
-from simcore_service_webserver.statics import setup_statics
+from simcore_service_webserver.statics import STATIC_DIRNAMES, setup_statics
 from simcore_service_webserver.studies_access import setup_studies_access
 from simcore_service_webserver.users import setup_users
 from simcore_service_webserver.users_api import delete_user, is_user_guest
@@ -43,10 +43,7 @@ def qx_client_outdir(tmpdir, mocker):
     """  Emulates qx output at service/web/client after compiling """
 
     basedir = tmpdir.mkdir("source-output")
-    folders = [
-        basedir.mkdir(folder_name)
-        for folder_name in ("osparc", "resource", "transpiled")
-    ]
+    folders = [basedir.mkdir(folder_name) for folder_name in STATIC_DIRNAMES]
 
     index_file = Path(basedir.join("index.html"))
     index_file.write_text(
