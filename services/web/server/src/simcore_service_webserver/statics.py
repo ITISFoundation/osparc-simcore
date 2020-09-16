@@ -19,7 +19,9 @@ from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .constants import APP_SETTINGS_KEY, RQ_PRODUCT_KEY
-from .products import FE_APPS
+
+FRONTEND_APPS_AVAILABLE = {"osparc", "tis", "s4l"}
+FRONTEND_APP_DEFAULT = "osparc"
 
 INDEX_RESOURCE_NAME = "statics.index"
 TMPDIR_KEY = f"{__name__}.tmpdir"
@@ -63,6 +65,9 @@ async def get_frontend_ria(request: web.Request):
 
     target_product = request[RQ_PRODUCT_KEY]
 
+    if not target_product or target_product not in FRONTEND_APPS_AVAILABLE:
+        target_product = FRONTEND_APP_DEFAULT
+
     log.debug("Serving front-end for product %s", target_product)
     raise web.HTTPFound(f"/{target_product}/index.html#")
 
@@ -91,7 +96,7 @@ def setup_statics(app: web.Application):
 
     # Creating static routes
     routes = web.RouteTableDef()
-    static_dirs = FE_APPS + ["resource", "transpiled"]
+    static_dirs = FRONTEND_APPS_AVAILABLE | {"resource", "transpiled"}
     is_dev: bool = app[APP_SETTINGS_KEY].build_target in [None, "development"]
 
     for name in static_dirs:
