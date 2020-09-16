@@ -140,9 +140,7 @@ async def list_projects(request: web.Request):
     user_available_services: List[Dict] = await catalog.get_services_for_user(
         request.app, user_id
     )
-    if not user_available_services:
-        # let's not waste time here
-        return {"data": {}}
+
     # validate response
     validated_projects = []
     for project in projects_list:
