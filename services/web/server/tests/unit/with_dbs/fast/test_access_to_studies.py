@@ -45,20 +45,22 @@ def qx_client_outdir(tmpdir, mocker):
     basedir = tmpdir.mkdir("source-output")
     folders = [basedir.mkdir(folder_name) for folder_name in STATIC_DIRNAMES]
 
+    HTML =  textwrap.dedent("""\
+        <!DOCTYPE html>
+        <html>
+        <body>
+            <h1>{0}-SIMCORE</h1>
+            <p> This is a result of qx_client_outdir fixture for product {0}</p>
+        </body>
+        </html>
+        """)
+
     index_file = Path(basedir.join("index.html"))
-    index_file.write_text(
-        textwrap.dedent(
-            """\
-    <!DOCTYPE html>
-    <html>
-    <body>
-        <h1>OSPARC-SIMCORE</h1>
-        <p> This is a result of qx_client_outdir fixture </p>
-    </body>
-    </html>
-    """
-        )
-    )
+    index_file.write_text(HTML.format("OSPARC"))
+
+    for folder, frontend_app in zip(folders, STATIC_DIRNAMES):
+        index_file = Path(folder.join("index.html"))
+        index_file.write_text(HTML.format(frontend_app.upper()))
 
     # patch get_client_outdir
     mocker.patch.object(simcore_service_webserver.statics, "get_client_outdir")
@@ -234,6 +236,7 @@ async def test_access_study_anonymously(
 ):
 
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
+
     resp = await client.get(study_url)
 
     expected_prj_id = await assert_redirected_to_study(resp, client.session)
