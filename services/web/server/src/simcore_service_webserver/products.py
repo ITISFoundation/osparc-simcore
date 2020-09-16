@@ -11,6 +11,7 @@ from .__version__ import api_vtag
 from .constants import APP_DB_ENGINE_KEY, APP_PRODUCTS_KEY, RQ_PRODUCT_KEY, RQ_PRODUCT_FRONTEND_KEY
 from .db_models import products
 from .statics import FRONTEND_APPS_AVAILABLE
+from aiopg.sa.engine import Engine
 
 log = logging.getLogger(__name__)
 
@@ -33,12 +34,13 @@ class Product(BaseModel):
 async def load_products_from_db(app: web.Application):
     # load from database defined products and map with front-end??
     app_products = []
+    engine: Engine = app[APP_DB_ENGINE_KEY]
 
-    with app[APP_DB_ENGINE_KEY].acquire() as conn:
+    async with engine.acquire() as conn:
         stmt = sa.select([products.c.name, products.c.host_regex])
         async for row in conn.execute(stmt):
             try:
-                app_products.append(Product(*row))
+                app_products.append(Product(name=row[0], host_regex=row[1]))
             except ValidationError as err:
                 log.error("Discarding invalid product in db %s: %s", row, err)
 
@@ -77,4 +79,4 @@ async def discover_product_middleware(request, handler):
 def setup_products(app: web.Application):
 
     app.middlewares.append(discover_product_middleware)
-    app.on_startup(load_products_from_db)
+    app.on_startup.append(load_products_from_db)

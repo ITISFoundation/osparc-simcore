@@ -58,7 +58,6 @@ def create_application(config: Dict) -> web.Application:
     setup_session(app)
     setup_security(app)
     setup_rest(app)
-    setup_products(app)
     setup_diagnostics(app)
     setup_email(app)
     setup_computation(app)
@@ -75,6 +74,7 @@ def create_application(config: Dict) -> web.Application:
     setup_tags(app)
     setup_catalog(app)
     setup_publications(app)
+    setup_products(app)
 
     return app
 
