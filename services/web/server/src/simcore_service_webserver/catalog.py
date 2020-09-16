@@ -102,13 +102,10 @@ async def _reverse_proxy_handler(request: web.Request) -> web.Response:
     if request.can_read_body:
         raw: bytes = await request.read()
 
-    # forward request
-    session = get_client_session(request.app)
-
     # injects product discovered by middleware in headers
-    # FIXME: tmp with default but should be strict!!
     headers = {X_PRODUCT_NAME_HEADER: request.get(RQ_PRODUCT_KEY, "osparc")}
     headers.update(request.headers)
+
     # forward request
     return await _request_catalog(
         request.app, request.method, backend_url, headers, raw
