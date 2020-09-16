@@ -31,7 +31,7 @@ def get_ip() -> str:
     wait=wait_fixed(2), stop=stop_after_attempt(10), after=after_log(log, logging.WARN)
 )
 def get_service_published_port(
-    service_name: str, target_port: Optional[int] = None
+    service_name: str, target_ports: Optional[Union[List[int], int]] = None
 ) -> str:
     # WARNING: ENSURE that service name exposes a port in
     # Dockerfile file or docker-compose config file
@@ -58,7 +58,7 @@ def get_service_published_port(
         f"{p.get('TargetPort')} -> {p.get('PublishedPort')}" for p in service_ports
     )
 
-    if target_port is None:
+    if target_ports is None:
         if len(service_ports) > 1:
             log.warning(
                 "Multiple ports published in service '%s': %s. Defaulting to first",
@@ -68,14 +68,19 @@ def get_service_published_port(
         published_port = service_ports[0]["PublishedPort"]
 
     else:
-        target_port = int(target_port)
-        for p in service_ports:
-            if p["TargetPort"] == target_port:
-                published_port = p["PublishedPort"]
-                break
+        ports_to_look_for = target_ports
+        if isinstance(target_ports, (int, str)):
+            ports_to_look_for = [target_ports]
+
+        for target_port in ports_to_look_for:
+            target_port = int(target_port)
+            for p in service_ports:
+                if p["TargetPort"] == target_port:
+                    published_port = p["PublishedPort"]
+                    break
 
     if published_port is None:
-        raise RuntimeError(f"Cannot find published port for {target_port}. Got {msg}")
+        raise RuntimeError(f"Cannot find published port for {target_ports}. Got {msg}")
 
     return str(published_port)
 
@@ -85,11 +90,11 @@ def run_docker_compose_config(
     workdir: Path,
     destination_path: Optional[Path] = None,
 ) -> Dict:
-    """ Runs docker-compose config to validate and resolve a compose file configuration
+    """Runs docker-compose config to validate and resolve a compose file configuration
 
-        - Composes all configurations passed in 'docker_compose_paths'
-        - Takes 'workdir' as current working directory (i.e. all '.env' files there will be captured)
-        - Saves resolved output config to 'destination_path' (if given)
+    - Composes all configurations passed in 'docker_compose_paths'
+    - Takes 'workdir' as current working directory (i.e. all '.env' files there will be captured)
+    - Saves resolved output config to 'destination_path' (if given)
     """
 
     if not isinstance(docker_compose_paths, List):

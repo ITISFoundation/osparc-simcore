@@ -23,6 +23,7 @@ from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
 from pytest_simcore.helpers.utils_mock import future_with_result
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.application import create_safe_application
+from simcore_service_webserver import catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.director import setup_director
@@ -100,7 +101,7 @@ def client(
 
 @pytest.fixture()
 async def logged_user(client, user_role: UserRole):
-    """ adds a user in db and logs in with client
+    """adds a user in db and logs in with client
 
     NOTE: `user_role` fixture is defined as a parametrization below!!!
     """
@@ -134,7 +135,9 @@ async def shared_project(client, fake_project, logged_user, all_group):
         },
     )
     async with NewProject(
-        fake_project, client.app, user_id=logged_user["id"],
+        fake_project,
+        client.app,
+        user_id=logged_user["id"],
     ) as project:
         print("-----> added project", project["name"])
         yield project
@@ -204,6 +207,27 @@ async def _list_projects(
     return data
 
 
+@pytest.fixture
+async def catalog_subsystem_mock(monkeypatch):
+    services_in_project = []
+
+    def creator(projects: Optional[Union[List[Dict], Dict]] = None) -> None:
+        for proj in projects:
+            services_in_project.extend(
+                [
+                    {"key": s["key"], "version": s["version"]}
+                    for _, s in proj["workbench"].items()
+                ]
+            )
+
+    async def mocked_get_services_for_user(*args, **kwargs):
+        return services_in_project
+
+    monkeypatch.setattr(catalog, "get_services_for_user", mocked_get_services_for_user)
+
+    return creator
+
+
 # GET --------
 @pytest.mark.parametrize(
     "user_role,expected",
@@ -215,8 +239,14 @@ async def _list_projects(
     ],
 )
 async def test_list_projects(
-    client, logged_user, user_project, template_project, expected,
+    client,
+    logged_user,
+    user_project,
+    template_project,
+    expected,
+    catalog_subsystem_mock,
 ):
+    catalog_subsystem_mock([user_project, template_project])
     data = await _list_projects(client, expected)
     if data:
         assert len(data) == 2
@@ -261,8 +291,14 @@ async def _get_project(client, project: Dict, expected: web.Response) -> Dict:
     ],
 )
 async def test_get_project(
-    client, logged_user, user_project, template_project, expected,
+    client,
+    logged_user,
+    user_project,
+    template_project,
+    expected,
+    catalog_subsystem_mock,
 ):
+    catalog_subsystem_mock([user_project, template_project])
     await _get_project(client, user_project, expected)
 
     # with a template
@@ -474,6 +510,7 @@ async def test_new_template_from_project(
     expected,
     computational_system_mock,
     storage_subsystem_mock,
+    catalog_subsystem_mock,
     project_db_cleaner,
 ):
     # POST /v0/projects?as_template={project_uuid}
@@ -488,6 +525,7 @@ async def test_new_template_from_project(
 
     if not error:
         template_project = data
+        catalog_subsystem_mock([template_project])
 
         templates = await _list_projects(client, web.HTTPOk, {"type": "template"})
 
@@ -593,6 +631,7 @@ async def test_share_project(
     storage_subsystem_mock,
     mocked_director_subsystem,
     computational_system_mock,
+    catalog_subsystem_mock,
     share_rights: Dict,
     project_db_cleaner,
 ):
@@ -700,7 +739,11 @@ async def test_replace_project(
     ],
 )
 async def test_replace_project_updated_inputs(
-    client, logged_user, user_project, expected, computational_system_mock,
+    client,
+    logged_user,
+    user_project,
+    expected,
+    computational_system_mock,
 ):
     project_update = deepcopy(user_project)
     #
@@ -728,7 +771,11 @@ async def test_replace_project_updated_inputs(
     ],
 )
 async def test_replace_project_updated_readonly_inputs(
-    client, logged_user, user_project, expected, computational_system_mock,
+    client,
+    logged_user,
+    user_project,
+    expected,
+    computational_system_mock,
 ):
     project_update = deepcopy(user_project)
     project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
@@ -766,6 +813,7 @@ async def test_delete_project(
     expected,
     storage_subsystem_mock,
     mocked_director_subsystem,
+    catalog_subsystem_mock,
     fake_services,
 ):
     # DELETE /v0/projects/{project_id}
@@ -1114,8 +1162,9 @@ async def test_project_node_lifetime(
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
 async def test_tags_to_studies(
-    client, logged_user, user_project, expected, test_tags_data,
+    client, logged_user, user_project, expected, test_tags_data, catalog_subsystem_mock
 ):
+    catalog_subsystem_mock([user_project])
     # Add test tags
     tags = test_tags_data
     added_tags = []
@@ -1420,7 +1469,10 @@ async def test_open_shared_project_at_same_time(
     client_1 = client
     client_id1 = client_session_id()
     sio_1 = await _connect_websocket(
-        socketio_client, user_role != UserRole.ANONYMOUS, client_1, client_id1,
+        socketio_client,
+        user_role != UserRole.ANONYMOUS,
+        client_1,
+        client_id1,
     )
     clients = [
         {"client": client_1, "user": logged_user, "client_id": client_id1, "sio": sio_1}
@@ -1435,7 +1487,10 @@ async def test_open_shared_project_at_same_time(
         )
         client_id = client_session_id()
         sio = await _connect_websocket(
-            socketio_client, user_role != UserRole.ANONYMOUS, client, client_id,
+            socketio_client,
+            user_role != UserRole.ANONYMOUS,
+            client,
+            client_id,
         )
         clients.append(
             {"client": client, "user": user, "client_id": client_id, "sio": sio}
@@ -1454,7 +1509,10 @@ async def test_open_shared_project_at_same_time(
         )
         for c in clients
     ]
-    results = await asyncio.gather(*open_project_tasks, return_exceptions=True,)
+    results = await asyncio.gather(
+        *open_project_tasks,
+        return_exceptions=True,
+    )
 
     # one should be opened, the other locked
     if user_role != UserRole.ANONYMOUS:
