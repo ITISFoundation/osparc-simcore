@@ -15,7 +15,6 @@ from typing import Dict
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
 
-import simcore_service_webserver.statics
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserRole
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
@@ -39,13 +38,14 @@ SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
 
 
 @pytest.fixture
-def qx_client_outdir(tmpdir, mocker):
+def qx_client_outdir(tmpdir):
     """  Emulates qx output at service/web/client after compiling """
 
     basedir = tmpdir.mkdir("source-output")
     folders = [basedir.mkdir(folder_name) for folder_name in STATIC_DIRNAMES]
 
-    HTML =  textwrap.dedent("""\
+    HTML = textwrap.dedent(
+        """\
         <!DOCTYPE html>
         <html>
         <body>
@@ -53,7 +53,8 @@ def qx_client_outdir(tmpdir, mocker):
             <p> This is a result of qx_client_outdir fixture for product {0}</p>
         </body>
         </html>
-        """)
+        """
+    )
 
     index_file = Path(basedir.join("index.html"))
     index_file.write_text(HTML.format("OSPARC"))
@@ -62,9 +63,7 @@ def qx_client_outdir(tmpdir, mocker):
         index_file = Path(folder.join("index.html"))
         index_file.write_text(HTML.format(frontend_app.upper()))
 
-    # patch get_client_outdir
-    mocker.patch.object(simcore_service_webserver.statics, "get_client_outdir")
-    simcore_service_webserver.statics.get_client_outdir.return_value = Path(basedir)
+    return Path(basedir)
 
 
 @pytest.fixture
@@ -75,6 +74,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_db, qx_client_outdir, monkeyp
     cfg["projects"]["enabled"] = True
     cfg["storage"]["enabled"] = False
     cfg["rabbit"]["enabled"] = False
+    cfg["main"]["client_outdir"] = qx_client_outdir
 
     app = create_safe_application(cfg)
 
