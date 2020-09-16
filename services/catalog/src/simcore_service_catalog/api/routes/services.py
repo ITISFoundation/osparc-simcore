@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 @router.get("", response_model=List[ServiceOut])
 async def list_services(
-    # pyling: disable=too-many-arguments
+    # pylint: disable=too-many-arguments
     user_id: PositiveInt,
     details: Optional[bool] = True,
     director_client: DirectorApi = Depends(get_director_api),
