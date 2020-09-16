@@ -36,6 +36,7 @@ API_VERSION = "v0"
 
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = [
+    "catalog",
     "director",
     "postgres",
     "redis",
