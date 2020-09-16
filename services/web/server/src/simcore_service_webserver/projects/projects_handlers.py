@@ -21,15 +21,8 @@ from ..users_api import get_user_name
 from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from .projects_models import (
-    Owner,
-    ProjectLocked,
-    ProjectRunningState,
-    ProjectState,
-    RunningState,
-)
+from .projects_models import Owner, ProjectLocked, ProjectRunningState, ProjectState
 from .projects_utils import project_uses_available_services
-from ..computation_api import get_pipeline_state, update_pipeline_db
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",
