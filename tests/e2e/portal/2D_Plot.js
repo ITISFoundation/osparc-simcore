@@ -1,8 +1,8 @@
 // node 2D_Plot.js [url_prefix] [template_uuid]
 
-const tutorialBase = require('../osparc-simcore/tests/e2e/tutorials/tutorialBase');
-const auto = require('../osparc-simcore/tests/e2e/utils/auto');
-const utils = require('../osparc-simcore/tests/e2e/utils/utils');
+const tutorialBase = require('../tutorials/tutorialBase');
+const auto = require('../utils/auto');
+const utils = require('../utils/utils');
 
 const args = process.argv.slice(2);
 if (args.length < 1) {
