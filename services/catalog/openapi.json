@@ -500,7 +500,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ServiceIn"
+                "$ref": "#/components/schemas/ServiceUpdate"
               }
             }
           },
@@ -988,48 +988,6 @@
           }
         }
       },
-      "ServiceIn": {
-        "title": "ServiceIn",
-        "required": [
-          "name",
-          "description"
-        ],
-        "type": "object",
-        "properties": {
-          "access_rights": {
-            "title": "Access Rights",
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ServiceGroupAccessRights"
-            },
-            "description": "service access rights per group id"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string",
-            "description": "short, human readable name for the node",
-            "example": "Fast Counter"
-          },
-          "thumbnail": {
-            "title": "Thumbnail",
-            "maxLength": 2083,
-            "minLength": 1,
-            "type": "string",
-            "description": "url to the thumbnail",
-            "format": "uri",
-            "example": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string",
-            "description": "human readable description of the purpose of the node",
-            "example": [
-              "Our best node type",
-              "The mother of all nodes, makes your numbers shine!"
-            ]
-          }
-        }
-      },
       "ServiceInput": {
         "title": "ServiceInput",
         "required": [
@@ -1160,6 +1118,21 @@
               "The mother of all nodes, makes your numbers shine!"
             ]
           },
+          "classifiers": {
+            "title": "Classifiers",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "access_rights": {
+            "title": "Access Rights",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ServiceGroupAccessRights"
+            },
+            "description": "service access rights per group id"
+          },
           "key": {
             "title": "Key",
             "pattern": "^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$",
@@ -1224,19 +1197,16 @@
             "type": "object",
             "description": "definition of the outputs of this node"
           },
-          "access_rights": {
-            "title": "Access Rights",
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ServiceGroupAccessRights"
-            },
-            "description": "service access rights per group id"
+          "owner": {
+            "title": "Owner",
+            "type": "string",
+            "format": "email"
           }
         },
         "additionalProperties": false
       },
-      "ServiceProperty": {
-        "title": "ServiceProperty",
+      "ServiceOutput": {
+        "title": "ServiceOutput",
         "required": [
           "displayOrder",
           "label",
@@ -1325,6 +1295,42 @@
         ],
         "type": "string",
         "description": "An enumeration."
+      },
+      "ServiceUpdate": {
+        "title": "ServiceUpdate",
+        "type": "object",
+        "properties": {
+          "access_rights": {
+            "title": "Access Rights",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ServiceGroupAccessRights"
+            },
+            "description": "service access rights per group id"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "thumbnail": {
+            "title": "Thumbnail",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "classifiers": {
+            "title": "Classifiers",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
       },
       "Structure": {
         "title": "Structure",
