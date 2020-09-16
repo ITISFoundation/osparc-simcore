@@ -170,7 +170,7 @@ def test_check_serve_root(loop, make_up_prod: Dict, traefik_service: URL):
         charset = resp.info().get_content_charset()
         content = resp.read().decode(charset)
         # TODO: serch osparc-simcore commit id e.g. 'osparc-simcore v817d82e'
-        search = "osparc/boot.js"
+        search = "boot.js"
         if content.find(search) < 0:
             pytest.fail("{} not found in main index.html".format(search))
     except urllib.error.HTTPError as err:
