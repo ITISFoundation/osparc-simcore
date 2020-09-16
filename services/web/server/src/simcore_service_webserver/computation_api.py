@@ -13,6 +13,7 @@ import sqlalchemy as sa
 from aiohttp import web, web_exceptions
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
+from aiopg.sa.result import RowProxy
 from celery import Celery
 from celery.result import AsyncResult
 from sqlalchemy import and_
@@ -28,7 +29,6 @@ from simcore_service_webserver.computation_models import to_node_class
 
 from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
 from .director import director_api
-
 
 log = logging.getLogger(__file__)
 
@@ -441,9 +441,6 @@ def get_celery(_app: web.Application) -> Celery:
     return celery_app
 
 
-SOME_NAME = "TESTING_GETTING_TASK_STATUS"
-
-
 async def start_pipeline_computation(
     app: web.Application, user_id: int, project_id: str
 ) -> Optional[str]:
@@ -457,8 +454,6 @@ async def start_pipeline_computation(
         )
         return
 
-    app[SOME_NAME] = task.task_id
-
     log.debug(
         "Task (task=%s, user_id=%s, project_id=%s) submitted for execution.",
         task.task_id,
@@ -469,13 +464,16 @@ async def start_pipeline_computation(
 
 
 async def get_pipeline_state(app: web.Application, project_id: str) -> str:
-    # from .projects.project_models import RunningState
+    db_engine = app[APP_DB_ENGINE_KEY]
+    async with db_engine.acquire() as conn:
+        async for row in conn.execute(
+            sa.select([comp_tasks]).where(comp_tasks.c.project_id == project_id)
+        ):
+            task_state = row.state
+            log.error("HEREEHEEHEHEH State of task %s is %s", row.job_id, row.state)
 
-    if SOME_NAME not in app:
-        return "NOT_STARTED"
-
-    result = AsyncResult(app[SOME_NAME])
-    return result.state
+    # result = AsyncResult(app[SOME_NAME])
+    return "NOT_STARTED"
 
 
 async def delete_pipeline_db(app: web.Application, project_id: str) -> None:
