@@ -11,6 +11,7 @@ from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
 from ...models.domain.service import (
     KEY_RE,
+    ServiceType,
     VERSION_RE,
     ServiceAccessRightsAtDB,
     ServiceMetaDataAtDB,
@@ -28,6 +29,7 @@ logger = logging.getLogger(__name__)
 @router.get("", response_model=List[ServiceOut])
 async def list_services(
     user_id: PositiveInt,
+    details: Optional[bool] = True,
     director_client: DirectorApi = Depends(get_director_api),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
@@ -59,6 +61,25 @@ async def list_services(
             product_name=x_simcore_products_name,
         )
     }
+    visible_services = executable_services | writable_services
+    if not details:
+        # only return a stripped down version
+        services = [
+            ServiceOut(
+                key=key,
+                version=version,
+                name="nodetails",
+                description="nodetails",
+                type=ServiceType.computational,
+                authors=[{"name": "nodetails", "email": "nodetails@nodetails.com"}],
+                contact="nodetails@nodetails.com",
+                inputs={},
+                outputs={},
+            )
+            for key, version in visible_services
+        ]
+        return services
+
     # get the services from the registry and filter them out
     frontend_services = [s.dict(by_alias=True) for s in get_frontend_services()]
     registry_services = await director_client.get("/services")
@@ -68,10 +89,7 @@ async def list_services(
         try:
             service = ServiceOut.parse_obj(x)
 
-            if (
-                not (service.key, service.version) in writable_services
-                and not (service.key, service.version) in executable_services
-            ):
+            if not (service.key, service.version) in visible_services:
                 # no access to that service
                 continue
 

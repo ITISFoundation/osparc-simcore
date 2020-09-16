@@ -9,7 +9,7 @@ import aioredlock
 from aiohttp import web
 from jsonschema import ValidationError
 
-from servicelib.utils import fire_and_forget_task
+from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog
 from ..computation_api import update_pipeline_db
@@ -117,7 +117,6 @@ async def create_projects(request: web.Request):
 @login_required
 @permission_required("project.read")
 async def list_projects(request: web.Request):
-
     # TODO: implement all query parameters as
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
     user_id = request[RQT_USERID_KEY]
@@ -138,25 +137,27 @@ async def list_projects(request: web.Request):
     stop = min(start + count, len(projects_list))
     projects_list = projects_list[start:stop]
     user_available_services: List[Dict] = await catalog.get_services_for_user(
-        request.app, user_id
+        request.app, user_id, only_key_versions=True
     )
 
     # validate response
-    validated_projects = []
-    for project in projects_list:
+
+    async def validate_project(prj: Dict) -> Optional[Dict]:
         try:
-            projects_api.validate_project(request.app, project)
-            if await project_uses_available_services(project, user_available_services):
-                validated_projects.append(project)
+            projects_api.validate_project(request.app, prj)
+            if await project_uses_available_services(prj, user_available_services):
+                return prj
         except ValidationError:
             log.warning(
                 "Invalid project with id='%s' in database."
                 "Skipping project from listed response."
                 "RECOMMENDED db data diagnose and cleanup",
-                project.get("uuid", "undefined"),
+                prj.get("uuid", "undefined"),
             )
-            continue
 
+    validation_tasks = [validate_project(project) for project in projects_list]
+    results = await logged_gather(*validation_tasks, reraise=True)
+    validated_projects = [r for r in results if r]
     return {"data": validated_projects}
 
 
@@ -167,7 +168,7 @@ async def get_project(request: web.Request):
     # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
     user_id = request[RQT_USERID_KEY]
     user_available_services: List[Dict] = await catalog.get_services_for_user(
-        request.app, user_id
+        request.app, user_id, only_key_versions=True
     )
     from .projects_api import get_project_for_user
 

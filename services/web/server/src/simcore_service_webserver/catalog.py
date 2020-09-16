@@ -143,12 +143,12 @@ def setup_catalog(app: web.Application, *, disable_auth=False):
 
 
 async def get_services_for_user(
-    app: web.Application, user_id: int
+    app: web.Application, user_id: int, *, only_key_versions: bool
 ) -> Optional[List[Dict]]:
     url = (
         URL(app[f"{__name__}.catalog_origin"])
         .with_path(app[f"{__name__}.catalog_version_prefix"] + "/services")
-        .with_query({"user_id": user_id})
+        .with_query({"user_id": user_id, "details": f"{not only_key_versions}"})
     )
 
     headers = {"X-Simcore-Products-Name": "osparc"}
