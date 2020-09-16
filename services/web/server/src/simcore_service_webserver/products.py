@@ -50,12 +50,14 @@ def discover_product_by_hostname(request: web.Request) -> Optional[str]:
     for product in app_products:
         if product.host_regex.search(request.host):
             return product.name
+    return None
 
 
 @web.middleware
 async def discover_product_middleware(request, handler):
     # NOTE: RQ_PRODUCT_KEY entry is ONLY for root or API entrypoints
     # NOTE: RQ_PRODUCT_KEY can return None
+    #
     if request.path == "/": # root
         product_name: Optional[str] = discover_product_by_hostname(request)
         request[RQ_PRODUCT_FRONTEND_KEY] = request[RQ_PRODUCT_KEY] = product_name
