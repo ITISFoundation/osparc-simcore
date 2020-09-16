@@ -182,7 +182,9 @@ async def get_project(request: web.Request):
             include_templates=True,
         )
         if not await project_uses_available_services(project, user_available_services):
-            raise web.HTTPNotFound(reason=f"Project {project_uuid} not found")
+            raise web.HTTPNotFound(
+                reason=f"Project {project_uuid} uses unavailable services. Please ask your administrator."
+            )
         return {"data": project}
 
     except ProjectInvalidRightsError as exc:
