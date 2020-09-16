@@ -28,7 +28,7 @@ def make_products_table(product_sample):
     async def _make(conn):
         for name, regex in product_sample.items():
             result = await conn.execute(
-                products.insert().values(name=name, host_regex=regex, frontend=name)
+                products.insert().values(name=name, host_regex=regex)
             )
 
             assert result.closed
