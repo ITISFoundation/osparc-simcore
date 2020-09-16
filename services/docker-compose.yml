@@ -141,7 +141,7 @@ services:
       endpoint_mode: dnsrr
       resources:
         reservations:
-          cpus: "0.1"
+          cpus: "0.10"
           memory: "100M"
     volumes:
       - input:/home/scu/input

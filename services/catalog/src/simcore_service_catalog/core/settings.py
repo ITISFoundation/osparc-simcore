@@ -27,8 +27,7 @@ class DirectorSettings(BaseSettings):
     vtag: str = "v0"
 
     @property
-    def base_url(self):
-        # FIXME: httpx.client does not consder vtag
+    def base_url(self) -> str:
         return f"http://{self.host}:{self.port}/{self.vtag}"
 
     class Config(_CommonConfig):

@@ -239,3 +239,11 @@ async def get_user(app: web.Application, user_id: int) -> Dict:
         if not row:
             raise UserNotFoundError(uid=user_id)
         return dict(row)
+
+
+async def get_user_id_from_gid(app: web.Application, primary_gid: int) -> int:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        return await conn.scalar(
+            sa.select([users.c.id]).where(users.c.primary_gid == primary_gid)
+        )
