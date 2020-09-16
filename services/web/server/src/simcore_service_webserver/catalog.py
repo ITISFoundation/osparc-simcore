@@ -9,7 +9,7 @@ from yarl import URL
 
 from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
-from servicelib.rest_responses import unwrap_envelope, wrap_as_envelope
+from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_routing import iter_path_operations
 
 from .__version__ import api_version_prefix
@@ -152,10 +152,9 @@ async def get_services_for_user(
     )
 
     headers = {"X-Simcore-Products-Name": "osparc"}
-
-    resp = await _request_catalog(app, "GET", url, headers)
-    data, error = unwrap_envelope(resp)
-    if error:
-        logger.error("Could not retrieve services for user %s", user_id)
-        return
-    return data
+    session = get_client_session(app)
+    async with session.get(url, headers=headers) as resp:
+        if resp.status >= 400:
+            logger.error("Error while retrieving services for user %s", user_id)
+            return
+        return await resp.json()
