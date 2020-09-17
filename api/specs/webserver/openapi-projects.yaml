@@ -61,7 +61,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Project"
+              $ref: "#/components/schemas/ProjectIn"
       responses:
         "201":
           description: project created
@@ -123,7 +123,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Project"
+              $ref: "#/components/schemas/ProjectIn"
       responses:
         "200":
           description: got detailed project
@@ -376,8 +376,8 @@ components:
           nullable: true
           default: null
 
-    Project:
-      $ref: "../common/schemas/project.yaml#/components/schemas/Project"
+    ProjectIn:
+      $ref: "../common/schemas/project.yaml#/components/schemas/ProjectIn"
 
     ProjectEnveloped:
       $ref: "../common/schemas/project.yaml#/components/schemas/ProjectEnveloped"
