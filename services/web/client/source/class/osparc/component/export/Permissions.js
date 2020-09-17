@@ -59,6 +59,7 @@ qx.Class.define("osparc.component.export.Permissions", {
     __organizationsAndMembers: null,
     __collaboratorsModel: null,
     __myFrieds: null,
+    __addCollaboratorBtn: null,
 
     __buildLayout: function() {
       const addCollaborator = this.__createAddCollaboratorSection();
@@ -89,12 +90,18 @@ qx.Class.define("osparc.component.export.Permissions", {
         flex: 1
       });
 
-      const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Add")).set({
-        allowGrowY: false
+      const addCollaboratorBtn = this.__addCollaboratorBtn = new qx.ui.form.Button(this.tr("Add")).set({
+        allowGrowY: false,
+        enabled: false
       });
       addCollaboratorBtn.addListener("execute", () => {
         this._addCollaborator();
       }, this);
+      qx.event.message.Bus.getInstance().subscribe("OrgAndMembPermsFilter", () => {
+        const anySelected = Boolean(this.__organizationsAndMembers.getSelectedGIDs().length);
+        this.__addCollaboratorBtn.setEnabled(anySelected);
+      }, this);
+
       hBox.add(addCollaboratorBtn);
 
       return vBox;
