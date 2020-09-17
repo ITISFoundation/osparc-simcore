@@ -18,8 +18,8 @@ director:
   port: ${DIRECTOR_PORT}
   version: "v0"
 catalog:
-  host: catalog
-  port: 8000
+  host: ${CATALOG_HOST}
+  port: ${CATALOG_PORT}
   version: v0
 db:
   postgres:
