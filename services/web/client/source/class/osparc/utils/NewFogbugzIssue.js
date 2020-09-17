@@ -29,9 +29,10 @@ qx.Class.define("osparc.utils.NewFogbugzIssue", {
 
   statics: {
     getNewIssueUrl: function() {
-      const temp = osparc.utils.NewFogbugzIssue.getTemplate();
+      const temp = osparc.utils.NewIssueBase.getTemplate();
       let env = "```json\n";
       env += JSON.stringify(osparc.utils.LibVersions.getEnvLibs(), null, 2);
+      env += JSON.stringify(osparc.utils.NewIssueBase.getScreenResolution(), null, 2);
       env += "\n```";
       const body = encodeURIComponent(temp+env);
       let url = "https://z43.fogbugz.com/f/cases/new";
@@ -39,26 +40,6 @@ qx.Class.define("osparc.utils.NewFogbugzIssue", {
       url += "&ixProject=45";
       url += "&sEvent=" + body;
       return url;
-    },
-
-    getTemplate: function() {
-      return `
-## Long story short
-<!-- Please describe your review or bug you found. -->
-
-## Expected behaviour
-<!-- What is the behaviour you expect? -->
-
-## Actual behaviour
-<!-- What's actually happening? -->
-
-## Steps to reproduce
-<!-- Please describe steps to reproduce the issue. -->
-
-Note: your environment was attached but will not be displayed
-<!--
-## Your environment
-`;
     }
   }
 });
