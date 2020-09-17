@@ -53,7 +53,7 @@ async def create_projects(request: web.Request):
 
     try:
         project = {}
-        is_project_template = False
+
         if as_template:  # create template from
             await check_permission(request, "project.template.create")
 
@@ -67,7 +67,6 @@ async def create_projects(request: web.Request):
                 include_templates=False,
             )
             project = await clone_project(request, source_project, user_id)
-            is_project_template = True
 
         elif template_uuid:  # create from template
             template_prj = await db.get_template_project(template_uuid)
@@ -104,13 +103,13 @@ async def create_projects(request: web.Request):
         # This is a new project and every new graph needs to be reflected in the pipeline db
         await update_pipeline_db(request.app, project["uuid"], project["workbench"])
 
-        # Adds state if not a template
-        if not is_project_template:
-            owner_kargs = await get_user_name(request.app, user_id)
-            project_state = ProjectLocked.construct(
-                value=False, onwer=Owner(**owner_kargs)
+        # Appends state
+        project_state = ProjectState(
+            locked=ProjectLocked(
+                value=False, owner=Owner(**await get_user_name(request.app, user_id))
             )
-            project.update(project_state.dict())
+        )
+        project.update(project_state.dict())
 
     except ValidationError as exc:
         raise web.HTTPBadRequest(reason="Invalid project data") from exc
@@ -173,7 +172,7 @@ async def list_projects(request: web.Request):
 
     # Add state in each project for this user
     for project in validated_projects:
-        project_state = await get_project_state_for_user(
+        project_state: ProjectState = await get_project_state_for_user(
             user_id, project_uuid=project["uuid"], app=request.app
         )
         project.update(project_state.dict())
@@ -281,9 +280,12 @@ async def replace_project(request: web.Request):
             request.app, project_uuid, new_project["workbench"], replace_pipeline
         )
 
-        # Adds state if not a template
-        owner_kargs = await get_user_name(request.app, user_id)
-        project_state = ProjectLocked.construct(value=False, onwer=Owner(**owner_kargs))
+        # Appends state
+        project_state = ProjectState(
+            locked=ProjectLocked(
+                value=False, owner=Owner(**await get_user_name(request.app, user_id))
+            )
+        )
         new_project.update(project_state.dict())
 
     except ValidationError as exc:
@@ -473,7 +475,7 @@ async def state_project(request: web.Request) -> web.Response:
         include_templates=True,
         include_state=True,
     )
-    project_state = ProjectState.construct(locked=validated_project["lock"])
+    project_state = ProjectState(**validated_project)
     return web.json_response({"data": project_state.dict()})
 
 

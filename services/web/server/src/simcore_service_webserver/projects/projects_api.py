@@ -77,7 +77,7 @@ async def get_project_for_user(
     validate_project(app, project)
 
     # adds state if it is not a template
-    if include_state and not is_template:
+    if include_state:
         project_state = await get_project_state_for_user(user_id, project_uuid, app)
         project.update(project_state.dict())
     return project

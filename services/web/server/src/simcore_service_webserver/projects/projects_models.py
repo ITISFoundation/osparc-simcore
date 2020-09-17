@@ -137,7 +137,7 @@ class ProjectIn(Project):
 
 class ProjectOut(Project, ProjectState):
     # allOf = [Project, ProjectState]
-    locked: Optional[ProjectLocked]  # fields in ProjectState NOT required
+    pass
 
 
 def prune_fields_from_dict(model_cls: Type[BaseModel], dikt: Dict) -> Dict:
