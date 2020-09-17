@@ -162,8 +162,8 @@ class WebsocketRegistry:
 def managed_resource(
     user_id: Union[str, int], client_session_id: Optional[str], app: web.Application
 ) -> Iterator[WebsocketRegistry]:
-    registry = WebsocketRegistry(int(user_id), client_session_id, app)
     try:
+        registry = WebsocketRegistry(int(user_id), client_session_id, app)
         yield registry
     except Exception:
         log.exception(
