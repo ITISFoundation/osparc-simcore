@@ -356,7 +356,7 @@ async def notify_project_state_update(
     for room in rooms_to_notify:
         await post_group_messages(app, room, messages)
 
-
+from ..users_api import get_user_name
 async def get_project_state_for_user(user_id, project_uuid, app) -> ProjectState:
     """
     Returns state of a project with respect to a given user

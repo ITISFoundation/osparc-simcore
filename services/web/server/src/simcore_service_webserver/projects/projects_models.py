@@ -6,9 +6,10 @@
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Type
 
 from pydantic import BaseModel, EmailStr, Field, constr
+
 from simcore_postgres_database.webserver_models import ProjectType, projects
 
 current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
@@ -16,6 +17,15 @@ current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve
 KEY_RE = r"^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s]+)+$"
 VERSION_RE = r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
 DATE_RE = r"\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[0-9])(:(\\d|[0-5]\\d)){2}(\\.\\d{3})?Z"
+
+
+__all__ = [
+    "projects",
+    "ProjectType",
+    "ProjectState",
+    "ProjectLocked",
+    "Owner",
+]
 
 
 class Connection(BaseModel):
@@ -77,7 +87,7 @@ class AccessRights(BaseModel):
     delete: bool
 
 
-GroupID = constr(regex=f"^\\d+$")
+GroupID = constr(regex="^\\d+$")
 NodeID = constr(strip_whitespace=True, min_length=1)
 ClassifierID = constr(strip_whitespace=True, min_length=1)
 
@@ -119,6 +129,7 @@ class ProjectLocked(BaseModel):
 class ProjectState(BaseModel):
     locked: ProjectLocked
 
+
 # API schemas
 class ProjectIn(Project):
     pass
@@ -126,15 +137,13 @@ class ProjectIn(Project):
 
 class ProjectOut(Project, ProjectState):
     # allOf = [Project, ProjectState]
-    locked: Optional[ProjectLocked] # fields in ProjectState NOT required
+    locked: Optional[ProjectLocked]  # fields in ProjectState NOT required
 
-
-# HELPERS ------------------
 
 def prune_fields_from_dict(model_cls: Type[BaseModel], dikt: Dict) -> Dict:
     """
-        Removes keys in dikt fitting the name fields
-        NOTE: this is only pruning first level keys in the dict!
+    Removes keys in dikt fitting the name fields
+    NOTE: this is only pruning first level keys in the dict!
     """
     pruned = {}
     for field_name in model_cls.__fields__:
@@ -143,14 +152,6 @@ def prune_fields_from_dict(model_cls: Type[BaseModel], dikt: Dict) -> Dict:
         except KeyError:
             pass
     return pruned
-
-__all__ = [
-    "projects",
-    "ProjectType",
-    "ProjectState",
-    "ProjectLocked",
-    "Owner",
-]
 
 
 if __name__ == "__main__":
