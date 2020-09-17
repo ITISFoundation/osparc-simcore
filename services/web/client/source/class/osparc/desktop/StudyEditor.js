@@ -580,30 +580,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return true;
     },
 
-    __stopPipeline: function() {
-      if (!osparc.data.Permissions.getInstance().canDo("study.stop", true)) {
-        return false;
-      }
-
-      let req = new osparc.io.request.ApiRequest("/stop_pipeline", "POST");
-      let data = {};
-      data["projectId"] = this.getStudy().getUuid();
-      req.set({
-        requestData: qx.util.Serializer.toJson(data)
-      });
-      req.addListener("success", this.__onPipelineStopped, this);
-      req.addListener("error", e => {
-        this.getLogger().error(null, "Error stopping pipeline");
-      }, this);
-      req.addListener("fail", e => {
-        this.getLogger().error(null, "Failed stopping pipeline");
-      }, this);
-      // req.send();
-
-      this.getLogger().info(null, "Stopping pipeline. Not yet implemented");
-      return true;
-    },
-
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["project_id"];
@@ -722,7 +698,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       controlsBar.addListener("groupSelection", this.__groupSelection, this);
       controlsBar.addListener("ungroupSelection", this.__ungroupSelection, this);
       controlsBar.addListener("startPipeline", this.__startPipeline, this);
-      controlsBar.addListener("stopPipeline", this.__stopPipeline, this);
     },
 
     __attachSocketEventHandlers: function() {
