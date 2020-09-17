@@ -18,6 +18,7 @@ from aiohttp import ClientResponse, ClientSession, web
 import simcore_service_webserver.statics
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserRole
+from pytest_simcore.helpers.utils_mock import future_with_result
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.application import create_safe_application
 from servicelib.rest_responses import unwrap_envelope
@@ -26,6 +27,11 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.projects.projects_api import delete_project_from_db
+from simcore_service_webserver.projects.projects_models import (
+    Owner,
+    ProjectLocked,
+    ProjectState,
+)
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
@@ -69,8 +75,25 @@ def qx_client_outdir(tmpdir, mocker):
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, postgres_db, qx_client_outdir, monkeypatch):
-    # def client(loop, aiohttp_client, app_cfg, qx_client_outdir, monkeypatch): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
+def mocks_on_projects_api(mocker):
+    """
+        All projects in this module are UNLOCKED
+    """
+    state = ProjectState(
+        locked=ProjectLocked(
+            value=False, owner=Owner(first_name="Speedy", last_name="Gonzalez")
+        )
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
+        return_value=future_with_result(state),
+    )
+
+
+@pytest.fixture
+def client(
+    loop, aiohttp_client, app_cfg, postgres_db, qx_client_outdir, mocks_on_projects_api
+):
     cfg = deepcopy(app_cfg)
 
     cfg["projects"]["enabled"] = True
@@ -110,7 +133,9 @@ async def logged_user(client):  # , role: UserRole):
     async with LoggedUser(
         client, {"role": role.name}, check_if_succeeds=role != UserRole.ANONYMOUS
     ) as user:
+
         yield user
+
         await delete_all_projects(client.app)
 
 
