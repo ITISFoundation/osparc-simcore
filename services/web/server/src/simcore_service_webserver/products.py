@@ -64,9 +64,14 @@ async def discover_product_middleware(request, handler):
         product_name: Optional[str] = discover_product_by_hostname(request)
         request[RQ_PRODUCT_FRONTEND_KEY] = request[RQ_PRODUCT_KEY] = product_name
 
-    if request.path.startswith(f"/{api_vtag}"): # API entrypoints
+    elif request.path.startswith(f"/{api_vtag}"): # API entrypoints
         product_name: Optional[str] = discover_product_by_hostname(request)
         request[RQ_PRODUCT_KEY] = product_name
+
+    elif request.path.startswith("/study/"): # Publications entrypoint. SEE studies_access.py::access_study
+        product_name: Optional[str] = discover_product_by_hostname(request)
+        request[RQ_PRODUCT_FRONTEND_KEY] = request[RQ_PRODUCT_KEY] = product_name
+
 
     response = await handler(request)
 
