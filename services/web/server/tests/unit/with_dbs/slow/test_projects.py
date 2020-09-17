@@ -252,7 +252,12 @@ async def test_list_projects(
 
     if data:
         assert len(data) == 2
+
+        project_state = prune_fields_from_dict(ProjectState, data[0])
         assert data[0] == template_project
+        assert not ProjectState(
+            **project_state
+        ).locked.value, "Templates are not locked"
 
         project_state = prune_fields_from_dict(ProjectState, data[1])
         assert data[1] == user_project
@@ -264,14 +269,20 @@ async def test_list_projects(
         assert len(data) == 1
         project_state = prune_fields_from_dict(ProjectState, data[0])
         assert data[0] == user_project
-        assert ProjectState(**project_state)
+        assert not ProjectState(
+            **project_state
+        ).locked.value, "Single user does not lock"
 
     # GET /v0/projects?type=template
     # instead /v0/projects/templates ??
     data = await _list_projects(client, expected, {"type": "template"})
     if data:
         assert len(data) == 1
+        project_state = prune_fields_from_dict(ProjectState, data[0])
         assert data[0] == template_project
+        assert not ProjectState(
+            **project_state
+        ).locked.value, "Templates are not locked"
 
 
 async def _assert_equal_project(client, project: Dict, expected: web.Response) -> Dict:
@@ -371,11 +382,9 @@ async def _new_project(
     new_project, error = await assert_status(resp, expected_response)
     if not error:
         # has project state
-        project_state = prune_fields_from_dict(ProjectState, new_project)
-        project_state = ProjectState(**project_state)
-        assert (
-            not project_state.locked.value
-        ), "Newly created projects should be unlocked"
+        assert not ProjectState(
+            **prune_fields_from_dict(ProjectState, new_project)
+        ).locked.value, "Newly created projects should be unlocked"
 
         # updated fields
         assert expected_data["uuid"] != new_project["uuid"]
