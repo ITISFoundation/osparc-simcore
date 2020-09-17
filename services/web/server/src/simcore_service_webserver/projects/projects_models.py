@@ -119,7 +119,6 @@ class ProjectLocked(BaseModel):
 class ProjectState(BaseModel):
     locked: ProjectLocked
 
-
 # API schemas
 class ProjectIn(Project):
     pass
@@ -127,8 +126,23 @@ class ProjectIn(Project):
 
 class ProjectOut(Project, ProjectState):
     # allOf = [Project, ProjectState]
-    pass
+    locked: Optional[ProjectLocked] # fields in ProjectState NOT required
 
+
+# HELPERS ------------------
+
+def prune_fields_from_dict(model_cls: Type[BaseModel], dikt: Dict) -> Dict:
+    """
+        Removes keys in dikt fitting the name fields
+        NOTE: this is only pruning first level keys in the dict!
+    """
+    pruned = {}
+    for field_name in model_cls.__fields__:
+        try:
+            pruned[field_name] = dikt.pop(field_name)
+        except KeyError:
+            pass
+    return pruned
 
 __all__ = [
     "projects",

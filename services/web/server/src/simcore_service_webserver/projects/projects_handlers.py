@@ -5,10 +5,10 @@ import json
 import logging
 from typing import Dict, List, Optional, Set
 
-import aioredlock
 from aiohttp import web
 from jsonschema import ValidationError
 
+import aioredlock
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog
@@ -21,7 +21,7 @@ from ..users_api import get_user_name
 from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from .projects_models import Owner, ProjectLocked, ProjectState
+from .projects_models import Owner, ProjectLocked, ProjectState, prune_fields_from_dict
 from .projects_utils import project_uses_available_services
 
 OVERRIDABLE_DOCUMENT_KEYS = [
@@ -40,11 +40,10 @@ log = logging.getLogger(__name__)
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def create_projects(request: web.Request):
-    from .projects_api import (
-        clone_project,
-    )  # TODO: keep here since is async and parser thinks it is a handler
+    from .projects_api import clone_project
 
     # pylint: disable=too-many-branches
+    # TODO: keep here since is async and parser thinks it is a handler
 
     user_id = request[RQT_USERID_KEY]
     db = request.config_dict[APP_PROJECT_DBAPI]
@@ -103,6 +102,14 @@ async def create_projects(request: web.Request):
         # This is a new project and every new graph needs to be reflected in the pipeline db
         await update_pipeline_db(request.app, project["uuid"], project["workbench"])
 
+        # Adds state if not a template
+        if not as_template:
+            owner_kargs = await get_user_name(request.app, user_id)
+            project_state = ProjectLocked.construct(
+                value=False, onwer=Owner(**owner_kargs)
+            )
+            project.update(project_state.dict())
+
     except ValidationError as exc:
         raise web.HTTPBadRequest(reason="Invalid project data") from exc
     except ProjectNotFoundError as exc:
@@ -117,8 +124,11 @@ async def create_projects(request: web.Request):
 @login_required
 @permission_required("project.read")
 async def list_projects(request: web.Request):
+    from .projects_api import get_project_state_for_user
+
     # TODO: implement all query parameters as
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
+
     user_id = request[RQT_USERID_KEY]
     ptype = request.query.get("type", "all")  # TODO: get default for oaspecs
     db = request.config_dict[APP_PROJECT_DBAPI]
@@ -141,7 +151,6 @@ async def list_projects(request: web.Request):
     )
 
     # validate response
-
     async def validate_project(prj: Dict) -> Optional[Dict]:
         try:
             projects_api.validate_project(request.app, prj)
@@ -156,8 +165,18 @@ async def list_projects(request: web.Request):
             )
 
     validation_tasks = [validate_project(project) for project in projects_list]
+    # FIXME: if some invalid, then it should not reraise but instead
     results = await logged_gather(*validation_tasks, reraise=True)
     validated_projects = [r for r in results if r]
+
+    # Add state in each project for this user
+    for project in validated_projects:
+        project_state = await get_project_state_for_user(
+            user_id, project_uuid=project["uuid"], app=request.app
+        )
+        project.update(project_state.dict())
+
+    assert all("locked" in p for p in validate_project)  # nosec
     return {"data": validated_projects}
 
 
@@ -179,10 +198,11 @@ async def get_project(request: web.Request):
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True,
+            include_state=True,
         )
         if not await project_uses_available_services(project, user_available_services):
             raise web.HTTPNotFound(
-                reason=f"Project {project_uuid} uses unavailable services. Please ask your administrator."
+                reason=f"Project '{project_uuid}' uses unavailable services. Please ask your administrator."
             )
         return {"data": project}
 
@@ -216,7 +236,11 @@ async def replace_project(request: web.Request):
     replace_pipeline = request.query.get(
         "run", False
     )  # FIXME: Actually was never called. CHECK if logic still applies (issue #1176)
+
     new_project = await request.json()
+
+    # Prune state fields (just in case)
+    prune_fields_from_dict(ProjectState, new_project)
 
     db = request.config_dict[APP_PROJECT_DBAPI]
     await check_permission(
@@ -235,11 +259,13 @@ async def replace_project(request: web.Request):
         from .projects_api import get_project_for_user
 
         projects_api.validate_project(request.app, new_project)
+
         current_project = await get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True,
+            include_state=False,
         )
 
         if current_project["accessRights"] != new_project["accessRights"]:
@@ -253,6 +279,11 @@ async def replace_project(request: web.Request):
             request.app, project_uuid, new_project["workbench"], replace_pipeline
         )
 
+        # Adds state if not a template
+        owner_kargs = await get_user_name(request.app, user_id)
+        project_state = ProjectLocked.construct(value=False, onwer=Owner(**owner_kargs))
+        new_project.update(project_state.dict())
+
     except ValidationError as exc:
         raise web.HTTPBadRequest from exc
 
@@ -260,6 +291,7 @@ async def replace_project(request: web.Request):
         raise web.HTTPForbidden(
             reason="You do not have sufficient rights to save the project"
         ) from exc
+
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound from exc
 
@@ -328,6 +360,7 @@ async def open_project(request: web.Request) -> web.Response:
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True,
+            include_state=False,
         )
 
         async def try_add_project() -> Optional[Set[int]]:
@@ -358,16 +391,21 @@ async def open_project(request: web.Request) -> web.Response:
 
         # user id opened project uuid
         await projects_api.start_project_interactive_services(request, project, user_id)
+
         # notify users that project is now locked
         project_state = ProjectState(
             locked=ProjectLocked(
                 value=True, owner=Owner(**await get_user_name(request.app, user_id))
             )
         )
+        project.update(project_state.dict())
+
         await projects_api.notify_project_state_update(
             request.app, project, project_state
         )
+
         return web.json_response({"data": project})
+
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
@@ -389,6 +427,7 @@ async def close_project(request: web.Request) -> web.Response:
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True,
+            include_state=False,
         )
         project_opened_by_others: bool = False
         with managed_resource(user_id, client_session_id, request.app) as rt:
@@ -425,27 +464,16 @@ async def state_project(request: web.Request) -> web.Response:
     # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
     from .projects_api import get_project_for_user
 
-    # check that project exists
-    await get_project_for_user(
+    # check that project exists and queries state
+    validated_project = await get_project_for_user(
         request.app,
         project_uuid=project_uuid,
         user_id=user_id,
         include_templates=True,
+        include_state=True,
     )
-    with managed_resource(user_id, None, request.app) as rt:
-        users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
-        usernames = [
-            await get_user_name(request.app, uid) for uid in set(users_of_project)
-        ]
-        assert len(usernames) <= 1  # currently not possible to have more than 1
-        project_state = ProjectState(
-            locked={
-                "value": len(usernames) > 0,
-                "owner": Owner(**usernames[0]) if len(usernames) > 0 else None,
-            }
-        )
-
-        return web.json_response({"data": project_state.dict()})
+    project_state = ProjectState.construct(locked=validated_project["lock"])
+    return web.json_response({"data": project_state.dict()})
 
 
 @login_required
@@ -469,9 +497,11 @@ async def get_active_project(request: web.Request) -> web.Response:
                 project_uuid=user_active_projects[0],
                 user_id=user_id,
                 include_templates=True,
+                include_state=True,
             )
 
         return web.json_response({"data": project})
+
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason="Project not found") from exc
 

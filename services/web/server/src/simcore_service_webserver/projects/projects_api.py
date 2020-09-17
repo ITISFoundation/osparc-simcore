@@ -22,6 +22,7 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 
 from ..computation_api import delete_pipeline_db
 from ..director import director_api
+from ..resource_manager.websocket_manager import managed_resource
 from ..socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT, post_group_messages
 from ..storage_api import copy_data_folders_from_project  # mocked in unit-tests
 from ..storage_api import (
@@ -31,7 +32,7 @@ from ..storage_api import (
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import NodeNotFoundError
-from .projects_models import ProjectState
+from .projects_models import Owner, ProjectLocked, ProjectState
 from .projects_utils import clone_project_document
 
 log = logging.getLogger(__name__)
@@ -52,26 +53,32 @@ async def get_project_for_user(
     user_id: int,
     *,
     include_templates: bool = False,
+    include_state: bool = False,
 ) -> Dict:
-    """ Returns a project accessible to user
+    """Returns a VALID project accessible to user
 
     :raises web.HTTPNotFound: if no match found
     :return: schema-compliant project data
     :rtype: Dict
     """
-
     db = app[APP_PROJECT_DBAPI]
 
-    project = None
+    is_template = False
     if include_templates:
         project = await db.get_template_project(project_uuid)
+        is_template = True
 
-    if not project:
+    if not is_template:
         project = await db.get_user_project(user_id, project_uuid)
 
     # TODO: how to handle when database has an invalid project schema???
     # Notice that db model does not include a check on project schema.
     validate_project(app, project)
+
+    # adds state if it is not a template
+    if include_state and not is_template:
+        project_state = await get_project_state_for_user(user_id, project_uuid, app)
+        project.update(project_state.dict())
     return project
 
 
@@ -276,7 +283,7 @@ async def update_project_node_outputs(
     data: Optional[Dict],
 ) -> Dict:
     """
-        Updates outputs of a given node in a project with 'data'
+    Updates outputs of a given node in a project with 'data'
     """
     log.debug(
         "updating node %s outputs in project %s for user %s with %s",
@@ -315,7 +322,8 @@ async def update_project_node_outputs(
 
 
 async def get_workbench_node_ids_from_project_uuid(
-    app: web.Application, project_uuid: str,
+    app: web.Application,
+    project_uuid: str,
 ) -> Set[str]:
     """Returns a set with all the node_ids from a project's workbench"""
     db = app[APP_PROJECT_DBAPI]
@@ -323,7 +331,8 @@ async def get_workbench_node_ids_from_project_uuid(
 
 
 async def is_node_id_present_in_any_project_workbench(
-    app: web.Application, node_id: str,
+    app: web.Application,
+    node_id: str,
 ) -> bool:
     """If the node_id is presnet in one of the projects' workbenche returns True"""
     db = app[APP_PROJECT_DBAPI]
@@ -346,3 +355,29 @@ async def notify_project_state_update(
 
     for room in rooms_to_notify:
         await post_group_messages(app, room, messages)
+
+
+async def get_project_state_for_user(user_id, project_uuid, app) -> ProjectState:
+    """
+    Returns state of a project with respect to a given user
+    E.g.
+        the state is locked for user1 because user2 is working on it and
+        there is a locked-while-using policy in place
+
+    WARNING: assumes project_uuid exists!! If not, get_project_for_user for that
+    """
+    with managed_resource(user_id, None, app) as rt:
+        # checks who is using it
+        users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
+        usernames = [await get_user_name(app, uid) for uid in set(users_of_project)]
+        assert len(usernames) <= 1  # currently not possible to have more than 1
+
+        # based on usage, sets an state
+        is_locked: bool = len(usernames) > 0
+        project_state = ProjectState(
+            locked=ProjectLocked(
+                value=is_locked,
+                owner=Owner(**usernames[0]) if is_locked else None,
+            )
+        )
+        return project_state
