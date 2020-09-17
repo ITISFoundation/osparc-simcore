@@ -86,6 +86,7 @@ async def _reverse_proxy_handler(request: web.Request) -> web.Response:
     SEE https://gist.github.com/barrachri/32f865c4705f27e75d3b8530180589fb
     """
     user_id = request[RQT_USERID_KEY]
+
     # path & queries
     backend_url = to_backend_service(
         request.rel_url,
@@ -103,7 +104,9 @@ async def _reverse_proxy_handler(request: web.Request) -> web.Response:
         raw: bytes = await request.read()
 
     # injects product discovered by middleware in headers
-    headers = {X_PRODUCT_NAME_HEADER: request.get(RQ_PRODUCT_KEY, "osparc")}
+    # NOTE: for the moment a valid header is required
+    product_name: str =  request[RQ_PRODUCT_KEY] or "osparc"
+    headers = {X_PRODUCT_NAME_HEADER: product_name}
     headers.update(request.headers)
 
     # forward request
