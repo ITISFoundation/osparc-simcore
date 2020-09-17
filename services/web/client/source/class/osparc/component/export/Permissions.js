@@ -181,14 +181,19 @@ qx.Class.define("osparc.component.export.Permissions", {
       this.__organizationsAndMembers.reset();
 
       const aceessRights = this.__getAccessRights();
-      const myFriends = this.__myFrieds;
-      for (const gid of Object.keys(myFriends)) {
-        const myFriend = myFriends[gid];
+      const myFriends = Object.values(this.__myFrieds);
+
+      // sort them first
+      myFriends.sort((a, b) => (a["label"] > b["label"]) ? 1 : -1);
+      myFriends.sort((a, b) => (a["isOrg"] && !b["isOrg"]) ? -1 : 1);
+
+      myFriends.forEach(myFriend => {
+        const gid = myFriend["gid"];
         if (parseInt(gid) !== osparc.auth.Data.getInstance().getGroupId() && !(parseInt(gid) in aceessRights)) {
           const btn = this.__organizationsAndMembers.addOption(myFriend);
           btn.setIcon(myFriend["isOrg"] ? "@FontAwesome5Solid/users/14" : "@FontAwesome5Solid/user/14");
         }
-      }
+      });
     },
 
     __reloadCollaboratorsList: function() {
