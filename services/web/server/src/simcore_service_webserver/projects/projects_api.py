@@ -29,6 +29,7 @@ from ..storage_api import (
     delete_data_folders_of_project,
     delete_data_folders_of_project_node,
 )
+from ..users_api import get_user_name
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import NodeNotFoundError
@@ -66,7 +67,7 @@ async def get_project_for_user(
     is_template = False
     if include_templates:
         project = await db.get_template_project(project_uuid)
-        is_template = True
+        is_template = bool(project)
 
     if not is_template:
         project = await db.get_user_project(user_id, project_uuid)
@@ -356,7 +357,7 @@ async def notify_project_state_update(
     for room in rooms_to_notify:
         await post_group_messages(app, room, messages)
 
-from ..users_api import get_user_name
+
 async def get_project_state_for_user(user_id, project_uuid, app) -> ProjectState:
     """
     Returns state of a project with respect to a given user
@@ -366,6 +367,7 @@ async def get_project_state_for_user(user_id, project_uuid, app) -> ProjectState
 
     WARNING: assumes project_uuid exists!! If not, get_project_for_user for that
     """
+    # NOTE: This adds a dependency to the socket registry sub-module!!
     with managed_resource(user_id, None, app) as rt:
         # checks who is using it
         users_of_project = await rt.find_users_of_resource("project_id", project_uuid)

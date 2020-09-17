@@ -349,7 +349,6 @@ class HTTPLocked(web.HTTPClientError):
 @login_required
 @permission_required("project.open")
 async def open_project(request: web.Request) -> web.Response:
-
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     client_session_id = await request.json()

@@ -36,6 +36,7 @@ from simcore_service_webserver.projects.projects_models import (
     Owner,
     ProjectLocked,
     ProjectState,
+    prune_fields_from_dict,
 )
 from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
@@ -227,8 +228,6 @@ async def catalog_subsystem_mock(monkeypatch):
 
     return creator
 
-from simcore_webserver_service.projects.projects_models import ProjectState, prune_fields_from_dict
-
 
 # GET --------
 @pytest.mark.parametrize(
@@ -374,7 +373,9 @@ async def _new_project(
         # has project state
         project_state = prune_fields_from_dict(ProjectState, new_project)
         project_state = ProjectState(**project_state)
-        assert not project_state.locked.value, "Newly created projects should be unlocked"
+        assert (
+            not project_state.locked.value
+        ), "Newly created projects should be unlocked"
 
         # updated fields
         assert expected_data["uuid"] != new_project["uuid"]
