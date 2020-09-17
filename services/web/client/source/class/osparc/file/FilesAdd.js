@@ -51,8 +51,6 @@ qx.Class.define("osparc.file.FilesAdd", {
 
     const input = new qx.html.Input("file", {
       display: "none"
-    }, {
-      multiple: true
     });
     this.getContentElement().add(input);
 
