@@ -61,22 +61,20 @@ qx.Class.define("osparc.component.export.Permissions", {
     __myFrieds: null,
 
     __buildLayout: function() {
-      const addCollaborator = this.__createAddCollaborator();
+      const addCollaborator = this.__createAddCollaboratorSection();
       this._add(addCollaborator);
 
-      const collaboratorsList = this.__createCollaboratorsList();
+      const collaboratorsList = this.__createCollaboratorsListSection();
       this._add(collaboratorsList, {
         flex: 1
       });
     },
 
-    __createAddCollaborator: function() {
+    __createAddCollaboratorSection: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       vBox.setVisibility(this._isUserOwner() ? "visible" : "excluded");
 
-      const label = new qx.ui.basic.Label().set({
-        value: this.tr("Add Collaborators and Organizations")
-      });
+      const label = new qx.ui.basic.Label(this.tr("Select from the following list"));
       vBox.add(label);
 
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
@@ -102,7 +100,12 @@ qx.Class.define("osparc.component.export.Permissions", {
       return vBox;
     },
 
-    __createCollaboratorsList: function() {
+    __createCollaboratorsListSection: function() {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+
+      const label = new qx.ui.basic.Label(this.tr("Shared with"));
+      vBox.add(label);
+
       const collaboratorsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
@@ -142,8 +145,11 @@ qx.Class.define("osparc.component.export.Permissions", {
           });
         }
       });
+      vBox.add(collaboratorsUIList, {
+        flex: 1
+      });
 
-      return collaboratorsUIList;
+      return vBox;
     },
 
     __getMyFriends: function() {
