@@ -36,6 +36,7 @@ assert FRONTEND_APP_DEFAULT in FRONTEND_APPS_AVAILABLE  # nosec
 def get_index_body(statics_outdir: Path, frontend_name: str):
     index_path = statics_outdir / frontend_name / "index.html"
     html = index_path.read_text()
+    # TODO: this is not very safe ...
     # fixes relative paths
     html = html.replace(f"../resource/{frontend_name}", f"resource/{frontend_name}")
     html = html.replace("boot.js", f"{frontend_name}/boot.js")
