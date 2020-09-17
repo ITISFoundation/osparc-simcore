@@ -227,6 +227,8 @@ async def catalog_subsystem_mock(monkeypatch):
 
     return creator
 
+from simcore_webserver_service.projects.projects_models import ProjectState, prune_fields_from_dict
+
 
 # GET --------
 @pytest.mark.parametrize(
@@ -248,16 +250,22 @@ async def test_list_projects(
 ):
     catalog_subsystem_mock([user_project, template_project])
     data = await _list_projects(client, expected)
+
     if data:
         assert len(data) == 2
         assert data[0] == template_project
+
+        project_state = prune_fields_from_dict(ProjectState, data[1])
         assert data[1] == user_project
+        assert ProjectState(**project_state)
 
     # GET /v0/projects?type=user
     data = await _list_projects(client, expected, {"type": "user"})
     if data:
         assert len(data) == 1
+        project_state = prune_fields_from_dict(ProjectState, data[0])
         assert data[0] == user_project
+        assert ProjectState(**project_state)
 
     # GET /v0/projects?type=template
     # instead /v0/projects/templates ??
@@ -267,7 +275,7 @@ async def test_list_projects(
         assert data[0] == template_project
 
 
-async def _get_project(client, project: Dict, expected: web.Response) -> Dict:
+async def _assert_equal_project(client, project: Dict, expected: web.Response) -> Dict:
     # GET /v0/projects/{project_id}
 
     # with a project owned by user
@@ -277,7 +285,9 @@ async def _get_project(client, project: Dict, expected: web.Response) -> Dict:
     data, error = await assert_status(resp, expected)
 
     if not error:
+        project_state = prune_fields_from_dict(ProjectState, data)
         assert data == project
+        assert ProjectState(**project_state)
     return data
 
 
@@ -299,10 +309,12 @@ async def test_get_project(
     catalog_subsystem_mock,
 ):
     catalog_subsystem_mock([user_project, template_project])
-    await _get_project(client, user_project, expected)
+
+    # standard project
+    await _assert_equal_project(client, user_project, expected)
 
     # with a template
-    await _get_project(client, template_project, expected)
+    await _assert_equal_project(client, template_project, expected)
 
 
 async def _new_project(
@@ -359,6 +371,11 @@ async def _new_project(
 
     new_project, error = await assert_status(resp, expected_response)
     if not error:
+        # has project state
+        project_state = prune_fields_from_dict(ProjectState, new_project)
+        project_state = ProjectState(**project_state)
+        assert not project_state.locked.value, "Newly created projects should be unlocked"
+
         # updated fields
         assert expected_data["uuid"] != new_project["uuid"]
         assert (
@@ -577,6 +594,7 @@ async def test_new_template_from_project(
 
     if not error:
         template_project = data
+
         # uses predefined
         assert template_project["name"] == predefined["name"]
         assert template_project["description"] == predefined["description"]
