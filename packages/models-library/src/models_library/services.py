@@ -274,17 +274,6 @@ class ServiceMetaData(ServiceCommonData):
     classifiers: Optional[List[str]]
 
 
-# OpenAPI models (contain both service metadata and access rights)
-class ServiceUpdate(ServiceMetaData, ServiceAccessRights):
-    pass
-
-
-class ServiceOut(
-    ServiceDockerData, ServiceAccessRights, ServiceMetaData
-):  # pylint: disable=too-many-ancestors
-    owner: Optional[EmailStr]
-
-
 # Databases models (tables services_meta_data and services_access_rights)
 class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaData):
     # for a partial update all members must be Optional

@@ -12,13 +12,12 @@ from models_library.services import (
     VERSION_RE,
     ServiceAccessRightsAtDB,
     ServiceMetaDataAtDB,
-    ServiceOut,
     ServiceType,
-    ServiceUpdate,
 )
 
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
+from ...models.schemas.services import ServiceOut, ServiceUpdate
 from ...services.frontend_services import get_services as get_frontend_services
 from ..dependencies.database import get_repository
 from ..dependencies.director import DirectorApi, get_director_api

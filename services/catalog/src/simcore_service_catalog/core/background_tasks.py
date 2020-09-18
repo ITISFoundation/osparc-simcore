@@ -51,7 +51,7 @@ async def _list_registry_services(
         try:
             service_data = ServiceDockerData.parse_obj(x)
             services[(service_data.key, service_data.version)] = service_data
-        # services = parse_obj_as(List[ServiceOut], data)
+        # services = parse_obj_as(List[ServiceDockerData], data)
         except ValidationError as exc:
             logger.warning(
                 "skip service %s:%s that has invalid fields\n%s",

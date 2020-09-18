@@ -19,12 +19,12 @@ import simcore_service_catalog.api.dependencies.director
 from models_library.services import (
     ServiceAccessRightsAtDB,
     ServiceDockerData,
-    ServiceOut,
     ServiceType,
 )
 from simcore_service_catalog.api.routes import services
 from simcore_service_catalog.db.repositories.groups import GroupsRepository
 from simcore_service_catalog.models.domain.group import GroupAtDB, GroupType
+from simcore_service_catalog.models.schemas.services import ServiceOut
 
 core_services = ["postgres"]
 ops_services = ["adminer"]
