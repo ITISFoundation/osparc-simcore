@@ -10,7 +10,7 @@
  */
 
 qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
-  extend: osparc.ui.switch.Switch,
+  extend: osparc.ui.basic.Switch,
 
   construct: function() {
     this.base(arguments);
