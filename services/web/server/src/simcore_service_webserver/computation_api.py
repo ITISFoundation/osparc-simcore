@@ -13,7 +13,6 @@ import sqlalchemy as sa
 from aiohttp import web, web_exceptions
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import RowProxy
 from celery import Celery
 from celery.result import AsyncResult
 from sqlalchemy import and_
@@ -489,7 +488,7 @@ async def get_task_states(
                 task_states[row.node_id] = RunningState.not_started
                 continue
             task_result = AsyncResult(row.job_id)
-            running_state = RunningState.from_celery_state(task_result.state)
+            running_state = _from_celery_state(task_result.state)
             task_states[row.node_id] = running_state
     return task_states
 

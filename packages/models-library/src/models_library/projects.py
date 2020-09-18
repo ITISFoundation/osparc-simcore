@@ -33,8 +33,6 @@ class ProjectState(BaseModel):
 
 
 __all__ = [
-    "projects",
-    "ProjectType",
     "ProjectState",
     "ProjectRunningState",
     "ProjectLocked",
