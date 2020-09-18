@@ -20,15 +20,6 @@ class ProjectLocked(BaseModel):
     owner: Optional[Owner]
 
 
-class RunningState(str, Enum):
-    not_started = "NOT_STARTED"
-    pending = "PENDING"
-    started = "STARTED"
-    retrying = "RETRY"
-    success = "SUCCESS"
-    failure = "FAILURE"
-
-
 class ProjectRunningState(BaseModel):
     value: RunningState
 

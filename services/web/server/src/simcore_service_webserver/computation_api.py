@@ -433,11 +433,7 @@ async def update_pipeline_db(
 def get_celery(_app: web.Application) -> Celery:
     config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
     rabbit = RabbitConfig(**config)
-    celery_app = Celery(
-        rabbit.name,
-        broker=rabbit.broker_url,
-        backend=rabbit.backend,
-    )
+    celery_app = Celery(rabbit.name, broker=rabbit.broker_url, backend=rabbit.backend,)
     return celery_app
 
 
@@ -463,17 +459,59 @@ async def start_pipeline_computation(
     return task.task_id
 
 
-async def get_pipeline_state(app: web.Application, project_id: str) -> str:
+from pydantic import BaseModel
+
+
+class RunningState(str, Enum):
+    not_started = "NOT_STARTED"
+    pending = "PENDING"
+    started = "STARTED"
+    retrying = "RETRY"
+    success = "SUCCESS"
+    failure = "FAILURE"
+
+    @classmethod
+    def from_celery_state(cls, celery_state):
+        CELERY_TO_RUNNING_STATE = {
+            "PENDING": RunningState.pending,
+            "STARTED": RunningState.started,
+            "RETRY": RunningState.retrying,
+            "FAILURE": RunningState.failure,
+            "SUCCESS": RunningState.success,
+        }
+        return cls(CELERY_TO_RUNNING_STATE[celery_state])
+
+
+async def get_task_states(
+    app: web.Application, project_id: str
+) -> Dict[str, RunningState]:
     db_engine = app[APP_DB_ENGINE_KEY]
+    task_states: Dict[str, RunningState] = {}
     async with db_engine.acquire() as conn:
         async for row in conn.execute(
             sa.select([comp_tasks]).where(comp_tasks.c.project_id == project_id)
         ):
-            task_state = row.state
-            log.error("HEREEHEEHEHEH State of task %s is %s", row.job_id, row.state)
+            if not row.job_id:
+                # the task did not start yet - no sidecar is running it
+                task_states[row.node_id] = RunningState.not_started
+                continue
+            task_result = AsyncResult(row.job_id)
+            running_state = RunningState.from_celery_state(task_result.state)
+            task_states[row.node_id] = running_state
+    return task_states
 
-    # result = AsyncResult(app[SOME_NAME])
-    return "NOT_STARTED"
+
+async def get_pipeline_state(app: web.Application, project_id: str) -> RunningState:
+    task_states: Dict[str, RunningState] = await get_task_states(app, project_id)
+    # compute pipeline state from task states
+    pipeline_state = RunningState.not_started
+    for _, state in task_states.items():
+        if state != RunningState.not_started:
+            pipeline_state = RunningState.started
+        if state == RunningState.failure:
+            return RunningState.failure
+
+    return pipeline_state
 
 
 async def delete_pipeline_db(app: web.Application, project_id: str) -> None:
