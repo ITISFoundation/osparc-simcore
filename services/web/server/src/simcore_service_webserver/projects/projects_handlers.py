@@ -21,7 +21,7 @@ from ..users_api import get_user_name
 from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from .projects_models import Owner, ProjectLocked, ProjectState, prune_fields_from_dict
+from .projects_models import Owner, ProjectLocked, ProjectState
 from .projects_utils import project_uses_available_services
 
 OVERRIDABLE_DOCUMENT_KEYS = [
@@ -109,7 +109,7 @@ async def create_projects(request: web.Request):
                 value=False, owner=Owner(**await get_user_name(request.app, user_id))
             )
         )
-        project.update(project_state.dict())
+        project["state"] = project_state.dict()
 
     except ValidationError as exc:
         raise web.HTTPBadRequest(reason="Invalid project data") from exc
@@ -175,7 +175,7 @@ async def list_projects(request: web.Request):
         project_state: ProjectState = await get_project_state_for_user(
             user_id, project_uuid=project["uuid"], app=request.app
         )
-        project.update(project_state.dict())
+        project["state"] = project_state.dict()
 
     assert all("locked" in p for p in validated_projects)  # nosec
     return {"data": validated_projects}
@@ -240,8 +240,8 @@ async def replace_project(request: web.Request):
 
     new_project = await request.json()
 
-    # Prune state fields (just in case)
-    prune_fields_from_dict(ProjectState, new_project)
+    # Prune state field (just in case)
+    new_project.pop("state", None)
 
     db = request.config_dict[APP_PROJECT_DBAPI]
     await check_permission(
@@ -286,7 +286,7 @@ async def replace_project(request: web.Request):
                 value=False, owner=Owner(**await get_user_name(request.app, user_id))
             )
         )
-        new_project.update(project_state.dict())
+        new_project["state"] = project_state.dict()
 
     except ValidationError as exc:
         raise web.HTTPBadRequest from exc
@@ -401,7 +401,7 @@ async def open_project(request: web.Request) -> web.Response:
                 value=True, owner=Owner(**await get_user_name(request.app, user_id))
             )
         )
-        project.update(project_state.dict())
+        project["state"] = project_state.dict()
 
         await projects_api.notify_project_state_update(
             request.app, project, project_state

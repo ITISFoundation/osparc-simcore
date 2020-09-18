@@ -36,7 +36,6 @@ from simcore_service_webserver.projects.projects_models import (
     Owner,
     ProjectLocked,
     ProjectState,
-    prune_fields_from_dict,
 )
 from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
@@ -273,13 +272,13 @@ async def test_list_projects(
     if data:
         assert len(data) == 2
 
-        project_state = prune_fields_from_dict(ProjectState, data[0])
+        project_state = data[0].pop("state")
         assert data[0] == template_project
         assert not ProjectState(
             **project_state
         ).locked.value, "Templates are not locked"
 
-        project_state = prune_fields_from_dict(ProjectState, data[1])
+        project_state = data[1].pop("state")
         assert data[1] == user_project
         assert ProjectState(**project_state)
 
@@ -287,7 +286,7 @@ async def test_list_projects(
     data = await _list_projects(client, expected, {"type": "user"})
     if data:
         assert len(data) == 1
-        project_state = prune_fields_from_dict(ProjectState, data[0])
+        project_state = data[0].pop("state")
         assert data[0] == user_project
         assert not ProjectState(
             **project_state
@@ -298,7 +297,7 @@ async def test_list_projects(
     data = await _list_projects(client, expected, {"type": "template"})
     if data:
         assert len(data) == 1
-        project_state = prune_fields_from_dict(ProjectState, data[0])
+        project_state = data[0].pop("state")
         assert data[0] == template_project
         assert not ProjectState(
             **project_state
@@ -315,7 +314,7 @@ async def _assert_equal_project(client, project: Dict, expected: web.Response) -
     data, error = await assert_status(resp, expected)
 
     if not error:
-        project_state = prune_fields_from_dict(ProjectState, data)
+        project_state = data.pop("state")
         assert data == project
         assert ProjectState(**project_state)
     return data
@@ -403,7 +402,7 @@ async def _new_project(
     if not error:
         # has project state
         assert not ProjectState(
-            **prune_fields_from_dict(ProjectState, new_project)
+            **new_project.pop("state")
         ).locked.value, "Newly created projects should be unlocked"
 
         # updated fields
