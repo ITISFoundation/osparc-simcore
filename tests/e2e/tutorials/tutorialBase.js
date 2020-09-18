@@ -22,13 +22,15 @@ class TutorialBase {
     this.__interval = null;
   }
 
-  async start() {
+  initScreenshoter() {
     utils.createScreenshotsDir();
 
     this.__interval = setInterval(async() => {
       await this.takeScreenshot();
     }, 2000);
+  }
 
+  async start() {
     await this.beforeScript();
     await this.goTo();
 
@@ -177,7 +179,13 @@ class TutorialBase {
     await auto.restoreIFrame(this.__page);
   }
 
+  async clickLoggerTitle() {
+    await auto.clickLoggerTitle(this.__page);
+  }
+
   async runPipeline(waitFor = 25000) {
+    await this.clickLoggerTitle();
+
     await this.takeScreenshot("runStudy_before");
     await auto.runStudy(this.__page, waitFor);
     await this.takeScreenshot("runStudy_after");
@@ -251,6 +259,7 @@ class TutorialBase {
 
   async close() {
     clearInterval(this.__interval);
+    await utils.sleep(2000);
     await this.__browser.close();
   }
 
@@ -259,6 +268,9 @@ class TutorialBase {
   }
 
   async takeScreenshot(screenshotTitle) {
+    if (this.__demo) {
+      return;
+    }
     let title = this.__templateName;
     if (screenshotTitle) {
       title += '_' + screenshotTitle;

@@ -2,9 +2,7 @@ from fastapi import Depends, FastAPI
 from fastapi.requests import Request
 
 from ...core.settings import AppSettings, DirectorSettings
-from ...services.director import AuthSession
-
-UNAVAILBLE_MSG = "backend service is disabled or unreachable"
+from ...services.director import DirectorApi
 
 
 def _get_app(request: Request) -> FastAPI:
@@ -16,9 +14,7 @@ def _get_settings(request: Request) -> DirectorSettings:
     return app_settings.director
 
 
-def get_director_session(app: FastAPI = Depends(_get_app),) -> AuthSession:
-    """
-        Lifetime of AuthSession wrapper is one request because it needs different session cookies
-        Lifetime of embedded client is attached to the app lifetime
-    """
-    return AuthSession.create(app)
+def get_director_api(
+    app: FastAPI = Depends(_get_app),
+) -> DirectorApi:
+    return app.state.director_api

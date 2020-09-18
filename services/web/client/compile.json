@@ -20,65 +20,48 @@
   ],
   "applications": [
     {
+      "default": true,
       "class": "osparc.Application",
       "theme": "osparc.theme.ThemeDark",
       "name": "osparc",
       "title": "oSPARC",
-      "default": true,
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
         "osparc.theme.ThemeLight"
       ],
+      "environment": {
+        "product.name": "osparc"
+      },
       "bootPath": "source/boot"
     },
     {
-      "class": "explorer.Application",
-      "theme": "osparc.theme.ThemeDark",
-      "name": "explorer",
-      "title": "oSPARC Explorer",
+      "class": "osparc.Application",
+      "theme": "osparc.theme.ThemeLightBlue",
+      "name": "s4l",
+      "title": "Sim4Life",
       "include": [
         "iconfont.material.Load",
-        "iconfont.fontawesome5.Load",
-        "osparc.theme.OSparcLight"
+        "iconfont.fontawesome5.Load"
       ],
+      "environment": {
+        "product.name": "s4l"
+      },
       "bootPath": "source/boot"
     },
     {
-      "class": "qxl.apiviewer.Application",
-      "theme": "qxl.apiviewer.Theme",
-      "name": "apiviewer",
-      "title": "Qooxdoo API Viewer",
-      "environment": {
-        "qx.icontheme": "Tango",
-        "excludeFromAPIViewer": [
-          "qxl.apiviewer.*"
-        ]
-      },
+      "class": "osparc.Application",
+      "theme": "osparc.theme.ThemePurple",
+      "name": "tis",
+      "title": "TI Solutions",
       "include": [
-        "osparc.*"
+        "iconfont.material.Load",
+        "iconfont.fontawesome5.Load"
       ],
-      "exclude": [
-        "qx.test.*",
-        "qx.module.Blocker",
-        "qx.module.Placement"
-      ]
-    },
-    {
-      "class": "qxl.testtapper.Application",
-      "name": "testtapper",
-      "theme": "osparc.theme.ThemeDark",
-      "title": "Qooxdoo TestTAPper",
       "environment": {
-        "qx.icontheme": "Tango"
+        "product.name": "tis"
       },
-      "include": [
-        "osparc.test.*",
-        "iconfont.material.Load"
-      ],
-      "exclude": [
-        "qx.test.*"
-      ]
+      "bootPath": "source/boot"
     }
   ],
   "eslintConfig": {

@@ -6,6 +6,7 @@
 """
 
 import logging
+import textwrap
 import uuid as uuidlib
 from collections import deque
 from datetime import datetime
@@ -170,7 +171,7 @@ class ProjectDBAPI:
         force_project_uuid=False,
         force_as_template=False,
     ) -> Dict:
-        """ Inserts a new project in the database and, if a user is specified, it assigns ownership
+        """Inserts a new project in the database and, if a user is specified, it assigns ownership
 
         - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
         invalid uuid will raise an exception.
@@ -193,7 +194,10 @@ class ProjectDBAPI:
             # TODO: check best rollback design. see transaction.begin...
             # TODO: check if template, otherwise standard (e.g. template-  prefix in uuid)
             prj.update(
-                {"creationDate": now_str(), "lastChangeDate": now_str(),}
+                {
+                    "creationDate": now_str(),
+                    "lastChangeDate": now_str(),
+                }
             )
             kargs = _convert_to_db_names(prj)
             kargs.update(
@@ -249,13 +253,15 @@ class ProjectDBAPI:
         log.info("Loading projects for user %s", user_id)
         async with self.engine.acquire() as conn:
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
-            query = f"""
-    SELECT *
-    FROM projects
-    WHERE projects.type != 'TEMPLATE'
-    AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
-    OR prj_owner = {user_id})
-    """
+            query = textwrap.dedent(
+                f"""\
+                SELECT *
+                FROM projects
+                WHERE projects.type != 'TEMPLATE'
+                AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
+                OR prj_owner = {user_id})
+                """
+            )
             projects_list = await self.__load_projects(
                 conn, query, user_id, user_groups
             )
@@ -272,16 +278,20 @@ class ProjectDBAPI:
 
         async with self.engine.acquire() as conn:
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
+
             # NOTE: in order to use specific postgresql function jsonb_exists_any we use raw call here
-            query = f"""
-SELECT *
-FROM projects
-WHERE projects.type = 'TEMPLATE'
-{'AND projects.published ' if only_published else ''}
-AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
-OR prj_owner = {user_id})
-            """
+            query = textwrap.dedent(
+                f"""\
+                SELECT *
+                FROM projects
+                WHERE projects.type = 'TEMPLATE'
+                {'AND projects.published ' if only_published else ''}
+                AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
+                OR prj_owner = {user_id})
+                """
+            )
             db_projects = await self.__load_projects(conn, query, user_id, user_groups)
+
             projects_list.extend(db_projects)
 
         return projects_list
@@ -337,15 +347,17 @@ OR prj_owner = {user_id})
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
 
             # NOTE: in order to use specific postgresql function jsonb_exists_any we use raw call here
-            query = f"""
-SELECT *
-FROM projects
-WHERE
-{"" if include_templates else "projects.type != 'TEMPLATE' AND"}
-uuid = '{project_uuid}'
-AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
-OR prj_owner = {user_id})
-"""
+            query = textwrap.dedent(
+                f"""\
+                SELECT *
+                FROM projects
+                WHERE
+                {"" if include_templates else "projects.type != 'TEMPLATE' AND"}
+                uuid = '{project_uuid}'
+                AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
+                OR prj_owner = {user_id})
+                """
+            )
             result = await conn.execute(query)
             project_row = await result.first()
 
@@ -392,7 +404,7 @@ OR prj_owner = {user_id})
                 return _convert_to_schema_names(project, user_email)
 
     async def get_user_project(self, user_id: int, project_uuid: str) -> Dict:
-        """ Returns all projects *owned* by the user
+        """Returns all projects *owned* by the user
 
             - prj_owner
             - Notice that a user can have access to a template but he might not onw it
@@ -448,16 +460,21 @@ OR prj_owner = {user_id})
         return template_prj
 
     async def update_user_project(
-        self, project_data: Dict, user_id: int, project_uuid: str, include_templates: Optional[bool] = False
+        self,
+        project_data: Dict,
+        user_id: int,
+        project_uuid: str,
+        include_templates: Optional[bool] = False,
     ):
-        """ updates a project from a user
-
-        """
+        """updates a project from a user"""
         log.info("Updating project %s for user %s", project_uuid, user_id)
 
         async with self.engine.acquire() as conn:
             row = await self._get_project(
-                user_id, project_uuid, exclude_foreign=["tags"], include_templates=include_templates
+                user_id,
+                project_uuid,
+                exclude_foreign=["tags"],
+                include_templates=include_templates,
             )
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
             _check_project_permissions(row, user_id, user_groups, "write")
@@ -505,7 +522,7 @@ OR prj_owner = {user_id})
             )
 
     async def make_unique_project_uuid(self) -> str:
-        """ Generates a project identifier still not used in database
+        """Generates a project identifier still not used in database
 
         WARNING: this method does not guarantee always unique id due to possible race condition
         (i.e. while client gets this uuid and uses it, another client might have used the same id already)
@@ -576,6 +593,23 @@ OR prj_owner = {user_id})
             ):
                 result.append(row[0])
             return list(result)
+
+    async def update_project_without_enforcing_checks(
+        self, project_data: Dict, project_uuid: str
+    ) -> bool:
+        """The garbage collector needs to alter the row without passing through the 
+        permissions layer."""
+        async with self.engine.acquire() as conn:
+            # update timestamps
+            project_data["lastChangeDate"] = now_str()
+            # now update it
+            result = await conn.execute(
+                # pylint: disable=no-value-for-parameter
+                projects.update()
+                .values(**_convert_to_db_names(project_data))
+                .where(projects.c.uuid == project_uuid)
+            )
+            return result.rowcount == 1
 
 
 def setup_projects_db(app: web.Application):

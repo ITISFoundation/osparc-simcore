@@ -30,7 +30,7 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
   properties: {
     autoConnectPorts: {
       nullable: false,
-      init: false,
+      init: true,
       check: "Boolean",
       event: "changeAutoConnectPorts"
     },

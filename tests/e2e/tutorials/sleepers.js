@@ -18,13 +18,14 @@ async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, user, pass, newUser, templateName, enableDemoMode);
 
   try {
+    tutorial.initScreenshoter();
     await tutorial.start();
     await tutorial.openTemplate(1000);
 
     // Some time for loading the workbench
     await tutorial.waitFor(5000);
 
-    await tutorial.runPipeline(25000);
+    await tutorial.runPipeline(30000);
     console.log('Checking results for the first sleeper:');
     await tutorial.openNodeFiles(0);
     const outFiles = [
@@ -33,7 +34,7 @@ async function runTutorial() {
     ];
     await tutorial.checkResults(outFiles.length);
 
-    await tutorial.waitFor(20000);
+    await tutorial.waitFor(30000);
     console.log('Checking results for the last sleeper:');
     await tutorial.openNodeFiles(4);
     await tutorial.checkResults(outFiles.length);

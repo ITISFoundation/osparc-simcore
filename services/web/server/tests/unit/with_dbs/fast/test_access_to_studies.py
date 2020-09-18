@@ -21,6 +21,7 @@ from pytest_simcore.helpers.utils_login import LoggedUser, UserRole
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.application import create_safe_application
 from servicelib.rest_responses import unwrap_envelope
+from simcore_service_webserver import catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
@@ -28,6 +29,7 @@ from simcore_service_webserver.projects.projects_api import delete_project_from_
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
+from simcore_service_webserver.settings import setup_settings
 from simcore_service_webserver.statics import setup_statics
 from simcore_service_webserver.studies_access import setup_studies_access
 from simcore_service_webserver.users import setup_users
@@ -77,6 +79,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_db, qx_client_outdir, monkeyp
 
     app = create_safe_application(cfg)
 
+    setup_settings(app)
     setup_statics(app)
     setup_db(app)
     setup_session(app)
@@ -98,7 +101,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_db, qx_client_outdir, monkeyp
 
 @pytest.fixture
 async def logged_user(client):  # , role: UserRole):
-    """ adds a user in db and logs in with client
+    """adds a user in db and logs in with client
 
     NOTE: role fixture is defined as a parametrization below
     """
@@ -204,7 +207,7 @@ async def test_access_to_forbidden_study(client, unpublished_project):
 
     valid_but_not_sharable = unpublished_project["uuid"]
 
-    resp = await client.get(f"/study/valid_but_not_sharable")
+    resp = await client.get("/study/valid_but_not_sharable")
     content = await resp.text()
 
     assert (
@@ -212,9 +215,27 @@ async def test_access_to_forbidden_study(client, unpublished_project):
     ), f"STANDARD studies are NOT sharable: {content}"
 
 
+@pytest.fixture
+async def catalog_subsystem_mock(monkeypatch, published_project):
+    services_in_project = [
+        {"key": s["key"], "version": s["version"]}
+        for _, s in published_project["workbench"].items()
+    ]
+
+    async def mocked_get_services_for_user(*args, **kwargs):
+        return services_in_project
+
+    monkeypatch.setattr(catalog, "get_services_for_user", mocked_get_services_for_user)
+
+
 async def test_access_study_anonymously(
-    client, qx_client_outdir, published_project, storage_subsystem_mock
+    client,
+    qx_client_outdir,
+    published_project,
+    storage_subsystem_mock,
+    catalog_subsystem_mock,
 ):
+
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
     resp = await client.get(study_url)
 
@@ -241,7 +262,12 @@ async def test_access_study_anonymously(
 
 
 async def test_access_study_by_logged_user(
-    client, logged_user, qx_client_outdir, published_project, storage_subsystem_mock
+    client,
+    logged_user,
+    qx_client_outdir,
+    published_project,
+    storage_subsystem_mock,
+    catalog_subsystem_mock,
 ):
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
     resp = await client.get(study_url)
@@ -260,7 +286,11 @@ async def test_access_study_by_logged_user(
 
 
 async def test_access_cookie_of_expired_user(
-    client, qx_client_outdir, published_project, storage_subsystem_mock
+    client,
+    qx_client_outdir,
+    published_project,
+    storage_subsystem_mock,
+    catalog_subsystem_mock,
 ):
     # emulates issue #1570
     app: web.Application = client.app

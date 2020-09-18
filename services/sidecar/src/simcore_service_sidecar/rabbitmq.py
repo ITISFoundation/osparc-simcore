@@ -39,10 +39,9 @@ def _channel_close_callback(sender: Any, exc: Optional[BaseException]):
 
 class RabbitMQ(BaseModel):
     config: RabbitConfig = RabbitConfig()
-    connection: aio_pika.RobustConnection = None
+    connection: aio_pika.Connection = None
     channel: aio_pika.Channel = None
     logs_exchange: aio_pika.Exchange = None
-    progress_exchange: aio_pika.Exchange = None
     instrumentation_exchange: aio_pika.Exchange = None
 
     class Config:
@@ -68,11 +67,6 @@ class RabbitMQ(BaseModel):
         log.debug("Declaring %s exchange", self.config.channels["log"])
         self.logs_exchange = await self.channel.declare_exchange(
             self.config.channels["log"], aio_pika.ExchangeType.FANOUT
-        )
-        log.debug("Declaring %s exchange", self.config.channels["progress"])
-        self.progress_exchange = await self.channel.declare_exchange(
-            self.config.channels["progress"],
-            aio_pika.ExchangeType.FANOUT,
         )
 
         log.debug("Declaring %s exchange", self.config.channels["instrumentation"])

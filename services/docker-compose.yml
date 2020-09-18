@@ -93,12 +93,12 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
-      - BUILD_DATE=${BUILD_DATE:-1970-01-01T01:00:00Z}
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
       - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
       - STORAGE_HOST=${STORAGE_HOST:-storage}
       - STORAGE_PORT=${STORAGE_PORT:-8080}
       - CATALOG_HOST=${CATALOG_HOST:-catalog}
+      - CATALOG_PORT=${CATALOG_PORT:-8000}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - WEBSERVER_LOGLEVEL=${LOG_LEVEL:-WARNING}
       - DIAGNOSTICS_MAX_DELAY_SECS=30
@@ -142,14 +142,14 @@ services:
       endpoint_mode: dnsrr
       resources:
         reservations:
-          cpus: "0.1"
+          cpus: "0.10"
           memory: "100M"
     volumes:
       - input:/home/scu/input
       - output:/home/scu/output
       - log:/home/scu/log
       - /var/run/docker.sock:/var/run/docker.sock
-      - /etc/hostname:/home/scu/hostname:ro
+      - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment:
       - RABBIT_HOST=${RABBIT_HOST}
       - RABBIT_PORT=${RABBIT_PORT}
@@ -172,6 +172,7 @@ services:
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - SIDECAR_LOGLEVEL=${LOG_LEVEL:-WARNING}
+      - START_AS_MODE_CPU=${SIDECAR_FORCE_CPU_NODE:-0}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
     depends_on:
