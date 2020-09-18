@@ -75,7 +75,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
   },
 
   statics: {
-    FEEDBACK_GFORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLSe232bTigsM2zV97Kjp2OhCenl6o9gNGcDFt2kO_dfkIjtQAQ/viewform?usp=sf_link",
     BUTTON_OPTIONS: {
       font: "title-14",
       allowGrowY: false,
@@ -294,7 +293,11 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       }
 
       const feedbackAnonBtn = new qx.ui.menu.Button(this.tr("Anonymous feedback"));
-      feedbackAnonBtn.addListener("execute", () => window.open(this.self().FEEDBACK_GFORM_URL));
+      feedbackAnonBtn.addListener("execute", () => {
+        if (this.__serverStatics.feedbackFormUrl) {
+          window.open(this.__serverStatics.feedbackFormUrl);
+        }
+      });
       menu.add(feedbackAnonBtn);
 
       const feedbackBtn = new qx.ui.form.MenuButton(this.tr("Give us feedback"), null, menu);
@@ -317,10 +320,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
       menu.addSeparator();
 
-      const helpBtn = new qx.ui.menu.Button(this.tr("Help"));
-      helpBtn.addListener("execute", () => window.open("https://docs.osparc.io"));
-      osparc.utils.Utils.setIdToWidget(helpBtn, "userMenuHelpBtn");
-      menu.add(helpBtn);
       const aboutBtn = new qx.ui.menu.Button(this.tr("About"));
       aboutBtn.addListener("execute", () => osparc.About.getInstance().open());
       osparc.utils.Utils.setIdToWidget(aboutBtn, "userMenuAboutBtn");
