@@ -6,9 +6,14 @@ import logging
 
 from aiohttp import web
 
+from models_library import RunningState
 from servicelib.request_keys import RQT_USERID_KEY
 
-from .computation_api import start_pipeline_computation, update_pipeline_db
+from .computation_api import (
+    get_pipeline_state,
+    start_pipeline_computation,
+    update_pipeline_db,
+)
 from .login.decorators import login_required
 from .projects.projects_api import get_project_for_user
 from .projects.projects_exceptions import ProjectNotFoundError
@@ -45,6 +50,16 @@ async def start_pipeline(request: web.Request) -> web.Response:
     # FIXME: if start is already ongoing. Do not re-start!
     try:
         project = await get_project_for_user(request.app, project_id, user_id)
+
+        pipeline_state: RunningState = await get_pipeline_state(request.app, project_id)
+
+        if pipeline_state in [
+            RunningState.pending,
+            RunningState.started,
+            RunningState.retrying,
+        ]:
+            raise web.HTTPForbidden(reason=f"Projet {project_id} already started")
+
         await update_pipeline_db(request.app, project_id, project["workbench"])
 
     except ProjectNotFoundError as exc:
