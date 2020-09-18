@@ -10,6 +10,7 @@ from .models.comp_pipeline import comp_pipeline
 from .models.comp_tasks import DB_CHANNEL_NAME, comp_tasks
 from .models.confirmations import ConfirmationAction, confirmations
 from .models.groups import GroupType, groups, user_to_groups
+from .models.products import products
 from .models.projects import ProjectType, projects
 from .models.tags import study_tags, tags
 from .models.tokens import tokens
@@ -34,4 +35,5 @@ __all__ = [
     "study_tags",
     "api_keys",
     "group_classifiers",
+    "products",
 ]

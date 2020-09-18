@@ -14,6 +14,7 @@ from servicelib.rest_routing import iter_path_operations
 
 from .__version__ import api_version_prefix
 from .catalog_config import get_client_session, get_config
+from .constants import RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
 
@@ -85,6 +86,7 @@ async def _reverse_proxy_handler(request: web.Request) -> web.Response:
     SEE https://gist.github.com/barrachri/32f865c4705f27e75d3b8530180589fb
     """
     user_id = request[RQT_USERID_KEY]
+
     # path & queries
     backend_url = to_backend_service(
         request.rel_url,
@@ -101,12 +103,14 @@ async def _reverse_proxy_handler(request: web.Request) -> web.Response:
     if request.can_read_body:
         raw: bytes = await request.read()
 
-    # add product to headers @crespov, here where the product shall come in
-    headers = {"X-Simcore-Products-Name": "osparc"}
-    headers.update(request.headers)
+    # injects product discovered by middleware in headers
+    fwd_headers = request.headers.copy()
+    product_name = request[RQ_PRODUCT_KEY]
+    fwd_headers.update({X_PRODUCT_NAME_HEADER: product_name})
+
     # forward request
     return await _request_catalog(
-        request.app, request.method, backend_url, headers, raw
+        request.app, request.method, backend_url, fwd_headers, raw
     )
 
 

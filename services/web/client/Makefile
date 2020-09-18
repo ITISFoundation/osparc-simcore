@@ -94,7 +94,7 @@ shell: ## runs /bin/sh in 'itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}'
 
 
 .PHONY: info
-info: ## this colorful help
+info: ## displays info about toolkit and build images
 	# toolkit image 'itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}'
 	@docker images itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}
 	@docker image inspect itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG} $(if jq,| jq .[0].ContainerConfig.Labels,)
