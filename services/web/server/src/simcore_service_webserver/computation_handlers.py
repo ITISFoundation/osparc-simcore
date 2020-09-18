@@ -6,7 +6,7 @@ import logging
 
 from aiohttp import web
 
-from models_library import RunningState
+from models_library.projects import RunningState
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .computation_api import (
