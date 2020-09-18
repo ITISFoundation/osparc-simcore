@@ -306,13 +306,13 @@ async def test_workflow(
     assert len(projects) == 1
 
     for key in projects[0].keys():
-        if key not in ("lastChangeDate",):
+        if key not in ("lastChangeDate", "state"):
             assert projects[0][key] == modified_project[key]
 
     # get
     project = await _request_get(client, pid)
     for key in project.keys():
-        if key not in ("lastChangeDate",):
+        if key not in ("lastChangeDate", "state"):
             assert project[key] == modified_project[key]
 
     # delete
