@@ -6,7 +6,7 @@
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Union, Type
+from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, EmailStr, Field, constr
 

@@ -304,7 +304,7 @@ async def test_list_projects(
         ).locked.value, "Templates are not locked"
 
 
-async def _assert_equal_project(client, project: Dict, expected: web.Response) -> Dict:
+async def _assert_get_same_project(client, project: Dict, expected: web.Response) -> Dict:
     # GET /v0/projects/{project_id}
 
     # with a project owned by user
@@ -340,10 +340,10 @@ async def test_get_project(
     catalog_subsystem_mock([user_project, template_project])
 
     # standard project
-    await _assert_equal_project(client, user_project, expected)
+    await _assert_get_same_project(client, user_project, expected)
 
     # with a template
-    await _assert_equal_project(client, template_project, expected)
+    await _assert_get_same_project(client, template_project, expected)
 
 
 async def _new_project(
@@ -700,7 +700,7 @@ async def test_share_project(
         }
 
         # user 1 can always get to his project
-        await _get_project(client, new_project, expected.ok)
+        await _assert_get_same_project(client, new_project, expected.ok)
 
     # get another user logged in now
     user_2 = await log_client_in(
@@ -708,7 +708,7 @@ async def test_share_project(
     )
     if new_project:
         # user 2 can only get the project if user 2 has read access
-        await _get_project(
+        await _assert_get_same_project(
             client,
             new_project,
             expected.ok if share_rights["read"] else expected.forbidden,
@@ -881,7 +881,7 @@ async def test_delete_project(
         mocked_director_subsystem["stop_service"].has_calls(calls)
         # wait for the fire&forget to run
         await sleep(2)
-        await _get_project(client, user_project, web.HTTPNotFound)
+        await _assert_get_same_project(client, user_project, web.HTTPNotFound)
 
 
 @pytest.mark.parametrize(
@@ -1232,7 +1232,7 @@ async def test_tags_to_studies(
 
     # check the tags are in
     user_project["tags"] = [tag["id"] for tag in added_tags]
-    data = await _get_project(client, user_project, expected)
+    data = await _assert_get_same_project(client, user_project, expected)
 
     # Delete tag0
     url = client.app.router["delete_tag"].url_for(tag_id=str(added_tags[0].get("id")))
@@ -1240,7 +1240,7 @@ async def test_tags_to_studies(
     await assert_status(resp, web.HTTPNoContent)
     # Get project and check that tag is no longer there
     user_project["tags"].remove(added_tags[0]["id"])
-    data = await _get_project(client, user_project, expected)
+    data = await _assert_get_same_project(client, user_project, expected)
     assert added_tags[0].get("id") not in data.get("tags")
 
     # Remove tag1 from project
@@ -1251,7 +1251,7 @@ async def test_tags_to_studies(
     await assert_status(resp, expected)
     # Get project and check that tag is no longer there
     user_project["tags"].remove(added_tags[1]["id"])
-    data = await _get_project(client, user_project, expected)
+    data = await _assert_get_same_project(client, user_project, expected)
     assert added_tags[1].get("id") not in data.get("tags")
 
     # Delete tag1
