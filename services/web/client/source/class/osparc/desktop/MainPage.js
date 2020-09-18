@@ -198,10 +198,6 @@ qx.Class.define("osparc.desktop.MainPage", {
           }
 
           let locked = false;
-          // TODO PC: remove this once /projetcs returns the 'state' node in project
-          if ("locked" in latestStudyData) {
-            locked = latestStudyData["locked"]["value"];
-          }
           if ("state" in latestStudyData && "locked" in latestStudyData["state"]) {
             locked = latestStudyData["state"]["locked"]["value"];
           }

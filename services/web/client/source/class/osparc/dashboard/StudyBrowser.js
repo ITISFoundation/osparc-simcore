@@ -384,11 +384,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       const tags = study.tags ? osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id)) : [];
 
-      // TODO PC: remove this once /projetcs returns the 'state' node in project
-      if ("locked" in study) {
-        study["state"] = study["locked"];
-      }
-
       const item = new osparc.dashboard.StudyBrowserButtonItem().set({
         resourceType: study.resourceType,
         uuid: study.uuid,
