@@ -83,8 +83,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this._showLoadingPage(this.tr("Starting ") + (studyData.name || this.tr("Study")));
 
         // Before starting a study, make sure the latest version is fetched
+        const params = {
+          url: {
+            "projectId": studyData.uuid
+          }
+        };
         const promises = [
-          osparc.store.Store.getInstance().getStudyWState(studyData.uuid, true),
+          osparc.data.Resources.getOne("studies", params),
           osparc.store.Store.getInstance().getServicesDAGs()
         ];
         Promise.all(promises)
@@ -448,7 +453,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       sweeper.addListener("iterationSelected", e => {
         win.close();
         const iterationStudyId = e.getData();
-        osparc.store.Store.getInstance().getStudyWState(iterationStudyId)
+        const params = {
+          url: {
+            "projectId": iterationStudyId
+          }
+        };
+        osparc.data.Resources.getOne("studies", params)
           .then(studyData => {
             study.removeIFrames();
             this.fireDataEvent("startStudy", studyData.uuid);
