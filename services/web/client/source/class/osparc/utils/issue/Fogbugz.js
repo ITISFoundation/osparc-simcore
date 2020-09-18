@@ -28,12 +28,12 @@ qx.Class.define("osparc.utils.issue.Fogbugz", {
   type: "static",
 
   statics: {
-    getNewIssueUrl: function() {
+    getNewIssueUrl: function(originUrl, prjId) {
       const body = osparc.utils.issue.Base.getBody();
 
-      let url = "https://z43.fogbugz.com/f/cases/new";
+      let url = originUrl + "/f/cases/new";
       url += "?command=new";
-      url += "&ixProject=45";
+      url += "&ixProject=" + prjId;
       url += "&sEvent=" + body;
       return url;
     }

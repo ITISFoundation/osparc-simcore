@@ -15,15 +15,6 @@
 
 ************************************************************************ */
 
-/**
- * Here is a little example of how to use the widget.
- *
- * <pre class='javascript'>
- *   const url = osparc.utils.issue.Github.getNewIssueUrl();
- *   window.open(url);
- * </pre>
- */
-
 qx.Class.define("osparc.utils.issue.Base", {
   type: "static",
 
