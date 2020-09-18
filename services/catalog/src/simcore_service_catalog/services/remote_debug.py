@@ -12,7 +12,7 @@ REMOTE_DEBUG_PORT = 3000
 
 def setup_remote_debugging(force_enabled=False, *, boot_mode=None):
     """
-        Programaticaly enables remote debugging if SC_BOOT_MODE==debug-ptvsd
+    Programaticaly enables remote debugging if SC_BOOT_MODE==debug-ptvsd
     """
     boot_mode = boot_mode or os.environ.get("SC_BOOT_MODE")
     if boot_mode == "debug-ptvsd" or force_enabled:

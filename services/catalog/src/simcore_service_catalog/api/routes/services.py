@@ -1,8 +1,9 @@
 import logging
 import urllib.parse
-from typing import List, Set, Tuple
+from typing import List, Optional, Set, Tuple
 
-from fastapi import APIRouter, Depends, HTTPException, status
+# FIXME: too many DB calls
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import ValidationError, constr
 from pydantic.types import PositiveInt
 
@@ -10,27 +11,30 @@ from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
 from ...models.domain.service import (
     KEY_RE,
+    ServiceType,
     VERSION_RE,
     ServiceAccessRightsAtDB,
     ServiceMetaDataAtDB,
     ServiceOut,
     ServiceUpdate,
 )
+from ...services.frontend_services import get_services as get_frontend_services
 from ..dependencies.database import get_repository
-from ..dependencies.director import AuthSession, get_director_session
+from ..dependencies.director import DirectorApi, get_director_api
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# FIXME: too many DB calls
-
 
 @router.get("", response_model=List[ServiceOut])
 async def list_services(
+    # pylint: disable=too-many-arguments
     user_id: PositiveInt,
-    director_client: AuthSession = Depends(get_director_session),
+    details: Optional[bool] = True,
+    director_client: DirectorApi = Depends(get_director_api),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
+    x_simcore_products_name: str = Header(None),
 ):
     # get user groups
     user_groups = await groups_repository.list_user_groups(user_id)
@@ -44,27 +48,49 @@ async def list_services(
     executable_services: Set[Tuple[str, str]] = {
         (service.key, service.version)
         for service in await services_repo.list_services(
-            gids=[group.gid for group in user_groups], execute_access=True
+            gids=[group.gid for group in user_groups],
+            execute_access=True,
+            product_name=x_simcore_products_name,
         )
     }
     # get the writable services
     writable_services: Set[Tuple[str, str]] = {
         (service.key, service.version)
         for service in await services_repo.list_services(
-            gids=[group.gid for group in user_groups], write_access=True
+            gids=[group.gid for group in user_groups],
+            write_access=True,
+            product_name=x_simcore_products_name,
         )
     }
+    visible_services = executable_services | writable_services
+    if not details:
+        # only return a stripped down version
+        services = [
+            ServiceOut(
+                key=key,
+                version=version,
+                name="nodetails",
+                description="nodetails",
+                type=ServiceType.computational,
+                authors=[{"name": "nodetails", "email": "nodetails@nodetails.com"}],
+                contact="nodetails@nodetails.com",
+                inputs={},
+                outputs={},
+            )
+            for key, version in visible_services
+        ]
+        return services
+
     # get the services from the registry and filter them out
-    data = await director_client.get("/services")
+    frontend_services = [s.dict(by_alias=True) for s in get_frontend_services()]
+    registry_services = await director_client.get("/services")
+    data = frontend_services + registry_services
     services: List[ServiceOut] = []
     for x in data:
         try:
             service = ServiceOut.parse_obj(x)
 
-            if (
-                not (service.key, service.version) in writable_services
-                and not (service.key, service.version) in executable_services
-            ):
+            if not (service.key, service.version) in visible_services:
                 # no access to that service
                 continue
 
@@ -72,14 +98,21 @@ async def list_services(
             access_rights: List[
                 ServiceAccessRightsAtDB
             ] = await services_repo.get_service_access_rights(
-                service.key, service.version
+                service.key, service.version, product_name=x_simcore_products_name
             )
             service.access_rights = {rights.gid: rights for rights in access_rights}
 
             # access is allowed, override some of the values with what is in the db
-            service_in_db = await services_repo.get_service(
-                service.key, service.version
-            )
+            service_in_db: Optional[
+                ServiceMetaDataAtDB
+            ] = await services_repo.get_service(service.key, service.version)
+            if not service_in_db:
+                logger.error(
+                    "The service %s:%s is not in the database",
+                    service.key,
+                    service.version,
+                )
+                continue
             service = service.copy(
                 update=service_in_db.dict(exclude_unset=True, exclude={"owner"})
             )
@@ -109,9 +142,10 @@ async def get_service(
     user_id: int,
     service_key: constr(regex=KEY_RE),
     service_version: constr(regex=VERSION_RE),
-    director_client: AuthSession = Depends(get_director_session),
+    director_client: DirectorApi = Depends(get_director_api),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
+    x_simcore_products_name: str = Header(None),
 ):
     # check the service exists
     services_in_registry = await director_client.get(
@@ -134,12 +168,15 @@ async def get_service(
         service_version,
         gids=[group.gid for group in user_groups],
         write_access=True,
+        product_name=x_simcore_products_name,
     )
     if service_in_db:
         # we have full access, let's add the access to the output
         service_access_rights: List[
             ServiceAccessRightsAtDB
-        ] = await services_repo.get_service_access_rights(service.key, service.version)
+        ] = await services_repo.get_service_access_rights(
+            service.key, service.version, product_name=x_simcore_products_name
+        )
         service.access_rights = {rights.gid: rights for rights in service_access_rights}
     else:
         # check if we have executable rights
@@ -148,6 +185,7 @@ async def get_service(
             service_version,
             gids=[group.gid for group in user_groups],
             execute_access=True,
+            product_name=x_simcore_products_name,
         )
         if not service_in_db:
             # we have no access here
@@ -175,9 +213,10 @@ async def modify_service(
     service_key: constr(regex=KEY_RE),
     service_version: constr(regex=VERSION_RE),
     updated_service: ServiceUpdate,
-    director_client: AuthSession = Depends(get_director_session),
+    director_client: DirectorApi = Depends(get_director_api),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
+    x_simcore_products_name: str = Header(None),
 ):
     # check the service exists
     await director_client.get(
@@ -199,6 +238,7 @@ async def modify_service(
         service_version,
         gids=[group.gid for group in user_groups],
         write_access=True,
+        product_name=x_simcore_products_name,
     )
     if not writable_service:
         # deny access
@@ -219,7 +259,7 @@ async def modify_service(
     current_gids_in_db = [
         r.gid
         for r in await services_repo.get_service_access_rights(
-            service_key, service_version
+            service_key, service_version, product_name=x_simcore_products_name
         )
     ]
 
@@ -232,6 +272,7 @@ async def modify_service(
                 gid=gid,
                 execute_access=rights.execute_access,
                 write_access=rights.write_access,
+                product_name=x_simcore_products_name,
             )
             for gid, rights in updated_service.access_rights.items()
         ]
@@ -244,7 +285,12 @@ async def modify_service(
             if gid not in updated_service.access_rights
         ]
         deleted_access_rights = [
-            ServiceAccessRightsAtDB(key=service_key, version=service_version, gid=gid)
+            ServiceAccessRightsAtDB(
+                key=service_key,
+                version=service_version,
+                gid=gid,
+                product_name=x_simcore_products_name,
+            )
             for gid in removed_gids
         ]
         await services_repo.delete_service_access_rights(deleted_access_rights)
@@ -257,4 +303,5 @@ async def modify_service(
         director_client,
         groups_repository,
         services_repo,
+        x_simcore_products_name,
     )

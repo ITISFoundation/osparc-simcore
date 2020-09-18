@@ -39,10 +39,24 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     getLogoPath: function() {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      const textColor = colorManager.resolve("text");
-      const luminance = this.getColorLuminance(textColor);
-      return luminance > 0.3 ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
+      let logoPath = null;
+      const product = qx.core.Environment.get("product.name");
+      switch (product) {
+        case "s4l":
+          logoPath = "osparc/s4l_logo.png";
+          break;
+        case "tis":
+          logoPath = "osparc/ti-solutions.svg";
+          break;
+        default: {
+          const colorManager = qx.theme.manager.Color.getInstance();
+          const textColor = colorManager.resolve("text");
+          const luminance = this.getColorLuminance(textColor);
+          logoPath = (luminance > 0.3) ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
+          break;
+        }
+      }
+      return logoPath;
     },
 
     getLoaderUri: function(arg) {

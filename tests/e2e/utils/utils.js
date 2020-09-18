@@ -190,26 +190,19 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function __addZeros(input) {
-  return String(input).padStart(2, "0");
-}
-
 function createScreenshotsDir() {
   const fs = require('fs');
   const screenshotsDir = pathLib.join(__dirname, SCREENSHOTS_DIR);
   if (!fs.existsSync(screenshotsDir)) {
     fs.mkdirSync(screenshotsDir);
   }
+  console.log("Screenshots directory:", screenshotsDir);
 }
 
 async function takeScreenshot(page, captureName) {
-  const d = new Date();
-  const date = __addZeros(d.getMonth()+1) +"-"+ __addZeros(d.getDate());
-  const time = __addZeros(d.getHours()) +"-"+ __addZeros(d.getMinutes()) +"-"+ __addZeros(d.getSeconds());
-  const timeStamp = date +"_"+ time;
-  captureName = captureName.replace("undefined", "");
-  let filename = timeStamp+"_"+captureName+".jpg";
+  let filename = captureName.replace("undefined", "");
   filename = filename.replace(":", "-");
+  filename = filename+".jpg";
   const path = pathLib.join(__dirname, SCREENSHOTS_DIR, filename);
 
   await page.screenshot({

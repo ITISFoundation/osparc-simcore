@@ -1,5 +1,7 @@
 const utils = require("./utils")
 const responses = require('./responsesQueue');
+require('log-timestamp');
+
 
 async function register(page, user, pass) {
   await utils.waitAndClick(page, '[osparc-test-id="loginCreateAccountBtn"]');
@@ -35,11 +37,7 @@ async function logIn(page, user, pass) {
 async function logOut(page) {
   console.log("Logging out");
 
-
-  await page.waitForSelector('[osparc-test-id="userMenuMainBtn"]', {
-    visible: true,
-    timeout: 2000
-  });
+  await page.waitForSelector('[osparc-test-id="userMenuMainBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuMainBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuLogoutBtn"]');
 }
@@ -131,7 +129,8 @@ async function dashboardNewStudy(page) {
 
 async function toDashboard(page) {
   console.log("To Dashboard");
-  await utils.waitAndClick(page, '[osparc-test-id="dashboardBtn"]')
+  await utils.waitAndClick(page, '[osparc-test-id="dashboardBtn"]');
+  await page.waitFor(2000);
 }
 
 async function dashboardOpenFirstTemplate(page, templateName) {
@@ -172,6 +171,11 @@ async function __filterTemplatesByText(page, templateName) {
   await utils.clearInput(page, '[osparc-test-id="sideSearchFiltersTextFld"]')
   await page.type('[osparc-test-id="sideSearchFiltersTextFld"]', templateName)
   await page.keyboard.press('Enter')
+}
+
+async function clickLoggerTitle(page) {
+  console.log("Click LoggerTitle");
+  await utils.waitAndClick(page, '[osparc-test-id="loggerTitleLabel"]')
 }
 
 async function runStudy(page, waitFor = 0) {
@@ -335,6 +339,7 @@ module.exports = {
   dashboardEditFristStudyThumbnail,
   dashboardNewStudy,
   dashboardOpenFirstTemplate,
+  clickLoggerTitle,
   runStudy,
   dashboardDeleteFirstStudy,
   toDashboard,

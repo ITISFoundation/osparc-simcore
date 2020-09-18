@@ -1,4 +1,4 @@
-version: '3.4'
+version: "3.7"
 services:
   postgres:
     image: postgres:10
@@ -14,10 +14,14 @@ services:
     command:
       [
         "postgres",
-        "-c", "log_connections=true",
-        "-c", "log_disconnections=true",
-        "-c", "log_duration=true",
-        "-c", "log_line_prefix=[%p] [%a] [%c] [%x] "
+        "-c",
+        "log_connections=true",
+        "-c",
+        "log_disconnections=true",
+        "-c",
+        "log_duration=true",
+        "-c",
+        "log_line_prefix=[%p] [%a] [%c] [%x] ",
       ]
   adminer:
     image: adminer
