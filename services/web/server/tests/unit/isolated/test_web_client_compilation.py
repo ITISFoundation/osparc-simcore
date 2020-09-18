@@ -32,7 +32,6 @@ def client_compile_cfg(web_client_dir: Path) -> Dict:
 def source_boot_index_html(web_client_dir: Path) -> str:
     index_html = web_client_dir / "source" / "boot" / "index.html"
     assert index_html.exists()
-
     return index_html
 
 

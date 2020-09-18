@@ -12,7 +12,7 @@ from simcore_service_webserver.__version__ import api_vtag
 # FRONT_END ####################################
 frontend_folder = Path.home() / "devp/osparc-simcore/services/web/client"
 
-frontend_info = json.loads((frontend_folder / "compile copy.json").read_text())
+frontend_info = json.loads((frontend_folder / "compile.json").read_text())
 
 target = next(
     t for t in frontend_info["targets"] if t["type"] == frontend_info["defaultTarget"]
@@ -113,6 +113,7 @@ async def discover_product_middleware(request, handler):
 async def serve_default_app(request):
     # TODO: check url and defined what is the default??
     print("Request from", request.headers["Host"])
+    import pdb; pdb.set_trace()
 
     target_product = request.get(RQ_PRODUCT_NAME_KEY, default_frontend_app)
 

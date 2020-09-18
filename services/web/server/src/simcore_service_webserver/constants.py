@@ -15,6 +15,3 @@ RQ_PRODUCT_FRONTEND_KEY = f"{__name__}.product_frontend"
 
 # Headers keys
 X_PRODUCT_NAME_HEADER = "X-Simcore-Products-Name"
-X_PRODUCT_IDENTIFIER_HEADER = (
-    "X-Simcore-Products-Identifier"  # could be given to the front-end
-)
