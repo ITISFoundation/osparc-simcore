@@ -253,14 +253,14 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         manuals.push([this.tr("Z43 manual"), this.__serverStatics.manualExtraUrl]);
       }
 
-      let control = null;
+      let control = new qx.ui.core.Widget();
       if (manuals.length === 1) {
         const manual = manuals[0];
         control = new osparc.ui.form.LinkButton(manual[0], manual[1]).set({
           appearance: "link-button",
           font: "text-14"
         });
-      } else {
+      } else if (manuals.length > 1) {
         const menu = new qx.ui.menu.Menu().set({
           font: "text-14"
         });
