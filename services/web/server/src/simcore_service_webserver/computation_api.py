@@ -3,6 +3,7 @@
 """
 # pylint: disable=too-many-arguments
 
+from asyncio import CancelledError
 import datetime
 import logging
 from pprint import pformat
@@ -19,7 +20,7 @@ from sqlalchemy import and_
 
 from models_library.projects import RunningState
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
-from simcore_postgres_database.models.comp_pipeline import UNKNOWN
+from simcore_postgres_database.models.comp_pipeline import UNKNOWN, SUCCESS
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
 from simcore_sdk.config.rabbit import Config as RabbitConfig
@@ -441,6 +442,10 @@ def get_celery(_app: web.Application) -> Celery:
     return celery_app
 
 
+from servicelib.utils import fire_and_forget_task
+import asyncio
+
+
 async def start_pipeline_computation(
     app: web.Application, user_id: int, project_id: str
 ) -> Optional[str]:
@@ -453,6 +458,35 @@ async def start_pipeline_computation(
             "Task for user_id %s, project %s could not be started", user_id, project_id
         )
         return
+
+    async def _monitor_task_results(
+        app: web.Application, project_id: str, task_id: str
+    ) -> None:
+        try:
+            pipeline_state: RunningState = RunningState.unknown
+            while True:
+                new_state = await get_pipeline_state(app, project_id)
+                if new_state != pipeline_state:
+                    log.debug(
+                        "Project %s changed its state from %s to %s",
+                        project_id,
+                        pipeline_state,
+                        new_state,
+                    )
+                    pipeline_state = new_state
+                    # await projects_api.notify_project_state_update(
+                    #     app, project_data, ProjectState(locked={"value": False})
+                    # )
+                    if pipeline_state in [RunningState.success, RunningState.failure]:
+                        log.debug("Completed monitoring of project %s", project_id)
+                        break
+                await asyncio.sleep(5)
+
+        except CancelledError:
+            # the task got cancelled
+            pass
+
+    fire_and_forget_task(_monitor_task_results(app, project_id, task.task_id))
 
     log.debug(
         "Task (task=%s, user_id=%s, project_id=%s) submitted for execution.",
@@ -487,6 +521,10 @@ async def get_task_states(
                 # the task did not start yet - no sidecar is running it
                 task_states[row.node_id] = RunningState.not_started
                 continue
+            if row.state == SUCCESS:
+                task_states[row.node_id] = RunningState.success
+                continue
+            # the task might be running, better ask celery
             task_result = AsyncResult(row.job_id)
             running_state = _from_celery_state(task_result.state)
             task_states[row.node_id] = running_state
@@ -496,14 +534,13 @@ async def get_task_states(
 async def get_pipeline_state(app: web.Application, project_id: str) -> RunningState:
     task_states: Dict[str, RunningState] = await get_task_states(app, project_id)
     # compute pipeline state from task states
-    pipeline_state = RunningState.not_started
-    for _, state in task_states.items():
-        if state != RunningState.not_started:
-            pipeline_state = RunningState.started
-        if state == RunningState.failure:
-            return RunningState.failure
-
-    return pipeline_state
+    if all(x == RunningState.success for x in task_states.values()):
+        return RunningState.success
+    if any(x == RunningState.failure for x in task_states.values()):
+        return RunningState.failure
+    if any(x != RunningState.not_started for x in task_states.values()):
+        return RunningState.started
+    return RunningState.not_started
 
 
 async def delete_pipeline_db(app: web.Application, project_id: str) -> None:

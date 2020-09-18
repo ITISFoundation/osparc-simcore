@@ -15,6 +15,7 @@ class ProjectLocked(BaseModel):
 
 
 class RunningState(str, Enum):
+    unknown = "UNKNOWN"
     not_started = "NOT_STARTED"
     pending = "PENDING"
     started = "STARTED"
