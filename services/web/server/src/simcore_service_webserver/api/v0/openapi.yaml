@@ -6014,28 +6014,31 @@ paths:
                               type: object
                               description: object used for development purposes only
                         - type: object
-                          required:
-                            - locked
                           properties:
-                            locked:
+                            state:
                               type: object
-                              description: describes the project lock state
                               required:
-                                - value
+                                - locked
                               properties:
-                                value:
-                                  type: boolean
-                                  description: true if the project is locked
-                                owner:
+                                locked:
                                   type: object
-                                  properties:
-                                    first_name:
-                                      type: string
-                                    last_name:
-                                      type: string
+                                  description: describes the project lock state
                                   required:
-                                    - firstName
-                                    - lastName
+                                    - value
+                                  properties:
+                                    value:
+                                      type: boolean
+                                      description: true if the project is locked
+                                    owner:
+                                      type: object
+                                      properties:
+                                        first_name:
+                                          type: string
+                                        last_name:
+                                          type: string
+                                      required:
+                                        - firstName
+                                        - lastName
                   error:
                     nullable: true
                     default: null
@@ -6635,28 +6638,31 @@ paths:
                             type: object
                             description: object used for development purposes only
                       - type: object
-                        required:
-                          - locked
                         properties:
-                          locked:
+                          state:
                             type: object
-                            description: describes the project lock state
                             required:
-                              - value
+                              - locked
                             properties:
-                              value:
-                                type: boolean
-                                description: true if the project is locked
-                              owner:
+                              locked:
                                 type: object
-                                properties:
-                                  first_name:
-                                    type: string
-                                  last_name:
-                                    type: string
+                                description: describes the project lock state
                                 required:
-                                  - firstName
-                                  - lastName
+                                  - value
+                                properties:
+                                  value:
+                                    type: boolean
+                                    description: true if the project is locked
+                                  owner:
+                                    type: object
+                                    properties:
+                                      first_name:
+                                        type: string
+                                      last_name:
+                                        type: string
+                                    required:
+                                      - firstName
+                                      - lastName
                   error:
                     nullable: true
                     default: null
@@ -7002,28 +7008,31 @@ paths:
                             type: object
                             description: object used for development purposes only
                       - type: object
-                        required:
-                          - locked
                         properties:
-                          locked:
+                          state:
                             type: object
-                            description: describes the project lock state
                             required:
-                              - value
+                              - locked
                             properties:
-                              value:
-                                type: boolean
-                                description: true if the project is locked
-                              owner:
+                              locked:
                                 type: object
-                                properties:
-                                  first_name:
-                                    type: string
-                                  last_name:
-                                    type: string
+                                description: describes the project lock state
                                 required:
-                                  - firstName
-                                  - lastName
+                                  - value
+                                properties:
+                                  value:
+                                    type: boolean
+                                    description: true if the project is locked
+                                  owner:
+                                    type: object
+                                    properties:
+                                      first_name:
+                                        type: string
+                                      last_name:
+                                        type: string
+                                    required:
+                                      - firstName
+                                      - lastName
                   error:
                     nullable: true
                     default: null
@@ -7375,28 +7384,31 @@ paths:
                             type: object
                             description: object used for development purposes only
                       - type: object
-                        required:
-                          - locked
                         properties:
-                          locked:
+                          state:
                             type: object
-                            description: describes the project lock state
                             required:
-                              - value
+                              - locked
                             properties:
-                              value:
-                                type: boolean
-                                description: true if the project is locked
-                              owner:
+                              locked:
                                 type: object
-                                properties:
-                                  first_name:
-                                    type: string
-                                  last_name:
-                                    type: string
+                                description: describes the project lock state
                                 required:
-                                  - firstName
-                                  - lastName
+                                  - value
+                                properties:
+                                  value:
+                                    type: boolean
+                                    description: true if the project is locked
+                                  owner:
+                                    type: object
+                                    properties:
+                                      first_name:
+                                        type: string
+                                      last_name:
+                                        type: string
+                                    required:
+                                      - firstName
+                                      - lastName
                   error:
                     nullable: true
                     default: null
@@ -7991,28 +8003,31 @@ paths:
                             type: object
                             description: object used for development purposes only
                       - type: object
-                        required:
-                          - locked
                         properties:
-                          locked:
+                          state:
                             type: object
-                            description: describes the project lock state
                             required:
-                              - value
+                              - locked
                             properties:
-                              value:
-                                type: boolean
-                                description: true if the project is locked
-                              owner:
+                              locked:
                                 type: object
-                                properties:
-                                  first_name:
-                                    type: string
-                                  last_name:
-                                    type: string
+                                description: describes the project lock state
                                 required:
-                                  - firstName
-                                  - lastName
+                                  - value
+                                properties:
+                                  value:
+                                    type: boolean
+                                    description: true if the project is locked
+                                  owner:
+                                    type: object
+                                    properties:
+                                      first_name:
+                                        type: string
+                                      last_name:
+                                        type: string
+                                    required:
+                                      - firstName
+                                      - lastName
                   error:
                     nullable: true
                     default: null
@@ -8380,28 +8395,31 @@ paths:
                             type: object
                             description: object used for development purposes only
                       - type: object
-                        required:
-                          - locked
                         properties:
-                          locked:
+                          state:
                             type: object
-                            description: describes the project lock state
                             required:
-                              - value
+                              - locked
                             properties:
-                              value:
-                                type: boolean
-                                description: true if the project is locked
-                              owner:
+                              locked:
                                 type: object
-                                properties:
-                                  first_name:
-                                    type: string
-                                  last_name:
-                                    type: string
+                                description: describes the project lock state
                                 required:
-                                  - firstName
-                                  - lastName
+                                  - value
+                                properties:
+                                  value:
+                                    type: boolean
+                                    description: true if the project is locked
+                                  owner:
+                                    type: object
+                                    properties:
+                                      first_name:
+                                        type: string
+                                      last_name:
+                                        type: string
+                                    required:
+                                      - firstName
+                                      - lastName
                   error:
                     nullable: true
                     default: null
@@ -9581,28 +9599,31 @@ paths:
                             type: object
                             description: object used for development purposes only
                       - type: object
-                        required:
-                          - locked
                         properties:
-                          locked:
+                          state:
                             type: object
-                            description: describes the project lock state
                             required:
-                              - value
+                              - locked
                             properties:
-                              value:
-                                type: boolean
-                                description: true if the project is locked
-                              owner:
+                              locked:
                                 type: object
-                                properties:
-                                  first_name:
-                                    type: string
-                                  last_name:
-                                    type: string
+                                description: describes the project lock state
                                 required:
-                                  - firstName
-                                  - lastName
+                                  - value
+                                properties:
+                                  value:
+                                    type: boolean
+                                    description: true if the project is locked
+                                  owner:
+                                    type: object
+                                    properties:
+                                      first_name:
+                                        type: string
+                                      last_name:
+                                        type: string
+                                    required:
+                                      - firstName
+                                      - lastName
                   error:
                     nullable: true
                     default: null
@@ -9947,28 +9968,31 @@ paths:
                             type: object
                             description: object used for development purposes only
                       - type: object
-                        required:
-                          - locked
                         properties:
-                          locked:
+                          state:
                             type: object
-                            description: describes the project lock state
                             required:
-                              - value
+                              - locked
                             properties:
-                              value:
-                                type: boolean
-                                description: true if the project is locked
-                              owner:
+                              locked:
                                 type: object
-                                properties:
-                                  first_name:
-                                    type: string
-                                  last_name:
-                                    type: string
+                                description: describes the project lock state
                                 required:
-                                  - firstName
-                                  - lastName
+                                  - value
+                                properties:
+                                  value:
+                                    type: boolean
+                                    description: true if the project is locked
+                                  owner:
+                                    type: object
+                                    properties:
+                                      first_name:
+                                        type: string
+                                      last_name:
+                                        type: string
+                                    required:
+                                      - firstName
+                                      - lastName
                   error:
                     nullable: true
                     default: null

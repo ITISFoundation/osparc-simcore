@@ -6,7 +6,10 @@ components:
     ProjectOut:
       allOf:
         - $ref: "./project-v0.0.1-converted.yaml"
-        - $ref: "#/components/schemas/ProjectState"
+        - type: object
+          properties:
+            state:
+              $ref: "#/components/schemas/ProjectState"
 
     ProjectEnveloped:
       type: object
