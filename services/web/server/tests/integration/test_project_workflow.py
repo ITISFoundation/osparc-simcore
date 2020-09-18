@@ -271,7 +271,7 @@ async def test_workflow(
     projects = await _request_list(client)
     assert len(projects) == 1
 
-    assert not ProjectState(**projects[0].pop("state")).locked
+    assert not ProjectState(**projects[0].pop("state")).locked.value
     for key in projects[0].keys():
         if key not in (
             "uuid",
