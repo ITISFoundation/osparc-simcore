@@ -59,3 +59,10 @@ def services_dir(osparc_simcore_root_dir: Path) -> Path:
 def temp_folder(request, tmpdir_factory) -> Path:
     tmp = Path(tmpdir_factory.mktemp(f"tmp_module_{request.module.__name__}"))
     return tmp
+
+
+@pytest.fixture(scope="session")
+def web_client_dir(services_dir: Path) -> Path:
+    wbc_dir = services_dir / "web/client"
+    assert wbc_dir.exists()
+    return wbc_dir
