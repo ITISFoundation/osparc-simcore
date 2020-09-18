@@ -64,6 +64,10 @@ Note: your environment was attached but will not be displayed
         "screenResolution": {
           "width": window.screen.width,
           "height": window.screen.height
+        },
+        "windowResolution": {
+          "width": window.innerWidth,
+          "height": window.innerHeight
         }
       };
     }
