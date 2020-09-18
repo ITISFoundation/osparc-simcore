@@ -3,9 +3,10 @@
 """
 # pylint: disable=too-many-arguments
 
-from asyncio import CancelledError
+import asyncio
 import datetime
 import logging
+from asyncio import CancelledError
 from pprint import pformat
 from typing import Dict, Optional
 
@@ -20,7 +21,8 @@ from sqlalchemy import and_
 
 from models_library.projects import RunningState
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
-from simcore_postgres_database.models.comp_pipeline import UNKNOWN, SUCCESS
+from servicelib.utils import fire_and_forget_task
+from simcore_postgres_database.models.comp_pipeline import RUNNING, SUCCESS, UNKNOWN
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
 from simcore_sdk.config.rabbit import Config as RabbitConfig
@@ -434,16 +436,8 @@ async def update_pipeline_db(
 def get_celery(_app: web.Application) -> Celery:
     config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
     rabbit = RabbitConfig(**config)
-    celery_app = Celery(
-        rabbit.name,
-        broker=rabbit.broker_url,
-        backend=rabbit.backend,
-    )
+    celery_app = Celery(rabbit.name, broker=rabbit.broker_url, backend=rabbit.backend,)
     return celery_app
-
-
-from servicelib.utils import fire_and_forget_task
-import asyncio
 
 
 async def start_pipeline_computation(
@@ -499,7 +493,7 @@ async def start_pipeline_computation(
 
 def _from_celery_state(celery_state) -> RunningState:
     CELERY_TO_RUNNING_STATE = {
-        "PENDING": RunningState.pending,
+        "PENDING": RunningState.unknown,  # TODO: Celery pending state means unknown
         "STARTED": RunningState.started,
         "RETRY": RunningState.retrying,
         "FAILURE": RunningState.failure,
@@ -524,7 +518,10 @@ async def get_task_states(
             if row.state == SUCCESS:
                 task_states[row.node_id] = RunningState.success
                 continue
-            # the task might be running, better ask celery
+            if row.state == RUNNING:
+                task_states[row.nod_id] = RunningState.started
+                continue
+            # the task might be running, better ask celery (NOTE this remains only 24h and disappears and state will be pending)
             task_result = AsyncResult(row.job_id)
             running_state = _from_celery_state(task_result.state)
             task_states[row.node_id] = running_state
