@@ -245,12 +245,12 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     __createManualMenuBtn: function() {
       const manuals = [];
-      if (this.__serverStatics && this.__serverStatics.manualMainURL) {
-        manuals.push([this.tr("User manual"), this.__serverStatics.manualMainURL]);
+      if (this.__serverStatics && this.__serverStatics.manualMainUrl) {
+        manuals.push([this.tr("User manual"), this.__serverStatics.manualMainUrl]);
       }
 
-      if (osparc.utils.Utils.isInZ43() && this.__serverStatics && this.__serverStatics.manualExtraURL) {
-        manuals.push([this.tr("Z43 manual"), this.__serverStatics.manualExtraURL]);
+      if (osparc.utils.Utils.isInZ43() && this.__serverStatics && this.__serverStatics.manualExtraUrl) {
+        manuals.push([this.tr("Z43 manual"), this.__serverStatics.manualExtraUrl]);
       }
 
       let control = null;
