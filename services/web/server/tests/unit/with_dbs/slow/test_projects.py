@@ -111,9 +111,29 @@ async def logged_user(client, user_role: UserRole):
         {"role": user_role.name},
         check_if_succeeds=user_role != UserRole.ANONYMOUS,
     ) as user:
-        print("-----> logged in user", user_role)
+        print("-----> logged in user", user["name"], user_role)
         yield user
-        print("<----- logged out user", user_role)
+        print("<----- logged out user", user["name"], user_role)
+
+
+@pytest.fixture
+def mocks_on_projects_api(mocker, logged_user):
+    """
+    All projects in this module are UNLOCKED
+
+    Emulates that it found logged_user as the SOLE user of this project
+    and returns the  ProjectState indicating his as owner
+    """
+    nameparts = logged_user["name"].split(".") + [""]
+    state = ProjectState(
+        locked=ProjectLocked(
+            value=False, owner=Owner(first_name=nameparts[0], last_name=nameparts[1])
+        )
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
+        return_value=future_with_result(state),
+    )
 
 
 @pytest.fixture
@@ -539,6 +559,7 @@ async def test_new_template_from_project(
     storage_subsystem_mock,
     catalog_subsystem_mock,
     project_db_cleaner,
+    mocks_on_projects_api,
 ):
     # POST /v0/projects?as_template={project_uuid}
     url = (

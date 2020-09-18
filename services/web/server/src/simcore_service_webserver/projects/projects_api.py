@@ -365,9 +365,10 @@ async def get_project_state_for_user(user_id, project_uuid, app) -> ProjectState
         the state is locked for user1 because user2 is working on it and
         there is a locked-while-using policy in place
 
-    WARNING: assumes project_uuid exists!! If not, get_project_for_user for that
+    WARNING: assumes project_uuid exists!! If not, call first get_project_for_user
+    NOTE: This adds a dependency to the socket registry sub-module. Many tests
+        might require a mock for this function to work properly
     """
-    # NOTE: This adds a dependency to the socket registry sub-module!!
     with managed_resource(user_id, None, app) as rt:
         # checks who is using it
         users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
