@@ -24,12 +24,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let jsonTreeWidget = new osparc.component.widget.JsonTreeWidget(data);
+ *   let jsonTreeWidget = new osparc.ui.basic.JsonTreeWidget(data);
  *   this.getRoot().add(jsonTreeWidget);
  * </pre>
  */
 
-qx.Class.define("osparc.component.widget.JsonTreeWidget", {
+qx.Class.define("osparc.ui.basic.JsonTreeWidget", {
   extend: qx.ui.basic.Label,
 
   /**

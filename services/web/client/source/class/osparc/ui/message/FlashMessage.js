@@ -86,7 +86,7 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
           });
           break;
         case "closebutton":
-          control = new osparc.component.form.IconButton("@MaterialIcons/close/16", () => this.fireEvent("closeMessage")).set({
+          control = new osparc.ui.basic.IconButton("@MaterialIcons/close/16", () => this.fireEvent("closeMessage")).set({
             alignY: "middle"
           });
           this._add(control);

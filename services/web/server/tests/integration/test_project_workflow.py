@@ -319,7 +319,10 @@ async def test_workflow(
     # wait for delete tasks to finish
     tasks = Task.all_tasks()
     for task in tasks:
-        if "delete_project" in task._coro.__name__:
+        # TODO: 'async_generator_asend' has no __name__ attr. Python 3.8 gets coros names
+        # Expects "delete_project" coros to have __name__ attrs
+        # pylint: disable=protected-access
+        if "delete_project" in getattr(task._coro, "__name__", ""):
             await wait_for(task, timeout=60.0)
 
     # list empty

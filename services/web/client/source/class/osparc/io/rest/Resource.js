@@ -47,6 +47,9 @@ qx.Class.define("osparc.io.rest.Resource", {
       });
 
       request.setRequestHeader("Content-Type", "application/json");
+
+      const productName = qx.core.Environment.get("product.name");
+      request.setRequestHeader("X-Simcore-Products-Name", productName);
     });
   },
 

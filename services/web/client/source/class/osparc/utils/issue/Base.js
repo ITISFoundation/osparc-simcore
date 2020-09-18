@@ -15,30 +15,19 @@
 
 ************************************************************************ */
 
-/**
- * Here is a little example of how to use the widget.
- *
- * <pre class='javascript'>
- *   const url = osparc.utils.NewFogbugzIssue.getNewIssueUrl();
- *   window.open(url);
- * </pre>
- */
-
-qx.Class.define("osparc.utils.NewFogbugzIssue", {
+qx.Class.define("osparc.utils.issue.Base", {
   type: "static",
 
   statics: {
-    getNewIssueUrl: function() {
-      const temp = osparc.utils.NewFogbugzIssue.getTemplate();
+    getBody: function() {
+      const temp = osparc.utils.issue.Base.getTemplate();
       let env = "```json\n";
-      env += JSON.stringify(osparc.utils.LibVersions.getEnvLibs(), null, 2);
+      let libs = osparc.utils.LibVersions.getEnvLibs();
+      libs.push(osparc.utils.issue.Base.getScreenResolution());
+      env += JSON.stringify(libs, null, 2);
       env += "\n```";
       const body = encodeURIComponent(temp+env);
-      let url = "https://z43.fogbugz.com/f/cases/new";
-      url += "?command=new";
-      url += "&ixProject=45";
-      url += "&sEvent=" + body;
-      return url;
+      return body;
     },
 
     getTemplate: function() {
@@ -59,6 +48,19 @@ Note: your environment was attached but will not be displayed
 <!--
 ## Your environment
 `;
+    },
+
+    getScreenResolution: function() {
+      return {
+        "screenResolution": {
+          "width": window.screen.width,
+          "height": window.screen.height
+        },
+        "windowResolution": {
+          "width": window.innerWidth,
+          "height": window.innerHeight
+        }
+      };
     }
   }
 });

@@ -53,7 +53,7 @@ qx.Class.define("osparc.component.filter.AutocompleteFilter", {
           this._add(control);
           break;
         case "clearbutton":
-          control = new osparc.component.form.IconButton("@MaterialIcons/close/12", () => this.reset());
+          control = new osparc.ui.basic.IconButton("@MaterialIcons/close/12", () => this.reset());
           this._add(control, {
             right: 0,
             bottom: 12
