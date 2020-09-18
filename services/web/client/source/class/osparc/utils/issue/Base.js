@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2019 IT'IS Foundation, https://itis.swiss
+     2020 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -19,15 +19,26 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   const url = osparc.utils.NewGHIssue.getNewIssueUrl();
+ *   const url = osparc.utils.issue.Github.getNewIssueUrl();
  *   window.open(url);
  * </pre>
  */
 
-qx.Class.define("osparc.utils.NewIssueBase", {
+qx.Class.define("osparc.utils.issue.Base", {
   type: "static",
 
   statics: {
+    getBody: function() {
+      const temp = osparc.utils.issue.Base.getTemplate();
+      let env = "```json\n";
+      let libs = osparc.utils.LibVersions.getEnvLibs();
+      libs.push(osparc.utils.issue.Base.getScreenResolution());
+      env += JSON.stringify(libs, null, 2);
+      env += "\n```";
+      const body = encodeURIComponent(temp+env);
+      return body;
+    },
+
     getTemplate: function() {
       return `
 ## Long story short

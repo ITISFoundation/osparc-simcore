@@ -19,22 +19,18 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   const url = osparc.utils.NewFogbugzIssue.getNewIssueUrl();
+ *   const url = osparc.utils.issue.Fogbugz.getNewIssueUrl();
  *   window.open(url);
  * </pre>
  */
 
-qx.Class.define("osparc.utils.NewFogbugzIssue", {
+qx.Class.define("osparc.utils.issue.Fogbugz", {
   type: "static",
 
   statics: {
     getNewIssueUrl: function() {
-      const temp = osparc.utils.NewIssueBase.getTemplate();
-      let env = "```json\n";
-      env += JSON.stringify(osparc.utils.LibVersions.getEnvLibs(), null, 2);
-      env += JSON.stringify(osparc.utils.NewIssueBase.getScreenResolution(), null, 2);
-      env += "\n```";
-      const body = encodeURIComponent(temp+env);
+      const body = osparc.utils.issue.Base.getBody();
+
       let url = "https://z43.fogbugz.com/f/cases/new";
       url += "?command=new";
       url += "&ixProject=45";
