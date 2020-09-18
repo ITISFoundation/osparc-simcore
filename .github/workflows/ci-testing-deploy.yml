@@ -436,6 +436,55 @@ jobs:
           name: unit_servicelib_coverage
           path: codeclimate.unit_servicelib_coverage.json
 
+  unit-test-models-library:
+    name: Unit-testing models-library
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo ::set-env name=DOCKER_BUILDX::1
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-models-library-${{ hashFiles('packages/models-library/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-models-library-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install
+        run: ./ci/github/unit-testing/models-library.bash install
+      - name: test
+        run: ./ci/github/unit-testing/models-library.bash test
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_modelslib_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit_modelslib_coverage
+          path: codeclimate.unit_modelslib_coverage.json
+
   unit-test-simcore-sdk:
     name: Unit-testing simcore-sdk
     runs-on: ${{ matrix.os }}
@@ -1135,6 +1184,7 @@ jobs:
         unit-test-director,
         unit-test-sidecar,
         unit-test-service-library,
+        unit-test-models-library,
         unit-test-simcore-sdk,
         unit-test-storage,
         unit-test-webserver-isolated,
@@ -1164,6 +1214,9 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: unit_servicelib_coverage
+      - uses: actions/download-artifact@v1
+        with:
+          name: unit_modelslib_coverage
       - uses: actions/download-artifact@v1
         with:
           name: unit_simcoresdk_coverage
@@ -1200,6 +1253,7 @@ jobs:
             unit_director_coverage/*.json \
             unit_sidecar_coverage/*.json \
             unit_servicelib_coverage/*.json \
+            unit_modelslib_coverage/*.json \
             unit_simcoresdk_coverage/*.json \
             unit_storage_coverage/*.json \
             unit_webserver_isolated_coverage/*.json \
@@ -1215,7 +1269,7 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter
-          ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json --parts 14
+          ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json --parts 15
       - name: upload coverages
         run: |
           ./cc-test-reporter upload-coverage
@@ -1232,6 +1286,7 @@ jobs:
         unit-test-frontend,
         unit-test-python-linting,
         unit-test-service-library,
+        unit-test-models-library,
         unit-test-simcore-sdk,
         unit-test-storage,
         unit-test-webserver-isolated,
