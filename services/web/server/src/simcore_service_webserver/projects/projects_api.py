@@ -15,6 +15,7 @@ from uuid import uuid4
 
 from aiohttp import web
 
+from models_library.projects import ProjectState
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
@@ -31,7 +32,6 @@ from ..storage_api import (
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import NodeNotFoundError
-from .projects_models import ProjectState
 from .projects_utils import clone_project_document
 
 log = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ async def get_project_for_user(
     *,
     include_templates: bool = False,
 ) -> Dict:
-    """ Returns a project accessible to user
+    """Returns a project accessible to user
 
     :raises web.HTTPNotFound: if no match found
     :return: schema-compliant project data
@@ -276,7 +276,7 @@ async def update_project_node_outputs(
     data: Optional[Dict],
 ) -> Dict:
     """
-        Updates outputs of a given node in a project with 'data'
+    Updates outputs of a given node in a project with 'data'
     """
     log.debug(
         "updating node %s outputs in project %s for user %s with %s",
@@ -315,7 +315,8 @@ async def update_project_node_outputs(
 
 
 async def get_workbench_node_ids_from_project_uuid(
-    app: web.Application, project_uuid: str,
+    app: web.Application,
+    project_uuid: str,
 ) -> Set[str]:
     """Returns a set with all the node_ids from a project's workbench"""
     db = app[APP_PROJECT_DBAPI]
@@ -323,7 +324,8 @@ async def get_workbench_node_ids_from_project_uuid(
 
 
 async def is_node_id_present_in_any_project_workbench(
-    app: web.Application, node_id: str,
+    app: web.Application,
+    node_id: str,
 ) -> bool:
     """If the node_id is presnet in one of the projects' workbenche returns True"""
     db = app[APP_PROJECT_DBAPI]

@@ -18,6 +18,7 @@ from celery import Celery
 from celery.result import AsyncResult
 from sqlalchemy import and_
 
+from models_library.projects import RunningState
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.comp_pipeline import UNKNOWN
 from simcore_postgres_database.models.comp_tasks import NodeClass
@@ -433,7 +434,11 @@ async def update_pipeline_db(
 def get_celery(_app: web.Application) -> Celery:
     config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
     rabbit = RabbitConfig(**config)
-    celery_app = Celery(rabbit.name, broker=rabbit.broker_url, backend=rabbit.backend,)
+    celery_app = Celery(
+        rabbit.name,
+        broker=rabbit.broker_url,
+        backend=rabbit.backend,
+    )
     return celery_app
 
 
@@ -459,27 +464,15 @@ async def start_pipeline_computation(
     return task.task_id
 
 
-from pydantic import BaseModel
-
-
-class RunningState(str, Enum):
-    not_started = "NOT_STARTED"
-    pending = "PENDING"
-    started = "STARTED"
-    retrying = "RETRY"
-    success = "SUCCESS"
-    failure = "FAILURE"
-
-    @classmethod
-    def from_celery_state(cls, celery_state):
-        CELERY_TO_RUNNING_STATE = {
-            "PENDING": RunningState.pending,
-            "STARTED": RunningState.started,
-            "RETRY": RunningState.retrying,
-            "FAILURE": RunningState.failure,
-            "SUCCESS": RunningState.success,
-        }
-        return cls(CELERY_TO_RUNNING_STATE[celery_state])
+def _from_celery_state(celery_state) -> RunningState:
+    CELERY_TO_RUNNING_STATE = {
+        "PENDING": RunningState.pending,
+        "STARTED": RunningState.started,
+        "RETRY": RunningState.retrying,
+        "FAILURE": RunningState.failure,
+        "SUCCESS": RunningState.success,
+    }
+    return RunningState(CELERY_TO_RUNNING_STATE[celery_state])
 
 
 async def get_task_states(

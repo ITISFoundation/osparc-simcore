@@ -18,6 +18,7 @@ from mock import call
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
 from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
+from models_library.projects import Owner, ProjectLocked, ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
 from pytest_simcore.helpers.utils_mock import future_with_result
@@ -31,11 +32,6 @@ from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.projects.projects_handlers import (
     OVERRIDABLE_DOCUMENT_KEYS,
-)
-from simcore_service_webserver.projects.projects_models import (
-    Owner,
-    ProjectLocked,
-    ProjectState,
 )
 from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
