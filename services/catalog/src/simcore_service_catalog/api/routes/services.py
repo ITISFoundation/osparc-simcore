@@ -7,17 +7,18 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import ValidationError, constr
 from pydantic.types import PositiveInt
 
-from ...db.repositories.groups import GroupsRepository
-from ...db.repositories.services import ServicesRepository
-from ...models.domain.service import (
+from models_library.services import (
     KEY_RE,
-    ServiceType,
     VERSION_RE,
     ServiceAccessRightsAtDB,
     ServiceMetaDataAtDB,
     ServiceOut,
+    ServiceType,
     ServiceUpdate,
 )
+
+from ...db.repositories.groups import GroupsRepository
+from ...db.repositories.services import ServicesRepository
 from ...services.frontend_services import get_services as get_frontend_services
 from ..dependencies.database import get_repository
 from ..dependencies.director import DirectorApi, get_director_api

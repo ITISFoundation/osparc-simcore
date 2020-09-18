@@ -11,7 +11,7 @@ from typing import Callable, Dict
 
 import pytest
 
-from simcore_service_catalog.models.domain.service import ServiceDockerData
+from models_library.services import ServiceDockerData
 
 
 @pytest.fixture(scope="session")

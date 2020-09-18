@@ -21,23 +21,22 @@ from fastapi import FastAPI
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 
-
-from ..api.dependencies.director import get_director_api
-from ..db.repositories.groups import GroupsRepository
-from ..db.repositories.projects import ProjectsRepository
-from ..db.repositories.services import ServicesRepository
-from ..models.domain.service import (
+from models_library.services import (
     ServiceAccessRightsAtDB,
     ServiceDockerData,
     ServiceMetaDataAtDB,
 )
 
+from ..api.dependencies.director import get_director_api
+from ..db.repositories.groups import GroupsRepository
+from ..db.repositories.projects import ProjectsRepository
+from ..db.repositories.services import ServicesRepository
+from ..services.frontend_services import get_services as get_frontend_services
+
 logger = logging.getLogger(__name__)
 
 ServiceKey = str
 ServiceVersion = str
-
-from ..services.frontend_services import get_services as get_frontend_services
 
 
 async def _list_registry_services(

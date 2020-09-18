@@ -8,7 +8,8 @@ from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql import and_, or_
 
-from ...models.domain.service import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
+from models_library.services import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
+
 from ..tables import services_access_rights, services_meta_data
 from ._base import BaseRepository
 
@@ -131,7 +132,10 @@ class ServicesRepository(BaseRepository):
         return updated_service
 
     async def get_service_access_rights(
-        self, key: str, version: str, product_name: str,
+        self,
+        key: str,
+        version: str,
+        product_name: str,
     ) -> List[ServiceAccessRightsAtDB]:
         services_in_db = []
         query = sa.select([services_access_rights]).where(
