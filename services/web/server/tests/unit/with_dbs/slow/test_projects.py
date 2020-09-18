@@ -1016,11 +1016,13 @@ async def test_get_active_project(
         project_id=user_project["uuid"]
     )
     resp = await client.post(open_project_url, json=client_id1)
-    data, error = await assert_status(resp, expected)
+    await assert_status(resp, expected)
+
     resp = await client.get(get_active_projects_url)
     data, error = await assert_status(resp, expected)
     if resp.status == web.HTTPOk.status_code:
         assert not error
+        assert ProjectState(**data.pop("state")).locked.value
         assert data == user_project
 
     # login with socket using client session id2
@@ -1570,6 +1572,9 @@ async def test_open_shared_project_at_same_time(
             if error:
                 num_assertions += 1
             elif data:
+                project_status = ProjectState(**data.pop("state"))
                 assert data == shared_project
+                assert project_status.locked.value
+                assert project_status.locked.owner.first_name in [c["user"]["name"] for c in clients]
 
         assert num_assertions == NUMBER_OF_ADDITIONAL_CLIENTS

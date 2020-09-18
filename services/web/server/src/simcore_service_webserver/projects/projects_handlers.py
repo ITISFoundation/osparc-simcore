@@ -474,7 +474,7 @@ async def state_project(request: web.Request) -> web.Response:
         include_templates=True,
         include_state=True,
     )
-    project_state = ProjectState(**validated_project)
+    project_state = ProjectState(**validated_project["state"])
     return web.json_response({"data": project_state.dict()})
 
 
