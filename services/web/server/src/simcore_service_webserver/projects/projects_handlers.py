@@ -177,7 +177,6 @@ async def list_projects(request: web.Request):
         )
         project["state"] = project_state.dict()
 
-    assert all("locked" in p for p in validated_projects)  # nosec
     return {"data": validated_projects}
 
 
