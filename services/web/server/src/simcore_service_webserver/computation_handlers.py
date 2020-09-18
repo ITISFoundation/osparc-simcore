@@ -33,22 +33,6 @@ async def _process_request(request):
 
 
 @login_required
-async def update_pipeline(request: web.Request) -> web.Response:
-    await check_permission(request, "services.pipeline.*")
-    await check_permission(request, "project.read")
-
-    user_id, project_id = await _process_request(request)
-
-    try:
-        project = await get_project_for_user(request.app, project_id, user_id)
-        await update_pipeline_db(request.app, project_id, project["workbench"])
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"Project {project_id} not found") from exc
-
-    raise web.HTTPNoContent()
-
-
-@login_required
 async def start_pipeline(request: web.Request) -> web.Response:
     """Starts pipeline described in the workbench section of a valid project
     already at the server side
