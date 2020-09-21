@@ -6,8 +6,8 @@ set -o pipefail  # don't hide errors within pipes
 IFS=$'\n\t'
 
 # when changing the DOCKER_COMPOSE_VERSION please compute the sha256sum on an ubuntu box (macOS has different checksum)
-DOCKER_COMPOSE_VERSION="1.26.2"
-DOCKER_COMPOSE_SHA256SUM="13e50875393decdb047993c3c0192b0a3825613e6dfc0fa271efed4f5dbdd6eb"
+DOCKER_COMPOSE_VERSION="1.27.3"
+DOCKER_COMPOSE_SHA256SUM="92055c48e1514c0377b76ed3df87f505c50099145d86835b06fa5109811b6a83"
 DOCKER_COMPOSE_BIN=/usr/local/bin/docker-compose
 curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o $DOCKER_COMPOSE_BIN
 chmod +x $DOCKER_COMPOSE_BIN
