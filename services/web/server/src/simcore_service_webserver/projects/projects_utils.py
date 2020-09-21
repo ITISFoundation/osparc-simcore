@@ -2,7 +2,7 @@ import logging
 import re
 import uuid as uuidlib
 from copy import deepcopy
-from typing import AnyStr, Dict, Match, Optional, Tuple
+from typing import AnyStr, Dict, List, Match, Optional, Set, Tuple
 
 from servicelib.decorators import safe_return
 
@@ -63,9 +63,9 @@ def clone_project_document(
 def substitute_parameterized_inputs(
     parameterized_project: Dict, parameters: Dict
 ) -> Dict:
-    """ Substitutes parameterized r/w inputs
+    """Substitutes parameterized r/w inputs
 
-        NOTE: project is is changed
+    NOTE: project is is changed
     """
     project = deepcopy(parameterized_project)
 
@@ -115,10 +115,10 @@ def substitute_parameterized_inputs(
 
 
 def is_graph_equal(lhs_workbench: Dict, rhs_workbench: Dict) -> bool:
-    """ Checks whether both workbench contain the same graph
+    """Checks whether both workbench contain the same graph
 
-        Two graphs are the same when the same topology (i.e. nodes and edges)
-        and the ports at each node have same values/connections
+    Two graphs are the same when the same topology (i.e. nodes and edges)
+    and the ports at each node have same values/connections
     """
     try:
         if not set(rhs_workbench.keys()) == set(lhs_workbench.keys()):
@@ -145,3 +145,22 @@ def is_graph_equal(lhs_workbench: Dict, rhs_workbench: Dict) -> bool:
     except (ValueError, TypeError, AttributeError):
         return False
     return True
+
+
+async def project_uses_available_services(
+    project: Dict, available_services: List[Dict]
+) -> bool:
+    if not project["workbench"]:
+        # empty project
+        return True
+    # get project services
+    needed_services: Set[Tuple[str, str]] = {
+        (s["key"], s["version"]) for _, s in project["workbench"].items()
+    }
+
+    # get available services
+    available_services: Set[Tuple[str, str]] = {
+        (s["key"], s["version"]) for s in available_services
+    }
+
+    return needed_services.issubset(available_services)
