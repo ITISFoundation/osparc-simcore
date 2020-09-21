@@ -8,9 +8,6 @@ services:
       - LOGLEVEL=${LOG_LEVEL:-INFO}
     env_file:
       - ../.env
-    depends_on:
-      - postgres
-      - webserver
     deploy:
       labels:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
@@ -39,9 +36,6 @@ services:
       - POSTGRES_PORT=${POSTGRES_PORT}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
       - BACKGROUND_TASK_REST_TIME=${CATALOG_BACKGROUND_TASK_REST_TIME:-60}
-    depends_on:
-      - postgres
-      - director
     networks:
       - default
 
@@ -105,13 +99,6 @@ services:
       - DIAGNOSTICS_MAX_AVG_LATENCY=10
     env_file:
       - ../.env
-    depends_on:
-      - storage
-      - catalog
-      - director
-      - postgres
-      - rabbit
-      - redis
     deploy:
       placement:
         constraints:
@@ -175,10 +162,6 @@ services:
       - START_AS_MODE_CPU=${SIDECAR_FORCE_CPU_NODE:-0}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
-    depends_on:
-      - rabbit
-      - postgres
-      - redis
     networks:
       - computational_services_subnet
 
@@ -203,8 +186,6 @@ services:
       - BF_API_KEY=${BF_API_KEY}
       - TRACING_ENABLED=${TRACING_ENABLED:-True}
       - TRACING_ZIPKIN_ENDPOINT=${TRACING_ZIPKIN_ENDPOINT:-http://jaeger:9411}
-    depends_on:
-      - postgres
     deploy:
       placement:
         constraints:
@@ -234,8 +215,6 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
-    depends_on:
-      - postgres
     networks:
       - default
 
@@ -308,11 +287,9 @@ services:
       - "--tracing.jaeger=true"
       - "--tracing.jaeger.samplingServerURL=http://jaeger:5778/sampling"
       - "--tracing.jaeger.localAgentHostPort=jaeger:6831"
-
     volumes:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock
-
     deploy:
       placement:
         constraints:
