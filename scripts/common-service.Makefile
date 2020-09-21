@@ -33,20 +33,34 @@ export APP_VERSION
 #
 
 
-## FIXME: pip-sync --quiet requirements/$(subst install-,,$@).txt
-
 .PHONY: install-dev install-prod install-ci
+
 install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
 	pip-sync requirements/$(subst install-,,$@).txt
 
 
 
+.PHONY: test-dev-unit test-ci-unit test-dev-integration test-ci-integration test-dev
+
+test-dev-unit test-ci-unit: _check_venv_active
+	# targets tests/unit folder
+	@make --no-print-directory _run-$(subst -unit,,$@) target=$(CURDIR)/tests/unit
+
+test-dev-integration test-ci-integration:
+	# targets tests/integration folder using local/$(image-name):production images
+	@export DOCKER_REGISTRY=local; \
+	export DOCKER_IMAGE_TAG=production; \
+	make --no-print-directory _run-$(subst -integration,,$@) target=$(CURDIR)/tests/integration
+
+
+test-dev: test-dev-unit test-dev-integration ## runs unit and integration tests for development (e.g. w/ pdb)
+
+
 .PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
 build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## builds docker image in many flavours
 	# building docker image for ${APP_NAME} ...
 	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
-
 
 .PHONY: shell
 shell: ## runs shell in production container
@@ -74,3 +88,21 @@ info: ## displays service info
 #
 # SUBTASKS
 #
+
+.PHONY: _run-test-dev _run-test-ci
+
+TEST_TARGET := $(if $(target),$(target),$(CURDIR)/tests/unit)
+
+_run-test-dev: _check_venv_active
+	# runs tests for development (e.g w/ pdb)
+	pytest -vv --exitfirst --failed-first --durations=10 --pdb $(TEST_TARGET)
+
+
+_run-test-ci: _check_venv_active
+	# runs tests for CI (e.g. w/o pdb but w/ converage)
+	pytest --cov=$(APP_PACKAGE_NAME) --durations=10 --cov-append --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc -v -m "not travis" $(TEST_TARGET)
+
+
+.PHONY: _assert_target_defined
+_assert_target_defined:
+	$(if $(target),,$(error unset argument 'target' is required))
