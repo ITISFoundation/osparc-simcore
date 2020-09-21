@@ -2,14 +2,8 @@
 # Targets for DEVELOPMENT of Components Catalog Service
 #
 include ../../scripts/common.Makefile
+include ../../scripts/common-service.Makefile
 
-
-APP_NAME     := sidecar
-APP_CLI_NAME := simcore-service-sidecar
-export APP_VERSION = $(shell cat VERSION)
-
-REPO_BASE_DIR  = $(abspath $(CURDIR)/../../)
-VENV_DIR      ?= $(abspath $(REPO_BASE_DIR)/.venv)
 
 
 .PHONY: requirements
@@ -37,9 +31,3 @@ tests-integration: ## runs integration tests against local+production images
 	@export DOCKER_REGISTRY=local; \
 	export DOCKER_IMAGE_TAG=production; \
 	pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/integration
-
-
-.PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
-build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## docker image build in many flavours
-	# building ${APP_NAME} ...
-	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}

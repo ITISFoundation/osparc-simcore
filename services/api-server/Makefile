@@ -2,15 +2,8 @@
 # Targets for DEVELOPMENT of Public API Server
 #
 include ../../scripts/common.Makefile
+include ../../scripts/common-service.Makefile
 
-# Custom variables
-APP_NAME         := $(notdir $(CURDIR))
-APP_CLI_NAME     := simcore-service-$(APP_NAME)
-APP_PACKAGE_NAME := $(subst -,_,$(APP_CLI_NAME))
-APP_VERSION      := $(shell cat VERSION)
-SRC_DIR          := $(abspath $(CURDIR)/src/$(APP_PACKAGE_NAME))
-
-export APP_VERSION
 
 .PHONY: reqs
 reqs: ## compiles pip requirements (.in -> .txt)
@@ -77,12 +70,6 @@ down: docker-compose.yml ## stops pg fixture
 
 
 # BUILD ########
-
-
-.PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
-build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## builds docker image (using main services/docker-compose-build.yml)
-	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
-
 
 .PHONY: openapi-specs openapi.json
 openapi-specs: openapi.json

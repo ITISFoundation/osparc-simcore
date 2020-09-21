@@ -2,8 +2,8 @@
 # Targets for DEVELOPMENT for Director service
 #
 include ../../scripts/common.Makefile
+include ../../scripts/common-service.Makefile
 
-APP_NAME := $(notdir $(CURDIR))
 
 .PHONY: openapi-specs
 openapi-specs: ## updates and validates openapi specifications
@@ -20,8 +20,3 @@ install-dev install-prod install-ci: openapi-specs _check_venv_active ## install
 tests: ## runs unit tests
 	# running unit tests
 	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests
-
-
-.PHONY: build
-build: openapi-specs ## builds docker image (using main services/docker-compose-build.yml)
-	@make --no-print-directory build-super

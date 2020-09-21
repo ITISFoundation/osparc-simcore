@@ -2,10 +2,10 @@
 # Targets for DEVELOPMENT for Webserver service
 #
 include ../../../scripts/common.Makefile
+include ../../../scripts/common-service.Makefile
 
+# overrides since it does not has same directory name
 APP_NAME     := webserver
-APP_CLI_NAME := simcore-service-catalog
-export APP_VERSION = $(shell cat VERSION)
 
 
 .PHONY: requirements
@@ -47,14 +47,3 @@ run-devel: ## runs app with pg service
 	# Running $(APP_CLI_NAME)
 	## $(APP_CLI_NAME) --print-config > config.yaml | sed enable: true enable: false
 	$(APP_CLI_NAME)  -c  tests/unit/with_dbs/config-devel.yml
-
-
-.PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
-build build-nc build-devel build-devel-nc build-cache build-cache-nc: openapi-specs ## docker image build in many flavours
-	# building ${APP_NAME} ...
-	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
-
-
-.PHONY: tail
-tail: ## tails log of $(APP_NAME) container
-	docker logs -f $(shell docker ps -f "name=$(APP_NAME)*" --format {{.ID}}) > $(APP_NAME).log 2>&1

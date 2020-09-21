@@ -2,15 +2,8 @@
 # Targets for DEVELOPMENT of Components Catalog Service
 #
 include ../../scripts/common.Makefile
+include ../../scripts/common-service.Makefile
 
-# Custom variables
-APP_NAME         := $(notdir $(CURDIR))
-APP_CLI_NAME     := simcore-service-catalog
-APP_PACKAGE_NAME := $(subst -,_,$(APP_CLI_NAME))
-APP_VERSION      := $(shell cat VERSION)
-SRC_DIR          := $(abspath $(CURDIR)/src/$(APP_PACKAGE_NAME))
-
-export APP_VERSION
 
 .PHONY: requirements reqs
 requirements reqs: ## (or reqs) compiles pip requirements (.in -> .txt)
@@ -75,12 +68,6 @@ run-devel run-prod: .env up-adjacent ## runs app with services defined in docker
 
 
 # BUILD #####################
-
-.PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
-build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## docker image build in many flavours
-	# building ${APP_NAME} ...
-	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
-
 
 .PHONY: openapi-specs openapi.json
 openapi-specs: openapi.json .env
