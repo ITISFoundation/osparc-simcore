@@ -18,11 +18,6 @@ openapi-specs: ## updates and validates openapi specifications
 	$(MAKE_C) $(CURDIR)/src/simcore_service_${APP_NAME}/api $@
 
 
-.PHONY: install-dev install-prod install-ci
-install-dev install-prod install-ci: openapi-specs requirements _check_venv_active ## install app in development/production or CI mode
-	# installing in $(subst install-,,$@) mode
-	python -m pip --quiet install -r requirements/$(subst install-,,$@).txt
-
 
 .PHONY: tests-unit tests-integration tests
 

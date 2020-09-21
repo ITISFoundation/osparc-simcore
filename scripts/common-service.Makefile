@@ -32,6 +32,16 @@ export APP_VERSION
 # COMMON TASKS
 #
 
+
+## FIXME: pip-sync --quiet requirements/$(subst install-,,$@).txt
+
+.PHONY: install-dev install-prod install-ci
+install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
+	# installing in $(subst install-,,$@) mode
+	pip-sync requirements/$(subst install-,,$@).txt
+
+
+
 .PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
 build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## builds docker image in many flavours
 	# building docker image for ${APP_NAME} ...

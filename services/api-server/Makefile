@@ -10,12 +10,6 @@ reqs: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
 
 
-.PHONY: install-dev install-prod install-ci
-install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
-	# installing in $(subst install-,,$@) mode
-	pip-sync requirements/$(subst install-,,$@).txt
-
-
 PHONY: tests-unit tests-integration tests
 tests: tests-unit tests-integration
 
