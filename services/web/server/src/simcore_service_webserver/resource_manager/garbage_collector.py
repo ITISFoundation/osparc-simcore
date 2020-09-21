@@ -118,7 +118,11 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
     # the projects are closed or the user was disconencted.
     # This will close and remove all these services from
     # the cluster, thus freeing important resources.
-    await remove_orphaned_services(registry, app)
+
+    # Temporary disabling GC to until the dynamic service
+    # safe function is invoked by the GC. This will avoid
+    # data loss for current users.
+    # await remove_orphaned_services(registry, app)
 
 
 async def remove_disconnected_user_resources(
