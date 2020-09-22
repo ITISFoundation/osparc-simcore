@@ -109,9 +109,6 @@ services:
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
-    depends_on:
-      - rabbit
-      - postgres
     networks:
       - computational_services_subnet
 
@@ -165,9 +162,6 @@ services:
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - TARGET_MPI_NODE_CPU_COUNT=${DEV_PC_CPU_COUNT:-0} # development computer CPU count, if env var is missing put to 0 to disable
-    depends_on:
-      - rabbit
-      - postgres
     networks:
       - computational_services_subnet
 

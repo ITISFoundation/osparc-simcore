@@ -17,7 +17,6 @@ pytest-cov
 pytest-mock
 pytest-runner
 pytest-docker
-docker-compose==1.26.2 # avoids increasing via pytest-docker
 
 # fixtures
 Faker

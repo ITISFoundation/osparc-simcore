@@ -222,7 +222,11 @@ async def add_user_in_group(
     new_user_email: Optional[str] = None,
     access_rights: Optional[Dict[str, bool]] = None,
 ) -> None:
+    """
+        adds new_user (either by id or email) in group (with gid) owned by user_id
+    """
     if not new_user_id and not new_user_email:
+        # TODO: I would return ValueError here since is a problem with the arguments
         raise GroupsException("Invalid method call, missing user id or user email")
 
     if new_user_email:

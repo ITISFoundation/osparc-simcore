@@ -22,7 +22,7 @@ pytest-aiohttp==0.3.0     # via -r requirements/requirements.in
 pytest-instafail==0.4.2   # via -r requirements/requirements.in
 pytest-runner==5.2        # via -r requirements/requirements.in
 pytest-sugar==0.9.4       # via -r requirements/requirements.in
-pytest==6.0.1             # via -r requirements/requirements.in, pytest-aiohttp, pytest-instafail, pytest-sugar
+pytest==6.0.2             # via -r requirements/requirements.in, pytest-aiohttp, pytest-instafail, pytest-sugar
 six==1.15.0               # via packaging
 termcolor==1.1.0          # via pytest-sugar
 toml==0.10.1              # via pytest

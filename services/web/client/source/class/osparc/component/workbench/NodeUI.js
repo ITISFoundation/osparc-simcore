@@ -171,7 +171,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.__progressBar = this.getChildControl("progress");
       }
       if (node.isDynamic()) {
-        const nodeStatus = new osparc.component.service.NodeStatusUI(node);
+        const nodeStatus = new osparc.ui.basic.NodeStatusUI(node);
         this.__chipContainer.add(nodeStatus);
       }
     },

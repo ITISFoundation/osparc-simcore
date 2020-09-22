@@ -3,8 +3,6 @@
 #
 include ../../scripts/common.Makefile
 
-ROOT_DIR  = $(abspath $(CURDIR)/../../)
-VENV_DIR ?= $(abspath $(ROOT_DIR)/.venv)
 
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)
@@ -12,12 +10,12 @@ requirements: ## compiles pip requirements (.in -> .txt)
 
 
 .PHONY: install
-install: $(VENV_DIR) requirements ## installs dependencies
+install: _check_venv_active  ## installs dependencies
 	# installing requirements
-	@$</bin/pip3 install -r requirements/ci.txt
+	python -m pip install -r requirements/ci.txt
 
 
 .PHONY: tests
-tests: ## runs all tests [DEV]
+tests: _check_venv_active ## runs all tests [DEV]
 	# running unit tests
-	@$(VENV_DIR)/bin/pytest -vv -x --ff --pdb $(CURDIR)
+	pytest -vv -x --ff --pdb $(CURDIR)

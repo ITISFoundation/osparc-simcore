@@ -21,7 +21,6 @@ from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import delete_all_projects
-from pytest_simcore.simcore_services import simcore_services
 from servicelib.application import create_safe_application
 from simcore_service_webserver import catalog
 from simcore_service_webserver.catalog import setup_catalog
@@ -29,6 +28,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.projects.projects_fakes import Fake
+from simcore_service_webserver.projects.projects_models import ProjectState
 from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
@@ -270,6 +270,8 @@ async def test_workflow(
     # list not empty
     projects = await _request_list(client)
     assert len(projects) == 1
+
+    assert not ProjectState(**projects[0].pop("state")).locked.value
     for key in projects[0].keys():
         if key not in (
             "uuid",
@@ -304,13 +306,13 @@ async def test_workflow(
     assert len(projects) == 1
 
     for key in projects[0].keys():
-        if key not in ("lastChangeDate",):
+        if key not in ("lastChangeDate", "state"):
             assert projects[0][key] == modified_project[key]
 
     # get
     project = await _request_get(client, pid)
     for key in project.keys():
-        if key not in ("lastChangeDate",):
+        if key not in ("lastChangeDate", "state"):
             assert project[key] == modified_project[key]
 
     # delete
@@ -319,7 +321,10 @@ async def test_workflow(
     # wait for delete tasks to finish
     tasks = Task.all_tasks()
     for task in tasks:
-        if "delete_project" in task._coro.__name__:
+        # TODO: 'async_generator_asend' has no __name__ attr. Python 3.8 gets coros names
+        # Expects "delete_project" coros to have __name__ attrs
+        # pylint: disable=protected-access
+        if "delete_project" in getattr(task._coro, "__name__", ""):
             await wait_for(task, timeout=60.0)
 
     # list empty

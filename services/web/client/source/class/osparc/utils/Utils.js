@@ -59,15 +59,6 @@ qx.Class.define("osparc.utils.Utils", {
       return logoPath;
     },
 
-    getLoaderUri: function(arg) {
-      let loadingUri = qx.util.ResourceManager.getInstance().toUri("osparc/loading/loader.html");
-      if (arg) {
-        loadingUri += "?loading=- ";
-        loadingUri += arg;
-      }
-      return loadingUri;
-    },
-
     addBorder: function(sidePanel, width = 1, where = "right") {
       sidePanel.getContentElement().setStyle("border-"+where, width+"px solid " + qx.theme.manager.Color.getInstance().resolve("material-button-background"));
     },
@@ -83,27 +74,6 @@ qx.Class.define("osparc.utils.Utils", {
         iframeDocument.style.setProperty("--text-color", textColor);
         iframeDocument.style.setProperty("--spinner-color", spinnerColor);
       }
-    },
-
-    createLoadingIFrame: function(text) {
-      const loadingUri = osparc.utils.Utils.getLoaderUri(text);
-      const iframe = new qx.ui.embed.Iframe(loadingUri);
-
-      const contEle = iframe.getContentElement();
-      contEle.addListener("appear", () => {
-        qx.event.Timer.once(() => {
-          const domEl = contEle.getDomElement();
-          if (domEl) {
-            this.__setStyleToIFrame(domEl);
-            const colorManager = qx.theme.manager.Color.getInstance();
-            colorManager.addListener("changeTheme", () => {
-              this.__setStyleToIFrame(domEl);
-            });
-          }
-        }, this, 50);
-      });
-      iframe.setBackgroundColor("transparent");
-      return iframe;
     },
 
     compareVersionNumbers: function(v1, v2) {

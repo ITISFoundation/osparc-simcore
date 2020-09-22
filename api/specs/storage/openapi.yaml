@@ -11,25 +11,25 @@ info:
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
 servers:
   - description: API server
-    url: '/v0'
+    url: "/v0"
   - description: Development server
     url: http://{host}:{port}/{basePath}
     variables:
       host:
-        default: 'localhost'
+        default: "localhost"
       port:
-        default: '11111'
+        default: "11111"
       basePath:
         enum:
           - v0
         default: v0
 tags:
-- name: admins
-  description: Secured Admin-only calls
-- name: tests
-  description: Operations available for testing
-- name: users
-  description: Operations available to regular users
+  - name: admins
+    description: Secured Admin-only calls
+  - name: tests
+    description: Operations available for testing
+  - name: users
+    description: Operations available to regular users
 
 paths:
   /:
@@ -45,9 +45,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components/schemas/health_check.yaml#/components/schemas/HealthCheckEnveloped'
+                $ref: "./components/schemas/health_check.yaml#/components/schemas/HealthCheckEnveloped"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
   /check/{action}:
     post:
       tags:
@@ -59,8 +59,8 @@ paths:
           name: action
           schema:
             type: string
-            default: 'echo'
-            enum: ['fail', 'echo']
+            default: "echo"
+            enum: ["fail", "echo"]
         - in: query
           name: data
           schema:
@@ -69,22 +69,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './components/schemas/fake.yaml#/components/schemas/FakeType'
+              $ref: "./components/schemas/fake.yaml#/components/schemas/FakeType"
       responses:
-        '200':
+        "200":
           description: Echoes response based on action
           content:
             application/json:
               schema:
-                $ref: './components/schemas/fake.yaml#/components/schemas/FakeEnveloped'
+                $ref: "./components/schemas/fake.yaml#/components/schemas/FakeEnveloped"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
   /locations:
     get:
       tags:
         - users
       summary: Get available storage locations
-      operationId : get_storage_locations
+      operationId: get_storage_locations
       parameters:
         - name: user_id
           in: query
@@ -92,14 +92,14 @@ paths:
           schema:
             type: string
       responses:
-        '200':
-          description: 'List of available storage locations'
+        "200":
+          description: "List of available storage locations"
           content:
             application/json:
               schema:
-                $ref: './components/schemas/location_array.yaml#/components/schemas/FileLocationArrayEnveloped'
+                $ref: "./components/schemas/location_array.yaml#/components/schemas/FileLocationArrayEnveloped"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
 
   /locations/{location_id}/datasets:
     get:
@@ -109,7 +109,7 @@ paths:
       operationId: get_datasets_metadata
       parameters:
         - name: location_id
-          in : path
+          in: path
           required: true
           schema:
             type: string
@@ -119,14 +119,14 @@ paths:
           schema:
             type: string
       responses:
-        '200':
-          description: 'list of dataset meta-datas'
+        "200":
+          description: "list of dataset meta-datas"
           content:
             application/json:
               schema:
-                $ref: './components/schemas/dataset_meta_data_array.yaml#/components/schemas/DatasetMetaDataArrayEnveloped'
+                $ref: "./components/schemas/dataset_meta_data_array.yaml#/components/schemas/DatasetMetaDataArrayEnveloped"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
 
   /locations/{location_id}/files/metadata:
     get:
@@ -136,7 +136,7 @@ paths:
       operationId: get_files_metadata
       parameters:
         - name: location_id
-          in : path
+          in: path
           required: true
           schema:
             type: string
@@ -151,14 +151,14 @@ paths:
           schema:
             type: string
       responses:
-        '200':
-          description: 'list of file meta-datas'
+        "200":
+          description: "list of file meta-datas"
           content:
             application/json:
               schema:
-                $ref: './components/schemas/file_meta_data_array.yaml#/components/schemas/FileMetaDataArrayEnveloped'
+                $ref: "./components/schemas/file_meta_data_array.yaml#/components/schemas/FileMetaDataArrayEnveloped"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
 
   /locations/{location_id}/datasets/{dataset_id}/metadata:
     get:
@@ -168,7 +168,7 @@ paths:
       operationId: get_files_metadata_dataset
       parameters:
         - name: location_id
-          in : path
+          in: path
           required: true
           schema:
             type: string
@@ -183,14 +183,14 @@ paths:
           schema:
             type: string
       responses:
-        '200':
-          description: 'list of file meta-datas'
+        "200":
+          description: "list of file meta-datas"
           content:
             application/json:
               schema:
-                $ref: './components/schemas/file_meta_data_array.yaml#/components/schemas/FileMetaDataArrayEnveloped'
+                $ref: "./components/schemas/file_meta_data_array.yaml#/components/schemas/FileMetaDataArrayEnveloped"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
 
   /locations/{location_id}/files/{fileId}/metadata:
     get:
@@ -199,49 +199,49 @@ paths:
       summary: Get File Metadata
       operationId: get_file_metadata
       parameters:
-      - name: fileId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: location_id
-        in : path
-        required: true
-        schema:
-          type: string
-      - name: user_id
-        in: query
-        required: true
-        schema:
-          type: string
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
-        '200':
-          $ref: '#/components/responses/FileMetaData_200'
+        "200":
+          $ref: "#/components/responses/FileMetaData_200"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     patch:
       tags:
         - users
       summary: Update File Metadata
       operationId: update_file_meta_data
       parameters:
-      - name: fileId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: location_id
-        in : path
-        required: true
-        schema:
-          type: string
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
-        $ref: '#/components/requestBodies/FileMetaDataBody'
+        $ref: "#/components/requestBodies/FileMetaDataBody"
       responses:
-        '200':
-          $ref: '#/components/responses/FileMetaData_200'
+        "200":
+          $ref: "#/components/responses/FileMetaData_200"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
 
   /locations/{location_id}/files/{fileId}:
     get:
@@ -250,88 +250,88 @@ paths:
       summary: Returns download link for requested file
       operationId: download_file
       parameters:
-      - name: fileId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: location_id
-        in : path
-        required: true
-        schema:
-          type: string
-      - name: user_id
-        in: query
-        required: true
-        schema:
-          type: string
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
-        '200':
-          $ref: '#/components/responses/PresignedLink_200'
+        "200":
+          $ref: "#/components/responses/PresignedLink_200"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     put:
       tags:
         - users
       summary: Returns upload link or performs copy operation to datcore
       operationId: upload_file
       parameters:
-      - name: fileId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: location_id
-        in : path
-        required: true
-        schema:
-          type: string
-      - name: user_id
-        in: query
-        required: true
-        schema:
-          type: string
-      - name: extra_location
-        in : query
-        required: false
-        schema:
-          type: string
-      - name: extra_source
-        in : query
-        required: false
-        schema:
-          type: string
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: extra_location
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: extra_source
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
-        '200':
-          $ref: '#/components/responses/PresignedLink_200'
+        "200":
+          $ref: "#/components/responses/PresignedLink_200"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
     delete:
       tags:
         - users
       summary: Deletes File
       operationId: delete_file
       parameters:
-      - name: fileId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: location_id
-        in : path
-        required: true
-        schema:
-          type: string
-      - name: user_id
-        in: query
-        required: true
-        schema:
-          type: string
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
-        '204':
-          $ref: '#/components/responses/OK_NoContent_204'
+        "204":
+          $ref: "#/components/responses/OK_NoContent_204"
         default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          $ref: "#/components/responses/DefaultErrorResponse"
 
   /simcore-s3/folders:
     post:
@@ -340,11 +340,11 @@ paths:
       summary: Deep copies of all data from source to destination project in s3
       operationId: copy_folders_from_project
       parameters:
-      - name: user_id
-        in: query
-        required: true
-        schema:
-          type: integer
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: integer
       requestBody:
         content:
           application/json:
@@ -352,23 +352,23 @@ paths:
               type: object
               properties:
                 source:
-                  $ref: './openapi.yaml#/components/schemas/Project'
+                  $ref: "./openapi.yaml#/components/schemas/Project"
                 destination:
-                  $ref: './openapi.yaml#/components/schemas/Project'
+                  $ref: "./openapi.yaml#/components/schemas/Project"
                 nodes_map:
                   type: object
                   description: maps source and destination node uuids
                   additionalProperties:
                     type: string
       responses:
-        '201':
+        "201":
           description: Data from destination project copied and returns project
           content:
             application/json:
               schema:
-                $ref: './openapi.yaml#/components/schemas/Project'
+                $ref: "./openapi.yaml#/components/schemas/Project"
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 
   /simcore-s3/folders/{folder_id}:
     delete:
@@ -377,29 +377,29 @@ paths:
       summary: Deletes all objects within a node_id or within a project_id if node_id is omitted
       operationId: delete_folders_of_project
       parameters:
-      - name: folder_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: node_id
-        in: query
-        required: false
-        schema:
-          type: string
-      - name: user_id
-        in: query
-        required: true
-        schema:
-          type: string
+        - name: folder_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: node_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
-        '204':
+        "204":
           description: folder has been successfully deleted
 
 components:
   schemas:
     Project:
-      $ref: '../common/schemas/project.yaml#/components/schemas/Project'
+      $ref: "../common/schemas/project.yaml#/components/schemas/ProjectIn"
 
   responses:
     OK_NoContent_204:
@@ -410,25 +410,25 @@ components:
       content:
         application/json:
           schema:
-            $ref: './components/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+            $ref: "./components/schemas/error.yaml#/components/schemas/ErrorEnveloped"
 
     FileMetaData_200:
-      description: 'Returns file metadata'
+      description: "Returns file metadata"
       content:
         application/json:
           schema:
-            $ref: './components/schemas/file_meta_data.yaml#/components/schemas/FileMetaDataEnveloped'
+            $ref: "./components/schemas/file_meta_data.yaml#/components/schemas/FileMetaDataEnveloped"
 
     PresignedLink_200:
-      description: 'Returns presigned link'
+      description: "Returns presigned link"
       content:
         application/json:
           schema:
-            $ref: './components/schemas/presigned_link.yaml#/components/schemas/PresignedLinkEnveloped'
+            $ref: "./components/schemas/presigned_link.yaml#/components/schemas/PresignedLinkEnveloped"
 
   requestBodies:
     FileMetaDataBody:
-        content:
-          application/json:
-            schema:
-              $ref: './components/schemas/file_meta_data.yaml#/components/schemas/FileMetaDataType'
+      content:
+        application/json:
+          schema:
+            $ref: "./components/schemas/file_meta_data.yaml#/components/schemas/FileMetaDataType"

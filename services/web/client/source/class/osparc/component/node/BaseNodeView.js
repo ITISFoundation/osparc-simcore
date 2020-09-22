@@ -105,7 +105,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __buildSideView: function(isInput) {
       const collapsedWidth = 35;
       const sidePanel = new osparc.desktop.SidePanel().set({
-        minWidth: 300,
+        minWidth: 250,
         collapsedMinWidth: collapsedWidth,
         collapsedWidth: collapsedWidth
       });
