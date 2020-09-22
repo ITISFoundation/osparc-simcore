@@ -2,39 +2,14 @@
 # Targets for DEVELOPMENT of Public API Server
 #
 include ../../scripts/common.Makefile
+include ../../scripts/common-service.Makefile
 
-# Custom variables
-APP_NAME         := $(notdir $(CURDIR))
-APP_CLI_NAME     := simcore-service-$(APP_NAME)
-APP_PACKAGE_NAME := $(subst -,_,$(APP_CLI_NAME))
-APP_VERSION      := $(shell cat VERSION)
-SRC_DIR          := $(abspath $(CURDIR)/src/$(APP_PACKAGE_NAME))
-
-export APP_VERSION
 
 .PHONY: reqs
 reqs: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
 
 
-.PHONY: install-dev install-prod install-ci
-install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
-	# installing in $(subst install-,,$@) mode
-	pip-sync requirements/$(subst install-,,$@).txt
-
-
-PHONY: tests-unit tests-integration tests
-tests: tests-unit tests-integration
-
-tests-unit: ## runs unit tests
-	# running unit tests
-	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/unit
-
-tests-integration: ## runs integration tests against local+production images
-	# running integration tests local/(service):production images ...
-	@export DOCKER_REGISTRY=local; \
-	export DOCKER_IMAGE_TAG=production; \
-	pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests/integration
 
 
 # DEVELOPMENT TOOLS ########
@@ -77,12 +52,6 @@ down: docker-compose.yml ## stops pg fixture
 
 
 # BUILD ########
-
-
-.PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
-build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## builds docker image (using main services/docker-compose-build.yml)
-	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
-
 
 .PHONY: openapi-specs openapi.json
 openapi-specs: openapi.json

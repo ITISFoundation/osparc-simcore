@@ -436,16 +436,21 @@ async def standard_groups(client, logged_user: Dict) -> List[Dict[str, str]]:
     async with NewUser(
         {"name": f"{logged_user['name']}_admin", "role": "USER"}, client.app
     ) as admin_user:
+        # creates two groups
         sparc_group = await create_user_group(client.app, admin_user["id"], sparc_group)
         team_black_group = await create_user_group(
             client.app, admin_user["id"], team_black_group
         )
+
+        # adds logged_user  to sparc group
         await add_user_in_group(
             client.app,
             admin_user["id"],
             sparc_group["gid"],
             new_user_id=logged_user["id"],
         )
+
+        # adds logged_user  to team-black group
         await add_user_in_group(
             client.app,
             admin_user["id"],
