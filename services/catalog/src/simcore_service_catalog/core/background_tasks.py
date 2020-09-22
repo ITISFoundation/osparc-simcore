@@ -21,7 +21,6 @@ from fastapi import FastAPI
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 
-
 from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.projects import ProjectsRepository
@@ -31,13 +30,15 @@ from ..models.domain.service import (
     ServiceDockerData,
     ServiceMetaDataAtDB,
 )
+from ..services.frontend_services import get_services as get_frontend_services
 
 logger = logging.getLogger(__name__)
 
 ServiceKey = str
 ServiceVersion = str
 
-from ..services.frontend_services import get_services as get_frontend_services
+OLD_SERVICES_DATE: datetime = datetime(2020, 8, 19)
+DEFAULT_PRODUCT_FOR_NEW_SERVICES = "osparc"
 
 
 async def _list_registry_services(
@@ -72,9 +73,6 @@ async def _list_db_services(
         (service.key, service.version)
         for service in await services_repo.list_services()
     }
-
-
-OLD_SERVICES_DATE: datetime = datetime(2020, 8, 19)
 
 
 async def _create_service_default_access_rights(
@@ -210,7 +208,11 @@ async def _ensure_published_templates_accessible(connection: SAConnection) -> No
     missing_services = published_services - available_services
     missing_services_access_rights = [
         ServiceAccessRightsAtDB(
-            key=service[0], version=service[1], gid=everyone_gid, execute_access=True
+            key=service[0],
+            version=service[1],
+            gid=everyone_gid,
+            execute_access=True,
+            product_name=DEFAULT_PRODUCT_FOR_NEW_SERVICES,
         )
         for service in missing_services
     ]
