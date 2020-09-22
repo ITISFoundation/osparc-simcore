@@ -11,11 +11,11 @@ from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
 from ...models.domain.service import (
     KEY_RE,
-    ServiceType,
     VERSION_RE,
     ServiceAccessRightsAtDB,
     ServiceMetaDataAtDB,
     ServiceOut,
+    ServiceType,
     ServiceUpdate,
 )
 from ...services.frontend_services import get_services as get_frontend_services

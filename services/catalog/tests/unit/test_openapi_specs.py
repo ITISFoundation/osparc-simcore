@@ -2,12 +2,16 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import pytest
 import json
+
+import pytest
+
 from simcore_service_catalog.core.application import init_app
 
 
-@pytest.mark.skip(reason="FIXME: fails with make tests but does not fail with pytest test_!???")
+@pytest.mark.skip(
+    reason="FIXME: fails with make tests but does not fail with pytest test_!???"
+)
 def test_openapi_json_is_updated(project_slug_dir, devel_environ):
     # devel_environ needed to build app
 

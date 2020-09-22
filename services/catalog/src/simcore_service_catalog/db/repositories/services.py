@@ -131,7 +131,10 @@ class ServicesRepository(BaseRepository):
         return updated_service
 
     async def get_service_access_rights(
-        self, key: str, version: str, product_name: str,
+        self,
+        key: str,
+        version: str,
+        product_name: str,
     ) -> List[ServiceAccessRightsAtDB]:
         services_in_db = []
         query = sa.select([services_access_rights]).where(
