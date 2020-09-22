@@ -5,6 +5,8 @@ import shutil
 import time
 from pathlib import Path
 from typing import Dict, Optional
+import zipfile
+import os
 
 import aiopg
 import attr
@@ -164,6 +166,12 @@ class Executor:
                     final_path,
                     path,
                 )
+                # check if the file is a zip, in that case extract all
+                if zipfile.is_zipfile(final_path):
+                    with zipfile.ZipFile(final_path, "r") as zip_obj:
+                        zip_obj.extractall(final_path.parents[0])
+                # finally remove the zip archive
+                os.remove(final_path)
             else:
                 input_ports[port.key] = port_value
         else:
