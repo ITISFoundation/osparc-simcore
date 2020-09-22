@@ -243,7 +243,7 @@ async def catalog_subsystem_mock(monkeypatch):
     async def mocked_get_services_for_user(*args, **kwargs):
         return services_in_project
 
-    monkeypatch.setattr(catalog, "get_services_for_user", mocked_get_services_for_user)
+    monkeypatch.setattr(catalog, "get_services_for_user_in_product", mocked_get_services_for_user)
 
     return creator
 

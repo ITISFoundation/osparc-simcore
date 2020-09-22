@@ -120,16 +120,14 @@ async def _reverse_proxy_handler(request: web.Request) -> web.Response:
 ## API ------------------------
 
 
-async def get_services_for_user(
-    app: web.Application, user_id: int, *, only_key_versions: bool
+async def get_services_for_user_in_product(
+    app: web.Application, user_id: int, product_name: str, *, only_key_versions: bool
 ) -> Optional[List[Dict]]:
     url = (
         URL(app[f"{__name__}.catalog_origin"])
         .with_path(app[f"{__name__}.catalog_version_prefix"] + "/services")
         .with_query({"user_id": user_id, "details": f"{not only_key_versions}"})
     )
-    product_name = app.request[RQ_PRODUCT_KEY]
-
     session = get_client_session(app)
     async with session.get(url, headers={X_PRODUCT_NAME_HEADER: product_name}) as resp:
         if resp.status >= 400:
