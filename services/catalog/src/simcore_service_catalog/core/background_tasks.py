@@ -38,7 +38,6 @@ ServiceKey = str
 ServiceVersion = str
 
 OLD_SERVICES_DATE: datetime = datetime(2020, 8, 19)
-DEFAULT_PRODUCT_FOR_NEW_SERVICES = "osparc"
 
 
 async def _list_registry_services(
@@ -185,7 +184,9 @@ async def _ensure_registry_insync_with_db(
         )
 
 
-async def _ensure_published_templates_accessible(connection: SAConnection) -> None:
+async def _ensure_published_templates_accessible(
+    connection: SAConnection, default_product_name: str
+) -> None:
     # Rationale: if a project template was published, its services must be available to everyone.
     # a published template has a column Published that is set to True
     projects_repo = ProjectsRepository(connection)
@@ -212,7 +213,7 @@ async def _ensure_published_templates_accessible(connection: SAConnection) -> No
             version=service[1],
             gid=everyone_gid,
             execute_access=True,
-            product_name=DEFAULT_PRODUCT_FOR_NEW_SERVICES,
+            product_name=default_product_name,
         )
         for service in missing_services
     ]
@@ -226,6 +227,7 @@ async def _ensure_published_templates_accessible(connection: SAConnection) -> No
 
 async def sync_registry_task(app: FastAPI) -> None:
     # get list of services from director
+    default_product: str = app.state.settings.access_rights_default_product_name
     engine: Engine = app.state.engine
     while True:
         try:
@@ -235,8 +237,9 @@ async def sync_registry_task(app: FastAPI) -> None:
                 # check that the list of services is in sync with the registry
                 await _ensure_registry_insync_with_db(app, conn)
 
-                # check that the published services are available to everyone (templates are published to GUESTs, so their services must be also accessible)
-                await _ensure_published_templates_accessible(conn)
+                # check that the published services are available to everyone
+                # (templates are published to GUESTs, so their services must be also accessible)
+                await _ensure_published_templates_accessible(conn, default_product)
 
             await asyncio.sleep(app.state.settings.background_task_rest_time)
 
@@ -244,11 +247,13 @@ async def sync_registry_task(app: FastAPI) -> None:
             # task is stopped
             logger.debug("Catalog background task cancelled", exc_info=True)
             return
+
         except Exception:  # pylint: disable=broad-except
             logger.exception("Error while processing services entry")
+            # wait a bit before retrying, so it does not block everything until the director is up
             await asyncio.sleep(
-                5
-            )  # wait a bit before retrying, so it does not block everything until the director is up
+                app.state.settings.background_task_wait_after_failure
+            )
 
 
 async def start_registry_sync_task(app: FastAPI) -> None:

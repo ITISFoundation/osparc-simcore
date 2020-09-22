@@ -92,7 +92,7 @@ class AppSettings(BaseSettings):
     # POSTGRES
     postgres: PostgresSettings
 
-    # Director service
+    # DIRECTOR SERVICE
     director: DirectorSettings
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
@@ -100,8 +100,9 @@ class AppSettings(BaseSettings):
     port: int = 8000
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
 
-    # background task
+    # BACKGROUND TASK
     background_task_rest_time: PositiveInt = 60
+    background_task_wait_after_failure: PositiveInt = 5 # secs
     access_rights_default_product_name: str = "osparc"
 
     class Config(_CommonConfig):
