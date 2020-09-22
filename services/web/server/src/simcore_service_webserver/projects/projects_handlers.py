@@ -13,13 +13,13 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog
 from ..computation_api import update_pipeline_db
+from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from ..security_api import check_permission
 from ..security_decorators import permission_required
 from ..users_api import get_user_name
 from . import projects_api
-from .constants import RQ_PRODUCT_KEY
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_models import Owner, ProjectLocked, ProjectState
