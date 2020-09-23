@@ -75,6 +75,9 @@ async def _request_catalog(
         return web.json_response(data, status=resp.status)
 
 
+## HANDLERS  ------------------------
+
+
 @login_required
 @permission_required("services.catalog.*")
 async def _reverse_proxy_handler(request: web.Request) -> web.Response:
@@ -114,6 +117,28 @@ async def _reverse_proxy_handler(request: web.Request) -> web.Response:
     )
 
 
+## API ------------------------
+
+
+async def get_services_for_user_in_product(
+    app: web.Application, user_id: int, product_name: str, *, only_key_versions: bool
+) -> Optional[List[Dict]]:
+    url = (
+        URL(app[f"{__name__}.catalog_origin"])
+        .with_path(app[f"{__name__}.catalog_version_prefix"] + "/services")
+        .with_query({"user_id": user_id, "details": f"{not only_key_versions}"})
+    )
+    session = get_client_session(app)
+    async with session.get(url, headers={X_PRODUCT_NAME_HEADER: product_name}) as resp:
+        if resp.status >= 400:
+            logger.error("Error while retrieving services for user %s", user_id)
+            return
+        return await resp.json()
+
+
+## SETUP ------------------------
+
+
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
@@ -144,21 +169,3 @@ def setup_catalog(app: web.Application, *, disable_auth=False):
 
     # reverse proxy to catalog's API
     app.router.add_routes(routes)
-
-
-async def get_services_for_user(
-    app: web.Application, user_id: int, *, only_key_versions: bool
-) -> Optional[List[Dict]]:
-    url = (
-        URL(app[f"{__name__}.catalog_origin"])
-        .with_path(app[f"{__name__}.catalog_version_prefix"] + "/services")
-        .with_query({"user_id": user_id, "details": f"{not only_key_versions}"})
-    )
-
-    headers = {"X-Simcore-Products-Name": "osparc"}
-    session = get_client_session(app)
-    async with session.get(url, headers=headers) as resp:
-        if resp.status >= 400:
-            logger.error("Error while retrieving services for user %s", user_id)
-            return
-        return await resp.json()
