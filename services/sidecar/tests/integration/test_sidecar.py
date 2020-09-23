@@ -362,10 +362,11 @@ async def test_run_services(
     incoming_data = LockedCollector()
 
     async def rabbit_message_handler(message: aio_pika.IncomingMessage):
-        data = json.loads(message.body)
-        await incoming_data.append(data)
+        async with message.process():
+            data = json.loads(message.body)
+            await incoming_data.append(data)
 
-    await rabbit_queue.consume(rabbit_message_handler, exclusive=True, no_ack=True)
+    await rabbit_queue.consume(rabbit_message_handler, exclusive=True)
 
     job_id = 1
 
