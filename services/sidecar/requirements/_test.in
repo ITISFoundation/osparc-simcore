@@ -4,6 +4,7 @@
 
 # frozen specs
 -r _base.txt
+-r _packages.txt
 
 # testing
 coverage
