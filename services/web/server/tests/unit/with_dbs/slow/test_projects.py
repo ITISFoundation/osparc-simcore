@@ -28,6 +28,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.projects.projects_handlers import (
     OVERRIDABLE_DOCUMENT_KEYS,
@@ -64,7 +65,6 @@ def client(
     mocked_director_subsystem,
     mock_orphaned_services,
 ):
-    # def client(loop, aiohttp_client, app_cfg): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
 
     # config app
     cfg = deepcopy(app_cfg)
@@ -90,6 +90,7 @@ def client(
     setup_director(app)
     setup_tags(app)
     assert setup_projects(app)
+    setup_products(app)
 
     # server and client
     yield loop.run_until_complete(
@@ -243,7 +244,9 @@ async def catalog_subsystem_mock(monkeypatch):
     async def mocked_get_services_for_user(*args, **kwargs):
         return services_in_project
 
-    monkeypatch.setattr(catalog, "get_services_for_user", mocked_get_services_for_user)
+    monkeypatch.setattr(
+        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
+    )
 
     return creator
 
@@ -304,7 +307,9 @@ async def test_list_projects(
         ).locked.value, "Templates are not locked"
 
 
-async def _assert_get_same_project(client, project: Dict, expected: web.Response) -> Dict:
+async def _assert_get_same_project(
+    client, project: Dict, expected: web.Response
+) -> Dict:
     # GET /v0/projects/{project_id}
 
     # with a project owned by user
@@ -1575,6 +1580,8 @@ async def test_open_shared_project_at_same_time(
                 project_status = ProjectState(**data.pop("state"))
                 assert data == shared_project
                 assert project_status.locked.value
-                assert project_status.locked.owner.first_name in [c["user"]["name"] for c in clients]
+                assert project_status.locked.owner.first_name in [
+                    c["user"]["name"] for c in clients
+                ]
 
         assert num_assertions == NUMBER_OF_ADDITIONAL_CLIENTS

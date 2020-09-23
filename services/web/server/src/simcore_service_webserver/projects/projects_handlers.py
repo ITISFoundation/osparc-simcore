@@ -5,14 +5,15 @@ import json
 import logging
 from typing import Dict, List, Optional, Set
 
+import aioredlock
 from aiohttp import web
 from jsonschema import ValidationError
 
-import aioredlock
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog
 from ..computation_api import update_pipeline_db
+from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from ..security_api import check_permission
@@ -130,7 +131,7 @@ async def list_projects(request: web.Request):
     # TODO: implement all query parameters as
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
 
-    user_id = request[RQT_USERID_KEY]
+    user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
     ptype = request.query.get("type", "all")  # TODO: get default for oaspecs
     db = request.config_dict[APP_PROJECT_DBAPI]
 
@@ -147,8 +148,10 @@ async def list_projects(request: web.Request):
 
     stop = min(start + count, len(projects_list))
     projects_list = projects_list[start:stop]
-    user_available_services: List[Dict] = await catalog.get_services_for_user(
-        request.app, user_id, only_key_versions=True
+    user_available_services: List[
+        Dict
+    ] = await catalog.get_services_for_user_in_product(
+        request.app, user_id, product_name, only_key_versions=True
     )
 
     # validate response
@@ -185,9 +188,11 @@ async def list_projects(request: web.Request):
 async def get_project(request: web.Request):
     """Returns all projects accessible to a user (not necesarly owned)"""
     # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-    user_id = request[RQT_USERID_KEY]
-    user_available_services: List[Dict] = await catalog.get_services_for_user(
-        request.app, user_id, only_key_versions=True
+    user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
+    user_available_services: List[
+        Dict
+    ] = await catalog.get_services_for_user_in_product(
+        request.app, user_id, product_name, only_key_versions=True
     )
     from .projects_api import get_project_for_user
 
