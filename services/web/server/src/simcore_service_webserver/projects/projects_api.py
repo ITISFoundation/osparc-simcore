@@ -152,6 +152,9 @@ async def start_project_interactive_services(
     result = await logged_gather(*start_service_tasks, reraise=True)
     log.debug("Services start result %s", result)
     for entry in result:
+        # if the status is present in the results fo the start_service
+        # it means that the API call failed
+        # also it is enforced that the status is different from 200 OK
         if "status" not in entry:
             continue
 
