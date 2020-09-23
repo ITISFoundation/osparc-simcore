@@ -170,8 +170,8 @@ class Executor:
                 if zipfile.is_zipfile(final_path):
                     with zipfile.ZipFile(final_path, "r") as zip_obj:
                         zip_obj.extractall(final_path.parents[0])
-                # finally remove the zip archive
-                os.remove(final_path)
+                    # finally remove the zip archive
+                    os.remove(final_path)
             else:
                 input_ports[port.key] = port_value
         else:
