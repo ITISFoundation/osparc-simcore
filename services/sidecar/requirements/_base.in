@@ -2,8 +2,7 @@
 # Specifies third-party dependencies for 'sidecar'
 #
 
-# intra-repo packages
-# NOTE:
+# intra-repo packages CONSTRAINTS
 #   - Input-requirements on intra-repo packages are tested using latest updates
 #   - Added as constraints instead of requirements in order to avoid polluting base.txt
 #   - Will be installed when prod.txt or dev.txt
@@ -12,6 +11,7 @@
 -c ../../../packages/s3wrapper/requirements/_base.in
 -c ../../../packages/service-library/requirements/_base.in
 #
+
 
 urllib3>=1.25.8     # Vulnerability
 aiofile
