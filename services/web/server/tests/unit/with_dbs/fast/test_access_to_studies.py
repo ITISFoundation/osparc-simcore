@@ -25,6 +25,7 @@ from simcore_service_webserver import catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
+from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects.projects_api import delete_project_from_db
 from simcore_service_webserver.projects.projects_models import (
     Owner,
@@ -109,8 +110,10 @@ def client(
     setup_rest(app)  # TODO: why should we need this??
     setup_login(app)
     setup_users(app)
+    setup_products(app)
     assert setup_projects(app), "Shall not skip this setup"
     assert setup_studies_access(app), "Shall not skip this setup"
+
 
     # server and client
     yield loop.run_until_complete(

@@ -26,6 +26,7 @@ from simcore_service_webserver import catalog
 from simcore_service_webserver.catalog import setup_catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.projects.projects_fakes import Fake
 from simcore_service_webserver.projects.projects_models import ProjectState
@@ -74,6 +75,7 @@ def client(
     setup_resource_manager(app)
     assert setup_projects(app)
     setup_catalog(app)
+    setup_products(app)
 
     yield loop.run_until_complete(
         aiohttp_client(
@@ -242,7 +244,9 @@ async def catalog_subsystem_mock(monkeypatch):
     async def mocked_get_services_for_user(*args, **kwargs):
         return services_in_project
 
-    monkeypatch.setattr(catalog, "get_services_for_user_in_product", mocked_get_services_for_user)
+    monkeypatch.setattr(
+        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
+    )
 
     return creator
 
