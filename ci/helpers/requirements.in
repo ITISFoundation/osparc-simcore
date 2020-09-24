@@ -1,0 +1,6 @@
+# Minimal packages for install_pylint.bash
+#
+# NOTE: keep frozen since it caused errors in the past
+celery==4.4.7
+docker==4.3.1
+pyjwt==1.7.1
