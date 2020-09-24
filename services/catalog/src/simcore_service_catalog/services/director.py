@@ -74,7 +74,12 @@ def safe_request(request_func: Coroutine):
             normalized_path = path.lstrip("/")
             resp = await request_func(self, path=normalized_path, *args, **kwargs)
         except Exception as err:
-            logger.exception("Failed to put %s %s", self._client.base_url, path)
+            logger.exception(
+                "Failed request %s to %s%s",
+                request_func.__name__,
+                self._client.base_url,
+                path,
+            )
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
         return _unenvelope_or_raise_error(resp)
