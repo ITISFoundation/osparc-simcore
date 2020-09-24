@@ -125,6 +125,8 @@ async def start_project_interactive_services(
     running_services = await director_api.get_running_interactive_services(
         request.app, user_id, project["uuid"]
     )
+    log.debug("Running services %s", running_services)
+
     running_service_uuids = [x["service_uuid"] for x in running_services]
     # now start them if needed
     project_needed_services = {
@@ -133,6 +135,7 @@ async def start_project_interactive_services(
         if _is_node_dynamic(service["key"])
         and service_uuid not in running_service_uuids
     }
+    log.debug("Services to start %s", project_needed_services)
 
     start_service_tasks = [
         director_api.start_service(
@@ -145,7 +148,18 @@ async def start_project_interactive_services(
         )
         for service_uuid, service in project_needed_services.items()
     ]
-    await logged_gather(*start_service_tasks, reraise=True)
+
+    result = await logged_gather(*start_service_tasks, reraise=True)
+    log.debug("Services start result %s", result)
+    for entry in result:
+        # if the status is present in the results fo the start_service
+        # it means that the API call failed
+        # also it is enforced that the status is different from 200 OK
+        if "status" not in entry:
+            continue
+
+        if entry["status"] != 200:
+            log.error("Error while starting dynamic service %s", entry)
 
 
 async def delete_project(request: web.Request, project_uuid: str, user_id: int) -> None:
