@@ -1090,7 +1090,7 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash clean_up
 
   system-test-environment-setup:
-    name: System-testing environment setup
+    name: "[sys] environment setup"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
