@@ -1,4 +1,4 @@
-name: Github-CI Push/PR
+name: CI
 
 on:
   push:
@@ -23,7 +23,7 @@ env:
 
 jobs:
   unit-test-api:
-    name: Unit-testing api
+    name: "[unit] api"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -57,7 +57,7 @@ jobs:
         run: ./ci/github/unit-testing/api.bash test
 
   unit-test-api-server:
-    name: Unit-testing api-server
+    name: "[unit] api-server"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -104,7 +104,7 @@ jobs:
           path: codeclimate.unit_api_server_coverage.json
 
   unit-test-catalog:
-    name: Unit-testing catalog
+    name: "[unit] catalog"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -157,7 +157,7 @@ jobs:
           path: codeclimate.unit_catalog_coverage.json
 
   unit-test-director:
-    name: Unit-testing director
+    name: "[unit] director"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -204,7 +204,7 @@ jobs:
           path: codeclimate.unit_director_coverage.json
 
   unit-test-sidecar:
-    name: Unit-testing sidecar
+    name: "[unit] sidecar"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -250,7 +250,7 @@ jobs:
           name: unit_sidecar_coverage
           path: codeclimate.unit_sidecar_coverage.json
   unit-test-frontend:
-    name: Unit-testing frontend
+    name: "[unit] frontend"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -287,7 +287,7 @@ jobs:
     #     flags: unittests #optional
 
   unit-test-python-linting:
-    name: Unit-testing python-linting
+    name: "[unit] python-linting"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -321,7 +321,7 @@ jobs:
         run: ./ci/github/unit-testing/python-linting.bash test
 
   unit-test-service-library:
-    name: Unit-testing service-library
+    name: "[unit] service-library"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -368,7 +368,7 @@ jobs:
           path: codeclimate.unit_servicelib_coverage.json
 
   unit-test-simcore-sdk:
-    name: Unit-testing simcore-sdk
+    name: "[unit] simcore-sdk"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -415,7 +415,7 @@ jobs:
           path: codeclimate.unit_simcoresdk_coverage.json
 
   unit-test-storage:
-    name: Unit-testing storage
+    name: "[unit] storage"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -463,7 +463,7 @@ jobs:
 
   # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
   unit-test-webserver-isolated:
-    name: Unit-testing webserver isolated
+    name: "[unit] webserver isolated"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -511,7 +511,7 @@ jobs:
 
   # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
   unit-test-webserver-slow:
-    name: Unit-testing webserver slow
+    name: "[unit] webserver slow"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -559,7 +559,7 @@ jobs:
 
   # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
   unit-test-webserver-medium:
-    name: Unit-testing webserver medium
+    name: "[unit] webserver medium"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -607,7 +607,7 @@ jobs:
 
   # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
   unit-test-webserver-fast:
-    name: Unit-testing webserver fast
+    name: "[unit] webserver fast"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -684,7 +684,7 @@ jobs:
         run: ./ci/deploy/dockerhub-test-images.bash
 
   integration-test-webserver:
-    name: Integration-testing webserver
+    name: "[int] webserver"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -747,7 +747,7 @@ jobs:
           path: codeclimate.integration_webserver_coverage.json
 
   integration-test-sidecar:
-    name: Integration-testing sidecar
+    name: "[int] sidecar"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -810,7 +810,7 @@ jobs:
           path: codeclimate.integration_sidecar_coverage.json
 
   integration-test-simcore-sdk:
-    name: Integration-testing simcore-sdk
+    name: "[int] simcore-sdk"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -873,7 +873,7 @@ jobs:
           path: codeclimate.integration_simcoresdk_coverage.json
 
   system-test-swarm-deploy:
-    name: System-testing deploy simcore
+    name: "[system] deploy simcore"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -919,7 +919,7 @@ jobs:
   system-test-e2e:
     # FIXME: skip the job until make it faster and more reliable
     # https://github.com/ITISFoundation/osparc-simcore/issues/1594
-    name: System-testing e2e
+    name: "[system] e2e"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
