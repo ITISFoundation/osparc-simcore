@@ -31,6 +31,8 @@ from .studies_access import setup_studies_access
 from .tags import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
+from .settings import setup_settings
+from .products import setup_products
 
 log = logging.getLogger(__name__)
 
@@ -45,6 +47,8 @@ def create_application(config: Dict) -> web.Application:
     )
 
     app = create_safe_application(config)
+
+    setup_settings(app)
 
     # TODO: create dependency mechanism
     # and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
@@ -70,6 +74,7 @@ def create_application(config: Dict) -> web.Application:
     setup_tags(app)
     setup_catalog(app)
     setup_publications(app)
+    setup_products(app)
 
     return app
 

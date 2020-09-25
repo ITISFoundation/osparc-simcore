@@ -28,3 +28,5 @@ python-socketio
 semantic_version
 aiodebug
 json2html
+
+pydantic[email]

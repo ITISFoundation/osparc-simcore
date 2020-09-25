@@ -3,6 +3,8 @@
 Contains database **models** served by the ``postgres`` service and adds an extension with **migration** tools (e.g. entrypoint that wraps [alembic]'s CLI in a similar way to [flask-migrate]).
 
 
+## Usage
+
 To install migration tools add ``[migration]`` extra
 ```bash
   pip install .[migration]
@@ -58,8 +60,13 @@ Upgrades to given revision (get ``info`` to check history)
 [alembic]:https://alembic.sqlalchemy.org/en/latest/
 [flask-migrate]:https://flask-migrate.readthedocs.io/en/latest/
 
+## Database Models
 
-### Development
+Entity Relationship Diagram (ERD) defined under ``simcore_postgres_database.models``:
+
+![scripts/create_erd.py-output](doc/img/postgres-database-models.svg)
+
+## Development
 
 1. In order to create/modify/delete tables one can use sc-pg to start a clean database:
 

@@ -18,7 +18,6 @@ director:
 socketio:
   enabled: True
 db:
-  init_tables: False
   postgres:
     database: simcoredb
     endpoint: postgres:5432
@@ -44,7 +43,6 @@ rabbit:
   password: simcore
   channels:
     log: comp.backend.channels.log
-    progress: comp.backend.channels.progress
     instrumentation: "comp.backend.channels.instrumentation"
 login:
   enabled: True

@@ -184,20 +184,13 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
     },
 
     __getValuesFromServer: function() {
-      // get values from server
-      const request = new osparc.io.request.ApiRequest("/me", "GET");
-      request.addListenerOnce("success", e => {
-        const data = e.getTarget().getResponse()["data"];
-        this.__setDataToModel(data);
-      }, this);
-
-      request.addListenerOnce("fail", e => {
-        const error = e.getTarget().getResponse().error;
-        const msg = error ? error["errors"][0].message : this.tr("Failed to get profile");
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR", "user");
-      });
-
-      request.send();
+      osparc.data.Resources.getOne("profile", {}, null, false)
+        .then(profile => {
+          this.__setDataToModel(profile);
+        })
+        .catch(err => {
+          console.error(err);
+        });
     },
 
     __setDataToModel: function(data) {

@@ -28,8 +28,7 @@ class WebServerSettings(BaseSettings):
     vtag: str = "v0"
 
     @property
-    def base_url(self):
-        # FIXME: httpx.client does not consder vtag
+    def base_url(self) -> str:
         return f"http://{self.host}:{self.port}/{self.vtag}"
 
     class Config(_CommonConfig):
@@ -83,9 +82,10 @@ class AppSettings(BaseSettings):
     def match_logging_level(cls, value) -> str:
         try:
             getattr(logging, value.upper())
-        except AttributeError:
-            raise ValueError(f"{value.upper()} is not a valid level")
-        return value.upper()
+            return value.upper()
+        except AttributeError as err:
+            raise ValueError(f"{value.upper()} is not a valid level") from err
+
 
     @property
     def loglevel(self) -> int:
@@ -98,7 +98,7 @@ class AppSettings(BaseSettings):
     webserver: WebServerSettings
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
-    host: str = "0.0.0.0"  # "0.0.0.0" if is_containerized else "127.0.0.1",
+    host: str = "0.0.0.0"  # nosec
     port: int = 8000
 
     debug: bool = False  # If True, debug tracebacks should be returned on errors.

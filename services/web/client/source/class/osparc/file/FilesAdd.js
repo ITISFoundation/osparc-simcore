@@ -33,7 +33,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let filesAdd = new osparc.file.FilesAdd(this.tr("Add file(s)"));
+ *   let filesAdd = new osparc.file.FilesAdd(this.tr("Add file"));
  *   this.getRoot().add(filesAdd);
  * </pre>
  */
@@ -44,15 +44,13 @@ qx.Class.define("osparc.file.FilesAdd", {
   /**
     * @param label {String} Text to be displayed in the button
     */
-  construct: function(label = this.tr("Add file(s)")) {
+  construct: function(label = this.tr("Add file")) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.HBox(10));
 
     const input = new qx.html.Input("file", {
       display: "none"
-    }, {
-      multiple: true
     });
     this.getContentElement().add(input);
 

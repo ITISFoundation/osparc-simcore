@@ -1,6 +1,7 @@
 import base64
 import json
 import logging
+from contextlib import suppress
 from typing import Dict, Optional
 
 import attr
@@ -45,12 +46,10 @@ def setup_webserver(app: FastAPI) -> None:
 
 
 async def close_webserver(app: FastAPI) -> None:
-    try:
+    with suppress(AttributeError):
         client: AsyncClient = app.state.webserver_client
         await client.aclose()
         del app.state.webserver_client
-    except AttributeError:
-        pass
     logger.debug("Webserver closed successfully")
 
 
@@ -77,9 +76,6 @@ class AuthSession:
             vtag=app.state.settings.webserver.vtag,
             session_cookies=session_cookies,
         )
-
-    def _url(self, path: str) -> str:
-        return f"/{self.vtag}/{path.lstrip('/')}"
 
     @classmethod
     def _process(cls, resp: Response) -> Optional[Dict]:
@@ -112,21 +108,21 @@ class AuthSession:
     # TODO: add ping to healthcheck
 
     async def get(self, path: str) -> Optional[Dict]:
-        url = self._url(path)
+        url = path.lstrip('/')
         try:
             resp = await self.client.get(url, cookies=self.session_cookies)
-        except Exception:
+        except Exception as err:
             logger.exception("Failed to get %s", url)
-            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
         return self._process(resp)
 
     async def put(self, path: str, body: Dict) -> Optional[Dict]:
-        url = self._url(path)
+        url = path.lstrip('/')
         try:
             resp = await self.client.put(url, json=body, cookies=self.session_cookies)
-        except Exception:
+        except Exception as err:
             logger.exception("Failed to put %s", url)
-            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
         return self._process(resp)

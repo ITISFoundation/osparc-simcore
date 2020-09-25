@@ -41,7 +41,7 @@ qx.Class.define("osparc.auth.ui.ResetPassRequestView", {
       // email
       const email = new qx.ui.form.TextField();
       email.setRequired(true);
-      email.setPlaceholder(this.tr("Introduce your registration email"));
+      email.setPlaceholder(this.tr("Type your registration email"));
       this.add(email);
       this.addListener("appear", () => {
         email.focus();

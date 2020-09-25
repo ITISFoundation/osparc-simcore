@@ -194,11 +194,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return inputOutputNodesLayout;
     },
 
-    openServiceCatalog: function() {
-      let srvCat = this.__createServiceCatalog();
-      srvCat.open();
-    },
-
     __createServiceCatalog: function(pos) {
       const srvCat = new osparc.component.workbench.ServiceCatalog();
       if (pos) {

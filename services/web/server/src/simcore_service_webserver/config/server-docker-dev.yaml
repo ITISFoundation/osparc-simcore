@@ -18,11 +18,10 @@ director:
   port: ${DIRECTOR_PORT}
   version: "v0"
 catalog:
-  host: catalog
-  port: 8000
+  host: ${CATALOG_HOST}
+  port: ${CATALOG_PORT}
   version: v0
 db:
-  init_tables: False
   postgres:
     database: ${POSTGRES_DB}
     endpoint: ${POSTGRES_ENDPOINT}
@@ -45,7 +44,6 @@ rabbit:
   user: ${RABBIT_USER}
   password: ${RABBIT_PASSWORD}
   channels:
-    progress: "comp.backend.channels.progress"
     log: "comp.backend.channels.log"
     instrumentation: "comp.backend.channels.instrumentation"
 activity:

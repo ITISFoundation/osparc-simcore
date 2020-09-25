@@ -1,4 +1,3 @@
-from asyncio import Future
 from collections import namedtuple
 from typing import List, Tuple
 
@@ -63,9 +62,3 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
             ),
         ],
     )
-
-
-def future_with_result(result) -> Future:
-    f = Future()
-    f.set_result(result)
-    return f

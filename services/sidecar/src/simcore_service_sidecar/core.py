@@ -1,13 +1,14 @@
-from datetime import datetime
-from typing import List, Optional, Union, Dict
 import traceback
+from datetime import datetime
+from typing import Dict, List, Optional, Union
 
-import aiodocker
-import aiopg
+import asyncio
 import networkx as nx
-from celery.utils.log import get_task_logger
+from aiopg.sa import Engine, SAConnection
+from aiopg.sa.result import RowProxy
 from sqlalchemy import and_, literal_column
 
+from celery.utils.log import get_task_logger
 from simcore_postgres_database.sidecar_models import (  # PENDING,
     FAILED,
     RUNNING,
@@ -20,10 +21,10 @@ from simcore_sdk import node_ports
 from simcore_sdk.node_ports import log as node_port_log
 
 from . import config, exceptions
+from .db import DBContextManager
 from .executor import Executor
 from .rabbitmq import RabbitMQ
 from .utils import execution_graph, find_entry_point, is_node_ready
-from .db import DBContextManager
 
 log = get_task_logger(__name__)
 log.setLevel(config.SIDECAR_LOGLEVEL)
@@ -61,25 +62,24 @@ async def task_required_resources(node_id: str) -> Union[Dict[str, bool], None]:
 
 
 async def _try_get_task_from_db(
-    db_connection: aiopg.sa.SAConnection,
+    db_connection: SAConnection,
     graph: nx.DiGraph,
-    job_request_id: int,
+    job_request_id: str,
     project_id: str,
     node_id: str,
-) -> Optional[aiopg.sa.result.RowProxy]:
-    task: aiopg.sa.result.RowProxy = None
+) -> Optional[RowProxy]:
     # Use SELECT FOR UPDATE TO lock the row
     result = await db_connection.execute(
         query=comp_tasks.select(for_update=True).where(
-            and_(
-                comp_tasks.c.node_id == node_id,
-                comp_tasks.c.project_id == project_id,
-                comp_tasks.c.job_id == None,
-                comp_tasks.c.state == UNKNOWN,
+            (comp_tasks.c.node_id == node_id)
+            & (comp_tasks.c.project_id == project_id)
+            & (
+                ((comp_tasks.c.job_id == None) & (comp_tasks.c.state == UNKNOWN))
+                | (comp_tasks.c.state == FAILED)
             )
-        )
+        ),
     )
-    task = await result.fetchone()
+    task: RowProxy = await result.fetchone()
 
     if not task:
         log.debug("No task found")
@@ -97,7 +97,8 @@ async def _try_get_task_from_db(
         comp_tasks.update()
         .where(
             and_(
-                comp_tasks.c.node_id == node_id, comp_tasks.c.project_id == project_id,
+                comp_tasks.c.node_id == node_id,
+                comp_tasks.c.project_id == project_id,
             )
         )
         .values(job_id=job_request_id, state=RUNNING, start=datetime.utcnow())
@@ -114,9 +115,9 @@ async def _try_get_task_from_db(
 
 
 async def _get_pipeline_from_db(
-    db_connection: aiopg.sa.SAConnection, project_id: str,
-) -> aiopg.sa.result.RowProxy:
-    pipeline: aiopg.sa.result.RowProxy = None
+    db_connection: SAConnection,
+    project_id: str,
+) -> RowProxy:
     # get the pipeline
     result = await db_connection.execute(
         comp_pipeline.select().where(comp_pipeline.c.project_id == project_id)
@@ -126,21 +127,36 @@ async def _get_pipeline_from_db(
             f"Pipeline {result.rowcount} found instead of only one for project_id {project_id}"
         )
 
-    pipeline = await result.first()
+    pipeline: RowProxy = await result.first()
     if not pipeline:
         raise exceptions.DatabaseError(f"Pipeline {project_id} not found")
     log.debug("found pipeline %s", pipeline)
     return pipeline
 
+async def _set_task_status(db_engine: Engine, project_id: str, node_id: str, run_result):
+    async with db_engine.acquire() as connection:
+        await connection.execute(
+            # FIXME: E1120:No value for argument 'dml' in method call
+            # pylint: disable=E1120
+            comp_tasks.update()
+            .where(
+                and_(
+                    comp_tasks.c.node_id == node_id,
+                    comp_tasks.c.project_id == project_id,
+                )
+            )
+            .values(state=run_result, end=datetime.utcnow())
+        )
+
 
 async def inspect(
     # pylint: disable=too-many-arguments
-    db_engine: aiopg.sa.Engine,
+    db_engine: Engine,
     rabbit_mq: RabbitMQ,
-    job_request_id: int,
+    job_request_id: str,
     user_id: str,
     project_id: str,
-    node_id: str,
+    node_id: Optional[str],
 ) -> Optional[List[str]]:
     log.debug(
         "ENTERING inspect with user %s pipeline:node %s: %s",
@@ -149,11 +165,10 @@ async def inspect(
         node_id,
     )
 
-    pipeline: aiopg.sa.result.RowProxy = None
-    task: aiopg.sa.result.RowProxy = None
-    graph: nx.DiGraph = None
+    task: Optional[RowProxy] = None
+    graph: Optional[nx.DiGraph] = None
     async with db_engine.acquire() as connection:
-        pipeline = await _get_pipeline_from_db(connection, project_id)
+        pipeline: RowProxy = await _get_pipeline_from_db(connection, project_id)
         graph = execution_graph(pipeline)
         if not node_id:
             log.debug("NODE id was zero, this was the entry node id")
@@ -173,31 +188,24 @@ async def inspect(
 
     # now proceed actually running the task (we do that after the db session has been closed)
     # try to run the task, return empyt list of next nodes if anything goes wrong
-    run_result = SUCCESS
+    run_result = FAILED
     next_task_nodes = []
     try:
-        sidecar = Executor(
-            db_engine=db_engine, rabbit_mq=rabbit_mq, task=task, user_id=user_id,
+        executor = Executor(
+            db_engine=db_engine,
+            rabbit_mq=rabbit_mq,
+            task=task,
+            user_id=user_id,
         )
-        await sidecar.run()
+        await executor.run()
         next_task_nodes = list(graph.successors(node_id))
-    except (aiodocker.exceptions.DockerError, exceptions.SidecarException):
-        run_result = FAILED
-        log.exception("Error during execution")
+        run_result = SUCCESS
+    except asyncio.CancelledError:
+        log.warning("Task has been cancelled")
+        raise
 
     finally:
-        async with db_engine.acquire() as connection:
-            await connection.execute(
-                # FIXME: E1120:No value for argument 'dml' in method call
-                # pylint: disable=E1120
-                comp_tasks.update()
-                .where(
-                    and_(
-                        comp_tasks.c.node_id == node_id,
-                        comp_tasks.c.project_id == project_id,
-                    )
-                )
-                .values(state=run_result, end=datetime.utcnow())
-            )
+        await _set_task_status(db_engine, project_id, node_id, run_result)
+
 
     return next_task_nodes

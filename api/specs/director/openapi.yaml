@@ -15,32 +15,31 @@ servers:
     url: http://{host}:{port}/{version}
     variables:
       host:
-        default: 'localhost'
+        default: "localhost"
       port:
-        default: '8080'
+        default: "8080"
       version:
-        default: 'v0'
+        default: "v0"
         enum:
-          - 'v0'
+          - "v0"
   - description: Production server
     url: http://director:{port}/{version}
     variables:
       port:
-        default: '8080'
+        default: "8080"
       version:
-        default: 'v0'
+        default: "v0"
         enum:
-          - 'v0'
-
+          - "v0"
 
 # tags are used for organizing operations
 tags:
-- name: admins
-  description: Secured Admin-only calls
-- name: developers
-  description: Operations available to regular developers
-- name: users
-  description: Operations available to regular users
+  - name: admins
+    description: Secured Admin-only calls
+  - name: developers
+    description: Operations available to regular developers
+  - name: users
+    description: Operations available to regular users
 
 paths:
   /:
@@ -56,13 +55,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HealthCheckEnveloped'
+                $ref: "#/components/schemas/HealthCheckEnveloped"
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
 
   /services:
     get:
@@ -72,26 +71,26 @@ paths:
       description: Lists available services in the oSparc platform
       operationId: services_get
       parameters:
-        - $ref: '#/components/parameters/ServiceType'
+        - $ref: "#/components/parameters/ServiceType"
       responses:
         "200":
           description: Success, returns the list of available services
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServicesEnveloped'
+                $ref: "#/components/schemas/ServicesEnveloped"
         "401":
           description: Unauthorized access
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
 
   /services/{service_key}/{service_version}:
     get:
@@ -101,33 +100,33 @@ paths:
       description: Returns details of the selected service if available in the oSparc platform
       operationId: services_by_key_version_get
       parameters:
-        - $ref: '#/components/parameters/ServiceKeyPath'
-        - $ref: '#/components/parameters/ServiceVersionPath'
+        - $ref: "#/components/parameters/ServiceKeyPath"
+        - $ref: "#/components/parameters/ServiceVersionPath"
       responses:
         "200":
           description: Success, returns the details of the service
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServicesEnveloped'
+                $ref: "#/components/schemas/ServicesEnveloped"
         "401":
           description: Unauthorized access
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
 
   /service_extras/{service_key}/{service_version}:
     get:
@@ -135,35 +134,35 @@ paths:
         - users
       summary: Returns the service's details which should be hidden from the user defined as extras.
       description: Currently returns the node_requirements an array of resoruces needed for scheduling.
-      operationId: services_extras_get
+      operationId: service_extras_by_key_version_get
       parameters:
-        - $ref: '#/components/parameters/ServiceKeyPath'
-        - $ref: '#/components/parameters/ServiceVersionPath'
+        - $ref: "#/components/parameters/ServiceKeyPath"
+        - $ref: "#/components/parameters/ServiceVersionPath"
       responses:
         "200":
           description: Success, returns an object containing details hidden from the user
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceExtrasEnveloped'
+                $ref: "#/components/schemas/ServiceExtrasEnveloped"
         "401":
           description: Unauthorized access
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
 
   /running_interactive_services:
     get:
@@ -188,62 +187,62 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RunningServicesEnveloped'
+                $ref: "#/components/schemas/RunningServicesEnveloped"
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
     post:
       tags:
         - users
       summary: Starts an interactive service in the oSparc platform
       operationId: running_interactive_services_post
       parameters:
-        - $ref: '#/components/parameters/UserId'
-        - $ref: '#/components/parameters/ProjectId'
-        - $ref: '#/components/parameters/ServiceKey'
-        - $ref: '#/components/parameters/ServiceVersion'
-        - $ref: '#/components/parameters/AssignmentUuid'
-        - $ref: '#/components/parameters/ServiceBasePath'
+        - $ref: "#/components/parameters/UserId"
+        - $ref: "#/components/parameters/ProjectId"
+        - $ref: "#/components/parameters/ServiceKey"
+        - $ref: "#/components/parameters/ServiceVersion"
+        - $ref: "#/components/parameters/AssignmentUuid"
+        - $ref: "#/components/parameters/ServiceBasePath"
       responses:
         "201":
           description: Succesfully created the service in the oSparc platform. Returns the location where the service runs.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RunningServiceEnveloped'
+                $ref: "#/components/schemas/RunningServiceEnveloped"
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
         "401":
           description: Unauthorized access
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
         "409":
           description: A service with the same uuid already exists
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
 
   /running_interactive_services/{service_uuid}:
     get:
@@ -253,32 +252,32 @@ paths:
       description: Succesfully returns if a service with the defined uuid is up and running
       operationId: running_interactive_services_get
       parameters:
-        - $ref: '#/components/parameters/ServiceUuid'
+        - $ref: "#/components/parameters/ServiceUuid"
       responses:
         "200":
           description: OK service exists and runs. Returns service location.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RunningServiceEnveloped'
+                $ref: "#/components/schemas/RunningServiceEnveloped"
         "400":
           description: Malformed function call, missing field
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
     delete:
       tags:
         - users
@@ -286,7 +285,7 @@ paths:
       description: Stops and removes an interactive service from the oSparc platform
       operationId: running_interactive_services_delete
       parameters:
-        - $ref: '#/components/parameters/ServiceUuid'
+        - $ref: "#/components/parameters/ServiceUuid"
       responses:
         "204":
           description: Succesfully stopped and removed the service from the oSparc platform
@@ -295,19 +294,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
         "404":
           description: Service not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
         default:
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnveloped'
+                $ref: "#/components/schemas/ErrorEnveloped"
 
 components:
   parameters:
@@ -385,8 +384,8 @@ components:
       required: false
       schema:
         type: string
-        example: '/x/EycCXbU0H/'
-        default: ''
+        example: "/x/EycCXbU0H/"
+        default: ""
 
     ServiceUuid:
       in: path
@@ -428,19 +427,19 @@ components:
 
   schemas:
     ErrorEnveloped:
-      $ref: '../common/schemas/error.yaml#/components/schemas/ErrorEnveloped'
+      $ref: "../common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
 
     RunningServiceEnveloped:
-      $ref: '../common/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped'
+      $ref: "../common/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped"
 
     RunningServicesEnveloped:
-      $ref: '../common/schemas/running_service.yaml#/components/schemas/RunningServicesEnveloped'
+      $ref: "../common/schemas/running_service.yaml#/components/schemas/RunningServicesEnveloped"
 
     ServicesEnveloped:
-      $ref: '../common/schemas/services.yaml#/components/schemas/ServicesEnveloped'
+      $ref: "../common/schemas/services.yaml#/components/schemas/ServicesEnveloped"
 
     ServiceExtrasEnveloped:
-      $ref: '../common/schemas/services.yaml#/components/schemas/ServiceExtrasEnveloped'
+      $ref: "../common/schemas/services.yaml#/components/schemas/ServiceExtrasEnveloped"
 
     HealthCheckEnveloped:
-      $ref: '../common/schemas/health_check.yaml#/components/schemas/HealthCheckEnveloped'
+      $ref: "../common/schemas/health_check.yaml#/components/schemas/HealthCheckEnveloped"

@@ -5,14 +5,12 @@
 """
 
 import sqlalchemy as sa
-
-from sqlalchemy.sql import func, expression
 from sqlalchemy.dialects.postgresql import ARRAY
-
-
-# NOTE: using func.now() instead of python datetime ensure the time is computed server side
+from sqlalchemy.sql import expression, func
 
 from .base import metadata
+
+# NOTE: using func.now() instead of python datetime ensure the time is computed server side
 
 
 services_meta_data = sa.Table(
@@ -54,8 +52,16 @@ services_meta_data = sa.Table(
 services_access_rights = sa.Table(
     "services_access_rights",
     metadata,
-    sa.Column("key", sa.String, nullable=False,),
-    sa.Column("version", sa.String, nullable=False,),
+    sa.Column(
+        "key",
+        sa.String,
+        nullable=False,
+    ),
+    sa.Column(
+        "version",
+        sa.String,
+        nullable=False,
+    ),
     sa.Column(
         "gid",
         sa.BigInteger,
@@ -72,6 +78,16 @@ services_access_rights = sa.Table(
     sa.Column(
         "write_access", sa.Boolean, nullable=False, server_default=expression.false()
     ),
+    sa.Column(
+        "product_name",
+        sa.String,
+        sa.ForeignKey(
+            "products.name",
+            name="fk_services_name_products",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
+    ),
     sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
     sa.Column(
         "modified",
@@ -86,5 +102,5 @@ services_access_rights = sa.Table(
         onupdate="CASCADE",
         ondelete="CASCADE",
     ),
-    sa.PrimaryKeyConstraint("key", "version", "gid", name="services_access_pk"),
+    sa.PrimaryKeyConstraint("key", "version", "gid", "product_name", name="services_access_pk"),
 )

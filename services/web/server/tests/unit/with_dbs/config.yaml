@@ -13,7 +13,6 @@ director:
 socketio:
   enabled: True
 db:
-  init_tables: False
   postgres:
     database: test
     user: admin
@@ -33,7 +32,6 @@ rabbit:
   enabled: False
   channels:
     log: comp.backend.channels.log
-    progress: comp.backend.channels.progress
     instrumentation: comp.backend.channels.instrumentation
   password: simcore
   user: simcore

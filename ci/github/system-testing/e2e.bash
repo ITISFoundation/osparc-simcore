@@ -30,6 +30,11 @@ install_insecure_registry() {
     echo REGISTRY_URL=registry:5000
     # disable registry caching to ensure services are fetched
     echo DIRECTOR_REGISTRY_CACHING=False
+    echo DIRECTOR_REGISTRY_CACHING_TTL=0
+    # shorten time to sync services from director since registry comes later
+    echo CATALOG_BACKGROUND_TASK_REST_TIME=1
+    # ensure sidecars are started as CPU nodes
+    echo SIDECAR_FORCE_CPU_NODE=1
   } >>.env
 
   # prepare insecure registry access for docker engine
@@ -69,13 +74,17 @@ uninstall_insecure_registry() {
 }
 
 setup_images() {
-  echo "--------------- getting simcore docker images..."
+  echo "--------------- preparing docker images..."
   make pull-version || ( (make pull-cache || true) && make build-x tag-version)
   make info-images
 
+}
+
+setup_and_run_stack() {
   # configure simcore for testing with a private registry
   install_insecure_registry
 
+  echo "--------------- starting swarm ..."
   # start simcore and set log-level
   export LOG_LEVEL=WARNING
   make up-version
@@ -122,12 +131,6 @@ setup_database() {
   docker ps --filter "ancestor=$IMAGE_NAME"
   docker inspect "$(docker ps --filter "ancestor=$IMAGE_NAME" -q)"
 
-  # Cleaning up volumes
-  docker volume prune --force
-
-  # migrates tables
-  make pg-db-tables
-
   # Injects project template
   make inject-templates-in-db
   popd
@@ -136,34 +139,41 @@ setup_database() {
 install() {
   ## shortcut
   setup_images
+  setup_and_run_stack
   setup_environment
   setup_registry
   setup_database
 }
 
 test() {
+  sleep 5
   pushd tests/e2e
   make test
   popd
-
 }
 
-recover_artifacts() {
+dump_docker_logs() {
   # all screenshots are in tests/e2e/screenshots if any
 
   # get docker logs.
-  # WARNING: dumping long logs might take hours!!
-  mkdir simcore_logs
-  (docker service logs --timestamps --tail=300 --details simcore_webserver >simcore_logs/webserver.log 2>&1) || true
-  (docker service logs --timestamps --tail=200 --details simcore_director >simcore_logs/director.log 2>&1) || true
-  (docker service logs --timestamps --tail=200 --details simcore_storage >simcore_logs/storage.log 2>&1) || true
-  (docker service logs --timestamps --tail=200 --details simcore_sidecar >simcore_logs/sidecar.log 2>&1) || true
-  (docker service logs --timestamps --tail=200 --details simcore_catalog >simcore_logs/catalog.log 2>&1) || true
+  # NOTE: dumping logs sometimes hangs. Introducing a timeout
+  mkdir --parents simcore_logs
+  (timeout 30 docker service logs --timestamps --tail=300 --details ${SWARM_STACK_NAME}_webserver >simcore_logs/webserver.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_director  >simcore_logs/director.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_storage   >simcore_logs/storage.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_sidecar   >simcore_logs/sidecar.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_catalog   >simcore_logs/catalog.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_migration >simcore_logs/migration.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_postgres >simcore_logs/postgres.log 2>&1) || true
 }
 
 clean_up() {
   echo "--------------- listing services running..."
   docker service ls
+  echo "--------------- listing service details..."
+  docker service ps --no-trunc $(docker service ls --quiet)
+  echo "--------------- listing container details..."
+  docker container ps -a
   echo "--------------- listing images available..."
   docker images
   echo "--------------- switching off..."

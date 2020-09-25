@@ -229,3 +229,21 @@ async def get_user_name(app: web.Application, user_id: int) -> Dict[str, str]:
         )
         parts = user_name.split(".") + [""]
         return dict(first_name=parts[0], last_name=parts[1])
+
+
+async def get_user(app: web.Application, user_id: int) -> Dict:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        result = await conn.execute(sa.select([users]).where(users.c.id == user_id))
+        row: RowProxy = await result.fetchone()
+        if not row:
+            raise UserNotFoundError(uid=user_id)
+        return dict(row)
+
+
+async def get_user_id_from_gid(app: web.Application, primary_gid: int) -> int:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        return await conn.scalar(
+            sa.select([users.c.id]).where(users.c.primary_gid == primary_gid)
+        )

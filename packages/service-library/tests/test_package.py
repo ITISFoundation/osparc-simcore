@@ -7,8 +7,9 @@ import re
 from pathlib import Path
 
 import pytest
-from servicelib.utils import is_osparc_repo_dir, search_osparc_repo_dir
+
 from pytest_simcore.helpers.utils_pylint import assert_pylint_is_passing
+from servicelib.utils import is_osparc_repo_dir, search_osparc_repo_dir
 
 
 @pytest.fixture

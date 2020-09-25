@@ -10,39 +10,44 @@
 import asyncio
 import logging
 from asyncio.futures import CancelledError
+from datetime import datetime
 from pprint import pformat
 from typing import Dict, List, Optional, Set, Tuple
+from urllib.parse import quote_plus
 
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
-
 from fastapi import FastAPI
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
-from simcore_service_catalog.db.repositories.projects import ProjectsRepository
 
-from ..api.dependencies.director import get_director_session
+from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
+from ..db.repositories.projects import ProjectsRepository
 from ..db.repositories.services import ServicesRepository
 from ..models.domain.service import (
     ServiceAccessRightsAtDB,
     ServiceDockerData,
-    ServiceKeyVersion,
     ServiceMetaDataAtDB,
 )
+from ..services.frontend_services import get_services as get_frontend_services
 
 logger = logging.getLogger(__name__)
 
 ServiceKey = str
 ServiceVersion = str
 
+OLD_SERVICES_DATE: datetime = datetime(2020, 8, 19)
+
 
 async def _list_registry_services(
     app: FastAPI,
 ) -> Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData]:
-    client = get_director_session(app)
+    client = get_director_api(app)
     data = await client.get("/services")
-    services: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData] = {}
+    services: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData] = {
+        (s.key, s.version): s for s in get_frontend_services()
+    }
     for x in data:
         try:
             service_data = ServiceDockerData.parse_obj(x)
@@ -69,14 +74,42 @@ async def _list_db_services(
     }
 
 
-async def _get_service_access_rights(
-    service: ServiceDockerData, connection: SAConnection
+async def _create_service_default_access_rights(
+    app: FastAPI, service: ServiceDockerData, connection: SAConnection
 ) -> Tuple[Optional[PositiveInt], List[ServiceAccessRightsAtDB]]:
+    """Rationale as of 19.08.2020: all services that were put in oSparc before today
+    will be visible to everyone.
+    The services afterwards will be visible ONLY to his/her owner.
+    """
+
+    async def _is_old_service(app: FastAPI, service: ServiceDockerData) -> bool:
+        # get service build date
+        client = get_director_api(app)
+        data = await client.get(
+            f"/service_extras/{quote_plus(service.key)}/{service.version}"
+        )
+        if not data or "build_date" not in data:
+            return True
+
+        logger.debug("retrieved service extras are %s", data)
+
+        service_build_data = datetime.strptime(data["build_date"], "%Y-%m-%dT%H:%M:%SZ")
+        return service_build_data < OLD_SERVICES_DATE
+
     groups_repo = GroupsRepository(connection)
     everyone_gid = (await groups_repo.get_everyone_group()).gid
     owner_gid = None
     reader_gids: List[PositiveInt] = []
-    # first get the owner emails
+
+    def _is_frontend_service(service: ServiceDockerData) -> bool:
+        return "/frontend/" in service.key
+
+    if _is_frontend_service(service) or await _is_old_service(app, service):
+        logger.debug("service %s:%s is old or frontend", service.key, service.version)
+        # let's make that one available to everyone
+        reader_gids.append(everyone_gid)
+
+    # try to find the owner
     possible_owner_email = [service.contact] + [
         author.email for author in service.authors
     ]
@@ -84,35 +117,12 @@ async def _get_service_access_rights(
     for user_email in possible_owner_email:
         possible_gid = await groups_repo.get_user_gid_from_email(user_email)
         if possible_gid:
-            reader_gids.append(possible_gid)
             if not owner_gid:
                 owner_gid = possible_gid
-
-    # there was no owner here, try with affiliation to some group
-    possible_affiliations = [
-        author.affiliation for author in service.authors if author.affiliation
-    ]
-    for user_affiliation in possible_affiliations:
-        possible_gid = await groups_repo.get_gid_from_affiliation(user_affiliation)
-        if possible_gid:
-            reader_gids.append(possible_gid)
-            if not owner_gid:
-                owner_gid = possible_gid
-
-    # if the service is part of a published template, it has to be available to everyone
-    projects_repo = ProjectsRepository(connection)
-    published_services: List[
-        ServiceKeyVersion
-    ] = await projects_repo.list_services_from_published_templates()
-    if (
-        ServiceKeyVersion(key=service.key, version=service.version)
-        in published_services
-    ):
-        reader_gids.append(everyone_gid)
-
-    # if no owner gid yet, we pass readable rights to the everyone group
     if not owner_gid:
-        reader_gids.append(everyone_gid)
+        logger.warning("service %s:%s has no owner", service.key, service.version)
+    else:
+        reader_gids.append(owner_gid)
 
     # we add the owner with full rights, unless it's everyone
     access_rights = [
@@ -122,6 +132,7 @@ async def _get_service_access_rights(
             gid=gid,
             execute_access=True,
             write_access=(gid == owner_gid),
+            product_name=app.state.settings.access_rights_default_product_name,
         )
         for gid in set(reader_gids)
     ]
@@ -130,6 +141,7 @@ async def _get_service_access_rights(
 
 
 async def _create_services_in_db(
+    app: FastAPI,
     connection: SAConnection,
     service_keys: Set[Tuple[ServiceKey, ServiceVersion]],
     services: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData],
@@ -139,8 +151,8 @@ async def _create_services_in_db(
     for service_key, service_version in service_keys:
         service: ServiceDockerData = services[(service_key, service_version)]
         # find the service owner
-        owner_gid, service_access_rights = await _get_service_access_rights(
-            service, connection
+        owner_gid, service_access_rights = await _create_service_default_access_rights(
+            app, service, connection
         )
         # set the service in the DB
         await services_repo.create_service(
@@ -163,15 +175,18 @@ async def _ensure_registry_insync_with_db(
     missing_services_in_db = set(services_in_registry.keys()) - services_in_db
     if missing_services_in_db:
         logger.debug(
-            "missing services in db:\n%s", pformat(missing_services_in_db),
+            "missing services in db:\n%s",
+            pformat(missing_services_in_db),
         )
         # update db (rationale: missing services are shared with everyone for now)
         await _create_services_in_db(
-            connection, missing_services_in_db, services_in_registry
+            app, connection, missing_services_in_db, services_in_registry
         )
 
 
-async def _ensure_published_templates_accessible(connection: SAConnection) -> None:
+async def _ensure_published_templates_accessible(
+    connection: SAConnection, default_product_name: str
+) -> None:
     # Rationale: if a project template was published, its services must be available to everyone.
     # a published template has a column Published that is set to True
     projects_repo = ProjectsRepository(connection)
@@ -194,7 +209,11 @@ async def _ensure_published_templates_accessible(connection: SAConnection) -> No
     missing_services = published_services - available_services
     missing_services_access_rights = [
         ServiceAccessRightsAtDB(
-            key=service[0], version=service[1], gid=everyone_gid, execute_access=True
+            key=service[0],
+            version=service[1],
+            gid=everyone_gid,
+            execute_access=True,
+            product_name=default_product_name,
         )
         for service in missing_services
     ]
@@ -208,16 +227,19 @@ async def _ensure_published_templates_accessible(connection: SAConnection) -> No
 
 async def sync_registry_task(app: FastAPI) -> None:
     # get list of services from director
+    default_product: str = app.state.settings.access_rights_default_product_name
     engine: Engine = app.state.engine
     while True:
         try:
             async with engine.acquire() as conn:
                 logger.debug("syncing services between registry and database...")
+
                 # check that the list of services is in sync with the registry
                 await _ensure_registry_insync_with_db(app, conn)
 
-                # check that the published services are available to everyone (templates are published to GUESTs, so their services must be also accessible)
-                await _ensure_published_templates_accessible(conn)
+                # check that the published services are available to everyone
+                # (templates are published to GUESTs, so their services must be also accessible)
+                await _ensure_published_templates_accessible(conn, default_product)
 
             await asyncio.sleep(app.state.settings.background_task_rest_time)
 
@@ -225,11 +247,13 @@ async def sync_registry_task(app: FastAPI) -> None:
             # task is stopped
             logger.debug("Catalog background task cancelled", exc_info=True)
             return
+
         except Exception:  # pylint: disable=broad-except
             logger.exception("Error while processing services entry")
+            # wait a bit before retrying, so it does not block everything until the director is up
             await asyncio.sleep(
-                5
-            )  # wait a bit before retrying, so it does not block everything until the director is up
+                app.state.settings.background_task_wait_after_failure
+            )
 
 
 async def start_registry_sync_task(app: FastAPI) -> None:

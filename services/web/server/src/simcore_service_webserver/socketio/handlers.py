@@ -47,10 +47,10 @@ async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
     try:
         await authenticate_user(sid, app, request)
         await set_user_in_rooms(sid, app, request)
-    except web.HTTPUnauthorized:
-        raise SocketIOConnectionError("authentification failed")
+    except web.HTTPUnauthorized as exc:
+        raise SocketIOConnectionError("authentification failed") from exc
     except Exception as exc:  # pylint: disable=broad-except
-        raise SocketIOConnectionError(f"Unexpected error: {exc}")
+        raise SocketIOConnectionError(f"Unexpected error: {exc}") from exc
 
     # Send service_deletion_timeout to client
     # the interval should be < get_service_deletion_timeout(app) to avoid
@@ -93,7 +93,7 @@ async def set_user_in_rooms(
 ) -> None:
     user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     primary_group, user_groups, all_group = await list_user_groups(app, user_id)
-    groups = [primary_group] + user_groups + [all_group]
+    groups = [primary_group] + user_groups + ([all_group] if bool(all_group) else [])
     sio = get_socket_server(app)
     # TODO: check if it is necessary to leave_room when socket disconnects
     for group in groups:

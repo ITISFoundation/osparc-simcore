@@ -1,5 +1,5 @@
 #
-# These are common target and recipes to Makefiles of packages/ and services/
+# These are COMMON target and recipes to Makefiles for **packages/ and services/**
 #
 # This file is included at the top of every Makefile
 #
@@ -62,7 +62,7 @@ help:
 
 .PHONY: devenv
 devenv: ## build development environment (using main services/docker-compose-build.yml)
-	@$(MAKE_C) $@
+	@$(MAKE_C) $(REPO_BASE_DIR) $@
 
 
 .PHONY: clean
@@ -76,7 +76,7 @@ clean: ## cleans all unversioned files in project and temp files create by this 
 
 
 .PHONY: info
-info: ## displays basic info
+inf%: ## displays basic info
 	# system
 	@echo ' OS               : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WIN)'
 	@echo ' CURDIR           : ${CURDIR}'
@@ -88,7 +88,6 @@ info: ## displays basic info
 	# package
 	-@echo ' name         : ' $(shell python ${CURDIR}/setup.py --name)
 	-@echo ' version      : ' $(shell python ${CURDIR}/setup.py --version)
-
 
 
 .PHONY: autoformat
@@ -105,9 +104,11 @@ autoformat: ## runs black python formatter on this service's code. Use AFTER mak
 		--exclude "/(\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist|migration|client-sdk|generated_code)/" \
 		$(CURDIR)
 
+
 .PHONY: mypy
 mypy: $(REPO_BASE_DIR)/scripts/mypy.bash $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type checker on this services's code. Use AFTER make install-*
 	@$(REPO_BASE_DIR)/scripts/mypy.bash src
+
 
 .PHONY: code-analysis
 code-analysis: $(REPO_BASE_DIR)/.codeclimate.yml ## runs code-climate analysis
@@ -130,26 +131,18 @@ version-major: ## commits version with backwards-INcompatible addition or change
 	$(_bumpversion)
 
 
-buil%: ## builds docker image (using main services/docker-compose-build.yml)
-	# building docker image for ${APP_NAME}
-	@$(MAKE_C) ${REPO_BASE_DIR} build target=${APP_NAME}
-
-# FIXME:
-#.PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
-#build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## docker image build in many flavours
-#	# building docker image for ${APP_NAME} ...
-#	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
-
-.PHONY: shell
-shell: ## runs shell in production container
-	@$(MAKE_C) ${REPO_BASE_DIR} shell target=${APP_NAME}
-
 #
 # SUBTASKS
 #
 
-.PHONY: _check_venv_active
-_check_venv_active:
+.PHONY: _check_python_version _check_venv_active
+
+_check_python_version:
+	# Checking that runs with correct python version
+	@python3 -c "import sys; assert sys.version_info[:2]==(3,6), f'Expected python 3.6, got {sys.version_info}'"
+
+
+_check_venv_active: _check_python_version
 	# checking whether virtual environment was activated
 	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
 

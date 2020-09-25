@@ -8,19 +8,15 @@ from distutils.version import StrictVersion
 from enum import Enum
 from typing import Dict, List, Optional, Tuple
 
+import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
 
-import aiodocker
 from servicelib.monitor_services import service_started, service_stopped
 
 from . import config, docker_utils, exceptions, registry_proxy
 from .config import APP_CLIENT_SESSION_KEY
 from .system_utils import get_system_extra_hosts_raw
-
-SERVICE_RUNTIME_SETTINGS: str = "simcore.service.settings"
-SERVICE_REVERSE_PROXY_SETTINGS: str = "simcore.service.reverse-proxy-settings"
-SERVICE_RUNTIME_BOOTSETTINGS: str = "simcore.service.bootsettings"
 
 log = logging.getLogger(__name__)
 
@@ -84,7 +80,7 @@ def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
         log.debug("Append mount settings %s", mount)
         mounts.append(mount)
 
-    return mount
+    return mounts
 
 
 def _parse_env_settings(settings: List[str]) -> Dict:
@@ -128,10 +124,10 @@ async def _create_docker_service_params(
 ) -> Dict:
     # pylint: disable=too-many-statements
     service_parameters_labels = await _read_service_settings(
-        app, service_key, service_tag, SERVICE_RUNTIME_SETTINGS
+        app, service_key, service_tag, config.SERVICE_RUNTIME_SETTINGS
     )
     reverse_proxy_settings = await _read_service_settings(
-        app, service_key, service_tag, SERVICE_REVERSE_PROXY_SETTINGS
+        app, service_key, service_tag, config.SERVICE_REVERSE_PROXY_SETTINGS
     )
     service_name = registry_proxy.get_service_last_names(service_key) + "_" + node_uuid
     log.debug("Converting labels to docker runtime parameters")
@@ -268,14 +264,8 @@ async def _create_docker_service_params(
             docker_params["labels"]["port"] = docker_params["labels"][
                 f"traefik.http.services.{service_name}.loadbalancer.server.port"
             ] = str(param["value"])
-            if config.DEBUG_MODE:
-                # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
-                docker_params["endpoint_spec"]["Ports"] = [
-                    {"TargetPort": int(param["value"]), "PublishedPort": 0}
-                ]
-        elif (
-            config.DEBUG_MODE and param["type"] == "EndpointSpec"
-        ):  # REST-API compatible
+        # REST-API compatible
+        elif param["type"] == "EndpointSpec":
             if "Ports" in param["value"]:
                 if (
                     isinstance(param["value"]["Ports"], list)
@@ -284,8 +274,6 @@ async def _create_docker_service_params(
                     docker_params["labels"]["port"] = docker_params["labels"][
                         f"traefik.http.services.{service_name}.loadbalancer.server.port"
                     ] = str(param["value"]["Ports"][0]["TargetPort"])
-            if config.DEBUG_MODE:
-                docker_params["endpoint_spec"] = param["value"]
 
         # placement constraints
         elif param["name"] == "constraints":  # python-API compatible
@@ -301,9 +289,9 @@ async def _create_docker_service_params(
                 )
         elif param["name"] == "mount":
             log.debug("Found mount parameter %s", param["value"])
-            mount_settings = _parse_mount_settings(param["value"])
+            mount_settings: List[Dict] = _parse_mount_settings(param["value"])
             if mount_settings:
-                docker_params["task_template"]["ContainerSpec"]["Mounts"].append(
+                docker_params["task_template"]["ContainerSpec"]["Mounts"].extend(
                     mount_settings
                 )
 
@@ -666,7 +654,7 @@ async def _start_docker_service(
         published_port, target_port = await _get_docker_image_port_mapping(service)
         # now pass boot parameters
         service_boot_parameters_labels = await _read_service_settings(
-            app, service_key, service_tag, SERVICE_RUNTIME_BOOTSETTINGS
+            app, service_key, service_tag, config.SERVICE_RUNTIME_BOOTSETTINGS
         )
         service_entrypoint = _get_service_entrypoint(service_boot_parameters_labels)
         if published_port:
@@ -814,7 +802,11 @@ async def start_service(
         node_details = containers_meta_data[0]
         if config.MONITORING_ENABLED:
             service_started(
-                app, user_id, service_key, service_tag, "DYNAMIC",
+                app,
+                user_id,
+                service_key,
+                service_tag,
+                "DYNAMIC",
             )
         # we return only the info of the main service
         return node_details
@@ -830,7 +822,7 @@ async def _get_node_details(
     # get boot parameters
     results = await asyncio.gather(
         _read_service_settings(
-            app, service_key, service_tag, SERVICE_RUNTIME_BOOTSETTINGS
+            app, service_key, service_tag, config.SERVICE_RUNTIME_BOOTSETTINGS
         ),
         _get_service_basepath_from_docker_service(service),
         _get_service_state(client, service),
@@ -982,7 +974,9 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
                 await client.services.delete(service["Spec"]["Name"])
             log.debug("removed services, now removing network...")
         except aiodocker.exceptions.DockerError as err:
-            raise exceptions.GenericDockerError("Error while removing services", err)
+            raise exceptions.GenericDockerError(
+                "Error while removing services", err
+            ) from err
         # remove network(s)
         await _remove_overlay_network_of_swarm(client, node_uuid)
         log.debug("removed network")
@@ -996,36 +990,3 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
                 "DYNAMIC",
                 "SUCCESS",
             )
-
-
-async def generate_service_extras(
-    app: web.Application, image_key: str, image_tag: str
-) -> Dict:
-    result = {}
-    labels = await registry_proxy.get_image_labels(app, image_key, image_tag)
-    log.debug("Compiling service extras from labels %s", labels)
-
-    # check physical node requirements
-    # all nodes require "CPU"
-    result["node_requirements"] = ["CPU"]
-    # check if the service requires GPU support
-
-    def validate_kind(entry_to_validate, kind_name):
-        for element in (
-            entry_to_validate.get("value", {})
-            .get("Reservations", {})
-            .get("GenericResources", [])
-        ):
-            if element.get("DiscreteResourceSpec", {}).get("Kind") == kind_name:
-                return True
-        return False
-
-    if SERVICE_RUNTIME_SETTINGS in labels:
-        service_settings = json.loads(labels[SERVICE_RUNTIME_SETTINGS])
-        for entry in service_settings:
-            if entry.get("name") == "Resources" and validate_kind(entry, "VRAM"):
-                result["node_requirements"].append("GPU")
-            if entry.get("name") == "Resources" and validate_kind(entry, "MPI"):
-                result["node_requirements"].append("MPI")
-
-    return result

@@ -24,7 +24,6 @@ install_requirements = read_reqs(current_dir / "requirements" / "_base.txt") + [
     "s3wrapper==0.1.0",
     "simcore-postgres-database",
     "simcore-sdk==0.1.0",
-    "simcore-service-storage-sdk==0.1.0",
     "simcore-service-library",
 ]
 

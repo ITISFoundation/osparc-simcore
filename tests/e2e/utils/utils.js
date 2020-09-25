@@ -1,10 +1,9 @@
+const pathLib = require('path');
 
+const SCREENSHOTS_DIR = "../screenshots/";
 
 function parseCommandLineArguments(args) {
-  //
   // node $tutorial.js [url] [user] [password] [--demo]
-  //
-  //
 
   if (args.length < 1) {
     console.log('More arguments expected:  $tutorial.js [url] [user] [password] [--demo]');
@@ -173,33 +172,42 @@ async function waitForValidOutputFile(page) {
 }
 
 async function waitAndClick(page, id) {
-  await page.waitForSelector(id);
+  await page.waitForSelector(id, {
+    timeout: 30000 // default 30s
+  });
   await page.click(id);
 }
 
 async function clearInput(page, selector) {
-  await page.evaluate(selector => {
-    document.querySelector(selector).value = "";
-  }, selector);
+  await page.waitForSelector(selector);
+  await page.click(selector, {
+    clickCount: 3
+  });
+  await page.type('[osparc-test-id="sideSearchFiltersTextFld"]', "");
 }
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function __addZerosAtTheBeggining(input) {
-  return String(input).padStart(2, "0");
+function createScreenshotsDir() {
+  const fs = require('fs');
+  const screenshotsDir = pathLib.join(__dirname, SCREENSHOTS_DIR);
+  if (!fs.existsSync(screenshotsDir)) {
+    fs.mkdirSync(screenshotsDir);
+  }
+  console.log("Screenshots directory:", screenshotsDir);
 }
 
 async function takeScreenshot(page, captureName) {
-  const d = new Date();
-  const date = __addZerosAtTheBeggining(d.getMonth()+1) +"-"+ __addZerosAtTheBeggining(d.getDate());
-  const time = __addZerosAtTheBeggining(d.getHours()) +":"+ __addZerosAtTheBeggining(d.getMinutes()) +":"+ __addZerosAtTheBeggining(d.getSeconds());
-  const timeStamp = date +"_"+ time;
-  captureName = captureName.replace("undefined", "");
+  let filename = captureName.replace("undefined", "");
+  filename = filename.replace(":", "-");
+  filename = filename+".jpg";
+  const path = pathLib.join(__dirname, SCREENSHOTS_DIR, filename);
+
   await page.screenshot({
     fullPage: true,
-    path: 'screenshots/'+timeStamp+'_'+captureName+'.jpg',
+    path: path,
     type: 'jpeg',
   })
 }
@@ -230,6 +238,7 @@ module.exports = {
   waitAndClick,
   clearInput,
   sleep,
+  createScreenshotsDir,
   takeScreenshot,
   extractWorkbenchData,
   parseCommandLineArguments

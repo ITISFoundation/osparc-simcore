@@ -259,13 +259,13 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
 
       const newTokenKey = new qx.ui.form.TextField();
       newTokenKey.set({
-        placeholder: this.tr("Introduce token key here")
+        placeholder: this.tr("Input your token key here")
       });
       form.add(newTokenKey, this.tr("Key"));
 
       const newTokenSecret = new qx.ui.form.TextField();
       newTokenSecret.set({
-        placeholder: this.tr("Introduce token secret here")
+        placeholder: this.tr("Input your token secret here")
       });
       form.add(newTokenSecret, this.tr("Secret"));
 

@@ -18,7 +18,7 @@ from .config import (
     APP_RESOURCE_MANAGER_TASKS_KEY,
     CONFIG_SECTION_NAME,
 )
-from .garbage_collector import setup as setup_garbage_collector
+from .garbage_collector import setup_garbage_collector
 from .redis import setup_redis_client
 from .registry import RedisResourceRegistry
 

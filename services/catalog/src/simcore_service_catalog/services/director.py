@@ -1,15 +1,13 @@
-import json
+import functools
 import logging
-from typing import Dict, Optional
+from contextlib import suppress
+from typing import Coroutine, Dict, Optional
 
-import attr
 from fastapi import FastAPI, HTTPException
 from httpx import AsyncClient, Response, StatusCode
-
 from starlette import status
 
 from ..core.settings import DirectorSettings
-
 
 logger = logging.getLogger(__name__)
 
@@ -17,62 +15,43 @@ logger = logging.getLogger(__name__)
 def setup_director(app: FastAPI) -> None:
     settings: DirectorSettings = app.state.settings.director
 
-    # init client
+    # init client-api
     logger.debug("Setup director at %s...", settings.base_url)
+    app.state.director_api = DirectorApi(
+        base_url=settings.base_url, vtag=app.state.settings.director.vtag
+    )
 
-    client = AsyncClient(base_url=settings.base_url)
-    app.state.director_client = client
-
-    # TODO: raise if attribute already exists
-    # TODO: ping?
+    # does NOT communicate with director service
 
 
 async def close_director(app: FastAPI) -> None:
-    try:
+    with suppress(AttributeError):
         client: AsyncClient = app.state.director_client
         await client.aclose()
         del app.state.director_client
-    except AttributeError:
-        pass
+
     logger.debug("Director client closed successfully")
 
 
-@attr.s(auto_attribs=True)
-class AuthSession:
-    """
-    - wrapper around thin-client to simplify director's API
-    - sets endspoint upon construction
-    - MIME type: application/json
-    - processes responses, returning data or raising formatted HTTP exception
-    - The lifetime of an AuthSession is ONE request.
+# DIRECTOR API CLASS ---------------------------------------------
 
-    SEE services/catalog/src/simcore_service_catalog/api/dependencies/director.py
+
+def safe_request(request_func: Coroutine):
+    """
+    Creates a context for safe inter-process communication (IPC)
     """
 
-    client: AsyncClient  # Its lifetime is attached to app
-    vtag: str
+    def _unenvelope_or_raise_error(resp: Response) -> Dict:
+        """
+        Director responses are enveloped
+        If successful response, we un-envelop it and return data as a dict
+        If error, it raise an HTTPException
+        """
+        body = resp.json()
 
-    @classmethod
-    def create(cls, app: FastAPI):
-        return cls(
-            client=app.state.director_client, vtag=app.state.settings.director.vtag,
-        )
-
-    def _url(self, path: str) -> str:
-        return f"/{self.vtag}/{path.lstrip('/')}"
-
-    @classmethod
-    def _process(cls, resp: Response) -> Optional[Dict]:
-        # enveloped answer
-        data, error = None, None
-        try:
-            body = resp.json()
-            if "data" in body:
-                data = body["data"]
-            if "error" in body:
-                error = body["error"]
-        except (json.JSONDecodeError, KeyError):
-            logger.warning("Failed to unenvelop director response", exc_info=True)
+        assert "data" in body or "error" in body  # nosec
+        data = body.get("data")
+        error = body.get("error")
 
         if StatusCode.is_server_error(resp.status_code):
             logger.error(
@@ -87,29 +66,49 @@ class AuthSession:
             msg = error or resp.reason_phrase
             raise HTTPException(resp.status_code, detail=msg)
 
-        return data
+        return data or {}
+
+    @functools.wraps(request_func)
+    async def request_wrapper(self: "DirectorApi", path: str, *args, **kwargs):
+        try:
+            normalized_path = path.lstrip("/")
+            resp = await request_func(self, path=normalized_path, *args, **kwargs)
+        except Exception as err:
+            logger.exception(
+                "Failed request %s to %s%s",
+                request_func.__name__,
+                self._client.base_url,
+                path,
+            )
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
+
+        return _unenvelope_or_raise_error(resp)
+
+    return request_wrapper
+
+
+class DirectorApi:
+    """
+    - wrapper around thin-client to simplify director's API
+    - sets endspoint upon construction
+    - MIME type: application/json
+    - processes responses, returning data or raising formatted HTTP exception
+
+    SEE services/catalog/src/simcore_service_catalog/api/dependencies/director.py
+    """
+
+    def __init__(self, base_url: str, vtag: str):
+        self._client = AsyncClient(base_url=base_url)
+        self.vtag = vtag
 
     # OPERATIONS
-    # TODO: refactor and code below
     # TODO: policy to retry if NetworkError/timeout?
     # TODO: add ping to healthcheck
 
+    @safe_request
     async def get(self, path: str) -> Optional[Dict]:
-        url = self._url(path)
-        try:
-            resp = await self.client.get(url)
-        except Exception:
-            logger.exception("Failed to get %s", url)
-            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
+        return await self._client.get(path)
 
-        return self._process(resp)
-
+    @safe_request
     async def put(self, path: str, body: Dict) -> Optional[Dict]:
-        url = self._url(path)
-        try:
-            resp = await self.client.put(url, json=body)
-        except Exception:
-            logger.exception("Failed to put %s", url)
-            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
-
-        return self._process(resp)
+        return await self._client.put(path, json=body)

@@ -84,8 +84,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __reloadUserStudy: function(studyId, reload) {
-      osparc.store.Store.getInstance().getStudyWState(studyId, reload)
+    __reloadUserStudy: function(studyId) {
+      const params = {
+        url: {
+          "projectId": studyId
+        }
+      };
+      osparc.data.Resources.getOne("studies", params)
         .then(studyData => {
           this.__resetStudyItem(studyData);
         })
@@ -100,7 +105,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
      */
     reloadUserStudies: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
-        osparc.store.Store.getInstance().getStudiesWState(true)
+        osparc.data.Resources.get("studies")
           .then(studies => {
             this.__resetStudyList(studies);
             this.resetSelection();
@@ -225,7 +230,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getStudyAndStart: function(loadStudyId) {
-      osparc.store.Store.getInstance().getStudyWState(loadStudyId, true)
+      const params = {
+        url: {
+          "projectId": loadStudyId
+        }
+      };
+      osparc.data.Resources.getOne("studies", params)
         .then(studyData => {
           this.__startStudy(studyData["uuid"]);
         });
@@ -250,6 +260,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return deleteButton;
     },
 
+    __studyStateReceived: function(studyId, state) {
+      const studyItem = this.__userStudyContainer.getChildren().find(card => (card instanceof osparc.dashboard.StudyBrowserButtonItem) && (card.getUuid() === studyId));
+      if (studyItem) {
+        studyItem.setState(state);
+      }
+
+      osparc.store.Store.getInstance().setStudyState(studyId, state);
+    },
+
     __attachEventHandlers: function() {
       // Listen to socket
       const socket = osparc.wrapper.WebSocket.getInstance();
@@ -261,10 +280,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (data) {
           const studyId = data["project_uuid"];
           const state = ("data" in data) ? data["data"] : {};
-          const studyItem = this.__userStudyContainer.getChildren().find(card => (card instanceof osparc.dashboard.StudyBrowserButtonItem) && (card.getUuid() === studyId));
-          if (studyItem) {
-            studyItem.setState(state);
-          }
+          this.__studyStateReceived(studyId, state);
         }
       }, this);
 
@@ -472,7 +488,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
       classifiersEditor.addListener("updateClassifiers", e => {
         const studyId = e.getData();
-        this.__reloadUserStudy(studyId, true);
+        this.__reloadUserStudy(studyId);
       }, this);
     },
 
@@ -480,11 +496,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
       permissionsButton.addListener("execute", () => {
         const permissionsView = new osparc.component.export.StudyPermissions(studyData);
-        const title = this.tr("Share with people and organizations");
+        const title = this.tr("Share with Collaborators and Organizations");
         osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
         permissionsView.addListener("updateStudy", e => {
           const studyId = e.getData();
-          this.__reloadUserStudy(studyId, true);
+          this.__reloadUserStudy(studyId);
         }, this);
       }, this);
       return permissionsButton;
@@ -563,8 +579,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __createStudyDetailsEditor: function(studyData, winWidth) {
       const studyDetails = new osparc.component.metadata.StudyDetailsEditor(studyData, false, winWidth);
       studyDetails.addListener("updateStudy", e => {
-        const studyId = e.getData();
-        this.__reloadUserStudy(studyId, true);
+        const newStudyData = e.getData();
+        this.__reloadUserStudy(newStudyData.uuid);
       });
       studyDetails.addListener("openStudy", () => {
         this.__startStudy(studyData["uuid"]);

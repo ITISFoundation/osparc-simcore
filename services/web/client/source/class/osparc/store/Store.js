@@ -115,8 +115,8 @@ qx.Class.define("osparc.store.Store", {
       init: {}
     },
     classifiers: {
-      check: "Object",
-      init: {}
+      check: "Array",
+      init: []
     }
   },
 
@@ -132,6 +132,9 @@ qx.Class.define("osparc.store.Store", {
      * @param {String} idField Key used for the id field. This field has to be unique among all elements of that resource.
      */
     update: function(resource, data, idField = "uuid") {
+      if (data === undefined) {
+        return;
+      }
       const stored = this.get(resource);
       if (Array.isArray(stored)) {
         if (Array.isArray(data)) {
@@ -201,85 +204,12 @@ qx.Class.define("osparc.store.Store", {
       }
     },
 
-    getStudyWState: function(studyId, reload = false) {
-      return new Promise((resolve, reject) => {
-        const studiesWStateCache = this.getStudies();
-        const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
-        if (!reload && idx !== -1) {
-          resolve(studiesWStateCache[idx]);
-          return;
-        }
-        const params = {
-          url: {
-            "projectId": studyId
-          }
-        };
-        osparc.data.Resources.getOne("studies", params)
-          .then(study => {
-            osparc.data.Resources.fetch("studies", "state", params)
-              .then(state => {
-                study["locked"] = state["locked"];
-                if (idx === -1) {
-                  studiesWStateCache.push(study);
-                } else {
-                  studiesWStateCache[idx] = study;
-                }
-                resolve(study);
-              })
-              .catch(er => {
-                console.error(er);
-                reject();
-              });
-          })
-          .catch(err => {
-            console.error(err);
-            reject();
-          });
-      });
-    },
-
-    /**
-     * This function provides the list of studies with their state
-     * @param {Boolean} reload ?
-     */
-    getStudiesWState: function(reload = false) {
-      return new Promise((resolve, reject) => {
-        const studiesWStateCache = this.getStudies();
-        if (!reload && studiesWStateCache.length) {
-          resolve(studiesWStateCache);
-          return;
-        }
-        studiesWStateCache.length = 0;
-        osparc.data.Resources.get("studies")
-          .then(studies => {
-            const studiesWStatePromises = [];
-            studies.forEach(study => {
-              const params = {
-                url: {
-                  "projectId": study.uuid
-                }
-              };
-              studiesWStatePromises.push(osparc.data.Resources.fetch("studies", "state", params));
-            });
-            Promise.all(studiesWStatePromises)
-              .then(states => {
-                states.forEach((state, idx) => {
-                  const study = studies[idx];
-                  study["locked"] = state["locked"];
-                  studiesWStateCache.push(study);
-                });
-                resolve(studiesWStateCache);
-              })
-              .catch(er => {
-                console.error(er);
-                reject();
-              });
-          })
-          .catch(err => {
-            console.error(err);
-            reject();
-          });
-      });
+    setStudyState: function(studyId, state) {
+      const studiesWStateCache = this.getStudies();
+      const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
+      if (idx !== -1) {
+        studiesWStateCache[idx]["state"] = state;
+      }
     },
 
     deleteStudy: function(studyId) {
@@ -324,7 +254,7 @@ qx.Class.define("osparc.store.Store", {
      */
     getServicesDAGs: function(reload = false) {
       return new Promise((resolve, reject) => {
-        const allServices = osparc.utils.Services.getBuiltInServices();
+        const allServices = [];
         const servicesPromise = osparc.data.Resources.get("services", null, !reload);
         const dagsPromise = osparc.data.Resources.get("dags", null, !reload);
         Promise.all([servicesPromise, dagsPromise])
@@ -343,16 +273,17 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getUnaccessibleServices: function(studyData) {
+    getInaccessibleServices: function(studyData) {
       return new Promise((resolve, reject) => {
-        const unaccessibleServices = [];
+        const inaccessibleServices = [];
         const nodes = Object.values(studyData.workbench);
         nodes.forEach(node => {
-          const idx = unaccessibleServices.findIndex(unaccessibleSrv => unaccessibleSrv.key === node.key && unaccessibleSrv.version === node.version);
+          const idx = inaccessibleServices.findIndex(inaccessibleSrv => inaccessibleSrv.key === node.key && inaccessibleSrv.version === node.version);
           if (idx === -1) {
-            unaccessibleServices.push({
+            inaccessibleServices.push({
               key: node["key"],
-              version: node["version"]
+              version: node["version"],
+              label: node["label"]
             });
           }
         });
@@ -360,9 +291,9 @@ qx.Class.define("osparc.store.Store", {
           .then(services => {
             nodes.forEach(node => {
               if (osparc.utils.Services.getFromObject(services, node.key, node.version)) {
-                const idx = unaccessibleServices.findIndex(unaccessibleSrv => unaccessibleSrv.key === node.key && unaccessibleSrv.version === node.version);
+                const idx = inaccessibleServices.findIndex(inaccessibleSrv => inaccessibleSrv.key === node.key && inaccessibleSrv.version === node.version);
                 if (idx !== -1) {
-                  unaccessibleServices.splice(idx, 1);
+                  inaccessibleServices.splice(idx, 1);
                 }
               }
             });
@@ -371,7 +302,7 @@ qx.Class.define("osparc.store.Store", {
             console.error("failed getting services", err);
           })
           .finally(() => {
-            resolve(unaccessibleServices);
+            resolve(inaccessibleServices);
           });
       });
     },
@@ -451,6 +382,55 @@ qx.Class.define("osparc.store.Store", {
                   });
                 });
                 resolve(reachableMembers);
+              });
+          });
+      });
+    },
+
+    __getOrgClassifiers: function(orgId) {
+      const params = {
+        url: {
+          "gid": orgId
+        }
+      };
+      return osparc.data.Resources.get("classifiers", params);
+    },
+
+    getAllClassifiers: function(reload = false) {
+      return new Promise((resolve, reject) => {
+        const oldClassifiers = this.getClassifiers();
+        if (!reload && oldClassifiers.length) {
+          resolve(oldClassifiers);
+          return;
+        }
+        osparc.store.Store.getInstance().getGroupsOrganizations()
+          .then(orgs => {
+            const allClassifiers = [];
+            if (orgs.length === 0) {
+              this.setClassifiers(allClassifiers);
+              resolve(allClassifiers);
+              return;
+            }
+            const classifierPromises = [];
+            orgs.forEach(org => {
+              classifierPromises.push(this.__getOrgClassifiers(org["gid"]));
+            });
+            Promise.all(classifierPromises)
+              .then(classifierss => {
+                if (classifierss.length === 0) {
+                  this.setClassifiers(allClassifiers);
+                  resolve(allClassifiers);
+                  return;
+                }
+                classifierss.forEach(({classifiers}) => {
+                  if (classifiers) {
+                    Object.keys(classifiers).forEach(key => {
+                      allClassifiers.push(classifiers[key]);
+                    });
+                  }
+                });
+                this.setClassifiers(allClassifiers);
+                resolve(allClassifiers);
               });
           });
       });

@@ -94,7 +94,7 @@ qx.Class.define("osparc.component.sweeper.Iterations", {
       const combinations = this.__primaryStudy.getSweeper().getCombinations();
       const secondaryStudyIds = this.__primaryStudy.getSweeper().getSecondaryStudyIds();
       if (combinations.length === secondaryStudyIds.length) {
-        osparc.store.Store.getInstance().getStudiesWState(true)
+        osparc.data.Resources.get("studies")
           .then(studies => {
             const rows = [];
             for (let i=0; i<secondaryStudyIds.length; i++) {

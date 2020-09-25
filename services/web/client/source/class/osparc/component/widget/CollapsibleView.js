@@ -117,6 +117,10 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
       return this.__titleBar;
     },
 
+    getTitleLabel: function() {
+      return this.__titleLabel;
+    },
+
     _applyCollapsed: function(collapsed) {
       if (this.getContent()) {
         this.__caret.setSource(this.__getCaretId(collapsed));
