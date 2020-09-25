@@ -873,7 +873,7 @@ jobs:
           path: codeclimate.integration_simcoresdk_coverage.json
 
   system-test-swarm-deploy:
-    name: "[system] deploy simcore"
+    name: "[sys] deploy simcore"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -919,7 +919,7 @@ jobs:
   system-test-e2e:
     # FIXME: skip the job until make it faster and more reliable
     # https://github.com/ITISFoundation/osparc-simcore/issues/1594
-    name: "[system] e2e"
+    name: "[sys] e2e"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
