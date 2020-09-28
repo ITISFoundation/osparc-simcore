@@ -23,7 +23,13 @@ class TutorialBase {
   }
 
   initScreenshoter() {
-    utils.createScreenshotsDir();
+    try {
+      utils.createScreenshotsDir();
+    }
+    catch(err) {
+      console.error("Error creating screenshots directory", err);
+      throw(err);
+    }
 
     this.__interval = setInterval(async() => {
       await this.takeScreenshot();
@@ -74,10 +80,9 @@ class TutorialBase {
   async openStudyLink(openStudyTimeout = 20000) {
     this.__responsesQueue.addResponseListener("open");
 
-    await this.goTo();
-
     let resp = null;
     try {
+      await this.goTo();
       resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
     }
     catch(err) {
@@ -99,7 +104,15 @@ class TutorialBase {
     this.__responsesQueue.addResponseListener("projects?type=template");
     this.__responsesQueue.addResponseListener("catalog/dags");
     this.__responsesQueue.addResponseListener("services");
-    await auto.logIn(this.__page, this.__user, this.__pass);
+
+    try {
+      await auto.logIn(this.__page, this.__user, this.__pass);
+    }
+    catch(err) {
+      console.error("Failed logging in", err);
+      throw(err);
+    }
+
     try {
       const resp = await this.__responsesQueue.waitUntilResponse("projects?type=template");
       const templates = resp["data"];
@@ -112,6 +125,7 @@ class TutorialBase {
       console.error("Templates could not be fetched", err);
       throw(err);
     }
+
     try {
       const resp = await this.__responsesQueue.waitUntilResponse("catalog/dags");
       const dags = resp["data"];
@@ -124,6 +138,7 @@ class TutorialBase {
       console.error("DAGs could not be fetched", err);
       throw(err);
     }
+
     try {
       const resp = await this.__responsesQueue.waitUntilResponse("services");
       const services = resp["data"];
@@ -252,8 +267,8 @@ class TutorialBase {
     await auto.toDashboard(this.__page);
     await this.takeScreenshot("dashboardDeleteFirstStudy_before");
     this.__responsesQueue.addResponseListener("projects/");
-    await auto.dashboardDeleteFirstStudy(this.__page, this.__templateName);
     try {
+      await auto.dashboardDeleteFirstStudy(this.__page, this.__templateName);
       await this.__responsesQueue.waitUntilResponse("projects/");
     }
     catch(err) {
