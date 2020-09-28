@@ -16,7 +16,7 @@ const screenshotPrefix = "Opencor_";
 async function runTutorial () {
   const tutorial = new tutorialBase.TutorialBase(anonURL);
 
-  utils.createScreenshotsDir();
+  tutorial.initScreenshoter();
   const page = await tutorial.beforeScript();
   await tutorial.goTo();
 
@@ -36,6 +36,7 @@ async function runTutorial () {
   await tutorial.checkResults(outFiles.length);
 
   await tutorial.logOut();
+  tutorial.stopScreenshoter();
   await tutorial.close();
 }
 
