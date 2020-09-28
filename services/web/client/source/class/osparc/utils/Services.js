@@ -199,8 +199,8 @@ qx.Class.define("osparc.utils.Services", {
         key: "simcore/services/frontend/file-picker",
         version: "2.0.0",
         type: "dynamic",
-        name: "File Picker",
-        description: "File Picker",
+        name: "File Picker 2",
+        description: "File Picker 2",
         authors: [{
           name: "Odei Maiz",
           email: "maiz@itis.swiss"
