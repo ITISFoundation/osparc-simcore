@@ -30,6 +30,10 @@ class TutorialBase {
     }, 2000);
   }
 
+  stopScreenshoter() {
+    clearInterval(this.__interval);
+  }
+
   async start() {
     await this.beforeScript();
     await this.goTo();
@@ -258,7 +262,6 @@ class TutorialBase {
   }
 
   async close() {
-    clearInterval(this.__interval);
     await utils.sleep(2000);
     await this.__browser.close();
   }
