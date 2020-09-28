@@ -201,3 +201,14 @@ def get_tracemalloc_info(top=10) -> List[str]:
 def compose_error_msg(msg: str) -> str:
     msg = msg.strip()
     return f"{msg}. Please send this message to support@osparc.io [{now_str()}]"
+
+
+
+# -----------------------------------------------
+#
+# FORMATTING
+#
+
+def snake_to_camel(subject: str) -> str:
+    parts = subject.lower().split("_")
+    return parts[0] + "".join(x.title() for x in parts[1:])

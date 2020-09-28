@@ -12,15 +12,20 @@ from functools import lru_cache
 from pathlib import Path
 
 from aiohttp import web
-from tenacity import after_log, retry, stop_after_attempt, wait_random
-
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
+from tenacity import after_log, retry, stop_after_attempt, wait_random
 
 from .constants import APP_SETTINGS_KEY, RQ_PRODUCT_FRONTEND_KEY, RQ_PRODUCT_KEY
+from .statics_settings import (
+    FRONTEND_APPS_AVAILABLE,
+    ClientAppSettings,
+    ClientAppsSettings,
+    FrontEndApp,
+    S4LAppSettings,
+    TiSAppSettings,
+)
 
-FRONTEND_APPS_AVAILABLE = {"osparc", "tis", "s4l"}
-FRONTEND_APP_DEFAULT = "osparc"
 STATIC_DIRNAMES = FRONTEND_APPS_AVAILABLE | {"resource", "transpiled"}
 INDEX_RESOURCE_NAME = "statics.index"
 
@@ -29,7 +34,6 @@ APP_STATICS_OUTDIR_KEY = f"{__file__}.outdir"
 
 
 log = logging.getLogger(__file__)
-assert FRONTEND_APP_DEFAULT in FRONTEND_APPS_AVAILABLE  # nosec
 
 
 @lru_cache()
@@ -62,7 +66,6 @@ async def get_frontend_ria(request: web.Request):
         target_frontend,
     )
 
-
     # NOTE: CANNOT redirect , i.e.
     # raise web.HTTPFound(f"/{target_frontend}/index.html")
     # because it losses fragments and therefore it fails in study links.
@@ -80,7 +83,14 @@ async def _start_statics(app: web.Application):
     # therefore we create statics.json on_startup instead of upon setup
 
     resource_dir = app[APP_STATICS_OUTDIR_KEY] / "resource"
-    statics_info = app[APP_SETTINGS_KEY].to_client_statics()
+
+    # general server settings
+    statics_info: Dict = app[APP_SETTINGS_KEY].to_client_statics()
+
+    # front-end app settings
+    statics_info[FrontEndApp.osparc.value] = ClientAppSettings().to_client_statics()
+    statics_info[FrontEndApp.s4l.value] = S4LAppSettings().to_client_statics()
+    statics_info[FrontEndApp.tis.value] = TiSAppSettings().to_client_statics()
 
     @retry(
         wait=wait_random(min=1, max=3),
