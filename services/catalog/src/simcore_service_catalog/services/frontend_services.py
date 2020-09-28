@@ -54,12 +54,19 @@ def _file_sweeper_service() -> ServiceDockerData:
         description="File Sweeper",
         authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
         contact="maiz@itis.swiss",
-        inputs={},
+        inputs={
+            "inFile": {
+                "displayOrder": 0,
+                "label": "Input files",
+                "description": "Array of files",
+                "type": "data:*/*",
+            }
+        },
         outputs={
             "outFile": {
                 "displayOrder": 0,
-                "label": "File",
-                "description": "Chosen File",
+                "label": "One file",
+                "description": "One file at a time",
                 "type": "data:*/*",
             }
         },

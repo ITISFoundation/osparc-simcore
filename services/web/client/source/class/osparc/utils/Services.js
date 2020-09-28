@@ -236,7 +236,7 @@ qx.Class.define("osparc.utils.Services", {
         contact: "maiz@itis.swiss",
         owner: "maiz@itis.swiss",
         inputs: {
-          "inFile_0": {
+          "inFile": {
             displayOrder: 0,
             label: "Input files",
             description: "Array of files",
@@ -244,7 +244,7 @@ qx.Class.define("osparc.utils.Services", {
           }
         },
         outputs: {
-          "outFile_0": {
+          "outFile": {
             displayOrder: 0,
             label: "One file",
             description: "One file at a time",
