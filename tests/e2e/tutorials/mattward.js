@@ -50,6 +50,7 @@ async function runTutorial() {
   }
   finally {
     await tutorial.logOut();
+    tutorial.stopScreenshoter();
     await tutorial.close();
   }
 }

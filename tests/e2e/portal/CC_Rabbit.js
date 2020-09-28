@@ -16,7 +16,7 @@ const screenshotPrefix = "CCRabbit_";
 async function runTutorial () {
   const tutorial = new tutorialBase.TutorialBase(anonURL);
 
-  utils.createScreenshotsDir();
+  tutorial.initScreenshoter();
   const page = await tutorial.beforeScript();
   await tutorial.goTo();
 
@@ -53,7 +53,9 @@ async function runTutorial () {
   await tutorial.checkResults(outFiles2.length);
 
   // await tutorial.openNodeRetrieveAndRestart(4);
+
   await tutorial.logOut();
+  tutorial.stopScreenshoter();
   await tutorial.close();
 }
 
