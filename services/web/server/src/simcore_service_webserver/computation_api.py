@@ -46,6 +46,8 @@ async def _get_node_details(
             "type": "dynamic",
         }
         return fake_node_details
+    if "frontend/file-sweeper" in node_key:
+        return None
     if "frontend/nodes-group" in node_key:
         return None
     if "StimulationSelectivity" in node_key:
