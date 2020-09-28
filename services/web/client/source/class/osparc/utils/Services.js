@@ -226,7 +226,7 @@ qx.Class.define("osparc.utils.Services", {
       return [{
         key: "simcore/services/frontend/file-sweeper",
         version: "1.0.0",
-        type: "dynamic",
+        type: "computational",
         name: "File Sweeper",
         description: "File Sweeper",
         authors: [{

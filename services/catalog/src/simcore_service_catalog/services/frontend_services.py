@@ -49,7 +49,7 @@ def _file_sweeper_service() -> ServiceDockerData:
     return ServiceDockerData(
         key="simcore/services/frontend/file-sweeper",
         version="1.0.0",
-        type="dynamic",
+        type="computational",
         name="File Sweeper",
         description="File Sweeper",
         authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
