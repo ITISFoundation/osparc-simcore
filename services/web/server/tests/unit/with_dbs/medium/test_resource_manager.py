@@ -470,7 +470,7 @@ async def test_interactive_services_removed_per_project(
     # assert dynamic services are still around
     mocked_director_api["stop_service"].assert_not_called()
     # wait the defined delay
-    await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL)
+    await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 2)
     # assert dynamic service 2,3 is removed
     calls = [
         call(client.server.app, service2["service_uuid"]),

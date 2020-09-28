@@ -76,7 +76,7 @@ qx.Class.define("osparc.component.filter.TextFilter", {
           });
           break;
         case "clearbutton":
-          control = new osparc.component.form.IconButton("@MaterialIcons/close/12", () => {
+          control = new osparc.ui.basic.IconButton("@MaterialIcons/close/12", () => {
             this.reset();
             this.__textField.focus();
           });

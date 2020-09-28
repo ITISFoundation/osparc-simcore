@@ -8,9 +8,8 @@ from typing import Dict, Optional
 from aiohttp import web
 from pydantic import BaseSettings, Field, HttpUrl
 
-from .__version__ import app_name, api_version
-
-APP_SETTINGS_KEY = f"{__name__ }.app_settings"
+from .__version__ import api_version, app_name
+from .constants import APP_SETTINGS_KEY
 
 log = logging.getLogger(__name__)
 

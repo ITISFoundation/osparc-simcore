@@ -78,7 +78,9 @@ COPY --chown=scu:scu services/sidecar /build/services/sidecar
 COPY --chown=scu:scu services/storage/client-sdk /build/services/storage/client-sdk
 
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
-RUN pip --no-cache-dir install -r /build/services/sidecar/requirements/_base.txt
+RUN pip --no-cache-dir install \
+  -r /build/services/sidecar/requirements/_base.txt \
+  -r /build/services/sidecar/requirements/_packages.txt
 
 # --------------------------Cache stage -------------------
 # CI in master buils & pushes this target to speed-up image build

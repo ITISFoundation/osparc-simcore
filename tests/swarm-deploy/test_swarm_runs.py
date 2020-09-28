@@ -6,12 +6,12 @@ import logging
 import os
 import sys
 import time
-import urllib
 from pathlib import Path
 from pprint import pformat
 from typing import Dict, List
 
 import pytest
+import requests
 import tenacity
 from docker import DockerClient
 from docker.models.services import Service
@@ -118,13 +118,13 @@ def test_core_service_running(
         core_service_name.split(sep="_")[1]
     ]
     num_tasks = get_replicas(service_config)
-    assert len(tasks) == num_tasks, (
-        f"Expected a {num_tasks} task(s) for '{0}',"
-        " got:\n{1}\n{2}".format(
-            core_service_name,
-            get_tasks_summary(tasks),
-            get_failed_tasks_logs(running_service, docker_client),
-        )
+    assert (
+        len(tasks) == num_tasks
+    ), "Expected a {3} task(s) for '{0}'," " got:\n{1}\n{2}".format(
+        core_service_name,
+        get_tasks_summary(tasks),
+        get_failed_tasks_logs(running_service, docker_client),
+        num_tasks,
     )
 
     for i in range(num_tasks):
@@ -148,37 +148,37 @@ def test_core_service_running(
         )
 
 
-RETRY_WAIT_SECS = 2
-RETRY_COUNT = 20
+@pytest.mark.parametrize(
+    "test_url,expected_in_content",
+    [
+        ("http://127.0.0.1:9081/", "osparc/boot.js"),
+        ("http://127.0.0.1:9081/s4l/index.html", "Sim4Life"),
+        ("http://127.0.0.1:9081/tis/index.html", "TI Solutions"),
+    ],
+)
+def test_product_frontend_app_served(
+    make_up_prod: Dict, traefik_service: URL, test_url: str, expected_in_content: str, loop
+):
+    # NOTE: it takes a bit of time until traefik sets up the correct proxy and
+    # the webserver takes time to start
+    # TODO: determine wait times with pre-calibration step
+    @tenacity.retry(
+        wait=tenacity.wait_fixed(2),
+        stop=tenacity.stop_after_attempt(20),
+    )
+    def request_test_url():
+        resp = requests.get(test_url)
+        assert (
+            resp.ok
+        ), f"Failed request {resp.url} with {resp.status_code}: {resp.reason}"
+        return resp
 
+    resp = request_test_url()
 
-def test_check_serve_root(loop, make_up_prod: Dict, traefik_service: URL):
-
-    req = urllib.request.Request("http://127.0.0.1:9081/")
-    try:
-        # it takes a bit of time until traefik sets up the correct proxy and the webserver takes time to start
-        @tenacity.retry(
-            wait=tenacity.wait_fixed(RETRY_WAIT_SECS),
-            stop=tenacity.stop_after_attempt(RETRY_COUNT),
-            before_sleep=tenacity.before_sleep_log(logger, logging.INFO),
-        )
-        def check_root(request):
-            resp = urllib.request.urlopen(req)
-            return resp
-
-        resp = check_root(req)
-        charset = resp.info().get_content_charset()
-        content = resp.read().decode(charset)
-        # TODO: serch osparc-simcore commit id e.g. 'osparc-simcore v817d82e'
-        search = "osparc/boot.js"
-        if content.find(search) < 0:
-            pytest.fail("{} not found in main index.html".format(search))
-    except urllib.error.HTTPError as err:
-        pytest.fail(
-            "The server could not fulfill the request.\nError code {}".format(err.code)
-        )
-    except urllib.error.URLError as err:
-        pytest.fail("Failed reaching the server..\nError reason {}".format(err.reason))
+    # TODO: serch osparc-simcore commit id e.g. 'osparc-simcore v817d82e'
+    assert resp.ok
+    assert "text/html" in resp.headers["Content-Type"]
+    assert expected_in_content in resp.text, "Expected boot not found in response"
 
 
 # UTILS --------------------------------
@@ -196,8 +196,10 @@ def get_tasks_summary(tasks):
     msg = ""
     for t in tasks:
         t["Status"].setdefault("Err", "")
-        msg += "- task ID:{ID}, STATE: {Status[State]}, ERROR: '{Status[Err]}' \n".format(
-            **t
+        msg += (
+            "- task ID:{ID}, STATE: {Status[State]}, ERROR: '{Status[Err]}' \n".format(
+                **t
+            )
         )
     return msg
 

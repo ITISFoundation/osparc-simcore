@@ -1,14 +1,23 @@
 components:
   schemas:
-    Project:
+    ProjectIn:
       $ref: "./project-v0.0.1-converted.yaml"
+
+    ProjectOut:
+      allOf:
+        - $ref: "./project-v0.0.1-converted.yaml"
+        - type: object
+          properties:
+            state:
+              $ref: "#/components/schemas/ProjectState"
+
     ProjectEnveloped:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: "#/components/schemas/Project"
+          $ref: "#/components/schemas/ProjectOut"
         error:
           nullable: true
           default: null
@@ -21,7 +30,7 @@ components:
         data:
           type: array
           items:
-            $ref: "#/components/schemas/Project"
+            $ref: "#/components/schemas/ProjectOut"
         error:
           nullable: true
           default: null

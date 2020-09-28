@@ -28,6 +28,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.projects.projects_handlers import (
     OVERRIDABLE_DOCUMENT_KEYS,
@@ -64,7 +65,6 @@ def client(
     mocked_director_subsystem,
     mock_orphaned_services,
 ):
-    # def client(loop, aiohttp_client, app_cfg): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
 
     # config app
     cfg = deepcopy(app_cfg)
@@ -90,6 +90,7 @@ def client(
     setup_director(app)
     setup_tags(app)
     assert setup_projects(app)
+    setup_products(app)
 
     # server and client
     yield loop.run_until_complete(
@@ -110,9 +111,29 @@ async def logged_user(client, user_role: UserRole):
         {"role": user_role.name},
         check_if_succeeds=user_role != UserRole.ANONYMOUS,
     ) as user:
-        print("-----> logged in user", user_role)
+        print("-----> logged in user", user["name"], user_role)
         yield user
-        print("<----- logged out user", user_role)
+        print("<----- logged out user", user["name"], user_role)
+
+
+@pytest.fixture
+def mocks_on_projects_api(mocker, logged_user):
+    """
+    All projects in this module are UNLOCKED
+
+    Emulates that it found logged_user as the SOLE user of this project
+    and returns the  ProjectState indicating his as owner
+    """
+    nameparts = logged_user["name"].split(".") + [""]
+    state = ProjectState(
+        locked=ProjectLocked(
+            value=False, owner=Owner(first_name=nameparts[0], last_name=nameparts[1])
+        )
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
+        return_value=future_with_result(state),
+    )
 
 
 @pytest.fixture
@@ -223,7 +244,9 @@ async def catalog_subsystem_mock(monkeypatch):
     async def mocked_get_services_for_user(*args, **kwargs):
         return services_in_project
 
-    monkeypatch.setattr(catalog, "get_services_for_user", mocked_get_services_for_user)
+    monkeypatch.setattr(
+        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
+    )
 
     return creator
 
@@ -248,26 +271,45 @@ async def test_list_projects(
 ):
     catalog_subsystem_mock([user_project, template_project])
     data = await _list_projects(client, expected)
+
     if data:
         assert len(data) == 2
+
+        project_state = data[0].pop("state")
         assert data[0] == template_project
+        assert not ProjectState(
+            **project_state
+        ).locked.value, "Templates are not locked"
+
+        project_state = data[1].pop("state")
         assert data[1] == user_project
+        assert ProjectState(**project_state)
 
     # GET /v0/projects?type=user
     data = await _list_projects(client, expected, {"type": "user"})
     if data:
         assert len(data) == 1
+        project_state = data[0].pop("state")
         assert data[0] == user_project
+        assert not ProjectState(
+            **project_state
+        ).locked.value, "Single user does not lock"
 
     # GET /v0/projects?type=template
     # instead /v0/projects/templates ??
     data = await _list_projects(client, expected, {"type": "template"})
     if data:
         assert len(data) == 1
+        project_state = data[0].pop("state")
         assert data[0] == template_project
+        assert not ProjectState(
+            **project_state
+        ).locked.value, "Templates are not locked"
 
 
-async def _get_project(client, project: Dict, expected: web.Response) -> Dict:
+async def _assert_get_same_project(
+    client, project: Dict, expected: web.Response
+) -> Dict:
     # GET /v0/projects/{project_id}
 
     # with a project owned by user
@@ -277,7 +319,9 @@ async def _get_project(client, project: Dict, expected: web.Response) -> Dict:
     data, error = await assert_status(resp, expected)
 
     if not error:
+        project_state = data.pop("state")
         assert data == project
+        assert ProjectState(**project_state)
     return data
 
 
@@ -299,10 +343,12 @@ async def test_get_project(
     catalog_subsystem_mock,
 ):
     catalog_subsystem_mock([user_project, template_project])
-    await _get_project(client, user_project, expected)
+
+    # standard project
+    await _assert_get_same_project(client, user_project, expected)
 
     # with a template
-    await _get_project(client, template_project, expected)
+    await _assert_get_same_project(client, template_project, expected)
 
 
 async def _new_project(
@@ -359,6 +405,11 @@ async def _new_project(
 
     new_project, error = await assert_status(resp, expected_response)
     if not error:
+        # has project state
+        assert not ProjectState(
+            **new_project.pop("state")
+        ).locked.value, "Newly created projects should be unlocked"
+
         # updated fields
         assert expected_data["uuid"] != new_project["uuid"]
         assert (
@@ -512,6 +563,7 @@ async def test_new_template_from_project(
     storage_subsystem_mock,
     catalog_subsystem_mock,
     project_db_cleaner,
+    mocks_on_projects_api,
 ):
     # POST /v0/projects?as_template={project_uuid}
     url = (
@@ -577,6 +629,7 @@ async def test_new_template_from_project(
 
     if not error:
         template_project = data
+
         # uses predefined
         assert template_project["name"] == predefined["name"]
         assert template_project["description"] == predefined["description"]
@@ -652,7 +705,7 @@ async def test_share_project(
         }
 
         # user 1 can always get to his project
-        await _get_project(client, new_project, expected.ok)
+        await _assert_get_same_project(client, new_project, expected.ok)
 
     # get another user logged in now
     user_2 = await log_client_in(
@@ -660,7 +713,7 @@ async def test_share_project(
     )
     if new_project:
         # user 2 can only get the project if user 2 has read access
-        await _get_project(
+        await _assert_get_same_project(
             client,
             new_project,
             expected.ok if share_rights["read"] else expected.forbidden,
@@ -833,7 +886,7 @@ async def test_delete_project(
         mocked_director_subsystem["stop_service"].has_calls(calls)
         # wait for the fire&forget to run
         await sleep(2)
-        await _get_project(client, user_project, web.HTTPNotFound)
+        await _assert_get_same_project(client, user_project, web.HTTPNotFound)
 
 
 @pytest.mark.parametrize(
@@ -968,11 +1021,13 @@ async def test_get_active_project(
         project_id=user_project["uuid"]
     )
     resp = await client.post(open_project_url, json=client_id1)
-    data, error = await assert_status(resp, expected)
+    await assert_status(resp, expected)
+
     resp = await client.get(get_active_projects_url)
     data, error = await assert_status(resp, expected)
     if resp.status == web.HTTPOk.status_code:
         assert not error
+        assert ProjectState(**data.pop("state")).locked.value
         assert data == user_project
 
     # login with socket using client session id2
@@ -1184,7 +1239,7 @@ async def test_tags_to_studies(
 
     # check the tags are in
     user_project["tags"] = [tag["id"] for tag in added_tags]
-    data = await _get_project(client, user_project, expected)
+    data = await _assert_get_same_project(client, user_project, expected)
 
     # Delete tag0
     url = client.app.router["delete_tag"].url_for(tag_id=str(added_tags[0].get("id")))
@@ -1192,7 +1247,7 @@ async def test_tags_to_studies(
     await assert_status(resp, web.HTTPNoContent)
     # Get project and check that tag is no longer there
     user_project["tags"].remove(added_tags[0]["id"])
-    data = await _get_project(client, user_project, expected)
+    data = await _assert_get_same_project(client, user_project, expected)
     assert added_tags[0].get("id") not in data.get("tags")
 
     # Remove tag1 from project
@@ -1203,7 +1258,7 @@ async def test_tags_to_studies(
     await assert_status(resp, expected)
     # Get project and check that tag is no longer there
     user_project["tags"].remove(added_tags[1]["id"])
-    data = await _get_project(client, user_project, expected)
+    data = await _assert_get_same_project(client, user_project, expected)
     assert added_tags[1].get("id") not in data.get("tags")
 
     # Delete tag1
@@ -1522,6 +1577,11 @@ async def test_open_shared_project_at_same_time(
             if error:
                 num_assertions += 1
             elif data:
+                project_status = ProjectState(**data.pop("state"))
                 assert data == shared_project
+                assert project_status.locked.value
+                assert project_status.locked.owner.first_name in [
+                    c["user"]["name"] for c in clients
+                ]
 
         assert num_assertions == NUMBER_OF_ADDITIONAL_CLIENTS

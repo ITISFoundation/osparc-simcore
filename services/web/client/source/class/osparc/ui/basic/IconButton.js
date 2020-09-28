@@ -18,7 +18,7 @@
 /**
  * Small and simple icon button to trigger different actions on tap.
  */
-qx.Class.define("osparc.component.form.IconButton", {
+qx.Class.define("osparc.ui.basic.IconButton", {
   extend: qx.ui.basic.Image,
 
   /**

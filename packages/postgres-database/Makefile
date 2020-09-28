@@ -2,6 +2,7 @@
 # Targets for DEVELOPMENT of postgres-database
 #
 include ../../scripts/common.Makefile
+include ../../scripts/common-package.Makefile
 
 
 .PHONY: requirements

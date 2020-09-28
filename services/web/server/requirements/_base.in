@@ -29,4 +29,4 @@ semantic_version
 aiodebug
 json2html
 
-pydantic
+pydantic[email]

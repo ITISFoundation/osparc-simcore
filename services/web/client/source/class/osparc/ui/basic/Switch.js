@@ -9,7 +9,7 @@
  * Switch button
  */
 
-qx.Class.define("osparc.ui.switch.Switch", {
+qx.Class.define("osparc.ui.basic.Switch", {
   extend: qx.ui.basic.Image,
 
   construct: function() {

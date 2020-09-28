@@ -264,9 +264,8 @@ async def _create_docker_service_params(
             docker_params["labels"]["port"] = docker_params["labels"][
                 f"traefik.http.services.{service_name}.loadbalancer.server.port"
             ] = str(param["value"])
-        elif (
-            param["type"] == "EndpointSpec"
-        ):  # REST-API compatible
+        # REST-API compatible
+        elif param["type"] == "EndpointSpec":
             if "Ports" in param["value"]:
                 if (
                     isinstance(param["value"]["Ports"], list)
@@ -803,7 +802,11 @@ async def start_service(
         node_details = containers_meta_data[0]
         if config.MONITORING_ENABLED:
             service_started(
-                app, user_id, service_key, service_tag, "DYNAMIC",
+                app,
+                user_id,
+                service_key,
+                service_tag,
+                "DYNAMIC",
             )
         # we return only the info of the main service
         return node_details

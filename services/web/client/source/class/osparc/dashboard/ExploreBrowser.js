@@ -83,8 +83,13 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       }
     },
 
-    __reloadTemplate: function(studyId, reload) {
-      osparc.store.Store.getInstance().getStudyWState(studyId, reload)
+    __reloadTemplate: function(studyId) {
+      const params = {
+        url: {
+          "projectId": studyId
+        }
+      };
+      osparc.data.Resources.getOne("studies", params)
         .then(studyData => {
           this.__resetTemplateItem(studyData);
         })
@@ -506,7 +511,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       classifiersEditor.addListener("updateClassifiers", e => {
         if (this.self().isTemplate(studyData)) {
           const studyId = e.getData();
-          this.__reloadTemplate(studyId, true);
+          this.__reloadTemplate(studyId);
         } else if (this.self().isService(studyData)) {
           const serviceKey = e.getData();
           this.__reloadService(serviceKey, studyData.version);
