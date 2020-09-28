@@ -222,13 +222,43 @@ qx.Class.define("osparc.utils.Services", {
       }];
     },
 
-    getFilePicker: function(version = "1.0.0") {
-      const filePickers = this.__getFilePickers();
-      return filePickers.find(filePicker => filePicker.version === version);
+    __getFileSweepers: function() {
+      return [{
+        key: "simcore/services/frontend/file-sweeper",
+        version: "1.0.0",
+        type: "dynamic",
+        name: "File Sweeper",
+        description: "File Sweeper",
+        authors: [{
+          name: "Odei Maiz",
+          email: "maiz@itis.swiss"
+        }],
+        contact: "maiz@itis.swiss",
+        owner: "maiz@itis.swiss",
+        inputs: {
+          "inFile_0": {
+            displayOrder: 0,
+            label: "Input files",
+            description: "Array of files",
+            type: "data:*/*"
+          }
+        },
+        outputs: {
+          "outFile_0": {
+            displayOrder: 0,
+            label: "One file",
+            description: "One file at a time",
+            type: "data:*/*"
+          }
+        },
+        "access_rights": {
+          "1": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
+        }
+      }];
     },
 
-    getNodesGroup: function() {
-      return {
+    __getNodesGroups: function() {
+      return [{
         key: "simcore/services/frontend/nodes-group",
         version: "1.0.0",
         type: "group",
@@ -245,13 +275,29 @@ qx.Class.define("osparc.utils.Services", {
         "access_rights": {
           "1": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
         }
-      };
+      }];
+    },
+
+    getFilePicker: function(version = "1.0.0") {
+      const filePickers = this.__getFilePickers();
+      return filePickers.find(filePicker => filePicker.version === version);
+    },
+
+    getFileSweeper: function(version = "1.0.0") {
+      const fileSweepers = this.__getFileSweepers();
+      return fileSweepers.find(fileSweeper => fileSweeper.version === version);
+    },
+
+    getNodesGroup: function(version = "1.0.0") {
+      const nodesGroups = this.__getNodesGroups();
+      return nodesGroups.find(nodesGroup => nodesGroup.version === version);
     },
 
     getBuiltInServices: function() {
       const builtInServices = [
         ...this.__getFilePickers(),
-        ...[this.getNodesGroup()]
+        ...this.__getFileSweepers(),
+        ...this.__getNodesGroups()
       ];
       return builtInServices;
     },
