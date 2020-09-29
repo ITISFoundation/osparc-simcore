@@ -24,7 +24,7 @@ def run_serialized_in_context(target_args: List[str] = None):
             await asyncio.sleep(1)
 
     The context will be formed by the values of the arguments "param3" and "param1".
-    The values will must be serializable as they will be converted to string
+    The values must be serializable as they will be converted to string
     and put together as storage key for the context.
 
     The below calls will all run in a sequence:
