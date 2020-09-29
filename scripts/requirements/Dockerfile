@@ -2,6 +2,10 @@ ARG PYTHON_VERSION="3.6.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 
 
+RUN apt-get update && apt-get install \
+  make
+
+
 RUN pip --no-cache-dir install --upgrade \
   pip~=20.2.2  \
   wheel \
@@ -9,13 +13,9 @@ RUN pip --no-cache-dir install --upgrade \
 
 
 # devenv
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-
-WORKDIR /work
-
-# .dockerignore to include only target folders
-# mount osparc-simcore -> /work
-# cd script
-# make reqs
+RUN pip install \
+  black \
+  isort \
+  pip-tools \
+  bump2version \
+  rope
