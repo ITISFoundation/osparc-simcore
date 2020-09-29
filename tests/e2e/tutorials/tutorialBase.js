@@ -20,6 +20,8 @@ class TutorialBase {
     this.__responsesQueue = null;
 
     this.__interval = null;
+
+    this.__failed = false;
   }
 
   startScreenshooter() {
@@ -286,6 +288,14 @@ class TutorialBase {
       title += '_' + screenshotTitle;
     }
     await utils.takeScreenshot(this.__page, title);
+  }
+
+  getTutorialFailed() {
+    return this.__failed;
+  }
+
+  setTutorialFailed(failed) {
+    this.__failed = failed;
   }
 }
 

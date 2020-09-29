@@ -46,12 +46,17 @@ async function runTutorial() {
     await tutorial.removeStudy();
   }
   catch(err) {
+    tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
   }
   finally {
     await tutorial.logOut();
     tutorial.stopScreenshooter();
     await tutorial.close();
+  }
+
+  if (tutorial.getTutorialFailed()) {
+    throw "Tutorial Failed";
   }
 }
 
