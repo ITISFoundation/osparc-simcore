@@ -27,7 +27,7 @@ class LockedStore:
 
 
 async def test_context_aware_dispatch() -> None:
-    @run_serialized_in_context(target_args=["c1", "c3", "c3"])
+    @run_serialized_in_context(target_args=["c1", "c2", "c3"])
     async def orderly(c1: Any, c2: Any, c3: Any, control: Any) -> None:
         _ = (c1, c2, c3)
         sleep_interval = random.uniform(0, 0.01)
