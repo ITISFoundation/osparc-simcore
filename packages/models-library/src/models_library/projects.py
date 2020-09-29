@@ -228,12 +228,29 @@ class ProjectLocked(BaseModel):
     owner: Optional[Owner]
 
 
+class RunningState(str, Enum):
+    unknown = "UNKNOWN"
+    not_started = "NOT_STARTED"
+    pending = "PENDING"
+    started = "STARTED"
+    retrying = "RETRY"
+    success = "SUCCESS"
+    failure = "FAILURE"
+
+
+class ProjectRunningState(BaseModel):
+    value: RunningState
+
+
 class ProjectState(BaseModel):
     locked: ProjectLocked
+    state: ProjectRunningState
 
 
 __all__ = [
     "ProjectState",
+    "ProjectRunningState",
     "ProjectLocked",
+    "RunningState",
     "Owner",
 ]
