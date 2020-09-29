@@ -5,31 +5,21 @@
 import logging
 
 from aiohttp import web
-from celery import Celery
 
-from servicelib.application_keys import APP_CONFIG_KEY
+from models_library.projects import RunningState
 from servicelib.request_keys import RQT_USERID_KEY
-from simcore_sdk.config.rabbit import Config as RabbitConfig
 
-from .computation_api import update_pipeline_db
-from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
+from .computation_api import (
+    get_pipeline_state,
+    start_pipeline_computation,
+    update_pipeline_db,
+)
 from .login.decorators import login_required
 from .projects.projects_api import get_project_for_user
 from .projects.projects_exceptions import ProjectNotFoundError
 from .security_api import check_permission
 
 log = logging.getLogger(__file__)
-
-
-def get_celery(_app: web.Application) -> Celery:
-    config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
-    rabbit = RabbitConfig(**config)
-    celery_app = Celery(
-        rabbit.name,
-        broker=rabbit.broker_url,
-        backend=rabbit.backend,
-    )
-    return celery_app
 
 
 async def _process_request(request):
@@ -48,22 +38,6 @@ async def _process_request(request):
 
 
 @login_required
-async def update_pipeline(request: web.Request) -> web.Response:
-    await check_permission(request, "services.pipeline.*")
-    await check_permission(request, "project.read")
-
-    user_id, project_id = await _process_request(request)
-
-    try:
-        project = await get_project_for_user(request.app, project_id, user_id)
-        await update_pipeline_db(request.app, project_id, project["workbench"])
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"Project {project_id} not found") from exc
-
-    raise web.HTTPNoContent()
-
-
-@login_required
 async def start_pipeline(request: web.Request) -> web.Response:
     """Starts pipeline described in the workbench section of a valid project
     already at the server side
@@ -76,28 +50,28 @@ async def start_pipeline(request: web.Request) -> web.Response:
     # FIXME: if start is already ongoing. Do not re-start!
     try:
         project = await get_project_for_user(request.app, project_id, user_id)
+
+        pipeline_state: RunningState = await get_pipeline_state(request.app, project_id)
+
+        if pipeline_state in [
+            RunningState.pending,
+            RunningState.started,
+            RunningState.retrying,
+        ]:
+            raise web.HTTPForbidden(reason=f"Projet {project_id} already started")
+
         await update_pipeline_db(request.app, project_id, project["workbench"])
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_id} not found") from exc
 
-    # commit the tasks to celery
-    task = get_celery(request.app).send_task(
-        "comp.task", kwargs={"user_id": user_id, "project_id": project_id}
-    )
-
-    log.debug(
-        "Task (task=%s, user_id=%s, project_id=%s) submitted for execution.",
-        task.task_id,
-        user_id,
-        project_id,
-    )
+    task_id = await start_pipeline_computation(request.app, user_id, project_id)
 
     # answer the client while task has been spawned
     data = {
         # TODO: PC->SAN: some name with task id. e.g. to distinguish two projects with identical pipeline?
         "pipeline_name": "request_data",
         "project_id": project_id,
-        "task_id": task.task_id if task else "failed to start",
+        "task_id": task_id if task_id else "failed to start",
     }
     return data
