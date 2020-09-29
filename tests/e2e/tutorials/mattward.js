@@ -18,7 +18,7 @@ async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, user, pass, newUser, templateName, enableDemoMode);
 
   try {
-    tutorial.initScreenshoter();
+    tutorial.startScreenshooter();
     await tutorial.start();
     const studyData = await tutorial.openTemplate(1000);
 
@@ -50,7 +50,7 @@ async function runTutorial() {
   }
   finally {
     await tutorial.logOut();
-    tutorial.stopScreenshoter();
+    tutorial.stopScreenshooter();
     await tutorial.close();
   }
 }

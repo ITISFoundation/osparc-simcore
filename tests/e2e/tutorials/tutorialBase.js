@@ -22,7 +22,7 @@ class TutorialBase {
     this.__interval = null;
   }
 
-  initScreenshoter() {
+  startScreenshooter() {
     try {
       utils.createScreenshotsDir();
     }
@@ -36,7 +36,7 @@ class TutorialBase {
     }, 2000);
   }
 
-  stopScreenshoter() {
+  stopScreenshooter() {
     clearInterval(this.__interval);
   }
 
