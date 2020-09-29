@@ -85,7 +85,7 @@ def run_serialized_in_context(target_args: List[str] = None):
 
             if not context.initialized:
                 context.initialized = True
-                # todo run worker here for the queues in different thread
+
                 async def worker(in_q: asyncio.Queue, out_q: asyncio.Queue):
                     while True:
                         awaitable = await in_q.get()
