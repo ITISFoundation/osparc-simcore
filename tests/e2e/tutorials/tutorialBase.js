@@ -102,8 +102,7 @@ class TutorialBase {
 
   async login() {
     this.__responsesQueue.addResponseListener("projects?type=template");
-    this.__responsesQueue.addResponseListener("catalog/dags");
-    this.__responsesQueue.addResponseListener("services");
+    this.__responsesQueue.addResponseListener("catalog/services");
 
     try {
       await auto.logIn(this.__page, this.__user, this.__pass);
@@ -127,20 +126,7 @@ class TutorialBase {
     }
 
     try {
-      const resp = await this.__responsesQueue.waitUntilResponse("catalog/dags");
-      const dags = resp["data"];
-      console.log("DAGs received:", dags.length);
-      dags.forEach(dag => {
-        console.log(" - ", dag.name);
-      });
-    }
-    catch(err) {
-      console.error("DAGs could not be fetched", err);
-      throw(err);
-    }
-
-    try {
-      const resp = await this.__responsesQueue.waitUntilResponse("services");
+      const resp = await this.__responsesQueue.waitUntilResponse("catalog/services");
       const services = resp["data"];
       console.log("Services received:", services.length);
     }
