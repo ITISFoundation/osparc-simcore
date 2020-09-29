@@ -116,7 +116,7 @@ Once ready, the release-hotfix process starts by leveraging *Github*  release me
 
 Each docker build marked as released are tagged as described in the Release process.
 
-see ![img/git-release-workflow.svg](img/git-release-workflow.svg)
+See ![img/git-release-workflow.svg](img/git-release-workflow.svg)
 
 ### Hotfix example
 
@@ -141,4 +141,4 @@ A bug was found in version 1.2.0 of the simcore stack. The team decides to fix i
 3. Press the **Publish release** button
 4. The CI will be automatically triggered and will deploy the staging release
 
-see ![img/git-hotfix-workflow.svg](img/git-hotfix-workflow.svg)
+See ![img/git-hotfix-workflow.svg](img/git-hotfix-workflow.svg)
