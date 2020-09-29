@@ -30,7 +30,7 @@ cryptography==3.1         # via -r requirements/_base.txt, paramiko
 dataclasses==0.7          # via -r requirements/_base.txt, pydantic
 distro==1.5.0             # via docker-compose
 dnspython==2.0.0          # via -r requirements/_base.txt, email-validator
-docker-compose==1.27.3    # via pytest-docker
+docker-compose==1.27.4    # via pytest-docker
 docker[ssh]==4.3.1        # via -r requirements/_test.in, docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
