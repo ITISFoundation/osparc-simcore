@@ -199,17 +199,25 @@ function createScreenshotsDir() {
   console.log("Screenshots directory:", screenshotsDir);
 }
 
-async function takeScreenshot(page, captureName) {
-  let filename = captureName.replace("undefined", "");
-  filename = filename.replace(":", "-");
-  filename = filename+".jpg";
+async function takeScreenshot(page, captureName = "") {
+  const event = new Date();
+  const time = event.toLocaleTimeString('de-CH');
+  let filename = time + "_" + captureName;
+  filename = filename.split(":").join("-")
+  filename = filename + ".jpg";
   const path = pathLib.join(__dirname, SCREENSHOTS_DIR, filename);
+  console.log(path);
 
-  await page.screenshot({
-    fullPage: true,
-    path: path,
-    type: 'jpeg',
-  })
+  try {
+    await page.screenshot({
+      fullPage: true,
+      path: path,
+      type: 'jpeg',
+    })
+  }
+  catch(err) {
+    console.error("Error taking screenshot", err);
+  }
 }
 
 function extractWorkbenchData(data) {
