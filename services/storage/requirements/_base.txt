@@ -47,7 +47,7 @@ s3transfer==0.3.3         # via boto3
 semantic-version==2.8.5   # via -r requirements/_base.in
 semver==2.10.2            # via blackfynn
 six==1.15.0               # via isodate, jsonschema, openapi-core, openapi-spec-validator, protobuf, pyrsistent, python-dateutil, tenacity, websocket-client
-sqlalchemy[postgresql_psycopg2binary]==1.3.18  # via -r requirements/../../../packages/postgres-database/requirements/_base.in, -r requirements/../../../packages/service-library/requirements/_base.in, aiopg
+sqlalchemy[postgresql_psycopg2binary]==1.3.19  # via -r requirements/../../../packages/postgres-database/requirements/_base.in, -r requirements/../../../packages/service-library/requirements/_base.in, aiopg
 strict-rfc3339==0.7       # via openapi-core
 tenacity==6.2.0           # via -r requirements/../../../packages/service-library/requirements/_base.in, -r requirements/_base.in
 trafaret-config==2.0.2    # via -r requirements/_base.in
