@@ -52,7 +52,10 @@ def run_serialized_in_context(target_args: List[str] = None):
         contexts = {}
 
         def get_context(args, kwargs: Dict) -> Context:
-            search_args = dict(zip(decorated_function.__code__.co_varnames, args))
+            arg_names = decorated_function.__code__.co_varnames[
+                : decorated_function.__code__.co_argcount
+            ]
+            search_args = dict(zip(arg_names, args))
             search_args.update(kwargs)
 
             key_parts = deque()
