@@ -66,6 +66,18 @@ run: build ## Runs upgrade in a container
 		local/python-devkit:latest \
 		-c "cd scripts/requirements; make reqs $(if $(upgrade),upgrade=$(upgrade),)"
 
+.PHONY: shell
+shell:
+	docker run -it \
+		--workdir="/home/$(USER)" \
+    --volume="/etc/group:/etc/group:ro" \
+    --volume="/etc/passwd:/etc/passwd:ro" \
+    --volume="/etc/shadow:/etc/shadow:ro" \
+		--volume=$(REPODIR):/home/$(USER) \
+		--user=$(shell id -u):$(shell id -g) \
+		--entrypoint=/bin/bash \
+		local/python-devkit:latest
+
 
 .PHONY: help
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
