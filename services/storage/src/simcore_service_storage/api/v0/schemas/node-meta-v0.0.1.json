@@ -369,8 +369,24 @@
             },
             "type": {
               "type": "string",
-              "pattern": "^(number|integer|boolean|string|data:[^/\\s,]+/[^/\\s,]+)$",
+              "pattern": "^(array|number|integer|boolean|string|data:[^/\\s,]+/[^/\\s,]+)$",
               "description": "data type expected on this output",
+              "examples": [
+                "array",
+                "number",
+                "integer",
+                "boolean",
+                "string",
+                "data:application/json",
+                "data:application/vnd.ms-excel ",
+                "data:text/plain",
+                "data:application/hdf5"
+              ]
+            },
+            "items": {
+              "type": "string",
+              "pattern": "^(number|integer|boolean|string|data:[^/\\s,]+/[^/\\s,]+)$",
+              "description": "data type expected on this array's output",
               "examples": [
                 "number",
                 "integer",
