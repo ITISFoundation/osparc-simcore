@@ -16,7 +16,7 @@ const screenshotPrefix = "3DEM_";
 async function runTutorial () {
   const tutorial = new tutorialBase.TutorialBase(anonURL);
 
-  utils.createScreenshotsDir();
+  tutorial.initScreenshoter();
   const page = await tutorial.beforeScript();
   const studyData = await tutorial.openStudyLink();
 
@@ -32,7 +32,9 @@ async function runTutorial () {
     "data.zip"
   ];
   await tutorial.checkResults(outFiles.length);
+
   await tutorial.logOut();
+  tutorial.stopScreenshoter();
   await tutorial.close();
 }
 

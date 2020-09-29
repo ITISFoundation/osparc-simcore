@@ -16,7 +16,7 @@ const screenshotPrefix = "Bornstein_";
 async function runTutorial () {
   const tutorial = new tutorialBase.TutorialBase(anonURL);
 
-  utils.createScreenshotsDir();
+  tutorial.initScreenshoter();
   const page = await tutorial.beforeScript();
   const studyData = await tutorial.openStudyLink();
 
@@ -36,7 +36,9 @@ async function runTutorial () {
     "traces.pkl"
   ];
   await tutorial.checkResults(outFiles.length);
+
   await tutorial.logOut();
+  tutorial.stopScreenshoter();
   await tutorial.close();
 }
 
