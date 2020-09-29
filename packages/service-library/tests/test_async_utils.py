@@ -7,7 +7,7 @@ from typing import Any, Dict, List
 
 import pytest
 
-from servicelib.async_utils import run_serialized_in_context
+from servicelib.async_utils import run_sequentially_in_context
 
 
 class LockedStore:
@@ -27,7 +27,7 @@ class LockedStore:
 
 
 async def test_context_aware_dispatch() -> None:
-    @run_serialized_in_context(target_args=["c1", "c2", "c3"])
+    @run_sequentially_in_context(target_args=["c1", "c2", "c3"])
     async def orderly(c1: Any, c2: Any, c3: Any, control: Any) -> None:
         _ = (c1, c2, c3)
         sleep_interval = random.uniform(0, 0.01)
@@ -77,7 +77,7 @@ async def test_context_aware_function_sometimes_fails() -> None:
     class DidFailException(Exception):
         pass
 
-    @run_serialized_in_context(target_args=["will_fail"])
+    @run_sequentially_in_context(target_args=["will_fail"])
     async def sometimes_failing(will_fail: bool) -> None:
         if will_fail:
             raise DidFailException("I was instructed to fail")
@@ -97,7 +97,7 @@ async def test_context_aware_wrong_target_args_name() -> None:
     expected_param_name = "wrong_parameter"
 
     # pylint: disable=unused-argument
-    @run_serialized_in_context(target_args=[expected_param_name])
+    @run_sequentially_in_context(target_args=[expected_param_name])
     async def target_function(the_param: Any) -> None:
         return None
 
@@ -113,7 +113,7 @@ async def test_context_aware_wrong_target_args_name() -> None:
 
 async def test_context_aware_measure_parallelism() -> None:
     # expected duration 1 second
-    @run_serialized_in_context(target_args=["control"])
+    @run_sequentially_in_context(target_args=["control"])
     async def sleep_for(sleep_interval: float, control: Any) -> Any:
         await asyncio.sleep(sleep_interval)
         return control
@@ -132,7 +132,7 @@ async def test_context_aware_measure_parallelism() -> None:
 
 async def test_context_aware_measure_serialization() -> None:
     # expected duration 1 second
-    @run_serialized_in_context(target_args=["control"])
+    @run_sequentially_in_context(target_args=["control"])
     async def sleep_for(sleep_interval: float, control: Any) -> Any:
         await asyncio.sleep(sleep_interval)
         return control

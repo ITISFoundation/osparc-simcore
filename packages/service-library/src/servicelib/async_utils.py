@@ -5,21 +5,21 @@ import attr
 from typing import List, Dict
 
 
-@attr.s
+@attr.s(auto_attribs=True)
 class Context:
-    in_queue: asyncio.Queue = attr.ib()
-    out_queue: asyncio.Queue = attr.ib()
-    initialized: bool = attr.ib()
+    in_queue: asyncio.Queue
+    out_queue: asyncio.Queue
+    initialized: bool
 
 
-def run_serialized_in_context(target_args: List[str] = None):
-    """All request to function with same calling context will be serialized.
+def run_sequentially_in_context(target_args: List[str] = None):
+    """All request to function with same calling context will be run sequentially.
 
     Example:
 
     Given the following decorated function
 
-        @run_serialized_in_context(target_args=["param3", "param1"])
+        @run_sequentially_in_context(target_args=["param3", "param1"])
         async def func(param1, param2, param3):
             await asyncio.sleep(1)
 
