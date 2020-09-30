@@ -147,6 +147,10 @@ qx.Class.define("osparc.file.FilePicker", {
       return this.__filesTree;
     },
 
+    getSelectButton: function() {
+      return this.__selectBtn;
+    },
+
     uploadPendingFiles: function(files) {
       if (files.length > 0) {
         if (files.length > 1) {
