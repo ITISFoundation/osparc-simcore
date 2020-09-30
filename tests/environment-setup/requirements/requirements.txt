@@ -10,9 +10,8 @@ attrs==20.2.0             # via aiohttp, pytest
 chardet==3.0.4            # via aiohttp
 idna-ssl==1.1.0           # via aiohttp
 idna==2.10                # via idna-ssl, yarl
-importlib-metadata==1.7.0  # via pluggy, pytest
+importlib-metadata==2.0.0  # via pluggy, pytest
 iniconfig==1.0.1          # via pytest
-more-itertools==8.5.0     # via pytest
 multidict==4.7.6          # via aiohttp, yarl
 packaging==20.4           # via pytest, pytest-sugar
 pluggy==0.13.1            # via pytest
@@ -22,10 +21,10 @@ pytest-aiohttp==0.3.0     # via -r requirements/requirements.in
 pytest-instafail==0.4.2   # via -r requirements/requirements.in
 pytest-runner==5.2        # via -r requirements/requirements.in
 pytest-sugar==0.9.4       # via -r requirements/requirements.in
-pytest==6.0.2             # via -r requirements/requirements.in, pytest-aiohttp, pytest-instafail, pytest-sugar
+pytest==6.1.0             # via -r requirements/requirements.in, pytest-aiohttp, pytest-instafail, pytest-sugar
 six==1.15.0               # via packaging
 termcolor==1.1.0          # via pytest-sugar
 toml==0.10.1              # via pytest
 typing-extensions==3.7.4.3  # via aiohttp, yarl
-yarl==1.5.1               # via aiohttp
-zipp==3.1.0               # via importlib-metadata
+yarl==1.6.0               # via aiohttp
+zipp==3.2.0               # via importlib-metadata

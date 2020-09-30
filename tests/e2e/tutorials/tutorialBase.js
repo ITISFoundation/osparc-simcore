@@ -6,7 +6,7 @@ const utils = require('../utils/utils');
 const responses = require('../utils/responsesQueue');
 
 class TutorialBase {
-  constructor(url, user, pass, newUser, templateName, enableDemoMode=false) {
+  constructor(url, templateName, user, pass, newUser, enableDemoMode=false) {
     this.__demo = enableDemoMode;
     this.__templateName = templateName;
 

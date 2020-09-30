@@ -14,7 +14,7 @@ astroid==2.4.2            # via pylint
 async-exit-stack==1.0.1   # via -r requirements/_base.txt, asgi-lifespan, fastapi
 async-generator==1.10     # via -r requirements/_base.txt, fastapi
 async-timeout==3.0.1      # via aiohttp
-attrs==19.3.0             # via -r requirements/_base.txt, aiohttp, jsonschema, pytest, pytest-docker
+attrs==20.2.0             # via -r requirements/_base.txt, aiohttp, jsonschema, pytest, pytest-docker
 bcrypt==3.2.0             # via paramiko, passlib
 cached-property==1.5.1    # via docker-compose
 certifi==2020.6.20        # via -r requirements/_base.txt, httpx, requests
@@ -30,7 +30,7 @@ cryptography==3.1         # via -r requirements/_base.txt, paramiko
 dataclasses==0.7          # via -r requirements/_base.txt, pydantic
 distro==1.5.0             # via docker-compose
 dnspython==2.0.0          # via -r requirements/_base.txt, email-validator
-docker-compose==1.27.3    # via pytest-docker
+docker-compose==1.27.4    # via pytest-docker
 docker[ssh]==4.3.1        # via -r requirements/_test.in, docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
@@ -75,7 +75,7 @@ pyparsing==2.4.7          # via packaging
 pyrsistent==0.16.0        # via jsonschema
 pytest-aiohttp==0.3.0     # via -r requirements/_test.in
 pytest-cov==2.10.1        # via -r requirements/_test.in
-pytest-docker==0.10.0     # via -r requirements/_test.in
+pytest-docker==0.10.1     # via -r requirements/_test.in
 pytest-mock==3.3.1        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest==5.4.3             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-mock
