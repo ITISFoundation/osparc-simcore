@@ -15,7 +15,7 @@ aioredlock==0.5.2         # via -r requirements/_base.in
 aiormq==3.2.3             # via aio-pika
 amqp==2.6.1               # via kombu
 async-timeout==3.0.1      # via aiohttp, aioredis
-attrs==19.3.0             # via -c requirements/../../../packages/service-library/requirements/_base.in, aiohttp, aioredlock
+attrs==20.2.0             # via -c requirements/../../../packages/service-library/requirements/_base.in, aiohttp, aioredlock
 billiard==3.6.3.0         # via celery
 caio==0.6.1               # via aiofile
 celery[redis]==4.4.7      # via -r requirements/_base.in
