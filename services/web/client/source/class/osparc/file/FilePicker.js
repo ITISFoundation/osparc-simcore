@@ -58,6 +58,20 @@ qx.Class.define("osparc.file.FilePicker", {
     "finished": "qx.event.type.Event"
   },
 
+  statics: {
+    getOutputLabel: function(outputValue) {
+      if ("outFile" in outputValue) {
+        const outInfo = outputValue["outFile"];
+        if ("label" in outInfo) {
+          return outInfo.label;
+        }
+        const splitFilename = outInfo.path.split("/");
+        return splitFilename[splitFilename.length-1];
+      }
+      return null;
+    }
+  },
+
   members: {
     __filesTree: null,
     __filesAdder: null,

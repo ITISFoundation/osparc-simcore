@@ -129,25 +129,15 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
           if (progress === 100) {
             const output = node.getOutputValues();
             if (node.getVersion() === "1.0.0") {
-              if ("outFile" in output) {
-                const outInfo = output["outFile"];
-                if ("label" in outInfo) {
-                  return outInfo.label;
-                }
-                const splitFilename = outInfo.path.split("/");
-                return splitFilename[splitFilename.length-1];
+              const outputLabel = osparc.file.FilePicker.getOutputLabel(output);
+              if (outputLabel) {
+                return outputLabel;
               }
-            } else if ("outFiles" in output) {
-              const outInfos = output["outFiles"];
-              if (outInfos.length === 1) {
-                const outInfo = outInfos[0];
-                if ("label" in outInfo) {
-                  return outInfo.label;
-                }
-                const splitFilename = outInfo.path.split("/");
-                return splitFilename[splitFilename.length-1];
+            } else if (node.getVersion() === "2.0.0") {
+              const outputLabel = osparc.file.FilePicker2.getOutputLabel(output);
+              if (outputLabel) {
+                return outputLabel;
               }
-              return "(" + outInfos.length + ")";
             }
           }
           return this.tr("Select a file");
