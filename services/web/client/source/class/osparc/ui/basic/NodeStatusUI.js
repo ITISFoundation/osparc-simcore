@@ -127,8 +127,18 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       this.__node.getStatus().bind("progress", this.__label, "value", {
         converter: progress => {
           if (progress === 100) {
-            const outInfos = Object.values(node.getOutputValues());
-            if (outInfos.length === 1) {
+            const output = node.getOutputValues();
+            if (node.getVersion() === "1.0.0") {
+              if ("outFile" in output) {
+                const outInfo = output["outFile"];
+                if ("label" in outInfo) {
+                  return outInfo.label;
+                }
+                const splitFilename = outInfo.path.split("/");
+                return splitFilename[splitFilename.length-1];
+              }
+            } else if ("outFiles" in output) {
+              const outInfos = output["outFiles"];
               if (outInfos.length === 1) {
                 const outInfo = outInfos[0];
                 if ("label" in outInfo) {
@@ -137,18 +147,8 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
                 const splitFilename = outInfo.path.split("/");
                 return splitFilename[splitFilename.length-1];
               }
-            } else {
-              if (output.length === 1) {
-                const outInfo = outInfos[0];
-                if ("label" in outInfo) {
-                  return outInfo.label;
-                }
-                const splitFilename = outInfo.path.split("/");
-                return splitFilename[splitFilename.length-1];
-              } else {
-                const outInfo = outInfos[0];
-                return "(" + output.length + ")";
-              }
+              return "(" + outInfos.length + ")";
+            }
           }
           return this.tr("Select a file");
         }
