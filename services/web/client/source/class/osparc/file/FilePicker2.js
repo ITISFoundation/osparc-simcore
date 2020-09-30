@@ -55,6 +55,11 @@ qx.Class.define("osparc.file.FilePicker2", {
       filePicker.buildLayout();
       filePicker.init();
 
+      const selectBtn = filePicker.getSelectButton();
+      selectBtn.addListener("execute", () => {
+        this.__itemsSelected();
+      }, this);
+
       this._mainView.add(filePicker, {
         flex: 1
       });
@@ -63,6 +68,41 @@ qx.Class.define("osparc.file.FilePicker2", {
       filesTree.set({
         selectionMode: "multi"
       });
+    },
+
+    __itemsSelected: function() {
+      const data = this.__filePicker.getFilesTree().getSelectedFiles();
+      console.log(data);
+      if (data) {
+        this.__resetOutputFiles();
+        data.forEach(selectedEntry => {
+          if (selectedEntry["isFile"]) {
+            const selectedItem = selectedEntry["selectedItem"];
+            this.__appendOutputFile(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
+            this.getNode().repopulateOutputPortData();
+            this.fireEvent("finished");
+          }
+        });
+      }
+    },
+
+    __resetOutputFiles: function() {
+      const outputs = this.__filePicker.getOutputFile();
+      outputs["value"] = [];
+      this.getNode().getStatus().setProgress(0);
+    },
+
+    __appendOutputFile: function(store, dataset, path, label) {
+      if (store !== undefined && path) {
+        const outputs = this.__filePicker.getOutputFile();
+        outputs["value"].push({
+          store,
+          dataset,
+          path,
+          label
+        });
+        this.getNode().getStatus().setProgress(100);
+      }
     },
 
     // overridden
