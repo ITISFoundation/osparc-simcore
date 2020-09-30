@@ -33,7 +33,7 @@ class Connection(BaseModel):
     output: Optional[str]
 
 
-class FilePickerOutput(BaseModel):
+class FileIO(BaseModel):
     store: Union[str, int]  # simcore/datcore
     dataset: Optional[str]
     path: str
@@ -51,8 +51,8 @@ class Position(BaseModel):
     y: int
 
 
-InputTypes = Union[int, bool, str, float, Connection, FilePickerOutput]
-OutputTypes = Union[int, bool, str, float, FilePickerOutput]
+InputTypes = Union[int, bool, str, float, Connection, FileIO]
+OutputTypes = Union[int, bool, str, float, FileIO]
 InputID = constr(regex=r"^[-_a-zA-Z0-9]+$")
 OutputID = InputID
 

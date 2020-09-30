@@ -133,21 +133,26 @@ properties:
                         type: string
                       output:
                         type: string
-                  - type: object
+                  - title: FileIO
+                    type: object
                     additionalProperties: false
                     required:
                       - store
                       - path
                     properties:
                       store:
+                        title: Store
                         type:
                           - string
                           - integer
                       dataset:
+                        title: Dataset
                         type: string
                       path:
+                        title: Path
                         type: string
                       label:
+                        title: Label
                         type: string
           inputAccess:
             description: map with key - access level pairs
@@ -182,21 +187,26 @@ properties:
                       - string
                       - number
                       - 'null'
-                  - type: object
+                  - title: FileIO
+                    type: object
                     additionalProperties: false
                     required:
                       - store
                       - path
                     properties:
                       store:
+                        title: Store
                         type:
                           - string
                           - integer
                       dataset:
+                        title: Dataset
                         type: string
                       path:
+                        title: Path
                         type: string
                       label:
+                        title: Label
                         type: string
           outputNode:
             type: boolean
