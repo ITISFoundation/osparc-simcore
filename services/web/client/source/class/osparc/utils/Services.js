@@ -213,10 +213,7 @@ qx.Class.define("osparc.utils.Services", {
             displayOrder: 0,
             label: "File",
             description: "Chosen File",
-            type: "array",
-            items: {
-              type: "data:*/*"
-            }
+            type: "data:*/*"
           }
         },
         "access_rights": {

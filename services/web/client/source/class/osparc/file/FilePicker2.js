@@ -78,7 +78,6 @@ qx.Class.define("osparc.file.FilePicker2", {
     // overridden
     _addIFrame: function() {
       this.__buildMyLayout();
-      this.__init();
     },
 
     // overridden

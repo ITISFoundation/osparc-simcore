@@ -39,10 +39,7 @@ def _file_picker_service_2() -> ServiceDockerData:
                 "displayOrder": 0,
                 "label": "File",
                 "description": "Chosen File",
-                "type": "array",
-                "items": {
-                    "type": "data:*/*"
-                }
+                "type": "data:*/*"
             }
         },
     )
