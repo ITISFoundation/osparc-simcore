@@ -136,7 +136,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
     init: function() {
       if (this.__isOutputFileSelected()) {
-        const outFile = this.__getOutputFile();
+        const outFile = this.getOutputFile();
         this.__filesTree.loadFilePath(outFile.value);
       } else {
         this.__initResources();
@@ -179,7 +179,7 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
-    __getOutputFile: function() {
+    getOutputFile: function() {
       const outputs = Object.values(this.getNode().getOutputs());
       if (outputs.length) {
         return outputs[0];
@@ -189,7 +189,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __setOutputFile: function(store, dataset, path, label) {
       if (store !== undefined && path) {
-        const outputs = this.__getOutputFile();
+        const outputs = this.getOutputFile();
         outputs["value"] = {
           store,
           dataset,
@@ -201,7 +201,7 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __isOutputFileSelected: function() {
-      const outFile = this.__getOutputFile();
+      const outFile = this.getOutputFile();
       if (outFile && "value" in outFile && "path" in outFile.value) {
         return true;
       }
@@ -210,7 +210,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __checkSelectedFileIsListed: function() {
       if (this.__isOutputFileSelected()) {
-        const outFile = this.__getOutputFile();
+        const outFile = this.getOutputFile();
         this.__filesTree.setSelectedFile(outFile.value.path);
         this.__filesTree.fireEvent("selectionChanged");
       }
