@@ -179,6 +179,9 @@
                     },
                     {
                       "$ref": "#/definitions/FileIO"
+                    },
+                    {
+                      "$ref": "#/definitions/FileIOArray"
                     }
                   ]
                 }
@@ -230,6 +233,9 @@
                     },
                     {
                       "$ref": "#/definitions/FileIO"
+                    },
+                    {
+                      "$ref": "#/definitions/FileIOArray"
                     }
                   ]
                 }
@@ -333,6 +339,14 @@
           "title": "Label",
           "type": "string"
         }
+      }
+    },
+    "FileIOArray": {
+      "title": "FileIOArray",
+      "default": [],
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/FileIO"
       }
     }
   }

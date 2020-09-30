@@ -5923,6 +5923,31 @@ paths:
                                                 label:
                                                   title: Label
                                                   type: string
+                                            - title: FileIOArray
+                                              default: []
+                                              type: array
+                                              items:
+                                                title: FileIO
+                                                type: object
+                                                additionalProperties: false
+                                                required:
+                                                  - store
+                                                  - path
+                                                properties:
+                                                  store:
+                                                    title: Store
+                                                    type:
+                                                      - string
+                                                      - integer
+                                                  dataset:
+                                                    title: Dataset
+                                                    type: string
+                                                  path:
+                                                    title: Path
+                                                    type: string
+                                                  label:
+                                                    title: Label
+                                                    type: string
                                     inputAccess:
                                       description: map with key - access level pairs
                                       type: object
@@ -5977,6 +6002,31 @@ paths:
                                                 label:
                                                   title: Label
                                                   type: string
+                                            - title: FileIOArray
+                                              default: []
+                                              type: array
+                                              items:
+                                                title: FileIO
+                                                type: object
+                                                additionalProperties: false
+                                                required:
+                                                  - store
+                                                  - path
+                                                properties:
+                                                  store:
+                                                    title: Store
+                                                    type:
+                                                      - string
+                                                      - integer
+                                                  dataset:
+                                                    title: Dataset
+                                                    type: string
+                                                  path:
+                                                    title: Path
+                                                    type: string
+                                                  label:
+                                                    title: Label
+                                                    type: string
                                     outputNode:
                                       type: boolean
                                       deprecated: true
@@ -6305,6 +6355,31 @@ paths:
                                     label:
                                       title: Label
                                       type: string
+                                - title: FileIOArray
+                                  default: []
+                                  type: array
+                                  items:
+                                    title: FileIO
+                                    type: object
+                                    additionalProperties: false
+                                    required:
+                                      - store
+                                      - path
+                                    properties:
+                                      store:
+                                        title: Store
+                                        type:
+                                          - string
+                                          - integer
+                                      dataset:
+                                        title: Dataset
+                                        type: string
+                                      path:
+                                        title: Path
+                                        type: string
+                                      label:
+                                        title: Label
+                                        type: string
                         inputAccess:
                           description: map with key - access level pairs
                           type: object
@@ -6359,6 +6434,31 @@ paths:
                                     label:
                                       title: Label
                                       type: string
+                                - title: FileIOArray
+                                  default: []
+                                  type: array
+                                  items:
+                                    title: FileIO
+                                    type: object
+                                    additionalProperties: false
+                                    required:
+                                      - store
+                                      - path
+                                    properties:
+                                      store:
+                                        title: Store
+                                        type:
+                                          - string
+                                          - integer
+                                      dataset:
+                                        title: Dataset
+                                        type: string
+                                      path:
+                                        title: Path
+                                        type: string
+                                      label:
+                                        title: Label
+                                        type: string
                         outputNode:
                           type: boolean
                           deprecated: true
@@ -6567,6 +6667,31 @@ paths:
                                               label:
                                                 title: Label
                                                 type: string
+                                          - title: FileIOArray
+                                            default: []
+                                            type: array
+                                            items:
+                                              title: FileIO
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  title: Store
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  title: Dataset
+                                                  type: string
+                                                path:
+                                                  title: Path
+                                                  type: string
+                                                label:
+                                                  title: Label
+                                                  type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -6621,6 +6746,31 @@ paths:
                                               label:
                                                 title: Label
                                                 type: string
+                                          - title: FileIOArray
+                                            default: []
+                                            type: array
+                                            items:
+                                              title: FileIO
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  title: Store
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  title: Dataset
+                                                  type: string
+                                                path:
+                                                  title: Path
+                                                  type: string
+                                                label:
+                                                  title: Label
+                                                  type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -6947,6 +7097,31 @@ paths:
                                               label:
                                                 title: Label
                                                 type: string
+                                          - title: FileIOArray
+                                            default: []
+                                            type: array
+                                            items:
+                                              title: FileIO
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  title: Store
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  title: Dataset
+                                                  type: string
+                                                path:
+                                                  title: Path
+                                                  type: string
+                                                label:
+                                                  title: Label
+                                                  type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -7001,6 +7176,31 @@ paths:
                                               label:
                                                 title: Label
                                                 type: string
+                                          - title: FileIOArray
+                                            default: []
+                                            type: array
+                                            items:
+                                              title: FileIO
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  title: Store
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  title: Dataset
+                                                  type: string
+                                                path:
+                                                  title: Path
+                                                  type: string
+                                                label:
+                                                  title: Label
+                                                  type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -7333,6 +7533,31 @@ paths:
                                               label:
                                                 title: Label
                                                 type: string
+                                          - title: FileIOArray
+                                            default: []
+                                            type: array
+                                            items:
+                                              title: FileIO
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  title: Store
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  title: Dataset
+                                                  type: string
+                                                path:
+                                                  title: Path
+                                                  type: string
+                                                label:
+                                                  title: Label
+                                                  type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -7387,6 +7612,31 @@ paths:
                                               label:
                                                 title: Label
                                                 type: string
+                                          - title: FileIOArray
+                                            default: []
+                                            type: array
+                                            items:
+                                              title: FileIO
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  title: Store
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  title: Dataset
+                                                  type: string
+                                                path:
+                                                  title: Path
+                                                  type: string
+                                                label:
+                                                  title: Label
+                                                  type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -7710,6 +7960,31 @@ paths:
                                     label:
                                       title: Label
                                       type: string
+                                - title: FileIOArray
+                                  default: []
+                                  type: array
+                                  items:
+                                    title: FileIO
+                                    type: object
+                                    additionalProperties: false
+                                    required:
+                                      - store
+                                      - path
+                                    properties:
+                                      store:
+                                        title: Store
+                                        type:
+                                          - string
+                                          - integer
+                                      dataset:
+                                        title: Dataset
+                                        type: string
+                                      path:
+                                        title: Path
+                                        type: string
+                                      label:
+                                        title: Label
+                                        type: string
                         inputAccess:
                           description: map with key - access level pairs
                           type: object
@@ -7764,6 +8039,31 @@ paths:
                                     label:
                                       title: Label
                                       type: string
+                                - title: FileIOArray
+                                  default: []
+                                  type: array
+                                  items:
+                                    title: FileIO
+                                    type: object
+                                    additionalProperties: false
+                                    required:
+                                      - store
+                                      - path
+                                    properties:
+                                      store:
+                                        title: Store
+                                        type:
+                                          - string
+                                          - integer
+                                      dataset:
+                                        title: Dataset
+                                        type: string
+                                      path:
+                                        title: Path
+                                        type: string
+                                      label:
+                                        title: Label
+                                        type: string
                         outputNode:
                           type: boolean
                           deprecated: true
@@ -7972,6 +8272,31 @@ paths:
                                               label:
                                                 title: Label
                                                 type: string
+                                          - title: FileIOArray
+                                            default: []
+                                            type: array
+                                            items:
+                                              title: FileIO
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  title: Store
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  title: Dataset
+                                                  type: string
+                                                path:
+                                                  title: Path
+                                                  type: string
+                                                label:
+                                                  title: Label
+                                                  type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -8026,6 +8351,31 @@ paths:
                                               label:
                                                 title: Label
                                                 type: string
+                                          - title: FileIOArray
+                                            default: []
+                                            type: array
+                                            items:
+                                              title: FileIO
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  title: Store
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  title: Dataset
+                                                  type: string
+                                                path:
+                                                  title: Path
+                                                  type: string
+                                                label:
+                                                  title: Label
+                                                  type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -8374,6 +8724,31 @@ paths:
                                               label:
                                                 title: Label
                                                 type: string
+                                          - title: FileIOArray
+                                            default: []
+                                            type: array
+                                            items:
+                                              title: FileIO
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  title: Store
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  title: Dataset
+                                                  type: string
+                                                path:
+                                                  title: Path
+                                                  type: string
+                                                label:
+                                                  title: Label
+                                                  type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -8428,6 +8803,31 @@ paths:
                                               label:
                                                 title: Label
                                                 type: string
+                                          - title: FileIOArray
+                                            default: []
+                                            type: array
+                                            items:
+                                              title: FileIO
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  title: Store
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  title: Dataset
+                                                  type: string
+                                                path:
+                                                  title: Path
+                                                  type: string
+                                                label:
+                                                  title: Label
+                                                  type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -9588,6 +9988,31 @@ paths:
                                               label:
                                                 title: Label
                                                 type: string
+                                          - title: FileIOArray
+                                            default: []
+                                            type: array
+                                            items:
+                                              title: FileIO
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  title: Store
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  title: Dataset
+                                                  type: string
+                                                path:
+                                                  title: Path
+                                                  type: string
+                                                label:
+                                                  title: Label
+                                                  type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -9642,6 +10067,31 @@ paths:
                                               label:
                                                 title: Label
                                                 type: string
+                                          - title: FileIOArray
+                                            default: []
+                                            type: array
+                                            items:
+                                              title: FileIO
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  title: Store
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  title: Dataset
+                                                  type: string
+                                                path:
+                                                  title: Path
+                                                  type: string
+                                                label:
+                                                  title: Label
+                                                  type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -9967,6 +10417,31 @@ paths:
                                               label:
                                                 title: Label
                                                 type: string
+                                          - title: FileIOArray
+                                            default: []
+                                            type: array
+                                            items:
+                                              title: FileIO
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  title: Store
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  title: Dataset
+                                                  type: string
+                                                path:
+                                                  title: Path
+                                                  type: string
+                                                label:
+                                                  title: Label
+                                                  type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -10021,6 +10496,31 @@ paths:
                                               label:
                                                 title: Label
                                                 type: string
+                                          - title: FileIOArray
+                                            default: []
+                                            type: array
+                                            items:
+                                              title: FileIO
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  title: Store
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  title: Dataset
+                                                  type: string
+                                                path:
+                                                  title: Path
+                                                  type: string
+                                                label:
+                                                  title: Label
+                                                  type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
