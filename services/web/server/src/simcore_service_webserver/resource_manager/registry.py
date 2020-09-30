@@ -30,10 +30,10 @@ ALIVE_SUFFIX = "alive"
 
 @attr.s(auto_attribs=True)
 class RedisResourceRegistry:
-    """ Keeps a record of connected sockets per user
+    """Keeps a record of connected sockets per user
 
-        redis structure is following
-        Redis Hash: key=user_id:client_session_id values={server_id socket_id project_id}
+    redis structure is following
+    Redis Hash: key=user_id:client_session_id values={server_id socket_id project_id}
     """
 
     app: web.Application
@@ -92,12 +92,12 @@ class RedisResourceRegistry:
                 keys.append(self._decode_hash_key(hash_key))
         return keys
 
-    async def set_key_alive(
-        self, key: Dict[str, str], alive: bool, timeout: int = 0
-    ) -> None:
+    async def set_key_alive(self, key: Dict[str, str], timeout: int) -> None:
+        # setting the timeout to always expire, timeout > 0
+        timeout = int(max(1, timeout))
         client = get_redis_client(self.app)
         hash_key = f"{self._hash_key(key)}:{ALIVE_SUFFIX}"
-        await client.set(hash_key, 1, expire=0 if alive else timeout)
+        await client.set(hash_key, 1, expire=timeout)
 
     async def is_key_alive(self, key: Dict[str, str]) -> bool:
         client = get_redis_client(self.app)

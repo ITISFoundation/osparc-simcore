@@ -54,7 +54,9 @@ class WebsocketRegistry:
         )
         registry = get_registry(self.app)
         await registry.set_resource(self._resource_key(), (SOCKET_ID_KEY, socket_id))
-        await registry.set_key_alive(self._resource_key(), True)
+        await registry.set_key_alive(
+            self._resource_key(), get_service_deletion_timeout(self.app)
+        )
 
     async def get_socket_id(self) -> Optional[str]:
         log.debug(
@@ -70,7 +72,7 @@ class WebsocketRegistry:
         """When the user disconnects expire as soon as possible the alive key
         to ensure garbage collection will trigger in the next 2 cycles."""
         registry = get_registry(self.app)
-        await registry.set_key_alive(self._resource_key(), False, 1)
+        await registry.set_key_alive(self._resource_key(), 1)
 
     async def remove_socket_id(self) -> None:
         log.debug(
