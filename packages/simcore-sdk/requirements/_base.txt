@@ -25,4 +25,4 @@ tenacity==6.2.0           # via -r requirements/_base.in
 trafaret-config==2.0.2    # via -r requirements/_base.in
 trafaret==2.1.0           # via trafaret-config
 typing-extensions==3.7.4.3  # via aiohttp, yarl
-yarl==1.5.1               # via aiohttp
+yarl==1.6.0               # via aiohttp
