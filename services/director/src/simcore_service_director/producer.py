@@ -11,6 +11,7 @@ from typing import Dict, List, Optional, Tuple
 import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
+from servicelib.async_utils import run_sequentially_in_context
 
 from servicelib.monitor_services import service_started, service_stopped
 
@@ -914,6 +915,7 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
             ) from err
 
 
+@run_sequentially_in_context(target_args=["node_uuid"])
 async def stop_service(app: web.Application, node_uuid: str) -> None:
     log.debug("stopping service with uuid %s", node_uuid)
     # get the docker client
