@@ -82,12 +82,12 @@ async def garbage_collector_task(app: web.Application):
 
 async def collect_garbage(registry: RedisResourceRegistry, app: web.Application):
     """
-    Garbage collection has the task of removing trash from the system. The trash 
+    Garbage collection has the task of removing trash from the system. The trash
     can be divided in:
-    
+
     - Websockets & Redis (used to keep track of current active connections)
     - GUEST users (used for temporary access to the system which are created on the fly)
-    - deletion of users. If a user needs to be deleted it is manually marked as GUEST 
+    - deletion of users. If a user needs to be deleted it is manually marked as GUEST
         in the database
 
     The resources are Redis entries where all information regarding all the
@@ -99,7 +99,7 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
     endpoint to refresh the TTL, thus declaring that the user (websocket connection) is
     still active. The `resource_deletion_timeout_seconds` is theTTL of the key.
 
-    The field `garbage_collection_interval_seconds` defines the interval at which this 
+    The field `garbage_collection_interval_seconds` defines the interval at which this
     function will be called.
     """
     logger.info("collecting garbage...")
@@ -122,7 +122,7 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
     # Temporary disabling GC to until the dynamic service
     # safe function is invoked by the GC. This will avoid
     # data loss for current users.
-    # await remove_orphaned_services(registry, app)
+    await remove_orphaned_services(registry, app)
 
 
 async def remove_disconnected_user_resources(
@@ -189,7 +189,8 @@ async def remove_disconnected_user_resources(
                 # if this user was a GUEST also remove it from the database
                 # with the only associated project owned
                 await remove_guest_user_with_all_its_resources(
-                    app=app, user_id=int(dead_key["user_id"]),
+                    app=app,
+                    user_id=int(dead_key["user_id"]),
                 )
 
 
@@ -218,7 +219,8 @@ async def remove_users_manually_marked_as_guests(
             continue
 
         await remove_guest_user_with_all_its_resources(
-            app=app, user_id=guest_user_id,
+            app=app,
+            user_id=guest_user_id,
         )
 
 
@@ -283,11 +285,11 @@ async def remove_guest_user_with_all_its_resources(
 async def remove_all_projects_for_user(app: web.Application, user_id: int) -> None:
     """
     Goes through all the projects and will try to remove them but first it will check if
-    the project is shared with others. 
+    the project is shared with others.
     Based on the given access rights it will deltermine the action to take:
     - if other users have read access & execute access it will get deleted
     - if other users have write access the project's owner will be changed to a new owner:
-        - if the project is directly shared with a one or more users, one of these 
+        - if the project is directly shared with a one or more users, one of these
             will be picked as the new owner
         - if the project is not shared with any user but with groups of users, one
             of the users inside the group (which currently exists) will be picked as
@@ -309,12 +311,15 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
         APP_PROJECT_DBAPI
     ].list_all_projects_by_uuid_for_user(user_id=user_id)
     logger.info(
-        "Project uuids, to clean, for user '%s': '%s'", user_id, user_project_uuids,
+        "Project uuids, to clean, for user '%s': '%s'",
+        user_id,
+        user_project_uuids,
     )
 
     for project_uuid in user_project_uuids:
         logger.debug(
-            "Removing or transfering project '%s'", project_uuid,
+            "Removing or transfering project '%s'",
+            project_uuid,
         )
         try:
             project: Dict = await get_project_for_user(
@@ -411,7 +416,9 @@ async def get_new_project_owner_gid(
     # fallback to the groups search if the user does not exist
     if len(standard_groups) > 0 and new_project_owner_gid is None:
         new_project_owner_gid = await fetch_new_project_owner_from_groups(
-            app=app, standard_groups=standard_groups, user_id=user_id,
+            app=app,
+            standard_groups=standard_groups,
+            user_id=user_id,
         )
 
     logger.info(
@@ -483,7 +490,8 @@ async def replace_current_owner(
     # syncing back project data
     try:
         await app[APP_PROJECT_DBAPI].update_project_without_enforcing_checks(
-            project_data=project, project_uuid=project_uuid,
+            project_data=project,
+            project_uuid=project_uuid,
         )
     except Exception:  # pylint: disable=broad-except
         logger.exception(
@@ -500,4 +508,3 @@ async def remove_user(app: web.Application, user_id: int) -> None:
         logger.warning(
             "User '%s' still has some projects, could not be deleted", user_id
         )
-
