@@ -54,9 +54,10 @@ class WebsocketRegistry:
         )
         registry = get_registry(self.app)
         await registry.set_resource(self._resource_key(), (SOCKET_ID_KEY, socket_id))
-        await registry.set_key_alive(
-            self._resource_key(), get_service_deletion_timeout(self.app)
-        )
+        # hearthbeat is not emulated in tests, make sure that with very small GC intervals
+        # the resources do not result as timeout; this value is usually in the order of minutes
+        timeout = max(3, get_service_deletion_timeout(self.app))
+        await registry.set_key_alive(self._resource_key(), timeout)
 
     async def get_socket_id(self) -> Optional[str]:
         log.debug(
