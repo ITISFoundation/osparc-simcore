@@ -35,7 +35,7 @@ def _file_picker_service_2() -> ServiceDockerData:
         contact="maiz@itis.swiss",
         inputs={},
         outputs={
-            "outFile": {
+            "outFiles": {
                 "displayOrder": 0,
                 "label": "File",
                 "description": "Chosen File",
@@ -55,7 +55,7 @@ def _file_sweeper_service() -> ServiceDockerData:
         authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
         contact="maiz@itis.swiss",
         inputs={
-            "inFile": {
+            "inFiles": {
                 "displayOrder": 0,
                 "label": "Input files",
                 "description": "Array of files",

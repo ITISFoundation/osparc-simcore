@@ -209,7 +209,7 @@ qx.Class.define("osparc.utils.Services", {
         owner: "maiz@itis.swiss",
         inputs: {},
         outputs: {
-          "outFile_0": {
+          outFiles: {
             displayOrder: 0,
             label: "File",
             description: "Chosen File",
