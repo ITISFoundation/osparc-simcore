@@ -8,7 +8,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from pydantic import BaseModel, EmailStr, Field, constr
+from pydantic import BaseModel, EmailStr, Extra, Field, constr
 
 from simcore_postgres_database.webserver_models import ProjectType, projects
 
@@ -39,6 +39,13 @@ class FileIO(BaseModel):
     path: str
     label: str  # name of the file
 
+    class Config:
+        extra = Extra.forbid
+
+
+class FileIOArray(BaseModel):
+    __root__: List[FileIO] = []
+
 
 class AccessEnum(str, Enum):
     ReadAndWrite = "ReadAndWrite"
@@ -51,8 +58,8 @@ class Position(BaseModel):
     y: int
 
 
-InputTypes = Union[int, bool, str, float, Connection, FileIO]
-OutputTypes = Union[int, bool, str, float, FileIO]
+InputTypes = Union[int, bool, str, float, Connection, FileIO, FileIOArray]
+OutputTypes = Union[int, bool, str, float, FileIO, FileIOArray]
 InputID = constr(regex=r"^[-_a-zA-Z0-9]+$")
 OutputID = InputID
 
