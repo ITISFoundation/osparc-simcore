@@ -14,7 +14,7 @@ const screenshotPrefix = "Mattward_";
 
 
 async function runTutorial () {
-  const tutorial = new tutorialBase.TutorialBase(anonURL);
+  const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix);
 
   tutorial.startScreenshooter();
   const page = await tutorial.beforeScript();

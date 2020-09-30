@@ -15,7 +15,7 @@ const {
 const templateName = "Sleepers";
 
 async function runTutorial() {
-  const tutorial = new tutorialBase.TutorialBase(url, user, pass, newUser, templateName, enableDemoMode);
+  const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
 
   try {
     tutorial.startScreenshooter();
