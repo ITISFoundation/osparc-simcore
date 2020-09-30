@@ -389,22 +389,8 @@ paths:
                                     - Age in seconds since 1970
                                 type:
                                   type: string
-                                  pattern: '^(array|number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$'
-                                  description: data type expected on this output
-                                  example:
-                                    - array
-                                    - number
-                                    - integer
-                                    - boolean
-                                    - string
-                                    - 'data:application/json'
-                                    - 'data:application/vnd.ms-excel '
-                                    - 'data:text/plain'
-                                    - 'data:application/hdf5'
-                                items:
-                                  type: string
                                   pattern: '^(number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$'
-                                  description: data type expected on this array's output
+                                  description: data type expected on this output
                                   example:
                                     - number
                                     - integer
@@ -787,22 +773,8 @@ paths:
                                     - Age in seconds since 1970
                                 type:
                                   type: string
-                                  pattern: '^(array|number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$'
-                                  description: data type expected on this output
-                                  example:
-                                    - array
-                                    - number
-                                    - integer
-                                    - boolean
-                                    - string
-                                    - 'data:application/json'
-                                    - 'data:application/vnd.ms-excel '
-                                    - 'data:text/plain'
-                                    - 'data:application/hdf5'
-                                items:
-                                  type: string
                                   pattern: '^(number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$'
-                                  description: data type expected on this array's output
+                                  description: data type expected on this output
                                   example:
                                     - number
                                     - integer
@@ -2399,22 +2371,8 @@ components:
                           - Age in seconds since 1970
                       type:
                         type: string
-                        pattern: '^(array|number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$'
-                        description: data type expected on this output
-                        example:
-                          - array
-                          - number
-                          - integer
-                          - boolean
-                          - string
-                          - 'data:application/json'
-                          - 'data:application/vnd.ms-excel '
-                          - 'data:text/plain'
-                          - 'data:application/hdf5'
-                      items:
-                        type: string
                         pattern: '^(number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$'
-                        description: data type expected on this array's output
+                        description: data type expected on this output
                         example:
                           - number
                           - integer
