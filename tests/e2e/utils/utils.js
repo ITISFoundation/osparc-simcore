@@ -206,7 +206,6 @@ async function takeScreenshot(page, captureName = "") {
   filename = filename.split(":").join("-")
   filename = filename + ".jpg";
   const path = pathLib.join(__dirname, SCREENSHOTS_DIR, filename);
-  console.log(path);
 
   try {
     await page.screenshot({

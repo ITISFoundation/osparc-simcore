@@ -25,7 +25,7 @@ async function runTutorial() {
     // Some time for loading the workbench
     await tutorial.waitFor(5000);
 
-    await tutorial.runPipeline(30000);
+    await tutorial.runPipeline(40000);
     console.log('Checking results for the first sleeper:');
     await tutorial.openNodeFiles(0);
     const outFiles = [
