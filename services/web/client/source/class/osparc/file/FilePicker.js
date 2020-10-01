@@ -198,18 +198,12 @@ qx.Class.define("osparc.file.FilePicker", {
 
     getOutputFile: function() {
       const outputs = this.getNode().getOutputs();
-      if ("outFile" in outputs) {
-        return outputs["outFile"];
-      }
-      return null;
+      return outputs["outFile"];
     },
 
     getOutputFiles: function() {
       const outputs = this.getNode().getOutputs();
-      if ("outFiles" in outputs) {
-        return outputs["outFiles"];
-      }
-      return null;
+      return outputs["outFiles"];
     },
 
     __setOutputFile: function(store, dataset, path, label) {
@@ -247,8 +241,8 @@ qx.Class.define("osparc.file.FilePicker", {
         this.__filesTree.setSelectedFile(outFile.value.path);
         this.__filesTree.fireEvent("selectionChanged");
       } else if (this.__areOutputFilesSelected()) {
+        this.__filesTree.resetSelection();
         const outFiles = this.getOutputFiles();
-        this.__filesTree.setSelection([]);
         outFiles.value.forEach(outFile => {
           this.__filesTree.addSelectedFile(outFile.path);
         });
