@@ -128,30 +128,49 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
     },
 
     __generateModel: function(node, ports) {
-      let data = {
+      const nodeKey = node.getKey();
+
+      const data = {
         label: "root",
         open: true,
         children: []
       };
 
       for (let portKey in ports) {
-        let portData = {
-          label: ports[portKey].label,
+        const port = ports[portKey];
+        console.log(port.label, port.value);
+
+        const portData = {
+          label: port.label,
           portKey: portKey,
-          nodeKey: node.getKey(),
+          nodeKey,
           isDir: !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting")),
-          type: ports[portKey].type,
+          type: port.type,
           open: false
         };
-        if (ports[portKey].type === "node-output-tree-api-v0.0.1") {
-          const itemList = osparc.dev.fake.Data.getItemList(node.getKey(), portKey);
+        if (port.type === "node-output-tree-api-v0.0.1") {
+          const itemList = osparc.dev.fake.Data.getItemList(nodeKey, portKey);
           const showLeavesAsDirs = !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting"));
           const children = osparc.data.Converters.fromAPITreeToVirtualTreeModel(itemList, showLeavesAsDirs, portKey);
           portData.children = children;
           portData.open = true;
+        } else if (Array.isArray(port.value)) {
+          const children = [];
+          port.value.forEach((val, idx) => {
+            const childPortData = {
+              label: port.label,
+              portKey: portKey + "_idx_" + idx,
+              icon: osparc.data.Converters.fromTypeToIcon(port.type),
+              value: val == null ? this.tr("no value") : val
+            };
+            children.push(childPortData);
+          });
+          portData.isDir = true;
+          portData.children = children;
+          portData.open = true;
         } else {
-          portData.icon = osparc.data.Converters.fromTypeToIcon(ports[portKey].type);
-          portData.value = ports[portKey].value == null ? this.tr("no value") : ports[portKey].value;
+          portData.icon = osparc.data.Converters.fromTypeToIcon(port.type);
+          portData.value = port.value == null ? this.tr("no value") : port.value;
         }
         data.children.push(portData);
       }

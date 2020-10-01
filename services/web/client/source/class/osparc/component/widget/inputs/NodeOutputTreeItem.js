@@ -44,6 +44,13 @@
 qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
   extend: qx.ui.tree.VirtualTreeItem,
 
+  construct: function() {
+    this.base(arguments);
+    this.set({
+      indent: 12
+    });
+  },
+
   properties: {
     isDir: {
       check: "Boolean",
