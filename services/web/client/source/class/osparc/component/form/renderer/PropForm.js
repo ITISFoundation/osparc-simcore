@@ -216,17 +216,17 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         uiElement.set({
           droppable: true
         });
-        uiElement.nodeId = this.getNode().getNodeId();
-        uiElement.portId = portId;
+        uiElement.nodeUuid = this.getNode().getNodeId();
+        uiElement.output = portId;
 
         uiElement.addListener("dragover", e => {
           if (e.supportsType("osparc-port-link")) {
             const from = e.getRelatedTarget();
-            let dragNodeId = from.nodeId;
-            let dragPortId = from.portId;
+            let dragNodeId = from.nodeUuid;
+            let dragPortId = from.output;
             const to = e.getCurrentTarget();
-            let dropNodeId = to.nodeId;
-            let dropPortId = to.portId;
+            let dropNodeId = to.nodeUuid;
+            let dropPortId = to.output;
             if (this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId)) {
               this.__highlightCompatibles(e.getRelatedTarget());
               e.stopPropagation();
@@ -239,11 +239,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         uiElement.addListener("drop", e => {
           if (e.supportsType("osparc-port-link")) {
             const from = e.getRelatedTarget();
-            let dragNodeId = from.nodeId;
-            let dragPortId = from.portId;
+            let dragNodeId = from.nodeUuid;
+            let dragPortId = from.output;
             const to = e.getCurrentTarget();
-            // let dropNodeId = to.nodeId;
-            let dropPortId = to.portId;
+            // let dropNodeId = to.nodeUuid;
+            let dropPortId = to.output;
             this.addLink(dropPortId, dragNodeId, dragPortId);
           }
         }, this);
@@ -251,7 +251,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __getCompatibleInputs: function(output) {
-      return this._getChildren().filter(child => child.getField && this.__arePortsCompatible(output.nodeId, output.portId, child.getField().nodeId, child.getField().portId));
+      return this._getChildren().filter(child => child.getField && this.__arePortsCompatible(output.nodeUuid, output.output, child.getField().nodeUuid, child.getField().output));
     },
 
     __highlightCompatibles: function(output) {
