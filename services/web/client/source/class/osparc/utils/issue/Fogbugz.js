@@ -28,23 +28,23 @@ qx.Class.define("osparc.utils.issue.Fogbugz", {
   type: "static",
 
   statics: {
-    getNewIssueUrl: function(statics_data) {
+    getNewIssueUrl: function(staticsData) {
       const product = qx.core.Environment.get("product.name");
 
-      url_head = statics_data.fogbugzNewcaseUrl;
-      switch (project){
+      let urlHead = staticsData.fogbugzNewcaseUrl;
+      switch (product) {
         case "s4l":
-          url_head = statics_data.s4lFogbugzNewcaseUrl;
+          urlHead = staticsData.s4lFogbugzNewcaseUrl;
           break;
         case "tis":
-          url_head = statics_data.tisFogbugzNewcaseUrl;
+          urlHead = staticsData.tisFogbugzNewcaseUrl;
           break;
       }
 
-      if (url_head){
+      if (urlHead) {
         const body = osparc.utils.issue.Base.getBody();
-        const url = url_head + "&sEvent=" + body;
-        return url
+        const url = urlHead + "&sEvent=" + body;
+        return url;
       }
       return undefined;
     }
