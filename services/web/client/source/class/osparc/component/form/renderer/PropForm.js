@@ -403,7 +403,13 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       const port = fromNode.getOutput(from.output);
       const fromPortLabel = port ? port.label : null;
       fromNode.bind("label", this.getControlLink(toPortId), "value", {
-        converter: label => label + ": " + fromPortLabel
+        converter: label => {
+          let text = label + ": " + fromPortLabel;
+          if ("index" in from) {
+            text += ("["+from.index+"]");
+          }
+          return text;
+        }
       });
 
       this.__linkAdded(toPortId);

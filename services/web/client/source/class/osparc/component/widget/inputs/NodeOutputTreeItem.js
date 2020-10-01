@@ -68,6 +68,11 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
       nullable: true
     },
 
+    index: {
+      check: "Number",
+      nullable: true
+    },
+
     value: {
       nullable: true,
       apply: "_applyValue",

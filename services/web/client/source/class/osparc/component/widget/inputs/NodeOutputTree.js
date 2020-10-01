@@ -62,6 +62,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
         c.bindProperty("value", "value", null, item, id);
         c.bindProperty("nodeKey", "nodeKey", null, item, id);
         c.bindProperty("portKey", "portKey", null, item, id);
+        c.bindProperty("index", "index", null, item, id);
         c.bindProperty("isDir", "isDir", null, item, id);
         c.bindProperty("icon", "icon", null, item, id);
         c.bindProperty("type", "type", null, item, id);
@@ -105,6 +106,9 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
         e.addType("osparc-mapping");
         item.nodeUuid = this.getNode().getNodeId();
         item.output = item.getPortKey();
+        if (item.isPropertyInitialized("index")) {
+          item.index = item.getIndex();
+        }
         item.setNodeKey(this.getNode().getKey());
       }, this);
 
@@ -158,8 +162,10 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
           const children = [];
           port.value.forEach((val, idx) => {
             const childPortData = {
-              label: port.label,
-              portKey: portKey + "_idx_" + idx,
+              label: port.label + "["+idx+"]",
+              nodeKey,
+              portKey: portKey,
+              index: idx,
               icon: osparc.data.Converters.fromTypeToIcon(port.type),
               value: val == null ? this.tr("no value") : val
             };
