@@ -31,9 +31,10 @@ def test_time_utils():
     [
         ("snAke_Fun", "snakeFun"),
         ("", ""),
-        ("camelAlready", "camelAlready"),
+        # since it assumes snake, notice how these cases get flatten
+        ("camelAlready", "camelalready"),
         ("AlmostCamel", "almostcamel"),
-        ("_S", "_s")
+        ("_S", "S")
     ],
 )
 def test_snake_to_camel(subject, expected):

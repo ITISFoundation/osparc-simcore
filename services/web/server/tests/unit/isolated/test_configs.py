@@ -11,7 +11,7 @@ from typing import Dict, List
 
 import pytest
 
-from pytest_simcore.helpers.utils_environs import eval_service_environ, load_env
+from pytest_simcore.helpers.utils_environs import eval_service_environ
 from servicelib.application_setup import is_setup_function
 from simcore_service_webserver.application_config import create_schema
 from simcore_service_webserver.cli import parse, setup_parser
@@ -32,28 +32,6 @@ config_yaml_filenames = [str(name) for name in resources.listdir("config")]
 @pytest.fixture(scope="session")
 def app_config_schema():
     return create_schema()
-
-
-@pytest.fixture(scope="session")
-def env_devel_file(osparc_simcore_root_dir):
-    env_devel_fpath = osparc_simcore_root_dir / ".env-devel"
-    assert env_devel_fpath.exists()
-    return env_devel_fpath
-
-
-@pytest.fixture(scope="session")
-def services_docker_compose_file(osparc_simcore_root_dir):
-    dcpath = osparc_simcore_root_dir / "services" / "docker-compose.yml"
-    assert dcpath.exists()
-    return dcpath
-
-
-@pytest.fixture(scope="session")
-def devel_environ(env_devel_file):
-    env_devel = {}
-    with env_devel_file.open() as f:
-        env_devel = load_env(f)
-    return env_devel
 
 
 @pytest.fixture(scope="session")

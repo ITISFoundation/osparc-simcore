@@ -2,8 +2,11 @@
 
 import sys
 from pathlib import Path
+from typing import Dict
 
 import pytest
+
+from .helpers.utils_environs import load_env
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -42,6 +45,14 @@ def env_devel_file(osparc_simcore_root_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
+def devel_environ(env_devel_file) -> Dict:
+    env_devel = {}
+    with env_devel_file.open() as f:
+        env_devel = load_env(f)
+    return env_devel
+
+
+@pytest.fixture(scope="session")
 def script_dir(osparc_simcore_root_dir: Path) -> Path:
     scripts_folder = osparc_simcore_root_dir / "scripts"
     assert scripts_folder.exists()
@@ -53,6 +64,13 @@ def services_dir(osparc_simcore_root_dir: Path) -> Path:
     services_folder = osparc_simcore_root_dir / "services"
     assert services_folder.exists()
     return services_folder
+
+
+@pytest.fixture(scope="session")
+def services_docker_compose_file(services_dir):
+    dcpath = services_dir / "docker-compose.yml"
+    assert dcpath.exists()
+    return dcpath
 
 
 @pytest.fixture(scope="module")

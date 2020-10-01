@@ -14,7 +14,10 @@ from simcore_service_webserver.statics import (
     FRONTEND_APP_DEFAULT,
     FRONTEND_APPS_AVAILABLE,
 )
-from simcore_service_webserver.statics_settings import FrontEndAppSettings
+from simcore_service_webserver.statics_settings import (
+    FOGBUGZ_URL_TEMPLATE,
+    FrontEndAppSettings,
+)
 
 
 @pytest.fixture(scope="module")
@@ -69,17 +72,26 @@ def test_expected_frontend_apps_produced_by_webclient(client_compile_cfg: Dict):
 
 
 @pytest.fixture
-def test_frontend_app_settings(monkeypatch):
+def test_frontend_app_settings(monkeypatch, devel_environ):
+
+    assert "WEBSERVER_FOGBUGZ_URL" in devel_environ
+
     monkeypatch.setenv("WEBSERVER_MANUAL_MAIN_URL", "http://some_doc.org")
-    monkeypatch.setenv("WEBSERVER_S4L_FOGBUGZ_URL", "http://fogbugz_for_s4l.org")
-    monkeypatch.setenv("WEBSERVER_FOGBUGZ_URL", "http://fogbugz-default.org")
+    monkeypatch.setenv(
+        "WEBSERVER_S4L_FOGBUGZ_URL", FOGBUGZ_URL_TEMPLATE.format(projet=54, area=458)
+    )
+    monkeypatch.setenv(
+        "WEBSERVER_FOGBUGZ_URL", FOGBUGZ_URL_TEMPLATE.format(projet=54, area=457)
+    )
 
     settings = FrontEndAppSettings()
 
     assert settings.manual_main_url.host == "some_doc.org"
     assert settings.manual_main_url.tld == "org"
-    assert str(settings.s4l_fogbugz_url) == "http://fogbugz_for_s4l.org"
-    assert str(settings.fogbugz_url) == "http://fogbugz-default.org"
+    assert str(settings.s4l_fogbugz_url) == FOGBUGZ_URL_TEMPLATE.format(
+        projet=54, area=458
+    )
+    assert str(settings.fogbugz_url) == FOGBUGZ_URL_TEMPLATE.format(projet=54, area=457)
     assert settings.tis_fogbugz_url is None
 
     # is json-serializable
