@@ -394,13 +394,16 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
       contBtn.addListener("execute", () => {
         const statics = this.__serverStatics;
-        if (statics.fogbugzOriginUrl && statics.fogbugzProjectId) {
-          window.open(osparc.utils.issue.Fogbugz.getNewIssueUrl(statics.fogbugzOriginUrl, statics.fogbugzProjectId));
-          issueConfirmationWindow.close();
+        if (statics) {
+          const fbNewIssueUrl = osparc.utils.issue.Fogbugz.getNewIssueUrl(statics);
+          if (fbNewIssueUrl){
+            window.open(fbNewIssueUrl);
+            issueConfirmationWindow.close();
+          }
         }
       }, this);
       const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in Fogbugz"), "@FontAwesome5Solid/external-link-alt/12");
-      loginBtn.addListener("execute", () => window.open("https://z43.manuscript.com/login"), this);
+      loginBtn.addListener("execute", () => window.open("https://z43.fogbugz.com/login"), this);
       issueConfirmationWindow.addButton(contBtn);
       issueConfirmationWindow.addButton(loginBtn);
       issueConfirmationWindow.addCancelButton();
