@@ -117,6 +117,24 @@ qx.Class.define("osparc.file.FilesTree", {
             .splice(i, 1);
         }
       }
+    },
+
+    extractFileMetadata: function(filevalue) {
+      const locationId = filevalue.store;
+      let datasetId = "dataset" in filevalue ? filevalue.dataset : null;
+      const pathId = filevalue.path;
+      if (datasetId === null) {
+        const splitted = pathId.split("/");
+        if (splitted.length === 3) {
+          // simcore.s3
+          datasetId = splitted[0];
+        }
+      }
+      return {
+        locationId,
+        datasetId,
+        pathId
+      };
     }
   },
 
@@ -152,21 +170,24 @@ qx.Class.define("osparc.file.FilesTree", {
     },
 
     loadFilePath: function(outFileVal) {
-      const locationId = outFileVal.store;
-      let datasetId = "dataset" in outFileVal ? outFileVal.dataset : null;
-      const pathId = outFileVal.path;
-      if (datasetId === null) {
-        const splitted = pathId.split("/");
-        if (splitted.length === 3) {
-          // simcore.s3
-          datasetId = splitted[0];
-        }
+      if (Array.isArray(outFileVal)) {
+        outFileVal.forEach(val => {
+          const fileMetadata = this.self().extractFileMetadata(val);
+          this.__addToLoadFilePath(fileMetadata);
+        });
+      } else {
+        const fileMetadata = this.self().extractFileMetadata(outFileVal);
+        this.__addToLoadFilePath(fileMetadata);
       }
-      this.__addToLoadFilePath(locationId, datasetId, pathId);
       this.__populateLocations();
     },
 
-    __addToLoadFilePath: function(locationId, datasetId, pathId) {
+    __addToLoadFilePath: function(fileMetadata) {
+      const {
+        locationId,
+        datasetId,
+        pathId
+      } = fileMetadata;
       if (datasetId) {
         if (!(locationId in this.__loadPaths)) {
           this.__loadPaths[locationId] = {};
