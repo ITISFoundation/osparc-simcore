@@ -8,6 +8,7 @@ import pytest
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
+
 @pytest.fixture(scope="session")
 def osparc_simcore_root_dir(request) -> Path:
     """ osparc-simcore repo root dir """
@@ -39,14 +40,6 @@ def env_devel_file(osparc_simcore_root_dir: Path) -> Path:
     env_devel_fpath = osparc_simcore_root_dir / ".env-devel"
     assert env_devel_fpath.exists()
     return env_devel_fpath
-
-
-@pytest.fixture(scope="session")
-def devel_environ(env_devel_file) -> Dict:
-    env_devel = {}
-    with env_devel_file.open() as f:
-        env_devel = load_env(f)
-    return env_devel
 
 
 @pytest.fixture(scope="session")
