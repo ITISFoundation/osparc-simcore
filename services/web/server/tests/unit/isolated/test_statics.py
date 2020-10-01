@@ -5,20 +5,16 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
-
-
 import json
+from pathlib import Path
+from typing import Dict
 
+import pytest
 from simcore_service_webserver.statics import (
     FRONTEND_APP_DEFAULT,
     FRONTEND_APPS_AVAILABLE,
 )
-import pytest
-from pathlib import Path
-
-from typing import Dict
-
+from simcore_service_webserver.statics_settings import FrontEndAppSettings
 
 
 @pytest.fixture(scope="module")
@@ -27,6 +23,7 @@ def client_compile_cfg(web_client_dir: Path) -> Dict:
     assert compile_filepath.exists()
     cfg = json.loads(compile_filepath.read_text())
     return cfg
+
 
 @pytest.fixture(scope="module")
 def source_boot_index_html(web_client_dir: Path) -> str:
@@ -37,12 +34,17 @@ def source_boot_index_html(web_client_dir: Path) -> str:
 
 def test_expected_frontend_apps_produced_by_webclient(client_compile_cfg: Dict):
     """
-        tests that names in FRONTEND_APP_DEFAULT and FRONTEND_APPS_AVAILABLE
-        corresponds to actual front-end apps produced by web/client
+    tests that names in FRONTEND_APP_DEFAULT and FRONTEND_APPS_AVAILABLE
+    corresponds to actual front-end apps produced by web/client
     """
-    frontend_apps_in_repo = {feapp["name"] for feapp in client_compile_cfg["applications"]}
+    frontend_apps_in_repo = {
+        feapp["name"] for feapp in client_compile_cfg["applications"]
+    }
 
-    product_names = {feapp["environment"]["product.name"] for feapp in client_compile_cfg["applications"]}
+    product_names = {
+        feapp["environment"]["product.name"]
+        for feapp in client_compile_cfg["applications"]
+    }
 
     # test FRONTEND_APPS_AVAILABLE
     assert (
@@ -53,14 +55,37 @@ def test_expected_frontend_apps_produced_by_webclient(client_compile_cfg: Dict):
         FRONTEND_APPS_AVAILABLE == frontend_apps_in_repo
     ), "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
 
-
     # test FRONTEND_APP_DEFAULT
     default_frontend_app = next(
-        feapp["name"] for feapp in client_compile_cfg["applications"] if feapp["default"]
+        feapp["name"]
+        for feapp in client_compile_cfg["applications"]
+        if feapp["default"]
     )
     assert (
         default_frontend_app == FRONTEND_APP_DEFAULT
     ), "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
 
-
     assert FRONTEND_APP_DEFAULT in FRONTEND_APPS_AVAILABLE
+
+
+@pytest.fixture
+def test_frontend_app_settings(monkeypatch):
+    monkeypatch.setenv("WEBSERVER_MANUAL_MAIN_URL", "http://some_doc.org")
+    monkeypatch.setenv("WEBSERVER_S4L_FOGBUGZ_URL", "http://fogbugz_for_s4l.org")
+    monkeypatch.setenv("WEBSERVER_FOGBUGZ_URL", "http://fogbugz-default.org")
+
+    settings = FrontEndAppSettings()
+
+    assert settings.manual_main_url.host == "some_doc.org"
+    assert settings.manual_main_url.tld == "org"
+    assert str(settings.s4l_fogbugz_url) == "http://fogbugz_for_s4l.org"
+    assert str(settings.fogbugz_url) == "http://fogbugz-default.org"
+    assert settings.tis_fogbugz_url is None
+
+    # is json-serializable
+    statics = settings.to_statics()
+    assert json.dumps(statics)
+
+    # nulls are not output
+    assert "tis_fogbugz_url" not in statics
+    assert "fogbugz_url" in statics

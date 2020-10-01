@@ -8,8 +8,10 @@
 """
 import json
 import logging
+import os
 from functools import lru_cache
 from pathlib import Path
+from typing import Dict
 
 from aiohttp import web
 from servicelib.application_keys import APP_CONFIG_KEY
@@ -18,12 +20,9 @@ from tenacity import after_log, retry, stop_after_attempt, wait_random
 
 from .constants import APP_SETTINGS_KEY, RQ_PRODUCT_FRONTEND_KEY, RQ_PRODUCT_KEY
 from .statics_settings import (
+    FRONTEND_APP_DEFAULT,
     FRONTEND_APPS_AVAILABLE,
-    ClientAppSettings,
-    ClientAppsSettings,
-    FrontEndApp,
-    S4LAppSettings,
-    TiSAppSettings,
+    FrontEndAppSettings,
 )
 
 STATIC_DIRNAMES = FRONTEND_APPS_AVAILABLE | {"resource", "transpiled"}
@@ -78,38 +77,39 @@ async def get_frontend_ria(request: web.Request):
     )
 
 
+def create_statics_settings(app) -> Dict:
+    # Adds general server settings
+    info: Dict = app[APP_SETTINGS_KEY].to_client_statics()
+
+    # Adds specifics to front-end app
+    info.update(FrontEndAppSettings().to_statics())
+
+    return info
+
+
 async def _start_statics(app: web.Application):
-    # NOTE: in devel model, the folder might be under construction (qx-compile takes time),
-    # therefore we create statics.json on_startup instead of upon setup
+    # NOTE: in devel model, the folder might be under construction
+    # (qx-compile takes time), therefore we create statics.json
+    # on_startup instead of upon setup
 
-    resource_dir = app[APP_STATICS_OUTDIR_KEY] / "resource"
-
-    # general server settings
-    statics_info: Dict = app[APP_SETTINGS_KEY].to_client_statics()
-
-    # front-end app settings
-    statics_info[FrontEndApp.osparc.value] = ClientAppSettings().to_client_statics()
-    statics_info[FrontEndApp.s4l.value] = S4LAppSettings().to_client_statics()
-    statics_info[FrontEndApp.tis.value] = TiSAppSettings().to_client_statics()
+    resource_dir: Path = app[APP_STATICS_OUTDIR_KEY] / "resource"
+    statics_settings: Dict = create_statics_settings(app)
 
     @retry(
         wait=wait_random(min=1, max=3),
         stop=stop_after_attempt(3),
         after=after_log(log, logging.WARNING),
     )
-    async def write_statics_file() -> None:
+    async def do_write_statics_file() -> None:
         with open(resource_dir / "statics.json", "wt") as fh:
-            json.dump(statics_info, fh)
+            json.dump(statics_settings, fh)
 
-    # Creating static info about server
-    await write_statics_file()
+    # Creating static info
+    await do_write_statics_file()
 
 
 @app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
 def setup_statics(app: web.Application):
-
-    # Serves Front-end Rich Interface Application (RIA)
-    app.router.add_get("/", get_frontend_ria, name=INDEX_RESOURCE_NAME)
 
     # NOTE: source-output and build-output have both the same subfolder structure
     cfg = app[APP_CONFIG_KEY]["main"]
@@ -118,12 +118,21 @@ def setup_statics(app: web.Application):
     # Creating static routes
     routes = web.RouteTableDef()
     is_dev: bool = app[APP_SETTINGS_KEY].build_target in [None, "development"]
-
     for name in STATIC_DIRNAMES:
         folder = statics_dir / name
-        routes.static(f"/{folder.name}", folder, show_index=is_dev)
 
+        # avoids problems restarting when qx-compile takes longer to product outputs
+        if not folder.exists() and is_dev:
+            os.makedirs(folder, exist_ok=True)
+
+        # can navigate file index in dev mode
+        routes.static(f"/{folder.name}", folder, show_index=is_dev)
     app.add_routes(routes)
 
-    # cleanup
+
+    # Create dynamic route to serve front-end client
+    app.router.add_get("/", get_frontend_ria, name=INDEX_RESOURCE_NAME)
+
+
+    # Delayed creation of statics.json (mostly for dev mode)
     app.on_startup.append(_start_statics)

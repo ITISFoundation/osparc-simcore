@@ -1,7 +1,13 @@
 import time
 from datetime import datetime
 
-from simcore_service_webserver.utils import DATETIME_FORMAT, now_str, to_datetime
+import pytest
+from simcore_service_webserver.utils import (
+    DATETIME_FORMAT,
+    now_str,
+    snake_to_camel,
+    to_datetime,
+)
 
 
 def test_time_utils():
@@ -18,3 +24,17 @@ def test_time_utils():
     now_time = datetime.utcnow()
     snapshot = now_time.strftime(DATETIME_FORMAT)
     assert now_time == datetime.strptime(snapshot, DATETIME_FORMAT)
+
+
+@pytest.mark.parametrize(
+    "subject,expected",
+    [
+        ("snAke_Fun", "snakeFun"),
+        ("", ""),
+        ("camelAlready", "camelAlready"),
+        ("AlmostCamel", "almostcamel"),
+        ("_S", "_s")
+    ],
+)
+def test_snake_to_camel(subject, expected):
+    assert snake_to_camel(subject) == expected
