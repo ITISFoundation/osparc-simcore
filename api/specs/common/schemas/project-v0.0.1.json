@@ -162,20 +162,7 @@
                       ]
                     },
                     {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "required": [
-                        "nodeUuid",
-                        "output"
-                      ],
-                      "properties": {
-                        "nodeUuid": {
-                          "type": "string"
-                        },
-                        "output": {
-                          "type": "string"
-                        }
-                      }
+                      "$ref": "#/definitions/Connection"
                     },
                     {
                       "$ref": "#/definitions/FileIO"
@@ -311,6 +298,29 @@
     }
   },
   "definitions": {
+    "Connection": {
+      "title": "Connection",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nodeUuid",
+        "output"
+      ],
+      "properties": {
+        "nodeUuid": {
+          "title": "NodeUuid",
+          "type": "string"
+        },
+        "output": {
+          "title": "Output",
+          "type": "string"
+        },
+        "index": {
+          "title": "Index",
+          "type": "number"
+        }
+      }
+    },
     "FileIO": {
       "title": "FileIO",
       "type": "object",

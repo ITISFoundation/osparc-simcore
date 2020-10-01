@@ -5892,16 +5892,22 @@ paths:
                                                 - string
                                                 - number
                                                 - 'null'
-                                            - type: object
+                                            - title: Connection
+                                              type: object
                                               additionalProperties: false
                                               required:
                                                 - nodeUuid
                                                 - output
                                               properties:
                                                 nodeUuid:
+                                                  title: NodeUuid
                                                   type: string
                                                 output:
+                                                  title: Output
                                                   type: string
+                                                index:
+                                                  title: Index
+                                                  type: number
                                             - title: FileIO
                                               type: object
                                               additionalProperties: false
@@ -6324,16 +6330,22 @@ paths:
                                     - string
                                     - number
                                     - 'null'
-                                - type: object
+                                - title: Connection
+                                  type: object
                                   additionalProperties: false
                                   required:
                                     - nodeUuid
                                     - output
                                   properties:
                                     nodeUuid:
+                                      title: NodeUuid
                                       type: string
                                     output:
+                                      title: Output
                                       type: string
+                                    index:
+                                      title: Index
+                                      type: number
                                 - title: FileIO
                                   type: object
                                   additionalProperties: false
@@ -6636,16 +6648,22 @@ paths:
                                               - string
                                               - number
                                               - 'null'
-                                          - type: object
+                                          - title: Connection
+                                            type: object
                                             additionalProperties: false
                                             required:
                                               - nodeUuid
                                               - output
                                             properties:
                                               nodeUuid:
+                                                title: NodeUuid
                                                 type: string
                                               output:
+                                                title: Output
                                                 type: string
+                                              index:
+                                                title: Index
+                                                type: number
                                           - title: FileIO
                                             type: object
                                             additionalProperties: false
@@ -7066,16 +7084,22 @@ paths:
                                               - string
                                               - number
                                               - 'null'
-                                          - type: object
+                                          - title: Connection
+                                            type: object
                                             additionalProperties: false
                                             required:
                                               - nodeUuid
                                               - output
                                             properties:
                                               nodeUuid:
+                                                title: NodeUuid
                                                 type: string
                                               output:
+                                                title: Output
                                                 type: string
+                                              index:
+                                                title: Index
+                                                type: number
                                           - title: FileIO
                                             type: object
                                             additionalProperties: false
@@ -7502,16 +7526,22 @@ paths:
                                               - string
                                               - number
                                               - 'null'
-                                          - type: object
+                                          - title: Connection
+                                            type: object
                                             additionalProperties: false
                                             required:
                                               - nodeUuid
                                               - output
                                             properties:
                                               nodeUuid:
+                                                title: NodeUuid
                                                 type: string
                                               output:
+                                                title: Output
                                                 type: string
+                                              index:
+                                                title: Index
+                                                type: number
                                           - title: FileIO
                                             type: object
                                             additionalProperties: false
@@ -7929,16 +7959,22 @@ paths:
                                     - string
                                     - number
                                     - 'null'
-                                - type: object
+                                - title: Connection
+                                  type: object
                                   additionalProperties: false
                                   required:
                                     - nodeUuid
                                     - output
                                   properties:
                                     nodeUuid:
+                                      title: NodeUuid
                                       type: string
                                     output:
+                                      title: Output
                                       type: string
+                                    index:
+                                      title: Index
+                                      type: number
                                 - title: FileIO
                                   type: object
                                   additionalProperties: false
@@ -8241,16 +8277,22 @@ paths:
                                               - string
                                               - number
                                               - 'null'
-                                          - type: object
+                                          - title: Connection
+                                            type: object
                                             additionalProperties: false
                                             required:
                                               - nodeUuid
                                               - output
                                             properties:
                                               nodeUuid:
+                                                title: NodeUuid
                                                 type: string
                                               output:
+                                                title: Output
                                                 type: string
+                                              index:
+                                                title: Index
+                                                type: number
                                           - title: FileIO
                                             type: object
                                             additionalProperties: false
@@ -8693,16 +8735,22 @@ paths:
                                               - string
                                               - number
                                               - 'null'
-                                          - type: object
+                                          - title: Connection
+                                            type: object
                                             additionalProperties: false
                                             required:
                                               - nodeUuid
                                               - output
                                             properties:
                                               nodeUuid:
+                                                title: NodeUuid
                                                 type: string
                                               output:
+                                                title: Output
                                                 type: string
+                                              index:
+                                                title: Index
+                                                type: number
                                           - title: FileIO
                                             type: object
                                             additionalProperties: false
@@ -9957,16 +10005,22 @@ paths:
                                               - string
                                               - number
                                               - 'null'
-                                          - type: object
+                                          - title: Connection
+                                            type: object
                                             additionalProperties: false
                                             required:
                                               - nodeUuid
                                               - output
                                             properties:
                                               nodeUuid:
+                                                title: NodeUuid
                                                 type: string
                                               output:
+                                                title: Output
                                                 type: string
+                                              index:
+                                                title: Index
+                                                type: number
                                           - title: FileIO
                                             type: object
                                             additionalProperties: false
@@ -10386,16 +10440,22 @@ paths:
                                               - string
                                               - number
                                               - 'null'
-                                          - type: object
+                                          - title: Connection
+                                            type: object
                                             additionalProperties: false
                                             required:
                                               - nodeUuid
                                               - output
                                             properties:
                                               nodeUuid:
+                                                title: NodeUuid
                                                 type: string
                                               output:
+                                                title: Output
                                                 type: string
+                                              index:
+                                                title: Index
+                                                type: number
                                           - title: FileIO
                                             type: object
                                             additionalProperties: false
