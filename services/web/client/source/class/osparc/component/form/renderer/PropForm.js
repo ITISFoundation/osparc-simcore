@@ -415,7 +415,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return true;
     },
 
-    addLinks: function(data) {
+    deserializeLinks: function(data) {
       for (let key in data) {
         if (osparc.utils.Ports.isDataALink(data[key])) {
           this.addLink(key, data[key].nodeUuid, data[key].output);
@@ -500,7 +500,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return true;
     },
 
-    addParameters: function(data) {
+    deserializeParameters: function(data) {
       for (let key in data) {
         if (osparc.utils.Ports.isDataAParameter(data[key])) {
           const parameterId = data[key].replace("{{", "").replace("}}", "");
