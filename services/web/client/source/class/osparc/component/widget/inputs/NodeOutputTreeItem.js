@@ -19,7 +19,7 @@
  * VirtualTreeItem used mainly by NodeOutputTreeItem
  *
  *   It consists of an entry icon and label and contains more information like: isDir,
- * isRoot, nodeKey, portKey, key.
+ * nodeKey, portKey, key.
  *
  * *Example*
  *
@@ -56,12 +56,6 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
       check: "Boolean",
       nullable: false,
       init: true
-    },
-
-    isRoot: {
-      check: "Boolean",
-      nullable: false,
-      init: false
     },
 
     nodeKey: {
