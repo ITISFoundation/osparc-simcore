@@ -652,7 +652,7 @@ qx.Class.define("osparc.data.model.Node", {
       for (const outPort in outPorts) {
         for (const inPort in inPorts) {
           if (osparc.utils.Ports.arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
-            if (node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
+            if (node2.getPropsForm().addLink(inPort, node1.getNodeId(), outPort)) {
               autoConnections++;
               break;
             }
@@ -663,10 +663,6 @@ qx.Class.define("osparc.data.model.Node", {
         const flashMessenger = osparc.component.message.FlashMessenger.getInstance();
         flashMessenger.logAs(autoConnections + this.tr(" ports auto connected"), "INFO");
       }
-    },
-
-    addPortLink: function(toPortId, fromNodeId, fromPortId) {
-      return this.getPropsForm().addLink(toPortId, fromNodeId, fromPortId);
     },
 
     // ----- Input Nodes -----
