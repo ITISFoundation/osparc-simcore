@@ -36,12 +36,12 @@ def app_config_schema():
 
 @pytest.fixture(scope="session")
 def service_webserver_environ(
-    services_docker_compose_file, devel_environ, osparc_simcore_root_dir
+    services_docker_compose_file, env_devel_config, osparc_simcore_root_dir
 ):
     """ Creates a dict with the environment variables
         inside of a webserver container
     """
-    host_environ = devel_environ
+    host_environ = env_devel_config.copy()
     image_environ = {
         "SIMCORE_WEB_OUTDIR": "home/scu/services/web/client",  # defined in Dockerfile
         "OSPARC_SIMCORE_REPO_ROOTDIR": str(
