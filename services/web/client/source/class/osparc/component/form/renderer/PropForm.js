@@ -239,12 +239,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         uiElement.addListener("drop", e => {
           if (e.supportsType("osparc-port-link")) {
             const from = e.getRelatedTarget();
-            let dragNodeId = from.nodeUuid;
-            let dragPortId = from.output;
             const to = e.getCurrentTarget();
-            // let dropNodeId = to.nodeUuid;
-            let dropPortId = to.output;
-            this.addLink(dropPortId, dragNodeId, dragPortId);
+            this.addLink(to.output, from);
           }
         }, this);
       }
@@ -390,21 +386,21 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
     },
 
-    addLink: function(toPortId, fromNodeId, fromPortId) {
+    addLink: function(toPortId, from) {
       if (!this.__isPortAvailable(toPortId)) {
         return false;
       }
       this.getControlLink(toPortId).setEnabled(false);
       const link = {
-        nodeUuid: fromNodeId,
-        output: fromPortId
+        nodeUuid: from.nodeUuid,
+        output: from.output
       };
       this._form.getControl(toPortId)["link"] = link;
 
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const workbench = study.getWorkbench();
-      const fromNode = workbench.getNode(fromNodeId);
-      const port = fromNode.getOutput(fromPortId);
+      const fromNode = workbench.getNode(from.nodeUuid);
+      const port = fromNode.getOutput(from.output);
       const fromPortLabel = port ? port.label : null;
       fromNode.bind("label", this.getControlLink(toPortId), "value", {
         converter: label => label + ": " + fromPortLabel
@@ -418,7 +414,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     deserializeLinks: function(data) {
       for (let key in data) {
         if (osparc.utils.Ports.isDataALink(data[key])) {
-          this.addLink(key, data[key].nodeUuid, data[key].output);
+          this.addLink(key, data[key]);
         }
       }
     },
