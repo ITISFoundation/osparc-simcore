@@ -396,7 +396,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         const statics = this.__serverStatics;
         if (statics) {
           const fbNewIssueUrl = osparc.utils.issue.Fogbugz.getNewIssueUrl(statics);
-          if (fbNewIssueUrl){
+          if (fbNewIssueUrl) {
             window.open(fbNewIssueUrl);
             issueConfirmationWindow.close();
           }
