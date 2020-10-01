@@ -15,9 +15,10 @@ from simcore_service_webserver.statics import (
     FRONTEND_APPS_AVAILABLE,
 )
 from simcore_service_webserver.statics_settings import (
-    FOGBUGZ_URL_TEMPLATE,
     FrontEndAppSettings,
 )
+
+FOGBUGZ_NEWCASE_URL_TEMPLATE = r"https://z43.fogbugz.com/f/cases/new?command=new&pg=pgEditBug&ixProject={project}&ixArea={area}"
 
 
 @pytest.fixture(scope="module")
@@ -72,27 +73,30 @@ def test_expected_frontend_apps_produced_by_webclient(client_compile_cfg: Dict):
 
 
 @pytest.fixture
-def test_frontend_app_settings(monkeypatch, devel_environ):
-
-    assert "WEBSERVER_FOGBUGZ_URL" in devel_environ
-
+def test_frontend_app_settings(
+    monkeypatch,
+):
     monkeypatch.setenv("WEBSERVER_MANUAL_MAIN_URL", "http://some_doc.org")
     monkeypatch.setenv(
-        "WEBSERVER_S4L_FOGBUGZ_URL", FOGBUGZ_URL_TEMPLATE.format(projet=54, area=458)
+        "WEBSERVER_S4L_FOGBUGZ_URL",
+        FOGBUGZ_NEWCASE_URL_TEMPLATE.format(project=45, area=458),
     )
     monkeypatch.setenv(
-        "WEBSERVER_FOGBUGZ_URL", FOGBUGZ_URL_TEMPLATE.format(projet=54, area=457)
+        "WEBSERVER_FOGBUGZ_URL",
+        FOGBUGZ_NEWCASE_URL_TEMPLATE.format(project=45, area=457),
     )
 
     settings = FrontEndAppSettings()
 
     assert settings.manual_main_url.host == "some_doc.org"
     assert settings.manual_main_url.tld == "org"
-    assert str(settings.s4l_fogbugz_url) == FOGBUGZ_URL_TEMPLATE.format(
+    assert str(settings.s4l_fogbugz_newcase_url) == FOGBUGZ_NEWCASE_URL_TEMPLATE.format(
         projet=54, area=458
     )
-    assert str(settings.fogbugz_url) == FOGBUGZ_URL_TEMPLATE.format(projet=54, area=457)
-    assert settings.tis_fogbugz_url is None
+    assert str(settings.fogbugz_newcase_url) == FOGBUGZ_NEWCASE_URL_TEMPLATE.format(
+        project=54, area=457
+    )
+    assert settings.tis_fogbugz_newcase_url is None
 
     # is json-serializable
     statics = settings.to_statics()
@@ -101,3 +105,10 @@ def test_frontend_app_settings(monkeypatch, devel_environ):
     # nulls are not output
     assert "tis_fogbugz_url" not in statics
     assert "fogbugz_url" in statics
+
+
+def test_default_webserver_env_dev(devel_environ):
+    assert "WEBSERVER_FOGBUGZ_NEWCASE_URL" in devel_environ
+    assert devel_environ[
+        "WEBSERVER_FOGBUGZ_NEWCASE_URL"
+    ] == FOGBUGZ_NEWCASE_URL_TEMPLATE.format(project=45, area=449)
