@@ -170,14 +170,17 @@ qx.Class.define("osparc.file.FilesTree", {
     },
 
     loadFilePath: function(outFileVal) {
+      const fileMetadata = this.self().extractFileMetadata(outFileVal);
+      this.__addToLoadFilePath(fileMetadata);
+      this.__populateLocations();
+    },
+
+    loadFilePaths: function(outFileVal) {
       if (Array.isArray(outFileVal)) {
         outFileVal.forEach(val => {
           const fileMetadata = this.self().extractFileMetadata(val);
           this.__addToLoadFilePath(fileMetadata);
         });
-      } else {
-        const fileMetadata = this.self().extractFileMetadata(outFileVal);
-        this.__addToLoadFilePath(fileMetadata);
       }
       this.__populateLocations();
     },
