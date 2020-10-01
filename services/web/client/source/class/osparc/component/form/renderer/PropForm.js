@@ -395,10 +395,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         return false;
       }
       this.getControlLink(toPortId).setEnabled(false);
-      this._form.getControl(toPortId)["link"] = {
+      const link = {
         nodeUuid: fromNodeId,
         output: fromPortId
       };
+      this._form.getControl(toPortId)["link"] = link;
 
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const workbench = study.getWorkbench();

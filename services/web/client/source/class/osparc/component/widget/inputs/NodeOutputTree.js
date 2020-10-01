@@ -142,8 +142,8 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
 
         const portData = {
           label: port.label,
-          portKey: portKey,
           nodeKey,
+          portKey: portKey,
           isDir: !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting")),
           type: port.type,
           open: false
