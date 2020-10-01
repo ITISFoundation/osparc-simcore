@@ -107,8 +107,8 @@ def test_frontend_app_settings(
     assert "fogbugz_url" in statics
 
 
-def test_default_webserver_env_dev(devel_environ):
-    assert "WEBSERVER_FOGBUGZ_NEWCASE_URL" in devel_environ
-    assert devel_environ[
+def test_default_webserver_env_dev(env_devel_config):
+    assert "WEBSERVER_FOGBUGZ_NEWCASE_URL" in env_devel_config
+    assert env_devel_config[
         "WEBSERVER_FOGBUGZ_NEWCASE_URL"
     ] == FOGBUGZ_NEWCASE_URL_TEMPLATE.format(project=45, area=449)

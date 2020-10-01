@@ -11,6 +11,8 @@ import sqlalchemy as sa
 import yaml
 from aiopg.sa.engine import Engine
 
+pytest_plugins = ["pytest_simcore.repository_paths"]
+
 
 @pytest.fixture(scope="session")
 def postgres_service(docker_services, docker_ip, docker_compose_file) -> str:

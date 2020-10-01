@@ -18,7 +18,6 @@ from simcore_postgres_database.models import *  # pylint: disable=wildcard-impor
 from simcore_postgres_database.models.classifiers import group_classifiers
 from simcore_postgres_database.models.groups import groups
 
-pytest_plugins = ["pytest_simcore.environs"]
 
 
 @pytest.fixture
