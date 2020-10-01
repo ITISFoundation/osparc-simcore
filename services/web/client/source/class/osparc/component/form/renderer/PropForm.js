@@ -244,7 +244,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             const to = e.getCurrentTarget();
             // let dropNodeId = to.nodeId;
             let dropPortId = to.portId;
-            this.getNode().addLink(dropPortId, dragNodeId, dragPortId);
+            this.addLink(dropPortId, dragNodeId, dragPortId);
           }
         }, this);
       }
