@@ -537,6 +537,17 @@ qx.Class.define("osparc.file.FilesTree", {
       }
     },
 
+    addSelectedFile: function(fileId) {
+      const item = this.__findUuidInLeaves(fileId);
+      if (item) {
+        this.openNodeAndParents(item);
+
+        const selected = this.getSelection();
+        selected.push(item);
+        this.setSelection(selected);
+      }
+    },
+
     __getSelectedItem: function() {
       let selection = this.getSelection().toArray();
       if (selection.length > 0) {

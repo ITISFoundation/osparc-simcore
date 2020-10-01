@@ -246,6 +246,13 @@ qx.Class.define("osparc.file.FilePicker", {
         const outFile = this.getOutputFile();
         this.__filesTree.setSelectedFile(outFile.value.path);
         this.__filesTree.fireEvent("selectionChanged");
+      } else if (this.__areOutputFilesSelected()) {
+        const outFiles = this.getOutputFiles();
+        this.__filesTree.setSelection([]);
+        outFiles.value.forEach(outFile => {
+          this.__filesTree.addSelectedFile(outFile.path);
+        });
+        this.__filesTree.fireEvent("selectionChanged");
       }
     }
   }
