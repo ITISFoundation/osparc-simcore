@@ -6,15 +6,12 @@ from typing import Dict
 
 import pytest
 
-from .helpers.utils_environs import load_env
-
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
 
 @pytest.fixture(scope="session")
 def osparc_simcore_root_dir(request) -> Path:
     """ osparc-simcore repo root dir """
-    WILDCARD = "packages/pytest-simcore/src/pytest_simcore/environs.py"
+    WILDCARD = "packages/pytest-simcore/src/pytest_simcore/__init__.py"
     ROOT = Path("/")
 
     test_dir = Path(request.session.fspath)  # expected test dir in simcore
