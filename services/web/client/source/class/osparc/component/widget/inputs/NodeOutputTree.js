@@ -142,7 +142,6 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
 
       for (let portKey in ports) {
         const port = ports[portKey];
-        console.log(port.label, port.value);
 
         const portData = {
           label: port.label,

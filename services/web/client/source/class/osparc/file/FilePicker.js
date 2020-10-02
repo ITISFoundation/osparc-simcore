@@ -176,14 +176,6 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
-    getFilesTree: function() {
-      return this.__filesTree;
-    },
-
-    getSelectButton: function() {
-      return this.__selectBtn;
-    },
-
     uploadPendingFiles: function(files) {
       if (files.length > 0) {
         if (files.length > 1) {
@@ -222,7 +214,6 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __itemSelectedMulti: function() {
       const data = this.__filesTree.getSelectedFiles();
-      console.log(data);
       if (data) {
         this.__resetOutputFiles();
         data.forEach(selectedEntry => {
