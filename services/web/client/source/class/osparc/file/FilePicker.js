@@ -131,7 +131,7 @@ qx.Class.define("osparc.file.FilePicker", {
       }, this);
 
       const filesTree = this.__filesTree = this._createChildControlImpl("filesTree");
-      if (this.getNode().getVersion() !== "1.0.0") {
+      if (this.getNode().isFileSweeper()) {
         filesTree.set({
           selectionMode: "multi"
         });
@@ -195,9 +195,9 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __itemSelected: function() {
-      if (this.getNode().getVersion() === "1.0.0") {
+      if (this.getNode().isFilePicker()) {
         this.__itemSelectedOne();
-      } else {
+      } else if (this.getNode().isFileSweeper() {
         this.__itemSelectedMulti();
       }
     },
