@@ -47,13 +47,6 @@ qx.Class.define("osparc.component.node.FilePickerView", {
     });
   },
 
-  statics: {
-    getOutputLabel: function(outputValues) {
-
-      return null;
-    }
-  },
-
   members: {
     __filePicker: null,
 
