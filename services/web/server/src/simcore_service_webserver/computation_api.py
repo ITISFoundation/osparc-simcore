@@ -448,7 +448,11 @@ async def update_pipeline_db(
 def get_celery(_app: web.Application) -> Celery:
     config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
     rabbit = RabbitConfig(**config)
-    celery_app = Celery(rabbit.name, broker=rabbit.broker_url, backend=rabbit.backend,)
+    celery_app = Celery(
+        rabbit.name,
+        broker=rabbit.broker_url,
+        backend=rabbit.backend,
+    )
     return celery_app
 
 
@@ -466,7 +470,7 @@ async def start_pipeline_computation(
         return
 
     async def _monitor_task_results(
-        app: web.Application, project_id: str, task_id: str
+        app: web.Application, project_id: str, _: str
     ) -> None:
         try:
             pipeline_state: RunningState = RunningState.unknown
