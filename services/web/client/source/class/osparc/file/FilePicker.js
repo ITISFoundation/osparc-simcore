@@ -197,7 +197,7 @@ qx.Class.define("osparc.file.FilePicker", {
     __itemSelected: function() {
       if (this.getNode().isFilePicker()) {
         this.__itemSelectedOne();
-      } else if (this.getNode().isFileSweeper() {
+      } else if (this.getNode().isFileSweeper()) {
         this.__itemSelectedMulti();
       }
     },
