@@ -15,7 +15,6 @@ from sqlalchemy import literal_column
 
 from fake_creators import random_group
 from simcore_postgres_database.models import *  # pylint: disable=wildcard-import, unused-wildcard-import
-from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.models.classifiers import group_classifiers
 from simcore_postgres_database.models.groups import groups
 
@@ -37,24 +36,6 @@ def classifiers_bundle(web_client_resource_folder: Path) -> Dict:
     assert bundle_path.exists()
     return json.loads(bundle_path.read_text())
 
-
-@pytest.fixture
-async def pg_engine(loop, make_engine) -> Engine:
-    engine = await make_engine()
-
-    # TODO: upgrade/downgrade
-    sync_engine = make_engine(False)
-
-    metadata.drop_all(sync_engine)
-    metadata.create_all(sync_engine)
-
-    yield engine
-
-    engine.terminate()
-    await engine.wait_closed()
-
-    metadata.drop_all(sync_engine)
-    sync_engine.dispose()
 
 
 async def test_operations_on_group_classifiers(

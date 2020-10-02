@@ -75,7 +75,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
   },
 
   statics: {
-    FEEDBACK_GFORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLSe232bTigsM2zV97Kjp2OhCenl6o9gNGcDFt2kO_dfkIjtQAQ/viewform?usp=sf_link",
     BUTTON_OPTIONS: {
       font: "title-14",
       allowGrowY: false,
@@ -245,22 +244,22 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     __createManualMenuBtn: function() {
       const manuals = [];
-      if (this.__serverStatics && this.__serverStatics.manualMainURL) {
-        manuals.push([this.tr("User manual"), this.__serverStatics.manualMainURL]);
+      if (this.__serverStatics && this.__serverStatics.manualMainUrl) {
+        manuals.push([this.tr("User manual"), this.__serverStatics.manualMainUrl]);
       }
 
-      if (osparc.utils.Utils.isInZ43() && this.__serverStatics && this.__serverStatics.manualExtraURL) {
-        manuals.push([this.tr("Z43 manual"), this.__serverStatics.manualExtraURL]);
+      if (osparc.utils.Utils.isInZ43() && this.__serverStatics && this.__serverStatics.manualExtraUrl) {
+        manuals.push([this.tr("Z43 manual"), this.__serverStatics.manualExtraUrl]);
       }
 
-      let control = null;
+      let control = new qx.ui.core.Widget();
       if (manuals.length === 1) {
         const manual = manuals[0];
         control = new osparc.ui.form.LinkButton(manual[0], manual[1]).set({
           appearance: "link-button",
           font: "text-14"
         });
-      } else {
+      } else if (manuals.length > 1) {
         const menu = new qx.ui.menu.Menu().set({
           font: "text-14"
         });
@@ -294,7 +293,11 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       }
 
       const feedbackAnonBtn = new qx.ui.menu.Button(this.tr("Anonymous feedback"));
-      feedbackAnonBtn.addListener("execute", () => window.open(this.self().FEEDBACK_GFORM_URL));
+      feedbackAnonBtn.addListener("execute", () => {
+        if (this.__serverStatics.feedbackFormUrl) {
+          window.open(this.__serverStatics.feedbackFormUrl);
+        }
+      });
       menu.add(feedbackAnonBtn);
 
       const feedbackBtn = new qx.ui.form.MenuButton(this.tr("Give us feedback"), null, menu);
@@ -317,10 +320,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
       menu.addSeparator();
 
-      const helpBtn = new qx.ui.menu.Button(this.tr("Help"));
-      helpBtn.addListener("execute", () => window.open("https://docs.osparc.io"));
-      osparc.utils.Utils.setIdToWidget(helpBtn, "userMenuHelpBtn");
-      menu.add(helpBtn);
       const aboutBtn = new qx.ui.menu.Button(this.tr("About"));
       aboutBtn.addListener("execute", () => osparc.About.getInstance().open());
       osparc.utils.Utils.setIdToWidget(aboutBtn, "userMenuAboutBtn");
@@ -377,7 +376,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       );
       const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
       contBtn.addListener("execute", () => {
-        window.open(osparc.utils.NewGHIssue.getNewIssueUrl());
+        window.open(osparc.utils.issue.Github.getNewIssueUrl());
         issueConfirmationWindow.close();
       }, this);
       const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in GitHub"), "@FontAwesome5Solid/external-link-alt/12");
@@ -394,8 +393,11 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       );
       const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
       contBtn.addListener("execute", () => {
-        window.open(osparc.utils.NewFogbugzIssue.getNewIssueUrl());
-        issueConfirmationWindow.close();
+        const statics = this.__serverStatics;
+        if (statics.fogbugzOriginUrl && statics.fogbugzProjectId) {
+          window.open(osparc.utils.issue.Fogbugz.getNewIssueUrl(statics.fogbugzOriginUrl, statics.fogbugzProjectId));
+          issueConfirmationWindow.close();
+        }
       }, this);
       const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in Fogbugz"), "@FontAwesome5Solid/external-link-alt/12");
       loginBtn.addListener("execute", () => window.open("https://z43.manuscript.com/login"), this);

@@ -32,7 +32,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     const sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
       minWidth: 0,
-      width: Math.min(parseInt(window.innerWidth*0.25), 400)
+      width: Math.min(parseInt(window.innerWidth*0.25), 350)
     });
     osparc.utils.Utils.addBorder(sidePanel, 2, "right");
     const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
@@ -83,8 +83,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this._showLoadingPage(this.tr("Starting ") + (studyData.name || this.tr("Study")));
 
         // Before starting a study, make sure the latest version is fetched
+        const params = {
+          url: {
+            "projectId": studyData.uuid
+          }
+        };
         const promises = [
-          osparc.store.Store.getInstance().getStudyWState(studyData.uuid, true),
+          osparc.data.Resources.getOne("studies", params),
           osparc.store.Store.getInstance().getServicesDAGs()
         ];
         Promise.all(promises)
@@ -448,7 +453,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       sweeper.addListener("iterationSelected", e => {
         win.close();
         const iterationStudyId = e.getData();
-        osparc.store.Store.getInstance().getStudyWState(iterationStudyId)
+        const params = {
+          url: {
+            "projectId": iterationStudyId
+          }
+        };
+        osparc.data.Resources.getOne("studies", params)
           .then(studyData => {
             study.removeIFrames();
             this.fireDataEvent("startStudy", studyData.uuid);
@@ -580,30 +590,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return true;
     },
 
-    __stopPipeline: function() {
-      if (!osparc.data.Permissions.getInstance().canDo("study.stop", true)) {
-        return false;
-      }
-
-      let req = new osparc.io.request.ApiRequest("/stop_pipeline", "POST");
-      let data = {};
-      data["projectId"] = this.getStudy().getUuid();
-      req.set({
-        requestData: qx.util.Serializer.toJson(data)
-      });
-      req.addListener("success", this.__onPipelineStopped, this);
-      req.addListener("error", e => {
-        this.getLogger().error(null, "Error stopping pipeline");
-      }, this);
-      req.addListener("fail", e => {
-        this.getLogger().error(null, "Failed stopping pipeline");
-      }, this);
-      // req.send();
-
-      this.getLogger().info(null, "Stopping pipeline. Not yet implemented");
-      return true;
-    },
-
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["project_id"];
@@ -722,7 +708,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       controlsBar.addListener("groupSelection", this.__groupSelection, this);
       controlsBar.addListener("ungroupSelection", this.__ungroupSelection, this);
       controlsBar.addListener("startPipeline", this.__startPipeline, this);
-      controlsBar.addListener("stopPipeline", this.__stopPipeline, this);
     },
 
     __attachSocketEventHandlers: function() {

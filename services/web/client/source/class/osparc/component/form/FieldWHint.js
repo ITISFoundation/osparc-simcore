@@ -63,7 +63,7 @@ qx.Class.define("osparc.component.form.FieldWHint", {
       let control;
       switch (id) {
         case "infobutton":
-          control = new osparc.component.form.IconButton("@FontAwesome5Solid/info-circle/14");
+          control = new osparc.ui.basic.IconButton("@FontAwesome5Solid/info-circle/14");
           control.getContentElement().addClass("hint-button");
           this._add(control, {
             right: 0,

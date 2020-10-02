@@ -15,10 +15,10 @@ const {
 const templateName = "Sleepers";
 
 async function runTutorial() {
-  const tutorial = new tutorialBase.TutorialBase(url, user, pass, newUser, templateName, enableDemoMode);
+  const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
 
   try {
-    tutorial.initScreenshoter();
+    tutorial.startScreenshooter();
     await tutorial.start();
     await tutorial.openTemplate(1000);
 
@@ -42,11 +42,17 @@ async function runTutorial() {
     await tutorial.removeStudy();
   }
   catch(err) {
+    tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
   }
   finally {
     await tutorial.logOut();
+    tutorial.stopScreenshooter();
     await tutorial.close();
+  }
+
+  if (tutorial.getTutorialFailed()) {
+    throw "Tutorial Failed";
   }
 }
 

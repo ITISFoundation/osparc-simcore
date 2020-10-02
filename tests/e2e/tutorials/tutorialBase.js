@@ -6,7 +6,7 @@ const utils = require('../utils/utils');
 const responses = require('../utils/responsesQueue');
 
 class TutorialBase {
-  constructor(url, user, pass, newUser, templateName, enableDemoMode=false) {
+  constructor(url, templateName, user, pass, newUser, enableDemoMode=false) {
     this.__demo = enableDemoMode;
     this.__templateName = templateName;
 
@@ -20,23 +20,41 @@ class TutorialBase {
     this.__responsesQueue = null;
 
     this.__interval = null;
+
+    this.__failed = false;
   }
 
-  initScreenshoter() {
-    utils.createScreenshotsDir();
+  startScreenshooter() {
+    try {
+      utils.createScreenshotsDir();
+    }
+    catch(err) {
+      console.error("Error creating screenshots directory", err);
+      throw(err);
+    }
 
     this.__interval = setInterval(async() => {
       await this.takeScreenshot();
     }, 2000);
   }
 
-  async start() {
-    await this.beforeScript();
-    await this.goTo();
+  stopScreenshooter() {
+    clearInterval(this.__interval);
+  }
 
-    const needsRegister = await this.registerIfNeeded();
-    if (!needsRegister) {
-      await this.login();
+  async start() {
+    try {
+      await this.beforeScript();
+      await this.goTo();
+
+      const needsRegister = await this.registerIfNeeded();
+      if (!needsRegister) {
+        await this.login();
+      }
+    }
+    catch(err) {
+      console.error("Error starting", err);
+      throw(err);
     }
   }
 
@@ -64,10 +82,9 @@ class TutorialBase {
   async openStudyLink(openStudyTimeout = 20000) {
     this.__responsesQueue.addResponseListener("open");
 
-    await this.goTo();
-
     let resp = null;
     try {
+      await this.goTo();
       resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
     }
     catch(err) {
@@ -87,9 +104,16 @@ class TutorialBase {
 
   async login() {
     this.__responsesQueue.addResponseListener("projects?type=template");
-    this.__responsesQueue.addResponseListener("catalog/dags");
-    this.__responsesQueue.addResponseListener("services");
-    await auto.logIn(this.__page, this.__user, this.__pass);
+    this.__responsesQueue.addResponseListener("catalog/services");
+
+    try {
+      await auto.logIn(this.__page, this.__user, this.__pass);
+    }
+    catch(err) {
+      console.error("Failed logging in", err);
+      throw(err);
+    }
+
     try {
       const resp = await this.__responsesQueue.waitUntilResponse("projects?type=template");
       const templates = resp["data"];
@@ -102,20 +126,9 @@ class TutorialBase {
       console.error("Templates could not be fetched", err);
       throw(err);
     }
+
     try {
-      const resp = await this.__responsesQueue.waitUntilResponse("catalog/dags");
-      const dags = resp["data"];
-      console.log("DAGs received:", dags.length);
-      dags.forEach(dag => {
-        console.log(" - ", dag.name);
-      });
-    }
-    catch(err) {
-      console.error("DAGs could not be fetched", err);
-      throw(err);
-    }
-    try {
-      const resp = await this.__responsesQueue.waitUntilResponse("services");
+      const resp = await this.__responsesQueue.waitUntilResponse("catalog/services");
       const services = resp["data"];
       console.log("Services received:", services.length);
     }
@@ -242,8 +255,8 @@ class TutorialBase {
     await auto.toDashboard(this.__page);
     await this.takeScreenshot("dashboardDeleteFirstStudy_before");
     this.__responsesQueue.addResponseListener("projects/");
-    await auto.dashboardDeleteFirstStudy(this.__page, this.__templateName);
     try {
+      await auto.dashboardDeleteFirstStudy(this.__page, this.__templateName);
       await this.__responsesQueue.waitUntilResponse("projects/");
     }
     catch(err) {
@@ -258,7 +271,6 @@ class TutorialBase {
   }
 
   async close() {
-    clearInterval(this.__interval);
     await utils.sleep(2000);
     await this.__browser.close();
   }
@@ -276,6 +288,14 @@ class TutorialBase {
       title += '_' + screenshotTitle;
     }
     await utils.takeScreenshot(this.__page, title);
+  }
+
+  getTutorialFailed() {
+    return this.__failed;
+  }
+
+  setTutorialFailed(failed) {
+    this.__failed = failed;
   }
 }
 

@@ -10,12 +10,16 @@
 import logging
 import sys
 from pathlib import Path
+from typing import Dict
 
 import pytest
 
 import simcore_service_webserver
 
+from integration.utils import get_fake_data_dir, get_fake_project
+
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
 log = logging.getLogger(__name__)
 
 # mute noisy loggers
@@ -40,6 +44,11 @@ def api_specs_dir(osparc_simcore_root_dir: Path) -> Path:
 
 @pytest.fixture(scope="session")
 def fake_data_dir() -> Path:
-    dirpath = (current_dir / "data").resolve()
-    assert dirpath.exists()
-    return dirpath
+    fake_data_dir = get_fake_data_dir()
+    assert fake_data_dir.exists()
+    return fake_data_dir
+
+
+@pytest.fixture
+def fake_project(fake_data_dir: Path) -> Dict:
+    return get_fake_project()

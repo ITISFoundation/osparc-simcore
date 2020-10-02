@@ -190,10 +190,6 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function __addZeros(input) {
-  return String(input).padStart(2, "0");
-}
-
 function createScreenshotsDir() {
   const fs = require('fs');
   const screenshotsDir = pathLib.join(__dirname, SCREENSHOTS_DIR);
@@ -203,20 +199,25 @@ function createScreenshotsDir() {
   console.log("Screenshots directory:", screenshotsDir);
 }
 
-async function takeScreenshot(page, captureName) {
-  const d = new Date();
-  const date = __addZeros(d.getMonth()+1) +"-"+ __addZeros(d.getDate());
-  const time = __addZeros(d.getHours()) +"-"+ __addZeros(d.getMinutes()) +"-"+ __addZeros(d.getSeconds());
-  const timeStamp = date +"_"+ time;
-  captureName = captureName.replace("undefined", "");
-  let filename = timeStamp+"_"+captureName+".jpg";
-  filename = filename.replace(":", "-");
+async function takeScreenshot(page, captureName = "") {
+  const event = new Date();
+  const time = event.toLocaleTimeString('de-CH');
+  let filename = time + "_" + captureName;
+  filename = filename.split(":").join("-")
+  filename = filename + ".jpg";
   const path = pathLib.join(__dirname, SCREENSHOTS_DIR, filename);
+  console.log(path);
 
-  await page.screenshot({
-    path: path,
-    type: 'jpeg',
-  })
+  try {
+    await page.screenshot({
+      fullPage: true,
+      path: path,
+      type: 'jpeg',
+    })
+  }
+  catch(err) {
+    console.error("Error taking screenshot", err);
+  }
 }
 
 function extractWorkbenchData(data) {

@@ -15,6 +15,7 @@ from simcore_service_webserver.application import (
     setup_catalog,
     setup_db,
     setup_login,
+    setup_products,
     setup_rest,
     setup_security,
     setup_session,
@@ -42,6 +43,7 @@ def client(loop, app_cfg, aiohttp_client, postgres_db):
     setup_rest(app)
     setup_login(app)  # needed for login_utils fixtures
     assert setup_catalog(app)
+    setup_products(app)
 
     yield loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": app_cfg["main"]["port"]})
@@ -84,7 +86,7 @@ def mock_api_client_session(client, mocker):
 
 @pytest.fixture()
 async def logged_user(client, user_role: UserRole):
-    """ adds a user in db and logs in with client
+    """adds a user in db and logs in with client
 
     NOTE: `user_role` fixture is defined as a parametrization below!!!
     """

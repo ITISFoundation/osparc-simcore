@@ -54,7 +54,10 @@ class WebsocketRegistry:
         )
         registry = get_registry(self.app)
         await registry.set_resource(self._resource_key(), (SOCKET_ID_KEY, socket_id))
-        await registry.set_key_alive(self._resource_key(), True)
+        # hearthbeat is not emulated in tests, make sure that with very small GC intervals
+        # the resources do not result as timeout; this value is usually in the order of minutes
+        timeout = max(3, get_service_deletion_timeout(self.app))
+        await registry.set_key_alive(self._resource_key(), timeout)
 
     async def get_socket_id(self) -> Optional[str]:
         log.debug(
@@ -70,7 +73,7 @@ class WebsocketRegistry:
         """When the user disconnects expire as soon as possible the alive key
         to ensure garbage collection will trigger in the next 2 cycles."""
         registry = get_registry(self.app)
-        await registry.set_key_alive(self._resource_key(), False, 1)
+        await registry.set_key_alive(self._resource_key(), 1)
 
     async def remove_socket_id(self) -> None:
         log.debug(
@@ -81,14 +84,14 @@ class WebsocketRegistry:
         registry = get_registry(self.app)
         await registry.remove_resource(self._resource_key(), SOCKET_ID_KEY)
         await registry.set_key_alive(
-            self._resource_key(), False, get_service_deletion_timeout(self.app)
+            self._resource_key(), get_service_deletion_timeout(self.app)
         )
 
     async def set_heartbeat(self) -> None:
         """Refreshes heartbeat """
         registry = get_registry(self.app)
         await registry.set_key_alive(
-            self._resource_key(), False, get_service_deletion_timeout(self.app)
+            self._resource_key(), get_service_deletion_timeout(self.app)
         )
 
     async def find_socket_ids(self) -> List[str]:
@@ -162,8 +165,8 @@ class WebsocketRegistry:
 def managed_resource(
     user_id: Union[str, int], client_session_id: Optional[str], app: web.Application
 ) -> Iterator[WebsocketRegistry]:
-    registry = WebsocketRegistry(int(user_id), client_session_id, app)
     try:
+        registry = WebsocketRegistry(int(user_id), client_session_id, app)
         yield registry
     except Exception:
         log.exception(

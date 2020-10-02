@@ -39,19 +39,24 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     getLogoPath: function() {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      const textColor = colorManager.resolve("text");
-      const luminance = this.getColorLuminance(textColor);
-      return luminance > 0.3 ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
-    },
-
-    getLoaderUri: function(arg) {
-      let loadingUri = qx.util.ResourceManager.getInstance().toUri("osparc/loading/loader.html");
-      if (arg) {
-        loadingUri += "?loading=- ";
-        loadingUri += arg;
+      let logoPath = null;
+      const product = qx.core.Environment.get("product.name");
+      switch (product) {
+        case "s4l":
+          logoPath = "osparc/s4l_logo.png";
+          break;
+        case "tis":
+          logoPath = "osparc/ti-solutions.svg";
+          break;
+        default: {
+          const colorManager = qx.theme.manager.Color.getInstance();
+          const textColor = colorManager.resolve("text");
+          const luminance = this.getColorLuminance(textColor);
+          logoPath = (luminance > 0.3) ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
+          break;
+        }
       }
-      return loadingUri;
+      return logoPath;
     },
 
     addBorder: function(sidePanel, width = 1, where = "right") {
@@ -69,27 +74,6 @@ qx.Class.define("osparc.utils.Utils", {
         iframeDocument.style.setProperty("--text-color", textColor);
         iframeDocument.style.setProperty("--spinner-color", spinnerColor);
       }
-    },
-
-    createLoadingIFrame: function(text) {
-      const loadingUri = osparc.utils.Utils.getLoaderUri(text);
-      const iframe = new qx.ui.embed.Iframe(loadingUri);
-
-      const contEle = iframe.getContentElement();
-      contEle.addListener("appear", () => {
-        qx.event.Timer.once(() => {
-          const domEl = contEle.getDomElement();
-          if (domEl) {
-            this.__setStyleToIFrame(domEl);
-            const colorManager = qx.theme.manager.Color.getInstance();
-            colorManager.addListener("changeTheme", () => {
-              this.__setStyleToIFrame(domEl);
-            });
-          }
-        }, this, 50);
-      });
-      iframe.setBackgroundColor("transparent");
-      return iframe;
     },
 
     compareVersionNumbers: function(v1, v2) {

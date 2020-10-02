@@ -594,6 +594,23 @@ class ProjectDBAPI:
                 result.append(row[0])
             return list(result)
 
+    async def update_project_without_enforcing_checks(
+        self, project_data: Dict, project_uuid: str
+    ) -> bool:
+        """The garbage collector needs to alter the row without passing through the 
+        permissions layer."""
+        async with self.engine.acquire() as conn:
+            # update timestamps
+            project_data["lastChangeDate"] = now_str()
+            # now update it
+            result = await conn.execute(
+                # pylint: disable=no-value-for-parameter
+                projects.update()
+                .values(**_convert_to_db_names(project_data))
+                .where(projects.c.uuid == project_uuid)
+            )
+            return result.rowcount == 1
+
 
 def setup_projects_db(app: web.Application):
     db = ProjectDBAPI(app)

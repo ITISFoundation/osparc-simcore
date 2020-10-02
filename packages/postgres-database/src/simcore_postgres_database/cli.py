@@ -37,7 +37,11 @@ migration_dir = current_dir / "migration"
 discovered_cache = os.path.expanduser("~/.simcore_postgres_database_cache.json")
 
 log = logging.getLogger("root")
-fileConfig(default_ini)
+
+if __name__ == "__main__":
+    # swallows up all log messages from tests
+    # only enable it during cli invocation
+    fileConfig(default_ini)
 
 
 def safe(if_fails_return=False):

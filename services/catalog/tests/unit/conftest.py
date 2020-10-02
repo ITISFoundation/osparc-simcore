@@ -42,26 +42,6 @@ def installed_package_dir() -> Path:
     return dirpath
 
 
-@pytest.fixture(scope="session")
-def osparc_simcore_root_dir() -> Path:
-    root_dir = current_dir
-    while root_dir != root_dir.parent and not any(root_dir.glob("services/catalog")):
-        root_dir = root_dir.parent
-
-    assert (
-        root_dir and root_dir.exists()
-    ), "Did you renamed or moved the integration folder under catalog??"
-    assert any(root_dir.glob("services/catalog")), "%s not look like rootdir" % root_dir
-    return root_dir
-
-
-@pytest.fixture(scope="session")
-def api_specs_dir(osparc_simcore_root_dir: Path) -> Path:
-    specs_dir = osparc_simcore_root_dir / "api" / "specs" / "catalog"
-    assert specs_dir.exists()
-    return specs_dir
-
-
 # FAKE DATA ------
 
 

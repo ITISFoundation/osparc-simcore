@@ -1,4 +1,4 @@
-name: Github-CI Push/PR
+name: CI
 
 on:
   push:
@@ -35,7 +35,7 @@ env:
 
 jobs:
   unit-test-api:
-    name: Unit-testing api
+    name: "[unit] api"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -71,7 +71,7 @@ jobs:
         run: ./ci/github/unit-testing/api.bash test
 
   unit-test-api-server:
-    name: Unit-testing api-server
+    name: "[unit] api-server"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -196,7 +196,7 @@ jobs:
         run: make -C services/service-sidecar ci-tox-tests
 
   unit-test-catalog:
-    name: Unit-testing catalog
+    name: "[unit] catalog"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -251,7 +251,7 @@ jobs:
           path: codeclimate.unit_catalog_coverage.json
 
   unit-test-director:
-    name: Unit-testing director
+    name: "[unit] director"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -300,7 +300,7 @@ jobs:
           path: codeclimate.unit_director_coverage.json
 
   unit-test-sidecar:
-    name: Unit-testing sidecar
+    name: "[unit] sidecar"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -349,7 +349,7 @@ jobs:
           path: codeclimate.unit_sidecar_coverage.json
 
   unit-test-frontend:
-    name: Unit-testing frontend
+    name: "[unit] frontend"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -379,7 +379,7 @@ jobs:
     #     flags: unittests #optional
 
   unit-test-python-linting:
-    name: Unit-testing python-linting
+    name: "[unit] python-linting"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -464,7 +464,7 @@ jobs:
           path: codeclimate.unit_postgresdb_coverage.json
 
   unit-test-service-library:
-    name: Unit-testing service-library
+    name: "[unit] service-library"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -513,7 +513,7 @@ jobs:
           path: codeclimate.unit_servicelib_coverage.json
 
   unit-test-simcore-sdk:
-    name: Unit-testing simcore-sdk
+    name: "[unit] simcore-sdk"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -562,7 +562,7 @@ jobs:
           path: codeclimate.unit_simcoresdk_coverage.json
 
   unit-test-storage:
-    name: Unit-testing storage
+    name: "[unit] storage"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -612,7 +612,7 @@ jobs:
 
   # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
   unit-test-webserver-isolated:
-    name: Unit-testing webserver isolated
+    name: "[unit] webserver isolated"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -662,7 +662,7 @@ jobs:
 
   # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
   unit-test-webserver-slow:
-    name: Unit-testing webserver slow
+    name: "[unit] webserver slow"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -712,7 +712,7 @@ jobs:
 
   # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
   unit-test-webserver-medium:
-    name: Unit-testing webserver medium
+    name: "[unit] webserver medium"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -762,7 +762,7 @@ jobs:
 
   # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
   unit-test-webserver-fast:
-    name: Unit-testing webserver fast
+    name: "[unit] webserver fast"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -841,7 +841,7 @@ jobs:
         run: ./ci/deploy/dockerhub-test-images.bash
 
   integration-test-webserver:
-    name: Integration-testing webserver
+    name: "[int] webserver"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -906,7 +906,7 @@ jobs:
           path: codeclimate.integration_webserver_coverage.json
 
   integration-test-sidecar:
-    name: Integration-testing sidecar
+    name: "[int] sidecar"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -971,7 +971,7 @@ jobs:
           path: codeclimate.integration_sidecar_coverage.json
 
   integration-test-simcore-sdk:
-    name: Integration-testing simcore-sdk
+    name: "[int] simcore-sdk"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1036,7 +1036,7 @@ jobs:
           path: codeclimate.integration_simcoresdk_coverage.json
 
   system-test-swarm-deploy:
-    name: System-testing deploy simcore
+    name: "[sys] deploy simcore"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1084,7 +1084,7 @@ jobs:
   system-test-e2e:
     # FIXME: skip the job until make it faster and more reliable
     # https://github.com/ITISFoundation/osparc-simcore/issues/1594
-    name: System-testing e2e
+    name: "[sys] e2e"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1163,7 +1163,46 @@ jobs:
           path: tests/e2e/screenshots
       - name: cleanup
         if: always()
-        run: ./ci/github/system-testing/swarm-deploy.bash clean_up
+        run: ./ci/github/system-testing/e2e.bash clean_up
+
+  system-test-environment-setup:
+    name: "[sys] environment setup"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - name: set PR default variables
+        # only pushes have access to the docker credentials, use a default
+        if: github.event_name == 'pull_request'
+        run: |
+          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
+          echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
+      - uses: actions/checkout@v2
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-environment-setup-${{ hashFiles('tests/environment-setup/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-environment-setup-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install
+        run: ./ci/github/system-testing/environment-setup.bash install
+      - name: test
+        run: ./ci/github/system-testing/environment-setup.bash test
+      - name: cleanup
+        if: always()
+        run: ./ci/github/system-testing/environment-setup.bash clean_up
 
   coverage:
     needs:

@@ -45,8 +45,14 @@ setup(
     license="MIT license",
     python_requires="~=3.6",
     packages=find_packages(where="src"),
-    package_dir={"": "src",},
-    package_data={"": ["config/*.yaml",],},
+    package_dir={
+        "": "src",
+    },
+    package_data={
+        "": [
+            "config/*.yaml",
+        ],
+    },
     include_package_data=True,
     install_requires=install_requirements,
     test_suite="tests",
@@ -54,7 +60,7 @@ setup(
     extras_require={"test": test_requirements},
     entry_points={
         "console_scripts": [
-            "simcore-service-catalog = simcore_service_catalog.__main__:main",
+            "simcore-service-catalog=simcore_service_catalog.__main__:main",
         ],
     },
 )

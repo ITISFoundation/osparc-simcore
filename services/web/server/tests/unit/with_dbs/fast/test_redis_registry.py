@@ -110,17 +110,21 @@ async def test_redis_registry(loop, redis_registry):
         assert all(x in [key, second_key] for x in found_keys)
         assert not await redis_registry.find_keys(invalid_resource)
 
-    # create alive key
-    await redis_registry.set_key_alive(key, True)
+    DEAD_KEY_TIMEOUT = 1
+    STILL_ALIVE_KEY_TIMEOUT = DEAD_KEY_TIMEOUT + 1
+
+    # create a key which will be alive when testing
+    await redis_registry.set_key_alive(key, STILL_ALIVE_KEY_TIMEOUT)
     assert await redis_registry.is_key_alive(key) == True
     # create soon to be dead key
-    TIMEOUT = 3
-    await redis_registry.set_key_alive(second_key, False, TIMEOUT)
+    await redis_registry.set_key_alive(second_key, DEAD_KEY_TIMEOUT)
     alive_keys, dead_keys = await redis_registry.get_all_resource_keys()
     assert not dead_keys
     assert all(x in alive_keys for x in [key, second_key])
     assert all(x in [key, second_key] for x in alive_keys)
-    time.sleep(TIMEOUT)
+
+    time.sleep(DEAD_KEY_TIMEOUT)
+
     assert await redis_registry.is_key_alive(second_key) == False
     alive_keys, dead_keys = await redis_registry.get_all_resource_keys()
     assert alive_keys == [key]
@@ -135,6 +139,29 @@ async def test_redis_registry(loop, redis_registry):
         assert len(await redis_registry.get_resources(second_key)) == len(resources) - (
             resources.index(res) + 1
         )
+
+
+async def test_redis_registry_key_will_always_expire(loop, redis_registry):
+    get_random_int = lambda: randint(1, 10)
+    first_key = {f"key_{x}": f"value_{x}" for x in range(get_random_int())}
+    second_key = {f"sec_key_{x}": f"sec_value_{x}" for x in range(get_random_int())}
+
+    resources = [(f"res_key{x}", f"res_value{x}") for x in range(get_random_int())]
+    for resource in resources:
+        await redis_registry.set_resource(first_key, resource)
+        await redis_registry.set_resource(second_key, resource)
+
+    await redis_registry.set_key_alive(first_key, 0)
+    await redis_registry.set_key_alive(second_key, -3000)
+
+    time.sleep(1)  # minimum amount of sleep
+
+    assert await redis_registry.is_key_alive(second_key) == False
+    assert await redis_registry.is_key_alive(first_key) == False
+
+    alive_keys, dead_keys = await redis_registry.get_all_resource_keys()
+    assert len(alive_keys) == 0
+    assert len(dead_keys) == 2
 
 
 async def test_websocket_manager(loop, redis_enabled_app, redis_registry, user_ids):

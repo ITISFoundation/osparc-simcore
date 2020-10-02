@@ -5,6 +5,7 @@
 import asyncio
 import inspect
 import json
+from collections import deque
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 from uuid import uuid4
@@ -12,9 +13,9 @@ from uuid import uuid4
 import aio_pika
 import pytest
 import sqlalchemy as sa
+from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
 from yarl import URL
 
-from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
 from simcore_service_sidecar import config, utils
 
 SIMCORE_S3_ID = 0
@@ -80,9 +81,29 @@ def sidecar_config(
     config.RABBIT_CONFIG = rabbit_config
 
 
-def _assert_incoming_data_logs(
+class LockedCollector:
+    __slots__ = ("_lock", "_list")
+
+    def __init__(self):
+        self._lock = asyncio.Lock()
+        self._list = deque()
+
+    async def is_empty(self):
+        async with self._lock:
+            return len(self._list) == 0
+
+    async def append(self, item):
+        async with self._lock:
+            self._list.append(item)
+
+    async def as_list(self) -> List:
+        async with self._lock:
+            return list(self._list)
+
+
+async def _assert_incoming_data_logs(
     tasks: List[str],
-    incoming_data: List[Dict[str, str]],
+    incoming_data: LockedCollector,
     user_id: int,
     project_id: str,
     service_repo: str,
@@ -94,7 +115,7 @@ def _assert_incoming_data_logs(
     tasks_logs = {task: [] for task in tasks}
     progress_logs = {task: [] for task in tasks}
     instrumentation_messages = {task: [] for task in tasks}
-    for message in incoming_data:
+    for message in await incoming_data.as_list():
         if "metrics" in message:
             # instrumentation message
             instrumentation_messages[message["service_uuid"]].append(message)
@@ -338,13 +359,14 @@ async def test_run_services(
     :param osparc_service: Fixture defined in pytest-simcore.docker_registry. Uses parameters service_repo, service_tag
     :type osparc_service: Dict[str, str]
     """
-    incoming_data = []
+    incoming_data = LockedCollector()
 
     async def rabbit_message_handler(message: aio_pika.IncomingMessage):
-        data = json.loads(message.body)
-        incoming_data.append(data)
+        async with message.process():
+            data = json.loads(message.body)
+            await incoming_data.append(data)
 
-    await rabbit_queue.consume(rabbit_message_handler, exclusive=True, no_ack=True)
+    await rabbit_queue.consume(rabbit_message_handler, exclusive=True)
 
     job_id = 1
 
@@ -353,7 +375,7 @@ async def test_run_services(
     # runs None first
     next_task_nodes = await cli.run_sidecar(job_id, user_id, pipeline.project_id, None)
     await asyncio.sleep(5)
-    assert not incoming_data
+    assert await incoming_data.is_empty()
     assert next_task_nodes
     assert len(next_task_nodes) == 1
     assert next_task_nodes[0] == next(iter(pipeline_cfg))
@@ -370,7 +392,7 @@ async def test_run_services(
         dag.extend(pipeline_cfg[key]["next"])
     assert next_task_nodes == dag
     await asyncio.sleep(5)  # wait a little bit for logs to come in
-    _assert_incoming_data_logs(
+    await _assert_incoming_data_logs(
         list(pipeline_cfg.keys()),
         incoming_data,
         user_id,

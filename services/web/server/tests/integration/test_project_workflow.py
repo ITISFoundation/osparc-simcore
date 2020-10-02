@@ -12,7 +12,7 @@ from asyncio import Future, Task, wait_for
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
-from typing import Dict, List
+from typing import Dict, List, Optional, Union
 
 import pytest
 import sqlalchemy as sa
@@ -22,10 +22,14 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import delete_all_projects
 from servicelib.application import create_safe_application
+from simcore_service_webserver import catalog
+from simcore_service_webserver.catalog import setup_catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.projects.projects_fakes import Fake
+from simcore_service_webserver.projects.projects_models import ProjectState
 from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
@@ -36,12 +40,13 @@ API_VERSION = "v0"
 
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = [
+    "catalog",
     "director",
     "postgres",
     "redis",
 ]
 
-ops_services = []  # + ["adminer"]
+ops_services = ["adminer"]  # + ["adminer"]
 
 
 @pytest.fixture
@@ -69,6 +74,8 @@ def client(
     setup_login(app)
     setup_resource_manager(app)
     assert setup_projects(app)
+    setup_catalog(app)
+    setup_products(app)
 
     yield loop.run_until_complete(
         aiohttp_client(
@@ -221,10 +228,36 @@ async def _request_delete(client, pid):
     await assert_status(resp, web.HTTPNoContent)
 
 
+@pytest.fixture
+async def catalog_subsystem_mock(monkeypatch):
+    services_in_project = []
+
+    def creator(projects: Optional[Union[List[Dict], Dict]] = None) -> None:
+        for proj in projects:
+            services_in_project.extend(
+                [
+                    {"key": s["key"], "version": s["version"]}
+                    for _, s in proj["workbench"].items()
+                ]
+            )
+
+    async def mocked_get_services_for_user(*args, **kwargs):
+        return services_in_project
+
+    monkeypatch.setattr(
+        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
+    )
+
+    return creator
+
+
 async def test_workflow(
     client,
     postgres_db: sa.engine.Engine,
+    docker_registry: str,
+    simcore_services,
     fake_project_data,
+    catalog_subsystem_mock,
     logged_user,
     primary_group: Dict[str, str],
     standard_groups: List[Dict[str, str]],
@@ -237,10 +270,12 @@ async def test_workflow(
 
     # creation
     await _request_create(client, fake_project_data)
-
+    catalog_subsystem_mock([fake_project_data])
     # list not empty
     projects = await _request_list(client)
     assert len(projects) == 1
+
+    assert not ProjectState(**projects[0].pop("state")).locked.value
     for key in projects[0].keys():
         if key not in (
             "uuid",
@@ -275,13 +310,13 @@ async def test_workflow(
     assert len(projects) == 1
 
     for key in projects[0].keys():
-        if key not in ("lastChangeDate",):
+        if key not in ("lastChangeDate", "state"):
             assert projects[0][key] == modified_project[key]
 
     # get
     project = await _request_get(client, pid)
     for key in project.keys():
-        if key not in ("lastChangeDate",):
+        if key not in ("lastChangeDate", "state"):
             assert project[key] == modified_project[key]
 
     # delete
@@ -290,7 +325,10 @@ async def test_workflow(
     # wait for delete tasks to finish
     tasks = Task.all_tasks()
     for task in tasks:
-        if "delete_project" in task._coro.__name__:
+        # TODO: 'async_generator_asend' has no __name__ attr. Python 3.8 gets coros names
+        # Expects "delete_project" coros to have __name__ attrs
+        # pylint: disable=protected-access
+        if "delete_project" in getattr(task._coro, "__name__", ""):
             await wait_for(task, timeout=60.0)
 
     # list empty
@@ -298,21 +336,39 @@ async def test_workflow(
     assert not projects
 
 
-async def test_get_invalid_project(client, logged_user):
+async def test_get_invalid_project(
+    client,
+    postgres_db: sa.engine.Engine,
+    docker_registry: str,
+    simcore_services,
+    logged_user,
+):
     url = client.app.router["get_project"].url_for(project_id="some-fake-id")
     resp = await client.get(url)
 
     await assert_status(resp, web.HTTPNotFound)
 
 
-async def test_update_invalid_project(client, logged_user):
+async def test_update_invalid_project(
+    client,
+    postgres_db: sa.engine.Engine,
+    docker_registry: str,
+    simcore_services,
+    logged_user,
+):
     url = client.app.router["replace_project"].url_for(project_id="some-fake-id")
     resp = await client.get(url)
 
     await assert_status(resp, web.HTTPNotFound)
 
 
-async def test_delete_invalid_project(client, logged_user):
+async def test_delete_invalid_project(
+    client,
+    postgres_db: sa.engine.Engine,
+    docker_registry: str,
+    simcore_services,
+    logged_user,
+):
     url = client.app.router["delete_project"].url_for(project_id="some-fake-id")
     resp = await client.delete(url)
 
@@ -321,12 +377,21 @@ async def test_delete_invalid_project(client, logged_user):
 
 async def test_list_template_projects(
     client,
+    postgres_db: sa.engine.Engine,
+    docker_registry: str,
+    simcore_services,
     logged_user,
     fake_db,
     fake_template_projects,
     fake_template_projects_isan,
     fake_template_projects_osparc,
+    catalog_subsystem_mock,
 ):
+    catalog_subsystem_mock(
+        fake_template_projects
+        + fake_template_projects_isan
+        + fake_template_projects_osparc
+    )
     fake_db.load_template_projects()
     url = client.app.router["list_projects"].url_for()
     resp = await client.get(url.with_query(type="template"))

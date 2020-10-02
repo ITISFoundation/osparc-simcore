@@ -20,6 +20,7 @@ pytest-docker
 
 # fixtures
 Faker
+respx
 
 # migration due to pytest_simcore.postgres_service
 alembic
