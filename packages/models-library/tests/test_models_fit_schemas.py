@@ -12,7 +12,8 @@ from models_library.projects import Project
 from models_library.services import ServiceDockerData
 from pydantic.main import BaseModel
 
-import pytest
+from models_library.projects import Project
+from models_library.services import ServiceDockerData
 
 
 @pytest.mark.parametrize(
