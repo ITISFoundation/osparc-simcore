@@ -1862,9 +1862,6 @@ paths:
                                         output:
                                           title: Output
                                           type: string
-                                        index:
-                                          title: Index
-                                          type: number
                                     - title: FileIO
                                       type: object
                                       additionalProperties: false
@@ -2169,9 +2166,6 @@ paths:
                                         output:
                                           title: Output
                                           type: string
-                                        index:
-                                          title: Index
-                                          type: number
                                     - title: FileIO
                                       type: object
                                       additionalProperties: false
@@ -2486,9 +2480,6 @@ paths:
                                       output:
                                         title: Output
                                         type: string
-                                      index:
-                                        title: Index
-                                        type: number
                                   - title: FileIO
                                     type: object
                                     additionalProperties: false
@@ -2903,9 +2894,6 @@ components:
                             output:
                               title: Output
                               type: string
-                            index:
-                              title: Index
-                              type: number
                         - title: FileIO
                           type: object
                           additionalProperties: false

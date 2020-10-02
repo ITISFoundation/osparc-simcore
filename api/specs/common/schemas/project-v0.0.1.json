@@ -314,10 +314,6 @@
         "output": {
           "title": "Output",
           "type": "string"
-        },
-        "index": {
-          "title": "Index",
-          "type": "number"
         }
       }
     },

@@ -136,9 +136,6 @@ properties:
                       output:
                         title: Output
                         type: string
-                      index:
-                        title: Index
-                        type: number
                   - title: FileIO
                     type: object
                     additionalProperties: false

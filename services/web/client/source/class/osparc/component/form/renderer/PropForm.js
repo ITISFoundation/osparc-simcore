@@ -395,9 +395,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         nodeUuid: from.nodeUuid,
         output: from.output
       };
-      if ("index" in from) {
-        link["index"] = from.index;
-      }
       this._form.getControl(toPortId)["link"] = link;
 
       const study = osparc.store.Store.getInstance().getCurrentStudy();
@@ -408,9 +405,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       fromNode.bind("label", this.getControlLink(toPortId), "value", {
         converter: label => {
           let text = label + ": " + fromPortLabel;
-          if ("index" in from) {
-            text += ("["+from.index+"]");
-          }
           return text;
         }
       });
