@@ -7,9 +7,13 @@ import sys
 from pathlib import Path
 from typing import Callable, Dict
 
+import models_library
 import pytest
 
-import models_library
+pytest_plugins = [
+    "pytest_simcore.environs",
+    "pytest_simcore.schemas",
+]
 
 pytest_plugins = [
     "pytest_simcore.repository_paths",
