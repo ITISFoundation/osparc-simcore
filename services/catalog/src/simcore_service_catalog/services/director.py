@@ -69,15 +69,16 @@ def safe_request(request_func: Coroutine):
         return data or {}
 
     @functools.wraps(request_func)
-    async def request_wrapper(self: "DirectorApi", path: str, *args, **kwargs):
+    async def request_wrapper(zelf: "DirectorApi", path: str, *args, **kwargs):
         try:
             normalized_path = path.lstrip("/")
-            resp = await request_func(self, path=normalized_path, *args, **kwargs)
+            resp = await request_func(zelf, path=normalized_path, *args, **kwargs)
         except Exception as err:
+            #pylint: disable=protected-access
             logger.exception(
                 "Failed request %s to %s%s",
                 request_func.__name__,
-                self._client.base_url,
+                zelf._client.base_url,
                 normalized_path,
             )
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
