@@ -13,7 +13,7 @@ from models_library.projects import Owner, ProjectLocked, ProjectState
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog
-from ..computation_api import get_pipeline_state, update_pipeline_db
+from ..computation_api import update_pipeline_db
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
@@ -481,25 +481,6 @@ async def state_project(request: web.Request) -> web.Response:
     )
     project_state = ProjectState(**validated_project["state"])
     return web.json_response({"data": project_state.dict()})
-
-    # with managed_resource(user_id, None, request.app) as rt:
-    #     users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
-    #     usernames = [
-    #         await get_user_name(request.app, uid) for uid in set(users_of_project)
-    #     ]
-    #     assert len(usernames) <= 1  # currently not possible to have more than 1
-    #     running_state = ProjectRunningState(
-    #         value=await get_pipeline_state(request.app, project_uuid)
-    #     )
-    #     project_state = ProjectState(
-    #         locked={
-    #             "value": len(usernames) > 0,
-    #             "owner": Owner(**usernames[0]) if len(usernames) > 0 else None,
-    #         },
-    #         state=running_state,
-    #     )
-
-    #     return web.json_response({"data": project_state.dict()})
 
 
 @login_required

@@ -14,13 +14,19 @@ from typing import Any, Dict, Optional, Set
 from uuid import uuid4
 
 from aiohttp import web
-from models_library.projects import Owner, ProjectLocked, ProjectState
+
+from models_library.projects import (
+    Owner,
+    ProjectLocked,
+    ProjectRunningState,
+    ProjectState,
+)
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
-from ..computation_api import delete_pipeline_db
+from ..computation_api import delete_pipeline_db, get_pipeline_state
 from ..director import director_api
 from ..resource_manager.websocket_manager import managed_resource
 from ..socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT, post_group_messages
@@ -394,6 +400,9 @@ async def get_project_state_for_user(user_id, project_uuid, app) -> ProjectState
             locked=ProjectLocked(
                 value=is_locked,
                 owner=Owner(**usernames[0]) if is_locked else None,
+            ),
+            state=ProjectRunningState(
+                value=await get_pipeline_state(app, project_uuid)
             ),
         )
         return project_state
