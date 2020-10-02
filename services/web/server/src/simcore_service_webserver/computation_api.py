@@ -448,11 +448,7 @@ async def update_pipeline_db(
 def get_celery(_app: web.Application) -> Celery:
     config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
     rabbit = RabbitConfig(**config)
-    celery_app = Celery(
-        rabbit.name,
-        broker=rabbit.broker_url,
-        backend=rabbit.backend,
-    )
+    celery_app = Celery(rabbit.name, broker=rabbit.broker_url, backend=rabbit.backend,)
     return celery_app
 
 
@@ -474,7 +470,7 @@ async def start_pipeline_computation(
     ) -> None:
         try:
             pipeline_state: RunningState = RunningState.unknown
-            while True:
+            while pipeline_state not in [RunningState.success, RunningState.failure]:
                 new_state = await get_pipeline_state(app, project_id)
                 if new_state != pipeline_state:
                     log.debug(
@@ -487,9 +483,7 @@ async def start_pipeline_computation(
                     # await projects_api.notify_project_state_update(
                     #     app, project_data, ProjectState(locked={"value": False})
                     # )
-                    if pipeline_state in [RunningState.success, RunningState.failure]:
-                        log.debug("Completed monitoring of project %s", project_id)
-                        break
+
                 await asyncio.sleep(5)
 
         except CancelledError:
