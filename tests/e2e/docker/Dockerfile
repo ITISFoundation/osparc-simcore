@@ -3,7 +3,9 @@ FROM node:${NODE_VERSION}-slim as base
 
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
+  curl \
   git \
+  jq \
   libnss3 \
   libatk-bridge2.0 \
   gconf-service \
@@ -44,6 +46,8 @@ RUN apt-get update && \
   lsb-release \
   xdg-utils \
   wget \
+  && apt-get autoremove -y \
+  && apt-get clean -y \
   && rm -rf /var/lib/apt/lists/*
 
 SHELL [ "/bin/bash", "-c" ]
