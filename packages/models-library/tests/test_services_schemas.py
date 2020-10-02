@@ -38,6 +38,11 @@ def osparc_simcore_root_dir(here):
     )
     return root_dir
 
+pytest_plugins = [
+    "pytest_simcore.environs",
+    "pytest_simcore.schemas",
+]
+
 
 @pytest.fixture(scope="session")
 def json_diff_script(script_dir: Path) -> Path:
