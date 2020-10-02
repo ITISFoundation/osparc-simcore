@@ -112,6 +112,11 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
     },
 
     _transformValue: function(value) {
+      // add path as tooltip to files
+      if (value.getPath) {
+        this.__valueLabel.setToolTipText(value.getPath());
+      }
+
       if (value.getLabel) {
         return value.getLabel();
       }
