@@ -238,11 +238,6 @@ class RunningState(str, Enum):
     failure = "FAILURE"
 
 
-class NodeRunningState(RunningState):
-    uploading = "UPLOADING"
-    downloading = "DOWNLOADING"
-
-
 class ProjectRunningState(BaseModel):
     value: RunningState
 
