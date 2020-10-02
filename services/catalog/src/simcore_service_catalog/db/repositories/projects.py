@@ -26,6 +26,7 @@ class ProjectsRepository(BaseRepository):
                 try:
                     if (
                         "file-picker" in service["key"]
+                        or "file-sweeper" in service["key"]
                         or "nodes-group" in service["key"]
                     ):
                         # these 2 are not going to pass the validation tests, they are frontend only nodes.

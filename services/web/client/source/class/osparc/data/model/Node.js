@@ -189,6 +189,10 @@ qx.Class.define("osparc.data.model.Node", {
       return (metaData && metaData.key && metaData.key.includes("file-picker"));
     },
 
+    isFileSweeper: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("file-sweeper"));
+    },
+
     isRealService: function(metaData) {
       return (metaData && metaData.type && (metaData.key.includes("simcore/services/dynamic") || metaData.key.includes("simcore/services/comp")));
     }
@@ -237,6 +241,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     isFilePicker: function() {
       return osparc.data.model.Node.isFilePicker(this.getMetaData());
+    },
+
+    isFileSweeper: function() {
+      return osparc.data.model.Node.isFileSweeper(this.getMetaData());
     },
 
     isRealService: function() {
@@ -1147,7 +1155,7 @@ qx.Class.define("osparc.data.model.Node", {
         nodeEntry.outputNodes = this.getOutputNodes();
       }
 
-      if (this.isFilePicker()) {
+      if (this.isFilePicker() || this.isFileSweeper()) {
         nodeEntry.outputs = this.getOutputValues();
         nodeEntry.progress = this.getStatus().getProgress();
       }

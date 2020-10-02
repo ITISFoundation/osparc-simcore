@@ -15,7 +15,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     this.__label = this.getChildControl("label");
     this.__icon = this.getChildControl("icon");
 
-    if (node.isFilePicker()) {
+    if (node.isFilePicker() || node.isFileSweeper()) {
       this.__setupFilePicker();
     } else {
       this.__setupInteractive();

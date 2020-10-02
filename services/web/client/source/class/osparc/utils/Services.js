@@ -194,31 +194,6 @@ qx.Class.define("osparc.utils.Services", {
         "access_rights": {
           "1": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
         }
-      },
-      {
-        key: "simcore/services/frontend/file-picker",
-        version: "2.0.0",
-        type: "dynamic",
-        name: "File Picker 2",
-        description: "File Picker 2",
-        authors: [{
-          name: "Odei Maiz",
-          email: "maiz@itis.swiss"
-        }],
-        contact: "maiz@itis.swiss",
-        owner: "maiz@itis.swiss",
-        inputs: {},
-        outputs: {
-          outFiles: {
-            displayOrder: 0,
-            label: "File",
-            description: "Chosen File",
-            type: "data:*/*"
-          }
-        },
-        "access_rights": {
-          "1": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
-        }
       }];
     },
 
@@ -226,7 +201,7 @@ qx.Class.define("osparc.utils.Services", {
       return [{
         key: "simcore/services/frontend/file-sweeper",
         version: "1.0.0",
-        type: "computational",
+        type: "dynamic",
         name: "File Sweeper",
         description: "File Sweeper",
         authors: [{
@@ -235,18 +210,11 @@ qx.Class.define("osparc.utils.Services", {
         }],
         contact: "maiz@itis.swiss",
         owner: "maiz@itis.swiss",
-        inputs: {
-          "inFile": {
-            displayOrder: 0,
-            label: "Input files",
-            description: "Array of files",
-            type: "data:*/*"
-          }
-        },
+        inputs: {},
         outputs: {
-          "outFile": {
+          "outFiles": {
             displayOrder: 0,
-            label: "One file",
+            label: "Fle",
             description: "One file at a time",
             type: "data:*/*"
           }

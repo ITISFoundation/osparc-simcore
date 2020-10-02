@@ -167,7 +167,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
       this.__inputOutputLayout = this.getChildControl("inputOutput");
       this.__chipContainer = this.getChildControl("chips");
-      if (node.isComputational() || node.isFilePicker()) {
+      if (node.isComputational() || node.isFilePicker() || node.isFileSweeper()) {
         this.__progressBar = this.getChildControl("progress");
       }
       if (node.isDynamic()) {
@@ -185,7 +185,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const metaData = node.getMetaData();
       this.__createUIPorts(true, metaData && metaData.inputs);
       this.__createUIPorts(false, metaData && metaData.outputs);
-      if (node.isComputational() || node.isFilePicker()) {
+      if (node.isComputational() || node.isFilePicker() || node.isFileSweeper()) {
         node.getStatus().bind("progress", this.__progressBar, "value");
       }
     },

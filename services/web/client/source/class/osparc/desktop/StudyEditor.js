@@ -140,7 +140,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const validNodeIds = [];
       const allNodes = this.getStudy().getWorkbench().getNodes(true);
       Object.values(allNodes).forEach(node => {
-        if (!node.isFilePicker()) {
+        if (!node.isFilePicker() && !node.isFileSweeper()) {
           validNodeIds.push(node.getNodeId());
         }
       });
@@ -315,6 +315,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__groupNodeView.populateLayout();
         } else if (node.isFilePicker()) {
           this.__openFilePicker(node);
+        } else if (node.isFileSweeper()) {
+          this.__openFileSweeper(node);
         } else {
           this.__nodeView.setNode(node);
           this.showInMainView(this.__nodeView, nodeId);
@@ -330,11 +332,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         filePicker.init();
         const win = osparc.ui.window.Window.popUpInWindow(filePicker, node.getLabel(), 570, 450);
         filePicker.addListener("finished", () => win.close(), this);
-      } else if (node.getVersion() === "2.0.0") {
-        const nodeView = new osparc.component.node.FilePickerView(node);
-        this.showInMainView(nodeView, node.getNodeId());
-        nodeView.populateLayout();
       }
+    },
+
+    __openFileSweeper: function(node) {
+      const nodeView = new osparc.component.node.FilePickerView(node);
+      this.showInMainView(nodeView, node.getNodeId());
+      nodeView.populateLayout();
     },
 
     __removeNode: function(nodeId) {
