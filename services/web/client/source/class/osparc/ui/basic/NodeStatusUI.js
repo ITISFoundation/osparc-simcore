@@ -128,16 +128,9 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         converter: progress => {
           if (progress === 100) {
             const output = node.getOutputValues();
-            if (node.getVersion() === "1.0.0") {
-              const outputLabel = osparc.file.FilePicker.getOutputLabel(output);
-              if (outputLabel) {
-                return outputLabel;
-              }
-            } else if (node.getVersion() === "2.0.0") {
-              const outputLabel = osparc.file.FilePicker2.getOutputLabel(output);
-              if (outputLabel) {
-                return outputLabel;
-              }
+            const outputLabel = osparc.file.FilePicker.getOutputLabel(output);
+            if (outputLabel) {
+              return outputLabel;
             }
           }
           return this.tr("Select a file");

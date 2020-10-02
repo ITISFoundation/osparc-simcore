@@ -67,6 +67,17 @@ qx.Class.define("osparc.file.FilePicker", {
         }
         const splitFilename = outInfo.path.split("/");
         return splitFilename[splitFilename.length-1];
+      } else if ("outFiles" in outputValue) {
+        const outInfos = outputValue["outFiles"];
+        if (outInfos.length === 1) {
+          const outInfo = outInfos[0];
+          if ("label" in outInfo) {
+            return outInfo.label;
+          }
+          const splitFilename = outInfo.path.split("/");
+          return splitFilename[splitFilename.length-1];
+        }
+        return "(" + outInfos.length + ")";
       }
       return null;
     }
@@ -120,6 +131,11 @@ qx.Class.define("osparc.file.FilePicker", {
       }, this);
 
       const filesTree = this.__filesTree = this._createChildControlImpl("filesTree");
+      if (this.getNode().getVersion() !== "1.0.0") {
+        filesTree.set({
+          selectionMode: "multi"
+        });
+      }
       filesTree.addListener("selectionChanged", this.__selectionChanged, this);
       filesTree.addListener("itemSelected", this.__itemSelected, this);
       filesTree.addListener("filesAddedToTree", this.__checkSelectedFileIsListed, this);
@@ -187,12 +203,55 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __itemSelected: function() {
+      if (this.getNode().getVersion() === "1.0.0") {
+        this.__itemSelectedOne();
+      } else {
+        this.__itemSelectedMulti();
+      }
+    },
+
+    __itemSelectedOne: function() {
       const data = this.__filesTree.getSelectedFile();
       if (data && data["isFile"]) {
         const selectedItem = data["selectedItem"];
         this.__setOutputFile(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
         this.getNode().repopulateOutputPortData();
         this.fireEvent("finished");
+      }
+    },
+
+    __itemSelectedMulti: function() {
+      const data = this.__filePicker.getFilesTree().getSelectedFiles();
+      console.log(data);
+      if (data) {
+        this.__resetOutputFiles();
+        data.forEach(selectedEntry => {
+          if (selectedEntry["isFile"]) {
+            const selectedItem = selectedEntry["selectedItem"];
+            this.__appendOutputFile(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
+            this.getNode().repopulateOutputPortData();
+            this.fireEvent("finished");
+          }
+        });
+      }
+    },
+
+    __resetOutputFiles: function() {
+      const outputs = this.__filePicker.getOutputFile();
+      outputs["value"] = [];
+      this.getNode().getStatus().setProgress(0);
+    },
+
+    __appendOutputFile: function(store, dataset, path, label) {
+      if (store !== undefined && path) {
+        const outputs = this.__filePicker.getOutputFile();
+        outputs["value"].push({
+          store,
+          dataset,
+          path,
+          label
+        });
+        this.getNode().getStatus().setProgress(100);
       }
     },
 

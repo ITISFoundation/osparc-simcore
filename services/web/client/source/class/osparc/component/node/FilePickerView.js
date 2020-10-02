@@ -28,12 +28,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let filePicker = new osparc.file.FilePicker2(node);
+ *   let filePicker = new osparc.component.node.FilePickerView(node);
  *   this.getRoot().add(filePicker);
  * </pre>
  */
 
-qx.Class.define("osparc.file.FilePicker2", {
+qx.Class.define("osparc.component.node.FilePickerView", {
   extend: osparc.component.node.BaseNodeView,
 
   /**
@@ -49,18 +49,7 @@ qx.Class.define("osparc.file.FilePicker2", {
 
   statics: {
     getOutputLabel: function(outputValues) {
-      if ("outFiles" in outputValues) {
-        const outInfos = outputValues["outFiles"];
-        if (outInfos.length === 1) {
-          const outInfo = outInfos[0];
-          if ("label" in outInfo) {
-            return outInfo.label;
-          }
-          const splitFilename = outInfo.path.split("/");
-          return splitFilename[splitFilename.length-1];
-        }
-        return "(" + outInfos.length + ")";
-      }
+
       return null;
     }
   },
@@ -73,54 +62,9 @@ qx.Class.define("osparc.file.FilePicker2", {
       filePicker.buildLayout();
       filePicker.init();
 
-      const selectBtn = filePicker.getSelectButton();
-      selectBtn.addListener("execute", () => {
-        this.__itemsSelected();
-      }, this);
-
       this._mainView.add(filePicker, {
         flex: 1
       });
-
-      const filesTree = filePicker.getFilesTree();
-      filesTree.set({
-        selectionMode: "multi"
-      });
-    },
-
-    __itemsSelected: function() {
-      const data = this.__filePicker.getFilesTree().getSelectedFiles();
-      console.log(data);
-      if (data) {
-        this.__resetOutputFiles();
-        data.forEach(selectedEntry => {
-          if (selectedEntry["isFile"]) {
-            const selectedItem = selectedEntry["selectedItem"];
-            this.__appendOutputFile(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
-            this.getNode().repopulateOutputPortData();
-            this.fireEvent("finished");
-          }
-        });
-      }
-    },
-
-    __resetOutputFiles: function() {
-      const outputs = this.__filePicker.getOutputFile();
-      outputs["value"] = [];
-      this.getNode().getStatus().setProgress(0);
-    },
-
-    __appendOutputFile: function(store, dataset, path, label) {
-      if (store !== undefined && path) {
-        const outputs = this.__filePicker.getOutputFile();
-        outputs["value"].push({
-          store,
-          dataset,
-          path,
-          label
-        });
-        this.getNode().getStatus().setProgress(100);
-      }
     },
 
     // overridden
