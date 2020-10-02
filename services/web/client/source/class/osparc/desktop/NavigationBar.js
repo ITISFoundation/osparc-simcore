@@ -403,7 +403,12 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         }
       }, this);
       const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in Fogbugz"), "@FontAwesome5Solid/external-link-alt/12");
-      loginBtn.addListener("execute", () => window.open("https://z43.fogbugz.com/login"), this);
+      loginBtn.addListener("execute", () => {
+        const statics = this.__serverStatics;
+        if (statics && statics.fogbugzLoginUrl) {
+          window.open(statics.fogbugzLoginUrl);
+        }
+      }, this);
       issueConfirmationWindow.addButton(contBtn);
       issueConfirmationWindow.addButton(loginBtn);
       issueConfirmationWindow.addCancelButton();
