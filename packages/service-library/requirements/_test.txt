@@ -24,12 +24,12 @@ docker-compose==1.27.4    # via pytest-docker
 docker[ssh]==4.3.1        # via docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
-idna-ssl==1.1.0           # via -r requirements/_base.txt, aiohttp
+idna-ssl==1.1.0           # via -r requirements/_base.txt
 idna==2.10                # via -r requirements/_base.txt, idna-ssl, requests, yarl
-importlib-metadata==2.0.0  # via -r requirements/_base.txt, jsonschema, pluggy, pytest
+importlib-metadata==2.0.0  # via -r requirements/_base.txt
 iniconfig==1.0.1          # via pytest
 isodate==0.6.0            # via -r requirements/_base.txt, openapi-core
-isort==5.5.3              # via pylint
+isort==5.5.4              # via pylint
 jsonschema==3.2.0         # via -r requirements/_base.txt, docker-compose, openapi-spec-validator
 lazy-object-proxy==1.4.3  # via -r requirements/_base.txt, astroid, openapi-core
 mccabe==0.6.1             # via pylint
@@ -66,8 +66,7 @@ termcolor==1.1.0          # via pytest-sugar
 texttable==1.6.3          # via docker-compose
 toml==0.10.1              # via pylint, pytest
 trafaret==2.1.0           # via -r requirements/_base.txt
-typed-ast==1.4.1          # via astroid
-typing-extensions==3.7.4.3  # via -r requirements/_base.txt, aiohttp, yarl
+typing-extensions==3.7.4.3  # via -r requirements/_base.txt
 ujson==3.2.0              # via -r requirements/_base.txt
 urllib3==1.25.10          # via requests
 websocket-client==0.57.0  # via docker, docker-compose
