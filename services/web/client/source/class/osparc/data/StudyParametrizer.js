@@ -91,7 +91,7 @@ qx.Class.define("osparc.data.StudyParametrizer", {
             templatePrimaryStudyData["accessRights"][groupMe.gid] = osparc.component.export.StudyPermissions.getOwnerAccessRight();
             const params = {
               url: {
-                "study_id": this.__studyId
+                "study_id": templatePrimaryStudyData.uuid
               },
               data: templatePrimaryStudyData
             };
