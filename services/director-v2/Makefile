@@ -11,8 +11,15 @@ requirements reqs: ## (or reqs) compiles pip requirements (.in -> .txt)
 
 
 
+.PHONY: openapi-specs
+openapi-specs: openapi.json
+openapi.json:
+	# generating openapi specs file
+	python3 -c "import json; from $(APP_PACKAGE_NAME).__main__ import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
-# DEVELOPMENT ########
+
+
+# DEVELOPMENT #############
 
 # NOTE: add '127.0.0.1 registry' to /etc/host (needs sudo)
 EXTRA_REGISTRY:=registry:5000
@@ -34,6 +41,8 @@ down down-extra:  ## stops extra stack
 	# stopping extra services
 	-@docker-compose -f docker-compose-extra.yml down
 
+
+
 run-devel: .env up-extra  ## starts app with extra stack
 	# start app (within $<) in devel mode
 	uvicorn $(APP_PACKAGE_NAME).__main__:the_app \
@@ -45,6 +54,7 @@ run-prod: .env up-extra
 	$(APP_CLI_NAME)
 
 
+
 .PHONY: transfer-images-to-registry
 transfer-images-to-registry: ## transfer images to registry
 	# pushing sleeper image
@@ -54,19 +64,3 @@ transfer-images-to-registry: ## transfer images to registry
 	# completed transfer of images
 	curl -s $(EXTRA_REGISTRY)/v2/_catalog | jq '.repositories'
 	curl -s $(EXTRA_REGISTRY)/v2/simcore/services/comp/itis/sleeper/tags/list?n=50 | jq '.'
-
-
-
-# BUILD #####################
-
-.PHONY: build build-nc build-devel build-devel-nc build-cache build-cache-nc
-build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## docker image build in many flavours
-	# building ${APP_NAME} ...
-	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
-
-
-.PHONY: openapi-specs openapi.json
-openapi-specs: openapi.json
-openapi.json:
-	# generating openapi specs file
-	python3 -c "import json; from $(APP_PACKAGE_NAME).__main__ import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@

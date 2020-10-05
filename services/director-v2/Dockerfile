@@ -67,8 +67,8 @@ RUN apt-get update \
 # packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN pip install --upgrade --no-cache-dir \
-  pip~=20.1.2  \
+RUN pip --no-cache-dir install --upgrade  \
+  pip~=20.2.2  \
   wheel \
   setuptools
 
