@@ -441,7 +441,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const study = this.getStudy();
       const sweeper = new osparc.component.sweeper.Sweeper(study);
       const title = this.tr("Sweeper");
-      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 400, 700);
+      const win = osparc.ui.window.Window.popUpInWindow(sweeper, title, 500, 700);
       sweeper.addListener("iterationSelected", e => {
         win.close();
         const iterationStudyId = e.getData();
