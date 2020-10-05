@@ -1,12 +1,11 @@
 from typing import Optional
 
-from pydantic import EmailStr
-
 from models_library.services import (
     ServiceAccessRights,
     ServiceDockerData,
     ServiceMetaData,
 )
+from pydantic import EmailStr
 
 
 # OpenAPI models (contain both service metadata and access rights)
