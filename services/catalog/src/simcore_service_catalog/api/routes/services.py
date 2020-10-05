@@ -4,20 +4,19 @@ from typing import List, Optional, Set, Tuple
 
 # FIXME: too many DB calls
 from fastapi import APIRouter, Depends, Header, HTTPException, status
+from models_library.services import (
+    KEY_RE,
+    VERSION_RE,
+    ServiceAccessRightsAtDB,
+    ServiceMetaDataAtDB,
+    ServiceType,
+)
 from pydantic import ValidationError, constr
 from pydantic.types import PositiveInt
 
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
-from ...models.domain.service import (
-    KEY_RE,
-    VERSION_RE,
-    ServiceAccessRightsAtDB,
-    ServiceMetaDataAtDB,
-    ServiceOut,
-    ServiceType,
-    ServiceUpdate,
-)
+from ...models.schemas.services import ServiceOut, ServiceUpdate
 from ...services.frontend_services import get_services as get_frontend_services
 from ..dependencies.database import get_repository
 from ..dependencies.director import DirectorApi, get_director_api
