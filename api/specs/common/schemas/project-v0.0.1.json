@@ -346,6 +346,65 @@
     "dev": {
       "type": "object",
       "description": "object used for development purposes only"
+    },
+    "state": {
+      "type": "object",
+      "properties": {
+        "locked": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "title": "Value",
+              "type": "boolean"
+            },
+            "owner": {
+              "type": "object",
+              "properties": {
+                "first_name": {
+                  "title": "First Name",
+                  "type": "string"
+                },
+                "last_name": {
+                  "title": "Last Name",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "first_name",
+                "last_name"
+              ]
+            }
+          },
+          "required": [
+            "value"
+          ]
+        },
+        "state": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "description": "An enumeration.",
+              "enum": [
+                "UNKNOWN",
+                "NOT_STARTED",
+                "PENDING",
+                "STARTED",
+                "RETRY",
+                "SUCCESS",
+                "FAILURE"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ]
+        }
+      },
+      "required": [
+        "locked",
+        "state"
+      ]
     }
   }
 }

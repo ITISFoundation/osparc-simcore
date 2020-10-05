@@ -161,6 +161,35 @@ NodeID = constr(regex=r"^\d+$")
 ClassifierID = str
 
 
+class Owner(BaseModel):
+    first_name: str
+    last_name: str
+
+
+class ProjectLocked(BaseModel):
+    value: bool
+    owner: Optional[Owner]
+
+
+class RunningState(str, Enum):
+    unknown = "UNKNOWN"
+    not_started = "NOT_STARTED"
+    pending = "PENDING"
+    started = "STARTED"
+    retrying = "RETRY"
+    success = "SUCCESS"
+    failure = "FAILURE"
+
+
+class ProjectRunningState(BaseModel):
+    value: RunningState
+
+
+class ProjectState(BaseModel):
+    locked: ProjectLocked
+    state: ProjectRunningState
+
+
 class Project(BaseModel):
     uuid: UUID4 = Field(
         ...,
@@ -211,40 +240,12 @@ class Project(BaseModel):
     dev: Optional[Dict] = Field(
         None, description="object used for development purposes only"
     )
+    state: Optional[ProjectState] = Field(None, description="Project state")
 
     class Config:
         description = "Description of a simcore project"
         title = "simcore project"
         extra = Extra.forbid
-
-
-class Owner(BaseModel):
-    first_name: str
-    last_name: str
-
-
-class ProjectLocked(BaseModel):
-    value: bool
-    owner: Optional[Owner]
-
-
-class RunningState(str, Enum):
-    unknown = "UNKNOWN"
-    not_started = "NOT_STARTED"
-    pending = "PENDING"
-    started = "STARTED"
-    retrying = "RETRY"
-    success = "SUCCESS"
-    failure = "FAILURE"
-
-
-class ProjectRunningState(BaseModel):
-    value: RunningState
-
-
-class ProjectState(BaseModel):
-    locked: ProjectLocked
-    state: ProjectRunningState
 
 
 __all__ = [
@@ -254,3 +255,9 @@ __all__ = [
     "RunningState",
     "Owner",
 ]
+
+
+if __name__ == "__main__":
+
+    with open(current_file.with_suffix(".json"), "wt") as fh:
+        print(Project.schema_json(indent=2), file=fh)
