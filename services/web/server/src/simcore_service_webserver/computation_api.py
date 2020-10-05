@@ -22,7 +22,12 @@ from sqlalchemy import and_
 from models_library.projects import Node, RunningState
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.utils import fire_and_forget_task
-from simcore_postgres_database.models.comp_pipeline import RUNNING, SUCCESS, UNKNOWN
+from simcore_postgres_database.models.comp_pipeline import (
+    RUNNING,
+    SUCCESS,
+    UNKNOWN,
+    PENDING,
+)
 from simcore_postgres_database.webserver_models import (
     comp_pipeline,
     comp_tasks,
@@ -459,9 +464,34 @@ def get_celery(_app: web.Application) -> Celery:
     return celery_app
 
 
+from celery.signals import after_task_publish
+
+
+@after_task_publish.connect
+def task_sent_handler(sender=None, headers=None, body=None, **kwargs):
+    # information about task are located in headers for task messages
+    # using the task protocol version 2.
+    info = headers if "task" in headers else body
+    log.warning("-------------------------- AFTER_TASK_PUBLISH")
+
+
+async def _set_tasks_in_tasks_db_as_pending(db_engine: Engine, project_id: str):
+    query = (
+        comp_tasks.update()
+        .where(and_(comp_tasks.c.project_id == project_id))
+        .values(state=PENDING)
+    )
+    async with db_engine.acquire() as conn:
+        await conn.execute(query)
+
+
 async def start_pipeline_computation(
     app: web.Application, user_id: int, project_id: str
 ) -> Optional[str]:
+
+    db_engine = app[APP_DB_ENGINE_KEY]
+    await _set_tasks_in_tasks_db_as_pending(db_engine, project_id)
+
     # commit the tasks to celery
     task = get_celery(app).send_task(
         "comp.task", kwargs={"user_id": user_id, "project_id": project_id}
@@ -471,6 +501,12 @@ async def start_pipeline_computation(
             "Task for user_id %s, project %s could not be started", user_id, project_id
         )
         return
+
+    def on_celery_message(body):
+        log.warning("----------xxx-----------xxx-------- %s", body)
+
+    async def _monitor_background(task):
+        task.get(on_message=on_celery_message, propagate=False)
 
     async def _monitor_task_results(
         app: web.Application, project_id: str, _: str
@@ -497,6 +533,7 @@ async def start_pipeline_computation(
             # the task got cancelled
             pass
 
+    # fire_and_forget_task(_monitor_background(task))
     fire_and_forget_task(_monitor_task_results(app, project_id, task.task_id))
 
     log.debug(
@@ -530,9 +567,12 @@ async def get_task_states(
         ):
             if row.node_class != NodeClass.COMPUTATIONAL:
                 continue
-            if not row.job_id:
+            if not row.job_id and row.state == UNKNOWN:
                 # the task did not start yet - no sidecar is running it
                 task_states[row.node_id] = RunningState.not_started
+                continue
+            if not row.job_id and row.state == PENDING:
+                task_states[row.node_id] = RunningState.pending
                 continue
             if row.state == SUCCESS:
                 task_states[row.node_id] = RunningState.success
