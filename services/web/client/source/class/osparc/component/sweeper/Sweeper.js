@@ -38,6 +38,7 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
   members: {
     __primaryStudy: null,
     __parametersTable: null,
+    __fileSweepersTable: null,
     __iterationsSection: null,
     __iterationsTable: null,
     __selectedIteration: null,
@@ -59,6 +60,12 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
         flex: 2
       });
 
+      const fileSweepersSection = this.__buildFileSweepersSection();
+      this._add(fileSweepersSection, {
+        flex: 2
+      });
+
+
       const iterationsSection = this.__buildIterationsSection();
       this._add(iterationsSection, {
         flex: 3
@@ -77,6 +84,18 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
         flex: 1
       });
       return parametersSection;
+    },
+
+    __buildFileSweepersSection: function() {
+      const fileSweepersSection = new qx.ui.groupbox.GroupBox(this.tr("File Sweepers")).set({
+        layout: new qx.ui.layout.VBox(5)
+      });
+
+      const fileSweepersTable = this.__fileSweepersTable = new osparc.component.sweeper.FileSweepers(this.__primaryStudy);
+      fileSweepersSection.add(fileSweepersTable, {
+        flex: 1
+      });
+      return fileSweepersSection;
     },
 
     __buildIterationsSection: function() {
