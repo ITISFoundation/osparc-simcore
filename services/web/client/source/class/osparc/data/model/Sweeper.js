@@ -223,7 +223,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
       });
     },
 
-    recreateIterationsFileIterations: function(studyData) {
+    recreateFileIterations: function(studyData) {
       return new Promise((resolve, reject) => {
         // delete previous iterations
         this.removeSecondaryStudies()
