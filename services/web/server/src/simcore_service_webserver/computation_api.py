@@ -545,6 +545,8 @@ async def get_task_states(
 async def get_pipeline_state(app: web.Application, project_id: str) -> RunningState:
     task_states: Dict[str, RunningState] = await get_task_states(app, project_id)
     # compute pipeline state from task states
+    if not task_states:
+        return RunningState.not_started
     if all(x == RunningState.success for x in task_states.values()):
         return RunningState.success
     if any(x == RunningState.failure for x in task_states.values()):
