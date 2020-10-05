@@ -1,3 +1,5 @@
+# pylint: disable=unused-argument
+
 from fastapi import APIRouter, Query, status
 
 from ...models.constants import SERVICE_IMAGE_NAME_RE, VERSION_RE

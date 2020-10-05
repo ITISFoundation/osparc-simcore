@@ -3,13 +3,14 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
-from fastapi import FastAPI
-
 import pytest
-from simcore_service_director_v2.core.settings import AppSettings, RegistrySettings
-from simcore_service_director_v2.core.application import init_app
+from fastapi import FastAPI
 from starlette.testclient import TestClient
 
+from simcore_service_director_v2.core.application import init_app
+from simcore_service_director_v2.core.settings import AppSettings, RegistrySettings
+
+import respx
 
 @pytest.fixture
 def minimal_app(loop, devel_environ) -> FastAPI:
@@ -26,12 +27,10 @@ def minimal_app(loop, devel_environ) -> FastAPI:
         yield app
 
 
-import respx
 
 
 @pytest.fixture
 def mocked_registry_service_api(minimal_app):
-
 
     with respx.mock(
         base_url=minimal_app.state.settings.docker_registry.base_url,
