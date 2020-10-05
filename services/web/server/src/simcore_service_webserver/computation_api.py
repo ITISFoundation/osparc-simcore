@@ -19,12 +19,15 @@ from celery import Celery
 from celery.result import AsyncResult
 from sqlalchemy import and_
 
-from models_library.projects import RunningState
+from models_library.projects import Node, RunningState
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.utils import fire_and_forget_task
 from simcore_postgres_database.models.comp_pipeline import RUNNING, SUCCESS, UNKNOWN
-from simcore_postgres_database.models.comp_tasks import NodeClass
-from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
+from simcore_postgres_database.webserver_models import (
+    comp_pipeline,
+    comp_tasks,
+    NodeClass,
+)
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 
 # TODO: move this to computation_models
@@ -525,6 +528,8 @@ async def get_task_states(
         async for row in conn.execute(
             sa.select([comp_tasks]).where(comp_tasks.c.project_id == project_id)
         ):
+            if row.node_class != NodeClass.COMPUTATIONAL:
+                continue
             if not row.job_id:
                 # the task did not start yet - no sidecar is running it
                 task_states[row.node_id] = RunningState.not_started
@@ -533,7 +538,7 @@ async def get_task_states(
                 task_states[row.node_id] = RunningState.success
                 continue
             if row.state == RUNNING:
-                task_states[row.nod_id] = RunningState.started
+                task_states[row.node_id] = RunningState.started
                 continue
             # the task might be running, better ask celery (NOTE this remains only 24h and disappears and state will be pending)
             task_result = AsyncResult(row.job_id)
