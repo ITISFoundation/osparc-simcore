@@ -108,7 +108,9 @@ qx.Class.define("osparc.component.sweeper.Iterations", {
             const paramValues = secondaryStudy["dev"]["sweeper"]["parameterValues"];
             paramValues.forEach(paramValue => {
               for (const [key, value] of Object.entries(paramValue)) {
-                row[this.__cols[key].col] = value;
+                if (key in this.__cols) {
+                  row[this.__cols[key].col] = value;
+                }
               }
             });
             rows.push(row);
