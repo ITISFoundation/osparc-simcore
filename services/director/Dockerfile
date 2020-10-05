@@ -63,13 +63,16 @@ FROM base as build
 
 ENV SC_BUILD_TARGET=build
 
-RUN apt-get update &&\
-      apt-get install -y --no-install-recommends \
+RUN apt-get update \
+  &&  apt-get install -y --no-install-recommends \
       build-essential \
-      git
+      git \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
-RUN python -m venv ${VIRTUAL_ENV}
+RUN python -m venv "${VIRTUAL_ENV}"
 
 RUN pip --no-cache-dir install --upgrade \
       pip~=20.2.2  \
@@ -111,7 +114,7 @@ RUN pip --no-cache-dir install -r requirements/prod.txt
 FROM base as production
 
 ENV SC_BUILD_TARGET=production \
-      SC_BOOT_MODE=production
+    SC_BOOT_MODE=production
 ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
@@ -146,6 +149,6 @@ FROM build as development
 ENV SC_BUILD_TARGET=development
 ENV NODE_SCHEMA_LOCATION=../../../api/specs/common/schemas/node-meta-v0.0.1.json
 WORKDIR /devel
-RUN chown -R scu:scu ${VIRTUAL_ENV}
+RUN chown -R scu:scu "${VIRTUAL_ENV}"
 ENTRYPOINT [ "/bin/sh", "services/director/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/director/docker/boot.sh"]

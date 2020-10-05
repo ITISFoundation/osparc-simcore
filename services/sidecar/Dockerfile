@@ -60,12 +60,15 @@ FROM base as build
 
 ENV SC_BUILD_TARGET=build
 
-RUN apt-get update &&\
-  apt-get install -y --no-install-recommends \
-  build-essential
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    build-essential \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
-RUN python -m venv ${VIRTUAL_ENV}
+RUN python -m venv "${VIRTUAL_ENV}"
 
 RUN pip --no-cache-dir install --upgrade \
   pip~=20.2.2  \
@@ -138,7 +141,7 @@ FROM build as development
 ENV SC_BUILD_TARGET=development
 
 WORKDIR /devel
-RUN chown -R scu:scu ${VIRTUAL_ENV}
+RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
 # we use the celery API
 HEALTHCHECK --interval=60s \
