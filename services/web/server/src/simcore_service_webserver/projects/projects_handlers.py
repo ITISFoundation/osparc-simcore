@@ -157,6 +157,10 @@ async def list_projects(request: web.Request):
     # validate response
     async def validate_project(prj: Dict) -> Optional[Dict]:
         try:
+            project_state: ProjectState = await get_project_state_for_user(
+                user_id, project_uuid=prj["uuid"], app=request.app
+            )
+            prj["state"] = project_state.dict()
             projects_api.validate_project(request.app, prj)
             if await project_uses_available_services(prj, user_available_services):
                 return prj
@@ -172,13 +176,6 @@ async def list_projects(request: web.Request):
     # FIXME: if some invalid, then it should not reraise but instead
     results = await logged_gather(*validation_tasks, reraise=True)
     validated_projects = [r for r in results if r]
-
-    # Add state in each project for this user
-    for project in validated_projects:
-        project_state: ProjectState = await get_project_state_for_user(
-            user_id, project_uuid=project["uuid"], app=request.app
-        )
-        project["state"] = project_state.dict()
 
     return {"data": validated_projects}
 
