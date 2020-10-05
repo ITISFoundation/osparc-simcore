@@ -23,6 +23,19 @@ qx.Class.define("osparc.data.StudyParametrizer", {
   type: "static",
 
   statics: {
+    getActiveParameters: function(studyData, parameters) {
+      const activeParams = [...parameters];
+
+      const variableIds = osparc.utils.Study.mustache.getVariables(studyData);
+      for (let i=activeParams.length-1; i>=0; i--) {
+        if (!variableIds.includes(activeParams[i].id)) {
+          activeParams.splice(i, 1);
+        }
+      }
+
+      return activeParams;
+    },
+
     /**
      * Calculate the steps for the given parameter specs.
      * In: {low: 0, high: 3, nSteps: 4}
@@ -67,19 +80,6 @@ qx.Class.define("osparc.data.StudyParametrizer", {
         helper([], 0);
       }
       return r;
-    },
-
-    getActiveParameters: function(studyData, parameters) {
-      const activeParams = [...parameters];
-
-      const variableIds = osparc.utils.Study.mustache.getVariables(studyData);
-      for (let i=activeParams.length-1; i>=0; i--) {
-        if (!variableIds.includes(activeParams[i].id)) {
-          activeParams.splice(i, 1);
-        }
-      }
-
-      return activeParams;
     },
 
     recreateIterations: function(primaryStudyData, parameters, combinations) {
