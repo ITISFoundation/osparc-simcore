@@ -8,11 +8,11 @@ from .image_meta import ImageMetaData
 
 
 class ServiceType(str, Enum):
-    computational = "computational"
-    interactive = "interactive"
+    COMPUTATIONAL = "computational"
+    INTERACTIVE = "interactive"
 
 
-class NodeRequirement(Enum):
+class NodeRequirement(str, Enum):
     CPU = "CPU"
     GPU = "GPU"
 
@@ -33,12 +33,12 @@ class ServiceExtrasEnveloped(BaseModel):
 
 
 class ServiceState(str, Enum):
-    pending = "pending"
-    pulling = "pulling"
-    starting = "starting"
-    running = "running"
-    complete = "complete"
-    failed = "failed"
+    PENDING = "pending"
+    PULLING = "pulling"
+    STARTING = "starting"
+    RUNNING = "running"
+    COMPLETE = "complete"
+    FAILED = "failed"
 
 
 class RunningServiceType(BaseModel):
@@ -83,5 +83,5 @@ class RunningServicesEnveloped(BaseModel):
     data: RunningServicesArray
 
 
-class ServicesEnveloped(BaseModel):
-    __root__: List[ImageMetaData]
+class ServicesArrayEnveloped(BaseModel):
+    data: List[ImageMetaData]

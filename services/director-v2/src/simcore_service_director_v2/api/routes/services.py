@@ -1,12 +1,14 @@
+# pylint: disable=unused-argument
+
 from typing import Optional
 
-from fastapi import APIRouter, Path
+from fastapi import APIRouter, Path, Query
 
 from ...models.schemas.services import (
     SERVICE_IMAGE_NAME_RE,
     VERSION_RE,
     ServiceExtrasEnveloped,
-    ServicesEnveloped,
+    ServicesArrayEnveloped,
     ServiceType,
 )
 
@@ -16,9 +18,19 @@ router = APIRouter()
 @router.get(
     "",
     description="Lists services available in the deployed registry",
-    response_model=ServicesEnveloped,
+    response_model=ServicesArrayEnveloped,
 )
-async def list_services(service_type: Optional[ServiceType]):
+async def list_services(
+    service_type: Optional[ServiceType] = Query(
+        None,
+        description=(
+            "The service type:\n"
+            "   - computational - a computational service\n"
+            "   - interactive - an interactive service\n"
+        ),
+    )
+):
+    # TODO: why service_type is optional??
     print(service_type)
 
 
@@ -35,7 +47,7 @@ ServiceKeyVersionPath = Path(
 @router.get(
     "/{service_key}/{service_version}",
     description="Returns details of the selected service if available in the platform",
-    response_model=ServicesEnveloped,
+    response_model=ServicesArrayEnveloped,
 )
 async def get_service_versioned(
     service_key: str = ServiceKeyPath, service_version: str = ServiceKeyVersionPath
