@@ -1,0 +1,5 @@
+#
+# Specifies third-party dependencies for 'models-library'
+#
+
+pydantic[email]

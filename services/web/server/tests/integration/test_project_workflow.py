@@ -18,9 +18,11 @@ import pytest
 import sqlalchemy as sa
 from aiohttp import web
 
+from models_library.projects import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import delete_all_projects
+from pytest_simcore.simcore_services import simcore_services
 from servicelib.application import create_safe_application
 from simcore_service_webserver import catalog
 from simcore_service_webserver.catalog import setup_catalog
@@ -29,7 +31,6 @@ from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.projects.projects_fakes import Fake
-from simcore_service_webserver.projects.projects_models import ProjectState
 from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
