@@ -39,7 +39,7 @@ pytest-instafail==0.4.2   # via -r requirements/_test.in
 pytest-mock==3.3.1        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.4       # via -r requirements/_test.in
-pytest==6.1.0             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-icdiff, pytest-instafail, pytest-mock, pytest-sugar
+pytest==6.1.1             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-icdiff, pytest-instafail, pytest-mock, pytest-sugar
 requests==2.24.0          # via coveralls
 six==1.15.0               # via astroid, packaging
 termcolor==1.1.0          # via pytest-sugar
