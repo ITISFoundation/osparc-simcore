@@ -40,7 +40,7 @@ idna==2.10                # via -r requirements/_base.txt, idna-ssl, requests, y
 importlib-metadata==1.7.0  # via -r requirements/_base.txt, jsonschema, pluggy, pytest
 iniconfig==1.0.1          # via pytest
 isodate==0.6.0            # via -r requirements/_base.txt, openapi-core
-isort==5.4.2              # via pylint
+isort==5.5.4              # via pylint
 jmespath==0.10.0          # via -r requirements/_base.txt, boto3, botocore
 jsonschema==3.2.0         # via -r requirements/_base.txt, docker-compose, openapi-spec-validator
 lazy-object-proxy==1.4.3  # via -r requirements/_base.txt, astroid, openapi-core

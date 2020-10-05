@@ -32,7 +32,7 @@ docker-compose==1.27.4    # via pytest-docker
 docker[ssh]==4.3.1        # via -r requirements/_test.in, docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
-email-validator==1.1.1    # via -r requirements/_base.txt, fastapi
+email-validator==1.1.1    # via -r requirements/_base.txt, fastapi, pydantic
 faker==4.4.0              # via -r requirements/_test.in
 fastapi[all]==0.61.1      # via -r requirements/_base.txt
 graphene==2.1.8           # via -r requirements/_base.txt, fastapi
@@ -47,7 +47,7 @@ idna==2.10                # via -r requirements/_base.txt, email-validator, idna
 immutables==0.14          # via -r requirements/_base.txt, contextvars
 importlib-metadata==1.7.0  # via jsonschema, pluggy, pytest
 iniconfig==1.0.1          # via pytest
-isort==5.5.2              # via pylint
+isort==5.5.4              # via pylint
 itsdangerous==1.1.0       # via -r requirements/_base.txt, fastapi
 jinja2==2.11.2            # via -r requirements/_base.txt, fastapi
 jsonschema==3.2.0         # via -r requirements/_test.in, docker-compose
