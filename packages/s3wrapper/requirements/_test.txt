@@ -40,7 +40,7 @@ pyrsistent==0.17.3        # via jsonschema
 pytest-cov==2.10.1        # via -r requirements/_test.in
 pytest-docker==0.10.1     # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
-pytest==6.1.0             # via -r requirements/_test.in, pytest-cov, pytest-docker
+pytest==6.1.1             # via -r requirements/_test.in, pytest-cov, pytest-docker
 python-dateutil==2.8.1    # via -r requirements/_base.txt, minio
 python-dotenv==0.14.0     # via docker-compose
 pytz==2020.1              # via -r requirements/_base.txt, minio

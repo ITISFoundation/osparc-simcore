@@ -51,7 +51,7 @@ pytest-cov==2.10.1        # via -r requirements/_test.in
 pytest-docker==0.10.1     # via -r requirements/_test.in
 pytest-instafail==0.4.2   # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
-pytest==6.1.0             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-instafail
+pytest==6.1.1             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-instafail
 python-dateutil==2.8.1    # via -r requirements/_migration.txt, alembic, faker
 python-dotenv==0.14.0     # via docker-compose
 python-editor==1.0.4      # via -r requirements/_migration.txt, alembic
