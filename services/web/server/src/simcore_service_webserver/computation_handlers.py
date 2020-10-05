@@ -58,7 +58,9 @@ async def start_pipeline(request: web.Request) -> web.Response:
             RunningState.started,
             RunningState.retrying,
         ]:
-            raise web.HTTPForbidden(reason=f"Projet {project_id} already started")
+            raise web.HTTPForbidden(
+                reason=f"Projet {project_id} already started, state {pipeline_state}"
+            )
 
         await update_pipeline_db(request.app, project_id, project["workbench"])
 
