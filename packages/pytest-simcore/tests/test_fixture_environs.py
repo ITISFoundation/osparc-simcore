@@ -16,7 +16,7 @@ def test_root_dir_with_installed_plugin(testdir):
     testdir.makepyfile(
         f"""
         from pathlib import Path
-        pytest_plugins = ["pytest_simcore.environs"]
+        pytest_plugins = ["pytest_simcore.repository_paths"]
 
         def test_sth(osparc_simcore_root_dir):
             assert osparc_simcore_root_dir == Path('{repo_base_dir}')

@@ -12,7 +12,7 @@ import pytest
 import simcore_service_catalog
 
 pytest_plugins = [
-    "pytest_simcore.environs",
+    "pytest_simcore.repository_paths",
     "pytest_simcore.service_environs",
     "pytest_simcore.schemas",
     "pytest_simcore.docker_registry",

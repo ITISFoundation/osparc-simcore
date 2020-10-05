@@ -2,7 +2,11 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-name-in-module
 
-from simcore_service_webserver.settings import setup_settings, APP_SETTINGS_KEY, ApplicationSettings
+from simcore_service_webserver.settings import (
+    setup_settings,
+    APP_SETTINGS_KEY,
+    ApplicationSettings,
+)
 import pytest
 import json
 
@@ -32,16 +36,14 @@ def test_settings_constructs(settings: ApplicationSettings):
     assert "app_name" in settings.public_dict()
     assert "api_version" in settings.public_dict()
 
-    assert settings.manual_main_url.host == "some_doc.org"
-    assert settings.manual_main_url.tld == "org"
-
 
 def test_settings_to_client_statics(settings: ApplicationSettings):
     statics = settings.to_client_statics()
 
     # all key in camelcase
     assert all(
-        key[0] == key[0].lower() and "_" not in key and key.lower() != key for key in statics.keys()
+        key[0] == key[0].lower() and "_" not in key and key.lower() != key
+        for key in statics.keys()
     ), f"Got {list(statics.keys())}"
 
     # special alias

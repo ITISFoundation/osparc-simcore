@@ -28,14 +28,25 @@ qx.Class.define("osparc.utils.issue.Fogbugz", {
   type: "static",
 
   statics: {
-    getNewIssueUrl: function(originUrl, prjId) {
-      const body = osparc.utils.issue.Base.getBody();
+    getNewIssueUrl: function(staticsData) {
+      const product = qx.core.Environment.get("product.name");
 
-      let url = originUrl + "/f/cases/new";
-      url += "?command=new";
-      url += "&ixProject=" + prjId;
-      url += "&sEvent=" + body;
-      return url;
+      let urlHead = staticsData.fogbugzNewcaseUrl;
+      switch (product) {
+        case "s4l":
+          urlHead = staticsData.s4lFogbugzNewcaseUrl;
+          break;
+        case "tis":
+          urlHead = staticsData.tisFogbugzNewcaseUrl;
+          break;
+      }
+
+      if (urlHead) {
+        const body = osparc.utils.issue.Base.getBody();
+        const url = urlHead + "&sEvent=" + body;
+        return url;
+      }
+      return undefined;
     }
   }
 });

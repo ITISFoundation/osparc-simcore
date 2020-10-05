@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_base.txt requirements/_base.in
 #
-aio-pika==6.7.0           # via -r requirements/_base.in
+aio-pika==6.7.1           # via -r requirements/_base.in
 aiodocker==0.19.1         # via -r requirements/_base.in
 aiofile==3.1.0            # via -r requirements/_base.in
 aiofiles==0.5.0           # via -r requirements/_base.in

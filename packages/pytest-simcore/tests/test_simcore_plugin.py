@@ -6,7 +6,7 @@ def test_using_pytest_simcore_fixture(testdir):
 
     # create a temporary pytest test module
     testdir.makepyfile("""
-        pytest_plugins = ["pytest_simcore.environs"]
+        pytest_plugins = ["pytest_simcore.repository_paths"]
 
         def test_sth(request):
             assert request.config.getoption("--keep-docker-up") == True
