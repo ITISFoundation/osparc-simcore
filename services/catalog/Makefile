@@ -19,35 +19,35 @@ requirements reqs: ## (or reqs) compiles pip requirements (.in -> .txt)
 	cp .env-devel $@
 
 
-.PHONY: run-devel up-adjacent down-adjacent
+.PHONY: run-devel up-extra down down-extra
 
-up-adjacent: .env down-adjacent ## creates and starts adjacent services and migrates postgres database
+up-extra: .env down-extra ## creates and starts adjacent services and migrates postgres database
 	# starting all adjacent services
-	docker-compose -f docker-compose-adjacent.yml up --detach
+	docker-compose -f docker-compose-extra.yml up --detach
 	# discovering postgres services
 	@export $(shell grep -v '^#' .env | xargs) && sc-pg discover
 	@sc-pg info
 	# upgrading postgres database to HEAD version
 	@sc-pg upgrade
 
-down-adjacent: docker-compose-adjacent.yml ## stops pg fixture
+down down-extra: docker-compose-extra.yml ## stops pg fixture
 	# cleanup discover cache
 	-@sc-pg clean
 	# stopping extra services
-	-@docker-compose -f docker-compose-adjacent.yml down
+	-@docker-compose -f docker-compose-extra.yml down
 
 
-run-devel run-prod: .env up-adjacent ## runs app with services defined in docker-compose.yml
-	# starting catalog app (under $<) with adjacent services
-	@$(if $(findstring -devel,$@),\
-		echo "development mode (with reload upon change)";\
-		uvicorn simcore_service_catalog.__main__:the_app \
-			--reload --reload-dir $(SRC_DIR) \
-			--port=8000 --host=0.0.0.0;\
-		,\
-		echo "production mode"; \
-		simcore-service-catalog; \
-	)
+
+run-devel: .env up-extra  ## starts app with extra stack
+	# start app (within $<) in devel mode
+	uvicorn $(APP_PACKAGE_NAME).__main__:the_app \
+		--reload --reload-dir $(SRC_DIR) \
+		--port=8000 --host=0.0.0.0
+
+run-prod: .env up-extra
+	# start app (within $<) in prod mode
+	$(APP_CLI_NAME)
+
 
 
 # BUILD #####################
