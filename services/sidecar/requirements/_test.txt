@@ -44,7 +44,6 @@ kombu==4.6.11             # via -r requirements/_base.txt, celery
 lazy-object-proxy==1.4.3  # via -r requirements/_packages.txt, astroid, openapi-core
 mccabe==0.6.1             # via pylint
 minio==6.0.0              # via -r requirements/_packages.txt
-more-itertools==8.5.0     # via pytest
 multidict==4.7.6          # via -r requirements/_base.txt, -r requirements/_packages.txt, aiohttp, yarl
 networkx==2.5             # via -r requirements/_base.txt
 openapi-core==0.12.0      # via -r requirements/_packages.txt
@@ -66,7 +65,7 @@ pytest-instafail==0.4.2   # via -r requirements/_test.in
 pytest-lazy-fixture==0.6.3  # via -r requirements/_test.in
 pytest-mock==3.3.1        # via -r requirements/_test.in
 pytest-sugar==0.9.4       # via -r requirements/_test.in
-pytest==6.0.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-lazy-fixture, pytest-mock, pytest-sugar
+pytest==6.1.1             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-lazy-fixture, pytest-mock, pytest-sugar
 python-dateutil==2.8.1    # via -r requirements/_packages.txt, minio
 python-dotenv==0.14.0     # via -r requirements/_test.in
 pytz==2020.1              # via -r requirements/_base.txt, -r requirements/_packages.txt, celery, minio
