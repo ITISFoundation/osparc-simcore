@@ -102,8 +102,7 @@ services:
     deploy:
       placement:
         constraints:
-          - node.platform.os == linux
-          - node.role == manager
+          - node.platform.os == linux          
       labels:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
         # gzip compression
