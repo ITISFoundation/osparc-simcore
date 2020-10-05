@@ -169,7 +169,7 @@ qx.Class.define("osparc.file.FilePicker", {
         const outFile = this.__getOutputFile();
         this.__filesTree.loadFilePath(outFile.value);
       } else if (this.__areOutputFilesSelected()) {
-        const outFiles = this.__getOutputFiles();
+        const outFiles = this.getOutputFiles();
         this.__filesTree.loadFilePaths(outFiles.value);
       } else {
         this.__initResources();
@@ -220,10 +220,10 @@ qx.Class.define("osparc.file.FilePicker", {
           if (selectedEntry["isFile"]) {
             const selectedItem = selectedEntry["selectedItem"];
             this.__appendOutputFile(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
-            this.getNode().repopulateOutputPortData();
-            this.fireEvent("finished");
           }
         });
+        this.getNode().repopulateOutputPortData();
+        this.fireEvent("finished");
       }
     },
 
@@ -232,7 +232,7 @@ qx.Class.define("osparc.file.FilePicker", {
       return outputs["outFile"];
     },
 
-    __getOutputFiles: function() {
+    getOutputFiles: function() {
       const outputs = this.getNode().getOutputs();
       return outputs["outFiles"];
     },
@@ -251,14 +251,14 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __resetOutputFiles: function() {
-      const outputs = this.__getOutputFiles();
+      const outputs = this.getOutputFiles();
       outputs["value"] = [];
       this.getNode().getStatus().setProgress(0);
     },
 
     __appendOutputFile: function(store, dataset, path, label) {
       if (store !== undefined && path) {
-        const outputs = this.__getOutputFiles();
+        const outputs = this.getOutputFiles();
         outputs["value"].push({
           store,
           dataset,
@@ -278,7 +278,7 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __areOutputFilesSelected: function() {
-      const outFile = this.__getOutputFiles();
+      const outFile = this.getOutputFiles();
       if (outFile && "value" in outFile && Array.isArray(outFile.value) && outFile.value.length && "path" in outFile.value[0]) {
         return true;
       }
@@ -292,7 +292,7 @@ qx.Class.define("osparc.file.FilePicker", {
         this.__filesTree.fireEvent("selectionChanged");
       } else if (this.__areOutputFilesSelected()) {
         this.__filesTree.resetSelection();
-        const outFiles = this.__getOutputFiles();
+        const outFiles = this.getOutputFiles();
         outFiles.value.forEach(outFile => {
           this.__filesTree.addSelectedFile(outFile.path);
         });
