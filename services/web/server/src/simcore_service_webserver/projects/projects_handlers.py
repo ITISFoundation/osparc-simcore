@@ -160,7 +160,7 @@ async def list_projects(request: web.Request):
             project_state: ProjectState = await get_project_state_for_user(
                 user_id, project_uuid=prj["uuid"], app=request.app
             )
-            prj["state"] = project_state.dict()
+            prj["state"] = project_state.dict(by_alias=True, exclude_unset=True)
             projects_api.validate_project(request.app, prj)
             if await project_uses_available_services(prj, user_available_services):
                 return prj

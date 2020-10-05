@@ -377,6 +377,32 @@ async def notify_project_state_update(
         await post_group_messages(app, room, messages)
 
 
+async def _get_project_lock_state(
+    user_id: int, project_uuid: str, app: web.Application
+) -> ProjectLocked:
+    with managed_resource(user_id, None, app) as rt:
+        # checks who is using it
+        users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
+        usernames = [await get_user_name(app, uid) for uid in set(users_of_project)]
+        assert len(usernames) <= 1  # currently not possible to have more than 1
+
+        # based on usage, sets an state
+        is_locked: bool = len(usernames) > 0
+        if is_locked:
+            return ProjectLocked(
+                value=is_locked,
+                owner=Owner(**usernames[0]),
+            )
+        return ProjectLocked(value=is_locked)
+
+
+async def _get_project_running_state(
+    project_uuid: str, app: web.Application
+) -> ProjectRunningState:
+    pipeline_state = await get_pipeline_state(app, project_uuid)
+    return ProjectRunningState(value=pipeline_state)
+
+
 async def get_project_state_for_user(user_id, project_uuid, app) -> ProjectState:
     """
     Returns state of a project with respect to a given user
@@ -388,21 +414,9 @@ async def get_project_state_for_user(user_id, project_uuid, app) -> ProjectState
     NOTE: This adds a dependency to the socket registry sub-module. Many tests
         might require a mock for this function to work properly
     """
-    with managed_resource(user_id, None, app) as rt:
-        # checks who is using it
-        users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
-        usernames = [await get_user_name(app, uid) for uid in set(users_of_project)]
-        assert len(usernames) <= 1  # currently not possible to have more than 1
-
-        # based on usage, sets an state
-        is_locked: bool = len(usernames) > 0
-        project_state = ProjectState(
-            locked=ProjectLocked(
-                value=is_locked,
-                owner=Owner(**usernames[0]) if is_locked else None,
-            ),
-            state=ProjectRunningState(
-                value=await get_pipeline_state(app, project_uuid)
-            ),
-        )
-        return project_state
+    lock_state = await _get_project_lock_state(user_id, project_uuid, app)
+    running_state = await _get_project_running_state(project_uuid, app)
+    return ProjectState(
+        locked=lock_state,
+        state=running_state,
+    )
