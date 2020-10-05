@@ -30,7 +30,7 @@ def test_min_environ_for_app_settings(fake_environs):
 
     pprint(app_settings.dict())
 
-    assert app_settings.boot_mode == BootModeEnum.production
+    assert app_settings.boot_mode == BootModeEnum.PRODUCTION
     assert app_settings.loglevel == logging.DEBUG
     assert app_settings.extra_hosts_suffix == "foo"
 

@@ -15,7 +15,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
 
         # setup connection to remote debugger (if applies)
         setup_remote_debugging(
-            force_enabled=app.state.settings.boot_mode == BootModeEnum.debug
+            force_enabled=app.state.settings.boot_mode == BootModeEnum.DEBUG
         )
 
     return start_app

@@ -23,9 +23,9 @@ ORG_LABELS_TO_SCHEMA_LABELS = {
 
 
 class BootModeEnum(str, Enum):
-    debug = "debug-ptvsd"
-    production = "production"
-    development = "development"
+    DEBUG = "debug-ptvsd"
+    PRODUCTION = "production"
+    DEVELOPMENT = "development"
 
 
 class _CommonConfig:
@@ -39,6 +39,7 @@ class RegistrySettings(BaseSettings):
     pw: str = ""
     url: str = ""
     ssl: bool = True
+    enabled: bool = True
 
     class Config(_CommonConfig):
         env_prefix = "REGISTRY_"
@@ -53,6 +54,8 @@ class PostgresSettings(BaseSettings):
 
     minsize: int = 10
     maxsize: int = 10
+
+    enabled: bool = True
 
     @property
     def dsn(self) -> URL:
@@ -69,7 +72,7 @@ class PostgresSettings(BaseSettings):
         env_prefix = "POSTGRES_"
 
 
-class TracingSetttings(BaseSettings):
+class TracingSettings(BaseSettings):
     enabled: bool = True
     zipkin_endpoint: str = "http://jaeger:9411"
 
@@ -84,7 +87,7 @@ class AppSettings(BaseSettings):
         return cls(
             registry=RegistrySettings(),
             postgres=PostgresSettings(),
-            tracing=TracingSetttings(),
+            tracing=TracingSettings(),
         )
 
     # pylint: disable=no-self-use
@@ -159,7 +162,7 @@ class AppSettings(BaseSettings):
     monitoring_enabled: str = Field(False, env="MONITORING_ENABLED")
 
     # tracing
-    tracing: TracingSetttings
+    tracing: TracingSettings
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
     host: str = "0.0.0.0"  # nosec
