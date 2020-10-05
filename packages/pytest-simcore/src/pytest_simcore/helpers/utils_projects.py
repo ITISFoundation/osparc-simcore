@@ -1,8 +1,5 @@
 """ helpers to manage the projects's database and produce fixtures/mockup data for testing
 
-
-SEE services/web/server/src/simcore_service_webserver/projects/projects_models.py
-
 """
 # pylint: disable=no-value-for-parameter
 
