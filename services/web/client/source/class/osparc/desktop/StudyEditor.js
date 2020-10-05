@@ -140,7 +140,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const validNodeIds = [];
       const allNodes = this.getStudy().getWorkbench().getNodes(true);
       Object.values(allNodes).forEach(node => {
-        if (!node.isFilePicker() && !node.isFileSweeper()) {
+        if (!node.isFilePicker()) {
           validNodeIds.push(node.getNodeId());
         }
       });
