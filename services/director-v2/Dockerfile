@@ -12,25 +12,25 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 LABEL maintainer=pcrespov
 
 RUN set -eux; \
-      apt-get update; \
-      apt-get install -y gosu; \
-      rm -rf /var/lib/apt/lists/*; \
-      # verify that the binary works
-      gosu nobody true
+  apt-get update; \
+  apt-get install -y --no-install-recommends gosu; \
+  rm -rf /var/lib/apt/lists/*; \
+  # verify that the binary works
+  gosu nobody true
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
-      SC_USER_NAME=scu \
-      SC_BUILD_TARGET=base \
-      SC_BOOT_MODE=default
+  SC_USER_NAME=scu \
+  SC_BUILD_TARGET=base \
+  SC_BOOT_MODE=default
 
 RUN adduser \
-      --uid ${SC_USER_ID} \
-      --disabled-password \
-      --gecos "" \
-      --shell /bin/sh \
-      --home /home/${SC_USER_NAME} \
-      ${SC_USER_NAME}
+  --uid ${SC_USER_ID} \
+  --disabled-password \
+  --gecos "" \
+  --shell /bin/sh \
+  --home /home/${SC_USER_NAME} \
+  ${SC_USER_NAME}
 
 
 # Sets utf-8 encoding for Python et al
@@ -38,7 +38,7 @@ ENV LANG=C.UTF-8
 
 # Turns off writing .pyc files; superfluous on an ephemeral container.
 ENV PYTHONDONTWRITEBYTECODE=1 \
-      VIRTUAL_ENV=/home/scu/.venv
+  VIRTUAL_ENV=/home/scu/.venv
 
 # Ensures that the python and pip executables used in the image will be
 # those from our virtualenv.
@@ -56,18 +56,21 @@ FROM base as build
 
 ENV SC_BUILD_TARGET=build
 
-RUN apt-get update &&\
-      apt-get install -y --no-install-recommends \
-      build-essential
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    build-essential \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
-RUN python -m venv ${VIRTUAL_ENV}
+RUN python -m venv "${VIRTUAL_ENV}"
 
 RUN pip install --upgrade --no-cache-dir \
-      pip~=20.1.2  \
-      wheel \
-      setuptools
+  pip~=20.1.2  \
+  wheel \
+  setuptools
 
 WORKDIR /build
 
@@ -92,8 +95,8 @@ COPY --chown=scu:scu services/director-v2 /build/services/director-v2
 
 WORKDIR /build/services/director-v2
 
-RUN pip3 --no-cache-dir install -r requirements/prod.txt &&\
-      pip3 --no-cache-dir list -v
+RUN pip3 --no-cache-dir install -r requirements/prod.txt \
+  && pip3 --no-cache-dir list -v
 
 
 # --------------------------Production stage -------------------
@@ -106,7 +109,7 @@ RUN pip3 --no-cache-dir install -r requirements/prod.txt &&\
 FROM base as production
 
 ENV SC_BUILD_TARGET=production \
-      SC_BOOT_MODE=production
+  SC_BOOT_MODE=production
 
 ENV PYTHONOPTIMIZE=TRUE
 
@@ -121,10 +124,10 @@ RUN chmod +x services/director-v2/docker/*.sh
 
 
 HEALTHCHECK --interval=30s \
-      --timeout=20s \
-      --start-period=30s \
-      --retries=3 \
-      CMD ["python3", "services/director-v2/docker/healthcheck.py", "http://localhost:8000/"]
+  --timeout=20s \
+  --start-period=30s \
+  --retries=3 \
+  CMD ["python3", "services/director-v2/docker/healthcheck.py", "http://localhost:8000/"]
 
 ENTRYPOINT [ "/bin/sh", "services/director-v2/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/director-v2/docker/boot.sh"]
@@ -141,11 +144,11 @@ CMD ["/bin/sh", "services/director-v2/docker/boot.sh"]
 FROM build as development
 
 ENV SC_BUILD_TARGET=development \
-      SC_DEVEL_MOUNT=/devel/services/director-v2
+  SC_DEVEL_MOUNT=/devel/services/director-v2
 
 WORKDIR /devel
 
-RUN chown -R scu:scu ${VIRTUAL_ENV}
+RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
 ENTRYPOINT ["/bin/sh", "services/director-v2/docker/entrypoint.sh"]
 CMD ["/bin/sh", "services/director-v2/docker/boot.sh"]
