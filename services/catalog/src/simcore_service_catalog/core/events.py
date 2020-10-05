@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Callable
 
@@ -18,7 +19,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
 
         # setup connection to remote debugger (if applies)
         setup_remote_debugging(
-            force_enabled=app.state.settings.boot_mode == BootModeEnum.debug
+            force_enabled=app.state.settings.boot_mode == BootModeEnum.DEBUG
         )
 
         # setup connection to pg db
@@ -39,14 +40,18 @@ def create_start_app_handler(app: FastAPI) -> Callable:
 
 def create_stop_app_handler(app: FastAPI) -> Callable:
     async def stop_app() -> None:
-        try:
-            logger.info("Application stopping")
-            if app.state.settings.postgres.enabled:
-                await close_db_connection(app)
-            if app.state.settings.director.enabled:
-                await stop_registry_sync_task(app)
-                await close_director(app)
-        except Exception:  # pylint: disable=broad-except
-            logger.exception("Stopping application")
+        logger.info("Application stopping")
+        close_tasks = []
+        if app.state.settings.postgres.enabled:
+            close_tasks.append(close_db_connection(app))
+        if app.state.settings.director.enabled:
+            close_tasks.append(stop_registry_sync_task(app))
+            close_tasks.append(close_director(app))
+
+        if close_tasks:
+            results = await asyncio.gather(*close_tasks, return_exceptions=True)
+            for res in results:
+                if isinstance(res, Exception):
+                    logger.error("Failure while closing: %s", res)
 
     return stop_app

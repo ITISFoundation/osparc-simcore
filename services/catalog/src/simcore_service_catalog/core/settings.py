@@ -8,9 +8,9 @@ from yarl import URL
 
 
 class BootModeEnum(str, Enum):
-    debug = "debug-ptvsd"
-    production = "production"
-    development = "development"
+    DEBUG = "debug-ptvsd"
+    PRODUCTION = "production"
+    DEVELOPMENT = "development"
 
 
 class _CommonConfig:
@@ -45,7 +45,7 @@ class PostgresSettings(BaseSettings):
     port: int = 5432
 
     minsize: int = 10
-    maxsize: int = 10
+    maxsize: int = 30
 
     @property
     def dsn(self) -> URL:

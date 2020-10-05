@@ -1,13 +1,14 @@
 import logging
-from typing import Optional
+import time
+from typing import Callable, Optional
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 
 from ..__version__ import api_version, api_vtag
 from ..api.root import router as api_router
 from ..api.routes.health import router as health_router
 from .events import create_start_app_handler, create_stop_app_handler
-from .settings import AppSettings
+from .settings import AppSettings, BootModeEnum
 
 # from fastapi.exceptions import RequestValidationError
 # from starlette.exceptions import HTTPException
@@ -33,11 +34,11 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         description="Manages and maintains a **catalog** of all published components (e.g. macro-algorithms, scripts, etc)",
         version=api_version,
         openapi_url=f"/api/{api_vtag}/openapi.json",
-        docs_url="/api/docs",
+        docs_url="/dev/doc",
         redoc_url=None,  # default disabled
     )
 
-    logger.debug(settings)
+    logger.debug("App settings:%s", settings.json(indent=2))
     app.state.settings = settings
 
     app.add_event_handler("startup", create_start_app_handler(app))
@@ -53,5 +54,16 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     # api under /v*
     app.include_router(api_router, prefix=f"/{api_vtag}")
+
+    # middleware to time requests (ONLY for development)
+    if settings.boot_mode != BootModeEnum.PRODUCTION:
+
+        @app.middleware("http")
+        async def _add_process_time_header(request: Request, call_next: Callable):
+            start_time = time.time()
+            response = await call_next(request)
+            process_time = time.time() - start_time
+            response.headers["X-Process-Time"] = str(process_time)
+            return response
 
     return app
