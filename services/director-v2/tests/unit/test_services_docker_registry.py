@@ -4,20 +4,26 @@
 # pylint:disable=protected-access
 
 import pytest
+import respx
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from simcore_service_director_v2.core.application import init_app
-from simcore_service_director_v2.core.settings import AppSettings, RegistrySettings
+from simcore_service_director_v2.core.settings import (
+    AppSettings,
+    PostgresSettings,
+    RegistrySettings,
+    TracingSettings,
+)
 
-import respx
 
 @pytest.fixture
-def minimal_app(loop, devel_environ) -> FastAPI:
+def minimal_app(loop, env_evel_environ) -> FastAPI:
 
-    # avoid init of pg or director API clients
     settings = AppSettings(
         registry=RegistrySettings(enabled=False),
+        postgres=PostgresSettings(enabled=False),
+        tracing=TracingSettings(enabled=False),
     )
     app = init_app(settings)
 
@@ -27,13 +33,11 @@ def minimal_app(loop, devel_environ) -> FastAPI:
         yield app
 
 
-
-
 @pytest.fixture
 def mocked_registry_service_api(minimal_app):
 
     with respx.mock(
-        base_url=minimal_app.state.settings.docker_registry.base_url,
+        base_url=minimal_app.state.settings.registry.url,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
