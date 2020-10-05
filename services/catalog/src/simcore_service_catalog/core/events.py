@@ -1,5 +1,5 @@
-import asyncio
 import logging
+from contextlib import suppress
 from typing import Callable
 
 from fastapi import FastAPI
@@ -41,17 +41,16 @@ def create_start_app_handler(app: FastAPI) -> Callable:
 def create_stop_app_handler(app: FastAPI) -> Callable:
     async def stop_app() -> None:
         logger.info("Application stopping")
-        close_tasks = []
-        if app.state.settings.postgres.enabled:
-            close_tasks.append(close_db_connection(app))
-        if app.state.settings.director.enabled:
-            close_tasks.append(stop_registry_sync_task(app))
-            close_tasks.append(close_director(app))
 
-        if close_tasks:
-            results = await asyncio.gather(*close_tasks, return_exceptions=True)
-            for res in results:
-                if isinstance(res, Exception):
-                    logger.error("Failure while closing: %s", res)
+        if app.state.settings.director.enabled:
+            with suppress(Exception):
+                await stop_registry_sync_task(app)
+
+            with suppress(Exception):
+                await close_director(app)
+
+        if app.state.settings.postgres.enabled:
+            with suppress(Exception):
+                await close_db_connection(app)
 
     return stop_app
