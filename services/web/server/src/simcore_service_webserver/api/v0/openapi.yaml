@@ -5500,106 +5500,6 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
-  '/computation/pipeline/{project_id}':
-    put:
-      description: Update a pipeline using workbench section from given project
-      tags:
-        - service
-      operationId: update_pipeline
-      parameters:
-        - in: path
-          name: project_id
-          required: true
-          description: the uuid of the project
-          schema:
-            type: string
-            example: 123e4567-e89b-12d3-a456-426655440000
-      responses:
-        '204':
-          description: Succesfully updated the pipeline
-        default:
-          description: Default http error response body
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    nullable: true
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
   '/computation/pipeline/{project_id}/start':
     post:
       description: Starts a pipeline of a given project
@@ -6013,6 +5913,48 @@ paths:
                             dev:
                               type: object
                               description: object used for development purposes only
+                            state:
+                              type: object
+                              properties:
+                                locked:
+                                  type: object
+                                  properties:
+                                    value:
+                                      title: Value
+                                      type: boolean
+                                    owner:
+                                      type: object
+                                      properties:
+                                        first_name:
+                                          title: First Name
+                                          type: string
+                                        last_name:
+                                          title: Last Name
+                                          type: string
+                                      required:
+                                        - first_name
+                                        - last_name
+                                  required:
+                                    - value
+                                state:
+                                  type: object
+                                  properties:
+                                    value:
+                                      description: An enumeration.
+                                      enum:
+                                        - UNKNOWN
+                                        - NOT_STARTED
+                                        - PENDING
+                                        - STARTED
+                                        - RETRY
+                                        - SUCCESS
+                                        - FAILURE
+                                      type: string
+                                  required:
+                                    - value
+                              required:
+                                - locked
+                                - state
                         - type: object
                           properties:
                             state:
@@ -6385,6 +6327,48 @@ paths:
                 dev:
                   type: object
                   description: object used for development purposes only
+                state:
+                  type: object
+                  properties:
+                    locked:
+                      type: object
+                      properties:
+                        value:
+                          title: Value
+                          type: boolean
+                        owner:
+                          type: object
+                          properties:
+                            first_name:
+                              title: First Name
+                              type: string
+                            last_name:
+                              title: Last Name
+                              type: string
+                          required:
+                            - first_name
+                            - last_name
+                      required:
+                        - value
+                    state:
+                      type: object
+                      properties:
+                        value:
+                          description: An enumeration.
+                          enum:
+                            - UNKNOWN
+                            - NOT_STARTED
+                            - PENDING
+                            - STARTED
+                            - RETRY
+                            - SUCCESS
+                            - FAILURE
+                          type: string
+                      required:
+                        - value
+                  required:
+                    - locked
+                    - state
       responses:
         '201':
           description: project created
@@ -6637,6 +6621,48 @@ paths:
                           dev:
                             type: object
                             description: object used for development purposes only
+                          state:
+                            type: object
+                            properties:
+                              locked:
+                                type: object
+                                properties:
+                                  value:
+                                    title: Value
+                                    type: boolean
+                                  owner:
+                                    type: object
+                                    properties:
+                                      first_name:
+                                        title: First Name
+                                        type: string
+                                      last_name:
+                                        title: Last Name
+                                        type: string
+                                    required:
+                                      - first_name
+                                      - last_name
+                                required:
+                                  - value
+                              state:
+                                type: object
+                                properties:
+                                  value:
+                                    description: An enumeration.
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
+                                required:
+                                  - value
+                            required:
+                              - locked
+                              - state
                       - type: object
                         properties:
                           state:
@@ -7007,6 +7033,48 @@ paths:
                           dev:
                             type: object
                             description: object used for development purposes only
+                          state:
+                            type: object
+                            properties:
+                              locked:
+                                type: object
+                                properties:
+                                  value:
+                                    title: Value
+                                    type: boolean
+                                  owner:
+                                    type: object
+                                    properties:
+                                      first_name:
+                                        title: First Name
+                                        type: string
+                                      last_name:
+                                        title: Last Name
+                                        type: string
+                                    required:
+                                      - first_name
+                                      - last_name
+                                required:
+                                  - value
+                              state:
+                                type: object
+                                properties:
+                                  value:
+                                    description: An enumeration.
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
+                                required:
+                                  - value
+                            required:
+                              - locked
+                              - state
                       - type: object
                         properties:
                           state:
@@ -7383,6 +7451,48 @@ paths:
                           dev:
                             type: object
                             description: object used for development purposes only
+                          state:
+                            type: object
+                            properties:
+                              locked:
+                                type: object
+                                properties:
+                                  value:
+                                    title: Value
+                                    type: boolean
+                                  owner:
+                                    type: object
+                                    properties:
+                                      first_name:
+                                        title: First Name
+                                        type: string
+                                      last_name:
+                                        title: Last Name
+                                        type: string
+                                    required:
+                                      - first_name
+                                      - last_name
+                                required:
+                                  - value
+                              state:
+                                type: object
+                                properties:
+                                  value:
+                                    description: An enumeration.
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
+                                required:
+                                  - value
+                            required:
+                              - locked
+                              - state
                       - type: object
                         properties:
                           state:
@@ -7750,6 +7860,48 @@ paths:
                 dev:
                   type: object
                   description: object used for development purposes only
+                state:
+                  type: object
+                  properties:
+                    locked:
+                      type: object
+                      properties:
+                        value:
+                          title: Value
+                          type: boolean
+                        owner:
+                          type: object
+                          properties:
+                            first_name:
+                              title: First Name
+                              type: string
+                            last_name:
+                              title: Last Name
+                              type: string
+                          required:
+                            - first_name
+                            - last_name
+                      required:
+                        - value
+                    state:
+                      type: object
+                      properties:
+                        value:
+                          description: An enumeration.
+                          enum:
+                            - UNKNOWN
+                            - NOT_STARTED
+                            - PENDING
+                            - STARTED
+                            - RETRY
+                            - SUCCESS
+                            - FAILURE
+                          type: string
+                      required:
+                        - value
+                  required:
+                    - locked
+                    - state
       responses:
         '200':
           description: got detailed project
@@ -8002,6 +8154,48 @@ paths:
                           dev:
                             type: object
                             description: object used for development purposes only
+                          state:
+                            type: object
+                            properties:
+                              locked:
+                                type: object
+                                properties:
+                                  value:
+                                    title: Value
+                                    type: boolean
+                                  owner:
+                                    type: object
+                                    properties:
+                                      first_name:
+                                        title: First Name
+                                        type: string
+                                      last_name:
+                                        title: Last Name
+                                        type: string
+                                    required:
+                                      - first_name
+                                      - last_name
+                                required:
+                                  - value
+                              state:
+                                type: object
+                                properties:
+                                  value:
+                                    description: An enumeration.
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
+                                required:
+                                  - value
+                            required:
+                              - locked
+                              - state
                       - type: object
                         properties:
                           state:
@@ -8394,6 +8588,48 @@ paths:
                           dev:
                             type: object
                             description: object used for development purposes only
+                          state:
+                            type: object
+                            properties:
+                              locked:
+                                type: object
+                                properties:
+                                  value:
+                                    title: Value
+                                    type: boolean
+                                  owner:
+                                    type: object
+                                    properties:
+                                      first_name:
+                                        title: First Name
+                                        type: string
+                                      last_name:
+                                        title: Last Name
+                                        type: string
+                                    required:
+                                      - first_name
+                                      - last_name
+                                required:
+                                  - value
+                              state:
+                                type: object
+                                properties:
+                                  value:
+                                    description: An enumeration.
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
+                                required:
+                                  - value
+                            required:
+                              - locked
+                              - state
                       - type: object
                         properties:
                           state:
@@ -9598,6 +9834,48 @@ paths:
                           dev:
                             type: object
                             description: object used for development purposes only
+                          state:
+                            type: object
+                            properties:
+                              locked:
+                                type: object
+                                properties:
+                                  value:
+                                    title: Value
+                                    type: boolean
+                                  owner:
+                                    type: object
+                                    properties:
+                                      first_name:
+                                        title: First Name
+                                        type: string
+                                      last_name:
+                                        title: Last Name
+                                        type: string
+                                    required:
+                                      - first_name
+                                      - last_name
+                                required:
+                                  - value
+                              state:
+                                type: object
+                                properties:
+                                  value:
+                                    description: An enumeration.
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
+                                required:
+                                  - value
+                            required:
+                              - locked
+                              - state
                       - type: object
                         properties:
                           state:
@@ -9967,6 +10245,48 @@ paths:
                           dev:
                             type: object
                             description: object used for development purposes only
+                          state:
+                            type: object
+                            properties:
+                              locked:
+                                type: object
+                                properties:
+                                  value:
+                                    title: Value
+                                    type: boolean
+                                  owner:
+                                    type: object
+                                    properties:
+                                      first_name:
+                                        title: First Name
+                                        type: string
+                                      last_name:
+                                        title: Last Name
+                                        type: string
+                                    required:
+                                      - first_name
+                                      - last_name
+                                required:
+                                  - value
+                              state:
+                                type: object
+                                properties:
+                                  value:
+                                    description: An enumeration.
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
+                                required:
+                                  - value
+                            required:
+                              - locked
+                              - state
                       - type: object
                         properties:
                           state:
