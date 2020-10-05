@@ -34,7 +34,7 @@ class FileLink(BaseModel):
     )
     dataset: Optional[str] = Field(
         ...,
-        description="The dataset inside?",
+        description="Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
         example=["N:dataset:f9f5ac51-33ea-4861-8e08-5b4faf655041"],
     )
     path: str = Field(
