@@ -15,6 +15,7 @@ FIXME: Compare shows single commit. SEE https://github.com/ITISFoundation/osparc
 - ``migration`` service that discovers postgres service and upgrades main database [#1714](https://github.com/ITISFoundation/osparc-simcore/pull/1714)
 - Every group can register official classifiers for studies and services. Diplayed as a tree in UI [#1670](https://github.com/ITISFoundation/osparc-simcore/pull/1670), [#1719](https://github.com/ITISFoundation/osparc-simcore/pull/1719) , [#1722](https://github.com/ITISFoundation/osparc-simcore/pull/1722)
 - GC tests are run in isolation with a template database [#1724](https://github.com/ITISFoundation/osparc-simcore/pull/1724)
+- Added models_library python package that contains all basic pydantic models for use in simcore [#1856](https://github.com/ITISFoundation/osparc-simcore/pull/1856)
 
 ### Changed
 
@@ -32,23 +33,23 @@ FIXME: Compare shows single commit. SEE https://github.com/ITISFoundation/osparc
 
 ### Added
 - add traefik endpoint to api-gateway [#1555](https://github.com/ITISFoundation/osparc-simcore/pull/1555)
-- Shared project concurrency (frontend) [#1591](https://github.com/ITISFoundation/osparc-simcore/pull/1591) 
+- Shared project concurrency (frontend) [#1591](https://github.com/ITISFoundation/osparc-simcore/pull/1591)
 - Homogenize studies and services [#1569](https://github.com/ITISFoundation/osparc-simcore/pull/1569)
 - UI Fine grained access - project locking and notification
 - Adds support for GPU scheduling of computational services [#1553](https://github.com/ITISFoundation/osparc-simcore/pull/1553)
 
 ### Changed
-- UI/UX improvements [#1657](https://github.com/ITISFoundation/osparc-simcore/pull/1657) 
+- UI/UX improvements [#1657](https://github.com/ITISFoundation/osparc-simcore/pull/1657)
 - Improving storage performance [#1659](https://github.com/ITISFoundation/osparc-simcore/pull/1659)
 - Theming [#1656](https://github.com/ITISFoundation/osparc-simcore/pull/1656)
-- Reduce cardinality of metrics [#1593](https://github.com/ITISFoundation/osparc-simcore/pull/1593) 
+- Reduce cardinality of metrics [#1593](https://github.com/ITISFoundation/osparc-simcore/pull/1593)
 
 ### Fixed
 - Platform stability: [#1645](https://github.com/ITISFoundation/osparc-simcore/pull/1645)
 - Fix, improves and re-activate e2e CI testing [#1594](https://github.com/ITISFoundation/osparc-simcore/pull/1594), [#1620](https://github.com/ITISFoundation/osparc-simcore/pull/1620), [#1631](https://github.com/ITISFoundation/osparc-simcore/pull/1631), [#1600](https://github.com/ITISFoundation/osparc-simcore/pull/1600)
 - Fixes defaults [#1640](https://github.com/ITISFoundation/osparc-simcore/pull/1640)
 - Upgrade storage service [#1585](https://github.com/ITISFoundation/osparc-simcore/pull/1585), [#1586](https://github.com/ITISFoundation/osparc-simcore/pull/1586)
-- UPgrade catalog service [#1582](https://github.com/ITISFoundation/osparc-simcore/pull/1582) 
+- UPgrade catalog service [#1582](https://github.com/ITISFoundation/osparc-simcore/pull/1582)
 - Fixes on publish studies handling [#1632](https://github.com/ITISFoundation/osparc-simcore/pull/1632)
 - Invalidate cache before starting a study [#1602](https://github.com/ITISFoundation/osparc-simcore/pull/1602)
 - Some enhancements and bug fixes [#1608](https://github.com/ITISFoundation/osparc-simcore/pull/1608)
