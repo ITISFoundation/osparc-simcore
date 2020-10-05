@@ -1,11 +1,12 @@
 from typing import Dict, Optional
 
-from ..domain import project
+from models_library.projects import Node
+
 from ..domain.dag import DAGBase, DAGData
 
 
 class DAGIn(DAGBase):
-    workbench: Optional[Dict[str, project.Node]]
+    workbench: Optional[Dict[str, Node]]
 
 
 class DAGInPath(DAGBase):
@@ -13,7 +14,7 @@ class DAGInPath(DAGBase):
     name: str
     description: Optional[str]
     contact: Optional[str]
-    workbench: Optional[Dict[str, project.Node]]
+    workbench: Optional[Dict[str, Node]]
 
 
 class DAGOut(DAGData):
