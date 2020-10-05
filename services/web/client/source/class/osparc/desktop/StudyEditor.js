@@ -336,7 +336,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __openFileSweeper: function(node) {
-      const nodeView = new osparc.component.node.FilePickerView(node);
+      const nodeView = new osparc.component.node.FileSweeperView(node);
       this.showInMainView(nodeView, node.getNodeId());
       nodeView.populateLayout();
     },

@@ -28,12 +28,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let filePicker = new osparc.component.node.FilePickerView(node);
- *   this.getRoot().add(filePicker);
+ *   let fileSweeper = new osparc.component.node.FileSweeperView(node);
+ *   this.getRoot().add(fileSweeper);
  * </pre>
  */
 
-qx.Class.define("osparc.component.node.FilePickerView", {
+qx.Class.define("osparc.component.node.FileSweeperView", {
   extend: osparc.component.node.BaseNodeView,
 
   /**
