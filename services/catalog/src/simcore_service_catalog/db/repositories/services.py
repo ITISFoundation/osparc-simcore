@@ -8,7 +8,8 @@ from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql import and_, or_
 
-from ...models.domain.service import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
+from models_library.services import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
+
 from ..tables import services_access_rights, services_meta_data
 from ._base import BaseRepository
 

@@ -4,7 +4,8 @@ from typing import List
 import sqlalchemy as sa
 from pydantic import ValidationError
 
-from ...models.domain.service import ServiceKeyVersion
+from models_library.services import ServiceKeyVersion
+
 from ..tables import ProjectType, projects
 from ._base import BaseRepository
 
