@@ -25,17 +25,15 @@ class PortLink(BaseModel):
         example=["out_2"],
     )
 
+    class Config:
+        extra = Extra.forbid
 
-class FileLink(BaseModel):
+
+class BaseFileLink(BaseModel):
     store: Union[str, int] = Field(
         ...,
         description="The store identifier, '0' or 0 for simcore S3, '1' or 1 for datcore",
         example=["0", 1],
-    )
-    dataset: Optional[str] = Field(
-        ...,
-        description="Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
-        example=["N:dataset:f9f5ac51-33ea-4861-8e08-5b4faf655041"],
     )
     path: str = Field(
         ...,
@@ -45,11 +43,29 @@ class FileLink(BaseModel):
             "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt",
         ],
     )
-    label: Optional[str] = Field(
+
+    class Config:
+        extra = Extra.forbid
+
+
+class SimCoreFileLink(BaseFileLink):
+    pass
+
+
+class DatCoreFileLink(BaseFileLink):
+    dataset: str = Field(
+        ...,
+        description="Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
+        example=["N:dataset:f9f5ac51-33ea-4861-8e08-5b4faf655041"],
+    )
+    label: str = Field(
         ...,
         description="The real file name (REQUIRED for datcore)",
         example=["MyFile.txt"],
     )
+
+    class Config:
+        extra = Extra.forbid
 
 
 class AccessEnum(str, Enum):
@@ -59,15 +75,15 @@ class AccessEnum(str, Enum):
 
 
 class Position(BaseModel):
-    x: int
-    y: int
+    x: int = Field(..., description="The x position", example=["12"])
+    y: int = Field(..., description="The y position", example=["15"])
 
     class Config:
         extra = Extra.forbid
 
 
-InputTypes = Union[int, bool, str, float, PortLink, FileLink]
-OutputTypes = Union[int, bool, str, float, FileLink]
+InputTypes = Union[int, bool, str, float, PortLink, SimCoreFileLink, DatCoreFileLink]
+OutputTypes = Union[int, bool, str, float, SimCoreFileLink, DatCoreFileLink]
 InputID = constr(regex=PROPERTY_KEY_RE)
 OutputID = InputID
 
@@ -89,7 +105,9 @@ class Node(BaseModel):
         regex=VERSION_RE,
         example=["1.0.0", "0.0.1"],
     )
-    label: str = Field(...)
+    label: str = Field(
+        ..., description="The short name of the node", example=["JupyterLab"]
+    )
     progress: float = Field(..., ge=0, le=100, description="the node progress value")
     thumbnail: Optional[HttpUrl] = Field(
         None,
