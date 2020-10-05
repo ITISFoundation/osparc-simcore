@@ -189,6 +189,5 @@ class ProjectState(BaseModel):
 __all__ = [
     "ProjectState",
     "ProjectLocked",
-    "RunningState",
     "Owner",
 ]
