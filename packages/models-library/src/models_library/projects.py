@@ -12,16 +12,44 @@ current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve
 DATE_RE = r"\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z"
 
 
-class Connection(BaseModel):
-    nodeUuid: Optional[str]
-    output: Optional[str]
+class PortLink(BaseModel):
+    nodeUuid: UUID4 = Field(
+        ...,
+        description="The node to get the port output from",
+        example=["da5068e0-8a8d-4fb9-9516-56e5ddaef15b"],
+    )
+    output: str = Field(
+        ...,
+        description="The port key in the node given by nodeUuid",
+        regex=KEY_RE,
+        example=["out_2"],
+    )
 
 
-class FilePickerOutput(BaseModel):
-    store: Union[str, int]  # simcore/datcore
-    dataset: Optional[str]
-    path: str
-    label: str  # name of the file
+class FileLink(BaseModel):
+    store: Union[str, int] = Field(
+        ...,
+        description="The store identifier, '0' or 0 for simcore S3, '1' or 1 for datcore",
+        example=["0", 1],
+    )
+    dataset: Optional[str] = Field(
+        ...,
+        description="The dataset inside?",
+        example=["N:dataset:f9f5ac51-33ea-4861-8e08-5b4faf655041"],
+    )
+    path: str = Field(
+        ...,
+        description="The path to the file in the storage provider domain",
+        example=[
+            "N:package:b05739ef-260c-4038-b47d-0240d04b0599",
+            "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt",
+        ],
+    )
+    label: Optional[str] = Field(
+        ...,
+        description="The real file name (REQUIRED for datcore)",
+        example=["MyFile.txt"],
+    )
 
 
 class AccessEnum(str, Enum):
@@ -38,8 +66,8 @@ class Position(BaseModel):
         extra = Extra.forbid
 
 
-InputTypes = Union[int, bool, str, float, Connection, FilePickerOutput]
-OutputTypes = Union[int, bool, str, float, FilePickerOutput]
+InputTypes = Union[int, bool, str, float, PortLink, FileLink]
+OutputTypes = Union[int, bool, str, float, FileLink]
 InputID = constr(regex=PROPERTY_KEY_RE)
 OutputID = InputID
 
