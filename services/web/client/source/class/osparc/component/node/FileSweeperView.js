@@ -80,22 +80,9 @@ qx.Class.define("osparc.component.node.FileSweeperView", {
       filePicker.buildLayout();
       filePicker.init();
 
-      filePicker.addListener("finished", () => {
-        this.__fileSweeperSelectionChanged();
-      }, this);
-
       this._mainView.add(filePicker, {
         flex: 1
       });
-    },
-
-    __fileSweeperSelectionChanged: function() {
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const sweeper = study.getSweeper();
-      console.log(sweeper);
-
-      const outputs = this.__filePicker.getOutputFiles();
-      console.log(outputs);
     }
   }
 });

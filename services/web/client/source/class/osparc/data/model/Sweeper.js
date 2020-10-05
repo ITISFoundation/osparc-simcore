@@ -223,6 +223,25 @@ qx.Class.define("osparc.data.model.Sweeper", {
       });
     },
 
+    recreateIterationsFileIterations: function(studyData) {
+      return new Promise((resolve, reject) => {
+        // delete previous iterations
+        this.removeSecondaryStudies()
+          .then(() => {
+            const fileSweepers = osparc.data.StudyFileSweeper.getFileSweepers(studyData);
+            const combinations = osparc.data.StudyFileSweeper.calculateCombinations(studyData);
+
+            osparc.data.StudyFileSweeper.recreateIterations(studyData, fileSweepers, combinations)
+              .then(secondaryStudiesData => {
+                secondaryStudiesData.forEach(secondaryStudyData => {
+                  this.__secondaryStudyIds.push(secondaryStudyData.uuid);
+                });
+                resolve(this.getSecondaryStudyIds());
+              });
+          });
+      });
+    },
+
     serializeSweeper: function() {
       const obj = {};
 

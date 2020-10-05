@@ -108,6 +108,8 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
       iterationBtns.add(deleteIterationsBtn);
       const recreateIterationsBtn = this.__recreateIterationsBtn();
       iterationBtns.add(recreateIterationsBtn);
+      const recreateFileIterationsBtn = this.__recreateFileIterationsBtn();
+      iterationBtns.add(recreateFileIterationsBtn);
       iterationsSection.addAt(iterationBtns, 0);
 
       this.__rebuildIterationsTable();
@@ -207,6 +209,24 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
       return recreateIterationsBtn;
     },
 
+    __recreateFileIterationsBtn: function() {
+      const recreateIterationsBtn = new osparc.ui.form.FetchButton(this.tr("Recreate File Iterations")).set({
+        alignX: "right",
+        allowGrowX: false
+      });
+      recreateIterationsBtn.addListener("execute", () => {
+        recreateIterationsBtn.setFetching(true);
+        this.__recreateFileIterations(recreateIterationsBtn)
+          .then(() => {
+            this.__rebuildIterationsTable();
+          })
+          .finally(() => {
+            recreateIterationsBtn.setFetching(false);
+          });
+      }, this);
+      return recreateIterationsBtn;
+    },
+
     __deleteIterations: function() {
       return new Promise((resolve, reject) => {
         this.__primaryStudy.getSweeper().removeSecondaryStudies()
@@ -222,6 +242,18 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
       return new Promise((resolve, reject) => {
         const primaryStudyData = this.__primaryStudy.serializeStudy();
         this.__primaryStudy.getSweeper().recreateIterations(primaryStudyData)
+          .then(secondaryStudyIds => {
+            const msg = secondaryStudyIds.length + this.tr(" Iterations created");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg);
+            resolve();
+          });
+      });
+    },
+
+    __recreateFileIterations: function() {
+      return new Promise((resolve, reject) => {
+        const primaryStudyData = this.__primaryStudy.serializeStudy();
+        this.__primaryStudy.getSweeper().recreateFileIterations(primaryStudyData)
           .then(secondaryStudyIds => {
             const msg = secondaryStudyIds.length + this.tr(" Iterations created");
             osparc.component.message.FlashMessenger.getInstance().logAs(msg);
