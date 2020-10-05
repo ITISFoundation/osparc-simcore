@@ -118,18 +118,9 @@ qx.Class.define("osparc.data.StudyParametrizer", {
                     for (let i=0; i<combinations.length; i++) {
                       const combination = combinations[i];
                       let secondaryStudyData = secondaryStudiesData[i];
-                      let secondaryStudyDataStr = JSON.stringify(secondaryStudyData);
-                      const parameterValues = [];
-                      for (let j=0; j<combination.length; j++) {
-                        const varValue = combination[j];
-                        const parameterId = parameters[j].id;
-                        const mustachedStr = "\"{{" + parameterId + "}}\"";
-                        secondaryStudyDataStr = secondaryStudyDataStr.replace(mustachedStr, varValue);
-                        const parameterValue = {};
-                        parameterValue[parameterId] = varValue;
-                        parameterValues.push(parameterValue);
-                      }
-                      secondaryStudyData = JSON.parse(secondaryStudyDataStr);
+
+                      const parameterValues = this.__replaceParameters(secondaryStudyData, combination, parameters);
+
                       secondaryStudyData["dev"] = {
                         "sweeper": {
                           "primaryStudyId": primaryStudyData.uuid,
@@ -160,6 +151,22 @@ qx.Class.define("osparc.data.StudyParametrizer", {
               });
           });
       });
+    },
+
+    __replaceParameters: function(secondaryStudyData, combination, parameters) {
+      let secondaryStudyDataStr = JSON.stringify(secondaryStudyData);
+      const parameterValues = [];
+      for (let j=0; j<combination.length; j++) {
+        const varValue = combination[j];
+        const parameterId = parameters[j].id;
+        const mustachedStr = "\"{{" + parameterId + "}}\"";
+        secondaryStudyDataStr = secondaryStudyDataStr.replace(mustachedStr, varValue);
+        const parameterValue = {};
+        parameterValue[parameterId] = varValue;
+        parameterValues.push(parameterValue);
+      }
+      secondaryStudyData = JSON.parse(secondaryStudyDataStr);
+      return parameterValues;
     }
   }
 });
