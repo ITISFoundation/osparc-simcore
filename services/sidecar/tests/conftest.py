@@ -10,7 +10,7 @@ import pytest
 import simcore_service_sidecar
 
 pytest_plugins = [
-    "pytest_simcore.environs",
+    "pytest_simcore.repository_paths",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.rabbit_service",

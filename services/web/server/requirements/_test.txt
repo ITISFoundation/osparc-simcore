@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aio-pika==6.6.1           # via -r requirements/_base.txt
+aio-pika==6.7.1           # via -r requirements/_base.txt
 aiodebug==1.1.2           # via -r requirements/_base.txt
 aiohttp-jinja2==1.2.0     # via -r requirements/_base.txt
 aiohttp-security==0.4.0   # via -r requirements/_base.txt

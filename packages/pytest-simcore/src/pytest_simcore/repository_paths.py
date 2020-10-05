@@ -11,7 +11,7 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 @pytest.fixture(scope="session")
 def osparc_simcore_root_dir(request) -> Path:
     """ osparc-simcore repo root dir """
-    WILDCARD = "packages/pytest-simcore/src/pytest_simcore/environs.py"
+    WILDCARD = "packages/pytest-simcore/src/pytest_simcore/__init__.py"
     ROOT = Path("/")
 
     test_dir = Path(request.session.fspath)  # expected test dir in simcore
@@ -53,6 +53,13 @@ def services_dir(osparc_simcore_root_dir: Path) -> Path:
     services_folder = osparc_simcore_root_dir / "services"
     assert services_folder.exists()
     return services_folder
+
+
+@pytest.fixture(scope="session")
+def services_docker_compose_file(services_dir):
+    dcpath = services_dir / "docker-compose.yml"
+    assert dcpath.exists()
+    return dcpath
 
 
 @pytest.fixture(scope="module")
