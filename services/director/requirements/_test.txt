@@ -23,7 +23,7 @@ idna-ssl==1.1.0           # via -r requirements/_base.txt, aiohttp
 idna==2.8                 # via -r requirements/_base.txt, idna-ssl, requests, yarl
 importlib-metadata==1.7.0  # via pluggy, pytest
 iniconfig==1.0.1          # via pytest
-isort==4.3.21             # via pylint
+isort==5.5.4              # via pylint
 jsonschema==2.6.0         # via -r requirements/_base.txt, aiohttp-apiset, openapi-spec-validator
 lazy-object-proxy==1.4.3  # via astroid
 mccabe==0.6.1             # via pylint
@@ -33,7 +33,7 @@ packaging==20.4           # via pytest, pytest-sugar
 pluggy==0.13.1            # via pytest
 ptvsd==4.3.2              # via -r requirements/_test.in
 py==1.9.0                 # via pytest
-pylint==2.5.3             # via -r requirements/_test.in
+pylint==2.6.0             # via -r requirements/_test.in
 pyparsing==2.4.7          # via packaging
 pytest-aiohttp==0.3.0     # via -r requirements/_test.in
 pytest-cov==2.10.0        # via -r requirements/_test.in
