@@ -3,13 +3,13 @@
 """
 import json
 import logging
+
 from typing import Dict, List, Optional, Set
 
 import aioredlock
 from aiohttp import web
 from jsonschema import ValidationError
-
-from models_library.projects import Owner, ProjectLocked, ProjectState
+from models_library.projects import ProjectState
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog
@@ -41,8 +41,6 @@ log = logging.getLogger(__name__)
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def create_projects(request: web.Request):
-    from .projects_api import clone_project
-
     # pylint: disable=too-many-branches
     # TODO: keep here since is async and parser thinks it is a handler
 
@@ -58,16 +56,13 @@ async def create_projects(request: web.Request):
         if as_template:  # create template from
             await check_permission(request, "project.template.create")
 
-            # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-            from .projects_api import get_project_for_user
-
-            source_project = await get_project_for_user(
+            source_project = await projects_api.get_project_for_user(
                 request.app,
                 project_uuid=as_template,
                 user_id=user_id,
                 include_templates=False,
             )
-            project = await clone_project(request, source_project, user_id)
+            project = await projects_api.clone_project(request, source_project, user_id)
 
         elif template_uuid:  # create from template
             template_prj = await db.get_template_project(template_uuid)
@@ -76,7 +71,7 @@ async def create_projects(request: web.Request):
                     reason="Invalid template uuid {}".format(template_uuid)
                 )
 
-            project = await clone_project(request, template_prj, user_id)
+            project = await projects_api.clone_project(request, template_prj, user_id)
             # remove template access rights
             project["accessRights"] = {}
             # FIXME: parameterized inputs should get defaults provided by service
@@ -93,7 +88,7 @@ async def create_projects(request: web.Request):
                 # TODO: take skeleton and fill instead
                 project = predefined
 
-        # validate data
+        # re-validate data
         projects_api.validate_project(request.app, project)
 
         # update metadata (uuid, timestamps, ownership) and save
@@ -105,12 +100,10 @@ async def create_projects(request: web.Request):
         await update_pipeline_db(request.app, project["uuid"], project["workbench"])
 
         # Appends state
-        project_state = ProjectState(
-            locked=ProjectLocked(
-                value=False, owner=Owner(**await get_user_name(request.app, user_id))
-            )
+        project_state = await projects_api.get_project_state_for_user(
+            user_id, project["uuid"], request.app
         )
-        project["state"] = project_state.dict()
+        project["state"] = project_state.dict(by_alias=True, exclude_unset=True)
 
     except ValidationError as exc:
         raise web.HTTPBadRequest(reason="Invalid project data") from exc
@@ -126,8 +119,6 @@ async def create_projects(request: web.Request):
 @login_required
 @permission_required("project.read")
 async def list_projects(request: web.Request):
-    from .projects_api import get_project_state_for_user
-
     # TODO: implement all query parameters as
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
 
@@ -157,7 +148,7 @@ async def list_projects(request: web.Request):
     # validate response
     async def validate_project(prj: Dict) -> Optional[Dict]:
         try:
-            project_state: ProjectState = await get_project_state_for_user(
+            project_state: ProjectState = await projects_api.get_project_state_for_user(
                 user_id, project_uuid=prj["uuid"], app=request.app
             )
             prj["state"] = project_state.dict(by_alias=True, exclude_unset=True)
@@ -191,11 +182,9 @@ async def get_project(request: web.Request):
     ] = await catalog.get_services_for_user_in_product(
         request.app, user_id, product_name, only_key_versions=True
     )
-    from .projects_api import get_project_for_user
-
     project_uuid = request.match_info.get("project_id")
     try:
-        project = await get_project_for_user(
+        project = await projects_api.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
@@ -257,17 +246,14 @@ async def replace_project(request: web.Request):
     )
 
     try:
-        # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-        from .projects_api import get_project_for_user
-
         projects_api.validate_project(request.app, new_project)
 
-        current_project = await get_project_for_user(
+        current_project = await projects_api.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True,
-            include_state=False,
+            include_state=True,
         )
 
         if current_project["accessRights"] != new_project["accessRights"]:
@@ -282,12 +268,10 @@ async def replace_project(request: web.Request):
         )
 
         # Appends state
-        project_state = ProjectState(
-            locked=ProjectLocked(
-                value=False, owner=Owner(**await get_user_name(request.app, user_id))
-            )
+        project_state = await projects_api.get_project_state_for_user(
+            user_id, project_uuid, request.app
         )
-        new_project["state"] = project_state.dict()
+        new_project["state"] = project_state.dict(by_alias=True, exclude_unset=True)
 
     except ValidationError as exc:
         raise web.HTTPBadRequest from exc
@@ -356,15 +340,12 @@ async def open_project(request: web.Request) -> web.Response:
     project_uuid = request.match_info.get("project_id")
     client_session_id = await request.json()
     try:
-        # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-        from .projects_api import get_project_for_user
-
-        project = await get_project_for_user(
+        project = await projects_api.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True,
-            include_state=False,
+            include_state=True,
         )
 
         async def try_add_project() -> Optional[Set[int]]:
@@ -390,19 +371,20 @@ async def open_project(request: web.Request) -> web.Response:
         other_users = await try_add_project()
         if other_users:
             # project is already locked
-            usernames = [await get_user_name(request.app, uid) for uid in other_users]
+            usernames = [
+                await projects_api.get_user_name(request.app, uid)
+                for uid in other_users
+            ]
             raise HTTPLocked(reason=f"Project is already opened by {usernames}")
 
         # user id opened project uuid
         await projects_api.start_project_interactive_services(request, project, user_id)
 
         # notify users that project is now locked
-        project_state = ProjectState(
-            locked=ProjectLocked(
-                value=True, owner=Owner(**await get_user_name(request.app, user_id))
-            )
+        project_state = await projects_api.get_project_state_for_user(
+            user_id, project_uuid, request.app
         )
-        project["state"] = project_state.dict()
+        project["state"] = project_state.dict(by_alias=True, exclude_unset=True)
 
         await projects_api.notify_project_state_update(
             request.app, project, project_state
@@ -423,10 +405,7 @@ async def close_project(request: web.Request) -> web.Response:
 
     try:
         # ensure the project exists
-        # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-        from .projects_api import get_project_for_user
-
-        project = await get_project_for_user(
+        project = await projects_api.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
@@ -449,8 +428,11 @@ async def close_project(request: web.Request) -> web.Response:
                     )
             finally:
                 # ensure we notify the user whatever happens, the GC should take care of dangling services in case of issue
+                project_state = await projects_api.get_project_state_for_user(
+                    user_id, project_uuid, request.app
+                )
                 await projects_api.notify_project_state_update(
-                    request.app, project, ProjectState(locked={"value": False})
+                    request.app, project, project_state
                 )
 
         fire_and_forget_task(_close_project_task())
@@ -465,11 +447,9 @@ async def close_project(request: web.Request) -> web.Response:
 async def state_project(request: web.Request) -> web.Response:
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-    # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-    from .projects_api import get_project_for_user
 
     # check that project exists and queries state
-    validated_project = await get_project_for_user(
+    validated_project = await projects_api.get_project_for_user(
         request.app,
         project_uuid=project_uuid,
         user_id=user_id,
@@ -493,10 +473,8 @@ async def get_active_project(request: web.Request) -> web.Response:
             # get user's projects
             user_active_projects = await rt.find("project_id")
         if user_active_projects:
-            # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-            from .projects_api import get_project_for_user
 
-            project = await get_project_for_user(
+            project = await projects_api.get_project_for_user(
                 request.app,
                 project_uuid=user_active_projects[0],
                 user_id=user_id,
@@ -519,10 +497,8 @@ async def create_node(request: web.Request) -> web.Response:
 
     try:
         # ensure the project exists
-        # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-        from .projects_api import get_project_for_user
 
-        await get_project_for_user(
+        await projects_api.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
@@ -551,10 +527,8 @@ async def get_node(request: web.Request) -> web.Response:
     node_uuid = request.match_info.get("node_id")
     try:
         # ensure the project exists
-        # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-        from .projects_api import get_project_for_user
 
-        await get_project_for_user(
+        await projects_api.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
@@ -577,10 +551,8 @@ async def delete_node(request: web.Request) -> web.Response:
     node_uuid = request.match_info.get("node_id")
     try:
         # ensure the project exists
-        # TODO: temporary hidden until get_handlers_from_namespace refactor to seek marked functions instead!
-        from .projects_api import get_project_for_user
 
-        await get_project_for_user(
+        await projects_api.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,

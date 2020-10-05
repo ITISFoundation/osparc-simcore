@@ -77,14 +77,14 @@ async def get_project_for_user(
     if not is_template:
         project = await db.get_user_project(user_id, project_uuid)
 
-    # TODO: how to handle when database has an invalid project schema???
-    # Notice that db model does not include a check on project schema.
-    validate_project(app, project)
-
     # adds state if it is not a template
     if include_state:
         project_state = await get_project_state_for_user(user_id, project_uuid, app)
-        project["state"] = project_state.dict()
+        project["state"] = project_state.dict(by_alias=True, exclude_unset=True)
+
+    # TODO: how to handle when database has an invalid project schema???
+    # Notice that db model does not include a check on project schema.
+    validate_project(app, project)
     return project
 
 
