@@ -3,12 +3,12 @@ from typing import List, Optional
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
+from models_library.services import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from psycopg2.errors import ForeignKeyViolation  # pylint: disable=no-name-in-module
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql import and_, or_
 
-from ...models.domain.service import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from ..tables import services_access_rights, services_meta_data
 from ._base import BaseRepository
 

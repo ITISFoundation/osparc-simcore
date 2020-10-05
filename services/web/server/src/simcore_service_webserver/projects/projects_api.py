@@ -14,7 +14,7 @@ from typing import Any, Dict, Optional, Set
 from uuid import uuid4
 
 from aiohttp import web
-
+from models_library.projects import Owner, ProjectLocked, ProjectState
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
@@ -33,7 +33,6 @@ from ..users_api import get_user_name
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import NodeNotFoundError
-from .projects_models import Owner, ProjectLocked, ProjectState
 from .projects_utils import clone_project_document
 
 log = logging.getLogger(__name__)
@@ -395,6 +394,6 @@ async def get_project_state_for_user(user_id, project_uuid, app) -> ProjectState
             locked=ProjectLocked(
                 value=is_locked,
                 owner=Owner(**usernames[0]) if is_locked else None,
-            )
+            ),
         )
         return project_state

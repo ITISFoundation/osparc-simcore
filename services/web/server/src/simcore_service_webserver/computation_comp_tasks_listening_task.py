@@ -14,10 +14,13 @@ from sqlalchemy.sql import select
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from servicelib.utils import logged_gather
-from simcore_postgres_database.webserver_models import user_to_groups, DB_CHANNEL_NAME
+from simcore_postgres_database.webserver_models import (
+    DB_CHANNEL_NAME,
+    projects,
+    user_to_groups,
+)
 
 from .projects import projects_api, projects_exceptions
-from .projects.projects_models import projects
 from .socketio.events import post_messages
 
 log = logging.getLogger(__name__)
