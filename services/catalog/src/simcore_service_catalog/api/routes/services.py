@@ -33,7 +33,7 @@ async def list_services(
     director_client: DirectorApi = Depends(get_director_api),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
-    x_simcore_products_name: str = Header(None),
+    x_simcore_products_name: str = Header(...),
 ):
     # get user groups
     user_groups = await groups_repository.list_user_groups(user_id)
@@ -53,13 +53,13 @@ async def list_services(
         )
     }
     # get the writable services
+    _services = await services_repo.list_services(
+        gids=[group.gid for group in user_groups],
+        write_access=True,
+        product_name=x_simcore_products_name,
+    )
     writable_services: Set[Tuple[str, str]] = {
-        (service.key, service.version)
-        for service in await services_repo.list_services(
-            gids=[group.gid for group in user_groups],
-            write_access=True,
-            product_name=x_simcore_products_name,
-        )
+        (service.key, service.version) for service in _services
     }
     visible_services = executable_services | writable_services
     if not details:
