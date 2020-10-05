@@ -91,33 +91,30 @@ qx.Class.define("osparc.component.sweeper.Iterations", {
         columnModel.setDataCellRenderer(i, new qx.ui.table.cellrenderer.Number());
       }
 
-      const combinations = this.__primaryStudy.getSweeper().getCombinations();
       const secondaryStudyIds = this.__primaryStudy.getSweeper().getSecondaryStudyIds();
-      if (combinations.length === secondaryStudyIds.length) {
-        osparc.data.Resources.get("studies", null, false)
-          .then(studies => {
-            const rows = [];
-            for (let i=0; i<secondaryStudyIds.length; i++) {
-              const secondaryStudyId = secondaryStudyIds[i];
-              const secondaryStudy = studies.find(study => study.uuid === secondaryStudyId);
-              if (!secondaryStudy) {
-                console.error("Secondary study not found", secondaryStudyId);
-                continue;
-              }
-              const row = [];
-              row[this.__cols["id"].col] = secondaryStudy.uuid;
-              row[this.__cols["name"].col] = secondaryStudy.name;
-              const paramValues = secondaryStudy["dev"]["sweeper"]["parameterValues"];
-              paramValues.forEach(paramValue => {
-                for (const [key, value] of Object.entries(paramValue)) {
-                  row[this.__cols[key].col] = value;
-                }
-              });
-              rows.push(row);
+      osparc.data.Resources.get("studies", null, false)
+        .then(studies => {
+          const rows = [];
+          for (let i=0; i<secondaryStudyIds.length; i++) {
+            const secondaryStudyId = secondaryStudyIds[i];
+            const secondaryStudy = studies.find(study => study.uuid === secondaryStudyId);
+            if (!secondaryStudy) {
+              console.error("Secondary study not found", secondaryStudyId);
+              continue;
             }
-            this.getTableModel().setData(rows, false);
-          });
-      }
+            const row = [];
+            row[this.__cols["id"].col] = secondaryStudy.uuid;
+            row[this.__cols["name"].col] = secondaryStudy.name;
+            const paramValues = secondaryStudy["dev"]["sweeper"]["parameterValues"];
+            paramValues.forEach(paramValue => {
+              for (const [key, value] of Object.entries(paramValue)) {
+                row[this.__cols[key].col] = value;
+              }
+            });
+            rows.push(row);
+          }
+          this.getTableModel().setData(rows, false);
+        });
     }
   }
 });
