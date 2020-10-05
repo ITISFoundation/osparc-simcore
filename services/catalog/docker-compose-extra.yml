@@ -35,7 +35,7 @@ services:
     depends_on:
       - postgres
   director:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
+    image: local/director:production
     init: true
     environment:
       - REGISTRY_URL=${REGISTRY_URL}
