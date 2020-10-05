@@ -4,12 +4,11 @@
 
 import os
 import socket
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import aio_pika
 import pytest
 import tenacity
-
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from simcore_sdk.config.rabbit import Config
 
@@ -54,7 +53,8 @@ async def rabbit_connection(rabbit_service: str) -> aio_pika.RobustConnection:
         pytest.fail("rabbit reconnected")
 
     # create connection
-    # NOTE: to show the connection name in the rabbitMQ UI see there [https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url]
+    # NOTE: to show the connection name in the rabbitMQ UI see there
+    # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
     connection = await aio_pika.connect_robust(
         rabbit_service + f"?name={__name__}_{id(socket.gethostname())}",
         client_properties={"connection_name": "pytest read connection"},
@@ -73,9 +73,11 @@ async def rabbit_connection(rabbit_service: str) -> aio_pika.RobustConnection:
 async def rabbit_channel(
     rabbit_connection: aio_pika.RobustConnection,
 ) -> aio_pika.Channel:
-    def channel_close_callback(exc: Optional[BaseException]):
+    def channel_close_callback(sender: Any, exc: Optional[BaseException] = None):
         if exc:
             pytest.fail("rabbit channel closed!")
+        else:
+            print("sender was %s", sender)
 
     # create channel
     channel = await rabbit_connection.channel()
