@@ -11,21 +11,12 @@ aniso8601==7.0.0          # via graphene
 async-exit-stack==1.0.1   # via -r requirements/_base.in, fastapi
 async-generator==1.10     # via -r requirements/_base.in, fastapi
 async-timeout==3.0.1      # via aiohttp
-attrs==19.3.0             # via -r requirements/_base.in, aiohttp, jsonschema
-bcrypt==3.2.0             # via paramiko
-cached-property==1.5.1    # via docker-compose
+attrs==20.2.0             # via aiohttp
 certifi==2020.6.20        # via requests
-cffi==1.14.2              # via bcrypt, cryptography, pynacl
 chardet==3.0.4            # via aiohttp, requests
 click==7.1.2              # via uvicorn
-cryptography==3.1         # via paramiko
 dataclasses==0.7          # via pydantic
-distro==1.5.0             # via docker-compose
 dnspython==2.0.0          # via email-validator
-docker-compose==1.26.2    # via -r requirements/_base.in
-docker[ssh]==4.3.1        # via docker-compose
-dockerpty==0.4.1          # via docker-compose
-docopt==0.6.2             # via docker-compose
 email-validator==1.1.1    # via fastapi
 fastapi[all]==0.61.1      # via -r requirements/_base.in
 graphene==2.1.8           # via fastapi
@@ -35,37 +26,25 @@ h11==0.9.0                # via uvicorn
 httptools==0.1.1          # via uvicorn
 idna-ssl==1.1.0           # via aiohttp
 idna==2.10                # via email-validator, idna-ssl, requests, yarl
-importlib-metadata==1.7.0  # via jsonschema
 itsdangerous==1.1.0       # via fastapi
 jinja2==2.11.2            # via fastapi
-jsonschema==3.2.0         # via docker-compose
 markupsafe==1.1.1         # via jinja2
 multidict==4.7.6          # via aiohttp, yarl
-orjson==3.3.1             # via fastapi
-paramiko==2.7.2           # via docker
+orjson==3.4.0             # via fastapi
 promise==2.3              # via graphql-core, graphql-relay
-pycparser==2.20           # via cffi
 pydantic[dotenv]==1.6.1   # via -r requirements/_base.in, fastapi
-pynacl==1.4.0             # via paramiko
-pyrsistent==0.16.0        # via jsonschema
-python-dotenv==0.14.0     # via docker-compose, pydantic
+python-dotenv==0.14.0     # via pydantic
 python-multipart==0.0.5   # via fastapi
-pyyaml==5.3.1             # via docker-compose, fastapi
-requests==2.24.0          # via docker, docker-compose, fastapi
+pyyaml==5.3.1             # via fastapi
+requests==2.24.0          # via fastapi
 rx==1.6.1                 # via graphql-core
-six==1.15.0               # via bcrypt, cryptography, docker, docker-compose, dockerpty, graphene, graphql-core, graphql-relay, jsonschema, promise, pynacl, pyrsistent, python-multipart, tenacity, websocket-client
+six==1.15.0               # via graphene, graphql-core, graphql-relay, python-multipart, tenacity
 starlette==0.13.6         # via fastapi
 tenacity==6.2.0           # via -r requirements/_base.in
-texttable==1.6.3          # via docker-compose
 typing-extensions==3.7.4.3  # via aiodocker, aiohttp, yarl
 ujson==3.2.0              # via fastapi
 urllib3==1.25.10          # via requests
 uvicorn==0.11.8           # via fastapi
 uvloop==0.14.0            # via uvicorn
-websocket-client==0.57.0  # via docker, docker-compose
 websockets==8.1           # via uvicorn
-yarl==1.5.1               # via aiohttp
-zipp==3.1.0               # via importlib-metadata
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
+yarl==1.6.0               # via aiohttp
