@@ -162,13 +162,15 @@ ClassifierID = str
 
 
 class Owner(BaseModel):
-    first_name: str
-    last_name: str
+    first_name: str = Field(..., description="Owner first name", example=["John"])
+    last_name: str = Field(..., description="Owner last name", example=["Smith"])
 
 
 class ProjectLocked(BaseModel):
-    value: bool
-    owner: Optional[Owner]
+    value: bool = Field(
+        ..., description="True if the project is locked by another user"
+    )
+    owner: Optional[Owner] = Field(None, description="The user that owns the lock")
 
 
 class RunningState(str, Enum):
@@ -182,12 +184,14 @@ class RunningState(str, Enum):
 
 
 class ProjectRunningState(BaseModel):
-    value: RunningState
+    value: RunningState = Field(
+        ..., description="The running state of the project", example=["STARTED"]
+    )
 
 
 class ProjectState(BaseModel):
-    locked: ProjectLocked
-    state: ProjectRunningState
+    locked: ProjectLocked = Field(..., description="The project lock state")
+    state: ProjectRunningState = Field(..., description="The project running state")
 
 
 class Project(BaseModel):
