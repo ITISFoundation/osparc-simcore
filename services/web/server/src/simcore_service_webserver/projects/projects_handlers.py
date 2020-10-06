@@ -386,9 +386,7 @@ async def open_project(request: web.Request) -> web.Response:
         )
         project["state"] = project_state.dict(by_alias=True, exclude_unset=True)
 
-        await projects_api.notify_project_state_update(
-            request.app, project, project_state
-        )
+        await projects_api.notify_project_state_update(request.app, project)
 
         return web.json_response({"data": project})
 
@@ -431,9 +429,8 @@ async def close_project(request: web.Request) -> web.Response:
                 project_state = await projects_api.get_project_state_for_user(
                     user_id, project_uuid, request.app
                 )
-                await projects_api.notify_project_state_update(
-                    request.app, project, project_state
-                )
+                project["state"] = project_state.dict(by_alias=True, exclude_unset=True)
+                await projects_api.notify_project_state_update(request.app, project)
 
         fire_and_forget_task(_close_project_task())
 

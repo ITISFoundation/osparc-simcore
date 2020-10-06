@@ -17,23 +17,23 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from celery import Celery
 from celery.result import AsyncResult
-from sqlalchemy import and_
-
-from models_library.projects import Node, RunningState
+from models_library.projects import RunningState
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.utils import fire_and_forget_task
 from simcore_postgres_database.models.comp_pipeline import (
+    FAILED,
+    PENDING,
     RUNNING,
     SUCCESS,
     UNKNOWN,
-    PENDING,
 )
 from simcore_postgres_database.webserver_models import (
+    NodeClass,
     comp_pipeline,
     comp_tasks,
-    NodeClass,
 )
 from simcore_sdk.config.rabbit import Config as RabbitConfig
+from sqlalchemy import and_
 
 # TODO: move this to computation_models
 from simcore_service_webserver.computation_models import to_node_class
@@ -456,7 +456,11 @@ async def update_pipeline_db(
 def get_celery(_app: web.Application) -> Celery:
     config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
     rabbit = RabbitConfig(**config)
-    celery_app = Celery(rabbit.name, broker=rabbit.broker_url, backend=rabbit.backend,)
+    celery_app = Celery(
+        rabbit.name,
+        broker=rabbit.broker_url,
+        backend=rabbit.backend,
+    )
     return celery_app
 
 
@@ -552,6 +556,17 @@ def _from_celery_state(celery_state) -> RunningState:
     return RunningState(CELERY_TO_RUNNING_STATE[celery_state])
 
 
+def _from_db_state(db_state: int) -> RunningState:
+    DB_TO_RUNNING_STATE = {
+        FAILED: RunningState.failure,
+        PENDING: RunningState.pending,
+        SUCCESS: RunningState.success,
+        UNKNOWN: RunningState.not_started,  # in simcore unknown means not_started
+        RUNNING: RunningState.started,
+    }
+    return RunningState(DB_TO_RUNNING_STATE[db_state])
+
+
 async def get_task_states(
     app: web.Application, project_id: str
 ) -> Dict[str, RunningState]:
@@ -563,23 +578,13 @@ async def get_task_states(
         ):
             if row.node_class != NodeClass.COMPUTATIONAL:
                 continue
-            if not row.job_id and row.state == UNKNOWN:
-                # the task did not start yet - no sidecar is running it
-                task_states[row.node_id] = RunningState.not_started
-                continue
-            if row.state == PENDING:
-                task_states[row.node_id] = RunningState.pending
-                continue
-            if row.state == SUCCESS:
-                task_states[row.node_id] = RunningState.success
-                continue
-            if row.state == RUNNING:
-                task_states[row.node_id] = RunningState.started
-                continue
+            task_states[row.node_id] = _from_db_state(row.node_id)
+
             # the task might be running, better ask celery (NOTE this remains only 24h and disappears and state will be pending)
-            task_result = AsyncResult(row.job_id)
-            running_state = _from_celery_state(task_result.state)
-            task_states[row.node_id] = running_state
+            # task_result = AsyncResult(row.job_id)
+
+            # running_state = _from_celery_state(task_result.state)
+            # task_states[row.node_id] = running_state
     return task_states
 
 
