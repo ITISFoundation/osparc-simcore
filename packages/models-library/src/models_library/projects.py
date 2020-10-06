@@ -52,6 +52,10 @@ class SimCoreFileLink(BaseFileLink):
     pass
 
 
+class SimCoreFileLinkArray(BaseModel):
+    __root__: List[SimCoreFileLink] = []
+
+
 class DatCoreFileLink(BaseFileLink):
     dataset: str = Field(
         ...,
@@ -68,6 +72,10 @@ class DatCoreFileLink(BaseFileLink):
         extra = Extra.forbid
 
 
+class DatCoreFileLinkArray(BaseModel):
+    __root__: List[DatCoreFileLink] = []
+
+
 class AccessEnum(str, Enum):
     ReadAndWrite = "ReadAndWrite"
     Invisible = "Invisible"
@@ -82,8 +90,8 @@ class Position(BaseModel):
         extra = Extra.forbid
 
 
-InputTypes = Union[int, bool, str, float, PortLink, SimCoreFileLink, DatCoreFileLink]
-OutputTypes = Union[int, bool, str, float, SimCoreFileLink, DatCoreFileLink]
+InputTypes = Union[int, bool, str, float, PortLink, SimCoreFileLink, SimCoreFileLinkArray, DatCoreFileLink, DatCoreFileLinkArray]
+OutputTypes = Union[int, bool, str, float, SimCoreFileLink, SimCoreFileLinkArray, DatCoreFileLink, DatCoreFileLinkArray]
 InputID = constr(regex=PROPERTY_KEY_RE)
 OutputID = InputID
 
