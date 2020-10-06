@@ -359,9 +359,7 @@ async def is_node_id_present_in_any_project_workbench(
     return node_id in await db.get_all_node_ids_from_workbenches()
 
 
-async def notify_project_state_update(
-    app: web.Application, project: Dict, state: ProjectState
-) -> None:
+async def notify_project_state_update(app: web.Application, project: Dict) -> None:
     rooms_to_notify = [
         f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
     ]
@@ -369,7 +367,7 @@ async def notify_project_state_update(
     messages = {
         SOCKET_IO_PROJECT_UPDATED_EVENT: {
             "project_uuid": project["uuid"],
-            "data": state.dict(),
+            "data": project["state"],
         }
     }
 
