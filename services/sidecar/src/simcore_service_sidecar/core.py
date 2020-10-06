@@ -166,6 +166,12 @@ async def inspect(
         node_id,
     )
 
+    await rabbit_mq.post_log_message(
+        user_id,
+        project_id,
+        node_id,
+        f"[sidecar]Task {job_request_id} received: analyzing...",
+    )
     task: Optional[RowProxy] = None
     graph: Optional[nx.DiGraph] = None
     async with db_engine.acquire() as connection:
@@ -181,6 +187,10 @@ async def inspect(
     if not task:
         log.debug("no task at hand, let's rest...")
         return
+
+    await rabbit_mq.post_log_message(
+        user_id, project_id, node_id, f"[sidecar]Task found: starting...",
+    )
 
     # config nodeports
     node_ports.node_config.USER_ID = user_id
@@ -203,6 +213,12 @@ async def inspect(
         raise
 
     finally:
+        await rabbit_mq.post_log_message(
+            user_id,
+            project_id,
+            node_id,
+            f"[sidecar]Task completed with result: {run_result}",
+        )
         await _set_task_status(db_engine, project_id, node_id, run_result)
 
     return next_task_nodes
