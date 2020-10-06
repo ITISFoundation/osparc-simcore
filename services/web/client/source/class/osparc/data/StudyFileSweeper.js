@@ -165,6 +165,12 @@ qx.Class.define("osparc.data.StudyFileSweeper", {
           j++;
         }
       }
+      let secondaryStudyDataStr = JSON.stringify(secondaryStudyData.workbench);
+      const outFilesStr = "\"output\":\"outFiles\"";
+      const outFileStr = "\"output\":\"outFile\"";
+      console.log(secondaryStudyDataStr.indexOf(outFilesStr));
+      secondaryStudyDataStr = secondaryStudyDataStr.replaceAll(outFilesStr, outFileStr);
+      secondaryStudyData.workbench = JSON.parse(secondaryStudyDataStr);
       return parameterValues;
     }
   }
