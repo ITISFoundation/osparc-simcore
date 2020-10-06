@@ -1,24 +1,24 @@
+import asyncio
 import traceback
 from datetime import datetime
 from typing import Dict, List, Optional, Union
 
-import asyncio
 import networkx as nx
 from aiopg.sa import Engine, SAConnection
 from aiopg.sa.result import RowProxy
-from sqlalchemy import and_, literal_column
-
-from celery.utils.log import get_task_logger
-from simcore_postgres_database.sidecar_models import (  # PENDING,
-    FAILED,
+from simcore_postgres_database.sidecar_models import (
+    FAILED,  # PENDING,
+    PENDING,
     RUNNING,
     SUCCESS,
-    UNKNOWN,
     comp_pipeline,
     comp_tasks,
 )
 from simcore_sdk import node_ports
 from simcore_sdk.node_ports import log as node_port_log
+from sqlalchemy import and_, literal_column
+
+from celery.utils.log import get_task_logger
 
 from . import config, exceptions
 from .db import DBContextManager
@@ -74,7 +74,7 @@ async def _try_get_task_from_db(
             (comp_tasks.c.node_id == node_id)
             & (comp_tasks.c.project_id == project_id)
             & (
-                ((comp_tasks.c.job_id == None) & (comp_tasks.c.state == UNKNOWN))
+                ((comp_tasks.c.job_id == None) & (comp_tasks.c.state == PENDING))
                 | (comp_tasks.c.state == FAILED)
             )
         ),
@@ -97,8 +97,7 @@ async def _try_get_task_from_db(
         comp_tasks.update()
         .where(
             and_(
-                comp_tasks.c.node_id == node_id,
-                comp_tasks.c.project_id == project_id,
+                comp_tasks.c.node_id == node_id, comp_tasks.c.project_id == project_id,
             )
         )
         .values(job_id=job_request_id, state=RUNNING, start=datetime.utcnow())
@@ -115,8 +114,7 @@ async def _try_get_task_from_db(
 
 
 async def _get_pipeline_from_db(
-    db_connection: SAConnection,
-    project_id: str,
+    db_connection: SAConnection, project_id: str,
 ) -> RowProxy:
     # get the pipeline
     result = await db_connection.execute(
@@ -133,7 +131,10 @@ async def _get_pipeline_from_db(
     log.debug("found pipeline %s", pipeline)
     return pipeline
 
-async def _set_task_status(db_engine: Engine, project_id: str, node_id: str, run_result):
+
+async def _set_task_status(
+    db_engine: Engine, project_id: str, node_id: str, run_result
+):
     async with db_engine.acquire() as connection:
         await connection.execute(
             # FIXME: E1120:No value for argument 'dml' in method call
@@ -192,10 +193,7 @@ async def inspect(
     next_task_nodes = []
     try:
         executor = Executor(
-            db_engine=db_engine,
-            rabbit_mq=rabbit_mq,
-            task=task,
-            user_id=user_id,
+            db_engine=db_engine, rabbit_mq=rabbit_mq, task=task, user_id=user_id,
         )
         await executor.run()
         next_task_nodes = list(graph.successors(node_id))
@@ -206,6 +204,5 @@ async def inspect(
 
     finally:
         await _set_task_status(db_engine, project_id, node_id, run_result)
-
 
     return next_task_nodes
