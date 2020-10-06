@@ -13,6 +13,9 @@
     "*Makefile": "makefile"
   },
   "files.eol": "\n",
+  "files.exclude": {
+    "**/__pycache__": true
+  },
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
   "files.trimTrailingWhitespace": true,

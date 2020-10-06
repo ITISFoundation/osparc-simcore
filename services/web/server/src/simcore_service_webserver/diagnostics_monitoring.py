@@ -35,7 +35,10 @@ async def metrics_handler(request: web.Request):
 
 def middleware_factory(app_name: str) -> Coroutine:
     @web.middleware
-    async def _middleware_handler(request: web.Request, handler):
+    async def _middleware_handler(request: web.Request, handler: Coroutine):
+        if request.rel_url.path == "/socket.io/":
+            return await handler(request)
+
         try:
             request[kSTART_TIME] = time.time()
             request.app[kREQUEST_IN_PROGRESS].labels(

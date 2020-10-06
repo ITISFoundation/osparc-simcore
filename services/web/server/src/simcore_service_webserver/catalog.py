@@ -3,6 +3,7 @@
 """
 import logging
 from typing import Dict, List, Optional
+from asyncio import CancelledError
 
 from aiohttp import ContentTypeError, web
 from yarl import URL
@@ -56,23 +57,28 @@ async def _request_catalog(
 ) -> web.Response:
     session = get_client_session(app)
 
-    async with session.request(method, url, headers=headers, data=data) as resp:
+    try:
+        async with session.request(method, url, headers=headers, data=data) as resp:
 
-        is_error = resp.status >= 400
-        # catalog backend sometimes sends error in plan=in text
-        try:
-            payload: Dict = await resp.json()
-        except ContentTypeError:
-            payload = await resp.text()
-            is_error = True
+            is_error = resp.status >= 400
+            # catalog backend sometimes sends error in plan=in text
+            try:
+                payload: Dict = await resp.json()
+            except ContentTypeError:
+                payload = await resp.text()
+                is_error = True
 
-        if is_error:
-            # Only if error, it wraps since catalog service does not return (for the moment) enveloped
-            data = wrap_as_envelope(error=payload)
-        else:
-            data = wrap_as_envelope(data=payload)
+            if is_error:
+                # Only if error, it wraps since catalog service does
+                # not return (for the moment) enveloped
+                data = wrap_as_envelope(error=payload)
+            else:
+                data = wrap_as_envelope(data=payload)
 
-        return web.json_response(data, status=resp.status)
+            return web.json_response(data, status=resp.status)
+
+    except (CancelledError, TimeoutError) as err:
+        raise web.HTTPServiceUnavailable(reason="unavailable catalog service") from err
 
 
 ## HANDLERS  ------------------------
