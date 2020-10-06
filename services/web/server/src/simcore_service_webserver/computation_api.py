@@ -456,11 +456,7 @@ async def update_pipeline_db(
 def get_celery(_app: web.Application) -> Celery:
     config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
     rabbit = RabbitConfig(**config)
-    celery_app = Celery(
-        rabbit.name,
-        broker=rabbit.broker_url,
-        backend=rabbit.backend,
-    )
+    celery_app = Celery(rabbit.name, broker=rabbit.broker_url, backend=rabbit.backend,)
     return celery_app
 
 
@@ -571,7 +567,7 @@ async def get_task_states(
                 # the task did not start yet - no sidecar is running it
                 task_states[row.node_id] = RunningState.not_started
                 continue
-            if not row.job_id and row.state == PENDING:
+            if row.state == PENDING:
                 task_states[row.node_id] = RunningState.pending
                 continue
             if row.state == SUCCESS:
@@ -596,6 +592,8 @@ async def get_pipeline_state(app: web.Application, project_id: str) -> RunningSt
         return RunningState.success
     if any(x == RunningState.failure for x in task_states.values()):
         return RunningState.failure
+    if all(x == RunningState.pending for x in task_states.values()):
+        return RunningState.pending
     if any(x != RunningState.not_started for x in task_states.values()):
         return RunningState.started
     return RunningState.not_started
