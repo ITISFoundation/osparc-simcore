@@ -456,15 +456,12 @@ async def update_pipeline_db(
 def get_celery(_app: web.Application) -> Celery:
     config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
     rabbit = RabbitConfig(**config)
-    celery_app = Celery(
-        rabbit.name,
-        broker=rabbit.broker_url,
-        backend=rabbit.backend,
-    )
+    celery_app = Celery(rabbit.name, broker=rabbit.broker_url, backend=rabbit.backend,)
     return celery_app
 
 
 from celery.signals import after_task_publish
+from .socketio.events import post_messages
 
 
 @after_task_publish.connect
@@ -472,11 +469,20 @@ def task_sent_handler(sender=None, headers=None, body=None, **kwargs):
     # information about task are located in headers for task messages
     # using the task protocol version 2.
     info = headers if "task" in headers else body
-    log.warning("-------------------------- AFTER_TASK_PUBLISH")
+    log.debug("task published to celery: %s", headers)
+    # data = {
+    #     "Channel": "Log",
+    #     "Node": None,
+    #     "user_id": None,
+    #     "project_id": None,
+    #     "Messages": ["pipeline sent for execution..."],
+    # }
+    # await post_messages(app, user_id, data)
 
 
 async def _set_tasks_in_tasks_db_as_pending(db_engine: Engine, project_id: str):
     query = (
+        # pylint: disable=no-value-for-parameter
         comp_tasks.update()
         .where(and_(comp_tasks.c.project_id == project_id))
         .values(state=PENDING)
@@ -492,7 +498,7 @@ async def start_pipeline_computation(
     db_engine = app[APP_DB_ENGINE_KEY]
     await _set_tasks_in_tasks_db_as_pending(db_engine, project_id)
 
-    # commit the tasks to celery
+    # publish the tasks to celery
     task = get_celery(app).send_task(
         "comp.task", kwargs={"user_id": user_id, "project_id": project_id}
     )
@@ -502,39 +508,33 @@ async def start_pipeline_computation(
         )
         return
 
-    def on_celery_message(body):
-        log.warning("----------xxx-----------xxx-------- %s", body)
+    # async def _monitor_task_results(
+    #     app: web.Application, project_id: str, _: str
+    # ) -> None:
+    #     try:
+    #         pipeline_state: RunningState = RunningState.unknown
+    #         while pipeline_state not in [RunningState.success, RunningState.failure]:
+    #             new_state = await get_pipeline_state(app, project_id)
+    #             if new_state != pipeline_state:
+    #                 log.debug(
+    #                     "Project %s changed its state from %s to %s",
+    #                     project_id,
+    #                     pipeline_state,
+    #                     new_state,
+    #                 )
+    #                 pipeline_state = new_state
+    #                 # await projects_api.notify_project_state_update(
+    #                 #     app, project_data, ProjectState(locked={"value": False})
+    #                 # )
 
-    async def _monitor_background(task):
-        task.get(on_message=on_celery_message, propagate=False)
+    #             await asyncio.sleep(5)
 
-    async def _monitor_task_results(
-        app: web.Application, project_id: str, _: str
-    ) -> None:
-        try:
-            pipeline_state: RunningState = RunningState.unknown
-            while pipeline_state not in [RunningState.success, RunningState.failure]:
-                new_state = await get_pipeline_state(app, project_id)
-                if new_state != pipeline_state:
-                    log.debug(
-                        "Project %s changed its state from %s to %s",
-                        project_id,
-                        pipeline_state,
-                        new_state,
-                    )
-                    pipeline_state = new_state
-                    # await projects_api.notify_project_state_update(
-                    #     app, project_data, ProjectState(locked={"value": False})
-                    # )
-
-                await asyncio.sleep(5)
-
-        except CancelledError:
-            # the task got cancelled
-            pass
+    #     except CancelledError:
+    #         # the task got cancelled
+    #         pass
 
     # fire_and_forget_task(_monitor_background(task))
-    fire_and_forget_task(_monitor_task_results(app, project_id, task.task_id))
+    # fire_and_forget_task(_monitor_task_results(app, project_id, task.task_id))
 
     log.debug(
         "Task (task=%s, user_id=%s, project_id=%s) submitted for execution.",
