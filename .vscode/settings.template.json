@@ -34,9 +34,5 @@
   "shellcheck.executablePath": "${workspaceFolder}/scripts/shellcheck.bash",
   "shellcheck.run": "onSave",
   "shellcheck.enableQuickFix": true,
-  "python.formatting.provider": "black",
-  "python.sortImports.path": "${VIRTUAL_ENV}/bin/isort",
-  "python.sortImports.args": [
-    "--settings-path=${workspaceFolder}/.isort.cfg"
-  ]
+  "python.formatting.provider": "black"
 }

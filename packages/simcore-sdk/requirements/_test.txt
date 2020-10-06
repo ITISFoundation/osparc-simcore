@@ -54,7 +54,7 @@ pytest-instafail==0.4.2   # via -r requirements/_test.in
 pytest-mock==3.3.1        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.4       # via -r requirements/_test.in
-pytest==6.1.1             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-instafail, pytest-mock, pytest-sugar
+pytest==6.1.0             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-instafail, pytest-mock, pytest-sugar
 python-dotenv==0.14.0     # via -r requirements/_test.in, docker-compose
 pyyaml==5.3.1             # via -r requirements/_base.txt, docker-compose, trafaret-config
 requests==2.24.0          # via -r requirements/_test.in, coveralls, docker, docker-compose

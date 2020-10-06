@@ -11,7 +11,6 @@
 
 # installs this repo's packages
 -e ../../../packages/s3wrapper/
--e ../../../packages/models-library/
 -e ../../../packages/postgres-database/[migration]
 -e ../../../packages/simcore-sdk/
 -e ../../../packages/service-library/

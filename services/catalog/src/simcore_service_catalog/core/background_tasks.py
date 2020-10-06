@@ -18,11 +18,6 @@ from urllib.parse import quote_plus
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from fastapi import FastAPI
-from models_library.services import (
-    ServiceAccessRightsAtDB,
-    ServiceDockerData,
-    ServiceMetaDataAtDB,
-)
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 
@@ -30,6 +25,11 @@ from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.projects import ProjectsRepository
 from ..db.repositories.services import ServicesRepository
+from ..models.domain.service import (
+    ServiceAccessRightsAtDB,
+    ServiceDockerData,
+    ServiceMetaDataAtDB,
+)
 from ..services.frontend_services import get_services as get_frontend_services
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ async def _list_registry_services(
         try:
             service_data = ServiceDockerData.parse_obj(x)
             services[(service_data.key, service_data.version)] = service_data
-        # services = parse_obj_as(List[ServiceDockerData], data)
+        # services = parse_obj_as(List[ServiceOut], data)
         except ValidationError as exc:
             logger.warning(
                 "skip service %s:%s that has invalid fields\n%s",
@@ -251,7 +251,9 @@ async def sync_registry_task(app: FastAPI) -> None:
         except Exception:  # pylint: disable=broad-except
             logger.exception("Error while processing services entry")
             # wait a bit before retrying, so it does not block everything until the director is up
-            await asyncio.sleep(app.state.settings.background_task_wait_after_failure)
+            await asyncio.sleep(
+                app.state.settings.background_task_wait_after_failure
+            )
 
 
 async def start_registry_sync_task(app: FastAPI) -> None:

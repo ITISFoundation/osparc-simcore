@@ -23,8 +23,7 @@ readme = (current_dir / "README.md").read_text()
 version = (current_dir / "VERSION").read_text().strip()
 
 install_requirements = read_reqs(current_dir / "requirements" / "_base.txt") + [
-    "simcore-models-library",
-    "simcore-postgres-database",
+    "simcore-postgres-database"
 ]
 
 test_requirements = read_reqs(current_dir / "requirements" / "_test.txt")

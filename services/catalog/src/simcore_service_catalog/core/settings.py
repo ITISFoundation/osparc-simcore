@@ -102,7 +102,7 @@ class AppSettings(BaseSettings):
 
     # BACKGROUND TASK
     background_task_rest_time: PositiveInt = 60
-    background_task_wait_after_failure: PositiveInt = 5  # secs
+    background_task_wait_after_failure: PositiveInt = 5 # secs
     access_rights_default_product_name: str = "osparc"
 
     class Config(_CommonConfig):

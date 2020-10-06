@@ -18,7 +18,7 @@ from simcore_service_webserver.statics_settings import (
     FrontEndAppSettings,
 )
 
-FOGBUGZ_NEWCASE_URL_TEMPLATE = r"https://z43.manuscript.com/f/cases/new?command=new&pg=pgEditBug&ixProject={project}&ixArea={area}"
+FOGBUGZ_NEWCASE_URL_TEMPLATE = r"https://z43.fogbugz.com/f/cases/new?command=new&pg=pgEditBug&ixProject={project}&ixArea={area}"
 
 
 @pytest.fixture(scope="module")

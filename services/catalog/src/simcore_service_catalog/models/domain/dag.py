@@ -1,7 +1,9 @@
 from typing import Dict, Optional
 
-from models_library.projects import KEY_RE, VERSION_RE, Node
 from pydantic import BaseModel, EmailStr, Field, Json
+
+from . import project
+from .project import KEY_RE, VERSION_RE
 
 
 class DAGBase(BaseModel):
@@ -16,11 +18,11 @@ class DAGBase(BaseModel):
 
 class DAGAtDB(DAGBase):
     id: int
-    workbench: Json[Dict[str, Node]]  # pylint: disable=unsubscriptable-object
+    workbench: Json[Dict[str, project.Node]]  # pylint: disable=unsubscriptable-object
 
     class Config:
         orm_mode = True
 
 
 class DAGData(DAGAtDB):
-    workbench: Optional[Dict[str, Node]]
+    workbench: Optional[Dict[str, project.Node]]

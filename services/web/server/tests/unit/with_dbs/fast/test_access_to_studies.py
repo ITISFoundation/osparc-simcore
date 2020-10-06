@@ -15,7 +15,6 @@ from typing import Dict
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
 
-from models_library.projects import Owner, ProjectLocked, ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserRole
 from pytest_simcore.helpers.utils_mock import future_with_result
@@ -25,9 +24,14 @@ from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
-from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects import setup_projects
+from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects.projects_api import delete_project_from_db
+from simcore_service_webserver.projects.projects_models import (
+    Owner,
+    ProjectLocked,
+    ProjectState,
+)
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
@@ -72,7 +76,7 @@ def qx_client_outdir(tmpdir):
 @pytest.fixture
 def mocks_on_projects_api(mocker):
     """
-    All projects in this module are UNLOCKED
+        All projects in this module are UNLOCKED
     """
     state = ProjectState(
         locked=ProjectLocked(
@@ -109,6 +113,7 @@ def client(
     setup_products(app)
     assert setup_projects(app), "Shall not skip this setup"
     assert setup_studies_access(app), "Shall not skip this setup"
+
 
     # server and client
     yield loop.run_until_complete(
@@ -247,9 +252,7 @@ async def catalog_subsystem_mock(monkeypatch, published_project):
     async def mocked_get_services_for_user(*args, **kwargs):
         return services_in_project
 
-    monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
-    )
+    monkeypatch.setattr(catalog, "get_services_for_user_in_product", mocked_get_services_for_user)
 
 
 async def test_access_study_anonymously(

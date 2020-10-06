@@ -1,6 +1,6 @@
 from typing import List
 
-from models_library.services import ServiceDockerData
+from ..models.domain.service import ServiceDockerData
 
 
 def _file_picker_service() -> ServiceDockerData:

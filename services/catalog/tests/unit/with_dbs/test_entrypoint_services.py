@@ -11,11 +11,6 @@ from typing import List, Optional
 
 import pytest
 from fastapi import FastAPI
-from models_library.services import (
-    ServiceAccessRightsAtDB,
-    ServiceDockerData,
-    ServiceType,
-)
 from pydantic.types import PositiveInt
 from starlette.testclient import TestClient
 from yarl import URL
@@ -24,7 +19,12 @@ import simcore_service_catalog.api.dependencies.director
 from simcore_service_catalog.api.routes import services
 from simcore_service_catalog.db.repositories.groups import GroupsRepository
 from simcore_service_catalog.models.domain.group import GroupAtDB, GroupType
-from simcore_service_catalog.models.schemas.services import ServiceOut
+from simcore_service_catalog.models.domain.service import (
+    ServiceAccessRightsAtDB,
+    ServiceDockerData,
+    ServiceOut,
+    ServiceType,
+)
 
 core_services = ["postgres"]
 ops_services = ["adminer"]

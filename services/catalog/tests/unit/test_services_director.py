@@ -66,7 +66,7 @@ async def test_director_client_setup(minimal_app, mocked_director_service_api):
     assert data == ["one", "two"]
 
 
-# async def test_resilience_to_failing_director_service(
+#async def test_resilience_to_failing_director_service(
 #    minimal_app, mocked_director_service_api
-# ):
+#):
 #    pass

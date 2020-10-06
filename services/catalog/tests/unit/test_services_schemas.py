@@ -1,27 +1,17 @@
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-import
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+# pylint:disable=protected-access
+
+
 import json
 import subprocess
-import sys
 from pathlib import Path
 from typing import Callable, Dict
 
 import pytest
 
-import models_library
-
-pytest_plugins = [
-    "pytest_simcore.repository_paths",
-    "pytest_simcore.schemas",
-]
-
-
-@pytest.fixture(scope="session")
-def package_dir():
-    pdir = Path(models_library.__file__).resolve().parent
-    assert pdir.exists()
-    return pdir
+from simcore_service_catalog.models.domain.service import ServiceDockerData
 
 
 @pytest.fixture(scope="session")
@@ -49,3 +39,21 @@ def diff_json_schemas(json_diff_script: Path, tmp_path_factory: Path) -> Callabl
         )
 
     yield _run_diff
+
+
+def test_generated_schema_same_as_original(
+    diff_json_schemas: Callable, node_meta_schema: Dict
+):
+    generated_schema = json.loads(ServiceDockerData.schema_json(indent=2))
+
+    process_completion = diff_json_schemas(node_meta_schema, generated_schema)
+
+    assert (
+        process_completion.returncode == 0
+    ), f"Exit code {process_completion.returncode}\n{process_completion.stdout.decode('utf-8')}"
+
+    # https://www.npmjs.com/package/json-schema-diff returns true (at least in WSL whatever the result)
+    # ```false``` is returned at the end of the stdout
+    assert "No differences found" in process_completion.stdout.decode(
+        "utf-8"
+    ), process_completion.stdout.decode("utf-8")

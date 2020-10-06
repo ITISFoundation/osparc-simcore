@@ -10,7 +10,6 @@
 -r _test.txt
 
 # installs this repo's packages
-../../packages/models-library
 ../../packages/postgres-database
 ../../packages/pytest-simcore/
 
