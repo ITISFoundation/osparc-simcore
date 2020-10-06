@@ -77,7 +77,7 @@ def safe_request(request_func: Coroutine):
             logger.exception(
                 "Failed request %s to %s%s",
                 request_func.__name__,
-                self._client.base_url,
+                self._client.base_url,  # pylint: disable=protected-access
                 path,
             )
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err

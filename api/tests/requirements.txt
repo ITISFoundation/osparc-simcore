@@ -16,7 +16,7 @@ iniconfig==1.0.1          # via pytest
 isodate==0.6.0            # via openapi-core, openapi-schema-validator
 jsonschema==3.2.0         # via openapi-schema-validator, openapi-spec-validator
 lazy-object-proxy==1.5.1  # via openapi-core
-more-itertools==8.5.0     # via openapi-core, pytest
+more-itertools==8.5.0     # via openapi-core
 multidict==4.7.6          # via aiohttp, yarl
 openapi-core==0.13.4      # via -r requirements.in
 openapi-schema-validator==0.1.1  # via openapi-core
@@ -31,7 +31,7 @@ pytest-aiohttp==0.3.0     # via -r requirements.in
 pytest-cov==2.10.1        # via -r requirements.in
 pytest-instafail==0.4.2   # via -r requirements.in
 pytest-sugar==0.9.4       # via -r requirements.in
-pytest==6.0.2             # via -r requirements.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-sugar
+pytest==6.1.1             # via -r requirements.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-sugar
 pyyaml==5.3.1             # via openapi-spec-validator
 six==1.15.0               # via isodate, jsonschema, openapi-core, openapi-schema-validator, openapi-spec-validator, packaging
 strict-rfc3339==0.7       # via openapi-schema-validator

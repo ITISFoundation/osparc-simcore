@@ -38,6 +38,7 @@ future==0.18.2            # via -r requirements/_base.txt, blackfynn
 idna-ssl==1.1.0           # via -r requirements/_base.txt, aiohttp
 idna==2.10                # via -r requirements/_base.txt, idna-ssl, requests, yarl
 importlib-metadata==1.7.0  # via -r requirements/_base.txt, jsonschema, pluggy, pytest
+iniconfig==1.0.1          # via pytest
 isodate==0.6.0            # via -r requirements/_base.txt, openapi-core
 isort==5.4.2              # via pylint
 jmespath==0.10.0          # via -r requirements/_base.txt, boto3, botocore
@@ -45,7 +46,6 @@ jsonschema==3.2.0         # via -r requirements/_base.txt, docker-compose, opena
 lazy-object-proxy==1.4.3  # via -r requirements/_base.txt, astroid, openapi-core
 marshmallow==3.7.1        # via -r requirements/_base.txt
 mccabe==0.6.1             # via pylint
-more-itertools==8.4.0     # via pytest
 multidict==4.7.6          # via -r requirements/_base.txt, aiohttp, yarl
 numpy==1.19.1             # via pandas
 openapi-core==0.12.0      # via -r requirements/_base.txt
@@ -72,7 +72,7 @@ pytest-instafail==0.4.2   # via -r requirements/_test.in
 pytest-mock==3.2.0        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.4       # via -r requirements/_test.in
-pytest==5.4.3             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-instafail, pytest-mock, pytest-sugar
+pytest==6.1.1             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-instafail, pytest-mock, pytest-sugar
 python-dateutil==2.8.1    # via -r requirements/_base.txt, blackfynn, botocore, pandas
 python-dotenv==0.14.0     # via docker-compose
 pytz==2020.1              # via -r requirements/_base.txt, blackfynn, pandas
@@ -87,14 +87,13 @@ strict-rfc3339==0.7       # via -r requirements/_base.txt, openapi-core
 tenacity==6.2.0           # via -r requirements/_base.txt
 termcolor==1.1.0          # via pytest-sugar
 texttable==1.6.2          # via docker-compose
-toml==0.10.1              # via pylint
+toml==0.10.1              # via pylint, pytest
 trafaret-config==2.0.2    # via -r requirements/_base.txt
 trafaret==2.0.2           # via -r requirements/_base.txt, trafaret-config
 typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.2  # via -r requirements/_base.txt, aiohttp, aioitertools, yarl
 ujson==3.1.0              # via -r requirements/_base.txt
 urllib3==1.25.10          # via -r requirements/_base.txt, botocore, requests
-wcwidth==0.2.5            # via pytest
 websocket-client==0.57.0  # via -r requirements/_base.txt, blackfynn, docker, docker-compose
 werkzeug==1.0.1           # via -r requirements/_base.txt
 wrapt==1.12.1             # via -r requirements/_base.txt, aiobotocore, astroid, deprecated

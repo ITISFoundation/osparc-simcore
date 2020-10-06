@@ -9,6 +9,7 @@ import aioredlock
 from aiohttp import web
 from jsonschema import ValidationError
 
+from models_library.projects import Owner, ProjectLocked, ProjectState
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog
@@ -22,7 +23,6 @@ from ..users_api import get_user_name
 from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from .projects_models import Owner, ProjectLocked, ProjectState
 from .projects_utils import project_uses_available_services
 
 OVERRIDABLE_DOCUMENT_KEYS = [
