@@ -1,7 +1,6 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
 import asyncio
 import json
 import time
@@ -13,12 +12,16 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import mock
 import pytest
 import socketio
+from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
 from aiohttp import web
 from mock import call
-from socketio.exceptions import ConnectionError as SocketConnectionError
-
-from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
-from models_library.projects import Owner, ProjectLocked, ProjectState
+from models_library.projects import (
+    Owner,
+    ProjectLocked,
+    ProjectRunningState,
+    ProjectState,
+    RunningState,
+)
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
 from pytest_simcore.helpers.utils_mock import future_with_result
@@ -42,6 +45,7 @@ from simcore_service_webserver.socketio import setup_sockets
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.tags import setup_tags
 from simcore_service_webserver.utils import now_str, to_datetime
+from socketio.exceptions import ConnectionError as SocketConnectionError
 
 API_VERSION = "v0"
 RESOURCE_NAME = "projects"
@@ -124,7 +128,8 @@ def mocks_on_projects_api(mocker, logged_user):
     state = ProjectState(
         locked=ProjectLocked(
             value=False, owner=Owner(first_name=nameparts[0], last_name=nameparts[1])
-        )
+        ),
+        state=ProjectRunningState(value=RunningState.not_started),
     )
     mocker.patch(
         "simcore_service_webserver.projects.projects_api.get_project_state_for_user",

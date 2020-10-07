@@ -4,7 +4,6 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
 import re
 import textwrap
 from copy import deepcopy
@@ -14,8 +13,13 @@ from typing import Dict
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
-
-from models_library.projects import Owner, ProjectLocked, ProjectState
+from models_library.projects import (
+    Owner,
+    ProjectLocked,
+    ProjectRunningState,
+    ProjectState,
+    RunningState,
+)
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserRole
 from pytest_simcore.helpers.utils_mock import future_with_result
@@ -77,7 +81,8 @@ def mocks_on_projects_api(mocker):
     state = ProjectState(
         locked=ProjectLocked(
             value=False, owner=Owner(first_name="Speedy", last_name="Gonzalez")
-        )
+        ),
+        state=ProjectRunningState(value=RunningState.not_started),
     )
     mocker.patch(
         "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
