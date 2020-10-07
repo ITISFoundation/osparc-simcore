@@ -47,7 +47,7 @@ qx.Class.define("osparc.data.model.Study", {
       name: studyData.name === undefined ? this.getName() : studyData.name,
       description: studyData.description === undefined ? this.getDescription() : studyData.description,
       thumbnail: studyData.thumbnail === undefined ? this.getThumbnail() : studyData.thumbnail,
-      prjOwner: studyData.prjOwner === undefined ? osparc.auth.Data.getInstance().getUserName() : studyData.prjOwner,
+      owner: studyData.prjOwner === undefined ? osparc.auth.Data.getInstance().getUserName() : studyData.prjOwner,
       accessRights: studyData.accessRights === undefined ? this.getAccessRights() : studyData.accessRights,
       creationDate: studyData.creationDate === undefined ? this.getCreationDate() : new Date(studyData.creationDate),
       lastChangeDate: studyData.lastChangeDate === undefined ? this.getLastChangeDate() : new Date(studyData.lastChangeDate),
@@ -89,10 +89,10 @@ qx.Class.define("osparc.data.model.Study", {
       init: ""
     },
 
-    prjOwner: {
+    owner: {
       check: "String",
       nullable: false,
-      event: "changePrjOwner",
+      event: "changeOwner",
       init: ""
     },
 
@@ -198,7 +198,7 @@ qx.Class.define("osparc.data.model.Study", {
       }
       if (studyData instanceof osparc.data.model.Study) {
         const myEmail = osparc.auth.Data.getInstance().getEmail();
-        return studyData.getPrjOwner() === myEmail;
+        return studyData.getOwner() === myEmail;
       }
       return false;
     }
