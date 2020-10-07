@@ -76,6 +76,25 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
       return control || this.base(arguments, id);
     },
 
+    // overriden
+    _applyThumbnail: function(value) {
+      if (value === null) {
+        const collabType = this.getCollabType();
+        switch (collabType) {
+          case 0:
+            value = "@FontAwesome5Solid/globe/28";
+            break;
+          case 1:
+            value = "@FontAwesome5Solid/users/28";
+            break;
+          case 2:
+            value = "@FontAwesome5Solid/user/28";
+            break;
+        }
+      }
+      this.base(arguments, value);
+    },
+
     _applyAccessRights: function(value) {
       if (value === null) {
         return;

@@ -132,12 +132,12 @@ qx.Class.define("osparc.component.export.Permissions", {
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("gid", "model", null, item, id);
           ctrl.bindProperty("gid", "key", null, item, id);
+          ctrl.bindProperty("collabType", "collabType", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id); // user
           ctrl.bindProperty("label", "title", null, item, id); // organization
           ctrl.bindProperty("login", "subtitle", null, item, id); // user
           ctrl.bindProperty("description", "subtitle", null, item, id); // organization
-          ctrl.bindProperty("collabType", "collabType", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
