@@ -10,8 +10,6 @@ reqs: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
 
 
-
-
 # DEVELOPMENT TOOLS ########
 
 .env:
@@ -31,17 +29,22 @@ run-devel: .env docker-compose.yml down ## runs app on host with pg fixture for 
 		--reload --reload-dir $(SRC_DIR) \
 		--port=8000 --host=0.0.0.0
 
+
 .PHONY: db-tables
 db-tables: .env ## upgrades and create tables [for development]
 	# Upgrading and creating tables
 	export $(shell grep -v '^#' $< | xargs  -d '\n'); \
 	python3 tests/utils/init-pg.py
 
+
+
 .PHONY: db-migration
 db-migration: .env ## runs discover and upgrade on running pg-db [for development]
 	# Creating tables
 	export $(shell grep -v '^#' $< | xargs  -d '\n'); \
 	sc-pg discover && sc-pg upgrade
+
+
 
 down: docker-compose.yml ## stops pg fixture
 	# stopping extra services
