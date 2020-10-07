@@ -203,6 +203,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __buildToolbar: function() {
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+
       const toolbar = this.__toolbar = new qx.ui.toolbar.ToolBar();
       const titlePart = new qx.ui.toolbar.Part();
       const infoPart = new qx.ui.toolbar.Part();
@@ -222,7 +224,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
           if (node) {
             node.renameNode(evt.getData());
           }
-          const study = osparc.store.Store.getInstance().getCurrentStudy();
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", study.serializeStudy());
         }
       }, this);
@@ -232,7 +233,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
       infoPart.add(infoBtn);
 
-      if (osparc.data.Permissions.getInstance().canDo("study.node.update")) {
+      if (osparc.data.Permissions.getInstance().canDo("study.node.update") || osparc.data.model.Study.isStudyOwner(study)) {
         const editAccessLevel = new qx.ui.toolbar.Button(this.tr("Edit Access Level"));
         editAccessLevel.addListener("execute", () => this._openEditAccessLevel(), this);
         infoPart.add(editAccessLevel);
