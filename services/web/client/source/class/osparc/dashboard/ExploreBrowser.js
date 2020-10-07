@@ -674,7 +674,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
     __isUserOwner: function(studyData) {
       if (this.self().isTemplate(studyData)) {
-        return osparc.data.model.Study.isStudyOwner(studyData);
+        return osparc.data.model.Study.isOwner(studyData);
       } else if (this.self().isService(studyData)) {
         const myEmail = osparc.auth.Data.getInstance().getEmail();
         return studyData.owner === myEmail;

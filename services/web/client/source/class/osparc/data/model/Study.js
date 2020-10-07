@@ -190,7 +190,7 @@ qx.Class.define("osparc.data.model.Study", {
       return false;
     },
 
-    isUserOwner: function(studyData) {
+    isOwner: function(studyData) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const aceessRights = studyData["accessRights"];
       if (myGid in aceessRights) {

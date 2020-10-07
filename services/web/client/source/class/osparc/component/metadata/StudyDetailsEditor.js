@@ -80,7 +80,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __createButtons: function(isTemplate) {
-      const isCurrentUserOwner = osparc.data.model.Study.isStudyOwner(this.__studyData);
+      const isCurrentUserOwner = osparc.data.model.Study.isOwner(this.__studyData);
       const canUpdateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.update");
 
       const buttonsToolbar = new qx.ui.toolbar.ToolBar();
@@ -106,7 +106,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __createEditView: function(isTemplate) {
-      const isCurrentUserOwner = osparc.data.model.Study.isStudyOwner(this.__studyData);
+      const isCurrentUserOwner = osparc.data.model.Study.isOwner(this.__studyData);
       const canUpdateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.update");
       const fieldIsEnabled = isCurrentUserOwner && (!isTemplate || canUpdateTemplate);
 

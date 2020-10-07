@@ -66,7 +66,7 @@ qx.Class.define("osparc.component.export.StudyPermissions", {
     __studyData: null,
 
     _isUserOwner: function() {
-      return osparc.data.model.Study.isStudyOwner(this.__studyData);
+      return osparc.data.model.Study.isOwner(this.__studyData);
     },
 
     _addCollaborator: function() {

@@ -436,7 +436,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyServicesButton = this.__getStudyServicesMenuButton(studyData);
       menu.add(studyServicesButton);
 
-      const isCurrentUserOwner = osparc.data.model.Study.isStudyOwner(studyData);
+      const isCurrentUserOwner = osparc.data.model.Study.isOwner(studyData);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       if (isCurrentUserOwner && canCreateTemplate) {
         const saveAsTemplateButton = this.__getSaveAsTemplateMenuButton(studyData);
