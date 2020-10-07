@@ -5899,6 +5899,18 @@ paths:
                                           type: integer
                                         'y':
                                           type: integer
+                                    state:
+                                      title: RunningState
+                                      description: the node's running state
+                                      enum:
+                                        - UNKNOWN
+                                        - NOT_STARTED
+                                        - PENDING
+                                        - STARTED
+                                        - RETRY
+                                        - SUCCESS
+                                        - FAILURE
+                                      type: string
                               additionalProperties: true
                             tags:
                               type: array
@@ -6337,6 +6349,18 @@ paths:
                               type: integer
                             'y':
                               type: integer
+                        state:
+                          title: RunningState
+                          description: the node's running state
+                          enum:
+                            - UNKNOWN
+                            - NOT_STARTED
+                            - PENDING
+                            - STARTED
+                            - RETRY
+                            - SUCCESS
+                            - FAILURE
+                          type: string
                   additionalProperties: true
                 tags:
                   type: array
@@ -6655,6 +6679,18 @@ paths:
                                         type: integer
                                       'y':
                                         type: integer
+                                  state:
+                                    title: RunningState
+                                    description: the node's running state
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
                             additionalProperties: true
                           tags:
                             type: array
@@ -7091,6 +7127,18 @@ paths:
                                         type: integer
                                       'y':
                                         type: integer
+                                  state:
+                                    title: RunningState
+                                    description: the node's running state
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
                             additionalProperties: true
                           tags:
                             type: array
@@ -7533,6 +7581,18 @@ paths:
                                         type: integer
                                       'y':
                                         type: integer
+                                  state:
+                                    title: RunningState
+                                    description: the node's running state
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
                             additionalProperties: true
                           tags:
                             type: array
@@ -7966,6 +8026,18 @@ paths:
                               type: integer
                             'y':
                               type: integer
+                        state:
+                          title: RunningState
+                          description: the node's running state
+                          enum:
+                            - UNKNOWN
+                            - NOT_STARTED
+                            - PENDING
+                            - STARTED
+                            - RETRY
+                            - SUCCESS
+                            - FAILURE
+                          type: string
                   additionalProperties: true
                 tags:
                   type: array
@@ -8284,6 +8356,18 @@ paths:
                                         type: integer
                                       'y':
                                         type: integer
+                                  state:
+                                    title: RunningState
+                                    description: the node's running state
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
                             additionalProperties: true
                           tags:
                             type: array
@@ -8742,6 +8826,18 @@ paths:
                                         type: integer
                                       'y':
                                         type: integer
+                                  state:
+                                    title: RunningState
+                                    description: the node's running state
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
                             additionalProperties: true
                           tags:
                             type: array
@@ -10012,6 +10108,18 @@ paths:
                                         type: integer
                                       'y':
                                         type: integer
+                                  state:
+                                    title: RunningState
+                                    description: the node's running state
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
                             additionalProperties: true
                           tags:
                             type: array
@@ -10447,6 +10555,18 @@ paths:
                                         type: integer
                                       'y':
                                         type: integer
+                                  state:
+                                    title: RunningState
+                                    description: the node's running state
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
                             additionalProperties: true
                           tags:
                             type: array
