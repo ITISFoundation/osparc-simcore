@@ -250,6 +250,9 @@ qx.Class.define("osparc.data.model.Study", {
           return;
         }
         let value = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
+        if (key === "owner") {
+          key = "prjOwner";
+        }
         if (value !== null) {
           // only put the value in the payload if there is a value
           jsonObject[key] = value;
