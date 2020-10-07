@@ -12,6 +12,16 @@ current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve
 DATE_RE = r"\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z"
 
 
+class RunningState(str, Enum):
+    unknown = "UNKNOWN"
+    not_started = "NOT_STARTED"
+    pending = "PENDING"
+    started = "STARTED"
+    retrying = "RETRY"
+    success = "SUCCESS"
+    failure = "FAILURE"
+
+
 class PortLink(BaseModel):
     nodeUuid: UUID4 = Field(
         ...,
@@ -141,7 +151,13 @@ class Node(BaseModel):
         example=["nodeUUid1", "nodeUuid2"],
     )
 
-    position: Position = Field(...)
+    position: Position = Field(..., description="The node position in the workbench")
+
+    state: Optional[RunningState] = Field(
+        RunningState.not_started,
+        description="the node's running state",
+        example=["RUNNING", "FAILURE"],
+    )
 
     class Config:
         extra = Extra.forbid
@@ -171,16 +187,6 @@ class ProjectLocked(BaseModel):
         ..., description="True if the project is locked by another user"
     )
     owner: Optional[Owner] = Field(None, description="The user that owns the lock")
-
-
-class RunningState(str, Enum):
-    unknown = "UNKNOWN"
-    not_started = "NOT_STARTED"
-    pending = "PENDING"
-    started = "STARTED"
-    retrying = "RETRY"
-    success = "SUCCESS"
-    failure = "FAILURE"
 
 
 class ProjectRunningState(BaseModel):
