@@ -413,7 +413,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       if (text) {
         const checks = [
           this.getStudyTitle(),
-          this.getPrjOwner()
+          this.getOwner()
         ];
         if (checks.filter(label => label.toLowerCase().trim().includes(text)).length == 0) {
           return true;
