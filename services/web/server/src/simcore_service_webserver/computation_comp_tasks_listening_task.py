@@ -50,7 +50,9 @@ from .computation_api import convert_state_from_db
 async def _update_project_node_and_notify_if_needed(
     app: web.Application, project: Dict, new_node_data: Dict, user_id: int
 ) -> None:
-
+    log.debug(
+        "Received update from comp_task update from DB: %s", pformat(new_node_data)
+    )
     node_uuid = new_node_data["node_id"]
     project_uuid = new_node_data["project_id"]
 
