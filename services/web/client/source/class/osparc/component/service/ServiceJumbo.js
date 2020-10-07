@@ -30,7 +30,7 @@ qx.Class.define("osparc.component.service.ServiceJumbo", {
   construct: function(serviceModel, icon) {
     const label = serviceModel.getName ? serviceModel.getName() : "";
     const text = serviceModel.getDescription ? serviceModel.getDescription() : "";
-    const footer = serviceModel.getPrjOwner ? serviceModel.getPrjOwner() : "";
+    const footer = serviceModel.getOwner ? serviceModel.getOwner() : "";
     this.base(arguments, label, text, icon, footer);
     if (serviceModel != null) {
       this.setServiceModel(serviceModel);
