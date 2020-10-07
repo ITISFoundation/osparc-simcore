@@ -10,7 +10,6 @@ from typing import Dict
 
 from aiohttp import web
 from aiopg.sa import Engine
-from aiopg.sa.result import RowProxy
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
