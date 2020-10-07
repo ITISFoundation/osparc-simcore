@@ -169,6 +169,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const study = this.getStudy();
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree(study);
+      nodesTree.buildLayout();
       nodesTree.addListener("removeNode", e => {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
