@@ -3,28 +3,35 @@ from enum import Enum
 from typing import List, Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel, HttpUrl, confloat
+from pydantic import BaseModel, HttpUrl, confloat, constr
 
 LATEST_VERSION = "latest"
+KEY_RE = r"^(simcore)/(services)/(comp)(/[^\s/]+)+$"
+
+
+SolverKey = constr(regex=KEY_RE)
+
 
 class SolverRelease(BaseModel):
+    solver_id: UUID
     name: Optional[str] = None
     version: str
     release_date: datetime
 
 
-class SolverDescriptorBase(BaseModel):
-    solver_id: UUID
-    name: str
+class SolverBase(BaseModel):
+    solver_key: SolverKey
+    title: str
     maintainer: str
 
 
-class SolverOverview(SolverDescriptorBase):
+class SolverOverview(SolverBase):
     latest_version: str
+    latest_solver_id: UUID
     solver_url: HttpUrl
 
 
-class SolverDetailed(SolverDescriptorBase):
+class SolverDetailed(SolverBase):
     releases: List[SolverRelease]
 
 
