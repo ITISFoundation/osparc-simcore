@@ -2,28 +2,81 @@
 First a procedure is registered in postgres that gets triggered whenever the outputs
 of a record in comp_task table is changed.
 """
-
 import asyncio
 import json
 import logging
+from pprint import pformat
+from typing import Dict
 
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.result import RowProxy
+from servicelib.application_keys import APP_DB_ENGINE_KEY
+from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
 
-from servicelib.application_keys import APP_DB_ENGINE_KEY
-from servicelib.utils import logged_gather
-from simcore_postgres_database.webserver_models import (
-    DB_CHANNEL_NAME,
-    projects,
-    user_to_groups,
-)
-
 from .projects import projects_api, projects_exceptions
-from .socketio.events import post_messages
 
 log = logging.getLogger(__name__)
+
+OUTPUT_KEYS_TO_COMPARE = ["path", "store"]
+
+
+def _is_output_changed(current_outputs: Dict, new_outputs: Dict) -> bool:
+    if new_outputs != current_outputs:
+        if not current_outputs:
+            return True
+        for port_key in new_outputs:
+            if port_key not in current_outputs:
+                return True
+            if isinstance(new_outputs[port_key], dict):
+                if any(
+                    current_outputs[port_key][x] != new_outputs[port_key][x]
+                    for x in OUTPUT_KEYS_TO_COMPARE
+                ):
+                    return True
+            if new_outputs[port_key] != current_outputs[port_key]:
+                return True
+    return False
+
+
+def _is_state_changed(current_state: str, new_state: str) -> bool:
+    return current_state != new_state
+
+
+from .computation_api import convert_state_from_db
+
+
+async def _update_project_node_and_notify_if_needed(
+    app: web.Application, project: Dict, new_node_data: Dict, user_id: int
+) -> None:
+
+    node_uuid = new_node_data["node_id"]
+    project_uuid = new_node_data["project_id"]
+
+    if node_uuid not in project["workbench"]:
+        raise projects_exceptions.NodeNotFoundError(project_uuid, node_uuid)
+
+    current_outputs = project["workbench"][node_uuid].get("outputs")
+    if _is_output_changed(current_outputs, new_node_data["outputs"]):
+        project = await projects_api.update_project_node_outputs(
+            app,
+            user_id,
+            project_uuid,
+            node_uuid,
+            data=new_node_data["outputs"],
+        )
+        log.debug("UPDATED NODE: %s", pformat(project["workbench"][node_uuid]))
+        await projects_api.notify_project_node_update(app, project, node_uuid)
+
+    current_state = project["workbench"][node_uuid].get("state")
+    new_state = convert_state_from_db(new_node_data["state"]).value
+    if _is_state_changed(current_state, new_state):
+        project = await projects_api.update_project_node_state(
+            app, user_id, project_uuid, node_uuid, new_state
+        )
+        # await projects_api.notify_project_node_update(app, updated_node_data, node_uuid)
+        await projects_api.notify_project_state_update(app, project)
 
 
 async def listen(app: web.Application):
@@ -36,78 +89,68 @@ async def listen(app: web.Application):
             msg = await conn.connection.notifies.get()
 
             # Changes on comp_tasks.outputs of non-frontend task
-            log.debug("DB comp_tasks.outputs updated: <- %s", msg.payload)
-            node = json.loads(msg.payload)
-            node_data = node["data"]
-            task_output = node_data["outputs"]
-            node_id = node_data["node_id"]
-            project_id = node_data["project_id"]
+            log.debug("DB comp_tasks.outputs/state updated: <- %s", msg.payload)
+            task_data = json.loads(msg.payload)["data"]
+            task_output = task_data["outputs"]
+            log.debug("NEW NODE DATA: %s", pformat(task_output))
+            project_uuid = task_data["project_id"]
 
             # FIXME: we do not know who triggered these changes. we assume the user had the rights to do so
             # therefore we'll use the prj_owner user id. This should be fixed when the new sidecar comes in
             # and comp_tasks/comp_pipeline get deprecated.
 
             # find the user(s) linked to that project
-            result = await conn.execute(
-                select([projects]).where(projects.c.uuid == project_id)
+            the_project_owner = await conn.scalar(
+                select([projects.c.prj_owner]).where(projects.c.uuid == project_uuid)
             )
-            the_project: RowProxy = await result.fetchone()
-            if not the_project:
+            if not the_project_owner:
                 log.warning(
-                    "Project %s was not found and cannot be updated", project_id
+                    "Project %s was not found and cannot be updated", project_uuid
                 )
                 continue
-            the_project_owner = the_project["prj_owner"]
 
-            # Update the project
+            # update the project if necessary
+            project = await projects_api.get_project_for_user(
+                app, project_uuid, the_project_owner, include_state=True
+            )
+            # Update the project outputs
             try:
-                node_data = await projects_api.update_project_node_outputs(
-                    app, the_project_owner, project_id, node_id, data=task_output
+                await _update_project_node_and_notify_if_needed(
+                    app, project, task_data, the_project_owner
                 )
-            except projects_exceptions.ProjectNotFoundError:
+
+            except projects_exceptions.ProjectNotFoundError as exc:
                 log.warning(
-                    "Project %s was not found and cannot be updated", project_id
+                    "Project %s was not found and cannot be updated", exc.project_uuid
                 )
                 continue
-            except projects_exceptions.NodeNotFoundError:
+            except projects_exceptions.NodeNotFoundError as exc:
                 log.warning(
                     "Node %s ib project %s not found and cannot be updated",
-                    node_id,
-                    project_id,
+                    exc.node_uuid,
+                    exc.project_uuid,
                 )
                 continue
 
             # Notify the client(s), the owner + any one with read writes
-            clients_ids = [the_project_owner]
-            for gid, access_rights in the_project["access_rights"].items():
-                if not access_rights["read"]:
-                    continue
-                # let's get the users in that group
-                async for user in conn.execute(
-                    select([user_to_groups.c.uid]).where(user_to_groups.c.gid == gid)
-                ):
-                    clients_ids.append(user["uid"])
 
-            posts_tasks = [
-                post_messages(
-                    app,
-                    uid,
-                    messages={"nodeUpdated": {"Node": node_id, "Data": node_data}},
-                )
-                for uid in clients_ids
-            ]
-            await logged_gather(*posts_tasks, False)
+            # await projects_api.notify_project_state_update(app, project)
 
 
 async def comp_tasks_listening_task(app: web.Application) -> None:
     log.info("starting comp_task db listening task...")
-    try:
-        log.info("listening to comp_task events...")
-        await listen(app)
-    except asyncio.CancelledError:
-        pass
-    finally:
-        pass
+    while True:
+        try:
+            log.info("listening to comp_task events...")
+            await listen(app)
+        except asyncio.CancelledError:
+            # we are closing the app..
+            return
+        except Exception:  # pylint: disable=broad-except
+            log.exception(
+                "caught unhandled comp_task db listening task exception, restarting...",
+                exc_info=True,
+            )
 
 
 async def setup_comp_tasks_listening_task(app: web.Application):
