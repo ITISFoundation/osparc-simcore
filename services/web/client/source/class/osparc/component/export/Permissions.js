@@ -22,7 +22,7 @@ qx.Class.define("osparc.component.export.Permissions", {
   /**
     * @param serializedData {Object} Object containing the Serialized Data
     */
-  construct: function(serializedData) {
+  construct: function(serializedData, initCollabs = []) {
     this.base(arguments);
 
     this.__serializedData = serializedData;
@@ -31,6 +31,10 @@ qx.Class.define("osparc.component.export.Permissions", {
 
     this.__buildLayout();
 
+    this.__collaborators = {};
+    initCollabs.forEach(initCollab => {
+      this.__collaborators[initCollab["gid"]] = initCollab;
+    });
     this.__getCollaborators();
   },
 
@@ -160,8 +164,6 @@ qx.Class.define("osparc.component.export.Permissions", {
     },
 
     __getCollaborators: function() {
-      this.__collaborators = {};
-
       const store = osparc.store.Store.getInstance();
       const promises = [];
       promises.push(store.getGroupsOrganizations());
