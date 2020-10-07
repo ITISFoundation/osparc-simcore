@@ -34,7 +34,7 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
     this.__serviceData = osparc.utils.Utils.deepCloneObject(serviceData);
 
     const initCollabs = this.self().getEveryoneObj();
-    this.base(arguments, this.__serviceData, initCollabs);
+    this.base(arguments, this.__serviceData, [initCollabs]);
   },
 
   events: {
