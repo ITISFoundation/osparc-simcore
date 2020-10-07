@@ -47,7 +47,7 @@ qx.Class.define("osparc.data.model.Study", {
       name: studyData.name === undefined ? this.getName() : studyData.name,
       description: studyData.description === undefined ? this.getDescription() : studyData.description,
       thumbnail: studyData.thumbnail === undefined ? this.getThumbnail() : studyData.thumbnail,
-      owner: studyData.prjOwner === undefined ? osparc.auth.Data.getInstance().getUserName() : studyData.prjOwner,
+      prjOwner: studyData.prjOwner === undefined ? osparc.auth.Data.getInstance().getUserName() : studyData.prjOwner,
       accessRights: studyData.accessRights === undefined ? this.getAccessRights() : studyData.accessRights,
       creationDate: studyData.creationDate === undefined ? this.getCreationDate() : new Date(studyData.creationDate),
       lastChangeDate: studyData.lastChangeDate === undefined ? this.getLastChangeDate() : new Date(studyData.lastChangeDate),
@@ -89,10 +89,10 @@ qx.Class.define("osparc.data.model.Study", {
       init: ""
     },
 
-    owner: {
+    prjOwner: {
       check: "String",
       nullable: false,
-      event: "changeOwner",
+      event: "changePrjOwner",
       init: ""
     },
 
@@ -198,7 +198,7 @@ qx.Class.define("osparc.data.model.Study", {
       }
       if (studyData instanceof osparc.data.model.Study) {
         const myEmail = osparc.auth.Data.getInstance().getEmail();
-        return studyData.getOwner() === myEmail;
+        return studyData.getPrjOwner() === myEmail;
       }
       return false;
     }
@@ -250,9 +250,6 @@ qx.Class.define("osparc.data.model.Study", {
           return;
         }
         let value = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
-        if (key === "owner") {
-          key = "prjOwner";
-        }
         if (value !== null) {
           // only put the value in the payload if there is a value
           jsonObject[key] = value;
