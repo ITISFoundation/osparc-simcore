@@ -178,7 +178,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       return tree;
     },
 
-    populateTree: function() {
+    populateTree: function(tree) {
+      if (tree === undefined) {
+        tree = this.__tree;
+      }
+
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const topLevelNodes = study.getWorkbench().getNodes();
       let data = {
@@ -188,11 +192,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         isContainer: true
       };
       let newModel = qx.data.marshal.Json.createModel(data, true);
-      let oldModel = this.__tree.getModel();
+      let oldModel = tree.getModel();
       if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
         study.bind("name", newModel, "label");
-        this.__tree.setModel(newModel);
-        this.__tree.setDelegate({
+        tree.setModel(newModel);
+        tree.setDelegate({
           createItem: () => new osparc.component.widget.NodeTreeItem(),
           bindItem: (c, item, id) => {
             c.bindDefaultProperties(item, id);
