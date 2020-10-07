@@ -17,20 +17,13 @@ log = logging.getLogger(__name__)
 
 class ProjectType(enum.Enum):
     """
-        template: template project
-        standard: standard project
+    template: template project
+    standard: standard project
     """
 
     TEMPLATE = "template"
     STANDARD = "standard"
 
-class ProjectRunningState(enum.Enum):
-    NOT_STARTED = "NOT_STARTED"
-    PENDING = "PENDING"
-    STARTED = "STARTED"
-    RETRY = "RETRY"
-    SUCCESS = "SUCCESS"
-    FAILURE = "FAILURE"
 
 projects = sa.Table(
     "projects",
@@ -54,7 +47,6 @@ projects = sa.Table(
         ),
         nullable=True,
     ),
-    sa.Column("running_state", sa.Enum(ProjectRunningState, name="project_running_state"), nullable=False, default=ProjectRunningState.NOT_STARTED),
     sa.Column(
         "creation_date", sa.DateTime(), nullable=False, server_default=func.now()
     ),

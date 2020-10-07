@@ -42,8 +42,7 @@ DB_EXCLUSIVE_COLUMNS = [
     "type",
     "id",
     "published",
-    "running_state",
-]  # TODO: running_state is currently only in DB but will be used once sync is done
+]
 
 
 class ProjectAccessRights(Enum):
