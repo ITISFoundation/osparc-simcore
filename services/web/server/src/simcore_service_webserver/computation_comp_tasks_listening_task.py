@@ -66,7 +66,11 @@ async def _update_project_node_and_notify_if_needed(
             node_uuid,
             data=new_node_data["outputs"],
         )
-        log.debug("Updated node outputs: %s", pformat(project["workbench"][node_uuid]))
+        log.debug(
+            "Updated node outputs from %s to %s",
+            pformat(current_outputs or ""),
+            pformat(new_node_data["outputs"]),
+        )
         await projects_api.notify_project_node_update(app, project, node_uuid)
 
     current_state = project["workbench"][node_uuid].get("state")
@@ -75,7 +79,12 @@ async def _update_project_node_and_notify_if_needed(
         project = await projects_api.update_project_node_state(
             app, user_id, project_uuid, node_uuid, new_state
         )
-        log.debug("Updated node state: %s", pformat(project["workbench"][node_uuid]))
+        log.debug(
+            "Updated node state from %s to %s",
+            pformat(current_state or ""),
+            pformat(new_state),
+        )
+        await projects_api.notify_project_node_update(app, project, node_uuid)
         await projects_api.notify_project_state_update(app, project)
 
 
