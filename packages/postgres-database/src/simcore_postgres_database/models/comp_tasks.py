@@ -53,7 +53,8 @@ DROP TRIGGER IF EXISTS {DB_TRIGGER_NAME} on comp_tasks;
 CREATE TRIGGER {DB_TRIGGER_NAME}
 AFTER UPDATE OF outputs ON comp_tasks
     FOR EACH ROW
-    WHEN (OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb AND NEW.node_class <> 'FRONTEND')
+    WHEN ((OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb OR OLD.state IS DISTINCT FROM NEW.state)
+        AND NEW.node_class <> 'FRONTEND')
     EXECUTE PROCEDURE {DB_PROCEDURE_NAME}();
 """
 )
@@ -87,5 +88,7 @@ $$ LANGUAGE plpgsql;
 
 sa.event.listen(comp_tasks, "after_create", task_output_changed_procedure)
 sa.event.listen(
-    comp_tasks, "after_create", task_output_changed_trigger,
+    comp_tasks,
+    "after_create",
+    task_output_changed_trigger,
 )
