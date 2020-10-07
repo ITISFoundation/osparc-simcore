@@ -197,34 +197,6 @@ qx.Class.define("osparc.utils.Services", {
       }];
     },
 
-    __getFileSweepers: function() {
-      return [{
-        key: "simcore/services/frontend/file-sweeper",
-        version: "1.0.0",
-        type: "dynamic",
-        name: "File Sweeper",
-        description: "File Sweeper",
-        authors: [{
-          name: "Odei Maiz",
-          email: "maiz@itis.swiss"
-        }],
-        contact: "maiz@itis.swiss",
-        owner: "maiz@itis.swiss",
-        inputs: {},
-        outputs: {
-          "outFiles": {
-            displayOrder: 0,
-            label: "Fle",
-            description: "One file at a time",
-            type: "data:*/*"
-          }
-        },
-        "access_rights": {
-          "1": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
-        }
-      }];
-    },
-
     __getNodesGroups: function() {
       return [{
         key: "simcore/services/frontend/nodes-group",
@@ -251,23 +223,9 @@ qx.Class.define("osparc.utils.Services", {
       return filePickers.find(filePicker => filePicker.version === version);
     },
 
-    getFileSweeper: function(version = "1.0.0") {
-      const fileSweepers = this.__getFileSweepers();
-      return fileSweepers.find(fileSweeper => fileSweeper.version === version);
-    },
-
     getNodesGroup: function(version = "1.0.0") {
       const nodesGroups = this.__getNodesGroups();
       return nodesGroups.find(nodesGroup => nodesGroup.version === version);
-    },
-
-    getBuiltInServices: function() {
-      const builtInServices = [
-        ...this.__getFilePickers(),
-        ...this.__getFileSweepers(),
-        ...this.__getNodesGroups()
-      ];
-      return builtInServices;
     },
 
     addServiceToCache: function(service) {
