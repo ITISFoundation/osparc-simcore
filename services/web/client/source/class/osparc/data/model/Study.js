@@ -196,6 +196,10 @@ qx.Class.define("osparc.data.model.Study", {
       if (myGid in aceessRights) {
         return aceessRights[myGid]["delete"];
       }
+      if (studyData instanceof osparc.data.model.Study) {
+        const myEmail = osparc.auth.Data.getInstance().getEmail();
+        return studyData.getPrjOwner() === myEmail;
+      }
       return false;
     }
   },

@@ -416,7 +416,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       if (this.self().isTemplate(study)) {
         item.set({
           uuid: study.uuid,
-          creator: study.prjOwner ? study.prjOwner : "",
+          prjOwner: study.prjOwner ? study.prjOwner : "",
           accessRights: study.accessRights ? study.accessRights : {},
           icon: study.thumbnail ? study.thumbnail : "@FontAwesome5Solid/copy/50"
         });

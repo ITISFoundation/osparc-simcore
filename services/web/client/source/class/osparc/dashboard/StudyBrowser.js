@@ -389,7 +389,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         uuid: study.uuid,
         studyTitle: study.name,
         studyDescription: study.description,
-        creator: study.prjOwner ? study.prjOwner : null,
+        prjOwner: study.prjOwner ? study.prjOwner : null,
         accessRights: study.accessRights ? study.accessRights : null,
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
         icon: study.thumbnail || defaultThumbnail,
