@@ -57,10 +57,13 @@ async def parse_rabbit_message_data(app: web.Application, data: Dict) -> None:
         messages = {}
         if data["Channel"] == "Progress":
             # update corresponding project, node, progress value
-            node_data = await projects_api.update_project_node_progress(
+            project = await projects_api.update_project_node_progress(
                 app, user_id, project_id, node_id, progress=data["Progress"]
             )
-            messages["nodeUpdated"] = {"Node": node_id, "Data": node_data}
+            messages["nodeUpdated"] = {
+                "Node": node_id,
+                "Data": project["workbench"][node_id],
+            }
         elif data["Channel"] == "Log":
             messages["logger"] = data
         if messages:

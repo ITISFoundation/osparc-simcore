@@ -16,6 +16,7 @@ from .config import AsyncServer, get_socket_server
 log = logging.getLogger(__name__)
 
 SOCKET_IO_PROJECT_UPDATED_EVENT: str = "projectStateUpdated"
+SOCKET_IO_NODE_UPDATED_EVENT: str = "nodeUpdated"
 
 
 async def post_messages(

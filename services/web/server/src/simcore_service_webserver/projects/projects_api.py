@@ -29,7 +29,11 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from ..computation_api import delete_pipeline_db, get_pipeline_state
 from ..director import director_api
 from ..resource_manager.websocket_manager import managed_resource
-from ..socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT, post_group_messages
+from ..socketio.events import (
+    SOCKET_IO_PROJECT_UPDATED_EVENT,
+    SOCKET_IO_NODE_UPDATED_EVENT,
+    post_group_messages,
+)
 from ..storage_api import copy_data_folders_from_project  # mocked in unit-tests
 from ..storage_api import (
     delete_data_folders_of_project,
@@ -273,6 +277,24 @@ async def delete_project_node(
     )
 
 
+async def update_project_node_state(
+    app: web.Application, user_id: int, project_id: str, node_id: str, new_state: str
+) -> Dict:
+    log.debug(
+        "updating node %s state in project %s for user %s", node_id, project_id, user_id
+    )
+    project = await get_project_for_user(app, project_id, user_id)
+    if not node_id in project["workbench"]:
+        raise NodeNotFoundError(project_id, node_id)
+    project["workbench"][node_id]["state"] = new_state
+    db = app[APP_PROJECT_DBAPI]
+    updated_project = await db.update_user_project(project, user_id, project_id)
+    updated_project["state"] = await get_project_state_for_user(
+        user_id, project_id, app
+    )
+    return updated_project
+
+
 async def update_project_node_progress(
     app: web.Application, user_id: int, project_id: str, node_id: str, progress: float
 ) -> Optional[Dict]:
@@ -369,6 +391,24 @@ async def notify_project_state_update(app: web.Application, project: Dict) -> No
         SOCKET_IO_PROJECT_UPDATED_EVENT: {
             "project_uuid": project["uuid"],
             "data": project["state"],
+        }
+    }
+
+    for room in rooms_to_notify:
+        await post_group_messages(app, room, messages)
+
+
+async def notify_project_node_update(
+    app: web.Application, project: Dict, node_id: str
+) -> None:
+    rooms_to_notify = [
+        f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
+    ]
+
+    messages = {
+        SOCKET_IO_NODE_UPDATED_EVENT: {
+            "Node": node_id,
+            "data": project["workbench"][node_id],
         }
     }
 
