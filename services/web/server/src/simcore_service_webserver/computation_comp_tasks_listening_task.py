@@ -66,7 +66,7 @@ async def _update_project_node_and_notify_if_needed(
             node_uuid,
             data=new_node_data["outputs"],
         )
-        log.debug("UPDATED NODE: %s", pformat(project["workbench"][node_uuid]))
+        log.debug("Updated node outputs: %s", pformat(project["workbench"][node_uuid]))
         await projects_api.notify_project_node_update(app, project, node_uuid)
 
     current_state = project["workbench"][node_uuid].get("state")
@@ -75,7 +75,7 @@ async def _update_project_node_and_notify_if_needed(
         project = await projects_api.update_project_node_state(
             app, user_id, project_uuid, node_uuid, new_state
         )
-        # await projects_api.notify_project_node_update(app, updated_node_data, node_uuid)
+        log.debug("Updated node state: %s", pformat(project["workbench"][node_uuid]))
         await projects_api.notify_project_state_update(app, project)
 
 
@@ -131,10 +131,6 @@ async def listen(app: web.Application):
                     exc.project_uuid,
                 )
                 continue
-
-            # Notify the client(s), the owner + any one with read writes
-
-            # await projects_api.notify_project_state_update(app, project)
 
 
 async def comp_tasks_listening_task(app: web.Application) -> None:
