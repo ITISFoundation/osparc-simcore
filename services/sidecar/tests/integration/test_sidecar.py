@@ -1,12 +1,12 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
-
 import asyncio
 import inspect
 import json
 from collections import deque
 from pathlib import Path
+from pprint import pformat
 from typing import Any, Dict, List, Tuple
 from uuid import uuid4
 
@@ -14,9 +14,8 @@ import aio_pika
 import pytest
 import sqlalchemy as sa
 from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
-from yarl import URL
-
 from simcore_service_sidecar import config, utils
+from yarl import URL
 
 SIMCORE_S3_ID = 0
 
@@ -375,7 +374,7 @@ async def test_run_services(
     # runs None first
     next_task_nodes = await cli.run_sidecar(job_id, user_id, pipeline.project_id, None)
     await asyncio.sleep(5)
-    assert await incoming_data.is_empty()
+    assert await incoming_data.is_empty(), pformat(incoming_data.as_list())
     assert next_task_nodes
     assert len(next_task_nodes) == 1
     assert next_task_nodes[0] == next(iter(pipeline_cfg))
