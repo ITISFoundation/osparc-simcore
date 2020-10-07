@@ -2,11 +2,8 @@
 
 """
 # pylint: disable=too-many-arguments
-
-import asyncio
 import datetime
 import logging
-from asyncio import CancelledError
 from pprint import pformat
 from typing import Dict, Optional
 
@@ -16,10 +13,9 @@ from aiohttp import web, web_exceptions
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from celery import Celery
-from celery.result import AsyncResult
+from celery.signals import after_task_publish
 from models_library.projects import RunningState
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
-from servicelib.utils import fire_and_forget_task
 from simcore_postgres_database.models.comp_pipeline import (
     FAILED,
     PENDING,
@@ -33,10 +29,10 @@ from simcore_postgres_database.webserver_models import (
     comp_tasks,
 )
 from simcore_sdk.config.rabbit import Config as RabbitConfig
-from sqlalchemy import and_
 
 # TODO: move this to computation_models
 from simcore_service_webserver.computation_models import to_node_class
+from sqlalchemy import and_
 
 from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
 from .director import director_api
@@ -456,12 +452,12 @@ async def update_pipeline_db(
 def get_celery(_app: web.Application) -> Celery:
     config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
     rabbit = RabbitConfig(**config)
-    celery_app = Celery(rabbit.name, broker=rabbit.broker_url, backend=rabbit.backend,)
+    celery_app = Celery(
+        rabbit.name,
+        broker=rabbit.broker_url,
+        backend=rabbit.backend,
+    )
     return celery_app
-
-
-from celery.signals import after_task_publish
-from .socketio.events import post_messages
 
 
 @after_task_publish.connect
@@ -508,34 +504,6 @@ async def start_pipeline_computation(
         )
         return
 
-    # async def _monitor_task_results(
-    #     app: web.Application, project_id: str, _: str
-    # ) -> None:
-    #     try:
-    #         pipeline_state: RunningState = RunningState.unknown
-    #         while pipeline_state not in [RunningState.success, RunningState.failure]:
-    #             new_state = await get_pipeline_state(app, project_id)
-    #             if new_state != pipeline_state:
-    #                 log.debug(
-    #                     "Project %s changed its state from %s to %s",
-    #                     project_id,
-    #                     pipeline_state,
-    #                     new_state,
-    #                 )
-    #                 pipeline_state = new_state
-    #                 # await projects_api.notify_project_state_update(
-    #                 #     app, project_data, ProjectState(locked={"value": False})
-    #                 # )
-
-    #             await asyncio.sleep(5)
-
-    #     except CancelledError:
-    #         # the task got cancelled
-    #         pass
-
-    # fire_and_forget_task(_monitor_background(task))
-    # fire_and_forget_task(_monitor_task_results(app, project_id, task.task_id))
-
     log.debug(
         "Task (task=%s, user_id=%s, project_id=%s) submitted for execution.",
         task.task_id,
@@ -556,7 +524,7 @@ def _from_celery_state(celery_state) -> RunningState:
     return RunningState(CELERY_TO_RUNNING_STATE[celery_state])
 
 
-def _from_db_state(db_state: int) -> RunningState:
+def convert_state_from_db(db_state: int) -> RunningState:
     DB_TO_RUNNING_STATE = {
         FAILED: RunningState.failure,
         PENDING: RunningState.pending,
@@ -578,7 +546,7 @@ async def get_task_states(
         ):
             if row.node_class != NodeClass.COMPUTATIONAL:
                 continue
-            task_states[row.node_id] = _from_db_state(row.node_id)
+            task_states[row.node_id] = convert_state_from_db(row.state)
 
             # the task might be running, better ask celery (NOTE this remains only 24h and disappears and state will be pending)
             # task_result = AsyncResult(row.job_id)
