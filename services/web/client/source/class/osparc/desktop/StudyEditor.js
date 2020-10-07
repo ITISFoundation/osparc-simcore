@@ -756,7 +756,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           const nodeData = d["Data"];
           const workbench = this.getStudy().getWorkbench();
           const node = workbench.getNode(nodeId);
-          if (node) {
+          if (node && nodeData) {
             node.setOutputData(nodeData.outputs);
             if (nodeData.progress) {
               const progress = Number.parseInt(nodeData.progress);
