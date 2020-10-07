@@ -338,8 +338,12 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         if (this.__exportButton) {
           this.__exportButton.setEnabled(studyId !== nodeId && item.getIsContainer());
         }
-        this.__deleteButton.setEnabled(studyId !== nodeId && this.__currentNodeId !== nodeId);
-        this.__openButton.setEnabled(this.__currentNodeId !== nodeId);
+        if (this.__deleteButton) {
+          this.__deleteButton.setEnabled(studyId !== nodeId && this.__currentNodeId !== nodeId);
+        }
+        if (this.__openButton) {
+          this.__openButton.setEnabled(this.__currentNodeId !== nodeId);
+        }
       }
     },
 
