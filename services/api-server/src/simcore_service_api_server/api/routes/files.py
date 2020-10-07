@@ -1,13 +1,18 @@
 import asyncio
 import hashlib
+import sys
+from pathlib import Path
 from textwrap import dedent
 from typing import List
+from uuid import UUID
 
 from fastapi import APIRouter, File, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 
 from ...__version__ import api_vtag
 from ...models.schemas.files import FileUploaded
+
+current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 
 router = APIRouter()
 
@@ -25,11 +30,10 @@ async def upload_single_file(file: UploadFile = File(...)):
     # TODO: every session has a folder. A session is defined by the access token
     #
     return FileUploaded(
-            filename=file.filename,
-            content_type=file.content_type,
-            hash=await eval_sha256_hash(file),
-        )
-
+        filename=file.filename,
+        content_type=file.content_type,
+        hash=await eval_sha256_hash(file),
+    )
 
 
 @router.post(":upload-multiple", response_model=List[FileUploaded])
@@ -48,9 +52,6 @@ async def upload_multiple_files(files: List[UploadFile] = File(...)):
     return uploaded
 
 
-
-
-
 _CONTENT = dedent(
     f"""
     <body>
@@ -61,6 +62,7 @@ _CONTENT = dedent(
     </body>
     """
 )
+
 
 @router.get("/upload-multiple-view")
 async def files_upload_multiple_view():
@@ -85,3 +87,14 @@ async def eval_sha256_hash(file: UploadFile):
             break
         sha256_hash.update(chunk)
     return sha256_hash.hexdigest()
+
+
+@router.get("/{file_id}:download")
+async def download_file(file_id: UUID):
+    file_path: Path = current_file  # FIXME: tmp returns current file
+    return FileResponse(
+        file_path,
+        media_type="application/octet-stream",
+        filename=file_path.name,
+        stat_result=file_path.stat(),
+    )
