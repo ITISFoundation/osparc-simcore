@@ -57,6 +57,17 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
 
     removeCollaborator: function(serializedData, gid) {
       return delete serializedData["access_rights"][gid];
+    },
+
+    getEveryoneObj: function() {
+      return {
+        "gid": 1,
+        "label": "Everyone",
+        "description": "",
+        "thumbnail": null,
+        "accessRights": this.getCollaboratorAccessRight(),
+        "colabType": 0
+      };
     }
   },
 

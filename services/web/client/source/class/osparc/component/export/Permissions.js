@@ -133,7 +133,7 @@ qx.Class.define("osparc.component.export.Permissions", {
           ctrl.bindProperty("label", "title", null, item, id); // organization
           ctrl.bindProperty("login", "subtitle", null, item, id); // user
           ctrl.bindProperty("description", "subtitle", null, item, id); // organization
-          ctrl.bindProperty("isOrg", "isOrganization", null, item, id);
+          ctrl.bindProperty("colabType", "colabType", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
@@ -171,12 +171,12 @@ qx.Class.define("osparc.component.export.Permissions", {
           const orgs = values[0];
           const orgMembers = values[1];
           orgs.forEach(org => {
-            org["isOrg"] = true;
+            org["colabType"] = 1;
             this.__myFrieds[org["gid"]] = org;
           });
           for (const gid of Object.keys(orgMembers)) {
             const orgMember = orgMembers[gid];
-            orgMember["isOrg"] = false;
+            orgMember["colabType"] = 2;
             this.__myFrieds[gid] = orgMember;
           }
           this.__reloadOrganizationsAndMembers();
@@ -192,13 +192,25 @@ qx.Class.define("osparc.component.export.Permissions", {
 
       // sort them first
       myFriends.sort((a, b) => (a["label"] > b["label"]) ? 1 : -1);
-      myFriends.sort((a, b) => (a["isOrg"] && !b["isOrg"]) ? -1 : 1);
+      myFriends.sort((a, b) => (a["colabType"] > b["colabType"]) ? 1 : -1);
 
       myFriends.forEach(myFriend => {
         const gid = myFriend["gid"];
         if (parseInt(gid) !== osparc.auth.Data.getInstance().getGroupId() && !(parseInt(gid) in aceessRights)) {
           const btn = this.__organizationsAndMembers.addOption(myFriend);
-          btn.setIcon(myFriend["isOrg"] ? "@FontAwesome5Solid/users/14" : "@FontAwesome5Solid/user/14");
+          let iconPath = null;
+          switch (myFriend["colabType"]) {
+            case 0:
+              iconPath = "@FontAwesome5Solid/globe/14";
+              break;
+            case 1:
+              iconPath = "@FontAwesome5Solid/users/14";
+              break;
+            case 2:
+              iconPath = "@FontAwesome5Solid/user/14";
+              break;
+          }
+          btn.setIcon(iconPath);
         }
       });
     },
