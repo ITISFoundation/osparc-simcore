@@ -416,14 +416,14 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       if (this.self().isTemplate(study)) {
         item.set({
           uuid: study.uuid,
-          creator: study.prjOwner ? study.prjOwner : "",
+          owner: study.prjOwner ? study.prjOwner : "",
           accessRights: study.accessRights ? study.accessRights : {},
           icon: study.thumbnail ? study.thumbnail : "@FontAwesome5Solid/copy/50"
         });
       } else if (this.self().isService(study)) {
         item.set({
           uuid: study.key,
-          creator: study.owner ? study.owner : "",
+          owner: study.owner ? study.owner : "",
           accessRights: study.access_rights ? study.access_rights : {},
           icon: study.thumbnail ? study.thumbnail : "@FontAwesome5Solid/paw/50"
         });
@@ -673,10 +673,10 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __isUserOwner: function(studyData) {
-      const myEmail = osparc.auth.Data.getInstance().getEmail();
       if (this.self().isTemplate(studyData)) {
-        return studyData.prjOwner === myEmail;
+        return osparc.data.model.Study.isOwner(studyData);
       } else if (this.self().isService(studyData)) {
+        const myEmail = osparc.auth.Data.getInstance().getEmail();
         return studyData.owner === myEmail;
       }
       return false;
