@@ -234,7 +234,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       infoPart.add(infoBtn);
 
       if (osparc.data.Permissions.getInstance().canDo("study.node.update") || osparc.data.model.Study.isStudyOwner(study)) {
-        const editAccessLevel = new qx.ui.toolbar.Button(this.tr("Edit Access Level"));
+        const editAccessLevel = new qx.ui.toolbar.Button(this.tr("Edit Access Level"), "@FontAwesome5Solid/edit/14");
         editAccessLevel.addListener("execute", () => this._openEditAccessLevel(), this);
         infoPart.add(editAccessLevel);
       }
