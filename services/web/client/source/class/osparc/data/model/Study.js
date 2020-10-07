@@ -188,6 +188,15 @@ qx.Class.define("osparc.data.model.Study", {
         return true;
       }
       return false;
+    },
+
+    isUserOwner: function(studyData) {
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      const aceessRights = studyData["accessRights"];
+      if (myGid in aceessRights) {
+        return aceessRights[myGid]["delete"];
+      }
+      return false;
     }
   },
 

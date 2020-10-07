@@ -80,7 +80,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __createButtons: function(isTemplate) {
-      const isCurrentUserOwner = this.__isUserOwner();
+      const isCurrentUserOwner = osparc.data.model.Study.isStudyOwner(this.__studyData);
       const canUpdateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.update");
 
       const buttonsToolbar = new qx.ui.toolbar.ToolBar();
@@ -106,7 +106,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     },
 
     __createEditView: function(isTemplate) {
-      const isCurrentUserOwner = this.__isUserOwner();
+      const isCurrentUserOwner = osparc.data.model.Study.isStudyOwner(this.__studyData);
       const canUpdateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.update");
       const fieldIsEnabled = isCurrentUserOwner && (!isTemplate || canUpdateTemplate);
 
@@ -282,13 +282,6 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
           this.__stack.setSelection([this.__editView]);
           break;
       }
-    },
-
-    __isUserOwner: function() {
-      if (this.__studyData) {
-        return this.__studyData.prjOwner === osparc.auth.Data.getInstance().getEmail();
-      }
-      return false;
     }
   }
 });

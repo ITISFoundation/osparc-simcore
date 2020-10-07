@@ -66,12 +66,7 @@ qx.Class.define("osparc.component.export.StudyPermissions", {
     __studyData: null,
 
     _isUserOwner: function() {
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const aceessRights = this.__studyData["accessRights"];
-      if (myGid in aceessRights) {
-        return aceessRights[myGid]["delete"];
-      }
-      return false;
+      return osparc.data.model.Study.isStudyOwner(this.__studyData);
     },
 
     _addCollaborator: function() {
