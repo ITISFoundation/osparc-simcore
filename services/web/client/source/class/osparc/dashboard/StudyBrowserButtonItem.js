@@ -72,9 +72,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       nullable: true
     },
 
-    creator: {
+    prjOwner: {
       check: "String",
-      apply: "_applyCreator",
+      apply: "_applyPrjOwner",
       nullable: true
     },
 
@@ -266,7 +266,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       }
     },
 
-    _applyCreator: function(value, old) {
+    _applyPrjOwner: function(value, old) {
       if (this.isResourceType("service") || this.isResourceType("template")) {
         const label = this.getChildControl("description2");
         label.setValue(value);
@@ -413,7 +413,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       if (text) {
         const checks = [
           this.getStudyTitle(),
-          this.getCreator()
+          this.getPrjOwner()
         ];
         if (checks.filter(label => label.toLowerCase().trim().includes(text)).length == 0) {
           return true;
