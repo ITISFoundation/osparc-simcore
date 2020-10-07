@@ -100,10 +100,9 @@ async def create_projects(request: web.Request):
         await update_pipeline_db(request.app, project["uuid"], project["workbench"])
 
         # Appends state
-        project_state = await projects_api.get_project_state_for_user(
+        project["state"] = await projects_api.get_project_state_for_user(
             user_id, project["uuid"], request.app
         )
-        project["state"] = project_state.dict(by_alias=True, exclude_unset=True)
 
     except ValidationError as exc:
         raise web.HTTPBadRequest(reason="Invalid project data") from exc
@@ -148,10 +147,9 @@ async def list_projects(request: web.Request):
     # validate response
     async def validate_project(prj: Dict) -> Optional[Dict]:
         try:
-            project_state: ProjectState = await projects_api.get_project_state_for_user(
+            prj["state"] = await projects_api.get_project_state_for_user(
                 user_id, project_uuid=prj["uuid"], app=request.app
             )
-            prj["state"] = project_state.dict(by_alias=True, exclude_unset=True)
             projects_api.validate_project(request.app, prj)
             if await project_uses_available_services(prj, user_available_services):
                 return prj
@@ -268,10 +266,9 @@ async def replace_project(request: web.Request):
         )
 
         # Appends state
-        project_state = await projects_api.get_project_state_for_user(
+        new_project["state"] = await projects_api.get_project_state_for_user(
             user_id, project_uuid, request.app
         )
-        new_project["state"] = project_state.dict(by_alias=True, exclude_unset=True)
 
     except ValidationError as exc:
         raise web.HTTPBadRequest from exc
@@ -381,10 +378,9 @@ async def open_project(request: web.Request) -> web.Response:
         await projects_api.start_project_interactive_services(request, project, user_id)
 
         # notify users that project is now locked
-        project_state = await projects_api.get_project_state_for_user(
+        project["state"] = await projects_api.get_project_state_for_user(
             user_id, project_uuid, request.app
         )
-        project["state"] = project_state.dict(by_alias=True, exclude_unset=True)
 
         await projects_api.notify_project_state_update(request.app, project)
 
@@ -426,10 +422,9 @@ async def close_project(request: web.Request) -> web.Response:
                     )
             finally:
                 # ensure we notify the user whatever happens, the GC should take care of dangling services in case of issue
-                project_state = await projects_api.get_project_state_for_user(
+                project["state"] = await projects_api.get_project_state_for_user(
                     user_id, project_uuid, request.app
                 )
-                project["state"] = project_state.dict(by_alias=True, exclude_unset=True)
                 await projects_api.notify_project_state_update(request.app, project)
 
         fire_and_forget_task(_close_project_task())

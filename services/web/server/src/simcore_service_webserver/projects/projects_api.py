@@ -69,18 +69,16 @@ async def get_project_for_user(
     """
     db = app[APP_PROJECT_DBAPI]
 
-    is_template = False
+    project: Dict = None
     if include_templates:
         project = await db.get_template_project(project_uuid)
-        is_template = bool(project)
 
-    if not is_template:
+    if not project:
         project = await db.get_user_project(user_id, project_uuid)
 
     # adds state if it is not a template
     if include_state:
-        project_state = await get_project_state_for_user(user_id, project_uuid, app)
-        project["state"] = project_state.dict(by_alias=True, exclude_unset=True)
+        project["state"] = await get_project_state_for_user(user_id, project_uuid, app)
 
     # TODO: how to handle when database has an invalid project schema???
     # Notice that db model does not include a check on project schema.
@@ -291,8 +289,11 @@ async def update_project_node_progress(
 
     project["workbench"][node_id]["progress"] = int(100.0 * float(progress) + 0.5)
     db = app[APP_PROJECT_DBAPI]
-    await db.update_user_project(project, user_id, project_id)
-    return project["workbench"][node_id]
+    updated_project = await db.update_user_project(project, user_id, project_id)
+    updated_project["state"] = await get_project_state_for_user(
+        user_id, project_id, app
+    )
+    return updated_project
 
 
 async def update_project_node_outputs(
@@ -318,27 +319,27 @@ async def update_project_node_outputs(
     if not node_id in project["workbench"]:
         raise NodeNotFoundError(project_id, node_id)
 
-    if data:
-        # NOTE: update outputs (not required) if necessary as the UI expects a
-        # dataset/label field that is missing
-        outputs: Dict[str, Any] = project["workbench"][node_id].setdefault(
-            "outputs", {}
-        )
-        outputs.update(data)
+    # NOTE: update outputs (not required) if necessary as the UI expects a
+    # dataset/label field that is missing
+    outputs: Dict[str, Any] = project["workbench"][node_id].setdefault("outputs", {})
+    outputs.update(data)
 
-        for output_key in outputs.keys():
-            if not isinstance(outputs[output_key], dict):
-                continue
-            if "path" in outputs[output_key]:
-                # file_id is of type study_id/node_id/file.ext
-                file_id = outputs[output_key]["path"]
-                study_id, _, file_ext = file_id.split("/")
-                outputs[output_key]["dataset"] = study_id
-                outputs[output_key]["label"] = file_ext
+    for output_key in outputs.keys():
+        if not isinstance(outputs[output_key], dict):
+            continue
+        if "path" in outputs[output_key]:
+            # file_id is of type study_id/node_id/file.ext
+            file_id = outputs[output_key]["path"]
+            study_id, _, file_ext = file_id.split("/")
+            outputs[output_key]["dataset"] = study_id
+            outputs[output_key]["label"] = file_ext
 
-        db = app[APP_PROJECT_DBAPI]
-        await db.update_user_project(project, user_id, project_id)
-    return project["workbench"][node_id]
+    db = app[APP_PROJECT_DBAPI]
+    updated_project = await db.update_user_project(project, user_id, project_id)
+    updated_project["state"] = await get_project_state_for_user(
+        user_id, project_id, app
+    )
+    return updated_project
 
 
 async def get_workbench_node_ids_from_project_uuid(
@@ -401,7 +402,7 @@ async def _get_project_running_state(
     return ProjectRunningState(value=pipeline_state)
 
 
-async def get_project_state_for_user(user_id, project_uuid, app) -> ProjectState:
+async def get_project_state_for_user(user_id, project_uuid, app) -> Dict:
     """
     Returns state of a project with respect to a given user
     E.g.
@@ -417,4 +418,4 @@ async def get_project_state_for_user(user_id, project_uuid, app) -> ProjectState
     return ProjectState(
         locked=lock_state,
         state=running_state,
-    )
+    ).dict(by_alias=True, exclude_unset=True)
