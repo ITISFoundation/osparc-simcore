@@ -66,7 +66,7 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
         "description": "",
         "thumbnail": null,
         "accessRights": this.getCollaboratorAccessRight(),
-        "colabType": 0
+        "collabType": 0
       };
     }
   },

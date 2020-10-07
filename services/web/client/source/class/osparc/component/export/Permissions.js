@@ -31,7 +31,7 @@ qx.Class.define("osparc.component.export.Permissions", {
 
     this.__buildLayout();
 
-    this.__getMyFriends();
+    this.__getCollaborators();
   },
 
   statics: {
@@ -58,7 +58,7 @@ qx.Class.define("osparc.component.export.Permissions", {
     __serializedData: null,
     __organizationsAndMembers: null,
     __collaboratorsModel: null,
-    __myFrieds: null,
+    __collaborators: null,
     __addCollaboratorBtn: null,
 
     __buildLayout: function() {
@@ -133,7 +133,7 @@ qx.Class.define("osparc.component.export.Permissions", {
           ctrl.bindProperty("label", "title", null, item, id); // organization
           ctrl.bindProperty("login", "subtitle", null, item, id); // user
           ctrl.bindProperty("description", "subtitle", null, item, id); // organization
-          ctrl.bindProperty("colabType", "colabType", null, item, id);
+          ctrl.bindProperty("collabType", "collabType", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
@@ -159,8 +159,8 @@ qx.Class.define("osparc.component.export.Permissions", {
       return vBox;
     },
 
-    __getMyFriends: function() {
-      this.__myFrieds = {};
+    __getCollaborators: function() {
+      this.__collaborators = {};
 
       const store = osparc.store.Store.getInstance();
       const promises = [];
@@ -171,13 +171,13 @@ qx.Class.define("osparc.component.export.Permissions", {
           const orgs = values[0];
           const orgMembers = values[1];
           orgs.forEach(org => {
-            org["colabType"] = 1;
-            this.__myFrieds[org["gid"]] = org;
+            org["collabType"] = 1;
+            this.__collaborators[org["gid"]] = org;
           });
           for (const gid of Object.keys(orgMembers)) {
             const orgMember = orgMembers[gid];
-            orgMember["colabType"] = 2;
-            this.__myFrieds[gid] = orgMember;
+            orgMember["collabType"] = 2;
+            this.__collaborators[gid] = orgMember;
           }
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
@@ -188,18 +188,18 @@ qx.Class.define("osparc.component.export.Permissions", {
       this.__organizationsAndMembers.reset();
 
       const aceessRights = this.__getAccessRights();
-      const myFriends = Object.values(this.__myFrieds);
+      const myFriends = Object.values(this.__collaborators);
 
       // sort them first
       myFriends.sort((a, b) => (a["label"] > b["label"]) ? 1 : -1);
-      myFriends.sort((a, b) => (a["colabType"] > b["colabType"]) ? 1 : -1);
+      myFriends.sort((a, b) => (a["collabType"] > b["collabType"]) ? 1 : -1);
 
       myFriends.forEach(myFriend => {
         const gid = myFriend["gid"];
         if (parseInt(gid) !== osparc.auth.Data.getInstance().getGroupId() && !(parseInt(gid) in aceessRights)) {
           const btn = this.__organizationsAndMembers.addOption(myFriend);
           let iconPath = null;
-          switch (myFriend["colabType"]) {
+          switch (myFriend["collabType"]) {
             case 0:
               iconPath = "@FontAwesome5Solid/globe/14";
               break;
@@ -220,8 +220,8 @@ qx.Class.define("osparc.component.export.Permissions", {
 
       const aceessRights = this.__getAccessRights();
       Object.keys(aceessRights).forEach(gid => {
-        if (Object.prototype.hasOwnProperty.call(this.__myFrieds, gid)) {
-          const collaborator = this.__myFrieds[gid];
+        if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
+          const collaborator = this.__collaborators[gid];
           if ("first_name" in collaborator) {
             collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
