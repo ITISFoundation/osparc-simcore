@@ -33,7 +33,8 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
   construct: function(serviceData) {
     this.__serviceData = osparc.utils.Utils.deepCloneObject(serviceData);
 
-    this.base(arguments, this.__serviceData);
+    const initCollabs = this.self().getEveryoneObj();
+    this.base(arguments, this.__serviceData, [initCollabs]);
   },
 
   events: {
@@ -57,6 +58,17 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
 
     removeCollaborator: function(serializedData, gid) {
       return delete serializedData["access_rights"][gid];
+    },
+
+    getEveryoneObj: function() {
+      return {
+        "gid": 1,
+        "label": "Everyone",
+        "description": "",
+        "thumbnail": null,
+        "accessRights": this.getCollaboratorAccessRight(),
+        "collabType": 0
+      };
     }
   },
 

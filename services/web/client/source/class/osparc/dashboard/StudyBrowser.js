@@ -389,7 +389,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         uuid: study.uuid,
         studyTitle: study.name,
         studyDescription: study.description,
-        creator: study.prjOwner ? study.prjOwner : null,
+        owner: study.prjOwner ? study.prjOwner : null,
         accessRights: study.accessRights ? study.accessRights : null,
         lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
         icon: study.thumbnail || defaultThumbnail,
@@ -436,7 +436,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyServicesButton = this.__getStudyServicesMenuButton(studyData);
       menu.add(studyServicesButton);
 
-      const isCurrentUserOwner = this.__isUserOwner(studyData);
+      const isCurrentUserOwner = osparc.data.model.Study.isOwner(studyData);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       if (isCurrentUserOwner && canCreateTemplate) {
         const saveAsTemplateButton = this.__getSaveAsTemplateMenuButton(studyData);
@@ -658,16 +658,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __createConfirmWindow: function(isMulti) {
       const msg = isMulti ? this.tr("Are you sure you want to delete the studies?") : this.tr("Are you sure you want to delete the study?");
       return new osparc.ui.window.Confirmation(msg);
-    },
-
-    __isUserOwner: function(studyData) {
-      const myEmail = osparc.auth.Data.getInstance().getEmail();
-      if ("prjOwner" in studyData) {
-        return studyData.prjOwner === myEmail;
-      } else if ("getCreator" in studyData) {
-        return studyData.getCreator() === myEmail;
-      }
-      return false;
     }
   }
 });
