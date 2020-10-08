@@ -77,8 +77,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       let data = {
         label: study.getName(),
         children: osparc.component.widget.NodesTree.convertModel(topLevelNodes),
-        nodeId: study.getUuid(),
-        isContainer: true
+        nodeId: study.getUuid()
       };
       let model = qx.data.marshal.Json.createModel(data, true);
       return model;
