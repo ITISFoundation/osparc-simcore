@@ -42,6 +42,12 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox());
+
+    this.__toolBar = this._createChildControlImpl("toolbar");
+    this.__tree = this._createChildControlImpl("tree");
+    this.__populateTree();
+
+    this.__attachEventHandlers();
   },
 
   events: {
@@ -79,14 +85,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     __deleteButton: null,
     __currentNodeId: null,
     __toolbarInitMinWidth: null,
-
-    buildLayout: function() {
-      this.__toolBar = this._createChildControlImpl("toolbar");
-      this.__tree = this._createChildControlImpl("tree");
-      this.__populateTree();
-
-      this.__attachEventHandlers();
-    },
 
     _createChildControlImpl: function(id) {
       let control;
