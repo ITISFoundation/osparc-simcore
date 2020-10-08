@@ -36,6 +36,28 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
   },
 
   statics: {
+
+    convertModel: function(nodes) {
+      let children = [];
+      let i=0;
+      for (let nodeId in nodes) {
+        const node = nodes[nodeId];
+        let nodeInTree = {
+          label: "",
+          nodeId: node.getNodeId(),
+          skipNode: false,
+          position: i+1
+        };
+        nodeInTree.label = node.getLabel();
+        if (node.isContainer()) {
+          nodeInTree.children = this.convertModel(node.getInnerNodes());
+        }
+        children.push(nodeInTree);
+        i++;
+      }
+      return children;
+    },
+
     moveElement: function(input, from, to) {
       let numberOfDeletedElm = 1;
       const elm = input.splice(from, numberOfDeletedElm)[0];
@@ -76,8 +98,10 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       const topLevelNodes = study.getWorkbench().getNodes();
       let data = {
         label: study.getName(),
-        children: osparc.component.widget.NodesTree.convertModel(topLevelNodes),
-        nodeId: study.getUuid()
+        children: this.self().convertModel(topLevelNodes),
+        nodeId: study.getUuid(),
+        skipNode: false,
+        position: 0
       };
       let model = qx.data.marshal.Json.createModel(data, true);
       return model;
@@ -105,36 +129,64 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
             node.bind("label", item.getModel(), "label");
           }
           c.bindProperty("label", "label", null, item, id);
+          c.bindProperty("position", "position", null, item, id);
+          c.bindProperty("skipNode", "skipNode", null, item, id);
         },
         configureItem: item => {
+          item.addListener("showNode", () => {
+            this.__show(item.getModel());
+          }, this);
+          item.addListener("hideNode", () => {
+            this.__hide(item.getModel());
+          }, this);
           item.addListener("moveUp", () => {
-            const nodeId = item.getModel().getNodeId();
-            const parent = this.__tree.getParent(item.getModel());
-            if (parent) {
-              const children = parent.getChildren().toArray();
-              const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
-              if (idx > 0) {
-                this.self().moveElement(children, idx, idx-1);
-                item.setPosition(idx-1);
-                this.__tree.refresh();
-              }
-            }
+            this.__moveUp(item.getModel());
           }, this);
           item.addListener("moveDown", () => {
-            const nodeId = item.getModel().getNodeId();
-            const parent = this.__tree.getParent(item.getModel());
-            if (parent) {
-              const children = parent.getChildren().toArray();
-              const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
-              if (idx < children.length-1) {
-                this.self().moveElement(children, idx, idx+1);
-                item.setPosition(idx+1);
-                this.__tree.refresh();
-              }
-            }
+            this.__moveDown(item.getModel());
           }, this);
         }
       });
+    },
+
+    __show: function(itemMdl) {
+      itemMdl.set({
+        skipNode: true
+      });
+    },
+
+    __hide: function(itemMdl) {
+      itemMdl.set({
+        skipNode: false
+      });
+    },
+
+    __moveUp: function(itemMdl) {
+      const nodeId = itemMdl.getNodeId();
+      const parentMdl = this.__tree.getParent(itemMdl);
+      if (parentMdl) {
+        const children = parentMdl.getChildren().toArray();
+        const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
+        if (idx > 0) {
+          this.self().moveElement(children, idx, idx-1);
+          itemMdl.setPosition(idx-1);
+          this.__tree.refresh();
+        }
+      }
+    },
+
+    __moveDown: function(itemMdl) {
+      const nodeId = itemMdl.getNodeId();
+      const parentMdl = this.__tree.getParent(itemMdl);
+      if (parentMdl) {
+        const children = parentMdl.getChildren().toArray();
+        const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
+        if (idx < children.length-1) {
+          this.self().moveElement(children, idx, idx+1);
+          itemMdl.setPosition(idx+1);
+          this.__tree.refresh();
+        }
+      }
     }
   }
 });
