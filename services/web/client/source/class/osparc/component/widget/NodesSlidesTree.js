@@ -25,7 +25,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__tree = this._createChildControlImpl("tree");
     const save = this._createChildControlImpl("save-button");
@@ -47,7 +47,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           label: "",
           nodeId: node.getNodeId(),
           skipNode: false,
-          position: i+1
+          position: i
         };
         nodeInTree.label = node.getLabel();
         if (node.isContainer()) {
@@ -108,8 +108,8 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         label: study.getName(),
         children: this.self().convertModel(topLevelNodes),
         nodeId: study.getUuid(),
-        skipNode: false,
-        position: 0
+        skipNode: null,
+        position: null
       };
       let model = qx.data.marshal.Json.createModel(data, true);
       return model;

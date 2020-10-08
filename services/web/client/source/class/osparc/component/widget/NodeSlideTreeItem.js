@@ -20,13 +20,20 @@
  */
 
 qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
-  extend: osparc.component.widget.NodeTreeItem,
+  extend: qx.ui.tree.VirtualTreeItem,
 
   properties: {
+    nodeId : {
+      check : "String",
+      event: "changeNodeId",
+      nullable : true
+    },
+
     position: {
       check: "Number",
       event: "changePosition",
       apply: "_applyPosition",
+      init: -1,
       nullable: true
     },
 
@@ -107,17 +114,40 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       this.addWidget(showBtn);
 
       const moveUpBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/10");
-      moveUpBtn.addListener("execute", () => this.fireEvent("moveUp"), this);
+      moveUpBtn.addListener("execute", () => {
+        this.fireEvent("moveUp");
+      }, this);
+      this.bind("position", moveUpBtn, "visibility", {
+        converter: val => {
+          if (val === null) {
+            return "excluded";
+          }
+          return "visible";
+        }
+      });
       this.addWidget(moveUpBtn);
 
       const moveDownBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-down/10");
-      moveDownBtn.addListener("execute", () => this.fireEvent("moveDown"), this);
+      moveDownBtn.addListener("execute", () => {
+        this.fireEvent("moveDown");
+      }, this);
+      this.bind("position", moveDownBtn, "visibility", {
+        converter: val => {
+          if (val === null) {
+            return "excluded";
+          }
+          return "visible";
+        }
+      });
       this.addWidget(moveDownBtn);
 
-      if (false && osparc.data.Permissions.getInstance().canDo("study.nodestree.uuid.read")) {
-        const nodeIdWidget = new qx.ui.basic.Label();
+      if (osparc.data.Permissions.getInstance().canDo("study.nodestree.uuid.read")) {
+        const nodeIdWidget = new qx.ui.basic.Label().set({
+          alignX: "right",
+          minWidth: 260,
+          maxWidth: 260
+        });
         this.bind("nodeId", nodeIdWidget, "value");
-        nodeIdWidget.setMaxWidth(250);
         this.addWidget(nodeIdWidget);
       }
     },
