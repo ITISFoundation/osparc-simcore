@@ -28,6 +28,8 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     this._setLayout(new qx.ui.layout.VBox());
 
     this.__tree = this._createChildControlImpl("tree");
+    const save = this._createChildControlImpl("save-button");
+    save.addListener("execute", () => this.__saveSlides, this);
 
     const model = this.__initTree();
     this.__tree.setModel(model);
@@ -36,7 +38,6 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
   },
 
   statics: {
-
     convertModel: function(nodes) {
       let children = [];
       let i=0;
@@ -77,6 +78,13 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           this._add(control, {
             flex: 1
           });
+          break;
+        case "save-button":
+          control = new qx.ui.form.Button(this.tr("Save")).set({
+            allowGrowX: false,
+            alignX: "right"
+          });
+          this._add(control);
           break;
       }
 
@@ -187,6 +195,10 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           this.__tree.refresh();
         }
       }
+    },
+
+    __saveSlides: function() {
+      console.log("Serialize me", this.__tree.getModel());
     }
   }
 });
