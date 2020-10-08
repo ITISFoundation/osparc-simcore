@@ -20,23 +20,116 @@
  */
 
 qx.Class.define("osparc.component.widget.NodesSlidesTree", {
-  extend: osparc.component.widget.NodesTree,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
     this.base(arguments);
 
-    this.__buildLayout();
+    this._setLayout(new qx.ui.layout.VBox());
+
+    this.__tree = this._createChildControlImpl("tree");
+
+    this.__populateTree();
+  },
+
+  statics: {
+    moveElement: function(input, from, to) {
+      let numberOfDeletedElm = 1;
+      const elm = input.splice(from, numberOfDeletedElm)[0];
+      numberOfDeletedElm = 0;
+      input.splice(to, numberOfDeletedElm, elm);
+    }
   },
 
   members: {
-    __slidesTree: null,
+    __tree: null,
 
-    __buildLayout: function() {
-      // this.__slidesTree = this._createChildControlImpl("tree");
-      // this.populateTree(this.__slidesTree);
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "tree":
+          control = this.__buildTree();
+          this._add(control, {
+            flex: 1
+          });
+          break;
+      }
 
-      this.__tree = this._createChildControlImpl("tree");
-      this.populateTree(this.__tree);
+      return control || this.base(arguments, id);
+    },
+
+    __buildTree: function() {
+      const tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
+        decorator: "service-tree",
+        openMode: "none",
+        contentPadding: 0,
+        padding: 0
+      });
+      return tree;
+    },
+
+    __populateTree: function() {
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const topLevelNodes = study.getWorkbench().getNodes();
+      let data = {
+        label: study.getName(),
+        children: osparc.component.widget.NodesTree.convertModel(topLevelNodes),
+        nodeId: study.getUuid(),
+        isContainer: true
+      };
+      let newModel = qx.data.marshal.Json.createModel(data, true);
+      let oldModel = this.__tree.getModel();
+      if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
+        study.bind("name", newModel, "label");
+        this.__tree.setModel(newModel);
+        let i = 0;
+        this.__tree.setDelegate({
+          createItem: () => {
+            const nodeSlideTreeItem = new osparc.component.widget.NodeSlideTreeItem();
+            nodeSlideTreeItem.set({
+              visible: true,
+              position: i
+            });
+            i++;
+            return nodeSlideTreeItem;
+          },
+          bindItem: (c, item, id) => {
+            c.bindDefaultProperties(item, id);
+            c.bindProperty("nodeId", "nodeId", null, item, id);
+            const node = study.getWorkbench().getNode(item.getModel().getNodeId());
+            if (node) {
+              node.bind("label", item.getModel(), "label");
+            }
+            c.bindProperty("label", "label", null, item, id);
+          },
+          configureItem: item => {
+            item.addListener("moveUp", () => {
+              const nodeId = item.getModel().getNodeId();
+              const parent = this.__tree.getParent(item.getModel());
+              if (parent) {
+                const children = parent.getChildren().toArray();
+                const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
+                if (idx > 0) {
+                  this.self().moveElement(children, idx, idx-1);
+                  this.__tree.refresh();
+                }
+              }
+            }, this);
+            item.addListener("moveDown", () => {
+              const nodeId = item.getModel().getNodeId();
+              const parent = this.__tree.getParent(item.getModel());
+              if (parent) {
+                const children = parent.getChildren().toArray();
+                const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
+                if (idx < children.length-1) {
+                  this.self().moveElement(children, idx, idx+1);
+                  this.__tree.refresh();
+                }
+              }
+            }, this);
+          }
+        });
+      }
     }
   }
 });
