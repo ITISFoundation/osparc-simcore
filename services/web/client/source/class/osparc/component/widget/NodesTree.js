@@ -232,7 +232,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               this.__openItem(item.getModel().getNodeId());
               this.__selectedItem(item);
             }, this);
-            item.addListener("tap", e => {
+            item.addListener("tap", () => {
               this.__selectedItem(item);
               this.nodeSelected(item.getModel().getNodeId());
             }, this);
