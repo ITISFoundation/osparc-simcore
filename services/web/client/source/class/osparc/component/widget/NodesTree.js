@@ -45,7 +45,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
     this.__toolBar = this._createChildControlImpl("toolbar");
     this.__tree = this._createChildControlImpl("tree");
-    this.__populateTree();
+    this.populateTree();
 
     this.__attachEventHandlers();
   },
@@ -196,7 +196,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       return tree;
     },
 
-    __populateTree: function() {
+    populateTree: function() {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const topLevelNodes = study.getWorkbench().getNodes();
       let data = {
@@ -375,7 +375,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       }, this);
 
       qx.event.message.Bus.getInstance().subscribe("updateStudy", () => {
-        this.__populateTree();
+        this.populateTree();
       }, this);
     }
   }
