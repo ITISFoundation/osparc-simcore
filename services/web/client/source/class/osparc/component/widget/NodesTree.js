@@ -83,7 +83,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     buildLayout: function() {
       this.__toolBar = this._createChildControlImpl("toolbar");
       this.__tree = this._createChildControlImpl("tree");
-      this.populateTree();
+      this.__populateTree();
 
       this.__attachEventHandlers();
     },
@@ -198,11 +198,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       return tree;
     },
 
-    populateTree: function(tree) {
-      if (tree === undefined) {
-        tree = this.__tree;
-      }
-
+    __populateTree: function() {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const topLevelNodes = study.getWorkbench().getNodes();
       let data = {
@@ -212,11 +208,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         isContainer: true
       };
       let newModel = qx.data.marshal.Json.createModel(data, true);
-      let oldModel = tree.getModel();
+      let oldModel = this.__tree.getModel();
       if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
         study.bind("name", newModel, "label");
-        tree.setModel(newModel);
-        tree.setDelegate({
+        this.__tree.setModel(newModel);
+        this.__tree.setDelegate({
           createItem: () => new osparc.component.widget.NodeTreeItem(),
           bindItem: (c, item, id) => {
             c.bindDefaultProperties(item, id);
@@ -381,7 +377,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       }, this);
 
       qx.event.message.Bus.getInstance().subscribe("updateStudy", () => {
-        this.populateTree();
+        this.__populateTree();
       }, this);
     }
   }
