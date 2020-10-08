@@ -51,6 +51,26 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     "changeSelectedNode": "qx.event.type.Data"
   },
 
+  statics: {
+    convertModel: function(nodes) {
+      let children = [];
+      for (let nodeId in nodes) {
+        const node = nodes[nodeId];
+        let nodeInTree = {
+          label: "",
+          nodeId: node.getNodeId()
+        };
+        nodeInTree.label = node.getLabel();
+        nodeInTree.isContainer = node.isContainer();
+        if (node.isContainer()) {
+          nodeInTree.children = this.convertModel(node.getInnerNodes());
+        }
+        children.push(nodeInTree);
+      }
+      return children;
+    }
+  },
+
   members: {
     __toolBar: null,
     __tree: null,
@@ -187,7 +207,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       const topLevelNodes = study.getWorkbench().getNodes();
       let data = {
         label: study.getName(),
-        children: this.__convertModel(topLevelNodes),
+        children: this.self().convertModel(topLevelNodes),
         nodeId: study.getUuid(),
         isContainer: true
       };
@@ -219,24 +239,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           }
         });
       }
-    },
-
-    __convertModel: function(nodes) {
-      let children = [];
-      for (let nodeId in nodes) {
-        const node = nodes[nodeId];
-        let nodeInTree = {
-          label: "",
-          nodeId: node.getNodeId()
-        };
-        nodeInTree.label = node.getLabel();
-        nodeInTree.isContainer = node.isContainer();
-        if (node.isContainer()) {
-          nodeInTree.children = this.__convertModel(node.getInnerNodes());
-        }
-        children.push(nodeInTree);
-      }
-      return children;
     },
 
     __getNodeInTree: function(model, nodeId) {
