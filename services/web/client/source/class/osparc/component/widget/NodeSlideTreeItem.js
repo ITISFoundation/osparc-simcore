@@ -26,12 +26,14 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
     position: {
       check: "Number",
       event: "changePosition",
+      apply: "_applyPosition",
       nullable: true
     },
 
-    visible: {
+    skipNode: {
       check: "Boolean",
-      event: "changeVisible",
+      event: "changeSkipNode",
+      apply: "_applySkipNode",
       nullable: true
     }
   },
@@ -59,40 +61,40 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
           if (val === null) {
             return "";
           }
-          return toString(val+1);
+          return (val+1).toString();
         }
       });
-      this.bind("visible", posLbl, "visibility", {
-        converter: val => val ? "visible" : "excluded"
+      this.bind("skipNode", posLbl, "visibility", {
+        converter: val => val ? "excluded" : "visible"
       });
       this.addWidget(posLbl);
 
       const hideBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye-slash/10");
-      hideBtn.addListener("execute", () => this.setVisible(false), this);
-      this.bind("visible", hideBtn, "visibility", {
+      hideBtn.addListener("execute", () => this.setSkipNode(true), this);
+      this.bind("skipNode", hideBtn, "visibility", {
         converter: val => {
           if (val === null) {
             return "excluded";
           }
           if (val === true) {
-            return "visible";
+            return "excluded";
           }
-          return "excluded";
+          return "visible";
         }
       });
       this.addWidget(hideBtn);
 
       const showBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye/10");
-      showBtn.addListener("execute", () => this.setVisible(true), this);
-      this.bind("visible", showBtn, "visibility", {
+      showBtn.addListener("execute", () => this.setSkipNode(false), this);
+      this.bind("skipNode", showBtn, "visibility", {
         converter: val => {
           if (val === null) {
             return "excluded";
           }
           if (val === false) {
-            return "visible";
+            return "excluded";
           }
-          return "excluded";
+          return "visible";
         }
       });
       this.addWidget(showBtn);
@@ -106,14 +108,22 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       this.addWidget(moveDownBtn);
 
       if (false && osparc.data.Permissions.getInstance().canDo("study.nodestree.uuid.read")) {
-        this.addWidget(new qx.ui.core.Spacer(), {
-          flex: 1
-        });
-
         const nodeIdWidget = new qx.ui.basic.Label();
         this.bind("nodeId", nodeIdWidget, "value");
         nodeIdWidget.setMaxWidth(250);
         this.addWidget(nodeIdWidget);
+      }
+    },
+
+    _applyPosition: function(val) {
+      if (val === null) {
+        return;
+      }
+    },
+
+    _applySkipNode: function(val) {
+      if (val === null) {
+        return;
       }
     }
   }
