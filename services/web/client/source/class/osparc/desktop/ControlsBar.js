@@ -42,6 +42,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
   },
 
   events: {
+    "showEditSlides": "qx.event.type.Event",
     "showSweeper": "qx.event.type.Event",
     "showWorkbench": "qx.event.type.Event",
     "showSettings": "qx.event.type.Event",
