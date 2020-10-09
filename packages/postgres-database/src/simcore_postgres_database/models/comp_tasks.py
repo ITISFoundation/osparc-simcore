@@ -51,7 +51,7 @@ task_output_changed_trigger = sa.DDL(
     f"""
 DROP TRIGGER IF EXISTS {DB_TRIGGER_NAME} on comp_tasks;
 CREATE TRIGGER {DB_TRIGGER_NAME}
-AFTER UPDATE OF outputs ON comp_tasks
+AFTER UPDATE OF outputs,state ON comp_tasks
     FOR EACH ROW
     WHEN ((OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb OR OLD.state IS DISTINCT FROM NEW.state)
         AND NEW.node_class <> 'FRONTEND')
