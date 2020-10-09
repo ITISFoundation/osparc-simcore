@@ -47,7 +47,7 @@ def get_tasks_summary(service_tasks):
     msg = ""
     for task in service_tasks:
         status: Dict = task["Status"]
-        msg += f"- task ID:{task['ID']}, CREATED: {task['CreatedAt']}, UPDATED: {task['UpdatedAt']}, DESIREDSTATE: {task["DesiredState"]}, STATE: {status['State']}"
+        msg += f"- task ID:{task['ID']}, CREATED: {task['CreatedAt']}, UPDATED: {task['UpdatedAt']}, DESIREDSTATE: {task['DesiredState']}, STATE: {status['State']}"
         error = status.get("Err")
         if error:
             msg += f", ERROR: {error}"
