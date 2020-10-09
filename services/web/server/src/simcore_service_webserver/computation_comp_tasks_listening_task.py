@@ -70,7 +70,7 @@ async def _update_project_node_and_notify_if_needed(
             data=new_node_data["outputs"],
         )
         log.debug(
-            "Updated node outputs from %s to %s",
+            "Updated node outputs from\n %s\n to\n %s",
             pformat(current_outputs or ""),
             pformat(new_node_data["outputs"]),
         )
@@ -83,7 +83,8 @@ async def _update_project_node_and_notify_if_needed(
             app, user_id, project_uuid, node_uuid, new_state
         )
         log.debug(
-            "Updated node state from %s to %s",
+            "Updated node %s state from %s to %s",
+            node_uuid,
             pformat(current_state or ""),
             pformat(new_state),
         )
@@ -103,8 +104,16 @@ async def listen(app: web.Application):
             # Changes on comp_tasks.outputs of non-frontend task
             log.debug("DB comp_tasks.outputs/state updated: <- %s", msg.payload)
             task_data = json.loads(msg.payload)["data"]
-            task_output = task_data["outputs"]
-            log.debug("NEW NODE DATA: %s", pformat(task_output))
+            log.debug(
+                "node %s new outputs: %s",
+                task_data["node_id"],
+                pformat(task_data["outputs"]),
+            )
+            log.debug(
+                "node %s new state: %s",
+                task_data["node_id"],
+                pformat(task_data["state"]),
+            )
             project_uuid = task_data["project_id"]
 
             # FIXME: we do not know who triggered these changes. we assume the user had the rights to do so
