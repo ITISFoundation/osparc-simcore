@@ -7,6 +7,7 @@ from pathlib import Path
 from pdb import Pdb
 from pprint import pformat
 from typing import Dict, List
+import os
 
 import docker
 import yaml
@@ -107,7 +108,7 @@ def by_service_creation(service):
     return to_datetime(datetime_str)
 
 
-def wait_for_services() -> None:
+def wait_for_services() -> int:
     expected_services = core_services() + ops_services()
 
     client = docker.from_env()
@@ -130,28 +131,34 @@ def wait_for_services() -> None:
     for service in started_services:
 
         expected_replicas = service.attrs["Spec"]["Mode"]["Replicated"]["Replicas"]
-        print(f"Service: {service.name} expects {expected_replicas} replicas", "-"*10)
+        print(f"Service: {service.name} expects {expected_replicas} replicas", "-" * 10)
 
-        for attempt in Retrying(
-            stop=stop_after_attempt(MAX_RETRY_COUNT),
-            wait=wait_fixed(WAIT_BEFORE_RETRY),
-            reraise=True,
-        ):
-            with attempt:
-                service_tasks: List[Dict] = service.tasks()  #  freeze
-                print(get_tasks_summary(service_tasks))
+        try:
+            for attempt in Retrying(
+                stop=stop_after_attempt(MAX_RETRY_COUNT),
+                wait=wait_fixed(WAIT_BEFORE_RETRY),
+            ):
+                with attempt:
+                    service_tasks: List[Dict] = service.tasks()  #  freeze
+                    print(get_tasks_summary(service_tasks))
 
-                #
-                # NOTE: a service could set 'ready' as desired-state instead of 'running' if
-                # it constantly breaks and the swarm desides to "stopy trying".
-                #
-                valid_replicas = sum(
-                    task["Status"]["State"] == RUNNING_STATE
-                    for task in service_tasks
-                )
-                assert (
-                    valid_replicas == expected_replicas
-                ), f"Service {service.name} failed to start\n { json.dumps(service.attrs, indent=1) }"
+                    #
+                    # NOTE: a service could set 'ready' as desired-state instead of 'running' if
+                    # it constantly breaks and the swarm desides to "stopy trying".
+                    #
+                    valid_replicas = sum(
+                        task["Status"]["State"] == RUNNING_STATE
+                        for task in service_tasks
+                    )
+                    assert valid_replicas == expected_replicas
+        except RetryError:
+            print(
+                f"ERROR: Service {service.name} failed to start {expected_replicas} replica/s"
+            )
+            print(json.dumps(service.attrs, indent=1))
+            return os.EX_SOFTWARE
+
+    return os.EX_OK
 
 
 if __name__ == "__main__":
