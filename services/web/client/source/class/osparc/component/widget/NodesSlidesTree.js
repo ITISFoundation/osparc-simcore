@@ -143,15 +143,19 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         configureItem: item => {
           item.addListener("showNode", () => {
             this.__show(item.getModel());
+            this.__recalculatePositions();
           }, this);
           item.addListener("hideNode", () => {
             this.__hide(item.getModel());
+            this.__recalculatePositions();
           }, this);
           item.addListener("moveUp", () => {
             this.__moveUp(item.getModel());
+            this.__recalculatePositions();
           }, this);
           item.addListener("moveDown", () => {
             this.__moveDown(item.getModel());
+            this.__recalculatePositions();
           }, this);
         }
       });
@@ -177,8 +181,6 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
         if (idx > 0) {
           this.self().moveElement(children, idx, idx-1);
-          itemMdl.setPosition(idx-1);
-          this.__tree.refresh();
         }
       }
     },
@@ -191,10 +193,22 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
         if (idx < children.length-1) {
           this.self().moveElement(children, idx, idx+1);
-          itemMdl.setPosition(idx+1);
-          this.__tree.refresh();
         }
       }
+    },
+
+    __recalculatePositions: function() {
+      const treeMdl = this.__tree.getModel();
+      const children = treeMdl.getChildren().toArray();
+      let pos = 0;
+      for (let i=0; i<children.length; i++) {
+        const child = children[i];
+        if (child.getSkipNode() === false) {
+          child.setPosition(pos);
+          pos++;
+        }
+      }
+      this.__tree.refresh();
     },
 
     __saveSlides: function() {
