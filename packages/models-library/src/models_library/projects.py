@@ -82,6 +82,13 @@ class Position(BaseModel):
         extra = Extra.forbid
 
 
+class WorkbenchUI(BaseModel):
+    position: Optional[Position] = Field(...)
+
+    class Config:
+        extra = Extra.forbid
+
+
 class Slideshow(BaseModel):
     slideType: Optional[str] = Field(..., description="Type of slide", example=["slide"])
     position: Optional[int] = Field(..., description="Slide's position", example=["0", "2"])
@@ -149,14 +156,14 @@ class Node(BaseModel):
         example=["nodeUUid1", "nodeUuid2"],
     )
 
-    position: Position = Field(...)
+    position: Optional[Position] = Field(...)
 
     class Config:
         extra = Extra.forbid
 
 
 class NodeUI(BaseModel):
-    position: Optional[Position] = Field(...)
+    workbench: Optional[WorkbenchUI] = Field(...)
     slideshow: Optional[Slideshow] = Field(...)
 
     class Config:

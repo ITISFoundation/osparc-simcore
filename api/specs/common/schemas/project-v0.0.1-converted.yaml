@@ -238,17 +238,21 @@ properties:
         type: object
         additionalProperties: false
         properties:
-          position:
+          workbench:
             type: object
             additionalProperties: false
-            required:
-              - x
-              - 'y'
             properties:
-              x:
-                type: integer
-              'y':
-                type: integer
+              position:
+                type: object
+                additionalProperties: false
+                required:
+                  - x
+                  - 'y'
+                properties:
+                  x:
+                    type: integer
+                  'y':
+                    type: integer
           slideshow:
             type: object
             additionalProperties: false
