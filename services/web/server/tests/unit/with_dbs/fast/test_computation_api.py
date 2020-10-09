@@ -49,7 +49,7 @@ async def mock_get_task_states(
 @pytest.fixture
 def mock_get_celery_publication_timeout(monkeypatch):
     def return_celery_publication_timeout(*args, **kwargs) -> int:
-        return 60
+        return 120
 
     monkeypatch.setattr(
         computation_api,
@@ -124,7 +124,7 @@ fake = faker.Faker()
             {
                 "task0": (
                     RunningState.published,
-                    datetime.utcnow() - timedelta(seconds=75),
+                    datetime.utcnow() - timedelta(seconds=175),
                 ),
                 "task1": (
                     RunningState.pending,
