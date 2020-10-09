@@ -9,7 +9,7 @@ from typing import Dict, List
 
 import docker
 import yaml
-from tenacity import Retrying, before_sleep_log, stop_after_attempt
+from tenacity import Retrying, before_sleep_log, stop_after_attempt, wait_fixed
 
 logger = logging.getLogger(__name__)
 
@@ -126,11 +126,10 @@ def wait_for_services() -> None:
         "got: {len(started_services)} {[s.name for s in started_services]}"
     )
 
-    # now check they are in running mode
     for service in started_services:
 
         expected_replicas = service.attrs["Spec"]["Mode"]["Replicated"]["Replicas"]
-        print(f"Service: {service.name} expects {expected_replicas} replicas")
+        print(f"Service: {service.name} expects {expected_replicas} replicas", "-"*10)
 
         for attempt in Retrying(
             stop=stop_after_attempt(MAX_RETRY_COUNT),
@@ -142,6 +141,10 @@ def wait_for_services() -> None:
                 service_tasks: List[Dict] = service.tasks()  #  freeze
                 print(get_tasks_summary(service_tasks))
 
+                #
+                # NOTE: a service could set 'ready' as desired-state instead of 'running' if
+                # it constantly breaks and the swarm desides to "stopy trying".
+                #
                 valid_replicas = sum(
                     task.get("DesiredState") == task["Status"]["State"]
                     for task in service_tasks
