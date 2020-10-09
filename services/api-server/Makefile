@@ -22,6 +22,7 @@ docker-compose.yml:
 run-devel: .env docker-compose.yml down ## runs app on host with pg fixture for development [for development]
 	# Starting db (under $<)
 	docker-compose up --detach
+	sleep 2
 	# Creating db-tables: user=key, password=secret
 	@$(MAKE) db-tables
 	# start app (under $<)
