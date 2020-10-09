@@ -1319,7 +1319,7 @@ async def _state_project(
     data, error = await assert_status(resp, expected)
     if not error:
         # the project is locked
-        assert data == expected_project_state.dict(by_alias=True, , exclude_unset=True)
+        assert data == expected_project_state.dict(by_alias=True, exclude_unset=True)
 
 
 async def _assert_project_state_updated(
@@ -1387,7 +1387,9 @@ async def test_open_shared_project_2_users_locked(
         client_id1,
         {SOCKET_IO_PROJECT_UPDATED_EVENT: mock_project_state_updated_handler},
     )
-    expected_project_state = ProjectState(locked={"value": False}, state=RunningState.not_started)
+    expected_project_state = ProjectState(
+        locked={"value": False}, state=RunningState.not_started
+    )
     await _state_project(
         client_1,
         shared_project,
