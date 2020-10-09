@@ -29,12 +29,14 @@ def _is_output_changed(current_outputs: Dict, new_outputs: Dict) -> bool:
             if port_key not in current_outputs:
                 return True
             if isinstance(new_outputs[port_key], dict):
+                # file type output
                 if any(
                     current_outputs[port_key][x] != new_outputs[port_key][x]
                     for x in OUTPUT_KEYS_TO_COMPARE
                 ):
                     return True
-            if new_outputs[port_key] != current_outputs[port_key]:
+            elif new_outputs[port_key] != current_outputs[port_key]:
+                # value output
                 return True
     return False
 
