@@ -9,13 +9,14 @@ from typing import Dict, List
 
 import docker
 import yaml
+from tenacity import Retrying, before_sleep_log, stop_after_attempt
 
 logger = logging.getLogger(__name__)
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-WAIT_TIME_SECS = 20
-RETRY_COUNT = 7
+WAIT_BEFORE_RETRY = 5
+MAX_RETRY_COUNT = 7
 MAX_WAIT_TIME = 240
 
 # SEE https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
@@ -41,20 +42,17 @@ FAILED_STATES = [
 ]
 
 
-def get_tasks_summary(tasks):
+def get_tasks_summary(service_tasks):
     msg = ""
-    for task in tasks:
+    for task in service_tasks:
         status: Dict = task["Status"]
-        msg += f"- task ID:{task['ID']}, STATE: {status['State']}"
+        msg += f"- task ID:{task['ID']}, , CREATED: {task['CreatedAt']}, UPDATED: {task['UpdatedAt']}, STATE: {status['State']}"
         error = status.get("Err")
         if error:
             msg += f", ERROR: {error}"
         msg += "\n"
 
     return msg
-
-
-# --------------------------------------------------------------------------------
 
 
 def osparc_simcore_root_dir() -> Path:
@@ -92,13 +90,34 @@ def ops_services() -> List[str]:
         return [x for x in dc_specs["services"].keys()]
 
 
+def to_datetime(datetime_str: str) -> datetime:
+    # datetime_str is typically '2020-10-09T12:28:14.771034099Z'
+    #  - The T separates the date portion from the time-of-day portion
+    #  - The Z on the end means UTC, that is, an offset-from-UTC
+    # The 099 before the Z is not clear, therefore we will truncate the last part
+    N = len("2020-10-09T12:28:14.771034")
+    if len(datetime_str) > N:
+        datetime_str = datetime_str[:N]
+    return datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
+
+
+def by_service_creation(service):
+    datetime_str = service.attrs["CreatedAt"]
+    return to_datetime(datetime_str)
+
+
 def wait_for_services() -> None:
     expected_services = core_services() + ops_services()
 
     client = docker.from_env()
-    started_services = [
-        s for s in client.services.list() if s.name.split("_")[-1] in expected_services
-    ]
+    started_services = sorted(
+        [
+            s
+            for s in client.services.list()
+            if s.name.split("_")[-1] in expected_services
+        ],
+        key=by_service_creation,
+    )
 
     assert len(started_services), "no services started!"
     assert len(expected_services) == len(started_services), (
@@ -106,47 +125,30 @@ def wait_for_services() -> None:
         "expected: {len(expected_services)} {expected_services}\n"
         "got: {len(started_services)} {[s.name for s in started_services]}"
     )
+
     # now check they are in running mode
     for service in started_services:
 
-        # get last updated task
+        expected_replicas = service.attrs["Spec"]["Mode"]["Replicated"]["Replicas"]
+        print(f"Service: {service.name} expects {expected_replicas} replicas")
 
-        def by_updated_timestamp(task) -> datetime:
-            datetime_str = task["UpdatedAt"]
-            # datetime_str is typically '2020-10-09T12:28:14.771034099Z'
-            #  - The T separates the date portion from the time-of-day portion
-            #  - The Z on the end means UTC, that is, an offset-from-UTC
-            # The 099 before the Z is not clear, therefore we will truncate the last part
-            N = len("2020-10-09T12:28:14.771034")
-            if len(datetime_str) > N:
-                datetime_str = datetime_str[:N]
-            return datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
+        for attempt in Retrying(
+            stop=stop_after_attempt(MAX_RETRY_COUNT),
+            wait=wait_fixed(WAIT_BEFORE_RETRY),
+            reraise=True,
+            before_sleep=before_sleep_log(logger, logging.WARNING),
+        ):
+            with attempt:
+                service_tasks: List[Dict] = service.tasks()  #  freeze
+                print(get_tasks_summary(service_tasks))
 
-        task = sorted(service.tasks(), key=by_updated_timestamp)[-1]
-        assert task
-
-        # retry loop
-        for n in range(RETRY_COUNT):
-            if task["Status"]["State"] in PRE_STATES:
-                print(
-                    f"Waiting [{n}/{RETRY_COUNT}] for {service.name}...\n",
-                    get_tasks_summary(service.tasks()),
+                valid_replicas = sum(
+                    task.get("DesiredState") == task["Status"]["State"]
+                    for task in service_tasks
                 )
-                time.sleep(WAIT_TIME_SECS)
-            elif task["Status"]["State"] in FAILED_STATES:
-                print(
-                    f"Waiting [{n}/{RETRY_COUNT}] for {service.name} which failed ...\n",
-                    get_tasks_summary(service.tasks()),
-                )
-                time.sleep(WAIT_TIME_SECS)
-            else:
-                break
-
-        assert task["Status"]["State"] == task.get(
-            "DesiredState", RUNNING_STATE
-        ), f"Expected running, got \n{pformat(task)}\n" + get_tasks_summary(
-            service.tasks()
-        )
+                assert (
+                    valid_replicas == expected_replicas
+                ), f"Service {service.name} failed to start"
 
 
 if __name__ == "__main__":
