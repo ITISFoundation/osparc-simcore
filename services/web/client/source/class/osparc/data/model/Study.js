@@ -56,7 +56,8 @@ qx.Class.define("osparc.data.model.Study", {
     });
 
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
-    this.setWorkbench(new osparc.data.model.Workbench(wbData));
+    this.setWorkbench(new osparc.data.model.Workbench(wbData, studyData.ui));
+    this.setUi(studyData.ui);
 
     this.setSweeper(new osparc.data.model.Sweeper(studyData));
   },
@@ -120,6 +121,10 @@ qx.Class.define("osparc.data.model.Study", {
     workbench: {
       check: "osparc.data.model.Workbench",
       nullable: false
+    },
+
+    ui: {
+      check: "Object"
     },
 
     classifiers: {
@@ -253,6 +258,19 @@ qx.Class.define("osparc.data.model.Study", {
           jsonObject["dev"] = {};
           jsonObject["dev"]["sweeper"] = this.getSweeper().serializeSweeper();
           return;
+        }
+        if (key === "ui") {
+          jsonObject["ui"] = {};
+          jsonObject["ui"]["workbench"] = {};
+          const nodes = this.getWorkbench().getNodes(true);
+          for (const nodeUuid in nodes) {
+            jsonObject["ui"][nodeUuid] = {};
+            jsonObject["ui"][nodeUuid]["workbench"] = {};
+          }
+          for (const nodeUuid in nodes) {
+            const node = nodes[nodeUuid];
+            jsonObject["ui"][nodeUuid]["workbench"]["position"] = node.getPosition();
+          }
         }
         let value = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
         if (value !== null) {

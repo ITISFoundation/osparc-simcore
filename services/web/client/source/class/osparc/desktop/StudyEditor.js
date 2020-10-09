@@ -425,8 +425,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __getCurrentPipeline: function() {
       const saveContainers = false;
-      const savePosition = false;
-      const currentPipeline = this.getStudy().getWorkbench().serializeWorkbench(saveContainers, savePosition);
+      const currentPipeline = this.getStudy().getWorkbench().serializeWorkbench(saveContainers);
       return currentPipeline;
     },
 
