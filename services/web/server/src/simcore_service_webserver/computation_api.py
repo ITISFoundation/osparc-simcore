@@ -13,7 +13,6 @@ from aiohttp import web, web_exceptions
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from celery import Celery
-from celery.signals import after_task_publish
 from models_library.projects import RunningState
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.comp_pipeline import (
@@ -458,22 +457,6 @@ def get_celery(_app: web.Application) -> Celery:
         backend=rabbit.backend,
     )
     return celery_app
-
-
-@after_task_publish.connect
-def task_sent_handler(_=None, headers=None, body=None, **kwargs):
-    # information about task are located in headers for task messages
-    # using the task protocol version 2.
-    # info = headers if "task" in headers else body
-    log.debug("task published to celery: %s", headers)
-    # data = {
-    #     "Channel": "Log",
-    #     "Node": None,
-    #     "user_id": None,
-    #     "project_id": None,
-    #     "Messages": ["pipeline sent for execution..."],
-    # }
-    # await post_messages(app, user_id, data)
 
 
 async def _set_tasks_in_tasks_db_as_pending(db_engine: Engine, project_id: str):
