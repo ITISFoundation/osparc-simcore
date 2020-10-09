@@ -5,8 +5,6 @@ from uuid import UUID
 
 from fastapi import APIRouter
 
-# from fastapi.responses import RedirectResponse
-
 from ...models.schemas.solvers import (
     LATEST_VERSION,
     KeyIdentifier,
@@ -20,11 +18,14 @@ from ...models.schemas.solvers import (
     SolverOverview,
 )
 
+# from fastapi.responses import RedirectResponse
+
+
 router = APIRouter()
 
 
-
 ## SOLVERS ------------
+
 
 @router.get("", response_model=List[SolverOverview])
 async def list_solvers():
@@ -77,18 +78,18 @@ async def list_runs(solver_id: UUID):
     pass
 
 
+@router.get("/{solver_id}/runs/{run_id}:stop", response_model=RunProxy)
+async def stop_run(solver_id: UUID, run_id: UUID):
+    pass
+
+
 @router.get("/{solver_id}/runs/{run_id}", response_model=RunProxy)
 async def get_run(solver_id: UUID, run_id: UUID):
     pass
 
 
-@router.get("/{solver_id}/runs/{run_id}/state", response_model=RunState)
-async def inspect_run_state(solver_id: UUID):
-    pass
-
-
-@router.get("/{solver_id}/runs/{run_id}:stop", response_model=RunProxy)
-async def stop_run(solver_id: UUID, run_id: UUID):
+@router.get("/{solver_id}/runs/{run_id}:inspect", response_model=RunState)
+async def inspect_run(solver_id: UUID):
     pass
 
 
