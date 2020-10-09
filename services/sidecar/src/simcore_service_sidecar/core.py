@@ -7,7 +7,7 @@ import networkx as nx
 from aiopg.sa import Engine, SAConnection
 from aiopg.sa.result import RowProxy
 from simcore_postgres_database.sidecar_models import (
-    FAILED,  # PENDING,
+    FAILED,
     PENDING,
     RUNNING,
     SUCCESS,
