@@ -74,7 +74,7 @@ def qx_client_outdir(tmpdir):
 
 
 @pytest.fixture
-def mocks_on_projects_api(mocker):
+def mocks_on_projects_api(mocker) -> Dict:
     """
     All projects in this module are UNLOCKED
     """
@@ -83,7 +83,7 @@ def mocks_on_projects_api(mocker):
             value=False, owner=Owner(first_name="Speedy", last_name="Gonzalez")
         ),
         state=ProjectRunningState(value=RunningState.not_started),
-    )
+    ).dict(by_alias=True, exclude_unset=True)
     mocker.patch(
         "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
         return_value=future_with_result(state),

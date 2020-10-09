@@ -117,7 +117,7 @@ async def logged_user(client, user_role: UserRole):
 
 
 @pytest.fixture
-def mocks_on_projects_api(mocker, logged_user):
+def mocks_on_projects_api(mocker, logged_user) -> Dict:
     """
     All projects in this module are UNLOCKED
 
@@ -130,7 +130,7 @@ def mocks_on_projects_api(mocker, logged_user):
             value=False, owner=Owner(first_name=nameparts[0], last_name=nameparts[1])
         ),
         state=ProjectRunningState(value=RunningState.not_started),
-    )
+    ).dict(by_alias=True, exclude_unset=True)
     mocker.patch(
         "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
         return_value=future_with_result(state),
@@ -157,9 +157,7 @@ async def shared_project(client, fake_project, logged_user, all_group):
         },
     )
     async with NewProject(
-        fake_project,
-        client.app,
-        user_id=logged_user["id"],
+        fake_project, client.app, user_id=logged_user["id"],
     ) as project:
         print("-----> added project", project["name"])
         yield project
@@ -793,11 +791,7 @@ async def test_replace_project(
     ],
 )
 async def test_replace_project_updated_inputs(
-    client,
-    logged_user,
-    user_project,
-    expected,
-    computational_system_mock,
+    client, logged_user, user_project, expected, computational_system_mock,
 ):
     project_update = deepcopy(user_project)
     #
@@ -825,11 +819,7 @@ async def test_replace_project_updated_inputs(
     ],
 )
 async def test_replace_project_updated_readonly_inputs(
-    client,
-    logged_user,
-    user_project,
-    expected,
-    computational_system_mock,
+    client, logged_user, user_project, expected, computational_system_mock,
 ):
     project_update = deepcopy(user_project)
     project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
@@ -1525,10 +1515,7 @@ async def test_open_shared_project_at_same_time(
     client_1 = client
     client_id1 = client_session_id()
     sio_1 = await _connect_websocket(
-        socketio_client,
-        user_role != UserRole.ANONYMOUS,
-        client_1,
-        client_id1,
+        socketio_client, user_role != UserRole.ANONYMOUS, client_1, client_id1,
     )
     clients = [
         {"client": client_1, "user": logged_user, "client_id": client_id1, "sio": sio_1}
@@ -1543,10 +1530,7 @@ async def test_open_shared_project_at_same_time(
         )
         client_id = client_session_id()
         sio = await _connect_websocket(
-            socketio_client,
-            user_role != UserRole.ANONYMOUS,
-            client,
-            client_id,
+            socketio_client, user_role != UserRole.ANONYMOUS, client, client_id,
         )
         clients.append(
             {"client": client, "user": user, "client_id": client_id, "sio": sio}
@@ -1565,10 +1549,7 @@ async def test_open_shared_project_at_same_time(
         )
         for c in clients
     ]
-    results = await asyncio.gather(
-        *open_project_tasks,
-        return_exceptions=True,
-    )
+    results = await asyncio.gather(*open_project_tasks, return_exceptions=True,)
 
     # one should be opened, the other locked
     if user_role != UserRole.ANONYMOUS:
