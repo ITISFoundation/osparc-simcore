@@ -461,7 +461,7 @@ def get_celery(_app: web.Application) -> Celery:
 
 
 @after_task_publish.connect
-def task_sent_handler(_=None, headers=None, body=None):
+def task_sent_handler(_=None, headers=None, body=None, **kwargs):
     # information about task are located in headers for task messages
     # using the task protocol version 2.
     # info = headers if "task" in headers else body
