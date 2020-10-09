@@ -136,7 +136,6 @@ def wait_for_services() -> None:
             stop=stop_after_attempt(MAX_RETRY_COUNT),
             wait=wait_fixed(WAIT_BEFORE_RETRY),
             reraise=True,
-            before_sleep=before_sleep_log(logger, logging.WARNING),
         ):
             with attempt:
                 service_tasks: List[Dict] = service.tasks()  #  freeze
@@ -152,7 +151,7 @@ def wait_for_services() -> None:
                 )
                 assert (
                     valid_replicas == expected_replicas
-                ), f"Service {service.name} failed to start\n { json.dumps(service.attrs, indent=2) }"
+                ), f"Service {service.name} failed to start\n { json.dumps(service.attrs, indent=1) }"
 
 
 if __name__ == "__main__":
