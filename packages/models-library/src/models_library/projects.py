@@ -82,6 +82,14 @@ class Position(BaseModel):
         extra = Extra.forbid
 
 
+class Slideshow(BaseModel):
+    slideType: Optional[str] = Field(..., description="Type of slide", example=["slide"])
+    position: Optional[int] = Field(..., description="Slide's position", example=["0", "2"])
+
+    class Config:
+        extra = Extra.forbid
+
+
 InputTypes = Union[int, bool, str, float, PortLink, SimCoreFileLink, DatCoreFileLink]
 OutputTypes = Union[int, bool, str, float, SimCoreFileLink, DatCoreFileLink]
 InputID = constr(regex=PROPERTY_KEY_RE)
@@ -147,6 +155,14 @@ class Node(BaseModel):
         extra = Extra.forbid
 
 
+class NodeUI(BaseModel):
+    position: Optional[Position] = Field(...)
+    slideshow: Optional[Slideshow] = Field(...)
+
+    class Config:
+        extra = Extra.forbid
+
+
 class AccessRights(BaseModel):
     read: bool = Field(..., description="gives read access")
     write: bool = Field(..., description="gives write access")
@@ -202,6 +218,7 @@ class Project(BaseModel):
         example=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )
     workbench: Dict[NodeID, Node]
+    ui: Optional[Dict[NodeID, NodeUI]]
     tags: Optional[List[int]] = Field(None)
     classifiers: Optional[List[ClassifierID]] = Field(
         None,

@@ -327,6 +327,54 @@
         }
       }
     },
+    "ui": {
+      "type": "object",
+      "patternProperties": {
+        "^\\S+$": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "position": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "x",
+                "y"
+              ],
+              "properties": {
+                "x": {
+                  "type": "integer"
+                },
+                "y": {
+                  "type": "integer"
+                }
+              }
+            },
+            "slideshow": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "slideType": {
+                  "type": "string",
+                  "description": "Type of slide",
+                  "examples": [
+                    "slide"
+                  ]
+                },
+                "position": {
+                  "type": "number",
+                  "description": "Slide's position",
+                  "examples": [
+                    "0",
+                    "2"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "tags": {
       "type": "array",
       "items": {

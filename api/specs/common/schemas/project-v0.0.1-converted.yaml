@@ -231,6 +231,40 @@ properties:
               'y':
                 type: integer
     additionalProperties: true
+  ui:
+    type: object
+    x-patternProperties:
+      ^\S+$:
+        type: object
+        additionalProperties: false
+        properties:
+          position:
+            type: object
+            additionalProperties: false
+            required:
+              - x
+              - 'y'
+            properties:
+              x:
+                type: integer
+              'y':
+                type: integer
+          slideshow:
+            type: object
+            additionalProperties: false
+            properties:
+              slideType:
+                type: string
+                description: Type of slide
+                example:
+                  - slide
+              position:
+                type: number
+                description: Slide's position
+                example:
+                  - '0'
+                  - '2'
+    additionalProperties: true
   tags:
     type: array
     items:
