@@ -452,11 +452,12 @@ info: ## displays setup information
 	@echo ' DIRECTOR_API_VERSION  : ${DIRECTOR_API_VERSION}'
 	@echo ' STORAGE_API_VERSION   : ${STORAGE_API_VERSION}'
 	@echo ' WEBSERVER_API_VERSION : ${WEBSERVER_API_VERSION}'
-	# tools version
+	# dev tools version
 	@echo ' make   : $(shell make --version 2>&1 | head -n 1)'
 	@echo ' jq     : $(shell jq --version)'
 	@echo ' awk    : $(shell awk -W version 2>&1 | head -n 1)'
 	@echo ' python : $(shell python3 --version)'
+	@echo ' node   : $(shell node --version 2> /dev/null || echo ERROR nodejs missing)'
 
 
 define show-meta
