@@ -1,3 +1,4 @@
+import json
 import logging
 import sys
 import time
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 WAIT_BEFORE_RETRY = 5
-MAX_RETRY_COUNT = 7
+MAX_RETRY_COUNT = 10
 MAX_WAIT_TIME = 240
 
 # SEE https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
@@ -46,7 +47,7 @@ def get_tasks_summary(service_tasks):
     msg = ""
     for task in service_tasks:
         status: Dict = task["Status"]
-        msg += f"- task ID:{task['ID']}, , CREATED: {task['CreatedAt']}, UPDATED: {task['UpdatedAt']}, STATE: {status['State']}"
+        msg += f"- task ID:{task['ID']}, CREATED: {task['CreatedAt']}, UPDATED: {task['UpdatedAt']}, DESIREDSTATE: {task["DesiredState"]}, STATE: {status['State']}"
         error = status.get("Err")
         if error:
             msg += f", ERROR: {error}"
@@ -146,12 +147,12 @@ def wait_for_services() -> None:
                 # it constantly breaks and the swarm desides to "stopy trying".
                 #
                 valid_replicas = sum(
-                    task.get("DesiredState") == task["Status"]["State"]
+                    task["Status"]["State"] == RUNNING_STATE
                     for task in service_tasks
                 )
                 assert (
                     valid_replicas == expected_replicas
-                ), f"Service {service.name} failed to start"
+                ), f"Service {service.name} failed to start\n { json.dumps(service.attrs, indent=2) }"
 
 
 if __name__ == "__main__":
