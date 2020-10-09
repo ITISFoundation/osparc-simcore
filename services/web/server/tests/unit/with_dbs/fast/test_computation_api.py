@@ -1,3 +1,8 @@
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
+
 from typing import Dict
 
 import pytest
@@ -71,6 +76,11 @@ async def mock_get_task_states(
             # started pipeline if any of the node is started
             {"task0": RunningState.started, "task1": RunningState.failure},
             RunningState.started,
+        ),
+        (
+            # empty tasks (could be an empty project or filled with dynamic services)
+            {},
+            RunningState.not_started,
         ),
     ],
 )
