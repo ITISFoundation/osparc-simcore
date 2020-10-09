@@ -6002,12 +6002,12 @@ paths:
                               additionalProperties: true
                             ui:
                               type: object
-                              x-patternProperties:
-                                ^\S+$:
+                              additionalProperties: false
+                              properties:
+                                workbench:
                                   type: object
-                                  additionalProperties: false
-                                  properties:
-                                    workbench:
+                                  x-patternProperties:
+                                    ^\S+$:
                                       type: object
                                       additionalProperties: false
                                       properties:
@@ -6022,7 +6022,11 @@ paths:
                                               type: integer
                                             'y':
                                               type: integer
-                                    slideshow:
+                                  additionalProperties: true
+                                slideshow:
+                                  type: object
+                                  x-patternProperties:
+                                    ^\S+$:
                                       type: object
                                       additionalProperties: false
                                       properties:
@@ -6037,7 +6041,7 @@ paths:
                                           example:
                                             - '0'
                                             - '2'
-                              additionalProperties: true
+                                  additionalProperties: true
                             tags:
                               type: array
                               items:
@@ -6412,12 +6416,12 @@ paths:
                   additionalProperties: true
                 ui:
                   type: object
-                  x-patternProperties:
-                    ^\S+$:
+                  additionalProperties: false
+                  properties:
+                    workbench:
                       type: object
-                      additionalProperties: false
-                      properties:
-                        workbench:
+                      x-patternProperties:
+                        ^\S+$:
                           type: object
                           additionalProperties: false
                           properties:
@@ -6432,7 +6436,11 @@ paths:
                                   type: integer
                                 'y':
                                   type: integer
-                        slideshow:
+                      additionalProperties: true
+                    slideshow:
+                      type: object
+                      x-patternProperties:
+                        ^\S+$:
                           type: object
                           additionalProperties: false
                           properties:
@@ -6447,7 +6455,7 @@ paths:
                               example:
                                 - '0'
                                 - '2'
-                  additionalProperties: true
+                      additionalProperties: true
                 tags:
                   type: array
                   items:
@@ -6702,12 +6710,12 @@ paths:
                             additionalProperties: true
                           ui:
                             type: object
-                            x-patternProperties:
-                              ^\S+$:
+                            additionalProperties: false
+                            properties:
+                              workbench:
                                 type: object
-                                additionalProperties: false
-                                properties:
-                                  workbench:
+                                x-patternProperties:
+                                  ^\S+$:
                                     type: object
                                     additionalProperties: false
                                     properties:
@@ -6722,7 +6730,11 @@ paths:
                                             type: integer
                                           'y':
                                             type: integer
-                                  slideshow:
+                                additionalProperties: true
+                              slideshow:
+                                type: object
+                                x-patternProperties:
+                                  ^\S+$:
                                     type: object
                                     additionalProperties: false
                                     properties:
@@ -6737,7 +6749,7 @@ paths:
                                         example:
                                           - '0'
                                           - '2'
-                            additionalProperties: true
+                                additionalProperties: true
                           tags:
                             type: array
                             items:
@@ -7110,12 +7122,12 @@ paths:
                             additionalProperties: true
                           ui:
                             type: object
-                            x-patternProperties:
-                              ^\S+$:
+                            additionalProperties: false
+                            properties:
+                              workbench:
                                 type: object
-                                additionalProperties: false
-                                properties:
-                                  workbench:
+                                x-patternProperties:
+                                  ^\S+$:
                                     type: object
                                     additionalProperties: false
                                     properties:
@@ -7130,7 +7142,11 @@ paths:
                                             type: integer
                                           'y':
                                             type: integer
-                                  slideshow:
+                                additionalProperties: true
+                              slideshow:
+                                type: object
+                                x-patternProperties:
+                                  ^\S+$:
                                     type: object
                                     additionalProperties: false
                                     properties:
@@ -7145,7 +7161,7 @@ paths:
                                         example:
                                           - '0'
                                           - '2'
-                            additionalProperties: true
+                                additionalProperties: true
                           tags:
                             type: array
                             items:
@@ -7524,12 +7540,12 @@ paths:
                             additionalProperties: true
                           ui:
                             type: object
-                            x-patternProperties:
-                              ^\S+$:
+                            additionalProperties: false
+                            properties:
+                              workbench:
                                 type: object
-                                additionalProperties: false
-                                properties:
-                                  workbench:
+                                x-patternProperties:
+                                  ^\S+$:
                                     type: object
                                     additionalProperties: false
                                     properties:
@@ -7544,7 +7560,11 @@ paths:
                                             type: integer
                                           'y':
                                             type: integer
-                                  slideshow:
+                                additionalProperties: true
+                              slideshow:
+                                type: object
+                                x-patternProperties:
+                                  ^\S+$:
                                     type: object
                                     additionalProperties: false
                                     properties:
@@ -7559,7 +7579,7 @@ paths:
                                         example:
                                           - '0'
                                           - '2'
-                            additionalProperties: true
+                                additionalProperties: true
                           tags:
                             type: array
                             items:
@@ -7929,12 +7949,12 @@ paths:
                   additionalProperties: true
                 ui:
                   type: object
-                  x-patternProperties:
-                    ^\S+$:
+                  additionalProperties: false
+                  properties:
+                    workbench:
                       type: object
-                      additionalProperties: false
-                      properties:
-                        workbench:
+                      x-patternProperties:
+                        ^\S+$:
                           type: object
                           additionalProperties: false
                           properties:
@@ -7949,7 +7969,11 @@ paths:
                                   type: integer
                                 'y':
                                   type: integer
-                        slideshow:
+                      additionalProperties: true
+                    slideshow:
+                      type: object
+                      x-patternProperties:
+                        ^\S+$:
                           type: object
                           additionalProperties: false
                           properties:
@@ -7964,7 +7988,7 @@ paths:
                               example:
                                 - '0'
                                 - '2'
-                  additionalProperties: true
+                      additionalProperties: true
                 tags:
                   type: array
                   items:
@@ -8219,12 +8243,12 @@ paths:
                             additionalProperties: true
                           ui:
                             type: object
-                            x-patternProperties:
-                              ^\S+$:
+                            additionalProperties: false
+                            properties:
+                              workbench:
                                 type: object
-                                additionalProperties: false
-                                properties:
-                                  workbench:
+                                x-patternProperties:
+                                  ^\S+$:
                                     type: object
                                     additionalProperties: false
                                     properties:
@@ -8239,7 +8263,11 @@ paths:
                                             type: integer
                                           'y':
                                             type: integer
-                                  slideshow:
+                                additionalProperties: true
+                              slideshow:
+                                type: object
+                                x-patternProperties:
+                                  ^\S+$:
                                     type: object
                                     additionalProperties: false
                                     properties:
@@ -8254,7 +8282,7 @@ paths:
                                         example:
                                           - '0'
                                           - '2'
-                            additionalProperties: true
+                                additionalProperties: true
                           tags:
                             type: array
                             items:
@@ -8649,12 +8677,12 @@ paths:
                             additionalProperties: true
                           ui:
                             type: object
-                            x-patternProperties:
-                              ^\S+$:
+                            additionalProperties: false
+                            properties:
+                              workbench:
                                 type: object
-                                additionalProperties: false
-                                properties:
-                                  workbench:
+                                x-patternProperties:
+                                  ^\S+$:
                                     type: object
                                     additionalProperties: false
                                     properties:
@@ -8669,7 +8697,11 @@ paths:
                                             type: integer
                                           'y':
                                             type: integer
-                                  slideshow:
+                                additionalProperties: true
+                              slideshow:
+                                type: object
+                                x-patternProperties:
+                                  ^\S+$:
                                     type: object
                                     additionalProperties: false
                                     properties:
@@ -8684,7 +8716,7 @@ paths:
                                         example:
                                           - '0'
                                           - '2'
-                            additionalProperties: true
+                                additionalProperties: true
                           tags:
                             type: array
                             items:
@@ -9891,12 +9923,12 @@ paths:
                             additionalProperties: true
                           ui:
                             type: object
-                            x-patternProperties:
-                              ^\S+$:
+                            additionalProperties: false
+                            properties:
+                              workbench:
                                 type: object
-                                additionalProperties: false
-                                properties:
-                                  workbench:
+                                x-patternProperties:
+                                  ^\S+$:
                                     type: object
                                     additionalProperties: false
                                     properties:
@@ -9911,7 +9943,11 @@ paths:
                                             type: integer
                                           'y':
                                             type: integer
-                                  slideshow:
+                                additionalProperties: true
+                              slideshow:
+                                type: object
+                                x-patternProperties:
+                                  ^\S+$:
                                     type: object
                                     additionalProperties: false
                                     properties:
@@ -9926,7 +9962,7 @@ paths:
                                         example:
                                           - '0'
                                           - '2'
-                            additionalProperties: true
+                                additionalProperties: true
                           tags:
                             type: array
                             items:
@@ -10298,12 +10334,12 @@ paths:
                             additionalProperties: true
                           ui:
                             type: object
-                            x-patternProperties:
-                              ^\S+$:
+                            additionalProperties: false
+                            properties:
+                              workbench:
                                 type: object
-                                additionalProperties: false
-                                properties:
-                                  workbench:
+                                x-patternProperties:
+                                  ^\S+$:
                                     type: object
                                     additionalProperties: false
                                     properties:
@@ -10318,7 +10354,11 @@ paths:
                                             type: integer
                                           'y':
                                             type: integer
-                                  slideshow:
+                                additionalProperties: true
+                              slideshow:
+                                type: object
+                                x-patternProperties:
+                                  ^\S+$:
                                     type: object
                                     additionalProperties: false
                                     properties:
@@ -10333,7 +10373,7 @@ paths:
                                         example:
                                           - '0'
                                           - '2'
-                            additionalProperties: true
+                                additionalProperties: true
                           tags:
                             type: array
                             items:

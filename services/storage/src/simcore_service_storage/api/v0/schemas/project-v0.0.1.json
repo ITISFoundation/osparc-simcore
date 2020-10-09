@@ -329,12 +329,12 @@
     },
     "ui": {
       "type": "object",
-      "patternProperties": {
-        "^\\S+$": {
+      "additionalProperties": false,
+      "properties": {
+        "workbench": {
           "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "workbench": {
+          "patternProperties": {
+            "^\\S+$": {
               "type": "object",
               "additionalProperties": false,
               "properties": {
@@ -355,8 +355,13 @@
                   }
                 }
               }
-            },
-            "slideshow": {
+            }
+          }
+        },
+        "slideshow": {
+          "type": "object",
+          "patternProperties": {
+            "^\\S+$": {
               "type": "object",
               "additionalProperties": false,
               "properties": {

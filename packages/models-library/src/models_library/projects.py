@@ -162,9 +162,9 @@ class Node(BaseModel):
         extra = Extra.forbid
 
 
-class NodeUI(BaseModel):
-    workbench: Optional[WorkbenchUI] = Field(...)
-    slideshow: Optional[Slideshow] = Field(...)
+class StudyUI(BaseModel):
+    workbench: Optional[Dict[NodeID, WorkbenchUI]] = Field(...)
+    slideshow: Optional[Dict[NodeID, Slideshow]] = Field(...)
 
     class Config:
         extra = Extra.forbid
@@ -225,7 +225,7 @@ class Project(BaseModel):
         example=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )
     workbench: Dict[NodeID, Node]
-    ui: Optional[Dict[NodeID, NodeUI]]
+    ui: Optional[StudyUI]
     tags: Optional[List[int]] = Field(None)
     classifiers: Optional[List[ClassifierID]] = Field(
         None,
