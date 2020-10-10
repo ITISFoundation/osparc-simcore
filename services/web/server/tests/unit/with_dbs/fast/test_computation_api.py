@@ -107,7 +107,10 @@ fake = faker.Faker()
         (
             # pipeline is published if any of the node is published AND time is within publication timeout
             {
-                "task0": (RunningState.published, datetime.utcnow()),
+                "task0": (
+                    RunningState.published,
+                    datetime.utcnow() - timedelta(seconds=10),
+                ),
                 "task1": (
                     RunningState.pending,
                     datetime.utcnow() - timedelta(seconds=75),
