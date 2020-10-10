@@ -67,18 +67,9 @@ def mock_get_celery_publication_timeout(monkeypatch):
         (
             # pipeline is published if any of the node is published AND time is within publication timeout
             {
-                "task0": (
-                    RunningState.PUBLISHED,
-                    datetime.utcnow(),
-                ),
-                "task1": (
-                    RunningState.PENDING,
-                    datetime.utcnow() - timedelta(seconds=75),
-                ),
-                "task2": (
-                    RunningState.STARTED,
-                    datetime.utcnow() - timedelta(seconds=155),
-                ),
+                "task0": (RunningState.PUBLISHED, datetime.utcnow(),),
+                "task1": (RunningState.PENDING, -timedelta(seconds=75),),
+                "task2": (RunningState.STARTED, -timedelta(seconds=155),),
             },
             RunningState.PUBLISHED,
         ),
@@ -87,17 +78,10 @@ def mock_get_celery_publication_timeout(monkeypatch):
             {
                 "task0": (
                     RunningState.PUBLISHED,
-                    datetime.utcnow()
-                    - timedelta(seconds=CELERY_PUBLICATION_TIMEOUT + 75),
+                    -timedelta(seconds=CELERY_PUBLICATION_TIMEOUT + 75),
                 ),
-                "task1": (
-                    RunningState.PENDING,
-                    datetime.utcnow() - timedelta(seconds=145),
-                ),
-                "task2": (
-                    RunningState.STARTED,
-                    datetime.utcnow() - timedelta(seconds=1555),
-                ),
+                "task1": (RunningState.PENDING, -timedelta(seconds=145),),
+                "task2": (RunningState.STARTED, -timedelta(seconds=1555),),
             },
             RunningState.NOT_STARTED,
         ),
@@ -151,8 +135,15 @@ def mock_get_celery_publication_timeout(monkeypatch):
 async def test_get_pipeline_state(
     mock_get_task_states,
     mock_get_celery_publication_timeout,
+    task_states,
     expected_pipeline_state: RunningState,
 ):
+    now = datetime.utcnow()
+    new_state = task_states
+    for key, state in task_states.items():
+        if isinstance(state[1], timedelta):
+            correct_time = now + state[1]
+            new_state[key] = (state[0], correct_time)
     FAKE_APP = {}
     FAKE_PROJECT = "project_id"
     pipeline_state = await get_pipeline_state(FAKE_APP, FAKE_PROJECT)
