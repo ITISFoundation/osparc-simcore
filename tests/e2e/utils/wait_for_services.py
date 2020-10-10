@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import sys
 import time
 from datetime import datetime
@@ -7,17 +8,22 @@ from pathlib import Path
 from pdb import Pdb
 from pprint import pformat
 from typing import Dict, List
-import os
 
 import docker
 import yaml
-from tenacity import Retrying, before_sleep_log, stop_after_attempt, wait_fixed
+from tenacity import (
+    RetryError,
+    Retrying,
+    before_sleep_log,
+    stop_after_attempt,
+    wait_fixed,
+)
 
 logger = logging.getLogger(__name__)
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-WAIT_BEFORE_RETRY = 5
+WAIT_BEFORE_RETRY = 10
 MAX_RETRY_COUNT = 10
 MAX_WAIT_TIME = 240
 
@@ -48,7 +54,7 @@ def get_tasks_summary(service_tasks):
     msg = ""
     for task in service_tasks:
         status: Dict = task["Status"]
-        msg += f"- task ID:{task['ID']}, CREATED: {task['CreatedAt']}, UPDATED: {task['UpdatedAt']}, DESIREDSTATE: {task['DesiredState']}, STATE: {status['State']}"
+        msg += f"- task ID:{task['ID']}, CREATED: {task['CreatedAt']}, UPDATED: {task['UpdatedAt']}, DESIRED_STATE: {task['DesiredState']}, STATE: {status['State']}"
         error = status.get("Err")
         if error:
             msg += f", ERROR: {error}"
