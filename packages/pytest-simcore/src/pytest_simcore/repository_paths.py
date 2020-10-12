@@ -1,5 +1,4 @@
 # pylint: disable=redefined-outer-name
-
 import sys
 from pathlib import Path
 
@@ -88,3 +87,26 @@ def pylintrc(osparc_simcore_root_dir: Path) -> Path:
     pylintrc = osparc_simcore_root_dir / ".pylintrc"
     assert pylintrc.exists()
     return pylintrc
+
+
+@pytest.fixture(scope="session")
+def tests_dir() -> Path:
+    tdir = (current_dir / "..").resolve()
+    assert tdir.exists()
+    assert tdir.name == "tests"
+    return tdir
+
+
+## PACKAGE and SERVICE DIRECTORY STRUCTURE
+
+
+@pytest.fixture(scope="session")
+def project_slug_dir() -> Path:
+    raise NotImplementedError("Override fixture in project's tests/conftest.py")
+
+
+@pytest.fixture(scope="session")
+def project_tests_dir(project_slug_dir: Path) -> Path:
+    test_dir = project_slug_dir / "tests"
+    assert test_dir.exists()
+    return test_dir
