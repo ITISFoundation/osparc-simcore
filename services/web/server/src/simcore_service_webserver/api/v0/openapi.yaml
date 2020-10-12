@@ -5851,7 +5851,6 @@ paths:
                                     - key
                                     - version
                                     - label
-                                    - position
                                   properties:
                                     key:
                                       type: string
@@ -6265,7 +6264,6 @@ paths:
                         - key
                         - version
                         - label
-                        - position
                       properties:
                         key:
                           type: string
@@ -6559,7 +6557,6 @@ paths:
                                   - key
                                   - version
                                   - label
-                                  - position
                                 properties:
                                   key:
                                     type: string
@@ -6971,7 +6968,6 @@ paths:
                                   - key
                                   - version
                                   - label
-                                  - position
                                 properties:
                                   key:
                                     type: string
@@ -7389,7 +7385,6 @@ paths:
                                   - key
                                   - version
                                   - label
-                                  - position
                                 properties:
                                   key:
                                     type: string
@@ -7798,7 +7793,6 @@ paths:
                         - key
                         - version
                         - label
-                        - position
                       properties:
                         key:
                           type: string
@@ -8092,7 +8086,6 @@ paths:
                                   - key
                                   - version
                                   - label
-                                  - position
                                 properties:
                                   key:
                                     type: string
@@ -8526,7 +8519,6 @@ paths:
                                   - key
                                   - version
                                   - label
-                                  - position
                                 properties:
                                   key:
                                     type: string
@@ -9772,7 +9764,6 @@ paths:
                                   - key
                                   - version
                                   - label
-                                  - position
                                 properties:
                                   key:
                                     type: string
@@ -10183,7 +10174,6 @@ paths:
                                   - key
                                   - version
                                   - label
-                                  - position
                                 properties:
                                   key:
                                     type: string

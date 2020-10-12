@@ -107,8 +107,7 @@
           "required": [
             "key",
             "version",
-            "label",
-            "position"
+            "label"
           ],
           "properties": {
             "key": {
