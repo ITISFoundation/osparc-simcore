@@ -171,7 +171,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
             child.setPosition(initData[nodeId].position);
             child.setSkipNode(false);
           } else {
-            child.setPosition(null);
+            child.setPosition(-1);
             child.setSkipNode(true);
           }
         });
