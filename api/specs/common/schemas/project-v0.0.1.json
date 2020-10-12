@@ -436,6 +436,7 @@
                       "enum": [
                         "UNKNOWN",
                         "NOT_STARTED",
+                        "PUBLISHED",
                         "PENDING",
                         "STARTED",
                         "RETRY",
