@@ -262,20 +262,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       }
     },
 
-    studySaved: function() {
-      for (let i=0; i<this.__mainViewCaptionLayout.getChildren().length; i++) {
-        let widget = this.__mainViewCaptionLayout.getChildren()[i];
-        if (widget instanceof qx.ui.form.Button) {
-          const waitFor = 500;
-          qx.event.Timer.once(ev => {
-            widget.removeState("hovered");
-          }, this, waitFor);
-          widget.addState("hovered");
-          return;
-        }
-      }
-    },
-
     __createSlidesMenuBtn: function() {
       const menu = new qx.ui.menu.Menu().set({
         font: "text-14"

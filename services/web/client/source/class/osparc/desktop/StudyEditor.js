@@ -51,7 +51,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   events: {
     "changeMainViewCaption": "qx.event.type.Data",
     "studyIsLocked": "qx.event.type.Event",
-    "studySaved": "qx.event.type.Data",
     "startStudy": "qx.event.type.Data"
   },
 
@@ -668,7 +667,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return new Promise((resolve, reject) => {
         osparc.data.Resources.fetch("studies", "put", params)
           .then(data => {
-            this.fireDataEvent("studySaved", true);
             this.__lastSavedStudy = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
             resolve();
           }).catch(error => {

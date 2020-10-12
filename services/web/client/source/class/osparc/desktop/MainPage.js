@@ -265,13 +265,6 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__studyEditor.addListener("studyIsLocked", () => {
         this.__showDashboard();
       }, this);
-
-      this.__studyEditor.addListener("studySaved", ev => {
-        const wasSaved = ev.getData();
-        if (wasSaved) {
-          this.__navBar.studySaved();
-        }
-      }, this);
     },
 
     __getStudyEditor: function() {
