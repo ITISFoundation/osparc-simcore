@@ -261,15 +261,7 @@ qx.Class.define("osparc.data.model.Study", {
         }
         if (key === "ui") {
           jsonObject["ui"] = this.getUi();
-          if (!("workbench" in jsonObject["ui"])) {
-            jsonObject["ui"]["workbench"] = {};
-          }
-          const nodes = this.getWorkbench().getNodes(true);
-          for (const nodeUuid in nodes) {
-            const node = nodes[nodeUuid];
-            jsonObject["ui"]["workbench"][nodeUuid] = {};
-            jsonObject["ui"]["workbench"][nodeUuid]["position"] = node.getPosition();
-          }
+          jsonObject["ui"]["workbench"] = this.getWorkbench().serializeWorkbenchUI();
           return;
         }
         let value = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);

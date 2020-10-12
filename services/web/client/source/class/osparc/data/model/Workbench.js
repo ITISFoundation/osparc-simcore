@@ -575,6 +575,17 @@ qx.Class.define("osparc.data.model.Workbench", {
         }
       }
       return workbench;
+    },
+
+    serializeWorkbenchUI: function() {
+      let workbenchUI = {};
+      const nodes = this.getNodes(true);
+      for (const nodeUuid in nodes) {
+        const node = nodes[nodeUuid];
+        workbenchUI[nodeUuid] = {};
+        workbenchUI[nodeUuid]["position"] = node.getPosition();
+      }
+      return workbenchUI;
     }
   }
 });
