@@ -3,7 +3,7 @@
 """
 # pylint: disable=too-many-arguments
 import logging
-from datetime import date, datetime
+from datetime import datetime
 from pprint import pformat
 from typing import Dict, Optional, Tuple
 
