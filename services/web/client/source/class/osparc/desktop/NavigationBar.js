@@ -97,7 +97,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     __dashboardLabel: null,
     __slidesMenu: null,
     __studyTitle: null,
-    __mainViewCaptionLayout: null,
+    __workbenchNodesLayout: null,
 
     buildLayout: function() {
       this.getChildControl("logo");
@@ -115,7 +115,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
       const studyTitle = this.__studyTitle = this.__createStudyTitle();
       this._add(studyTitle);
-      this.__mainViewCaptionLayout = this.getChildControl("study-path-container");
+      this.__workbenchNodesLayout = this.getChildControl("study-path-container");
 
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
@@ -205,7 +205,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     setPathButtons: function(nodeIds) {
-      this.__mainViewCaptionLayout.removeAll();
+      this.__workbenchNodesLayout.removeAll();
       nodeIds.length === 1 ? this.__studyTitle.show() : this.__studyTitle.exclude();
       if (nodeIds.length === 0) {
         this.__setPageContext(this.self().PAGE_CONTEXT["dashboard"]);
@@ -231,13 +231,13 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         btn.addListener("execute", function() {
           this.fireDataEvent("nodeSelected", nodeId);
         }, this);
-        this.__mainViewCaptionLayout.add(btn);
+        this.__workbenchNodesLayout.add(btn);
 
         if (i<nodeIds.length-1) {
           const arrow = new qx.ui.basic.Label(">").set({
             font: "text-14"
           });
-          this.__mainViewCaptionLayout.add(arrow);
+          this.__workbenchNodesLayout.add(arrow);
         }
         if (i === nodeIds.length-1) {
           this.__setPageContext(this.self().PAGE_CONTEXT["studyEditorWorkbench"]);
