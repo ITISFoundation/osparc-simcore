@@ -1329,7 +1329,8 @@ async def _state_project(
     data, error = await assert_status(resp, expected)
     if not error:
         # the project is locked
-        assert data == expected_project_state.dict(by_alias=True, exclude_unset=True)
+        received_state = ProjectState(**data)
+        assert received_state == expected_project_state
 
 
 async def _assert_project_state_updated(
@@ -1358,7 +1359,9 @@ async def _assert_project_state_updated(
                 json.dumps(
                     {
                         "project_uuid": shared_project["uuid"],
-                        "data": expected_project_state.dict(),
+                        "data": expected_project_state.dict(
+                            by_alias=True, exclude_unset=True
+                        ),
                     }
                 )
             )
@@ -1461,7 +1464,10 @@ async def test_open_shared_project_2_users_locked(
     await _close_project(client_1, client_id1, shared_project, expected.no_content)
     if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
         # Guests cannot close projects
-        expected_project_state = ProjectState(locked=ProjectLocked(value=False))
+        expected_project_state = ProjectState(
+            locked=ProjectLocked(value=False),
+            state=ProjectRunningState(value=RunningState.not_started),
+        )
 
     # we should receive an event that the project lock state changed
     # NOTE: there are 3 calls since we are part of the primary group and the all group and user 2 is part of the all group
