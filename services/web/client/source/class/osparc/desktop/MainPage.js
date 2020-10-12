@@ -179,7 +179,7 @@ qx.Class.define("osparc.desktop.MainPage", {
 
       this.__mainStack.setSelection([this.__dashboardLayout]);
       this.__dashboard.getStudyBrowser().reloadUserStudies();
-      this.__navBar.setPathButtons([]);
+      this.__navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT["dashboard"]);
       if (this.__studyEditor) {
         this.__studyEditor.destruct();
       }
@@ -254,6 +254,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     __syncStudyEditor: function() {
       const studyEditor = this.__studyEditor;
       const study = studyEditor.getStudy();
+      this.__navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT["workbench"]);
       this.__navBar.setStudy(study);
       this.__navBar.setPathButtons(this.__studyEditor.getCurrentPathIds());
 

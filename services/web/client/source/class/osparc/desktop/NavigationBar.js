@@ -87,8 +87,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     PAGE_CONTEXT: {
       "dashboard": 0,
-      "studyEditorWorkbench": 1,
-      "studyEditorSlides": 2
+      "workbench": 1,
+      "slides": 2
     }
   },
 
@@ -98,6 +98,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     __slidesMenu: null,
     __studyTitle: null,
     __workbenchNodesLayout: null,
+    __guidedNodesLayout: null,
 
     buildLayout: function() {
       this.getChildControl("logo");
@@ -115,7 +116,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
       const studyTitle = this.__studyTitle = this.__createStudyTitle();
       this._add(studyTitle);
-      this.__workbenchNodesLayout = this.getChildControl("study-path-container");
+      this.__workbenchNodesLayout = this.getChildControl("workbench-nodes-path-container");
+      this.__guidedNodesLayout = this.getChildControl("guided-nodes-path-container");
 
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
@@ -126,7 +128,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       this.getChildControl("theme-switch");
       this.getChildControl("user-menu");
 
-      this.__setPageContext(this.self().PAGE_CONTEXT["dashboard"]);
+      this.setPageContext(this.self().PAGE_CONTEXT["dashboard"]);
     },
 
     _createChildControlImpl: function(id) {
@@ -160,10 +162,16 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           });
           this._add(control);
           break;
-        case "study-path-container":
+        case "workbench-nodes-path-container":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignY: "middle"
           }));
+          this._add(control);
+          break;
+        case "guided-nodes-path-container":
+          control = new qx.ui.basic.Label(this.tr("Wizard")).set({
+            font: "text-16"
+          });
           this._add(control);
           break;
         case "manual":
@@ -206,15 +214,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     setPathButtons: function(nodeIds) {
       this.__workbenchNodesLayout.removeAll();
-      nodeIds.length === 1 ? this.__studyTitle.show() : this.__studyTitle.exclude();
-      if (nodeIds.length === 0) {
-        this.__setPageContext(this.self().PAGE_CONTEXT["dashboard"]);
-        return;
-      }
-      this.__setPageContext(this.self().PAGE_CONTEXT["studyEditorWorkbench"]);
-      if (nodeIds.length === 1) {
-        return;
-      }
 
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       for (let i=0; i<nodeIds.length; i++) {
@@ -240,24 +239,44 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this.__workbenchNodesLayout.add(arrow);
         }
         if (i === nodeIds.length-1) {
-          this.__setPageContext(this.self().PAGE_CONTEXT["studyEditorWorkbench"]);
           btn.setFont("title-14");
         }
       }
+
+      if (nodeIds.length === 1) {
+        this.__studyTitle.show();
+        this.__workbenchNodesLayout.exclude();
+      } else {
+        this.__studyTitle.exclude();
+        this.__workbenchNodesLayout.show();
+      }
     },
 
-    __setPageContext: function(mainPageContext) {
+    setPageContext: function(mainPageContext) {
       switch (mainPageContext) {
         case 0:
-          this.__dashboardLabel.setVisibility("visible");
-          this.__dashboardBtn.setVisibility("excluded");
-          this.__slidesMenu.setVisibility("excluded");
+          this.__dashboardLabel.show();
+          this.__dashboardBtn.exclude();
+          this.__slidesMenu.exclude();
+          this.__studyTitle.exclude();
+          this.__workbenchNodesLayout.exclude();
+          this.__guidedNodesLayout.exclude();
           break;
         case 1:
+          this.__dashboardLabel.exclude();
+          this.__dashboardBtn.show();
+          this.__slidesMenu.show();
+          this.__studyTitle.show();
+          this.__workbenchNodesLayout.show();
+          this.__guidedNodesLayout.exclude();
+          break;
         case 2:
-          this.__dashboardLabel.setVisibility("excluded");
-          this.__dashboardBtn.setVisibility("visible");
-          this.__slidesMenu.setVisibility("visible");
+          this.__dashboardLabel.exclude();
+          this.__dashboardBtn.show();
+          this.__slidesMenu.show();
+          this.__studyTitle.exclude();
+          this.__workbenchNodesLayout.exclude();
+          this.__guidedNodesLayout.show();
           break;
       }
     },
@@ -465,7 +484,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       if (study) {
         study.bind("name", this.__studyTitle, "value");
       }
-      this.__studyTitle.show();
     },
 
     __createStudyTitle: function() {
