@@ -540,17 +540,19 @@ async def get_pipeline_state(app: web.Application, project_id: str) -> RunningSt
     task_states: Dict[str, RunningState] = await get_task_states(app, project_id)
     # compute pipeline state from task states
     if task_states:
-        if all(x == RunningState.not_started for x in task_states.values()):
-            return RunningState.not_started
-        if all(x == RunningState.success for x in task_states.values()):
-            return RunningState.success
-        if all(x == RunningState.pending for x in task_states.values()):
-            return RunningState.pending
+        # put in a set of unique values
+        set_states = set(task_states.values())
+        if len(set_states) == 1:
+            # this is typically for success, pending, published
+            return next(iter(set_states))
 
-        if any(x == RunningState.started for x in task_states.values()):
-            return RunningState.started
-        if any(x == RunningState.failure for x in task_states.values()):
-            return RunningState.failure
+        for state in [
+            RunningState.published,  # still in publishing phase
+            RunningState.started,  # task is started or retrying
+            RunningState.failure,  # task is failed -> pipeline as well
+        ]:
+            if any(x == state for x in set_states):
+                return state
 
     return RunningState.not_started
 
