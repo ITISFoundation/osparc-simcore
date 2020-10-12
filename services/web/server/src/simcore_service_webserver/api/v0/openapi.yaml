@@ -6033,11 +6033,6 @@ paths:
                                       required:
                                         - position
                                       properties:
-                                        slideType:
-                                          type: string
-                                          description: Type of slide
-                                          example:
-                                            - slide
                                         position:
                                           type: integer
                                           description: Slide's position
@@ -6450,11 +6445,6 @@ paths:
                           required:
                             - position
                           properties:
-                            slideType:
-                              type: string
-                              description: Type of slide
-                              example:
-                                - slide
                             position:
                               type: integer
                               description: Slide's position
@@ -6747,11 +6737,6 @@ paths:
                                     required:
                                       - position
                                     properties:
-                                      slideType:
-                                        type: string
-                                        description: Type of slide
-                                        example:
-                                          - slide
                                       position:
                                         type: integer
                                         description: Slide's position
@@ -7162,11 +7147,6 @@ paths:
                                     required:
                                       - position
                                     properties:
-                                      slideType:
-                                        type: string
-                                        description: Type of slide
-                                        example:
-                                          - slide
                                       position:
                                         type: integer
                                         description: Slide's position
@@ -7583,11 +7563,6 @@ paths:
                                     required:
                                       - position
                                     properties:
-                                      slideType:
-                                        type: string
-                                        description: Type of slide
-                                        example:
-                                          - slide
                                       position:
                                         type: integer
                                         description: Slide's position
@@ -7995,11 +7970,6 @@ paths:
                           required:
                             - position
                           properties:
-                            slideType:
-                              type: string
-                              description: Type of slide
-                              example:
-                                - slide
                             position:
                               type: integer
                               description: Slide's position
@@ -8292,11 +8262,6 @@ paths:
                                     required:
                                       - position
                                     properties:
-                                      slideType:
-                                        type: string
-                                        description: Type of slide
-                                        example:
-                                          - slide
                                       position:
                                         type: integer
                                         description: Slide's position
@@ -8729,11 +8694,6 @@ paths:
                                     required:
                                       - position
                                     properties:
-                                      slideType:
-                                        type: string
-                                        description: Type of slide
-                                        example:
-                                          - slide
                                       position:
                                         type: integer
                                         description: Slide's position
@@ -9978,11 +9938,6 @@ paths:
                                     required:
                                       - position
                                     properties:
-                                      slideType:
-                                        type: string
-                                        description: Type of slide
-                                        example:
-                                          - slide
                                       position:
                                         type: integer
                                         description: Slide's position
@@ -10392,11 +10347,6 @@ paths:
                                     required:
                                       - position
                                     properties:
-                                      slideType:
-                                        type: string
-                                        description: Type of slide
-                                        example:
-                                          - slide
                                       position:
                                         type: integer
                                         description: Slide's position

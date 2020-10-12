@@ -370,13 +370,6 @@
                 "position"
               ],
               "properties": {
-                "slideType": {
-                  "type": "string",
-                  "description": "Type of slide",
-                  "examples": [
-                    "slide"
-                  ]
-                },
                 "position": {
                   "type": "integer",
                   "description": "Slide's position",

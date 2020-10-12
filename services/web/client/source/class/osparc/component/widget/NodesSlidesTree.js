@@ -31,10 +31,12 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     const save = this._createChildControlImpl("save-button");
     save.addListener("execute", () => this.__saveSlides(), this);
 
-    const model = this.__initTree(initData);
+    const model = this.__initTree();
     this.__tree.setModel(model);
 
     this.__populateTree();
+
+    this.__initData(initData);
   },
 
   statics: {
@@ -101,7 +103,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       return tree;
     },
 
-    __initTree: function(initData) {
+    __initTree: function() {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const topLevelNodes = study.getWorkbench().getNodes();
       let rootData = {
@@ -111,14 +113,6 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         skipNode: null,
         position: null
       };
-      const children = rootData.children;
-      for (let nodeId in initData) {
-        const idx = children.findIndex(child => child.nodeId === nodeId);
-        if (idx > -1) {
-          children[idx].position = initData[nodeId].position;
-          children[idx].skipNode = initData[nodeId].skipNode;
-        }
-      }
       return qx.data.marshal.Json.createModel(rootData, true);
     },
 
@@ -166,6 +160,22 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           }, this);
         }
       });
+    },
+
+    __initData: function(initData) {
+      if (Object.keys(initData).length) {
+        const children = this.__tree.getModel().getChildren().toArray();
+        children.forEach(child => {
+          const nodeId = child.getNodeId();
+          if (nodeId in initData) {
+            child.setPosition(initData[nodeId].position);
+            child.setSkipNode(false);
+          } else {
+            child.setPosition(null);
+            child.setSkipNode(true);
+          }
+        });
+      }
     },
 
     __show: function(itemMdl) {
@@ -225,7 +235,6 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       children.forEach(child => {
         if (child.getSkipNode() === false) {
           slideshow[child.getNodeId()] = {
-            "slideType": "slide",
             "position": child.getPosition()
           };
         }

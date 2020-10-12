@@ -94,7 +94,6 @@ class WorkbenchUI(BaseModel):
 
 
 class Slideshow(BaseModel):
-    slideType: Optional[str] = Field(..., description="Type of slide", example=["slide"])
     position: Optional[int] = Field(..., description="Slide's position", example=["0", "2"])
 
     class Config:
