@@ -39,6 +39,10 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     this.__initData(initData);
   },
 
+  events: {
+    "finished": "qx.event.type.Event"
+  },
+
   statics: {
     convertModel: function(nodes) {
       let children = [];
@@ -242,6 +246,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const studyUI = study.getUi();
       studyUI["slideshow"] = slideshow;
+      this.fireEvent("finished");
     }
   }
 });
