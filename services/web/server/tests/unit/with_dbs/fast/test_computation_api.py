@@ -108,8 +108,14 @@ fake = faker.Faker()
             # pipeline is published if any of the node is published AND time is within publication timeout
             {
                 "task0": (RunningState.published, datetime.utcnow()),
-                "task1": (RunningState.pending, fake.date_time()),
-                "task2": (RunningState.started, fake.date_time()),
+                "task1": (
+                    RunningState.pending,
+                    datetime.utcnow() - timedelta(seconds=75),
+                ),
+                "task2": (
+                    RunningState.started,
+                    datetime.utcnow() - timedelta(seconds=155),
+                ),
             },
             RunningState.published,
         ),
@@ -120,8 +126,14 @@ fake = faker.Faker()
                     RunningState.published,
                     datetime.utcnow() - timedelta(seconds=75),
                 ),
-                "task1": (RunningState.pending, fake.date_time()),
-                "task2": (RunningState.started, fake.date_time()),
+                "task1": (
+                    RunningState.pending,
+                    datetime.utcnow() - timedelta(seconds=145),
+                ),
+                "task2": (
+                    RunningState.started,
+                    datetime.utcnow() - timedelta(seconds=1555),
+                ),
             },
             RunningState.not_started,
         ),
@@ -139,17 +151,3 @@ async def test_get_pipeline_state(
 ):
     pipeline_state = await get_pipeline_state({}, "fake_project")
     assert pipeline_state == expected_pipeline_state
-
-
-@pytest.mark.parametrize(
-    "undefined_task_states",
-    [
-        (
-            # webserver crashed after setting tasks to pending
-            {"task0": RunningState.pending, "task1": RunningState.pending},
-        ),
-    ],
-)
-async def test_recover_after_crash(undefined_task_states):
-
-    pass
