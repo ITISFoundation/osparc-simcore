@@ -42,7 +42,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
   },
 
   events: {
-    "showEditSlides": "qx.event.type.Event",
     "showSweeper": "qx.event.type.Event",
     "showWorkbench": "qx.event.type.Event",
     "showSettings": "qx.event.type.Event",
@@ -109,8 +108,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       }
 
       const moreCtrls = new qx.ui.toolbar.Part();
-      const editSlidesButton = this.__createShowEditSlidesButton();
-      moreCtrls.add(editSlidesButton);
       osparc.data.model.Sweeper.isSweeperEnabled()
         .then(isSweeperEnabled => {
           if (isSweeperEnabled) {
@@ -124,11 +121,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       const startButton = this.__createStartButton();
       simCtrls.add(startButton);
       this.add(simCtrls);
-    },
-
-    __createShowEditSlidesButton: function() {
-      const editSlidesButton = this.__createButton(this.tr("Edit slides"), "paw", "showEditSlidesButton", "showEditSlides");
-      return editSlidesButton;
     },
 
     __createShowSweeperButton: function() {

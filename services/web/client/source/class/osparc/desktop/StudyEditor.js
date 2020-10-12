@@ -444,7 +444,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    __showEditSlides: function() {
+    startSlides: function() {
+
+    },
+
+    stopSlides: function() {
+
+    },
+
+    editSlides: function() {
       const uiData = this.getStudy().getUi();
       const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(uiData["slideshow"]);
       const title = this.tr("Edit Slides");
@@ -711,7 +719,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
 
       const controlsBar = this.__mainPanel.getControls();
-      controlsBar.addListener("showEditSlides", this.__showEditSlides, this);
       controlsBar.addListener("showSweeper", this.__showSweeper, this);
       controlsBar.addListener("showWorkbench", this.__showWorkbenchUI, this);
       controlsBar.addListener("showSettings", this.__showSettings, this);

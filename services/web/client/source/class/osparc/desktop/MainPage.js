@@ -83,6 +83,24 @@ qx.Class.define("osparc.desktop.MainPage", {
         }
       }, this);
 
+      navBar.addListener("slidesStart", () => {
+        if (this.__studyEditor) {
+          this.__studyEditor.startSlides();
+        }
+      }, this);
+
+      navBar.addListener("slidesStop", () => {
+        if (this.__studyEditor) {
+          this.__studyEditor.stopSlides();
+        }
+      }, this);
+
+      navBar.addListener("slidesEdit", () => {
+        if (this.__studyEditor) {
+          this.__studyEditor.editSlides();
+        }
+      }, this);
+
       navBar.addListener("nodeSelected", e => {
         if (this.__studyEditor) {
           let nodeId = e.getData();

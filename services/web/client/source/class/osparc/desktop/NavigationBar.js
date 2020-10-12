@@ -63,7 +63,10 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
   events: {
     "nodeSelected": "qx.event.type.Data",
-    "dashboardPressed": "qx.event.type.Event"
+    "dashboardPressed": "qx.event.type.Event",
+    "slidesStart": "qx.event.type.Event",
+    "slidesStop": "qx.event.type.Event",
+    "slidesEdit": "qx.event.type.Event"
   },
 
   properties: {
@@ -83,11 +86,18 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     }
   },
 
+  // eslint-disable-next-line qx-rules/no-refs-in-members
   members: {
     __dashboardBtn: null,
     __dashboardLabel: null,
+    __slidesMenu: null,
     __studyTitle: null,
     __mainViewCaptionLayout: null,
+    __pageContext: {
+      "dashboard": 0,
+      "studyEditorWorkbench": 1,
+      "studyEditorSlides": 2
+    },
 
     buildLayout: function() {
       this.getChildControl("logo");
@@ -96,7 +106,10 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
       this.__dashboardBtn = this.getChildControl("dashboard-button");
       this.__dashboardLabel = this.getChildControl("dashboard-label");
-      this.__dashboardContext();
+
+      this._add(new qx.ui.core.Spacer(20));
+
+      this.__slidesMenu = this.getChildControl("slides-menu");
 
       this._add(new qx.ui.core.Spacer(20));
 
@@ -112,6 +125,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       this.getChildControl("feedback");
       this.getChildControl("theme-switch");
       this.getChildControl("user-menu");
+
+      this.__setPageContext(this.__pageContext["dashboard"]);
     },
 
     _createChildControlImpl: function(id) {
@@ -134,6 +149,14 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         case "dashboard-label":
           control = new qx.ui.basic.Label(this.tr("Dashboard")).set({
             font: "text-16"
+          });
+          this._add(control);
+          break;
+        case "slides-menu":
+          control = this.__createSlidesMenuBtn();
+          control.set({
+            ...this.self().BUTTON_OPTIONS,
+            font: "text-14"
           });
           this._add(control);
           break;
@@ -185,10 +208,10 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       this.__mainViewCaptionLayout.removeAll();
       nodeIds.length === 1 ? this.__studyTitle.show() : this.__studyTitle.exclude();
       if (nodeIds.length === 0) {
-        this.__dashboardContext(true);
+        this.__setPageContext(this.__pageContext["dashboard"]);
         return;
       }
-      this.__dashboardContext(false);
+      this.__setPageContext(this.__pageContext["studyEditorWorkbench"]);
       if (nodeIds.length === 1) {
         return;
       }
@@ -217,15 +240,26 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this.__mainViewCaptionLayout.add(arrow);
         }
         if (i === nodeIds.length-1) {
-          this.__dashboardContext(false);
+          this.__setPageContext(this.__pageContext["studyEditorWorkbench"]);
           btn.setFont("title-14");
         }
       }
     },
 
-    __dashboardContext: function(dashboardContext = true) {
-      this.__dashboardLabel.setVisibility(dashboardContext ? "visible" : "excluded");
-      this.__dashboardBtn.setVisibility(dashboardContext ? "excluded" : "visible");
+    __setPageContext: function(mainPageContext) {
+      switch (mainPageContext) {
+        case 0:
+          this.__dashboardLabel.setVisibility("visible");
+          this.__dashboardBtn.setVisibility("excluded");
+          this.__slidesMenu.setVisibility("excluded");
+          break;
+        case 1:
+        case 2:
+          this.__dashboardLabel.setVisibility("excluded");
+          this.__dashboardBtn.setVisibility("visible");
+          this.__slidesMenu.setVisibility("visible");
+          break;
+      }
     },
 
     studySaved: function() {
@@ -240,6 +274,32 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           return;
         }
       }
+    },
+
+    __createSlidesMenuBtn: function() {
+      const menu = new qx.ui.menu.Menu().set({
+        font: "text-14"
+      });
+
+      const startBtn = new qx.ui.menu.Button(this.tr("Start"));
+      startBtn.addListener("execute", () => {
+        this.fireEvent("slidesStart");
+      }, this);
+      menu.add(startBtn);
+
+      const stopBtn = new qx.ui.menu.Button(this.tr("Stop"));
+      stopBtn.addListener("execute", () => {
+        this.fireEvent("slidesStop");
+      }, this);
+      menu.add(stopBtn);
+
+      const editBtn = new qx.ui.menu.Button(this.tr("Edit"));
+      editBtn.addListener("execute", () => {
+        this.fireEvent("slidesEdit");
+      }, this);
+      menu.add(editBtn);
+
+      return new qx.ui.form.MenuButton(this.tr("Slides"), null, menu);
     },
 
     __createManualMenuBtn: function() {
