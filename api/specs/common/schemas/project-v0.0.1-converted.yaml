@@ -270,11 +270,11 @@ properties:
                 example:
                   - slide
               position:
-                type: number
+                type: integer
                 description: Slide's position
                 example:
-                  - '0'
-                  - '2'
+                  - 0
+                  - 2
         additionalProperties: true
   tags:
     type: array
