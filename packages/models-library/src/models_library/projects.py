@@ -14,6 +14,7 @@ DATE_RE = r"\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|
 
 class RunningState(str, Enum):
     unknown = "UNKNOWN"
+    published = "PUBLISHED"
     not_started = "NOT_STARTED"
     pending = "PENDING"
     started = "STARTED"
