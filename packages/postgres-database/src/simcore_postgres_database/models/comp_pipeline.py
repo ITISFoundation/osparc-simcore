@@ -8,8 +8,10 @@ import sqlalchemy as sa
 
 from .base import metadata
 
+
 class StateType(enum.Enum):
     NOT_STARTED = "NOT_STARTED"
+    PUBLISHED = "PUBLISHED"
     PENDING = "PENDING"
     RUNNING = "RUNNING"
     SUCCESS = "SUCCESS"
