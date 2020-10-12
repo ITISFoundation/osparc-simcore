@@ -169,9 +169,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this._add(control);
           break;
         case "guided-nodes-path-container":
-          control = new qx.ui.basic.Label(this.tr("Wizard")).set({
-            font: "text-16"
-          });
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignY: "middle"
+          }));
           this._add(control);
           break;
         case "manual":
@@ -212,24 +212,44 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       return this.__dashboardBtn;
     },
 
+    __createNodePathBtn: function(nodeId) {
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const btn = new qx.ui.form.Button().set(this.self().BUTTON_OPTIONS);
+      if (nodeId === study.getUuid()) {
+        study.bind("name", btn, "label");
+      } else {
+        const node = study.getWorkbench().getNode(nodeId);
+        if (node) {
+          node.bind("label", btn, "label");
+        }
+      }
+      btn.addListener("execute", function() {
+        this.fireDataEvent("nodeSelected", nodeId);
+      }, this);
+      return btn;
+    },
+
+    __createNodeSlideBtn: function(nodeId, pos) {
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const btn = new qx.ui.form.Button().set(this.self().BUTTON_OPTIONS);
+      const node = study.getWorkbench().getNode(nodeId);
+      if (node) {
+        node.bind("label", btn, "label", {
+          converter: val => (pos+1).toString() + " " + val
+        });
+      }
+      btn.addListener("execute", function() {
+        this.fireDataEvent("nodeSelected", nodeId);
+      }, this);
+      return btn;
+    },
+
     setPathButtons: function(nodeIds) {
       this.__workbenchNodesLayout.removeAll();
 
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
       for (let i=0; i<nodeIds.length; i++) {
-        const btn = new qx.ui.form.Button().set(this.self().BUTTON_OPTIONS);
         const nodeId = nodeIds[i];
-        if (nodeId === study.getUuid()) {
-          study.bind("name", btn, "label");
-        } else {
-          const node = study.getWorkbench().getNode(nodeId);
-          if (node) {
-            node.bind("label", btn, "label");
-          }
-        }
-        btn.addListener("execute", function() {
-          this.fireDataEvent("nodeSelected", nodeId);
-        }, this);
+        const btn = this.__createNodePathBtn(nodeId);
         this.__workbenchNodesLayout.add(btn);
 
         if (i<nodeIds.length-1) {
@@ -249,6 +269,22 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       } else {
         this.__studyTitle.exclude();
         this.__workbenchNodesLayout.show();
+      }
+    },
+
+    showGuidedButtons: function() {
+      this.__guidedNodesLayout.removeAll();
+      const study = this.getStudy();
+      if (study) {
+        const studyUI = study.getUi();
+        if ("slideshow" in studyUI) {
+          const slideShow = studyUI["slideshow"];
+          for (let nodeId in slideShow) {
+            const node = slideShow[nodeId];
+            const btn = this.__createNodeSlideBtn(nodeId, node.position);
+            this.__guidedNodesLayout.add(btn);
+          }
+        }
       }
     },
 

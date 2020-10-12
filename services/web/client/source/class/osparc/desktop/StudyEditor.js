@@ -444,11 +444,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     startSlides: function() {
-
+      this.__sidePanel.exclude();
     },
 
     stopSlides: function() {
-
+      this.__sidePanel.show();
     },
 
     editSlides: function() {

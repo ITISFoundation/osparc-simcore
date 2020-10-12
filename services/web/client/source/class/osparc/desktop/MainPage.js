@@ -85,18 +85,22 @@ qx.Class.define("osparc.desktop.MainPage", {
 
       navBar.addListener("slidesStart", () => {
         if (this.__studyEditor) {
+          navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT["slides"]);
+          navBar.showGuidedButtons();
           this.__studyEditor.startSlides();
         }
       }, this);
 
       navBar.addListener("slidesStop", () => {
         if (this.__studyEditor) {
+          navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT["workbench"]);
           this.__studyEditor.stopSlides();
         }
       }, this);
 
       navBar.addListener("slidesEdit", () => {
         if (this.__studyEditor) {
+          navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT["workbench"]);
           this.__studyEditor.editSlides();
         }
       }, this);
