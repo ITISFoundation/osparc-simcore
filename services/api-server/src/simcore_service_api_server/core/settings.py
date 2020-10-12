@@ -73,7 +73,7 @@ class PostgresSettings(BaseSettings):
 
 class AppSettings(BaseSettings):
     @classmethod
-    def create_default(cls) -> "AppSettings":
+    def create_from_env(cls) -> "AppSettings":
         # This call triggers parsers
         return cls(
             postgres=PostgresSettings(),
