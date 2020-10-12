@@ -3,9 +3,12 @@
 # pylint:disable=redefined-outer-name
 
 
+from datetime import datetime, timedelta
 from typing import Dict
 
+import faker
 import pytest
+
 from models_library.projects import RunningState
 from pytest_simcore.postgres_service import postgres_db
 from simcore_postgres_database.models.comp_pipeline import StateType
@@ -43,42 +46,84 @@ async def mock_get_task_states(
     monkeypatch.setattr(computation_api, "get_task_states", return_node_to_state)
 
 
+@pytest.fixture
+def mock_get_celery_publication_timeout(monkeypatch):
+    def return_celery_publication_timeout(*args, **kwargs) -> int:
+        return 5
+
+    monkeypatch.setattr(
+        computation_api,
+        "get_celery_publication_timeout",
+        return_celery_publication_timeout,
+    )
+
+
+fake = faker.Faker()
+
+
 @pytest.mark.parametrize(
     "task_states, expected_pipeline_state",
     [
         (
             # not started pipeline (all nodes are in non started mode)
-            {"task0": RunningState.not_started, "task1": RunningState.not_started},
+            {
+                "task0": (RunningState.not_started, fake.date_time()),
+                "task1": (RunningState.not_started, fake.date_time()),
+            },
             RunningState.not_started,
         ),
         (
             # successful pipeline if ALL of the node are successful
-            {"task0": RunningState.success, "task1": RunningState.success},
+            {
+                "task0": (RunningState.success, fake.date_time()),
+                "task1": (RunningState.success, fake.date_time()),
+            },
             RunningState.success,
         ),
         (
             # pending pipeline if ALL of the node are pending
-            {"task0": RunningState.pending, "task1": RunningState.pending},
+            {
+                "task0": (RunningState.pending, fake.date_time()),
+                "task1": (RunningState.pending, fake.date_time()),
+            },
             RunningState.pending,
         ),
         (
             # failed pipeline if any of the node is failed
-            {"task0": RunningState.pending, "task1": RunningState.failure},
+            {
+                "task0": (RunningState.pending, fake.date_time()),
+                "task1": (RunningState.failure, fake.date_time()),
+            },
             RunningState.failure,
         ),
         (
             # started pipeline if any of the node is started
-            {"task0": RunningState.started, "task1": RunningState.failure},
+            {
+                "task0": (RunningState.started, fake.date_time()),
+                "task1": (RunningState.failure, fake.date_time()),
+            },
             RunningState.started,
         ),
         (
-            # pipeline is published if any of the node is published
+            # pipeline is published if any of the node is published AND time is within publication timeout
             {
-                "task0": RunningState.published,
-                "task1": RunningState.pending,
-                "task2": RunningState.started,
+                "task0": (RunningState.published, datetime.utcnow()),
+                "task1": (RunningState.pending, fake.date_time()),
+                "task2": (RunningState.started, fake.date_time()),
             },
             RunningState.published,
+        ),
+        (
+            # pipeline is published if any of the node is published AND time is within publication timeout
+            {
+                "task0": (
+                    RunningState.published,
+                    datetime.utcnow() - timedelta(seconds=10),
+                ),
+                "task1": (RunningState.pending, fake.date_time()),
+                "task2": (RunningState.started, fake.date_time()),
+            },
+            RunningState.not_started,
         ),
         (
             # empty tasks (could be an empty project or filled with dynamic services)
@@ -88,9 +133,12 @@ async def mock_get_task_states(
     ],
 )
 async def test_get_pipeline_state(
-    mock_get_task_states, expected_pipeline_state: RunningState
+    mock_get_task_states,
+    mock_get_celery_publication_timeout,
+    expected_pipeline_state: RunningState,
 ):
-    assert await get_pipeline_state({}, "fake_project") == expected_pipeline_state
+    pipeline_state = await get_pipeline_state({}, "fake_project")
+    assert pipeline_state == expected_pipeline_state
 
 
 @pytest.mark.parametrize(
