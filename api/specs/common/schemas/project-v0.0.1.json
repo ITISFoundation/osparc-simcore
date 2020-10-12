@@ -336,6 +336,9 @@
             "^\\S+$": {
               "type": "object",
               "additionalProperties": false,
+              "required": [
+                "position"
+              ],
               "properties": {
                 "position": {
                   "type": "object",
@@ -363,6 +366,9 @@
             "^\\S+$": {
               "type": "object",
               "additionalProperties": false,
+              "required": [
+                "position"
+              ],
               "properties": {
                 "slideType": {
                   "type": "string",

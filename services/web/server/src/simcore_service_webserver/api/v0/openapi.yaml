@@ -6009,6 +6009,8 @@ paths:
                                     ^\S+$:
                                       type: object
                                       additionalProperties: false
+                                      required:
+                                        - position
                                       properties:
                                         position:
                                           type: object
@@ -6028,6 +6030,8 @@ paths:
                                     ^\S+$:
                                       type: object
                                       additionalProperties: false
+                                      required:
+                                        - position
                                       properties:
                                         slideType:
                                           type: string
@@ -6422,6 +6426,8 @@ paths:
                         ^\S+$:
                           type: object
                           additionalProperties: false
+                          required:
+                            - position
                           properties:
                             position:
                               type: object
@@ -6441,6 +6447,8 @@ paths:
                         ^\S+$:
                           type: object
                           additionalProperties: false
+                          required:
+                            - position
                           properties:
                             slideType:
                               type: string
@@ -6715,6 +6723,8 @@ paths:
                                   ^\S+$:
                                     type: object
                                     additionalProperties: false
+                                    required:
+                                      - position
                                     properties:
                                       position:
                                         type: object
@@ -6734,6 +6744,8 @@ paths:
                                   ^\S+$:
                                     type: object
                                     additionalProperties: false
+                                    required:
+                                      - position
                                     properties:
                                       slideType:
                                         type: string
@@ -7126,6 +7138,8 @@ paths:
                                   ^\S+$:
                                     type: object
                                     additionalProperties: false
+                                    required:
+                                      - position
                                     properties:
                                       position:
                                         type: object
@@ -7145,6 +7159,8 @@ paths:
                                   ^\S+$:
                                     type: object
                                     additionalProperties: false
+                                    required:
+                                      - position
                                     properties:
                                       slideType:
                                         type: string
@@ -7543,6 +7559,8 @@ paths:
                                   ^\S+$:
                                     type: object
                                     additionalProperties: false
+                                    required:
+                                      - position
                                     properties:
                                       position:
                                         type: object
@@ -7562,6 +7580,8 @@ paths:
                                   ^\S+$:
                                     type: object
                                     additionalProperties: false
+                                    required:
+                                      - position
                                     properties:
                                       slideType:
                                         type: string
@@ -7951,6 +7971,8 @@ paths:
                         ^\S+$:
                           type: object
                           additionalProperties: false
+                          required:
+                            - position
                           properties:
                             position:
                               type: object
@@ -7970,6 +7992,8 @@ paths:
                         ^\S+$:
                           type: object
                           additionalProperties: false
+                          required:
+                            - position
                           properties:
                             slideType:
                               type: string
@@ -8244,6 +8268,8 @@ paths:
                                   ^\S+$:
                                     type: object
                                     additionalProperties: false
+                                    required:
+                                      - position
                                     properties:
                                       position:
                                         type: object
@@ -8263,6 +8289,8 @@ paths:
                                   ^\S+$:
                                     type: object
                                     additionalProperties: false
+                                    required:
+                                      - position
                                     properties:
                                       slideType:
                                         type: string
@@ -8677,6 +8705,8 @@ paths:
                                   ^\S+$:
                                     type: object
                                     additionalProperties: false
+                                    required:
+                                      - position
                                     properties:
                                       position:
                                         type: object
@@ -8696,6 +8726,8 @@ paths:
                                   ^\S+$:
                                     type: object
                                     additionalProperties: false
+                                    required:
+                                      - position
                                     properties:
                                       slideType:
                                         type: string
@@ -9922,6 +9954,8 @@ paths:
                                   ^\S+$:
                                     type: object
                                     additionalProperties: false
+                                    required:
+                                      - position
                                     properties:
                                       position:
                                         type: object
@@ -9941,6 +9975,8 @@ paths:
                                   ^\S+$:
                                     type: object
                                     additionalProperties: false
+                                    required:
+                                      - position
                                     properties:
                                       slideType:
                                         type: string
@@ -10332,6 +10368,8 @@ paths:
                                   ^\S+$:
                                     type: object
                                     additionalProperties: false
+                                    required:
+                                      - position
                                     properties:
                                       position:
                                         type: object
@@ -10351,6 +10389,8 @@ paths:
                                   ^\S+$:
                                     type: object
                                     additionalProperties: false
+                                    required:
+                                      - position
                                     properties:
                                       slideType:
                                         type: string
