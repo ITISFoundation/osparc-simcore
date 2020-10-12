@@ -5905,6 +5905,7 @@ paths:
                                       enum:
                                         - UNKNOWN
                                         - NOT_STARTED
+                                        - PUBLISHED
                                         - PENDING
                                         - STARTED
                                         - RETRY
@@ -6355,6 +6356,7 @@ paths:
                           enum:
                             - UNKNOWN
                             - NOT_STARTED
+                            - PUBLISHED
                             - PENDING
                             - STARTED
                             - RETRY
@@ -6685,6 +6687,7 @@ paths:
                                     enum:
                                       - UNKNOWN
                                       - NOT_STARTED
+                                      - PUBLISHED
                                       - PENDING
                                       - STARTED
                                       - RETRY
@@ -7133,6 +7136,7 @@ paths:
                                     enum:
                                       - UNKNOWN
                                       - NOT_STARTED
+                                      - PUBLISHED
                                       - PENDING
                                       - STARTED
                                       - RETRY
@@ -7587,6 +7591,7 @@ paths:
                                     enum:
                                       - UNKNOWN
                                       - NOT_STARTED
+                                      - PUBLISHED
                                       - PENDING
                                       - STARTED
                                       - RETRY
@@ -8032,6 +8037,7 @@ paths:
                           enum:
                             - UNKNOWN
                             - NOT_STARTED
+                            - PUBLISHED
                             - PENDING
                             - STARTED
                             - RETRY
@@ -8362,6 +8368,7 @@ paths:
                                     enum:
                                       - UNKNOWN
                                       - NOT_STARTED
+                                      - PUBLISHED
                                       - PENDING
                                       - STARTED
                                       - RETRY
@@ -8832,6 +8839,7 @@ paths:
                                     enum:
                                       - UNKNOWN
                                       - NOT_STARTED
+                                      - PUBLISHED
                                       - PENDING
                                       - STARTED
                                       - RETRY
@@ -10114,6 +10122,7 @@ paths:
                                     enum:
                                       - UNKNOWN
                                       - NOT_STARTED
+                                      - PUBLISHED
                                       - PENDING
                                       - STARTED
                                       - RETRY
@@ -10561,6 +10570,7 @@ paths:
                                     enum:
                                       - UNKNOWN
                                       - NOT_STARTED
+                                      - PUBLISHED
                                       - PENDING
                                       - STARTED
                                       - RETRY
