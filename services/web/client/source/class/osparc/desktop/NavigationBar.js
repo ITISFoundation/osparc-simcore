@@ -83,21 +83,21 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       allowGrowY: false,
       minWidth: 32,
       minHeight: 32
+    },
+
+    PAGE_CONTEXT: {
+      "dashboard": 0,
+      "studyEditorWorkbench": 1,
+      "studyEditorSlides": 2
     }
   },
 
-  // eslint-disable-next-line qx-rules/no-refs-in-members
   members: {
     __dashboardBtn: null,
     __dashboardLabel: null,
     __slidesMenu: null,
     __studyTitle: null,
     __mainViewCaptionLayout: null,
-    __pageContext: {
-      "dashboard": 0,
-      "studyEditorWorkbench": 1,
-      "studyEditorSlides": 2
-    },
 
     buildLayout: function() {
       this.getChildControl("logo");
@@ -126,7 +126,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       this.getChildControl("theme-switch");
       this.getChildControl("user-menu");
 
-      this.__setPageContext(this.__pageContext["dashboard"]);
+      this.__setPageContext(this.self().PAGE_CONTEXT["dashboard"]);
     },
 
     _createChildControlImpl: function(id) {
@@ -208,10 +208,10 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       this.__mainViewCaptionLayout.removeAll();
       nodeIds.length === 1 ? this.__studyTitle.show() : this.__studyTitle.exclude();
       if (nodeIds.length === 0) {
-        this.__setPageContext(this.__pageContext["dashboard"]);
+        this.__setPageContext(this.self().PAGE_CONTEXT["dashboard"]);
         return;
       }
-      this.__setPageContext(this.__pageContext["studyEditorWorkbench"]);
+      this.__setPageContext(this.self().PAGE_CONTEXT["studyEditorWorkbench"]);
       if (nodeIds.length === 1) {
         return;
       }
@@ -240,7 +240,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this.__mainViewCaptionLayout.add(arrow);
         }
         if (i === nodeIds.length-1) {
-          this.__setPageContext(this.__pageContext["studyEditorWorkbench"]);
+          this.__setPageContext(this.self().PAGE_CONTEXT["studyEditorWorkbench"]);
           btn.setFont("title-14");
         }
       }
