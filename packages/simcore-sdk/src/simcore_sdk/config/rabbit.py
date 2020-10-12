@@ -2,11 +2,10 @@
 
 """
 
-from typing import Dict, Optional, Union
+from typing import Dict, Union
 
 import trafaret as T
 from pydantic import BaseSettings
-from trafaret.base import Key
 
 # TODO: adapt all data below!
 CONFIG_SCHEMA = T.Dict(
