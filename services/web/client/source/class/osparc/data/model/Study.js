@@ -264,13 +264,11 @@ qx.Class.define("osparc.data.model.Study", {
           jsonObject["ui"]["workbench"] = {};
           const nodes = this.getWorkbench().getNodes(true);
           for (const nodeUuid in nodes) {
-            jsonObject["ui"][nodeUuid] = {};
-            jsonObject["ui"][nodeUuid]["workbench"] = {};
-          }
-          for (const nodeUuid in nodes) {
             const node = nodes[nodeUuid];
-            jsonObject["ui"][nodeUuid]["workbench"]["position"] = node.getPosition();
+            jsonObject["ui"]["workbench"][nodeUuid] = {};
+            jsonObject["ui"]["workbench"][nodeUuid]["position"] = node.getPosition();
           }
+          return;
         }
         let value = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
         if (value !== null) {

@@ -384,8 +384,11 @@ qx.Class.define("osparc.data.model.Workbench", {
         const nodeId = keys[i];
         const nodeData = workbenchData[nodeId];
         this.getNode(nodeId).populateNodeData(nodeData);
-        if (nodeId in workbenchUIData) {
+        if ("position" in nodeData) {
           this.getNode(nodeId).populateNodeUIData(nodeData);
+        }
+        if ("workbench" in workbenchUIData && nodeId in workbenchUIData.workbench) {
+          this.getNode(nodeId).populateNodeUIData(workbenchUIData.workbench[nodeId]);
         }
       }
       for (let i=0; i<keys.length; i++) {

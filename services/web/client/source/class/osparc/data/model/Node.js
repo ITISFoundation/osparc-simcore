@@ -370,8 +370,8 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     populateNodeUIData: function(nodeUIData) {
-      if ("workbench" in nodeUIData && nodeUIData.workbench.position) {
-        const pos = nodeUIData.workbench.position;
+      if ("position" in nodeUIData) {
+        const pos = nodeUIData.position;
         this.setPosition(pos.x, pos.y);
       }
     },
