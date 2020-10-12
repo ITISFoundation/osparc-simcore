@@ -22,7 +22,7 @@
 qx.Class.define("osparc.component.widget.NodesSlidesTree", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(initData = {}) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
@@ -31,7 +31,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     const save = this._createChildControlImpl("save-button");
     save.addListener("execute", () => this.__saveSlides(), this);
 
-    const model = this.__initTree();
+    const model = this.__initTree(initData);
     this.__tree.setModel(model);
 
     this.__populateTree();
@@ -101,18 +101,25 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       return tree;
     },
 
-    __initTree: function() {
+    __initTree: function(initData) {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const topLevelNodes = study.getWorkbench().getNodes();
-      let data = {
+      let rootData = {
         label: study.getName(),
         children: this.self().convertModel(topLevelNodes),
         nodeId: study.getUuid(),
         skipNode: null,
         position: null
       };
-      let model = qx.data.marshal.Json.createModel(data, true);
-      return model;
+      const children = rootData.children;
+      for (let nodeId in initData) {
+        const idx = children.findIndex(child => child.nodeId === nodeId);
+        if (idx > -1) {
+          children[idx].position = initData[nodeId].position;
+          children[idx].skipNode = initData[nodeId].skipNode;
+        }
+      }
+      return qx.data.marshal.Json.createModel(rootData, true);
     },
 
     __populateTree: function() {
@@ -212,21 +219,21 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     },
 
     __saveSlides: function() {
-      let slideShow = {};
+      let slideshow = {};
       const model = this.__tree.getModel();
       const children = model.getChildren().toArray();
       children.forEach(child => {
         if (child.getSkipNode() === false) {
-          slideShow[child.getNodeId()] = {
+          slideshow[child.getNodeId()] = {
             "slideType": "slide",
             "position": child.getPosition()
           };
         }
       });
-      console.log("Serialize me", slideShow);
+      console.log("Serialize me", slideshow);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const studyUI = study.getUi();
-      studyUI["slideShow"] = slideShow;
+      studyUI["slideshow"] = slideshow;
     }
   }
 });

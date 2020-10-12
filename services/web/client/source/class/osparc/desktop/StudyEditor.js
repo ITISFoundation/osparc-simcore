@@ -445,7 +445,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __showEditSlides: function() {
-      const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree();
+      const uiData = this.getStudy().getUi();
+      const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(uiData["slideshow"]);
       const title = this.tr("Edit Slides");
       osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 600, 500).set({
         modal: false,
