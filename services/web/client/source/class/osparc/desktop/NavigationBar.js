@@ -235,7 +235,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       const node = study.getWorkbench().getNode(nodeId);
       if (node) {
         node.bind("label", btn, "label", {
-          converter: val => (pos+1).toString() + " " + val
+          converter: val => (pos+1).toString() + " - " + val
         });
       }
       btn.addListener("execute", function() {

@@ -262,9 +262,9 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__navBar.setStudy(study);
       this.__navBar.setPathButtons(this.__studyEditor.getCurrentPathIds());
 
-      this.__studyEditor.addListener("changeMainViewCaption", ev => {
-        const elements = ev.getData();
-        this.__navBar.setPathButtons(elements);
+      this.__studyEditor.addListener("selectedNodeChanged", e => {
+        const nodesPath = this.__studyEditor.getCurrentPathIds();
+        this.__navBar.setPathButtons(nodesPath);
       }, this);
 
       this.__studyEditor.addListener("studyIsLocked", () => {

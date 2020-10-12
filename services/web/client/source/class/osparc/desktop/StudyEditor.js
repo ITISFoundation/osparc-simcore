@@ -49,7 +49,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   },
 
   events: {
-    "changeMainViewCaption": "qx.event.type.Data",
+    "selectedNodeChanged": "qx.event.type.Data",
     "studyIsLocked": "qx.event.type.Event",
     "startStudy": "qx.event.type.Data"
   },
@@ -303,7 +303,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const study = this.getStudy();
       const workbench = study.getWorkbench();
       if (nodeId === study.getUuid()) {
-        this.showInMainView(this.__workbenchUI, nodeId);
+        this.__showInMainView(this.__workbenchUI, nodeId);
         this.__workbenchUI.loadModel(workbench);
       } else {
         const node = workbench.getNode(nodeId);
@@ -311,12 +311,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__openFilePicker(node);
         } else if (node.isContainer()) {
           this.__groupNodeView.setNode(node);
-          this.showInMainView(this.__workbenchUI, nodeId);
+          this.__showInMainView(this.__workbenchUI, nodeId);
           this.__workbenchUI.loadModel(node);
           this.__groupNodeView.populateLayout();
         } else {
           this.__nodeView.setNode(node);
-          this.showInMainView(this.__nodeView, nodeId);
+          this.__showInMainView(this.__nodeView, nodeId);
           this.__nodeView.populateLayout();
         }
       }
@@ -399,7 +399,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__nodesTree.nodeSelected(this.__currentNodeId);
     },
 
-    showInMainView: function(widget, nodeId) {
+    __showInMainView: function(widget, nodeId) {
       this.__mainPanel.setMainView(widget);
 
       this.__nodesTree.nodeSelected(nodeId);
@@ -409,8 +409,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       controlsBar.setWorkbenchVisibility(widget === this.__workbenchUI);
       controlsBar.setExtraViewVisibility(this.__groupNodeView && this.__groupNodeView.getNode() && nodeId === this.__groupNodeView.getNode().getNodeId());
 
-      const nodesPath = this.getStudy().getWorkbench().getPathIds(nodeId);
-      this.fireDataEvent("changeMainViewCaption", nodesPath);
+      this.fireDataEvent("selectedNodeChanged", nodeId);
     },
 
     getCurrentPathIds: function() {
@@ -486,7 +485,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const workbench = this.getStudy().getWorkbench();
       const currentNode = workbench.getNode(this.__currentNodeId);
       if (currentNode === this.__workbenchUI.getCurrentModel()) {
-        this.showInMainView(this.__workbenchUI, this.__currentNodeId);
+        this.__showInMainView(this.__workbenchUI, this.__currentNodeId);
       } else {
         osparc.component.message.FlashMessenger.getInstance().logAs("No Workbench view for this node", "ERROR");
       }
@@ -496,9 +495,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const workbench = this.getStudy().getWorkbench();
       const currentNode = workbench.getNode(this.__currentNodeId);
       if (this.__groupNodeView.isPropertyInitialized("node") && currentNode === this.__groupNodeView.getNode()) {
-        this.showInMainView(this.__groupNodeView, this.__currentNodeId);
+        this.__showInMainView(this.__groupNodeView, this.__currentNodeId);
       } else if (this.__nodeView.isPropertyInitialized("node") && currentNode === this.__nodeView.getNode()) {
-        this.showInMainView(this.__nodeView, this.__currentNodeId);
+        this.__showInMainView(this.__nodeView, this.__currentNodeId);
       } else {
         osparc.component.message.FlashMessenger.getInstance().logAs("No Settings view for this node", "ERROR");
       }
