@@ -80,7 +80,6 @@ properties:
           - key
           - version
           - label
-          - position
         properties:
           key:
             type: string
