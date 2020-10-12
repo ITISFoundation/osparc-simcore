@@ -260,8 +260,10 @@ qx.Class.define("osparc.data.model.Study", {
           return;
         }
         if (key === "ui") {
-          jsonObject["ui"] = {};
-          jsonObject["ui"]["workbench"] = {};
+          jsonObject["ui"] = this.getUi();
+          if (!("workbench" in jsonObject["ui"])) {
+            jsonObject["ui"]["workbench"] = {};
+          }
           const nodes = this.getWorkbench().getNodes(true);
           for (const nodeUuid in nodes) {
             const node = nodes[nodeUuid];
