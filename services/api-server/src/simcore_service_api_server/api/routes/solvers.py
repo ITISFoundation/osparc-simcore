@@ -1,9 +1,13 @@
 import functools
+import logging
 import uuid as uuidlib
-from typing import List, Optional
+from operator import attrgetter
+from typing import Callable, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from packing import version
+from pydantic import ValidationError
 
 from ...models.schemas.solvers import (
     LATEST_VERSION,
@@ -17,9 +21,11 @@ from ...models.schemas.solvers import (
     SolverOutput,
     SolverOverview,
 )
+from ..dependencies.application import get_reverse_url_mapper
+from ..dependencies.services import CatalogApi, get_catalog_api_client
 
 # from fastapi.responses import RedirectResponse
-
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -28,10 +34,55 @@ router = APIRouter()
 
 
 @router.get("", response_model=List[SolverOverview])
-async def list_solvers():
+async def list_solvers(
+    catalog_client: CatalogApi = Depends(get_catalog_api_client),
+    url_for: Callable = Depends(get_reverse_url_mapper),
+):
     """ Lists an overview of all solvers. Each solver overview includes all released versions """
-    # pagination
-    pass
+    # TODO: pagination
+    # TODO: deduce user
+    user_id = 0
+
+    resp = await catalog_client.get(
+        "/services",
+        params={"user_id": user_id, "details": False},
+        headers={"x-simcore-products-name": "osparc"},
+    )
+
+    # TODO: move this sorting down to database?
+    # Create list list of the latest version of each solver
+    latest_solvers: Dict[SolverOverview] = {}
+    for service in resp.json():
+        if service.get("type") == "computational":
+            service_key = service["key"]
+            solver = latest_solvers.get(service_key)
+
+            if not solver or version.parse(solver.latest_version) < version.parse(
+                service["version"]
+            ):
+                try:
+                    latest_solvers[service_key] = SolverOverview(
+                        solver_key=service_key,
+                        title=service["name"],
+                        maintainer=service["authors"][0]["email"],
+                        latest_version=service["version"],
+                        solver_url=url_for(
+                            "get_solver_released_by_version",
+                            solver_key=service_key,
+                            version=service["version"],
+                        ),
+                    )
+                except ValidationError as err:
+                    logger.warning(
+                        "Skipping invalid service returned by catalog '%s': %s",
+                        service_key,
+                        err,
+                    )
+                except (KeyError, IndexError) as err:
+                    logger.error("API catalog response changed?")
+                    # raise internal error?
+
+    return sorted(latest_solvers.values(), key=attrgetter("solver_key"))
 
 
 @router.get("/{solver_key:path}", response_model=Solver)
