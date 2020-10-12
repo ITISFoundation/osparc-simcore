@@ -19,22 +19,28 @@ class _CommonConfig:
     env_file = ".env"
 
 
-class WebServerSettings(BaseSettings):
-    enabled: bool = Field(
-        True, description="Enables/Disables connection with webserver service"
-    )
+class BaseServiceSettings(BaseSettings):
+    enabled: bool = Field(True, description="Enables/Disables connection with service")
     host: str
     port: int = 8080
-    session_secret_key: SecretStr
-    session_name: str = "osparc.WEBAPI_SESSION"
     vtag: str = "v0"
 
     @property
     def base_url(self) -> str:
         return f"http://{self.host}:{self.port}/{self.vtag}"
 
+
+class WebServerSettings(BaseServiceSettings):
+    session_secret_key: SecretStr
+    session_name: str = "osparc.WEBAPI_SESSION"
+
     class Config(_CommonConfig):
         env_prefix = "WEBSERVER_"
+
+
+class CatalogSettings(BaseServiceSettings):
+    class Config(_CommonConfig):
+        env_prefix = "CATALOG_"
 
 
 class PostgresSettings(BaseSettings):
@@ -73,6 +79,7 @@ class AppSettings(BaseSettings):
             postgres=PostgresSettings(),
             webserver=WebServerSettings(),
             client_request=ClientRequestSettings(),
+            catalog=CatalogSettings(),
         )
 
     # pylint: disable=no-self-use
@@ -99,8 +106,9 @@ class AppSettings(BaseSettings):
     # POSTGRES
     postgres: PostgresSettings
 
-    # WEB-SERVER SERVICE
+    # SERVICES with http API
     webserver: WebServerSettings
+    catalog: CatalogSettings
 
     client_request: ClientRequestSettings
 
