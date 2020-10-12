@@ -15,13 +15,7 @@ from aiopg.sa.connection import SAConnection
 from celery import Celery
 from models_library.projects import RunningState
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
-from simcore_postgres_database.models.comp_pipeline import (
-    FAILED,
-    PENDING,
-    RUNNING,
-    SUCCESS,
-    UNKNOWN,
-)
+from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.webserver_models import (
     NodeClass,
     comp_pipeline,
@@ -256,7 +250,7 @@ async def _set_adjacency_in_pipeline_db(
             query = comp_pipeline.insert().values(
                 project_id=project_id,
                 dag_adjacency_list=dag_adjacency_list,
-                state=UNKNOWN,
+                state=StateType.NOT_STARTED,
             )
         else:
             # update pipeline
@@ -264,7 +258,7 @@ async def _set_adjacency_in_pipeline_db(
             query = (
                 comp_pipeline.update()
                 .where(comp_pipeline.c.project_id == project_id)
-                .values(dag_adjacency_list=dag_adjacency_list, state=UNKNOWN)
+                .values(dag_adjacency_list=dag_adjacency_list, state=StateType.NOT_STARTED)
             )
 
         await conn.execute(query)
@@ -358,7 +352,7 @@ async def _set_tasks_in_tasks_db(
                                 comp_tasks.c.node_id == task_row.node_id,
                             )
                         )
-                        .values(job_id=None, state=UNKNOWN)
+                        .values(job_id=None, state=StateType.NOT_STARTED)
                     )
                     await conn.execute(query)
 
@@ -403,7 +397,7 @@ async def _set_tasks_in_tasks_db(
                         )
                         .values(
                             job_id=None,
-                            state=UNKNOWN,
+                            state=StateType.NOT_STARTED,
                             node_class=task["node_class"],
                             image=task["image"],
                             schema=task["schema"],
@@ -464,7 +458,7 @@ async def _set_tasks_in_tasks_db_as_pending(db_engine: Engine, project_id: str):
         # pylint: disable=no-value-for-parameter
         comp_tasks.update()
         .where(and_(comp_tasks.c.project_id == project_id))
-        .values(state=PENDING)
+        .values(state=StateType.PENDING)
     )
     async with db_engine.acquire() as conn:
         await conn.execute(query)
@@ -509,11 +503,11 @@ def _from_celery_state(celery_state) -> RunningState:
 
 def convert_state_from_db(db_state: int) -> RunningState:
     DB_TO_RUNNING_STATE = {
-        FAILED: RunningState.failure,
-        PENDING: RunningState.pending,
-        SUCCESS: RunningState.success,
-        UNKNOWN: RunningState.not_started,  # in simcore unknown means not_started
-        RUNNING: RunningState.started,
+        StateType.FAILED: RunningState.failure,
+        StateType.PENDING: RunningState.pending,
+        StateType.SUCCESS: RunningState.success,
+        StateType.NOT_STARTED: RunningState.not_started,
+        StateType.RUNNING: RunningState.started,
     }
     return RunningState(DB_TO_RUNNING_STATE[db_state])
 
