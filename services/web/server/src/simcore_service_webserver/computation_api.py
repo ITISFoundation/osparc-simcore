@@ -2,10 +2,10 @@
 
 """
 # pylint: disable=too-many-arguments
-import datetime
 import logging
+from datetime import date, datetime
 from pprint import pformat
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import psycopg2.errors
 import sqlalchemy as sa
@@ -13,6 +13,8 @@ from aiohttp import web, web_exceptions
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from celery import Celery
+from sqlalchemy import and_
+
 from models_library.projects import RunningState
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.comp_pipeline import StateType
@@ -25,7 +27,6 @@ from simcore_sdk.config.rabbit import Config as RabbitConfig
 
 # TODO: move this to computation_models
 from simcore_service_webserver.computation_models import to_node_class
-from sqlalchemy import and_
 
 from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
 from .director import director_api
@@ -376,7 +377,7 @@ async def _set_tasks_in_tasks_db(
                         schema=task["schema"],
                         inputs=task["inputs"],
                         outputs=task["outputs"] if task["outputs"] else {},
-                        submit=datetime.datetime.utcnow(),
+                        submit=datetime.utcnow(),
                     )
 
                     await conn.execute(query)
@@ -405,7 +406,7 @@ async def _set_tasks_in_tasks_db(
                             schema=task["schema"],
                             inputs=task["inputs"],
                             outputs=task["outputs"] if task["outputs"] else {},
-                            submit=datetime.datetime.utcnow(),
+                            submit=datetime.utcnow(),
                         )
                     )
                     await conn.execute(query)
@@ -466,6 +467,9 @@ async def _set_tasks_in_tasks_db_as_published(db_engine: Engine, project_id: str
         await conn.execute(query)
 
 
+CELERY_PIPELINE_PUBLICATION_TIMEOUT_S = 5
+
+
 async def start_pipeline_computation(
     app: web.Application, user_id: int, project_id: str
 ) -> Optional[str]:
@@ -475,7 +479,9 @@ async def start_pipeline_computation(
 
     # publish the tasks to celery
     task = get_celery(app).send_task(
-        "comp.task", expires=60, kwargs={"user_id": user_id, "project_id": project_id}
+        "comp.task",
+        expires=CELERY_PIPELINE_PUBLICATION_TIMEOUT_S,
+        kwargs={"user_id": user_id, "project_id": project_id},
     )
     if not task:
         log.error(
@@ -517,7 +523,7 @@ def convert_state_from_db(db_state: StateType) -> RunningState:
 
 async def get_task_states(
     app: web.Application, project_id: str
-) -> Dict[str, RunningState]:
+) -> Dict[str, Tuple[RunningState, datetime]]:
     db_engine = app[APP_DB_ENGINE_KEY]
     task_states: Dict[str, RunningState] = {}
     async with db_engine.acquire() as conn:
@@ -526,8 +532,7 @@ async def get_task_states(
         ):
             if row.node_class != NodeClass.COMPUTATIONAL:
                 continue
-            task_states[row.node_id] = convert_state_from_db(row.state)
-
+            task_states[row.node_id] = (convert_state_from_db(row.state), row.submit)
             # the task might be running, better ask celery (NOTE this remains only 24h and disappears and state will be pending)
             # task_result = AsyncResult(row.job_id)
 
@@ -537,11 +542,20 @@ async def get_task_states(
 
 
 async def get_pipeline_state(app: web.Application, project_id: str) -> RunningState:
-    task_states: Dict[str, RunningState] = await get_task_states(app, project_id)
+    task_states: Dict[str, Tuple[RunningState, datetime]] = await get_task_states(
+        app, project_id
+    )
     # compute pipeline state from task states
+    now = datetime.utcnow()
     if task_states:
         # put in a set of unique values
-        set_states = set(task_states.values())
+        set_states = {state[0] for state in task_states.values()}
+        last_update = next(
+            iter(sorted([time[1] for time in task_states.values()], reverse=True))
+        )
+        if RunningState.published in set_states:
+            if (now - last_update).seconds > CELERY_PIPELINE_PUBLICATION_TIMEOUT_S:
+                return RunningState.not_started
         if len(set_states) == 1:
             # this is typically for success, pending, published
             return next(iter(set_states))
@@ -551,7 +565,7 @@ async def get_pipeline_state(app: web.Application, project_id: str) -> RunningSt
             RunningState.started,  # task is started or retrying
             RunningState.failure,  # task is failed -> pipeline as well
         ]:
-            if any(x == state for x in set_states):
+            if state in set_states:
                 return state
 
     return RunningState.not_started
