@@ -8,7 +8,6 @@
 #  https://docs.celeryproject.org/en/latest/userguide/signals.html#setup-logging
 #  https://www.distributedpython.com/2018/08/28/celery-logging/
 #  https://www.distributedpython.com/2018/11/06/celery-task-logger-format/
-
 import logging
 
 from celery.app.log import TaskFormatter
