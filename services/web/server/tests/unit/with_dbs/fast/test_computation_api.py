@@ -8,9 +8,7 @@ from typing import Dict
 import pytest
 from models_library.projects import RunningState
 from pytest_simcore.postgres_service import postgres_db
-from simcore_postgres_database.models.comp_pipeline import (
-    StateType
-)
+from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_service_webserver import computation_api
 from simcore_service_webserver.computation_api import (
     convert_state_from_db,
@@ -72,6 +70,15 @@ async def mock_get_task_states(
             # started pipeline if any of the node is started
             {"task0": RunningState.started, "task1": RunningState.failure},
             RunningState.started,
+        ),
+        (
+            # pipeline is published if any of the node is published
+            {
+                "task0": RunningState.published,
+                "task1": RunningState.pending,
+                "task2": RunningState.started,
+            },
+            RunningState.published,
         ),
         (
             # empty tasks (could be an empty project or filled with dynamic services)
