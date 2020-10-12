@@ -2,10 +2,11 @@
 
 """
 
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 import trafaret as T
 from pydantic import BaseSettings
+from trafaret.base import Key
 
 # TODO: adapt all data below!
 CONFIG_SCHEMA = T.Dict(
@@ -28,7 +29,12 @@ CONFIG_SCHEMA = T.Dict(
                             "result_backend",
                             default="${CELERY_RESULT_BACKEND}",
                             optional=True,
-                        ): T.String()
+                        ): T.String(),
+                        T.Key(
+                            "publication_timeout",
+                            default=60,
+                            optional=True,
+                        ): T.Int(),
                     }
                 ),
             }
@@ -46,7 +52,7 @@ class Config(BaseSettings):
     channels: Dict[str, Union[str, Dict]] = {
         "log": "comp.backend.channels.log",
         "instrumentation": "comp.backend.channels.instrumentation",
-        "celery": {"result_backend": "rpc://"},
+        "celery": {"result_backend": "rpc://", "publication_timeout": 60},
     }
 
     class Config:
@@ -59,3 +65,7 @@ class Config(BaseSettings):
     @property
     def backend(self):
         return self.channels["celery"]["result_backend"]
+
+    @property
+    def publication_timeout(self):
+        return self.channels["celery"]["publication_timeout"]
