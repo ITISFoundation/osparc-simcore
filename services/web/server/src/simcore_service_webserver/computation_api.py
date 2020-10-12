@@ -258,7 +258,9 @@ async def _set_adjacency_in_pipeline_db(
             query = (
                 comp_pipeline.update()
                 .where(comp_pipeline.c.project_id == project_id)
-                .values(dag_adjacency_list=dag_adjacency_list, state=StateType.NOT_STARTED)
+                .values(
+                    dag_adjacency_list=dag_adjacency_list, state=StateType.NOT_STARTED
+                )
             )
 
         await conn.execute(query)
@@ -453,12 +455,12 @@ def get_celery(_app: web.Application) -> Celery:
     return celery_app
 
 
-async def _set_tasks_in_tasks_db_as_pending(db_engine: Engine, project_id: str):
+async def _set_tasks_in_tasks_db_as_published(db_engine: Engine, project_id: str):
     query = (
         # pylint: disable=no-value-for-parameter
         comp_tasks.update()
         .where(and_(comp_tasks.c.project_id == project_id))
-        .values(state=StateType.PENDING)
+        .values(state=StateType.PUBLISHED)
     )
     async with db_engine.acquire() as conn:
         await conn.execute(query)
@@ -469,11 +471,11 @@ async def start_pipeline_computation(
 ) -> Optional[str]:
 
     db_engine = app[APP_DB_ENGINE_KEY]
-    await _set_tasks_in_tasks_db_as_pending(db_engine, project_id)
+    await _set_tasks_in_tasks_db_as_published(db_engine, project_id)
 
     # publish the tasks to celery
     task = get_celery(app).send_task(
-        "comp.task", kwargs={"user_id": user_id, "project_id": project_id}
+        "comp.task", expires=60, kwargs={"user_id": user_id, "project_id": project_id}
     )
     if not task:
         log.error(
@@ -501,15 +503,16 @@ def _from_celery_state(celery_state) -> RunningState:
     return RunningState(CELERY_TO_RUNNING_STATE[celery_state])
 
 
-def convert_state_from_db(db_state: int) -> RunningState:
+def convert_state_from_db(db_state: StateType) -> RunningState:
     DB_TO_RUNNING_STATE = {
         StateType.FAILED: RunningState.failure,
         StateType.PENDING: RunningState.pending,
         StateType.SUCCESS: RunningState.success,
+        StateType.PUBLISHED: RunningState.published,
         StateType.NOT_STARTED: RunningState.not_started,
         StateType.RUNNING: RunningState.started,
     }
-    return RunningState(DB_TO_RUNNING_STATE[db_state])
+    return RunningState(DB_TO_RUNNING_STATE[StateType(db_state)])
 
 
 async def get_task_states(

@@ -70,7 +70,10 @@ async def _try_get_task_from_db(
             (comp_tasks.c.node_id == node_id)
             & (comp_tasks.c.project_id == project_id)
             & (
-                ((comp_tasks.c.job_id == None) & (comp_tasks.c.state == StateType.PENDING))
+                (
+                    (comp_tasks.c.job_id == None)
+                    & (comp_tasks.c.state == StateType.PENDING)
+                )
                 | (comp_tasks.c.state == StateType.FAILED)
             )
         ),
@@ -93,7 +96,8 @@ async def _try_get_task_from_db(
         comp_tasks.update()
         .where(
             and_(
-                comp_tasks.c.node_id == node_id, comp_tasks.c.project_id == project_id,
+                comp_tasks.c.node_id == node_id,
+                comp_tasks.c.project_id == project_id,
             )
         )
         .values(job_id=job_request_id, state=StateType.RUNNING, start=datetime.utcnow())
@@ -110,7 +114,8 @@ async def _try_get_task_from_db(
 
 
 async def _get_pipeline_from_db(
-    db_connection: SAConnection, project_id: str,
+    db_connection: SAConnection,
+    project_id: str,
 ) -> RowProxy:
     # get the pipeline
     result = await db_connection.execute(
@@ -146,6 +151,22 @@ async def _set_task_status(
         )
 
 
+async def _set_pipeline_tasks_as_pending(
+    conn: SAConnection, graph: nx.DiGraph, project_id: str
+):
+    node_ids = list(graph.nodes)
+    for node_id in node_ids:
+        await conn.execute(
+            # pylint: disable=no-value-for-parameter
+            comp_tasks.update()
+            .where(
+                (comp_tasks.c.node_id == node_id)
+                & (comp_tasks.c.project_id == project_id)
+            )
+            .values(state=StateType.PENDING)
+        )
+
+
 async def inspect(
     # pylint: disable=too-many-arguments
     db_engine: Engine,
@@ -169,7 +190,9 @@ async def inspect(
         graph = execution_graph(pipeline)
         if not node_id:
             log.debug("NODE id was zero, this was the entry node id")
+            await _set_pipeline_tasks_as_pending(connection, graph, project_id)
             return find_entry_point(graph)
+        log.debug("NODE id is %s, getting the task from DB...", node_id)
         task = await _try_get_task_from_db(
             connection, graph, job_request_id, project_id, node_id
         )
@@ -179,7 +202,10 @@ async def inspect(
         return
 
     await rabbit_mq.post_log_message(
-        user_id, project_id, node_id, "[sidecar]Task found: starting...",
+        user_id,
+        project_id,
+        node_id,
+        "[sidecar]Task found: starting...",
     )
 
     # config nodeports
@@ -193,7 +219,10 @@ async def inspect(
     next_task_nodes = []
     try:
         executor = Executor(
-            db_engine=db_engine, rabbit_mq=rabbit_mq, task=task, user_id=user_id,
+            db_engine=db_engine,
+            rabbit_mq=rabbit_mq,
+            task=task,
+            user_id=user_id,
         )
         await executor.run()
         next_task_nodes = list(graph.successors(node_id))
