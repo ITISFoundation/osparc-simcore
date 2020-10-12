@@ -9,11 +9,7 @@ import pytest
 from models_library.projects import RunningState
 from pytest_simcore.postgres_service import postgres_db
 from simcore_postgres_database.models.comp_pipeline import (
-    FAILED,
-    PENDING,
-    RUNNING,
-    SUCCESS,
-    UNKNOWN,
+    StateType
 )
 from simcore_service_webserver import computation_api
 from simcore_service_webserver.computation_api import (
@@ -25,11 +21,11 @@ from simcore_service_webserver.computation_api import (
 @pytest.mark.parametrize(
     "db_state, expected_state",
     [
-        (FAILED, RunningState.failure),
-        (PENDING, RunningState.pending),
-        (RUNNING, RunningState.started),
-        (SUCCESS, RunningState.success),
-        (UNKNOWN, RunningState.not_started),
+        (StateType.FAILED, RunningState.failure),
+        (StateType.PENDING, RunningState.pending),
+        (StateType.RUNNING, RunningState.started),
+        (StateType.SUCCESS, RunningState.success),
+        (StateType.NOT_STARTED, RunningState.not_started),
     ],
 )
 def test_convert_state_from_db(db_state: int, expected_state: RunningState):
@@ -88,3 +84,8 @@ async def test_get_pipeline_state(
     mock_get_task_states, expected_pipeline_state: RunningState
 ):
     assert await get_pipeline_state({}, "fake_project") == expected_pipeline_state
+
+
+async def test_recover_after_crash():
+    # 1. webserver crashes after a pipeline was published, thus all tasks are set in pending mode
+    pass
