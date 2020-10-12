@@ -6,7 +6,7 @@ import enum
 import sqlalchemy as sa
 
 from .base import metadata
-from .comp_pipeline import UNKNOWN
+from .comp_pipeline import StateType
 
 
 class NodeClass(enum.Enum):
@@ -32,7 +32,9 @@ comp_tasks = sa.Table(
     sa.Column("inputs", sa.JSON),
     sa.Column("outputs", sa.JSON),
     sa.Column("image", sa.JSON),
-    sa.Column("state", sa.Integer, default=UNKNOWN),
+    sa.Column(
+        "state", sa.Enum(StateType), nullable=False, server_default=StateType.NOT_STARTED.value
+    ),
     # utc timestamps for submission/start/end
     sa.Column("submit", sa.DateTime),
     sa.Column("start", sa.DateTime),
