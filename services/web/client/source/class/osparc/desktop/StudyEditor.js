@@ -458,7 +458,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         modal: false,
         clickAwayClose: false
       });
-      nodesSlidesTree.addListener("finshed", () => {
+      nodesSlidesTree.addListener("finished", () => {
         win.close();
       });
     },
