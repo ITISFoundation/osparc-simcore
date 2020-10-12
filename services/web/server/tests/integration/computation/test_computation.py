@@ -1,7 +1,6 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
 import asyncio
 import json
 import sys
@@ -11,15 +10,13 @@ from pprint import pprint
 
 import pytest
 from aiohttp import web
-from yarl import URL
-
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_sdk.models.pipeline_models import (
-    SUCCESS,
     ComputationalPipeline,
     ComputationalTask,
+    StateType,
 )
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
@@ -29,6 +26,7 @@ from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
+from yarl import URL
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -146,7 +144,7 @@ def assert_sleeper_services_completed(project_id, postgres_session):
     )
     for task_db in tasks_db:
         if "sleeper" in task_db.image["name"]:
-            assert task_db.state == SUCCESS
+            assert task_db.state == StateType.SUCCESS
 
 
 # TESTS ------------------------------------------
