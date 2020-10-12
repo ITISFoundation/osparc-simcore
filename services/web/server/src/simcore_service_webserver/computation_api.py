@@ -456,6 +456,12 @@ def get_celery(_app: web.Application) -> Celery:
     return celery_app
 
 
+def get_celery_publication_timeout(app: web.Application) -> int:
+    config = app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
+    rabbit = RabbitConfig(**config)
+    return rabbit.publication_timeout
+
+
 async def _set_tasks_in_tasks_db_as_published(db_engine: Engine, project_id: str):
     query = (
         # pylint: disable=no-value-for-parameter
@@ -465,9 +471,6 @@ async def _set_tasks_in_tasks_db_as_published(db_engine: Engine, project_id: str
     )
     async with db_engine.acquire() as conn:
         await conn.execute(query)
-
-
-CELERY_PIPELINE_PUBLICATION_TIMEOUT_S = 5
 
 
 async def start_pipeline_computation(
@@ -480,7 +483,7 @@ async def start_pipeline_computation(
     # publish the tasks to celery
     task = get_celery(app).send_task(
         "comp.task",
-        expires=CELERY_PIPELINE_PUBLICATION_TIMEOUT_S,
+        expires=get_celery_publication_timeout(app),
         kwargs={"user_id": user_id, "project_id": project_id},
     )
     if not task:
@@ -554,7 +557,7 @@ async def get_pipeline_state(app: web.Application, project_id: str) -> RunningSt
             iter(sorted([time[1] for time in task_states.values()], reverse=True))
         )
         if RunningState.published in set_states:
-            if (now - last_update).seconds > CELERY_PIPELINE_PUBLICATION_TIMEOUT_S:
+            if (now - last_update).seconds > get_celery_publication_timeout(app):
                 return RunningState.not_started
         if len(set_states) == 1:
             # this is typically for success, pending, published
