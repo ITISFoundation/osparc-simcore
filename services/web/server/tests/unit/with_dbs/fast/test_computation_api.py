@@ -86,6 +86,15 @@ async def test_get_pipeline_state(
     assert await get_pipeline_state({}, "fake_project") == expected_pipeline_state
 
 
-async def test_recover_after_crash():
-    # 1. webserver crashes after a pipeline was published, thus all tasks are set in pending mode
+@pytest.mark.parametrize(
+    "undefined_task_states",
+    [
+        (
+            # webserver crashed after setting tasks to pending
+            {"task0": RunningState.pending, "task1": RunningState.pending},
+        ),
+    ],
+)
+async def test_recover_after_crash(undefined_task_states):
+
     pass
