@@ -6,19 +6,15 @@ from typing import Dict, List, Optional, Union
 import networkx as nx
 from aiopg.sa import Engine, SAConnection
 from aiopg.sa.result import RowProxy
+from celery.utils.log import get_task_logger
 from simcore_postgres_database.sidecar_models import (
-    FAILED,
-    PENDING,
-    RUNNING,
-    SUCCESS,
+    StateType,
     comp_pipeline,
     comp_tasks,
 )
 from simcore_sdk import node_ports
 from simcore_sdk.node_ports import log as node_port_log
 from sqlalchemy import and_, literal_column
-
-from celery.utils.log import get_task_logger
 
 from . import config, exceptions
 from .db import DBContextManager
@@ -74,8 +70,8 @@ async def _try_get_task_from_db(
             (comp_tasks.c.node_id == node_id)
             & (comp_tasks.c.project_id == project_id)
             & (
-                ((comp_tasks.c.job_id == None) & (comp_tasks.c.state == PENDING))
-                | (comp_tasks.c.state == FAILED)
+                ((comp_tasks.c.job_id == None) & (comp_tasks.c.state == StateType.PENDING))
+                | (comp_tasks.c.state == StateType.FAILED)
             )
         ),
     )
@@ -100,7 +96,7 @@ async def _try_get_task_from_db(
                 comp_tasks.c.node_id == node_id, comp_tasks.c.project_id == project_id,
             )
         )
-        .values(job_id=job_request_id, state=RUNNING, start=datetime.utcnow())
+        .values(job_id=job_request_id, state=StateType.RUNNING, start=datetime.utcnow())
         .returning(literal_column("*"))
     )
     task = await result.fetchone()
@@ -193,7 +189,7 @@ async def inspect(
 
     # now proceed actually running the task (we do that after the db session has been closed)
     # try to run the task, return empyt list of next nodes if anything goes wrong
-    run_result = FAILED
+    run_result = StateType.FAILED
     next_task_nodes = []
     try:
         executor = Executor(
@@ -201,7 +197,7 @@ async def inspect(
         )
         await executor.run()
         next_task_nodes = list(graph.successors(node_id))
-        run_result = SUCCESS
+        run_result = StateType.SUCCESS
     except asyncio.CancelledError:
         log.warning("Task has been cancelled")
         raise
