@@ -239,7 +239,6 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           };
         }
       });
-      console.log("Serialize me", slideshow);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const studyUI = study.getUi();
       studyUI["slideshow"] = slideshow;
