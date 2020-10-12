@@ -1,16 +1,20 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-import copy
 import uuid
 from datetime import datetime, timedelta
 
+import httpx
+import pytest
 from simcore_service_api_server.api.routes.solvers import compose_solver_id
 from simcore_service_api_server.models.schemas.solvers import (
     Solver,
     SolverOverview,
     SolverRelease,
 )
+
+# All test coroutines will be treated as marked.
+pytestmark = pytest.mark.asyncio
 
 
 def test_id_composer():
@@ -30,12 +34,12 @@ def create_solver(key):
                 solver_id=compose_solver_id(key, "1.0.1"),
                 version="1.0.1",
                 version_alias=["1", "1.0", "latest"],
-                release_data=datetime.now(),
+                release_date=datetime.now(),
             ),
             SolverRelease(
                 solver_id=compose_solver_id(key, "1.0.0"),
                 version="1.0.0",
-                release_data=datetime.now() - timedelta(days=1),
+                release_date=datetime.now() - timedelta(days=1),
             ),
         ],
     )
@@ -50,8 +54,8 @@ SOLVERS = [
 SOLVERS_OVERVIEW = [
     SolverOverview(
         latest_version=s.releases[0].version,
-        solver_url=f"http://localhost/v0/solvers/{s.releases[0].solver_id}"
-        ** s.dict(include={"solver_key", "title", "maintainer"}),
+        solver_url=f"http://foo.com/v0/solvers/{s.releases[0].solver_id}",
+        **s.dict(include={"solver_key", "title", "maintainer"}),
     )
     for s in SOLVERS
 ]

@@ -64,6 +64,7 @@ pylint==2.6.0             # via -r requirements/_test.in
 pynacl==1.4.0             # via paramiko
 pyparsing==2.4.7          # via packaging
 pyrsistent==0.17.3        # via jsonschema
+pytest-asyncio==0.14.0    # via -r requirements/_test.in
 pytest-cov==2.10.1        # via -r requirements/_test.in
 pytest-docker==0.10.1     # via -r requirements/_test.in
 pytest-mock==3.3.1        # via -r requirements/_test.in
