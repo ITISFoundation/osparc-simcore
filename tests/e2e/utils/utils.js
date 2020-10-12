@@ -213,6 +213,7 @@ async function takeScreenshot(page, captureName = "") {
       fullPage: true,
       path: path,
       type: 'jpeg',
+      quality: 15
     })
   }
   catch(err) {
