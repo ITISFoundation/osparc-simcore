@@ -425,7 +425,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __getCurrentPipeline: function() {
       const saveContainers = false;
-      const currentPipeline = this.getStudy().getWorkbench().serializeWorkbench(saveContainers);
+      const currentPipeline = this.getStudy().getWorkbench().serialize(saveContainers);
       return currentPipeline;
     },
 
@@ -620,7 +620,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const interval = 5000;
       let timer = this.__autoSaveTimer = new qx.event.Timer(interval);
       timer.addListener("interval", () => {
-        const newObj = this.getStudy().serializeStudy();
+        const newObj = this.getStudy().serialize();
         const delta = diffPatcher.diff(this.__lastSavedStudy, newObj);
         if (delta) {
           let deltaKeys = Object.keys(delta);
@@ -646,7 +646,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     updateStudyDocument: function(run=false) {
       this.getStudy().setLastChangeDate(new Date());
-      const newObj = this.getStudy().serializeStudy();
+      const newObj = this.getStudy().serialize();
       const prjUuid = this.getStudy().getUuid();
 
       const params = {

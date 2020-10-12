@@ -224,7 +224,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
           if (node) {
             node.renameNode(evt.getData());
           }
-          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", study.serializeStudy());
+          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", study.serialize());
         }
       }, this);
       titlePart.add(title);

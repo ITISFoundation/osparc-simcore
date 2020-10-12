@@ -1129,11 +1129,7 @@ qx.Class.define("osparc.data.model.Node", {
       };
     },
 
-    serialize: function(saveContainers = true, savePosition = true) {
-      if (!saveContainers && this.isContainer()) {
-        return null;
-      }
-
+    serialize: function() {
       // node generic
       let nodeEntry = {
         key: this.getKey(),

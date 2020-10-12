@@ -63,7 +63,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     buildWorkbench: function() {
       this.__rootNodes = {};
       this.__edges = {};
-      this.__deserializeWorkbench(this.__workbenchInitData, this.__workbenchUIInitData);
+      this.__deserialize(this.__workbenchInitData, this.__workbenchUIInitData);
       this.__workbenchInitData = null;
       this.__workbenchUIInitData = null;
     },
@@ -216,7 +216,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         workbench[innerNodeId]["parent"] = workbench[innerNodeId]["parent"] || parentNode.getNodeId();
       }
 
-      this.__deserializeWorkbench(workbench);
+      this.__deserialize(workbench);
 
       for (let innerNodeId in workbench) {
         this.getNode(innerNodeId).startInBackend();
@@ -343,7 +343,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    __deserializeWorkbench: function(workbenchData, workbenchUIData) {
+    __deserialize: function(workbenchData, workbenchUIData) {
       this.__deserializeNodes(workbenchData, workbenchUIData);
       this.__deserializeEdges(workbenchData);
     },
@@ -564,12 +564,12 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.removeNode(nodesGroup.getNodeId());
     },
 
-    serializeWorkbench: function(saveContainers = true) {
+    serialize: function() {
       let workbench = {};
       const allModels = this.getNodes(true);
       const nodes = Object.values(allModels);
       for (const node of nodes) {
-        const data = node.serialize(saveContainers);
+        const data = node.serialize();
         if (data) {
           workbench[node.getNodeId()] = data;
         }
@@ -577,7 +577,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       return workbench;
     },
 
-    serializeWorkbenchUI: function() {
+    serializeUI: function() {
       let workbenchUI = {};
       const nodes = this.getNodes(true);
       for (const nodeUuid in nodes) {
