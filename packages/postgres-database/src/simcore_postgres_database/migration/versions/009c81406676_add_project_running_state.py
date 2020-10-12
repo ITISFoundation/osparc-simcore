@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "009c81406676"
-down_revision = "d67672189ce1"
+down_revision = "350103a7efbd"
 branch_labels = None
 depends_on = None
 
@@ -174,10 +174,9 @@ WHERE comp_tasks.deprecated_state = '{old}'
         f"""
 DROP TRIGGER IF EXISTS {DB_TRIGGER_NAME} on comp_tasks;
 CREATE TRIGGER {DB_TRIGGER_NAME}
-AFTER UPDATE OF outputs,state ON comp_tasks
+AFTER UPDATE OF outputs ON comp_tasks
     FOR EACH ROW
-    WHEN ((OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb OR OLD.state IS DISTINCT FROM NEW.state)
-        AND NEW.node_class <> 'FRONTEND')
+    WHEN (OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb AND NEW.node_class <> 'FRONTEND')
     EXECUTE PROCEDURE {DB_PROCEDURE_NAME}();
 """
     )
