@@ -26,7 +26,7 @@ def setup_director(app: FastAPI) -> None:
 
 async def close_director(app: FastAPI) -> None:
     with suppress(AttributeError):
-        client: AsyncClient = app.state.director_client
+        client: AsyncClient = app.state.director_client.client
         await client.aclose()
         del app.state.director_client
 
@@ -99,7 +99,7 @@ class DirectorApi:
     """
 
     def __init__(self, base_url: str, vtag: str):
-        self._client = AsyncClient(base_url=base_url)
+        self.client = AsyncClient(base_url=base_url)
         self.vtag = vtag
 
     # OPERATIONS
@@ -108,8 +108,8 @@ class DirectorApi:
 
     @safe_request
     async def get(self, path: str) -> Optional[Dict]:
-        return await self._client.get(path)
+        return await self.client.get(path)
 
     @safe_request
     async def put(self, path: str, body: Dict) -> Optional[Dict]:
-        return await self._client.put(path, json=body)
+        return await self.client.put(path, json=body)
