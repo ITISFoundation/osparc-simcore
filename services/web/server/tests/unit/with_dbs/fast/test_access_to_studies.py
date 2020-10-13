@@ -82,7 +82,7 @@ def mocks_on_projects_api(mocker) -> Dict:
         locked=ProjectLocked(
             value=False, owner=Owner(first_name="Speedy", last_name="Gonzalez")
         ),
-        state=ProjectRunningState(value=RunningState.not_started),
+        state=ProjectRunningState(value=RunningState.NOT_STARTED),
     ).dict(by_alias=True, exclude_unset=True)
     mocker.patch(
         "simcore_service_webserver.projects.projects_api.get_project_state_for_user",

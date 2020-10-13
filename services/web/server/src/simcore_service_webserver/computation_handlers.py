@@ -54,10 +54,10 @@ async def start_pipeline(request: web.Request) -> web.Response:
         pipeline_state: RunningState = await get_pipeline_state(request.app, project_id)
 
         if pipeline_state in [
-            RunningState.published,
-            RunningState.pending,
-            RunningState.started,
-            RunningState.retrying,
+            RunningState.PUBLISHED,
+            RunningState.PENDING,
+            RunningState.STARTED,
+            RunningState.RETRY,
         ]:
             raise web.HTTPForbidden(
                 reason=f"Projet {project_id} already started, state {pipeline_state}"
