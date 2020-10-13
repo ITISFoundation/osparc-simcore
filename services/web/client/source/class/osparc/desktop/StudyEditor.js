@@ -49,7 +49,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   },
 
   events: {
-    "selectedNodeChanged": "qx.event.type.Data",
     "studyIsLocked": "qx.event.type.Event",
     "startStudy": "qx.event.type.Data"
   },
@@ -299,6 +298,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__groupNodeView.restoreIFrame();
       }
       this.__currentNodeId = nodeId;
+      this.getStudy().getUi().setCurrentNodeId(nodeId);
 
       const study = this.getStudy();
       const workbench = study.getWorkbench();
@@ -408,13 +408,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const controlsBar = this.__mainPanel.getControls();
       controlsBar.setWorkbenchVisibility(widget === this.__workbenchUI);
       controlsBar.setExtraViewVisibility(this.__groupNodeView && this.__groupNodeView.getNode() && nodeId === this.__groupNodeView.getNode().getNodeId());
-
-      this.fireDataEvent("selectedNodeChanged", nodeId);
-    },
-
-    getCurrentPathIds: function() {
-      const nodesPath = this.getStudy().getWorkbench().getPathIds(this.__currentNodeId);
-      return nodesPath;
     },
 
     getLogger: function() {

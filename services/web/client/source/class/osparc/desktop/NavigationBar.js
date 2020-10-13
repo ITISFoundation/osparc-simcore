@@ -250,7 +250,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       return btn;
     },
 
-    setPathButtons: function(nodeIds) {
+    __setPathButtons: function(nodeIds) {
       this.__workbenchNodesLayout.removeAll();
 
       for (let i=0; i<nodeIds.length; i++) {
@@ -275,6 +275,14 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       } else {
         this.__studyTitle.exclude();
         this.__workbenchNodesLayout.show();
+      }
+
+      if (this.getPageContext() === "workbench") {
+        this.__setWorkbenchBtnsVis(true);
+        this.__setSlidesBtnsVis(false);
+      } else {
+        this.__setWorkbenchBtnsVis(false);
+        this.__setSlidesBtnsVis(true);
       }
     },
 
@@ -548,6 +556,11 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     _applyStudy: function(study) {
       if (study) {
         study.bind("name", this.__studyTitle, "value");
+        study.getUi().addListener("changeCurrentNodeId", e => {
+          const currentNodeId = e.getData();
+          const nodesPath = study.getWorkbench().getPathIds(currentNodeId);
+          this.__setPathButtons(nodesPath);
+        });
         this.setPageContext("workbench");
       } else {
         this.setPageContext("dashboard");
