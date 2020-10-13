@@ -210,7 +210,7 @@ async def initialized_app(app: FastAPI) -> FastAPI:
 async def client(initialized_app: FastAPI) -> AsyncClient:
     async with AsyncClient(
         app=initialized_app,
-        base_url="http://testserver",
+        base_url="http://api.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:
         yield client
@@ -220,7 +220,7 @@ async def client(initialized_app: FastAPI) -> AsyncClient:
 def sync_client(app: FastAPI) -> TestClient:
     # test client:
     # Context manager to trigger events: https://fastapi.tiangolo.com/advanced/testing-events/
-    with TestClient(app) as cli:
+    with TestClient(app, base_url="http://api.testserver.io", raise_server_exceptions=True) as cli:
         yield cli
 
 

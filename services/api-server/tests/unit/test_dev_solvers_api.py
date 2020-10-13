@@ -12,8 +12,6 @@ from simcore_service_api_server.models.schemas.solvers import SolverOverview
 from fastapi import FastAPI
 from starlette import status
 
-pytestmark = pytest.mark.asyncio
-
 
 @pytest.fixture
 def app(project_env_devel_environment, monkeypatch) -> FastAPI:
@@ -43,13 +41,14 @@ def mocked_catalog_service_api(app: FastAPI):
             "version": "1.0.0",
             "integration-version": "1.0.0",
             "type": "computational",
-            "authors": [
-                {
-                    "name": "Jim Knopf",
-                    "email": ["sun@sense.eight", "deleen@minbar.bab"],
-                    "affiliation": ["Sense8", "Babylon 5"],
-                }
-            ],
+            "authors":  [
+                    {
+                        "name": "Jim Knopf",
+                        "email": ["sun@sense.eight", "deleen@minbar.bab"],
+                        "affiliation": ["Sense8", "Babylon 5"],
+                    }
+                ]
+            ,
             "contact": "lab@net.flix",
             "inputs": {},
             "outputs": {},
@@ -59,20 +58,20 @@ def mocked_catalog_service_api(app: FastAPI):
         return obj
 
     with respx.mock(
-        base_url=app.state.settings.director.base_url,
+        base_url=app.state.settings.catalog.base_url,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
         respx_mock.get(
-            "/v0/services",
-            content={
-                [
-                    create_service(version="0.0.1"),
-                    create_service(version="1.0.1"),
-                    create_service(type="dynamic"),
-                ]
-            },
+            "/v0/services?user_id=0&details=false",
+            status_code=200,
+            content=[
+                create_service(version="0.0.1"),
+                create_service(version="1.0.1"),
+                create_service(type="dynamic"),
+            ],
             alias="list_services",
+            content_type="application/json",
         )
 
         yield respx_mock
@@ -85,4 +84,15 @@ def test_list_solvers(sync_client: TestClient, mocked_catalog_service_api):
     assert resp.status_code == status.HTTP_200_OK
 
     # validates response
-    available_solvers = [SolverOverview.parse_obj(**s) for s in resp.json()]
+    for item in resp.json():
+        s = SolverOverview(**item)
+        print(s.json(indent=1))
+
+        # valid link
+        assert s.solver_url.host == "api.testserver.io"
+        resp = sync_client.get(s.solver_url.path)
+
+        assert resp.status_code == status.HTTP_200_OK
+
+
+    # test *_url fiels

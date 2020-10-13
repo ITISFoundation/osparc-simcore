@@ -5,9 +5,10 @@ from operator import attrgetter
 from typing import Callable, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
-from packing import version
+from fastapi import APIRouter, Depends, HTTPException
+from packaging import version
 from pydantic import ValidationError
+from starlette import status
 
 from ...models.schemas.solvers import (
     LATEST_VERSION,
@@ -31,7 +32,7 @@ router = APIRouter()
 
 
 ## SOLVERS ------------
-
+from urllib.request import pathname2url
 
 @router.get("", response_model=List[SolverOverview])
 async def list_solvers(
@@ -43,7 +44,7 @@ async def list_solvers(
     # TODO: deduce user
     user_id = 0
 
-    resp = await catalog_client.get(
+    available_services = await catalog_client.get(
         "/services",
         params={"user_id": user_id, "details": False},
         headers={"x-simcore-products-name": "osparc"},
@@ -52,7 +53,7 @@ async def list_solvers(
     # TODO: move this sorting down to database?
     # Create list list of the latest version of each solver
     latest_solvers: Dict[SolverOverview] = {}
-    for service in resp.json():
+    for service in available_services:
         if service.get("type") == "computational":
             service_key = service["key"]
             solver = latest_solvers.get(service_key)
@@ -64,11 +65,11 @@ async def list_solvers(
                     latest_solvers[service_key] = SolverOverview(
                         solver_key=service_key,
                         title=service["name"],
-                        maintainer=service["authors"][0]["email"],
+                        maintainer=service["contact"],
                         latest_version=service["version"],
                         solver_url=url_for(
                             "get_solver_released_by_version",
-                            solver_key=service_key,
+                            solver_key=pathname2url(service_key),
                             version=service["version"],
                         ),
                     )
@@ -79,8 +80,11 @@ async def list_solvers(
                         err,
                     )
                 except (KeyError, IndexError) as err:
-                    logger.error("API catalog response changed?")
-                    # raise internal error?
+                    logger.error("API catalog response required fields did change!")
+                    raise HTTPException(
+                        status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="Catalog API corrupted",
+                    ) from err
 
     return sorted(latest_solvers.values(), key=attrgetter("solver_key"))
 
@@ -88,17 +92,18 @@ async def list_solvers(
 @router.get("/{solver_key:path}", response_model=Solver)
 async def get_solver(solver_key: SolverKey):
     """ Returs a description of the solver and all its releases """
-    pass
+    raise NotImplementedError()
 
 
 @router.get("/{solver_key:path}/{version}", response_model=Solver)
 async def get_solver_released_by_version(
     solver_key: SolverKey, version: str = LATEST_VERSION
 ):
+    # FIXME: router ccannto distinguish this from get_solver!!
+
     # url = app.url_path_for("get_solver_released")
     # response = RedirectResponse(url=url)
     # return response
-
     solver_id = compose_solver_id(solver_key, version)
     return await get_solver_released(solver_id)
 
