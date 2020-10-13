@@ -22,11 +22,11 @@ from simcore_service_webserver.computation_api import (
 @pytest.mark.parametrize(
     "db_state, expected_state",
     [
-        (StateType.FAILED, RunningState.failure),
-        (StateType.PENDING, RunningState.pending),
-        (StateType.RUNNING, RunningState.started),
-        (StateType.SUCCESS, RunningState.success),
-        (StateType.NOT_STARTED, RunningState.not_started),
+        (StateType.FAILED, RunningState.FAILURE),
+        (StateType.PENDING, RunningState.PENDING),
+        (StateType.RUNNING, RunningState.STARTED),
+        (StateType.SUCCESS, RunningState.SUCCESS),
+        (StateType.NOT_STARTED, RunningState.NOT_STARTED),
     ],
 )
 def test_convert_state_from_db(db_state: int, expected_state: RunningState):
@@ -67,83 +67,83 @@ fake = faker.Faker()
         (
             # not started pipeline (all nodes are in non started mode)
             {
-                "task0": (RunningState.not_started, fake.date_time()),
-                "task1": (RunningState.not_started, fake.date_time()),
+                "task0": (RunningState.NOT_STARTED, fake.date_time()),
+                "task1": (RunningState.NOT_STARTED, fake.date_time()),
             },
-            RunningState.not_started,
+            RunningState.NOT_STARTED,
         ),
         (
             # successful pipeline if ALL of the node are successful
             {
-                "task0": (RunningState.success, fake.date_time()),
-                "task1": (RunningState.success, fake.date_time()),
+                "task0": (RunningState.SUCCESS, fake.date_time()),
+                "task1": (RunningState.SUCCESS, fake.date_time()),
             },
-            RunningState.success,
+            RunningState.SUCCESS,
         ),
         (
             # pending pipeline if ALL of the node are pending
             {
-                "task0": (RunningState.pending, fake.date_time()),
-                "task1": (RunningState.pending, fake.date_time()),
+                "task0": (RunningState.PENDING, fake.date_time()),
+                "task1": (RunningState.PENDING, fake.date_time()),
             },
-            RunningState.pending,
+            RunningState.PENDING,
         ),
         (
             # failed pipeline if any of the node is failed
             {
-                "task0": (RunningState.pending, fake.date_time()),
-                "task1": (RunningState.failure, fake.date_time()),
+                "task0": (RunningState.PENDING, fake.date_time()),
+                "task1": (RunningState.FAILURE, fake.date_time()),
             },
-            RunningState.failure,
+            RunningState.FAILURE,
         ),
         (
             # started pipeline if any of the node is started
             {
-                "task0": (RunningState.started, fake.date_time()),
-                "task1": (RunningState.failure, fake.date_time()),
+                "task0": (RunningState.STARTED, fake.date_time()),
+                "task1": (RunningState.FAILURE, fake.date_time()),
             },
-            RunningState.started,
+            RunningState.STARTED,
         ),
         (
             # pipeline is published if any of the node is published AND time is within publication timeout
             {
                 "task0": (
-                    RunningState.published,
+                    RunningState.PUBLISHED,
                     datetime.utcnow() - timedelta(seconds=10),
                 ),
                 "task1": (
-                    RunningState.pending,
+                    RunningState.PENDING,
                     datetime.utcnow() - timedelta(seconds=75),
                 ),
                 "task2": (
-                    RunningState.started,
+                    RunningState.STARTED,
                     datetime.utcnow() - timedelta(seconds=155),
                 ),
             },
-            RunningState.published,
+            RunningState.PUBLISHED,
         ),
         (
             # pipeline is published if any of the node is published AND time is within publication timeout
             {
                 "task0": (
-                    RunningState.published,
+                    RunningState.PUBLISHED,
                     datetime.utcnow() - timedelta(seconds=175),
                 ),
                 "task1": (
-                    RunningState.pending,
+                    RunningState.PENDING,
                     datetime.utcnow() - timedelta(seconds=145),
                 ),
                 "task2": (
-                    RunningState.started,
+                    RunningState.STARTED,
                     datetime.utcnow() - timedelta(seconds=1555),
                 ),
             },
-            RunningState.not_started,
+            RunningState.NOT_STARTED,
         ),
         (
             # empty tasks (could be an empty project or filled with dynamic services)
             {},
-            RunningState.not_started,
+            RunningState.NOT_STARTED,
         ),
     ],
 )

@@ -129,7 +129,7 @@ def mocks_on_projects_api(mocker, logged_user) -> Dict:
         locked=ProjectLocked(
             value=False, owner=Owner(first_name=nameparts[0], last_name=nameparts[1])
         ),
-        state=ProjectRunningState(value=RunningState.not_started),
+        state=ProjectRunningState(value=RunningState.NOT_STARTED),
     ).dict(by_alias=True, exclude_unset=True)
     mocker.patch(
         "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
@@ -1402,7 +1402,7 @@ async def test_open_shared_project_2_users_locked(
     )
     expected_project_state = ProjectState(
         locked={"value": False},
-        state=ProjectRunningState(value=RunningState.not_started),
+        state=ProjectRunningState(value=RunningState.NOT_STARTED),
     )
     await _state_project(
         client_1,
@@ -1466,7 +1466,7 @@ async def test_open_shared_project_2_users_locked(
         # Guests cannot close projects
         expected_project_state = ProjectState(
             locked=ProjectLocked(value=False),
-            state=ProjectRunningState(value=RunningState.not_started),
+            state=ProjectRunningState(value=RunningState.NOT_STARTED),
         )
 
     # we should receive an event that the project lock state changed
