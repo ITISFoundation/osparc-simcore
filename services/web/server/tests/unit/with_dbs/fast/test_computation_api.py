@@ -10,7 +10,6 @@ import faker
 import pytest
 
 from models_library.projects import RunningState
-from pytest_simcore.postgres_service import postgres_db
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_service_webserver import computation_api
 from simcore_service_webserver.computation_api import (
@@ -150,5 +149,12 @@ async def test_get_pipeline_state(
     mock_get_celery_publication_timeout,
     expected_pipeline_state: RunningState,
 ):
-    pipeline_state = await get_pipeline_state({}, "fake_project")
-    assert pipeline_state == expected_pipeline_state
+    FAKE_APP = {}
+    FAKE_PROJECT = "project_id"
+    task_states = await computation_api.get_task_states(
+        FAKE_APP, FAKE_PROJECT
+    )  # this should use the mock
+    pipeline_state = await get_pipeline_state(FAKE_APP, FAKE_PROJECT)
+    assert (
+        pipeline_state == expected_pipeline_state
+    ), f"task states are: {task_states} and expected pipeline state is {expected_pipeline_state}"
