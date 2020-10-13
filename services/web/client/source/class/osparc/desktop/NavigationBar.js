@@ -74,6 +74,12 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       check: "osparc.data.model.Study",
       nullable: true,
       apply: "_applyStudy"
+    },
+
+    pageContext: {
+      check: ["dashboard", "workbench", "slides"],
+      nullable: false,
+      apply: "_applyPageContext"
     }
   },
 
@@ -86,9 +92,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     PAGE_CONTEXT: {
-      "dashboard": 0,
-      "workbench": 1,
-      "slides": 2
+      0: "dashboard",
+      1: "workbench",
+      2: "slides"
     }
   },
 
@@ -128,7 +134,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       this.getChildControl("theme-switch");
       this.getChildControl("user-menu");
 
-      this.setPageContext(this.self().PAGE_CONTEXT["dashboard"]);
+      this.setPageContext("dashboard");
     },
 
     _createChildControlImpl: function(id) {
@@ -288,32 +294,55 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       }
     },
 
-    setPageContext: function(mainPageContext) {
+    _applyPageContext: function(mainPageContext) {
       switch (mainPageContext) {
-        case 0:
+        case "dashboard":
           this.__dashboardLabel.show();
           this.__dashboardBtn.exclude();
-          this.__slidesMenu.exclude();
-          this.__studyTitle.exclude();
-          this.__workbenchNodesLayout.exclude();
-          this.__guidedNodesLayout.exclude();
+          this.__setSlidesMenuVis(false);
+          this.__setWorkbenchBtnsVis(false);
+          this.__setSlidesBtnsVis(false);
           break;
-        case 1:
+        case "workbench":
           this.__dashboardLabel.exclude();
           this.__dashboardBtn.show();
-          this.__slidesMenu.show();
-          this.__studyTitle.show();
-          this.__workbenchNodesLayout.show();
-          this.__guidedNodesLayout.exclude();
+          this.__setSlidesMenuVis(true);
+          this.__setWorkbenchBtnsVis(true);
+          this.__setSlidesBtnsVis(false);
           break;
-        case 2:
+        case "slides":
           this.__dashboardLabel.exclude();
           this.__dashboardBtn.show();
-          this.__slidesMenu.show();
-          this.__studyTitle.exclude();
-          this.__workbenchNodesLayout.exclude();
-          this.__guidedNodesLayout.show();
+          this.__setSlidesMenuVis(true);
+          this.__setWorkbenchBtnsVis(false);
+          this.__setSlidesBtnsVis(true);
           break;
+      }
+    },
+
+    __setSlidesMenuVis: function(show) {
+      if (show && osparc.data.model.Study.isOwner(this.getStudy())) {
+        this.__slidesMenu.show();
+      } else {
+        this.__slidesMenu.exclude();
+      }
+    },
+
+    __setWorkbenchBtnsVis: function(show) {
+      if (show) {
+        this.__studyTitle.show();
+        this.__workbenchNodesLayout.show();
+      } else {
+        this.__studyTitle.exclude();
+        this.__workbenchNodesLayout.exclude();
+      }
+    },
+
+    __setSlidesBtnsVis: function(show) {
+      if (show) {
+        this.__guidedNodesLayout.show();
+      } else {
+        this.__guidedNodesLayout.exclude();
       }
     },
 
@@ -519,6 +548,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     _applyStudy: function(study) {
       if (study) {
         study.bind("name", this.__studyTitle, "value");
+        this.setPageContext("workbench");
+      } else {
+        this.setPageContext("dashboard");
       }
     },
 

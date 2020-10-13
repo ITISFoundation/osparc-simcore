@@ -85,7 +85,7 @@ qx.Class.define("osparc.desktop.MainPage", {
 
       navBar.addListener("slidesStart", () => {
         if (this.__studyEditor) {
-          navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT["slides"]);
+          navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT[2]);
           navBar.showGuidedButtons();
           this.__studyEditor.startSlides();
         }
@@ -93,14 +93,14 @@ qx.Class.define("osparc.desktop.MainPage", {
 
       navBar.addListener("slidesStop", () => {
         if (this.__studyEditor) {
-          navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT["workbench"]);
+          navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT[1]);
           this.__studyEditor.stopSlides();
         }
       }, this);
 
       navBar.addListener("slidesEdit", () => {
         if (this.__studyEditor) {
-          navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT["workbench"]);
+          navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT[1]);
           this.__studyEditor.editSlides();
         }
       }, this);
@@ -183,7 +183,7 @@ qx.Class.define("osparc.desktop.MainPage", {
 
       this.__mainStack.setSelection([this.__dashboardLayout]);
       this.__dashboard.getStudyBrowser().reloadUserStudies();
-      this.__navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT["dashboard"]);
+      this.__navBar.setStudy(null);
       if (this.__studyEditor) {
         this.__studyEditor.destruct();
       }
@@ -258,7 +258,6 @@ qx.Class.define("osparc.desktop.MainPage", {
     __syncStudyEditor: function() {
       const studyEditor = this.__studyEditor;
       const study = studyEditor.getStudy();
-      this.__navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT["workbench"]);
       this.__navBar.setStudy(study);
       this.__navBar.setPathButtons(this.__studyEditor.getCurrentPathIds());
 
