@@ -503,23 +503,23 @@ async def start_pipeline_computation(
 
 def _from_celery_state(celery_state) -> RunningState:
     CELERY_TO_RUNNING_STATE = {
-        "PENDING": RunningState.unknown,  # TODO: Celery pending state means unknown
-        "STARTED": RunningState.started,
-        "RETRY": RunningState.retrying,
-        "FAILURE": RunningState.failure,
-        "SUCCESS": RunningState.success,
+        "PENDING": RunningState.UNKNOWN,  # TODO: Celery pending state means unknown
+        "STARTED": RunningState.STARTED,
+        "RETRY": RunningState.RETRY,
+        "FAILURE": RunningState.FAILURE,
+        "SUCCESS": RunningState.SUCCESS,
     }
     return RunningState(CELERY_TO_RUNNING_STATE[celery_state])
 
 
 def convert_state_from_db(db_state: StateType) -> RunningState:
     DB_TO_RUNNING_STATE = {
-        StateType.FAILED: RunningState.failure,
-        StateType.PENDING: RunningState.pending,
-        StateType.SUCCESS: RunningState.success,
-        StateType.PUBLISHED: RunningState.published,
-        StateType.NOT_STARTED: RunningState.not_started,
-        StateType.RUNNING: RunningState.started,
+        StateType.FAILED: RunningState.FAILURE,
+        StateType.PENDING: RunningState.PENDING,
+        StateType.SUCCESS: RunningState.SUCCESS,
+        StateType.PUBLISHED: RunningState.PUBLISHED,
+        StateType.NOT_STARTED: RunningState.NOT_STARTED,
+        StateType.RUNNING: RunningState.STARTED,
     }
     return RunningState(DB_TO_RUNNING_STATE[StateType(db_state)])
 
@@ -556,22 +556,22 @@ async def get_pipeline_state(app: web.Application, project_id: str) -> RunningSt
         last_update = next(
             iter(sorted([time[1] for time in task_states.values()], reverse=True))
         )
-        if RunningState.published in set_states:
+        if RunningState.PUBLISHED in set_states:
             if (now - last_update).seconds > get_celery_publication_timeout(app):
-                return RunningState.not_started
+                return RunningState.NOT_STARTED
         if len(set_states) == 1:
             # this is typically for success, pending, published
             return next(iter(set_states))
 
         for state in [
-            RunningState.published,  # still in publishing phase
-            RunningState.started,  # task is started or retrying
-            RunningState.failure,  # task is failed -> pipeline as well
+            RunningState.PUBLISHED,  # still in publishing phase
+            RunningState.STARTED,  # task is started or retrying
+            RunningState.FAILURE,  # task is failed -> pipeline as well
         ]:
             if state in set_states:
                 return state
 
-    return RunningState.not_started
+    return RunningState.NOT_STARTED
 
 
 async def delete_pipeline_db(app: web.Application, project_id: str) -> None:
