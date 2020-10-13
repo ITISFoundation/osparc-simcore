@@ -501,26 +501,30 @@ async def start_pipeline_computation(
     return task.task_id
 
 
+CELERY_TO_RUNNING_STATE = {
+    "PENDING": RunningState.UNKNOWN,  # TODO: Celery pending state means unknown
+    "STARTED": RunningState.STARTED,
+    "RETRY": RunningState.RETRY,
+    "FAILURE": RunningState.FAILURE,
+    "SUCCESS": RunningState.SUCCESS,
+}
+
+
 def _from_celery_state(celery_state) -> RunningState:
-    CELERY_TO_RUNNING_STATE = {
-        "PENDING": RunningState.UNKNOWN,  # TODO: Celery pending state means unknown
-        "STARTED": RunningState.STARTED,
-        "RETRY": RunningState.RETRY,
-        "FAILURE": RunningState.FAILURE,
-        "SUCCESS": RunningState.SUCCESS,
-    }
     return RunningState(CELERY_TO_RUNNING_STATE[celery_state])
 
 
+DB_TO_RUNNING_STATE = {
+    StateType.FAILED: RunningState.FAILURE,
+    StateType.PENDING: RunningState.PENDING,
+    StateType.SUCCESS: RunningState.SUCCESS,
+    StateType.PUBLISHED: RunningState.PUBLISHED,
+    StateType.NOT_STARTED: RunningState.NOT_STARTED,
+    StateType.RUNNING: RunningState.STARTED,
+}
+
+
 def convert_state_from_db(db_state: StateType) -> RunningState:
-    DB_TO_RUNNING_STATE = {
-        StateType.FAILED: RunningState.FAILURE,
-        StateType.PENDING: RunningState.PENDING,
-        StateType.SUCCESS: RunningState.SUCCESS,
-        StateType.PUBLISHED: RunningState.PUBLISHED,
-        StateType.NOT_STARTED: RunningState.NOT_STARTED,
-        StateType.RUNNING: RunningState.STARTED,
-    }
     return RunningState(DB_TO_RUNNING_STATE[StateType(db_state)])
 
 
