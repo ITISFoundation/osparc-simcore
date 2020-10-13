@@ -13,14 +13,14 @@ DATE_RE = r"\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|
 
 
 class RunningState(str, Enum):
-    unknown = "UNKNOWN"
-    published = "PUBLISHED"
-    not_started = "NOT_STARTED"
-    pending = "PENDING"
-    started = "STARTED"
-    retrying = "RETRY"
-    success = "SUCCESS"
-    failure = "FAILURE"
+    UNKNOWN = "UNKNOWN"
+    PUBLISHED = "PUBLISHED"
+    NOT_STARTED = "NOT_STARTED"
+    PENDING = "PENDING"
+    STARTED = "STARTED"
+    RETRY = "RETRY"
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
 
 
 class PortLink(BaseModel):
@@ -155,7 +155,7 @@ class Node(BaseModel):
     position: Position = Field(..., description="The node position in the workbench")
 
     state: Optional[RunningState] = Field(
-        RunningState.not_started,
+        RunningState.NOT_STARTED,
         description="the node's running state",
         example=["RUNNING", "FAILURE"],
     )
