@@ -157,4 +157,4 @@ async def test_get_pipeline_state(
     pipeline_state = await get_pipeline_state(FAKE_APP, FAKE_PROJECT)
     assert (
         pipeline_state == expected_pipeline_state
-    ), f"task states are: {task_states} and expected pipeline state is {expected_pipeline_state}"
+    ), f"task states are: {task_states} and expected pipeline state is {expected_pipeline_state} and current time is {datetime.utcnow()}"
