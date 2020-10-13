@@ -46,10 +46,13 @@ async def mock_get_task_states(
     monkeypatch.setattr(computation_api, "get_task_states", return_node_to_state)
 
 
+CELERY_PUBLICATION_TIMEOUT = 5
+
+
 @pytest.fixture
 def mock_get_celery_publication_timeout(monkeypatch):
     def return_celery_publication_timeout(*args, **kwargs) -> int:
-        return 120
+        return CELERY_PUBLICATION_TIMEOUT
 
     monkeypatch.setattr(
         computation_api,
@@ -106,7 +109,7 @@ def mock_get_celery_publication_timeout(monkeypatch):
             {
                 "task0": (
                     RunningState.PUBLISHED,
-                    datetime.utcnow() - timedelta(seconds=10),
+                    datetime.utcnow(),
                 ),
                 "task1": (
                     RunningState.PENDING,
@@ -143,22 +146,14 @@ def mock_get_celery_publication_timeout(monkeypatch):
             RunningState.NOT_STARTED,
         ),
     ],
+    indirect=True,
 )
 async def test_get_pipeline_state(
     mock_get_task_states,
     mock_get_celery_publication_timeout,
     expected_pipeline_state: RunningState,
 ):
-    import time
-
-    now = time.time()
     FAKE_APP = {}
     FAKE_PROJECT = "project_id"
-    task_states = await computation_api.get_task_states(
-        FAKE_APP, FAKE_PROJECT
-    )  # this should use the mock
     pipeline_state = await get_pipeline_state(FAKE_APP, FAKE_PROJECT)
-    then = time.time()
-    assert (
-        pipeline_state == expected_pipeline_state
-    ), f"task states are: {task_states} and expected pipeline state is {expected_pipeline_state} and current time is {datetime.utcnow()}, seconds elapsed {then - now}"
+    assert pipeline_state == expected_pipeline_state
