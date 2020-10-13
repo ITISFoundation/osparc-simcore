@@ -4,7 +4,8 @@ from contextlib import suppress
 from typing import Coroutine, Dict, Optional
 
 from fastapi import FastAPI, HTTPException
-from httpx import AsyncClient, Response, StatusCode
+from httpx import AsyncClient, Response
+import httpx.codes
 from starlette import status
 
 from ..core.settings import CatalogSettings
@@ -51,11 +52,10 @@ def safe_request(request_func: Coroutine):
             resp: Response= await request_func(zelf, path=normalized_path, *args, **kwargs)
 
         except Exception as err:
-            #pylint: disable=protected-access
             logger.exception(
                 "Failed request %s to %s%s",
                 request_func.__name__,
-                zelf._client.base_url,
+                zelf.client.base_url,
                 normalized_path,
             )
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
@@ -64,7 +64,7 @@ def safe_request(request_func: Coroutine):
         data: Dict = resp.json()
 
         # translate error
-        if StatusCode.is_server_error(resp.status_code):
+        if httpx.codes.is_server_error(resp.status_code):
             logger.error(
                 "catalog error %d [%s]",
                 resp.status_code,
@@ -72,7 +72,7 @@ def safe_request(request_func: Coroutine):
             )
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        if StatusCode.is_client_error(resp.status_code):
+        if httpx.codes.is_client_error(resp.status_code):
             raise HTTPException(resp.status_code, detail=resp.reason_phrase)
 
         return data or {}
@@ -100,5 +100,5 @@ class CatalogApi:
     # TODO: add ping to healthcheck
 
     @safe_request
-    async def get(self, path: str) -> Optional[Dict]:
-        return await self.client.get(path)
+    async def get(self, path: str, *args, **kwargs) -> Optional[Dict]:
+        return await self.client.get(path, *args, **kwargs)

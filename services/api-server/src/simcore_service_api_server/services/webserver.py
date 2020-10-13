@@ -7,7 +7,7 @@ from typing import Dict, Optional
 import attr
 from cryptography import fernet
 from fastapi import FastAPI, HTTPException
-from httpx import AsyncClient, Response, StatusCode
+from httpx import AsyncClient, Response, codes
 from starlette import status
 
 from ..core.settings import WebServerSettings
@@ -90,7 +90,7 @@ class AuthSession:
         except (json.JSONDecodeError, KeyError):
             logger.warning("Failed to unenvelop webserver response", exc_info=True)
 
-        if StatusCode.is_server_error(resp.status_code):
+        if codes.is_server_error(resp.status_code):
             logger.error(
                 "webserver error %d [%s]: %s",
                 resp.status_code,
@@ -99,7 +99,7 @@ class AuthSession:
             )
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        if StatusCode.is_client_error(resp.status_code):
+        if codes.is_client_error(resp.status_code):
             msg = error or resp.reason_phrase
             raise HTTPException(resp.status_code, detail=msg)
 
