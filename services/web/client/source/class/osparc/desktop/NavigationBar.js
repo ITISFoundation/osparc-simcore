@@ -251,8 +251,26 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     __setPathButtons: function(nodeIds) {
-      this.__workbenchNodesLayout.removeAll();
+      if (this.getPageContext() === "workbench") {
+        this.__setWorkbenchBtnsVis(true);
+        this.__setSlidesBtnsVis(false);
+      } else {
+        this.__setWorkbenchBtnsVis(false);
+        this.__setSlidesBtnsVis(true);
+      }
 
+      if (nodeIds.length > 1) {
+        this.__populateWorkbenchNodesLayout(nodeIds);
+        this.__studyTitle.exclude();
+        this.__workbenchNodesLayout.show();
+      } else {
+        this.__studyTitle.show();
+        this.__workbenchNodesLayout.exclude();
+      }
+    },
+
+    __populateWorkbenchNodesLayout: function(nodeIds) {
+      this.__workbenchNodesLayout.removeAll();
       for (let i=0; i<nodeIds.length; i++) {
         const nodeId = nodeIds[i];
         const btn = this.__createNodePathBtn(nodeId);
@@ -267,22 +285,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         if (i === nodeIds.length-1) {
           btn.setFont("title-14");
         }
-      }
-
-      if (nodeIds.length === 1) {
-        this.__studyTitle.show();
-        this.__workbenchNodesLayout.exclude();
-      } else {
-        this.__studyTitle.exclude();
-        this.__workbenchNodesLayout.show();
-      }
-
-      if (this.getPageContext() === "workbench") {
-        this.__setWorkbenchBtnsVis(true);
-        this.__setSlidesBtnsVis(false);
-      } else {
-        this.__setWorkbenchBtnsVis(false);
-        this.__setSlidesBtnsVis(true);
       }
     },
 
