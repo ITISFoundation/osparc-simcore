@@ -1,75 +1,88 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-import uuid
-from datetime import datetime, timedelta
+# pylint: disable=unused-variable
+# pylint: disable=unused-argument
+# pylint: disable=redefined-outer-name
 
-import httpx
 import pytest
-from simcore_service_api_server.api.routes.solvers import compose_solver_id
-from simcore_service_api_server.models.schemas.solvers import (
-    Solver,
-    SolverOverview,
-    SolverRelease,
-)
+import respx
+from starlette.testclient import TestClient
+from simcore_service_api_server.core.application import init_app
+from simcore_service_api_server.core.settings import AppSettings
+from simcore_service_api_server.models.schemas.solvers import SolverOverview
 
-# All test coroutines will be treated as marked.
+from fastapi import FastAPI
+from starlette import status
+
 pytestmark = pytest.mark.asyncio
 
 
-def test_id_composer():
-    u = compose_solver_id("comp", 1)
-    assert u.variant == uuid.RFC_4122
-    assert u.version == 3
-    ##assert str(u) ==
+@pytest.fixture
+def app(project_env_devel_environment, monkeypatch) -> FastAPI:
+    # overrides conftest.py: app
+    # uses packages/pytest-simcore/src/pytest_simcore/environment_configs.py: env_devel_config
+
+    # Adds Dockerfile environs
+    monkeypatch.setenv("SC_BOOT_MODE", "production")
+
+    # settings from environs
+    settings = AppSettings.create_from_env()
+    settings.postgres.enabled = False
+    settings.webserver.enabled = False
+    settings.catalog.enabled = True
+
+    mini_app = init_app(settings)
+    return mini_app
 
 
-def create_solver(key):
-    return Solver(
-        solver_key=key,
-        title="S4L isolve",
-        maintainer="pcrespov",
-        releases=[
-            SolverRelease(
-                solver_id=compose_solver_id(key, "1.0.1"),
-                version="1.0.1",
-                version_alias=["1", "1.0", "latest"],
-                release_date=datetime.now(),
-            ),
-            SolverRelease(
-                solver_id=compose_solver_id(key, "1.0.0"),
-                version="1.0.0",
-                release_date=datetime.now() - timedelta(days=1),
-            ),
-        ],
-    )
+@pytest.fixture
+def mocked_catalog_service_api(app: FastAPI):
+    def create_service(**overrides):
+        # TODO: fake from Catalog schemas classes
+        obj = {
+            "name": "Fast Counter",
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "1.0.0",
+            "integration-version": "1.0.0",
+            "type": "computational",
+            "authors": [
+                {
+                    "name": "Jim Knopf",
+                    "email": ["sun@sense.eight", "deleen@minbar.bab"],
+                    "affiliation": ["Sense8", "Babylon 5"],
+                }
+            ],
+            "contact": "lab@net.flix",
+            "inputs": {},
+            "outputs": {},
+            "owner": "user@example.com",
+        }
+        obj.update(**overrides)
+        return obj
+
+    with respx.mock(
+        base_url=app.state.settings.director.base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+        respx_mock.get(
+            "/v0/services",
+            content={
+                [
+                    create_service(version="0.0.1"),
+                    create_service(version="1.0.1"),
+                    create_service(type="dynamic"),
+                ]
+            },
+            alias="list_services",
+        )
+
+        yield respx_mock
 
 
-SOLVERS = [
-    create_solver("simcore/services/comp/isolve"),
-    create_solver("simcore/services/comp/mpi-isolve"),
-]
+def test_list_solvers(sync_client: TestClient, mocked_catalog_service_api):
 
+    resp = sync_client.get("/v0/solvers")
 
-SOLVERS_OVERVIEW = [
-    SolverOverview(
-        latest_version=s.releases[0].version,
-        solver_url=f"http://foo.com/v0/solvers/{s.releases[0].solver_id}",
-        **s.dict(include={"solver_key", "title", "maintainer"}),
-    )
-    for s in SOLVERS
-]
+    assert resp.status_code == status.HTTP_200_OK
 
-
-def test_it():
-
-    # list solvers
-    latest_solvers = [s.dict(exclude_none=True) for s in SOLVERS_OVERVIEW]
-
-    # select a solver
-
-    # run with input
-
-    # check status
-
-    # get outputs
+    # validates response
+    available_solvers = [SolverOverview.parse_obj(**s) for s in resp.json()]
