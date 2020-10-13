@@ -361,6 +361,14 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       osparc.ui.window.Window.popUpInWindow(serviceDetails, title, 700, 800);
     },
 
+    getInputsView: function() {
+      return this.__inputsView;
+    },
+
+    getOutputsView: function() {
+      return this.__outputsView;
+    },
+
     __attachEventHandlers: function() {
       const blocker1 = this.getBlocker();
       const blocker2 = this.__pane2.getBlocker();

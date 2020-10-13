@@ -443,11 +443,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     startSlides: function() {
-      this.__sidePanel.exclude();
+      this.__sidePanel.setCollapsed(true);
+      this.__nodeView.getInputsView().setCollapsed(true);
+      this.__nodeView.getOutputsView().setCollapsed(true);
     },
 
     stopSlides: function() {
-      this.__sidePanel.show();
+      this.__sidePanel.setCollapsed(false);
+      this.__nodeView.getInputsView().setCollapsed(false);
+      this.__nodeView.getOutputsView().setCollapsed(false);
     },
 
     editSlides: function() {
