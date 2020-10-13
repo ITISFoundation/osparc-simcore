@@ -56,6 +56,11 @@ def project_env_devel_dict(project_slug_dir: Path) -> Dict:
     return environ
 
 
+@pytest.fixture
+def project_env_devel_environment(project_env_devel_dict, monkeypatch):
+    for key, value in project_env_devel_dict.items():
+        monkeypatch.setenv(key, value)
+
 ## FOLDER LAYOUT ---------------------------------------------------------------------
 
 
