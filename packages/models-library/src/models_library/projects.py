@@ -266,9 +266,3 @@ __all__ = [
     "RunningState",
     "Owner",
 ]
-
-
-if __name__ == "__main__":
-
-    with open(current_file.with_suffix(".json"), "wt") as fh:
-        print(Project.schema_json(indent=2), file=fh)
