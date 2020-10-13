@@ -4,7 +4,7 @@ from contextlib import suppress
 from typing import Coroutine, Dict, Optional
 
 from fastapi import FastAPI, HTTPException
-from httpx import AsyncClient, Response, StatusCode
+from httpx import AsyncClient, codes, Response
 from starlette import status
 
 from ..core.settings import DirectorSettings
@@ -53,7 +53,7 @@ def safe_request(request_func: Coroutine):
         data = body.get("data")
         error = body.get("error")
 
-        if StatusCode.is_server_error(resp.status_code):
+        if codes.is_server_error(resp.status_code):
             logger.error(
                 "director error %d [%s]: %s",
                 resp.status_code,
@@ -62,7 +62,7 @@ def safe_request(request_func: Coroutine):
             )
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        if StatusCode.is_client_error(resp.status_code):
+        if codes.is_client_error(resp.status_code):
             msg = error or resp.reason_phrase
             raise HTTPException(resp.status_code, detail=msg)
 
