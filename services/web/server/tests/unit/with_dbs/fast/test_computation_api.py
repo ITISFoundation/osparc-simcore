@@ -87,7 +87,8 @@ def mock_get_celery_publication_timeout(monkeypatch):
             {
                 "task0": (
                     RunningState.PUBLISHED,
-                    datetime.utcnow() - timedelta(seconds=175),
+                    datetime.utcnow()
+                    - timedelta(seconds=CELERY_PUBLICATION_TIMEOUT + 75),
                 ),
                 "task1": (
                     RunningState.PENDING,
