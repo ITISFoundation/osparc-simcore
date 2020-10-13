@@ -23,6 +23,7 @@ asgi_lifespan
 # fixtures
 faker
 passlib[bcrypt]
+respx
 
 # db migration
 alembic
