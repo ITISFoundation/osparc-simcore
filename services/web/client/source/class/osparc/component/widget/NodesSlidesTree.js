@@ -244,8 +244,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         }
       });
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const studyUI = study.getUi();
-      studyUI["slideshow"] = slideshow;
+      study.getUi().setSlideshow(slideshow);
       this.fireEvent("finished");
     }
   }
