@@ -14,6 +14,7 @@ from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
 
+from .computation_api import convert_state_from_db
 from .projects import projects_api, projects_exceptions
 
 log = logging.getLogger(__name__)
@@ -43,9 +44,6 @@ def _is_output_changed(current_outputs: Dict, new_outputs: Dict) -> bool:
 
 def _is_state_changed(current_state: str, new_state: str) -> bool:
     return current_state != new_state
-
-
-from .computation_api import convert_state_from_db
 
 
 async def _update_project_node_and_notify_if_needed(
