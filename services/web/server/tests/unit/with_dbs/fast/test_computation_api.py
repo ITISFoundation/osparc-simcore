@@ -18,6 +18,10 @@ from simcore_service_webserver.computation_api import (
     get_pipeline_state,
 )
 
+fake = faker.Faker()
+
+NodeID = str
+
 
 @pytest.mark.parametrize(
     "db_state, expected_state",
@@ -31,9 +35,6 @@ from simcore_service_webserver.computation_api import (
 )
 def test_convert_state_from_db(db_state: int, expected_state: RunningState):
     assert convert_state_from_db(db_state) == expected_state
-
-
-NodeID = str
 
 
 @pytest.fixture
@@ -56,9 +57,6 @@ def mock_get_celery_publication_timeout(monkeypatch):
         "get_celery_publication_timeout",
         return_celery_publication_timeout,
     )
-
-
-fake = faker.Faker()
 
 
 @pytest.mark.parametrize(
