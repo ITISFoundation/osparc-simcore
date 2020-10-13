@@ -149,12 +149,16 @@ async def test_get_pipeline_state(
     mock_get_celery_publication_timeout,
     expected_pipeline_state: RunningState,
 ):
+    import time
+
+    now = time.time()
     FAKE_APP = {}
     FAKE_PROJECT = "project_id"
     task_states = await computation_api.get_task_states(
         FAKE_APP, FAKE_PROJECT
     )  # this should use the mock
     pipeline_state = await get_pipeline_state(FAKE_APP, FAKE_PROJECT)
+    then = time.time()
     assert (
         pipeline_state == expected_pipeline_state
-    ), f"task states are: {task_states} and expected pipeline state is {expected_pipeline_state} and current time is {datetime.utcnow()}"
+    ), f"task states are: {task_states} and expected pipeline state is {expected_pipeline_state} and current time is {datetime.utcnow()}, seconds elapsed {then - now}"
