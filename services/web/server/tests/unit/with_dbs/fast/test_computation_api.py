@@ -46,7 +46,7 @@ async def mock_get_task_states(
     monkeypatch.setattr(computation_api, "get_task_states", return_node_to_state)
 
 
-CELERY_PUBLICATION_TIMEOUT = 5
+CELERY_PUBLICATION_TIMEOUT = 120
 
 
 @pytest.fixture
@@ -64,6 +64,42 @@ def mock_get_celery_publication_timeout(monkeypatch):
 @pytest.mark.parametrize(
     "task_states, expected_pipeline_state",
     [
+        (
+            # pipeline is published if any of the node is published AND time is within publication timeout
+            {
+                "task0": (
+                    RunningState.PUBLISHED,
+                    datetime.utcnow(),
+                ),
+                "task1": (
+                    RunningState.PENDING,
+                    datetime.utcnow() - timedelta(seconds=75),
+                ),
+                "task2": (
+                    RunningState.STARTED,
+                    datetime.utcnow() - timedelta(seconds=155),
+                ),
+            },
+            RunningState.PUBLISHED,
+        ),
+        (
+            # pipeline is published if any of the node is published AND time is within publication timeout
+            {
+                "task0": (
+                    RunningState.PUBLISHED,
+                    datetime.utcnow() - timedelta(seconds=175),
+                ),
+                "task1": (
+                    RunningState.PENDING,
+                    datetime.utcnow() - timedelta(seconds=145),
+                ),
+                "task2": (
+                    RunningState.STARTED,
+                    datetime.utcnow() - timedelta(seconds=1555),
+                ),
+            },
+            RunningState.NOT_STARTED,
+        ),
         (
             # not started pipeline (all nodes are in non started mode)
             {
@@ -105,48 +141,11 @@ def mock_get_celery_publication_timeout(monkeypatch):
             RunningState.STARTED,
         ),
         (
-            # pipeline is published if any of the node is published AND time is within publication timeout
-            {
-                "task0": (
-                    RunningState.PUBLISHED,
-                    datetime.utcnow(),
-                ),
-                "task1": (
-                    RunningState.PENDING,
-                    datetime.utcnow() - timedelta(seconds=75),
-                ),
-                "task2": (
-                    RunningState.STARTED,
-                    datetime.utcnow() - timedelta(seconds=155),
-                ),
-            },
-            RunningState.PUBLISHED,
-        ),
-        (
-            # pipeline is published if any of the node is published AND time is within publication timeout
-            {
-                "task0": (
-                    RunningState.PUBLISHED,
-                    datetime.utcnow() - timedelta(seconds=175),
-                ),
-                "task1": (
-                    RunningState.PENDING,
-                    datetime.utcnow() - timedelta(seconds=145),
-                ),
-                "task2": (
-                    RunningState.STARTED,
-                    datetime.utcnow() - timedelta(seconds=1555),
-                ),
-            },
-            RunningState.NOT_STARTED,
-        ),
-        (
             # empty tasks (could be an empty project or filled with dynamic services)
             {},
             RunningState.NOT_STARTED,
         ),
     ],
-    indirect=True,
 )
 async def test_get_pipeline_state(
     mock_get_task_states,
