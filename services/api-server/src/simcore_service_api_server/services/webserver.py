@@ -7,7 +7,7 @@ from typing import Dict, Optional
 import attr
 from cryptography import fernet
 from fastapi import FastAPI, HTTPException
-from httpx import AsyncClient, Response, codes
+from httpx import AsyncClient, codes, Response
 from starlette import status
 
 from ..core.settings import WebServerSettings

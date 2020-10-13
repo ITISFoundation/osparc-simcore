@@ -4,8 +4,7 @@ from contextlib import suppress
 from typing import Coroutine, Dict, Optional
 
 from fastapi import FastAPI, HTTPException
-from httpx import AsyncClient, Response
-import httpx.codes
+from httpx import AsyncClient, codes, Response
 from starlette import status
 
 from ..core.settings import CatalogSettings
@@ -64,7 +63,7 @@ def safe_request(request_func: Coroutine):
         data: Dict = resp.json()
 
         # translate error
-        if httpx.codes.is_server_error(resp.status_code):
+        if codes.is_server_error(resp.status_code):
             logger.error(
                 "catalog error %d [%s]",
                 resp.status_code,
@@ -72,7 +71,7 @@ def safe_request(request_func: Coroutine):
             )
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        if httpx.codes.is_client_error(resp.status_code):
+        if codes.is_client_error(resp.status_code):
             raise HTTPException(resp.status_code, detail=resp.reason_phrase)
 
         return data or {}
