@@ -49,7 +49,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -85,7 +85,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -134,7 +134,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -189,7 +189,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -238,7 +238,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -287,7 +287,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node }}
@@ -317,7 +317,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -353,7 +353,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -402,7 +402,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -451,7 +451,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -500,7 +500,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -549,7 +549,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -599,7 +599,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -649,7 +649,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -699,7 +699,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -749,7 +749,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -795,7 +795,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: show system environs
         if: github.event_name == 'push'
         run: ./ci/helpers/show_system_versions.bash
@@ -807,7 +807,7 @@ jobs:
         run: ./ci/build/test-images.bash build_images
       - name: set owner variable
         if: github.event_name == 'push'
-        run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
+        run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - name: push images
         # only pushes have access to the docker credentials
         if: github.event_name == 'push'
@@ -828,14 +828,14 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
+          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
       - name: setup docker
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -893,14 +893,14 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
+          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
       - name: setup docker
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -958,14 +958,14 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
+          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
       - name: setup docker
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1023,14 +1023,14 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
+          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
       - name: setup docker
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1072,14 +1072,14 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
+          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
       - name: setup docker
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1152,7 +1152,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo ::set-env name=DOCKER_REGISTRY::${TMP_DOCKER_REGISTRY,,}
+          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
       - name: setup python environment
         uses: actions/setup-python@v2
@@ -1307,9 +1307,9 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: set owner variable
-        run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
+        run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - name: deploy master
         if: github.ref == 'refs/heads/master'
         env:
