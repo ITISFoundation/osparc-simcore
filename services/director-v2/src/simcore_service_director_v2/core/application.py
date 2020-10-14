@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 
-from ..api.entrypoints import  api_router
+from ..api.entrypoints import api_router
 from ..meta import api_version, api_vtag, project_name, summary
 from .events import create_start_app_handler, create_stop_app_handler
 from .settings import AppSettings

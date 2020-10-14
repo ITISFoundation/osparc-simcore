@@ -4,8 +4,8 @@ from typing import Callable
 from fastapi import FastAPI
 
 from ..meta import WELCOME_MSG
-from ..services.remote_debug import setup_remote_debugging
 from ..services.docker_registry import setup_docker_registry, shutdown_docker_registry
+from ..services.remote_debug import setup_remote_debugging
 from .settings import BootModeEnum
 
 logger = logging.getLogger(__name__)

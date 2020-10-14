@@ -4,12 +4,13 @@
 import logging
 
 import pytest
+from yarl import URL
+
 from simcore_service_director_v2.core.settings import (
     AppSettings,
     BootModeEnum,
     RegistrySettings,
 )
-from yarl import URL
 
 
 def test_loading_env_devel_in_settings(project_env_devel_environment):

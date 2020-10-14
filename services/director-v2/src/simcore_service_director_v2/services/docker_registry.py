@@ -4,15 +4,14 @@ services/director/src/simcore_service_director/registry_proxy.py
 services/director/src/simcore_service_director/registry_cache_task.py
 
 """
+import logging
 from contextlib import suppress
-from typing import List, Dict
+from typing import Dict, List
 
 from fastapi import FastAPI
 from httpx import AsyncClient
-import logging
 
 from ..core.settings import RegistrySettings
-
 
 logger = logging.getLogger(__name__)
 
@@ -39,11 +38,13 @@ async def shutdown_docker_registry(app: FastAPI) -> None:
 #    - cache?
 #
 
+
 class RegistryApiClient:
     """
 
     Basic Authentication or Bearer
     """
+
     def __init__(self, settings: RegistrySettings):
         self.settings = settings.copy()
 
@@ -91,7 +92,7 @@ class RegistryApiClient:
         pass
 
     async def list_services(
-        self, #service_type: ServiceType
+        self,  # service_type: ServiceType
     ) -> List[Dict]:
         pass
 

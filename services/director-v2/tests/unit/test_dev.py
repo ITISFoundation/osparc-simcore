@@ -4,6 +4,7 @@
 
 
 import httpx
+
 from simcore_service_director_v2.core.settings import AppSettings, RegistrySettings
 
 

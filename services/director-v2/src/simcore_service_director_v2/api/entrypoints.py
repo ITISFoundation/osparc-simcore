@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from .routes import health, meta, running_interactive, services
 from ..meta import api_vtag
+from .routes import health, meta, running_interactive, services
 
 # Info
 meta_router = APIRouter()
