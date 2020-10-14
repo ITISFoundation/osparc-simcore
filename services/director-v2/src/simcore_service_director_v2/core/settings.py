@@ -58,6 +58,11 @@ class ApiServiceSettings(BaseSettings):
         return f"http://{self.host}:{self.port}/{self.vtag}"
 
 
+class DirectorV0Settings(ApiServiceSettings):
+    class Config(_CommonConfig):
+        env_prefix = "DIRECTOR_"
+
+
 class RegistrySettings(BaseSettings):
     enabled: bool = Field(True, description="Enables/Disables connection with service")
 
@@ -151,6 +156,7 @@ class AppSettings(BaseSettings):
     @classmethod
     def create_from_env(cls) -> "AppSettings":
         return cls(
+            director_v0=DirectorV0Settings(),
             registry=RegistrySettings(),
             postgres=PostgresSettings(),
             tracing=TracingSettings(),
@@ -173,6 +179,9 @@ class AppSettings(BaseSettings):
     @property
     def loglevel(self) -> int:
         return getattr(logging, self.log_level_name)
+
+    # DIRECTOR V0
+    director_v0: DirectorV0Settings
 
     # REGISTRY
     registry: RegistrySettings
@@ -233,4 +242,4 @@ class AppSettings(BaseSettings):
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
 
     class Config(_CommonConfig):
-        env_prefix = "DIRECTOR_"
+        env_prefix = "DIRECTOR2_"
