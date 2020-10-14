@@ -182,12 +182,9 @@ async def _create_docker_service_params(
         "task_template": {
             "ContainerSpec": container_spec,
             "Placement": {
-                "Constraints": [
-                    "node.role==worker",
-                    config.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS,
-                ]
+                "Constraints": ["node.role==worker"]
                 if await docker_utils.swarm_has_worker_nodes()
-                else [config.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS]
+                else []
             },
             "RestartPolicy": {
                 "Condition": "on-failure",
@@ -219,6 +216,11 @@ async def _create_docker_service_params(
         },
         "networks": [internal_network_id] if internal_network_id else [],
     }
+
+    if config.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS:
+        docker_params["task_template"]["Placement"][
+            "Constraints"
+        ] += config.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS
 
     if reverse_proxy_settings:
         # some services define strip_path:true if they need the path to be stripped away
