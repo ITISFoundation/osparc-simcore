@@ -1,3 +1,5 @@
+# pylint: disable=no-self-argument
+# pylint: disable=no-self-use
 import logging
 from enum import Enum
 from typing import Optional
@@ -9,6 +11,7 @@ from pydantic import (
     SecretStr,
     conint,
     constr,
+    root_validator,
     validator,
 )
 from yarl import URL
@@ -58,14 +61,41 @@ class ApiServiceSettings(BaseSettings):
 class RegistrySettings(BaseSettings):
     enabled: bool = Field(True, description="Enables/Disables connection with service")
 
-    url: AnyHttpUrl
+    # entrypoint
     ssl: bool = True
+    url: AnyHttpUrl
 
     # auth
-    auth: bool = False
-    user: str = ""
-    pw: str = ""
+    auth: bool = True
+    user: Optional[str] = None
+    pw: Optional[SecretStr] = None
 
+    @validator("url", pre=True)
+    def secure_url(cls, v, values):
+        if values["ssl"]:
+            if v.startswith("http://"):
+                v = v.replace("http://", "https://")
+        return v
+
+    @root_validator
+    def check_auth_credentials(cls, values):
+        if values["auth"]:
+            user, pw = values.get("user"), values.get("pw")
+            if user is None or pw is None:
+                raise ValueError("Cannot authenticate without credentials user, pw")
+            if not values["ssl"]:
+                raise ValueError("Authentication REQUIRES a secured channel")
+        return values
+
+    @property
+    def api_url(self) -> str:
+        return AnyHttpUrl.build(
+            scheme=self.url.scheme,
+            user=self.user,
+            password=self.pw.get_secret_value(),
+            host=self.url.host,
+            path="/v2",
+        )
 
     class Config(_CommonConfig):
         env_prefix = "REGISTRY_"
@@ -89,8 +119,6 @@ class PostgresSettings(BaseSettings):
     minsize: int = 10
     maxsize: int = 10
 
-    # pylint: disable=no-self-argument
-    # pylint: disable=no-self-use
     @validator("maxsize")
     def check_size(cls, v, values):
         if not (values["minsize"] <= v):
@@ -135,8 +163,6 @@ class AppSettings(BaseSettings):
     # LOGGING
     log_level_name: str = Field("DEBUG", env="LOG_LEVEL")
 
-    # pylint: disable=no-self-use
-    # pylint: disable=no-self-argument
     @validator("log_level_name")
     def match_logging_level(cls, value) -> str:
         try:
