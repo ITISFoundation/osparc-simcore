@@ -123,8 +123,25 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
       this._add(new qx.ui.core.Spacer(20));
 
-      const studyTitle = this.__studyTitle = this.__createStudyTitle();
-      this._add(studyTitle);
+      const studyTitle = this.__studyTitle = this.getChildControl("study-title");
+      studyTitle.addListener("editValue", evt => {
+        if (evt.getData() !== studyTitle.getValue()) {
+          studyTitle.setFetching(true);
+          const params = {
+            name: evt.getData()
+          };
+          this.getStudy().updateStudy(params)
+            .then(() => {
+              studyTitle.setFetching(false);
+            })
+            .catch(err => {
+              studyTitle.setFetching(false);
+              console.error(err);
+              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the title."), "ERROR");
+            });
+        }
+      }, this);
+
       this.__workbenchNodesLayout = this.getChildControl("workbench-nodes-path-container");
       this.__guidedNodesLayout = this.getChildControl("guided-nodes-path-container");
 
@@ -170,6 +187,14 @@ qx.Class.define("osparc.desktop.NavigationBar", {
             font: "text-14"
           });
           this._add(control);
+          break;
+        case "study-title":
+          control = new osparc.ui.form.EditLabel().set({
+            visibility: "excluded",
+            labelFont: "title-14",
+            inputFont: "text-14",
+            editable: osparc.data.Permissions.getInstance().canDo("study.update")
+          });
           break;
         case "workbench-nodes-path-container":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
@@ -589,33 +614,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           }
         });
       }
-    },
-
-    __createStudyTitle: function() {
-      const studyTitle = new osparc.ui.form.EditLabel().set({
-        visibility: "excluded",
-        labelFont: "title-14",
-        inputFont: "text-14",
-        editable: osparc.data.Permissions.getInstance().canDo("study.update")
-      });
-      studyTitle.addListener("editValue", evt => {
-        if (evt.getData() !== this.__studyTitle.getValue()) {
-          this.__studyTitle.setFetching(true);
-          const params = {
-            name: evt.getData()
-          };
-          this.getStudy().updateStudy(params)
-            .then(() => {
-              this.__studyTitle.setFetching(false);
-            })
-            .catch(err => {
-              this.__studyTitle.setFetching(false);
-              console.error(err);
-              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the title."), "ERROR");
-            });
-        }
-      }, this);
-      return studyTitle;
     }
   }
 });
