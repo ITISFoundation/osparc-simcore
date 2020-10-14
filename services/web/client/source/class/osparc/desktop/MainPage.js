@@ -86,7 +86,6 @@ qx.Class.define("osparc.desktop.MainPage", {
       navBar.addListener("slidesStart", () => {
         if (this.__studyEditor) {
           navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT[2]);
-          navBar.showGuidedButtons();
           this.__studyEditor.startSlides();
         }
       }, this);
