@@ -195,6 +195,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
             inputFont: "text-14",
             editable: osparc.data.Permissions.getInstance().canDo("study.update")
           });
+          this._add(control);
           break;
         case "workbench-nodes-path-container":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
