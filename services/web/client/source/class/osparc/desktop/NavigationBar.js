@@ -308,7 +308,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
             nodeId
           });
         }
-        nodes.sort((a, b) => (a.position > b.position) ? 1 : 0);
+        nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
         nodes.forEach(node => {
           const btn = this.__createNodeSlideBtn(node.nodeId, node.position);
           this.__guidedNodesLayout.add(btn);
@@ -583,7 +583,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     _applyStudy: function(study) {
       if (study) {
         study.bind("name", this.__studyTitle, "value");
-        study.getUi().addListener("changeCurrentNodeId", e => {
+        study.getUi().addListener("changeCurrentNodeId", () => {
           if (this.getPageContext() === "workbench") {
             this.__populateWorkbenchNodesLayout();
           }
