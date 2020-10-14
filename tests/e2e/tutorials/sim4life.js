@@ -27,7 +27,7 @@ async function runTutorial() {
     await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][0]], 20000);
 
     // Wait for some time
-    await tutorial.waitFor(5000);
+    await tutorial.waitFor(12000);
 
     await tutorial.removeStudy();
   }
