@@ -218,9 +218,12 @@ async def _create_docker_service_params(
     }
 
     if config.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS:
-        docker_params["task_template"]["Placement"][
-            "Constraints"
-        ] += config.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS
+        log.debug(
+            "adding custom constraints %s ", config.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS
+        )
+        docker_params["task_template"]["Placement"]["Constraints"] += [
+            config.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS
+        ]
 
     if reverse_proxy_settings:
         # some services define strip_path:true if they need the path to be stripped away
