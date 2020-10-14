@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import logging
 import os
 import socket
 from typing import Any, Dict, Optional, Tuple
@@ -9,10 +10,11 @@ from typing import Any, Dict, Optional, Tuple
 import aio_pika
 import pytest
 import tenacity
-from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from simcore_sdk.config.rabbit import Config
 
 from .helpers.utils_docker import get_service_published_port
+
+log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="module")
@@ -127,7 +129,12 @@ async def rabbit_queue(
 # HELPERS --
 
 
-@tenacity.retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
+@tenacity.retry(
+    wait=tenacity.wait_fixed(5),
+    stop=tenacity.stop_after_attempt(60),
+    before_sleep=tenacity.before_sleep_log(log, logging.INFO),
+    reraise=True,
+)
 async def wait_till_rabbit_responsive(url: str) -> None:
     connection = await aio_pika.connect(url)
     await connection.close()
