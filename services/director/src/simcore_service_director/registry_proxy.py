@@ -5,6 +5,7 @@ import json
 import logging
 import re
 from http import HTTPStatus
+from pprint import pformat
 from typing import Dict, List, Tuple
 
 from aiohttp import BasicAuth, ClientSession, client_exceptions, web
@@ -210,7 +211,7 @@ async def get_image_labels(app: web.Application, image: str, tag: str) -> Dict:
         "container_config", v1_compatibility_key["config"]
     )
     labels = container_config["Labels"]
-    logger.debug("retrieved labels of image %s:%s: %s", image, tag, request_result)
+    logger.debug("retrieved labels of image %s:%s", image, tag)
     return labels
 
 
@@ -337,7 +338,7 @@ async def get_service_extras(
 ) -> Dict[str, str]:
     result = {}
     labels = await get_image_labels(app, image_key, image_tag)
-    logger.debug("Compiling service extras from labels %s", labels)
+    logger.debug("Compiling service extras from labels %s", pformat(labels))
 
     # check physical node requirements
     # all nodes require "CPU"
