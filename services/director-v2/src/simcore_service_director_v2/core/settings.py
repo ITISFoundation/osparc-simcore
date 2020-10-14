@@ -13,7 +13,7 @@ from pydantic import (
 )
 from yarl import URL
 
-from ..__version__ import api_vtag
+from ..meta import api_vtag
 
 MINS = 60
 API_ROOT: str = "api"

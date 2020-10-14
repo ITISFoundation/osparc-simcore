@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 
-from ..__version__ import api_version, api_vtag, summary, project_name
+from ..meta import api_version, api_vtag, summary, project_name
 from ..api.root import router as api_router
 from ..api.routes.health import router as health_router
 from .events import create_start_app_handler, create_stop_app_handler
