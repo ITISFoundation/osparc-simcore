@@ -43,7 +43,7 @@ def create_template_db(postgres_dsn: Dict, postgres_engine: sa.engine.Engine) ->
     queries = [
         # disconnect existing users
         f"""
-        SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity 
+        SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity
         WHERE pg_stat_activity.datname = '{postgres_dsn["database"]}' AND pid <> pg_backend_pid();
         """,
         # drop template database
@@ -116,7 +116,7 @@ def database_from_template_before_each_function(
     queries = [
         # terminate existing connections to the database
         f"""
-        SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity 
+        SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity
         WHERE pg_stat_activity.datname = '{postgres_dsn["database"]}';
         """,
         # drop database
@@ -209,7 +209,7 @@ def postgres_session(postgres_db: sa.engine.Engine) -> sa.orm.session.Session:
 
 @tenacity.retry(
     wait=tenacity.wait_fixed(5),
-    stop=tenacity.stop_after_attempt(20),
+    stop=tenacity.stop_after_attempt(60),
     before_sleep=tenacity.before_sleep_log(log, logging.INFO),
     reraise=True,
 )

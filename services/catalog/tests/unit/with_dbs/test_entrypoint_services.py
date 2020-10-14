@@ -148,7 +148,6 @@ async def db_mockup(
     )
 
 
-@pytest.mark.skip(reason="issue in github actions?")
 async def test_director_mockup(
     director_mockup, app: FastAPI, registry_services: List[ServiceOut], user_id: int
 ):
