@@ -11,5 +11,5 @@ async def get_service_metadata():
     return Meta(
         name=__name__.split(".")[0],
         version=api_version,
-        released={api_vtag: api_version},
+        released={api_vtag: api_version, "v0": "0.1.0"},
     )

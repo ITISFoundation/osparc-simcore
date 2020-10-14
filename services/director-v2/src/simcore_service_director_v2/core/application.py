@@ -3,9 +3,8 @@ from typing import Optional
 
 from fastapi import FastAPI
 
-from ..meta import api_version, api_vtag, summary, project_name
-from ..api.root import router as api_router
-from ..api.routes.health import router as health_router
+from ..api.entrypoints import v0_router, meta_router, v2_router
+from ..meta import api_version, api_vtag, project_name, summary
 from .events import create_start_app_handler, create_stop_app_handler
 from .settings import AppSettings
 
@@ -46,8 +45,8 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     # app.add_exception_handler(RequestValidationError, http422_error_handler)
 
     # Routing
-
-    app.include_router(health_router)
-    app.include_router(api_router, prefix=f"/{api_vtag}")
+    app.include_router(meta_router)
+    app.include_router(v0_router, prefix="/v0")
+    app.include_router(v2_router, prefix=f"/{api_vtag}")
 
     return app

@@ -91,7 +91,7 @@ class RegistryApiClient:
         pass
 
     async def list_services(
-        self, service_type: ServiceType
+        self, #service_type: ServiceType
     ) -> List[Dict]:
         pass
 
