@@ -584,7 +584,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       if (study) {
         study.bind("name", this.__studyTitle, "value");
         study.getUi().addListener("changeCurrentNodeId", e => {
-          if (this.getPageContext() === "workbench)") {
+          if (this.getPageContext() === "workbench") {
             this.__populateWorkbenchNodesLayout();
           }
         });
