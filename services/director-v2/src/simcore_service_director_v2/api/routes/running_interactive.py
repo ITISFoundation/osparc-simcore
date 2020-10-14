@@ -58,4 +58,5 @@ async def start_interactive_service(
         example="/x/EycCXbU0H/",
     ),
 ):
+    # TODO: redirect to director-v0!!
     pass
