@@ -1,14 +1,14 @@
 #
 # DEVELOPMENT recipes for director-v2
 #
+
+
 include ../../scripts/common.Makefile
 include ../../scripts/common-service.Makefile
-
 
 .PHONY: requirements reqs
 requirements reqs: ## (or reqs) compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
-
 
 
 .PHONY: openapi-specs
@@ -20,12 +20,13 @@ openapi.json:
 
 
 # DEVELOPMENT #############
+include .env
 
-# NOTE: add '127.0.0.1 registry' to /etc/host (needs sudo)
-EXTRA_REGISTRY:=registry:5000
+REGISTRY_NAMESPACE=$(subst http://,,${REGISTRY_URL})
 
 .env:
-	cp .env-devel $@
+	# Copying makefile from .env-devel
+	@cp .env-devel $@
 
 
 .PHONY: up-extra down down-extra run-devel
@@ -54,13 +55,18 @@ run-prod: .env up-extra
 	$(APP_CLI_NAME)
 
 
-
 .PHONY: transfer-images-to-registry
-transfer-images-to-registry: ## transfer images to registry
+transfer-images-to-registry: .env ## transfer images to registry
 	# pushing sleeper image
 	@docker pull itisfoundation/sleeper:1.0.0
-	@docker tag itisfoundation/sleeper:1.0.0 $(EXTRA_REGISTRY)/simcore/services/comp/itis/sleeper:1.0.0
-	@docker push $(EXTRA_REGISTRY)/simcore/services/comp/itis/sleeper:1.0.0
+	@docker tag itisfoundation/sleeper:1.0.0 $(REGISTRY_NAMESPACE)/simcore/services/comp/itis/sleeper:1.0.0
+	@docker push $(REGISTRY_NAMESPACE)/simcore/services/comp/itis/sleeper:1.0.0
 	# completed transfer of images
-	curl -s $(EXTRA_REGISTRY)/v2/_catalog | jq '.repositories'
-	curl -s $(EXTRA_REGISTRY)/v2/simcore/services/comp/itis/sleeper/tags/list?n=50 | jq '.'
+	$(MAKE) info-registry
+
+
+.PHONY: info-registry
+info-registry: .env ## displays content of docker-registry
+	# ${REGISTRY_URL} info queries
+	curl -s ${REGISTRY_URL}/v2/_catalog | jq '.repositories'
+	curl -s ${REGISTRY_URL}/v2/simcore/services/comp/itis/sleeper/tags/list?n=50 | jq '.'
