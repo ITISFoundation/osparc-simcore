@@ -5,6 +5,8 @@ services:
     init: true
     ports:
       - "5000:5000"
+
+  # OPS ----------
   portainer:
     image: portainer/portainer
     init: true
