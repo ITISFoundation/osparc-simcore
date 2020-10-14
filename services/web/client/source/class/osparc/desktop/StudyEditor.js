@@ -676,6 +676,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     closeStudy: function() {
+      this.stopSlides();
       this.getStudy().closeStudy();
     },
 

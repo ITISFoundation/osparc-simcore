@@ -102,6 +102,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     __dashboardBtn: null,
     __dashboardLabel: null,
     __slidesMenu: null,
+    __startSlidesBtn: null,
+    __stopSlidesBtn: null,
+    __editSlidesBtn: null,
     __studyTitle: null,
     __workbenchNodesLayout: null,
     __guidedNodesLayout: null,
@@ -335,6 +338,15 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     __setSlidesMenuVis: function(show) {
       if (show && osparc.data.model.Study.isOwner(this.getStudy())) {
         this.__slidesMenu.show();
+        if (this.getPageContext() === "slides") {
+          this.__startSlidesBtn.setEnabled(false);
+          this.__stopSlidesBtn.setEnabled(true);
+          this.__editSlidesBtn.setEnabled(false);
+        } else {
+          this.__startSlidesBtn.setEnabled(true);
+          this.__stopSlidesBtn.setEnabled(false);
+          this.__editSlidesBtn.setEnabled(true);
+        }
       } else {
         this.__slidesMenu.exclude();
       }
@@ -363,19 +375,19 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         font: "text-14"
       });
 
-      const startBtn = new qx.ui.menu.Button(this.tr("Start"));
+      const startBtn = this.__startSlidesBtn = new qx.ui.menu.Button(this.tr("Start"));
       startBtn.addListener("execute", () => {
         this.fireEvent("slidesStart");
       }, this);
       menu.add(startBtn);
 
-      const stopBtn = new qx.ui.menu.Button(this.tr("Stop"));
+      const stopBtn = this.__stopSlidesBtn = new qx.ui.menu.Button(this.tr("Stop"));
       stopBtn.addListener("execute", () => {
         this.fireEvent("slidesStop");
       }, this);
       menu.add(stopBtn);
 
-      const editBtn = new qx.ui.menu.Button(this.tr("Edit"));
+      const editBtn = this.__editSlidesBtn = new qx.ui.menu.Button(this.tr("Edit"));
       editBtn.addListener("execute", () => {
         this.fireEvent("slidesEdit");
       }, this);
