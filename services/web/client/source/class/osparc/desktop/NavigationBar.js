@@ -588,9 +588,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
             this.__populateWorkbenchNodesLayout();
           }
         });
-        this.setPageContext("workbench");
-      } else {
-        this.setPageContext("dashboard");
       }
     },
 

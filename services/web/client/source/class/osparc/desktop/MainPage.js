@@ -183,6 +183,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__mainStack.setSelection([this.__dashboardLayout]);
       this.__dashboard.getStudyBrowser().reloadUserStudies();
       this.__navBar.setStudy(null);
+      this.__navBar.setPageContext("dashboard");
       if (this.__studyEditor) {
         this.__studyEditor.destruct();
       }
@@ -258,6 +259,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const studyEditor = this.__studyEditor;
       const study = studyEditor.getStudy();
       this.__navBar.setStudy(study);
+      this.__navBar.setPageContext("workbench");
 
       this.__studyEditor.addListener("studyIsLocked", () => {
         this.__showDashboard();
