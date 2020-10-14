@@ -86,14 +86,14 @@ qx.Class.define("osparc.desktop.MainPage", {
       navBar.addListener("slidesStart", () => {
         if (this.__studyEditor) {
           navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT[2]);
-          this.__studyEditor.startSlides();
+          this.__studyEditor.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT[2]);
         }
       }, this);
 
       navBar.addListener("slidesStop", () => {
         if (this.__studyEditor) {
           navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT[1]);
-          this.__studyEditor.stopSlides();
+          this.__studyEditor.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT[1]);
         }
       }, this);
 

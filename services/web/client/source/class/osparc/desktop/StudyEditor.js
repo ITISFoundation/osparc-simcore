@@ -15,8 +15,6 @@
 
 ************************************************************************ */
 
-/* eslint newline-per-chained-call: 0 */
-
 qx.Class.define("osparc.desktop.StudyEditor", {
   extend: osparc.ui.basic.LoadingPageHandler,
 
@@ -51,6 +49,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   events: {
     "studyIsLocked": "qx.event.type.Event",
     "startStudy": "qx.event.type.Data"
+  },
+
+  properties: {
+    pageContext: {
+      check: ["workbench", "slides"],
+      nullable: false,
+      apply: "_applyPageContext"
+    }
   },
 
   members: {
@@ -435,13 +441,25 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    startSlides: function() {
+    _applyPageContext: function(newCtxt) {
+      switch (newCtxt) {
+        case "workbench":
+          this.__stopSlides();
+          break;
+        case "slides":
+          this.__startSlides();
+          break;
+      }
+    },
+
+
+    __startSlides: function() {
       this.__sidePanel.setCollapsed(true);
       this.__nodeView.getInputsView().setCollapsed(true);
       this.__nodeView.getOutputsView().setCollapsed(true);
     },
 
-    stopSlides: function() {
+    __stopSlides: function() {
       this.__sidePanel.setCollapsed(false);
       this.__nodeView.getInputsView().setCollapsed(false);
       this.__nodeView.getOutputsView().setCollapsed(false);
