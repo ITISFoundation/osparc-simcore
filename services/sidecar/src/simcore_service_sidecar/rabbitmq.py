@@ -28,10 +28,6 @@ def _close_callback(sender: Any, exc: Optional[BaseException]):
         log.info("Rabbit connection closed from %s", sender)
 
 
-def _reconnect_callback():
-    log.warning("Rabbit connection reconnected")
-
-
 def _channel_close_callback(sender: Any, exc: Optional[BaseException]):
     if exc:
         log.error(
@@ -43,10 +39,9 @@ def _channel_close_callback(sender: Any, exc: Optional[BaseException]):
 
 class RabbitMQ(BaseModel):
     config: RabbitConfig = RabbitConfig()
-    connection: aio_pika.RobustConnection = None
+    connection: aio_pika.Connection = None
     channel: aio_pika.Channel = None
     logs_exchange: aio_pika.Exchange = None
-    progress_exchange: aio_pika.Exchange = None
     instrumentation_exchange: aio_pika.Exchange = None
 
     class Config:
@@ -59,12 +54,11 @@ class RabbitMQ(BaseModel):
         await _wait_till_rabbit_responsive(url)
 
         # NOTE: to show the connection name in the rabbitMQ UI see there [https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url]
-        self.connection = await aio_pika.connect_robust(
+        self.connection = await aio_pika.connect(
             url + f"?name={__name__}_{id(socket.gethostname())}",
             client_properties={"connection_name": "sidecar connection"},
         )
         self.connection.add_close_callback(_close_callback)
-        self.connection.add_reconnect_callback(_reconnect_callback)
 
         log.debug("Creating channel")
         self.channel = await self.connection.channel(publisher_confirms=False)
@@ -74,14 +68,11 @@ class RabbitMQ(BaseModel):
         self.logs_exchange = await self.channel.declare_exchange(
             self.config.channels["log"], aio_pika.ExchangeType.FANOUT
         )
-        log.debug("Declaring %s exchange", self.config.channels["progress"])
-        self.progress_exchange = await self.channel.declare_exchange(
-            self.config.channels["progress"], aio_pika.ExchangeType.FANOUT,
-        )
 
         log.debug("Declaring %s exchange", self.config.channels["instrumentation"])
         self.instrumentation_exchange = await self.channel.declare_exchange(
-            self.config.channels["instrumentation"], aio_pika.ExchangeType.FANOUT,
+            self.config.channels["instrumentation"],
+            aio_pika.ExchangeType.FANOUT,
         )
 
     async def close(self):
@@ -130,10 +121,12 @@ class RabbitMQ(BaseModel):
         )
 
     async def post_instrumentation_message(
-        self, instrumentation_data: Dict,
+        self,
+        instrumentation_data: Dict,
     ):
         await self._post_message(
-            self.instrumentation_exchange, data=instrumentation_data,
+            self.instrumentation_exchange,
+            data=instrumentation_data,
         )
 
     async def __aenter__(self):

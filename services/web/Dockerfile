@@ -9,6 +9,7 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 #  REQUIRED: client_qx:build image ready
 
+
 LABEL maintainer=pcrespov
 
 RUN set -eux; \
@@ -69,14 +70,16 @@ FROM base as build
 
 ENV SC_BUILD_TARGET build
 
-RUN apt-get update &&\
-    apt-get install -y --no-install-recommends \
-    build-essential
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    build-essential \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
-RUN python -m venv ${VIRTUAL_ENV}
+RUN python -m venv "${VIRTUAL_ENV}"
 
 RUN pip --no-cache-dir install --upgrade \
     pip~=20.2.2  \
@@ -116,10 +119,17 @@ RUN pip --no-cache-dir --quiet install -r requirements/prod.txt
 #
 FROM base as production
 
+ARG BUILD_DATE
+ARG VCS_URL
+ARG VCS_REF
+
 ENV SC_BUILD_TARGET=production \
     SC_BOOT_MODE=production \
     SC_HEALTHCHECK_INTERVAL=30 \
-    SC_HEALTHCHECK_RETRY=3
+    SC_HEALTHCHECK_RETRY=3 \
+    SC_BUILD_DATE=${BUILD_DATE} \
+    SC_VCS_URL=${VCS_URL} \
+    SC_VCS_REF=${VCS_REF}
 
 ENV PYTHONOPTIMIZE=TRUE
 
@@ -134,7 +144,7 @@ RUN chmod +x services/web/server/docker/*.sh
 
 # front-end client last (image name is the path to the Dockerfile)
 COPY --from=client/tools/qooxdoo-kit/builder:latest --chown=scu:scu \
-      /project/build-output ${SIMCORE_WEB_OUTDIR}
+      /project/build-output "${SIMCORE_WEB_OUTDIR}"
 
 HEALTHCHECK --interval=30s \
       --timeout=120s \
@@ -163,7 +173,7 @@ ENV SIMCORE_WEB_OUTDIR /devel/services/web/client
 
 WORKDIR /devel
 
-RUN chown -R scu:scu ${VIRTUAL_ENV}
+RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
 # NOTE: declaring VOLUMEs here makes troubles mounting
 #       the client's output folder to /devel/services/web/client.

@@ -48,7 +48,7 @@ services:
       - ./sidecar:/devel/services/sidecar
       - ./storage/client-sdk:/devel/services/storage/client-sdk
       - ../packages:/devel/packages
-      - /etc/hostname:/home/scu/hostname:ro
+      - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment:
       # force to start as cpu mode otherwise it will boot in gpu mode in development
       - START_AS_MODE_CPU=1
@@ -82,7 +82,7 @@ services:
       - ./sidecar:/devel/services/sidecar
       - ./storage/client-sdk:/devel/services/storage/client-sdk
       - ../packages:/devel/packages
-      - /etc/hostname:/home/scu/hostname:ro
+      - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     ports:
       - "3007:3000"
     environment:
@@ -109,9 +109,6 @@ services:
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
-    depends_on:
-      - rabbit
-      - postgres
     networks:
       - computational_services_subnet
 
@@ -137,7 +134,7 @@ services:
       - ./sidecar:/devel/services/sidecar
       - ./storage/client-sdk:/devel/services/storage/client-sdk
       - ../packages:/devel/packages
-      - /etc/hostname:/home/scu/hostname:ro
+      - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     ports:
       - "3008:3000"
     environment:
@@ -165,9 +162,6 @@ services:
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - TARGET_MPI_NODE_CPU_COUNT=${DEV_PC_CPU_COUNT:-0} # development computer CPU count, if env var is missing put to 0 to disable
-    depends_on:
-      - rabbit
-      - postgres
     networks:
       - computational_services_subnet
 

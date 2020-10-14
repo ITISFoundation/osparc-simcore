@@ -15,20 +15,24 @@ from typing import Dict
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
 
-import simcore_service_webserver.statics
+from models_library.projects import Owner, ProjectLocked, ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserRole
+from pytest_simcore.helpers.utils_mock import future_with_result
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.application import create_safe_application
 from servicelib.rest_responses import unwrap_envelope
+from simcore_service_webserver import catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.projects.projects_api import delete_project_from_db
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.statics import setup_statics
+from simcore_service_webserver.settings import setup_settings
+from simcore_service_webserver.statics import STATIC_DIRNAMES, setup_statics
 from simcore_service_webserver.studies_access import setup_studies_access
 from simcore_service_webserver.users import setup_users
 from simcore_service_webserver.users_api import delete_user, is_user_guest
@@ -37,46 +41,64 @@ SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
 
 
 @pytest.fixture
-def qx_client_outdir(tmpdir, mocker):
+def qx_client_outdir(tmpdir):
     """  Emulates qx output at service/web/client after compiling """
 
     basedir = tmpdir.mkdir("source-output")
-    folders = [
-        basedir.mkdir(folder_name)
-        for folder_name in ("osparc", "resource", "transpiled")
-    ]
+    folders = [basedir.mkdir(folder_name) for folder_name in STATIC_DIRNAMES]
 
-    index_file = Path(basedir.join("index.html"))
-    index_file.write_text(
-        textwrap.dedent(
-            """\
-    <!DOCTYPE html>
-    <html>
-    <body>
-        <h1>OSPARC-SIMCORE</h1>
-        <p> This is a result of qx_client_outdir fixture </p>
-    </body>
-    </html>
-    """
-        )
+    HTML = textwrap.dedent(
+        """\
+        <!DOCTYPE html>
+        <html>
+        <body>
+            <h1>{0}-SIMCORE</h1>
+            <p> This is a result of qx_client_outdir fixture for product {0}</p>
+        </body>
+        </html>
+        """
     )
 
-    # patch get_client_outdir
-    mocker.patch.object(simcore_service_webserver.statics, "get_client_outdir")
-    simcore_service_webserver.statics.get_client_outdir.return_value = Path(basedir)
+    index_file = Path(basedir.join("index.html"))
+    index_file.write_text(HTML.format("OSPARC"))
+
+    for folder, frontend_app in zip(folders, STATIC_DIRNAMES):
+        index_file = Path(folder.join("index.html"))
+        index_file.write_text(HTML.format(frontend_app.upper()))
+
+    return Path(basedir)
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, postgres_db, qx_client_outdir, monkeypatch):
-    # def client(loop, aiohttp_client, app_cfg, qx_client_outdir, monkeypatch): # <<<< FOR DEVELOPMENT. DO NOT REMOVE.
+def mocks_on_projects_api(mocker):
+    """
+    All projects in this module are UNLOCKED
+    """
+    state = ProjectState(
+        locked=ProjectLocked(
+            value=False, owner=Owner(first_name="Speedy", last_name="Gonzalez")
+        )
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
+        return_value=future_with_result(state),
+    )
+
+
+@pytest.fixture
+def client(
+    loop, aiohttp_client, app_cfg, postgres_db, qx_client_outdir, mocks_on_projects_api
+):
     cfg = deepcopy(app_cfg)
 
     cfg["projects"]["enabled"] = True
     cfg["storage"]["enabled"] = False
     cfg["rabbit"]["enabled"] = False
+    cfg["main"]["client_outdir"] = qx_client_outdir
 
     app = create_safe_application(cfg)
 
+    setup_settings(app)
     setup_statics(app)
     setup_db(app)
     setup_session(app)
@@ -84,6 +106,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_db, qx_client_outdir, monkeyp
     setup_rest(app)  # TODO: why should we need this??
     setup_login(app)
     setup_users(app)
+    setup_products(app)
     assert setup_projects(app), "Shall not skip this setup"
     assert setup_studies_access(app), "Shall not skip this setup"
 
@@ -98,7 +121,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_db, qx_client_outdir, monkeyp
 
 @pytest.fixture
 async def logged_user(client):  # , role: UserRole):
-    """ adds a user in db and logs in with client
+    """adds a user in db and logs in with client
 
     NOTE: role fixture is defined as a parametrization below
     """
@@ -107,7 +130,9 @@ async def logged_user(client):  # , role: UserRole):
     async with LoggedUser(
         client, {"role": role.name}, check_if_succeeds=role != UserRole.ANONYMOUS
     ) as user:
+
         yield user
+
         await delete_all_projects(client.app)
 
 
@@ -204,7 +229,7 @@ async def test_access_to_forbidden_study(client, unpublished_project):
 
     valid_but_not_sharable = unpublished_project["uuid"]
 
-    resp = await client.get(f"/study/valid_but_not_sharable")
+    resp = await client.get("/study/valid_but_not_sharable")
     content = await resp.text()
 
     assert (
@@ -212,10 +237,31 @@ async def test_access_to_forbidden_study(client, unpublished_project):
     ), f"STANDARD studies are NOT sharable: {content}"
 
 
+@pytest.fixture
+async def catalog_subsystem_mock(monkeypatch, published_project):
+    services_in_project = [
+        {"key": s["key"], "version": s["version"]}
+        for _, s in published_project["workbench"].items()
+    ]
+
+    async def mocked_get_services_for_user(*args, **kwargs):
+        return services_in_project
+
+    monkeypatch.setattr(
+        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
+    )
+
+
 async def test_access_study_anonymously(
-    client, qx_client_outdir, published_project, storage_subsystem_mock
+    client,
+    qx_client_outdir,
+    published_project,
+    storage_subsystem_mock,
+    catalog_subsystem_mock,
 ):
+
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
+
     resp = await client.get(study_url)
 
     expected_prj_id = await assert_redirected_to_study(resp, client.session)
@@ -241,7 +287,12 @@ async def test_access_study_anonymously(
 
 
 async def test_access_study_by_logged_user(
-    client, logged_user, qx_client_outdir, published_project, storage_subsystem_mock
+    client,
+    logged_user,
+    qx_client_outdir,
+    published_project,
+    storage_subsystem_mock,
+    catalog_subsystem_mock,
 ):
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
     resp = await client.get(study_url)
@@ -260,7 +311,11 @@ async def test_access_study_by_logged_user(
 
 
 async def test_access_cookie_of_expired_user(
-    client, qx_client_outdir, published_project, storage_subsystem_mock
+    client,
+    qx_client_outdir,
+    published_project,
+    storage_subsystem_mock,
+    catalog_subsystem_mock,
 ):
     # emulates issue #1570
     app: web.Application = client.app

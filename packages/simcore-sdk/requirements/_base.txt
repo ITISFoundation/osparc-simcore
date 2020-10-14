@@ -16,13 +16,13 @@ idna-ssl==1.1.0           # via aiohttp
 idna==2.10                # via idna-ssl, yarl
 multidict==4.7.6          # via aiohttp, yarl
 networkx==2.5             # via -r requirements/_base.in
-psycopg2-binary==2.8.5    # via -r requirements/_base.in, aiopg, sqlalchemy
+psycopg2-binary==2.8.6    # via -r requirements/_base.in, aiopg, sqlalchemy
 pydantic==1.6.1           # via -r requirements/_base.in
 pyyaml==5.3.1             # via trafaret-config
 six==1.15.0               # via tenacity
 sqlalchemy[postgresql_psycopg2binary]==1.3.19  # via aiopg
 tenacity==6.2.0           # via -r requirements/_base.in
 trafaret-config==2.0.2    # via -r requirements/_base.in
-trafaret==2.0.2           # via trafaret-config
+trafaret==2.1.0           # via trafaret-config
 typing-extensions==3.7.4.3  # via aiohttp, yarl
-yarl==1.5.1               # via aiohttp
+yarl==1.6.0               # via aiohttp

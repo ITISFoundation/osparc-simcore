@@ -95,6 +95,7 @@ def create_schema() -> T.Dict:
             addon_section("tags", optional=True): minimal_addon_schema(),
             addon_section("publications", optional=True): minimal_addon_schema(),
             addon_section("catalog", optional=True): catalog_config.schema,
+            addon_section("products", optional=True): minimal_addon_schema(),
         }
     )
 

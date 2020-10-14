@@ -62,6 +62,13 @@ export SWARM_STACK_NAME_NO_HYPHEN = $(subst -,_,$(SWARM_STACK_NAME))
 export DOCKER_IMAGE_TAG ?= latest
 export DOCKER_REGISTRY  ?= itisfoundation
 
+# NOTE: this is only for WSL1 as /etc/hostname is not accessible there
+ifeq ($(IS_WSL),WSL)
+ETC_HOSTNAME = $(CURDIR)/.fake_hostname_file
+export ETC_HOSTNAME
+host := $(shell echo $$(hostname) > $(ETC_HOSTNAME))
+endif
+
 
 .PHONY: help
 
@@ -311,7 +318,7 @@ push-version: tag-version
 
 ## ENVIRONMENT -------------------------------
 
-.PHONY: devenv devenv-all
+.PHONY: devenv devenv-all node-env
 
 .venv:
 	python3 -m venv $@
@@ -329,6 +336,15 @@ devenv-all: devenv ## sets up extra development tools (everything else besides p
 	@$(MAKE_C) services/web/client upgrade
 	# Building tools
 	@$(MAKE_C) scripts/json-schema-to-openapi-schema
+
+
+node_modules: package.json
+	# checking npm installed
+	@npm --version
+	# installing package.json
+	npm install --package-lock
+
+nodenv: node_modules ## builds node_modules local environ (TODO)
 
 
 .env: .env-devel ## creates .env file from defaults in .env-devel
@@ -436,11 +452,12 @@ info: ## displays setup information
 	@echo ' DIRECTOR_API_VERSION  : ${DIRECTOR_API_VERSION}'
 	@echo ' STORAGE_API_VERSION   : ${STORAGE_API_VERSION}'
 	@echo ' WEBSERVER_API_VERSION : ${WEBSERVER_API_VERSION}'
-	# tools version
+	# dev tools version
 	@echo ' make   : $(shell make --version 2>&1 | head -n 1)'
 	@echo ' jq     : $(shell jq --version)'
 	@echo ' awk    : $(shell awk -W version 2>&1 | head -n 1)'
 	@echo ' python : $(shell python3 --version)'
+	@echo ' node   : $(shell node --version 2> /dev/null || echo ERROR nodejs missing)'
 
 
 define show-meta
@@ -482,7 +499,7 @@ endif
 
 .PHONY: clean clean-images clean-venv clean-all clean-more
 
-_git_clean_args := -dxf -e .vscode -e TODO.md -e .venv
+_git_clean_args := -dxf -e .vscode -e TODO.md -e .venv -e .python-version
 _running_containers = $(shell docker ps -aq)
 
 .check-clean:
@@ -555,12 +572,12 @@ _git_get_repo_orga_name = $(shell git config --get remote.origin.url | \
 release-staging release-prod: .check-master-branch ## Helper to create a staging or production release in Github (usage: make release-staging name=sprint version=1 git_sha=optional or make release-prod version=1.2.3 git_sha=optional)
 	# ensure tags are uptodate
 	@git pull --tags
-	@echo "\e[33mOpen the following link to create the $(if $(findstring -staging, $@),staging,production) release:";
-	@echo "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)&body=$(_url_encoded_logs)";
+	@echo -e "\e[33mOpen the following link to create the $(if $(findstring -staging, $@),staging,production) release:";
+	@echo -e "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)&body=$(_url_encoded_logs)";
 
 .PHONY: release-hotfix
 release-hotfix: ## Helper to create a hotfix release in Github (usage: make release-hotfix version=1.2.4 git_sha=optional)
 	# ensure tags are uptodate
 	@git pull --tags
-	@echo "\e[33mOpen the following link to create the $(if $(findstring -staging, $@),staging,production) release:";
-	@echo "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)&body=$(_url_encoded_logs)";
+	@echo -e "\e[33mOpen the following link to create the $(if $(findstring -staging, $@),staging,production) release:";
+	@echo -e "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)&body=$(_url_encoded_logs)";

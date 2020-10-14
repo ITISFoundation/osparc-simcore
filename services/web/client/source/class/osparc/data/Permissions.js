@@ -144,6 +144,7 @@ qx.Class.define("osparc.data.Permissions", {
           "user.token.create",
           "user.token.delete",
           "user.tag",
+          "user.organizations.create",
           "study.node.create",
           "study.node.delete",
           "study.node.update",
@@ -162,10 +163,10 @@ qx.Class.define("osparc.data.Permissions", {
           "studies.template.create.all",
           "services.all.read",
           "user.role.update",
-          "user.organizations.create",
           "study.nodestree.uuid.read",
           "study.filestree.uuid.read",
-          "study.logger.debug.read"
+          "study.logger.debug.read",
+          "statics.read"
         ],
         "admin": []
       };

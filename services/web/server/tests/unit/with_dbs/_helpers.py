@@ -1,4 +1,3 @@
-from asyncio import Future
 from collections import namedtuple
 from typing import List, Tuple
 

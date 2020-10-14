@@ -92,14 +92,19 @@ def is_gpu_node() -> bool:
                 "AttachStderr": False,
                 "Tty": False,
                 "OpenStdin": False,
+                "HostConfig": {"Init": True, "AutoRemove": True},
             }
             try:
                 await docker.containers.run(
                     config=spec_config, name=f"sidecar_{uuid.uuid4()}_test_gpu"
                 )
                 return True
-            except aiodocker.exceptions.DockerError as e:
-                logger.warning("is_gpu_node DockerError during check: %s", str(e))
+            except aiodocker.exceptions.DockerError as err:
+                logger.debug(
+                    "is_gpu_node DockerError while check-run %s: %s",
+                    spec_config,
+                    err
+                )
 
             return False
 
@@ -141,9 +146,9 @@ def assemble_celery_app(task_default_queue: str, rabbit_config: RabbitConfig) ->
 
 async def get_volume_mount_point(volume_name: str) -> str:
     try:
-        docker_client: aiodocker.Docker = aiodocker.Docker()
-        volume_attributes = await DockerVolume(docker_client, volume_name).show()
-        return volume_attributes["Mountpoint"]
+        async with aiodocker.Docker() as docker_client:
+            volume_attributes = await DockerVolume(docker_client, volume_name).show()
+            return volume_attributes["Mountpoint"]
 
     except aiodocker.exceptions.DockerError as err:
         raise SidecarException(

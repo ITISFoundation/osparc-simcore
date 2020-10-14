@@ -5,17 +5,20 @@ import shutil
 import time
 from pathlib import Path
 from typing import Dict, Optional
+import zipfile
+import os
 
-import attr
-
-import aiodocker
 import aiopg
-from celery.utils.log import get_task_logger
+import attr
+from aiodocker import Docker
+from aiodocker.containers import DockerContainer
+from aiodocker.exceptions import DockerContainerError, DockerError
 from packaging import version
+
+from celery.utils.log import get_task_logger
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_sdk import node_data, node_ports
 from simcore_sdk.node_ports.dbmanager import DBManager
-from tenacity import retry, stop_after_attempt
 
 from . import config, exceptions
 from .boot_mode import get_boot_mode
@@ -98,7 +101,7 @@ class Executor:
         except asyncio.CancelledError:
             await self._post_messages(LogType.LOG, "[sidecar]...task cancelled")
             raise
-        except (aiodocker.exceptions.DockerError, exceptions.SidecarException) as exc:
+        except (DockerError, exceptions.SidecarException) as exc:
             await self._post_messages(
                 LogType.LOG, f"[sidecar]...task failed: {str(exc)}"
             )
@@ -163,6 +166,14 @@ class Executor:
                     final_path,
                     path,
                 )
+                # check if the file is a zip, in that case extract all if the service does not expect a zip file
+                if zipfile.is_zipfile(final_path) and (
+                    str(port.type) != "data:application/zip"
+                ):
+                    with zipfile.ZipFile(final_path, "r") as zip_obj:
+                        zip_obj.extractall(final_path.parents[0])
+                    # finally remove the zip archive
+                    os.remove(final_path)
             else:
                 input_ports[port.key] = port_value
         else:
@@ -205,7 +216,6 @@ class Executor:
             file_name.write_text(json.dumps(inputs))
             log.debug("Writing input file DONE")
 
-    @retry(reraise=True, stop=stop_after_attempt(3))
     async def _pull_image(self):
         docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
         log.debug(
@@ -214,8 +224,7 @@ class Executor:
             config.DOCKER_USER,
             config.DOCKER_PASSWORD,
         )
-        try:
-            docker_client: aiodocker.Docker = aiodocker.Docker()
+        async with Docker() as docker_client:
             await self._post_messages(
                 LogType.LOG,
                 f"[sidecar]Pulling {self.task.image['name']}:{self.task.image['tag']}...",
@@ -238,17 +247,7 @@ class Executor:
                     )["integration-version"]
                 )
 
-        except aiodocker.exceptions.DockerError:
-            msg = f"Failed to pull image '{docker_image}'"
-            log.exception(msg)
-            raise
-
-    async def _run_container(self):
-        # pylint: disable=too-many-statements, too-many-branches
-        start_time = time.perf_counter()
-        container = None
-        docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
-
+    async def _create_container_config(self, docker_image: str) -> Dict:
         # NOTE: Env/Binds for log folder is only necessary for integraion "0"
         env_vars = [
             f"{name.upper()}_FOLDER=/{name}/{self.task.job_id}"
@@ -293,89 +292,106 @@ class Executor:
                 ],
             },
         }
-        log.debug(
-            "Running image %s with config %s", docker_image, docker_container_config
+        return docker_container_config
+
+    async def _start_monitoring_container(
+        self, container: DockerContainer
+    ) -> asyncio.Future:
+        log_file = self.shared_folders.log_folder / "log.dat"
+        if self.integration_version == version.parse("0.0.0"):
+            # touch output file, so it's ready for the container (v0)
+            log_file.touch()
+
+            log_processor_task = fire_and_forget_task(
+                monitor_logs_task(log_file, self._post_messages)
+            )
+            return log_processor_task
+        log_processor_task = fire_and_forget_task(
+            monitor_logs_task(container, self._post_messages, log_file)
         )
+        return log_processor_task
+
+    async def _run_container(self):
+        start_time = time.perf_counter()
+        docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
+        container_config = await self._create_container_config(docker_image)
+
         # volume paths for car container (w/o prefix)
         result = "FAILURE"
         log_processor_task = None
         try:
-            docker_client: aiodocker.Docker = aiodocker.Docker()
-            await self._post_messages(
-                LogType.LOG,
-                f"[sidecar]Running {self.task.image['name']}:{self.task.image['tag']}...",
-            )
-            container = await docker_client.containers.create(
-                config=docker_container_config
-            )
-            # start monitoring logs
-            log_file = self.shared_folders.log_folder / "log.dat"
-            if self.integration_version == version.parse("0.0.0"):
-                # touch output file, so it's ready for the container (v0)
-                log_file.touch()
-
-                log_processor_task = fire_and_forget_task(
-                    monitor_logs_task(log_file, self._post_messages)
+            async with Docker() as docker_client:
+                await self._post_messages(
+                    LogType.LOG,
+                    f"[sidecar]Running {self.task.image['name']}:{self.task.image['tag']}...",
                 )
-            else:
-                log_processor_task = fire_and_forget_task(
-                    monitor_logs_task(container, self._post_messages, log_file)
+                container = await docker_client.containers.create(
+                    config=container_config
                 )
-            # start the container
-            await container.start()
-            # indicate container is started
-            await self.rabbit_mq.post_instrumentation_message(
-                {
-                    "metrics": "service_started",
-                    "user_id": self.user_id,
-                    "project_id": self.task.project_id,
-                    "service_uuid": self.task.node_id,
-                    "service_type": "COMPUTATIONAL",
-                    "service_key": self.task.image["name"],
-                    "service_tag": self.task.image["tag"],
-                }
-            )
+                log_processor_task = await self._start_monitoring_container(container)
+                # start the container
+                await container.start()
+                # indicate container is started
+                await self.rabbit_mq.post_instrumentation_message(
+                    {
+                        "metrics": "service_started",
+                        "user_id": self.user_id,
+                        "project_id": self.task.project_id,
+                        "service_uuid": self.task.node_id,
+                        "service_type": "COMPUTATIONAL",
+                        "service_key": self.task.image["name"],
+                        "service_tag": self.task.image["tag"],
+                    }
+                )
 
-            # wait until the container finished, either success or fail or timeout
-            container_data = await container.show()
-            while container_data["State"]["Running"]:
-                await asyncio.sleep(2)
-                # reload container data
+                # wait until the container finished, either success or fail or timeout
                 container_data = await container.show()
-                if (
-                    (time.perf_counter() - start_time) > config.SERVICES_TIMEOUT_SECONDS
-                    and config.SERVICES_TIMEOUT_SECONDS > 0
-                ):
-                    log.error(
-                        "Running container timed-out after %ss and will be stopped now\nlogs: %s",
-                        config.SERVICES_TIMEOUT_SECONDS,
-                        container.log(stdout=True, stderr=True),
-                    )
-                    await container.stop()
-                    break
+                TIME_TO_NEXT_PERDIODIC_CHECK_SECS = 2
+                while container_data["State"]["Running"]:
+                    await asyncio.sleep(TIME_TO_NEXT_PERDIODIC_CHECK_SECS)
+                    # reload container data
+                    container_data = await container.show()
+                    if (
+                        (time.perf_counter() - start_time)
+                        > config.SERVICES_TIMEOUT_SECONDS
+                        and config.SERVICES_TIMEOUT_SECONDS > 0
+                    ):
+                        log.error(
+                            "Running container timed-out after %ss and will be stopped now\nlogs: %s",
+                            config.SERVICES_TIMEOUT_SECONDS,
+                            container.log(stdout=True, stderr=True),
+                        )
+                        await container.stop()
+                        break
 
-            # reload container data to check the error code with latest info
-            container_data = await container.show()
-            if container_data["State"]["ExitCode"] > 0:
-                raise exceptions.SidecarException(
-                    f"{docker_image} completed with error code {container_data['State']['ExitCode']}:\n {container_data['State']['Error']}\n:Last logs:\n{container.logs(stdout=True, stderr=True, tail=10)}"
-                )
-            # ensure progress 1.0 is sent
-            await self._post_messages(LogType.PROGRESS, "1.0")
-            result = "SUCCESS"
-            log.info("%s completed with successfully!", docker_image)
-        except aiodocker.exceptions.DockerContainerError:
+                # reload container data to check the error code with latest info
+                container_data = await container.show()
+                if container_data["State"]["ExitCode"] > 0:
+                    logs = await container.log(stdout=True, stderr=True, tail=10)
+                    exc = exceptions.SidecarException(
+                        f"{docker_image} completed with error code {container_data['State']['ExitCode']}:\n {container_data['State']['Error']}\n:Last logs:\n{logs}"
+                    )
+                    # clean up the container
+                    await container.delete(force=True)
+                    raise exc
+                # clean up the container
+                await container.delete(force=True)
+                # ensure progress 1.0 is sent
+                await self._post_messages(LogType.PROGRESS, "1.0")
+                result = "SUCCESS"
+                log.info("%s completed with successfully!", docker_image)
+        except DockerContainerError:
             log.exception(
                 "Error while running %s with parameters %s",
                 docker_image,
-                docker_container_config,
+                container_config,
             )
             raise
-        except aiodocker.exceptions.DockerError:
+        except DockerError:
             log.exception(
                 "Unknown error while trying to run %s with parameters %s",
                 docker_image,
-                docker_container_config,
+                container_config,
             )
             raise
         except asyncio.CancelledError:
@@ -385,12 +401,10 @@ class Executor:
         finally:
             stop_time = time.perf_counter()
             log.info("Running %s took %sseconds", docker_image, stop_time - start_time)
-            if container:
-                # clean up the container
-                await container.delete(force=True)
             # stop monitoring logs now
             if log_processor_task:
                 log_processor_task.cancel()
+                await log_processor_task
             # instrumentation
             await self.rabbit_mq.post_instrumentation_message(
                 {
@@ -404,8 +418,6 @@ class Executor:
                     "result": result,
                 }
             )
-            if log_processor_task:
-                await log_processor_task
 
     async def _process_task_output(self):
         """There will be some files in the /output

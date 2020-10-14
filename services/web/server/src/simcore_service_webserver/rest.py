@@ -95,7 +95,7 @@ def setup(app: web.Application, *, swagger_doc_enabled: bool = True):
     )
 
     #
-    # rest API doc at /webapi/doc (optional, e.g. for testing since it can be heavy)
+    # rest API doc at /dev/doc (optional, e.g. for testing since it can be heavy)
     #
     # NOTE: avoid /api/* since traeffik uses for it's own API
     #
@@ -103,7 +103,7 @@ def setup(app: web.Application, *, swagger_doc_enabled: bool = True):
     if swagger_doc_enabled:
         setup_swagger(
             app,
-            swagger_url="/webapi/doc",
+            swagger_url="/dev/doc",
             swagger_from_file=str(spec_path),
             ui_version=3,
         )

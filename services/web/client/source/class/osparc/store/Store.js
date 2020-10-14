@@ -204,85 +204,12 @@ qx.Class.define("osparc.store.Store", {
       }
     },
 
-    getStudyWState: function(studyId, reload = false) {
-      return new Promise((resolve, reject) => {
-        const studiesWStateCache = this.getStudies();
-        const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
-        if (!reload && idx !== -1) {
-          resolve(studiesWStateCache[idx]);
-          return;
-        }
-        const params = {
-          url: {
-            "projectId": studyId
-          }
-        };
-        osparc.data.Resources.getOne("studies", params)
-          .then(study => {
-            osparc.data.Resources.fetch("studies", "state", params)
-              .then(state => {
-                study["state"] = state;
-                if (idx === -1) {
-                  studiesWStateCache.push(study);
-                } else {
-                  studiesWStateCache[idx] = study;
-                }
-                resolve(study);
-              })
-              .catch(er => {
-                console.error(er);
-                reject();
-              });
-          })
-          .catch(err => {
-            console.error(err);
-            reject();
-          });
-      });
-    },
-
-    /**
-     * This function provides the list of studies with their state
-     * @param {Boolean} reload ?
-     */
-    getStudiesWState: function(reload = false) {
-      return new Promise((resolve, reject) => {
-        const studiesWStateCache = this.getStudies();
-        if (!reload && studiesWStateCache.length) {
-          resolve(studiesWStateCache);
-          return;
-        }
-        studiesWStateCache.length = 0;
-        osparc.data.Resources.get("studies")
-          .then(studies => {
-            const studiesWStatePromises = [];
-            studies.forEach(study => {
-              const params = {
-                url: {
-                  "projectId": study.uuid
-                }
-              };
-              studiesWStatePromises.push(osparc.data.Resources.fetch("studies", "state", params));
-            });
-            Promise.all(studiesWStatePromises)
-              .then(states => {
-                states.forEach((state, idx) => {
-                  const study = studies[idx];
-                  study["state"] = state;
-                  studiesWStateCache.push(study);
-                });
-                resolve(studiesWStateCache);
-              })
-              .catch(er => {
-                console.error(er);
-                reject();
-              });
-          })
-          .catch(err => {
-            console.error(err);
-            reject();
-          });
-      });
+    setStudyState: function(studyId, state) {
+      const studiesWStateCache = this.getStudies();
+      const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
+      if (idx !== -1) {
+        studiesWStateCache[idx]["state"] = state;
+      }
     },
 
     deleteStudy: function(studyId) {
@@ -327,7 +254,7 @@ qx.Class.define("osparc.store.Store", {
      */
     getServicesDAGs: function(reload = false) {
       return new Promise((resolve, reject) => {
-        const allServices = osparc.utils.Services.getBuiltInServices();
+        const allServices = [];
         const servicesPromise = osparc.data.Resources.get("services", null, !reload);
         const dagsPromise = osparc.data.Resources.get("dags", null, !reload);
         Promise.all([servicesPromise, dagsPromise])

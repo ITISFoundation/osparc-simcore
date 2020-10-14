@@ -23,9 +23,9 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
   },
 
   properties: {
-    isOrganization: {
-      check: "Boolean",
-      event: "changeIsOrganization",
+    collabType: {
+      check: [0, 1, 2],
+      event: "changeCollabType",
       nullable: true
     },
 
@@ -76,6 +76,25 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
       return control || this.base(arguments, id);
     },
 
+    // overriden
+    _applyThumbnail: function(value) {
+      if (value === null) {
+        const collabType = this.getCollabType();
+        switch (collabType) {
+          case 0:
+            value = "@FontAwesome5Solid/globe/28";
+            break;
+          case 1:
+            value = "@FontAwesome5Solid/users/28";
+            break;
+          case 2:
+            value = "@FontAwesome5Solid/user/28";
+            break;
+        }
+      }
+      this.base(arguments, value);
+    },
+
     _applyAccessRights: function(value) {
       if (value === null) {
         return;
@@ -108,7 +127,7 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
       });
 
       const accessRights = this.getAccessRights();
-      if (!osparc.component.export.Permissions.canDelete(accessRights) && !this.getIsOrganization()) {
+      if (!osparc.component.export.Permissions.canDelete(accessRights) && this.getCollabType() === 2) {
         const makeOwnerButton = new qx.ui.menu.Button(this.tr("Make Owner"));
         makeOwnerButton.addListener("execute", () => {
           this.fireDataEvent("promoteCollaborator", {

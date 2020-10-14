@@ -1,4 +1,3 @@
-const fs = require('fs');
 const assert = require('assert');
 
 const startPuppe = require('../utils/startPuppe');
@@ -7,7 +6,7 @@ const utils = require('../utils/utils');
 const responses = require('../utils/responsesQueue');
 
 class TutorialBase {
-  constructor(url, user, pass, newUser, templateName, enableDemoMode=false) {
+  constructor(url, templateName, user, pass, newUser, enableDemoMode=false) {
     this.__demo = enableDemoMode;
     this.__templateName = templateName;
 
@@ -19,23 +18,43 @@ class TutorialBase {
     this.__browser = null;
     this.__page = null;
     this.__responsesQueue = null;
+
+    this.__interval = null;
+
+    this.__failed = false;
+  }
+
+  startScreenshooter() {
+    try {
+      utils.createScreenshotsDir();
+    }
+    catch(err) {
+      console.error("Error creating screenshots directory", err);
+      throw(err);
+    }
+
+    this.__interval = setInterval(async() => {
+      await this.takeScreenshot();
+    }, 2000);
+  }
+
+  stopScreenshooter() {
+    clearInterval(this.__interval);
   }
 
   async start() {
-    this.createScreenshotsDir();
-    await this.beforeScript();
-    await this.goTo();
+    try {
+      await this.beforeScript();
+      await this.goTo();
 
-    const needsRegister = await this.registerIfNeeded();
-    if (!needsRegister) {
-      await this.login();
+      const needsRegister = await this.registerIfNeeded();
+      if (!needsRegister) {
+        await this.login();
+      }
     }
-  }
-
-  createScreenshotsDir() {
-    const dir = 'screenshots';
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir);
+    catch(err) {
+      console.error("Error starting", err);
+      throw(err);
     }
   }
 
@@ -54,22 +73,23 @@ class TutorialBase {
     }
     catch(err) {
       console.error(this.__url, "can't be reached", err);
+      throw(err);
     }
     const domain = utils.getDomain(this.__url);
-    await utils.takeScreenshot(this.__page, this.__templateName + "_landingPage_" + domain);
+    await this.takeScreenshot("landingPage_" + domain);
   }
 
   async openStudyLink(openStudyTimeout = 20000) {
     this.__responsesQueue.addResponseListener("open");
 
-    await this.goTo();
-
     let resp = null;
     try {
+      await this.goTo();
       resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
     }
     catch(err) {
       console.error(this.__templateName, "could not be started", err);
+      throw(err);
     }
     return resp;
   }
@@ -84,38 +104,37 @@ class TutorialBase {
 
   async login() {
     this.__responsesQueue.addResponseListener("projects?type=template");
-    this.__responsesQueue.addResponseListener("catalog/dags");
-    this.__responsesQueue.addResponseListener("services");
-    await auto.logIn(this.__page, this.__user, this.__pass);
+    this.__responsesQueue.addResponseListener("catalog/services");
+
+    try {
+      await auto.logIn(this.__page, this.__user, this.__pass);
+    }
+    catch(err) {
+      console.error("Failed logging in", err);
+      throw(err);
+    }
+
     try {
       const resp = await this.__responsesQueue.waitUntilResponse("projects?type=template");
       const templates = resp["data"];
-      console.log("Templates received", templates.length);
+      console.log("Templates received:", templates.length);
       templates.forEach(template => {
         console.log(" - ", template.name);
       });
     }
     catch(err) {
       console.error("Templates could not be fetched", err);
+      throw(err);
     }
+
     try {
-      const resp = await this.__responsesQueue.waitUntilResponse("catalog/dags");
-      const dags = resp["data"];
-      console.log("DAGs received:", dags.length);
-      dags.forEach(dag => {
-        console.log(" - ", dag.name);
-      });
-    }
-    catch(err) {
-      console.error("DAGs could not be fetched", err);
-    }
-    try {
-      const resp = await this.__responsesQueue.waitUntilResponse("services");
+      const resp = await this.__responsesQueue.waitUntilResponse("catalog/services");
       const services = resp["data"];
       console.log("Services received:", services.length);
     }
     catch(err) {
       console.error("Services could not be fetched", err);
+      throw(err);
     }
   }
 
@@ -132,7 +151,7 @@ class TutorialBase {
   }
 
   async openTemplate(waitFor = 1000) {
-    await utils.takeScreenshot(this.__page, this.__templateName + "_dashboardOpenFirstTemplate_before");
+    await this.takeScreenshot("dashboardOpenFirstTemplate_before");
     this.__responsesQueue.addResponseListener("projects?from_template=");
     this.__responsesQueue.addResponseListener("open");
     let resp = null;
@@ -144,9 +163,10 @@ class TutorialBase {
     }
     catch(err) {
       console.error(`"${this.__templateName}" template could not be started:\n`, err);
+      throw(err);
     }
     await this.__page.waitFor(waitFor);
-    await utils.takeScreenshot(this.__page, this.__templateName + "_dashboardOpenFirstTemplate_after");
+    await this.takeScreenshot("dashboardOpenFirstTemplate_after");
     return resp;
   }
 
@@ -172,15 +192,21 @@ class TutorialBase {
     await auto.restoreIFrame(this.__page);
   }
 
+  async clickLoggerTitle() {
+    await auto.clickLoggerTitle(this.__page);
+  }
+
   async runPipeline(waitFor = 25000) {
-    await utils.takeScreenshot(this.__page, this.__templateName + "_runStudy_before");
+    await this.clickLoggerTitle();
+
+    await this.takeScreenshot("runStudy_before");
     await auto.runStudy(this.__page, waitFor);
-    await utils.takeScreenshot(this.__page, this.__templateName + "_runStudy_after");
+    await this.takeScreenshot("runStudy_after");
   }
 
   async openNode(nodePosInTree = 0) {
     await auto.openNode(this.__page, nodePosInTree);
-    await utils.takeScreenshot(this.__page, this.__templateName + '_openNode_' + nodePosInTree);
+    await this.takeScreenshot('openNode_' + nodePosInTree);
   }
 
   async getIframe() {
@@ -196,6 +222,7 @@ class TutorialBase {
     }
     catch(err) {
       console.error(err);
+      throw(err);
     }
   }
 
@@ -205,36 +232,38 @@ class TutorialBase {
   }
 
   async openNodeRetrieveAndRestart(nodePosInTree = 0) {
-    await utils.takeScreenshot(this.__page, "openNodeRetrieveAndRestart_before");
+    await this.takeScreenshot("openNodeRetrieveAndRestart_before");
     await auto.openNode(this.__page, nodePosInTree);
     await this.retrieve();
     await auto.clickRestart(this.__page);
-    await utils.takeScreenshot("openNodeRetrieveAndRestart_after");
+    await this.takeScreenshot("openNodeRetrieveAndRestart_after");
   }
 
   async checkResults(expecedNFiles = 1) {
-    await utils.takeScreenshot(this.__page, this.__templateName + "_checkResults_before");
+    await this.takeScreenshot("checkResults_before");
     try {
       await auto.checkDataProducedByNode(this.__page, expecedNFiles);
     }
     catch(err) {
       console.error("Failed checking Data Produced By Node", err);
+      throw(err);
     }
-    await utils.takeScreenshot(this.__page, this.__templateName + "_checkResults_after");
+    await this.takeScreenshot("checkResults_after");
   }
 
   async removeStudy() {
     await auto.toDashboard(this.__page);
-    await utils.takeScreenshot(this.__page, this.__templateName + "_dashboardDeleteFirstStudy_before");
+    await this.takeScreenshot("dashboardDeleteFirstStudy_before");
     this.__responsesQueue.addResponseListener("projects/");
-    await auto.dashboardDeleteFirstStudy(this.__page, this.__templateName);
     try {
+      await auto.dashboardDeleteFirstStudy(this.__page, this.__templateName);
       await this.__responsesQueue.waitUntilResponse("projects/");
     }
     catch(err) {
       console.error("Failed deleting study", err);
+      throw(err);
     }
-    await utils.takeScreenshot(this.__page, this.__templateName + "_dashboardDeleteFirstStudy_after");
+    await this.takeScreenshot("dashboardDeleteFirstStudy_after");
   }
 
   async logOut() {
@@ -242,6 +271,7 @@ class TutorialBase {
   }
 
   async close() {
+    await utils.sleep(2000);
     await this.__browser.close();
   }
 
@@ -250,7 +280,22 @@ class TutorialBase {
   }
 
   async takeScreenshot(screenshotTitle) {
-    await utils.takeScreenshot(this.__page, this.__templateName + '_' + screenshotTitle);
+    if (this.__demo) {
+      return;
+    }
+    let title = this.__templateName;
+    if (screenshotTitle) {
+      title += '_' + screenshotTitle;
+    }
+    await utils.takeScreenshot(this.__page, title);
+  }
+
+  getTutorialFailed() {
+    return this.__failed;
+  }
+
+  setTutorialFailed(failed) {
+    this.__failed = failed;
   }
 }
 

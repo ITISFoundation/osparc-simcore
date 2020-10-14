@@ -88,7 +88,7 @@ jobs:
 
     # test python, webserver ----------------------------------------------------------------------
     - stage: build / unit-testing
-      name: webserver
+      name: webserver-isolated
       language: python
       python:
         - "3.6"
@@ -101,7 +101,67 @@ jobs:
       before_script:
         - unbuffer bash ci/travis/unit-testing/webserver.bash before_script
       script:
-        - unbuffer bash ci/travis/unit-testing/webserver.bash script
+        - unbuffer bash ci/travis/unit-testing/webserver.bash test_isolated
+      after_success:
+        - unbuffer bash ci/travis/unit-testing/webserver.bash after_success
+      after_failure:
+        - unbuffer bash ci/travis/unit-testing/webserver.bash after_failure
+
+    - stage: build / unit-testing
+      name: webserver-with-db-slow
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ci/travis/unit-testing/webserver.bash before_install
+      install:
+        - unbuffer bash ci/travis/unit-testing/webserver.bash install
+      before_script:
+        - unbuffer bash ci/travis/unit-testing/webserver.bash before_script
+      script:
+        - unbuffer bash ci/travis/unit-testing/webserver.bash test_with_db_slow
+      after_success:
+        - unbuffer bash ci/travis/unit-testing/webserver.bash after_success
+      after_failure:
+        - unbuffer bash ci/travis/unit-testing/webserver.bash after_failure
+
+    - stage: build / unit-testing
+      name: webserver-with-db-medium
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ci/travis/unit-testing/webserver.bash before_install
+      install:
+        - unbuffer bash ci/travis/unit-testing/webserver.bash install
+      before_script:
+        - unbuffer bash ci/travis/unit-testing/webserver.bash before_script
+      script:
+        - unbuffer bash ci/travis/unit-testing/webserver.bash test_with_db_medium
+      after_success:
+        - unbuffer bash ci/travis/unit-testing/webserver.bash after_success
+      after_failure:
+        - unbuffer bash ci/travis/unit-testing/webserver.bash after_failure
+
+    - stage: build / unit-testing
+      name: webserver-with-db-fast
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ci/travis/unit-testing/webserver.bash before_install
+      install:
+        - unbuffer bash ci/travis/unit-testing/webserver.bash install
+      before_script:
+        - unbuffer bash ci/travis/unit-testing/webserver.bash before_script
+      script:
+        - unbuffer bash ci/travis/unit-testing/webserver.bash test_with_db_fast
       after_success:
         - unbuffer bash ci/travis/unit-testing/webserver.bash after_success
       after_failure:
@@ -217,6 +277,27 @@ jobs:
         - bash ci/travis/unit-testing/service-library.bash after_failure
 
     # test python, service-library ----------------------------------------------------------------------
+    - stage: build / unit-testing
+      name: models-library
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ci/travis/unit-testing/service-library.bash before_install
+      install:
+        - bash ci/travis/unit-testing/service-library.bash install
+      before_script:
+        - bash ci/travis/unit-testing/service-library.bash before_script
+      script:
+        - bash ci/travis/unit-testing/service-library.bash script
+      after_success:
+        - bash ci/travis/unit-testing/service-library.bash after_success
+      after_failure:
+        - bash ci/travis/unit-testing/service-library.bash after_failure
+
+    # test python, simcore-sdk-library ----------------------------------------------------------------------
     - stage: build / unit-testing
       name: simcore-sdk
       language: python

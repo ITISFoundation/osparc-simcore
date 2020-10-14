@@ -8,6 +8,7 @@
 
 # installs base requirements
 -r _base.txt
+-r _packages.txt
 
 # installs this repo's packages
 ../../services/storage/client-sdk/python/

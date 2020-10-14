@@ -218,14 +218,6 @@ qx.Class.define("osparc.utils.Services", {
       };
     },
 
-    getBuiltInServices: function() {
-      const builtInServices = [
-        this.getFilePicker(),
-        this.getNodesGroup()
-      ];
-      return builtInServices;
-    },
-
     addServiceToCache: function(service) {
       this.servicesCached = Object.assign(this.servicesCached, service);
     },

@@ -116,29 +116,31 @@ async def subscribe(app: web.Application) -> None:
         pika_log_channel, aio_pika.ExchangeType.FANOUT
     )
 
-    pika_progress_channel = rb_config["channels"]["progress"]
-    progress_exchange = await channel.declare_exchange(
-        pika_progress_channel, aio_pika.ExchangeType.FANOUT
+    # Declaring queue
+    logs_progress_queue = await channel.declare_queue(
+        f"webserver_{id(app)}_logs_progress",
+        exclusive=True,
+        arguments={"x-message-ttl": 60000},
     )
 
-    # Declaring queue
-    queue = await channel.declare_queue(exclusive=True)
-
     # Binding the queue to the exchange
-    await queue.bind(logs_exchange)
-    await queue.bind(progress_exchange)
+    await logs_progress_queue.bind(logs_exchange)
 
     # Start listening the queue with name 'task_queue'
     partial_rabbit_message_handler = rabbit_adapter(app)(rabbit_message_handler)
     app[APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY] = [partial_rabbit_message_handler]
-    await queue.consume(partial_rabbit_message_handler, exclusive=True, no_ack=True)
+    await logs_progress_queue.consume(
+        partial_rabbit_message_handler, exclusive=True, no_ack=True
+    )
 
     # instrumentation
     pika_instrumentation_channel = rb_config["channels"]["instrumentation"]
     instrumentation_exchange = await channel.declare_exchange(
         pika_instrumentation_channel, aio_pika.ExchangeType.FANOUT
     )
-    instrumentation_queue = await channel.declare_queue(exclusive=True)
+    instrumentation_queue = await channel.declare_queue(
+        f"webserver_{id(app)}_instrumentation", exclusive=True
+    )
     await instrumentation_queue.bind(instrumentation_exchange)
     partial_rabbit__instrumentation_handler = rabbit_adapter(app)(
         instrumentation_message_handler

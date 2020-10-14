@@ -188,6 +188,19 @@ qx.Class.define("osparc.data.model.Study", {
         return true;
       }
       return false;
+    },
+
+    isOwner: function(studyData) {
+      if (studyData instanceof osparc.data.model.Study) {
+        const myEmail = osparc.auth.Data.getInstance().getEmail();
+        return studyData.getPrjOwner() === myEmail;
+      }
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      const aceessRights = studyData["accessRights"];
+      if (myGid in aceessRights) {
+        return aceessRights[myGid]["delete"];
+      }
+      return false;
     }
   },
 
@@ -251,11 +264,16 @@ qx.Class.define("osparc.data.model.Study", {
         ...params
       })
         .then(data => {
+          // TODO OM: Hacky
+          if ("dev" in data) {
+            delete data["dev"];
+          }
           this.set({
             ...data,
             creationDate: new Date(data.creationDate),
             lastChangeDate: new Date(data.lastChangeDate),
-            workbench: this.getWorkbench()
+            workbench: this.getWorkbench(),
+            sweeper: this.getSweeper()
           });
           return data;
         });

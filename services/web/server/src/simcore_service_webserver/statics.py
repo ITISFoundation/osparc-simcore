@@ -9,93 +9,130 @@
 import json
 import logging
 import os
-import shutil
-import tempfile
+from functools import lru_cache
 from pathlib import Path
-from typing import Set
+from typing import Dict
 
 from aiohttp import web
-
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
+from tenacity import after_log, retry, stop_after_attempt, wait_random
 
+from .constants import APP_SETTINGS_KEY, RQ_PRODUCT_FRONTEND_KEY, RQ_PRODUCT_KEY
+from .statics_settings import (
+    FRONTEND_APP_DEFAULT,
+    FRONTEND_APPS_AVAILABLE,
+    FrontEndAppSettings,
+)
+
+STATIC_DIRNAMES = FRONTEND_APPS_AVAILABLE | {"resource", "transpiled"}
 INDEX_RESOURCE_NAME = "statics.index"
-TMPDIR_KEY = f"{__name__}.tmpdir"
+
+APP_FRONTEND_BASEDIR_KEY = f"{__name__}.frontend_basedir"
+APP_STATICS_OUTDIR_KEY = f"{__file__}.outdir"
+
 
 log = logging.getLogger(__file__)
 
 
-def get_client_outdir(app: web.Application) -> Path:
-    cfg = app[APP_CONFIG_KEY]["main"]
-    client_dir = Path(cfg["client_outdir"]).expanduser()
-    if not client_dir.exists():
-        tmp_dir = tempfile.mkdtemp(suffix="client_outdir")
-        log.error(
-            "Invalid client source path [%s]. Defaulting to %s", client_dir, tmp_dir
+@lru_cache()
+def get_index_body(statics_outdir: Path, frontend_name: str):
+    index_path = statics_outdir / frontend_name / "index.html"
+    html = index_path.read_text()
+    # TODO: this is not very safe ...
+    # fixes relative paths
+    html = html.replace(f"../resource/{frontend_name}", f"resource/{frontend_name}")
+    html = html.replace("boot.js", f"{frontend_name}/boot.js")
+    return html
+
+
+async def get_frontend_ria(request: web.Request):
+    log.debug("Request from host %s", request.headers["Host"])
+    target_frontend = request.get(RQ_PRODUCT_FRONTEND_KEY)
+
+    if target_frontend is None:
+        log.warning("No front-end specified using default %s", FRONTEND_APP_DEFAULT)
+        target_frontend = FRONTEND_APP_DEFAULT
+
+    elif target_frontend not in FRONTEND_APPS_AVAILABLE:
+        raise web.HTTPNotFound(
+            reason=f"Requested front-end '{target_frontend}' is not available"
         )
-        client_dir = tmp_dir
-        app[TMPDIR_KEY] = tmp_dir
-    return client_dir
+
+    log.debug(
+        "Serving front-end %s for product %s",
+        request.get(RQ_PRODUCT_KEY),
+        target_frontend,
+    )
+
+    # NOTE: CANNOT redirect , i.e.
+    # raise web.HTTPFound(f"/{target_frontend}/index.html")
+    # because it losses fragments and therefore it fails in study links.
+    #
+    # SEE services/web/server/tests/unit/isolated/test_redirections.py
+    #
+    statics_outdir: Path = request.app[APP_STATICS_OUTDIR_KEY]
+    return web.Response(
+        body=get_index_body(statics_outdir, target_frontend), content_type="text/html"
+    )
 
 
-async def _delete_tmps(app: web.Application):
-    tmp_dir = app.get(TMPDIR_KEY)
-    if tmp_dir:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+def create_statics_settings(app) -> Dict:
+    # Adds general server settings
+    info: Dict = app[APP_SETTINGS_KEY].to_client_statics()
+
+    # Adds specifics to front-end app
+    info.update(FrontEndAppSettings().to_statics())
+
+    return info
 
 
-async def index(request: web.Request):
-    """
-        Serves boot application under index
-    """
-    log.debug("index.request:\n %s", request)
+async def _start_statics(app: web.Application):
+    # NOTE: in devel model, the folder might be under construction
+    # (qx-compile takes time), therefore we create statics.json
+    # on_startup instead of upon setup
 
-    index_path = get_client_outdir(request.app) / "index.html"
-    with index_path.open() as ofh:
-        return web.Response(text=ofh.read(), content_type="text/html")
+    resource_dir: Path = app[APP_STATICS_OUTDIR_KEY] / "resource"
+    statics_settings: Dict = create_statics_settings(app)
 
+    @retry(
+        wait=wait_random(min=1, max=3),
+        stop=stop_after_attempt(3),
+        after=after_log(log, logging.WARNING),
+    )
+    async def do_write_statics_file() -> None:
+        with open(resource_dir / "statics.json", "wt") as fh:
+            json.dump(statics_settings, fh)
 
-def write_statics_file(directory: Path) -> None:
-    # ensures directory exists
-    os.makedirs(directory, exist_ok=True)
-
-    # create statics field
-    statics = {}
-    statics["stackName"] = os.environ.get("SWARM_STACK_NAME")
-    statics["buildDate"] = os.environ.get("BUILD_DATE")
-    with open(directory / "statics.json", "wt") as fh:
-        json.dump(statics, fh)
+    # Creating static info
+    await do_write_statics_file()
 
 
 @app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
 def setup_statics(app: web.Application):
-    # Serves Front-end Rich Interface Application (RIA)
-    app.router.add_get("/", index, name=INDEX_RESOURCE_NAME)
 
     # NOTE: source-output and build-output have both the same subfolder structure
-    outdir: Path = get_client_outdir(app)
+    cfg = app[APP_CONFIG_KEY]["main"]
+    app[APP_STATICS_OUTDIR_KEY] = statics_dir = Path(cfg["client_outdir"]).expanduser()
 
-    # Create statics file
-    write_statics_file(outdir / "resource")
+    # Creating static routes
+    routes = web.RouteTableDef()
+    is_dev: bool = app[APP_SETTINGS_KEY].build_target in [None, "development"]
+    for name in STATIC_DIRNAMES:
+        folder = statics_dir / name
 
-    required_dirs = ["osparc", "resource", "transpiled"]
-    folders = [x for x in outdir.iterdir() if x.is_dir()]
+        # avoids problems restarting when qx-compile takes longer to product outputs
+        if not folder.exists() and is_dev:
+            os.makedirs(folder, exist_ok=True)
 
-    # Checks integrity of RIA source before serving and warn!
-    for name in required_dirs:
-        folder_names = [path.name for path in folders]
-        if name not in folder_names:
-            log.warning(
-                "Missing folders: expected %s, got %s in %s",
-                required_dirs,
-                folder_names,
-                outdir,
-            )
+        # can navigate file index in dev mode
+        routes.static(f"/{folder.name}", folder, show_index=is_dev)
+    app.add_routes(routes)
 
-    # Add static routes
-    folders: Set[Path] = set(folders).union([outdir / name for name in required_dirs])
-    for path in folders:
-        app.router.add_static("/" + path.name, path)
 
-    # cleanup
-    app.on_cleanup.append(_delete_tmps)
+    # Create dynamic route to serve front-end client
+    app.router.add_get("/", get_frontend_ria, name=INDEX_RESOURCE_NAME)
+
+
+    # Delayed creation of statics.json (mostly for dev mode)
+    app.on_startup.append(_start_statics)

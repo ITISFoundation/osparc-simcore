@@ -1,10 +1,9 @@
+const pathLib = require('path');
 
+const SCREENSHOTS_DIR = "../screenshots/";
 
 function parseCommandLineArguments(args) {
-  //
   // node $tutorial.js [url] [user] [password] [--demo]
-  //
-  //
 
   if (args.length < 1) {
     console.log('More arguments expected:  $tutorial.js [url] [user] [password] [--demo]');
@@ -191,21 +190,35 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function __addZerosAtTheBeggining(input) {
-  return String(input).padStart(2, "0");
+function createScreenshotsDir() {
+  const fs = require('fs');
+  const screenshotsDir = pathLib.join(__dirname, SCREENSHOTS_DIR);
+  if (!fs.existsSync(screenshotsDir)) {
+    fs.mkdirSync(screenshotsDir);
+  }
+  console.log("Screenshots directory:", screenshotsDir);
 }
 
-async function takeScreenshot(page, captureName) {
-  const d = new Date();
-  const date = __addZerosAtTheBeggining(d.getMonth()+1) +"-"+ __addZerosAtTheBeggining(d.getDate());
-  const time = __addZerosAtTheBeggining(d.getHours()) +":"+ __addZerosAtTheBeggining(d.getMinutes()) +":"+ __addZerosAtTheBeggining(d.getSeconds());
-  const timeStamp = date +"_"+ time;
-  captureName = captureName.replace("undefined", "");
-  await page.screenshot({
-    fullPage: true,
-    path: 'screenshots/'+timeStamp+'_'+captureName+'.jpg',
-    type: 'jpeg',
-  })
+async function takeScreenshot(page, captureName = "") {
+  const event = new Date();
+  const time = event.toLocaleTimeString('de-CH');
+  let filename = time + "_" + captureName;
+  filename = filename.split(":").join("-")
+  filename = filename + ".jpg";
+  const path = pathLib.join(__dirname, SCREENSHOTS_DIR, filename);
+  console.log(path);
+
+  try {
+    await page.screenshot({
+      fullPage: true,
+      path: path,
+      type: 'jpeg',
+      quality: 15
+    })
+  }
+  catch(err) {
+    console.error("Error taking screenshot", err);
+  }
 }
 
 function extractWorkbenchData(data) {
@@ -234,6 +247,7 @@ module.exports = {
   waitAndClick,
   clearInput,
   sleep,
+  createScreenshotsDir,
   takeScreenshot,
   extractWorkbenchData,
   parseCommandLineArguments

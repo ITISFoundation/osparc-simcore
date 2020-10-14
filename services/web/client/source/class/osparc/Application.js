@@ -135,8 +135,18 @@ qx.Class.define("osparc.Application", {
           if (osparc.utils.Utils.isInZ43()) {
             document.title += " Z43";
           }
-          document.title += ` (${platformName})`;
+          if (platformName) {
+            document.title += ` (${platformName})`;
+          }
         });
+    },
+
+    __updateFavicon: function() {
+      const link = document.querySelector("link[rel*='icon']") || document.createElement("link");
+      link.type = "image/x-icon";
+      link.rel = "shortcut icon";
+      link.href = "resource/osparc/favicon-osparc.png";
+      document.getElementsByTagName("head")[0].appendChild(link);
     },
 
     __restart: function() {

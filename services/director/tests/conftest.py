@@ -15,7 +15,7 @@ import simcore_service_director
 from simcore_service_director import config, resources
 
 pytest_plugins = [
-    "pytest_simcore.environs",
+    "pytest_simcore.repository_paths",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.docker_registry",

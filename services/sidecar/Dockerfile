@@ -60,12 +60,15 @@ FROM base as build
 
 ENV SC_BUILD_TARGET=build
 
-RUN apt-get update &&\
-  apt-get install -y --no-install-recommends \
-  build-essential
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    build-essential \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
-RUN python -m venv ${VIRTUAL_ENV}
+RUN python -m venv "${VIRTUAL_ENV}"
 
 RUN pip --no-cache-dir install --upgrade \
   pip~=20.2.2  \
@@ -78,7 +81,9 @@ COPY --chown=scu:scu services/sidecar /build/services/sidecar
 COPY --chown=scu:scu services/storage/client-sdk /build/services/storage/client-sdk
 
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
-RUN pip --no-cache-dir install -r /build/services/sidecar/requirements/_base.txt
+RUN pip --no-cache-dir install \
+  -r /build/services/sidecar/requirements/_base.txt \
+  -r /build/services/sidecar/requirements/_packages.txt
 
 # --------------------------Cache stage -------------------
 # CI in master buils & pushes this target to speed-up image build
@@ -112,12 +117,12 @@ COPY --from=cache --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/sidecar/docker services/sidecar/docker
 
-# NOTE: when the sidecar gets an API, or maybe through rabbitMQ
-# HEALTHCHECK --interval=30s \
-#             --timeout=20s \
-#             --start-period=30s \
-#             --retries=3 \
-#             CMD ["python3", "services/api-server/docker/healthcheck.py", "http://localhost:8000/"]
+# we use the celery API
+HEALTHCHECK --interval=60s \
+  --timeout=60s \
+  --start-period=30s \
+  --retries=3 \
+  CMD celery inspect ping -b amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT} -d celery@${HOSTNAME}
 
 ENTRYPOINT [ "/bin/sh", "services/sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/sidecar/docker/boot.sh"]
@@ -136,6 +141,14 @@ FROM build as development
 ENV SC_BUILD_TARGET=development
 
 WORKDIR /devel
-RUN chown -R scu:scu ${VIRTUAL_ENV}
+RUN chown -R scu:scu "${VIRTUAL_ENV}"
+
+# we use the celery API
+HEALTHCHECK --interval=60s \
+  --timeout=60s \
+  --start-period=120s \
+  --retries=3 \
+  CMD celery inspect ping -b amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT} -d celery@${HOSTNAME}
+
 ENTRYPOINT [ "/bin/sh", "services/sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/sidecar/docker/boot.sh"]
