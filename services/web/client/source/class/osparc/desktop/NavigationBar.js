@@ -178,9 +178,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this._add(control);
           break;
         case "guided-nodes-path-container":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+          control = new qx.ui.toolbar.Part().set({
             alignY: "middle"
-          }));
+          });
           this._add(control);
           break;
         case "manual":
@@ -240,7 +240,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     __createNodeSlideBtn: function(nodeId, pos) {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const btn = new qx.ui.form.Button().set(this.self().BUTTON_OPTIONS);
+      const btn = new qx.ui.toolbar.RadioButton().set(this.self().BUTTON_OPTIONS);
       const node = study.getWorkbench().getNode(nodeId);
       if (node) {
         node.bind("label", btn, "label", {
@@ -298,17 +298,28 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       const study = this.getStudy();
       if (study) {
         this.__guidedNodesLayout.removeAll();
+        const radioGroup = new qx.ui.form.RadioGroup();
         const slideShow = study.getUi().getSlideshow();
+        const nodes = [];
         for (let nodeId in slideShow) {
           const node = slideShow[nodeId];
-          const btn = this.__createNodeSlideBtn(nodeId, node.position);
-          this.__guidedNodesLayout.add(btn);
+          nodes.push({
+            ...node,
+            nodeId
+          });
         }
+        nodes.sort((a, b) => (a.position > b.position) ? 1 : 0);
+        nodes.forEach(node => {
+          const btn = this.__createNodeSlideBtn(node.nodeId, node.position);
+          this.__guidedNodesLayout.add(btn);
+          radioGroup.add(btn);
+        });
+        radioGroup.setAllowEmptySelection(false);
       }
     },
 
-    _applyPageContext: function(mainPageContext) {
-      switch (mainPageContext) {
+    _applyPageContext: function(newCtxt) {
+      switch (newCtxt) {
         case "dashboard":
           this.__dashboardLabel.show();
           this.__dashboardBtn.exclude();
@@ -573,7 +584,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       if (study) {
         study.bind("name", this.__studyTitle, "value");
         study.getUi().addListener("changeCurrentNodeId", e => {
-          this._applyPageContext(this.getPageContext());
+          if (this.getPageContext() === "workbench)") {
+            this.__populateWorkbenchNodesLayout();
+          }
         });
         this.setPageContext("workbench");
       } else {
