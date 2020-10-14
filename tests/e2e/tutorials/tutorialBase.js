@@ -188,7 +188,7 @@ class TutorialBase {
     return resp;
   }
 
-  async waitForServices(studyId, nodeIds, timeout = 30000) {
+  async waitForServices(studyId, nodeIds, timeout = 40000) {
     const promises = [];
     nodeIds.forEach(nodeId => {
       this.__responsesQueue.addResponseServiceListener(studyId, nodeId);
