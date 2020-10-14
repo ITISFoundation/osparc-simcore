@@ -18,7 +18,7 @@ from simcore_service_director_v2.core.settings import (
 
 
 @pytest.fixture
-def minimal_app(loop, env_evel_environ) -> FastAPI:
+def minimal_app(loop, project_env_devel_environment) -> FastAPI:
 
     settings = AppSettings(
         registry=RegistrySettings(enabled=False),

@@ -1,6 +1,6 @@
 # director-v2
 
-[![image-size]](https://microbadger.com/images/itisfoundation/director-v2. "More on itisfoundation/director-v2.:staging-latest image")
+[![image-size]](https://microbadger.com/images/itisfoundation/director-v2 "More on itisfoundation/director-v2.:staging-latest image")
 
 [![image-badge]](https://microbadger.com/images/itisfoundation/director-v2 "More on director-v2  image in registry")
 [![image-version]](https://microbadger.com/images/itisfoundation/director-v2 "More on director-v2  image in registry")
@@ -22,8 +22,9 @@ Setup environment
 ```cmd
 make devenv
 source .venv/bin/activate
-cd services/api-service
+cd services/director-v2
 make install-dev
+make info
 ```
 
 Then
@@ -34,4 +35,4 @@ make run-devel
 
 The latter will start the director-v2  service in development-mode together with a postgres db initialized with test data. Open the following sites and use the test credentials ``user=key, password=secret`` to manually test the API:
 
-- http://127.0.0.1:8000/api/doc: swagger type of documentation
+- http://127.0.0.1:8000/dev/doc: swagger type of documentation

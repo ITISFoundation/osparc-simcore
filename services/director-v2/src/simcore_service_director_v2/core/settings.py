@@ -2,7 +2,15 @@ import logging
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseSettings, Field, SecretStr, validator
+from pydantic import (
+    AnyHttpUrl,
+    BaseSettings,
+    Field,
+    SecretStr,
+    conint,
+    constr,
+    validator,
+)
 from yarl import URL
 
 from ..__version__ import api_vtag
@@ -33,29 +41,61 @@ class _CommonConfig:
     env_file = ".env"  # SEE https://pydantic-docs.helpmanual.io/usage/settings/#dotenv-env-support
 
 
+class ApiServiceSettings(BaseSettings):
+    """ Settings needed to connect a osparc-simcore service API"""
+
+    enabled: bool = Field(True, description="Enables/Disables connection with service")
+
+    host: str
+    port: conint(gt=0, lt=65535) = 8000
+    vtag: constr(regex=r"^v\d$") = "v0"
+
+    @property
+    def api_base_url(self) -> str:
+        return f"http://{self.host}:{self.port}/{self.vtag}"
+
+
 class RegistrySettings(BaseSettings):
+    enabled: bool = Field(True, description="Enables/Disables connection with service")
+
+    url: AnyHttpUrl
+    ssl: bool = True
+
+    # auth
     auth: bool = False
     user: str = ""
     pw: str = ""
-    url: str = ""
-    ssl: bool = True
-    enabled: bool = True
+
 
     class Config(_CommonConfig):
         env_prefix = "REGISTRY_"
 
 
 class PostgresSettings(BaseSettings):
+    enabled: bool = True
+
+    # entrypoint
+    host: str
+    port: conint(gt=0, lt=65535) = 5432
+
+    # auth
     user: str
     password: SecretStr
-    db: str
-    host: str
-    port: int = 5432
 
+    # database
+    db: str
+
+    # pool connection limits
     minsize: int = 10
     maxsize: int = 10
 
-    enabled: bool = True
+    # pylint: disable=no-self-argument
+    # pylint: disable=no-self-use
+    @validator("maxsize")
+    def check_size(cls, v, values):
+        if not (values["minsize"] <= v):
+            raise ValueError(f"assert minsize={values['minsize']} <= maxsize={v}")
+        return v
 
     @property
     def dsn(self) -> URL:
@@ -74,7 +114,7 @@ class PostgresSettings(BaseSettings):
 
 class TracingSettings(BaseSettings):
     enabled: bool = True
-    zipkin_endpoint: str = "http://jaeger:9411"
+    zipkin_endpoint: AnyHttpUrl = "http://jaeger:9411"
 
     class Config(_CommonConfig):
         env_prefix = "TRACING_"
@@ -82,16 +122,12 @@ class TracingSettings(BaseSettings):
 
 class AppSettings(BaseSettings):
     @classmethod
-    def create_default(cls) -> "AppSettings":
-        # This call triggers parsers
+    def create_from_env(cls) -> "AppSettings":
         return cls(
             registry=RegistrySettings(),
             postgres=PostgresSettings(),
             tracing=TracingSettings(),
         )
-
-    # pylint: disable=no-self-use
-    # pylint: disable=no-self-argument
 
     # DOCKER
     boot_mode: Optional[BootModeEnum] = Field(..., env="SC_BOOT_MODE")
@@ -99,6 +135,8 @@ class AppSettings(BaseSettings):
     # LOGGING
     log_level_name: str = Field("DEBUG", env="LOG_LEVEL")
 
+    # pylint: disable=no-self-use
+    # pylint: disable=no-self-argument
     @validator("log_level_name")
     def match_logging_level(cls, value) -> str:
         try:
@@ -118,7 +156,7 @@ class AppSettings(BaseSettings):
     postgres: PostgresSettings
 
     # STORAGE
-    storage_endpoint = Field("storage:8080", env="STORAGE_ENDPOINT")
+    storage_endpoint: AnyHttpUrl = Field("http://storage:8080", env="STORAGE_ENDPOINT")
 
     # caching registry and TTL (time-to-live)
     registry_caching: bool = True
@@ -166,7 +204,7 @@ class AppSettings(BaseSettings):
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
     host: str = "0.0.0.0"  # nosec
-    port: int = 8000
+    port: conint(gt=0, lt=65535) = 8000
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
 
     class Config(_CommonConfig):
