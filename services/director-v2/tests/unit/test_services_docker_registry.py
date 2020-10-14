@@ -57,10 +57,10 @@ def mocked_registry_service_api(minimal_app):
 
 
 async def test_docker_registry_client(minimal_app, mocked_registry_service_api):
-    registry_api = minimal_app.state.registry_api
+    registry_api = minimal_app.state.docker_registry_api
 
-    catalog = await registry_api.list_repositories()
-    assert catalog
+    images_catalog = await registry_api.list_repositories()
+    assert images_catalog
     assert mocked_registry_service_api["catalog"].called
 
     tags = await registry_api.list_image_tags(image_key="services/comp/itis/sleeper")
