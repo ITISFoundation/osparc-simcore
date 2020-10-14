@@ -34,7 +34,8 @@ def test_create_registry_settings(project_env_devel_environment, monkeypatch):
     settings: RegistrySettings = AppSettings.create_from_env().registry
 
     # http -> https
-    assert settings.api_url == "https://admin:adminadmin@registry/v2"
+    assert settings.api_url() == "https://admin:adminadmin@registry/v2"
+    assert settings.api_url(with_credentials=False) == "https://registry/v2"
 
 
 def test_registry_settings_error(project_env_devel_environment, monkeypatch):

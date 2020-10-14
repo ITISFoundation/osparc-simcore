@@ -87,12 +87,11 @@ class RegistrySettings(BaseSettings):
                 raise ValueError("Authentication REQUIRES a secured channel")
         return values
 
-    @property
-    def api_url(self) -> str:
+    def api_url(self, with_credentials=True) -> str:
         return AnyHttpUrl.build(
             scheme=self.url.scheme,
-            user=self.user,
-            password=self.pw.get_secret_value(),
+            user=self.user if with_credentials else None,
+            password=self.pw.get_secret_value() if with_credentials else None,
             host=self.url.host,
             path="/v2",
         )
