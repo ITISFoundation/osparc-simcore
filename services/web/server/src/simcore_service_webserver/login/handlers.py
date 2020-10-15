@@ -26,6 +26,7 @@ from .utils import (
     render_and_send_mail,
     themed,
 )
+from simcore_service_webserver.rate_limiting import global_rate_limit_route
 
 # FIXME: do not use cfg singleton. use instead cfg = request.app[APP_LOGIN_CONFIG]
 
@@ -99,7 +100,9 @@ async def register(request: web.Request):
             email,
             themed("registration_email.html"),
             {
-                "auth": {"cfg": cfg,},
+                "auth": {
+                    "cfg": cfg,
+                },
                 "host": request.host,
                 "link": link,
                 "name": email.split("@")[0],
@@ -171,6 +174,7 @@ async def logout(request: web.Request) -> web.Response:
     return response
 
 
+@global_rate_limit_route(reqs=5, interval_seconds=3600)
 async def reset_password(request: web.Request):
     """
         1. confirm user exists
@@ -220,7 +224,13 @@ async def reset_password(request: web.Request):
                 request,
                 email,
                 common_themed("reset_password_email_failed.html"),
-                {"auth": {"cfg": cfg,}, "host": request.host, "reason": err.reason,},
+                {
+                    "auth": {
+                        "cfg": cfg,
+                    },
+                    "host": request.host,
+                    "reason": err.reason,
+                },
             )
         except Exception:  # pylint: disable=broad-except
             log.exception("Cannot send email")
@@ -234,7 +244,13 @@ async def reset_password(request: web.Request):
                 request,
                 email,
                 common_themed("reset_password_email.html"),
-                {"auth": {"cfg": cfg,}, "host": request.host, "link": link,},
+                {
+                    "auth": {
+                        "cfg": cfg,
+                    },
+                    "host": request.host,
+                    "link": link,
+                },
             )
         except Exception:  # pylint: disable=broad-except
             log.exception("Can not send email")
@@ -275,7 +291,13 @@ async def change_email(request: web.Request):
             request,
             email,
             common_themed("change_email_email.html"),
-            {"auth": {"cfg": cfg,}, "host": request.host, "link": link,},
+            {
+                "auth": {
+                    "cfg": cfg,
+                },
+                "host": request.host,
+                "link": link,
+            },
         )
     except Exception:  # pylint: disable=broad-except
         log.error("Can not send email")
@@ -316,19 +338,19 @@ async def change_password(request: web.Request):
 
 
 async def email_confirmation(request: web.Request):
-    """ Handled access from a link sent to user by email
-        Retrieves confirmation key and redirects back to some location front-end
+    """Handled access from a link sent to user by email
+    Retrieves confirmation key and redirects back to some location front-end
 
-        * registration, change-email:
-            - sets user as active
-            - redirects to login
-        * reset-password:
-            - redirects to login
-            - attaches page and token info onto the url
-            - info appended as fragment, e.g. https://osparc.io#reset-password?code=131234
-            - front-end should interpret that info as:
-                - show the reset-password page
-                - use the token to submit a POST /v0/auth/confirmation/{code} and finalize reset action
+    * registration, change-email:
+        - sets user as active
+        - redirects to login
+    * reset-password:
+        - redirects to login
+        - attaches page and token info onto the url
+        - info appended as fragment, e.g. https://osparc.io#reset-password?code=131234
+        - front-end should interpret that info as:
+            - show the reset-password page
+            - use the token to submit a POST /v0/auth/confirmation/{code} and finalize reset action
     """
     params, _, _ = await extract_and_validate(request)
 
@@ -363,9 +385,7 @@ async def email_confirmation(request: web.Request):
 
 
 async def reset_password_allowed(request: web.Request):
-    """ Changes password using a token code without being logged in
-
-    """
+    """Changes password using a token code without being logged in"""
     params, _, body = await extract_and_validate(request)
     db = get_storage(request.app)
 
