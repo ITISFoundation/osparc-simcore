@@ -73,6 +73,8 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       if (node) {
         this.__nodeView.setNode(node);
         this.__nodeView.populateLayout();
+        this.__nodeView.getInputsView().exclude();
+        this.__nodeView.getOutputsView().exclude();
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
     },
@@ -96,6 +98,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       });
 
       const controlsBar = this.__controlsBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+        minHeight: 40,
         padding: 5
       });
 
