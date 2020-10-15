@@ -260,6 +260,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const study = studyEditor.getStudy();
       this.__navBar.setStudy(study);
       this.__navBar.setPageContext("workbench");
+      studyEditor.setPageContext("workbench");
 
       this.__studyEditor.addListener("studyIsLocked", () => {
         this.__showDashboard();
