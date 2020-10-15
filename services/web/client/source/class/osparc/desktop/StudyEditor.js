@@ -111,7 +111,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               })
               .catch(err => {
                 if ("status" in err && err["status"] == 423) { // Locked
-                  const msg = study.getName() + this.tr(" is already opened");
+                  const msg = study.getName() + this.tr(" was already opened");
                   osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
                   this.fireEvent("studyIsLocked");
                 } else {
@@ -555,10 +555,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (!osparc.data.Permissions.getInstance().canDo("study.start", true)) {
         return;
       }
-
+      const runButton = this.__mainPanel.getControls().getStartButton();
+      runButton.setFetching(true);
+      runButton.setEnabled(false);
       this.updateStudyDocument(true)
         .then(() => {
           this.__doStartPipeline();
+        })
+        .catch(() => {
+          this.getLogger().error(null, "Couldn't run the pipeline: Pipeline failed to save.");
+          runButton.setFetching(false);
+          runButton.setEnabled(true);
         });
     },
 
@@ -577,9 +584,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __requestStartPipeline: function(studyId) {
       const url = "/computation/pipeline/" + encodeURIComponent(studyId) + "/start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
+      const runButton = this.__mainPanel.getControls().getStartButton();
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
         this.getLogger().error(null, "Error submitting pipeline");
+        runButton.setFetching(false);
+        runButton.setEnabled(true);
       }, this);
       req.addListener("fail", e => {
         if (e.getTarget().getResponse().error.status == "403") {
@@ -587,6 +597,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         } else {
           this.getLogger().error(null, "Failed submitting pipeline");
         }
+        runButton.setFetching(false);
+        runButton.setEnabled(true);
       }, this);
       req.send();
 
@@ -597,6 +609,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["project_id"];
+      const runButton = this.__mainPanel.getControls().getStartButton();
       this.getLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
@@ -652,17 +665,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         },
         data: newObj
       };
-      return new Promise((resolve, reject) => {
-        osparc.data.Resources.fetch("studies", "put", params)
-          .then(data => {
-            this.fireDataEvent("studySaved", true);
-            this.__lastSavedStudy = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
-            resolve();
-          }).catch(error => {
-            this.getLogger().error(null, "Error updating pipeline");
-            reject();
-          });
-      });
+      return osparc.data.Resources.fetch("studies", "put", params)
+        .then(data => {
+          this.fireDataEvent("studySaved", true);
+          this.__lastSavedStudy = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
+        }).catch(error => {
+          this.getLogger().error(null, "Error updating pipeline");
+          // Need to throw the error to be able to handle it later
+          throw error;
+        });
     },
 
     closeStudy: function() {

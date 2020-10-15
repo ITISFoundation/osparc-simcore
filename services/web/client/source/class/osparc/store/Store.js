@@ -50,7 +50,8 @@ qx.Class.define("osparc.store.Store", {
     currentStudy: {
       check: "osparc.data.model.Study",
       init: null,
-      nullable: true
+      nullable: true,
+      event: 'changeCurrentStudy'
     },
     currentStudyId: {
       check: "String",
@@ -209,6 +210,13 @@ qx.Class.define("osparc.store.Store", {
       const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
       if (idx !== -1) {
         studiesWStateCache[idx]["state"] = state;
+      }
+      // Set the state as well in the current study, as a plaing property
+      const currentStudy = this.getCurrentStudy();
+      if (currentStudy && currentStudy.getUuid() === studyId) {
+        console.log(currentStudy.getUuid(), studyId, state)
+        currentStudy.state = state;
+        this.fireDataEvent("changeCurrentStudy", currentStudy);
       }
     },
 
