@@ -367,6 +367,7 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 pylint: ## Runs python linter framework's wide
 	/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
 											-not -path "*egg*" \
+											-not -path "*service-sidecar*" \
 											-not -path "*migration*" \
 											-not -path "*datcore.py" \
 											-not -path "*sandbox*" \
