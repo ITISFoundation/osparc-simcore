@@ -120,7 +120,7 @@ jobs:
           path: codeclimate.unit_api_server_coverage.json
 
   unit-test-service-sidecar:
-    name: [unit] service-sidecar
+    name: "[unit] service-sidecar"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
