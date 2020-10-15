@@ -189,21 +189,14 @@ class TutorialBase {
   }
 
   async waitForServices(studyId, nodeIds, timeout = 40000) {
-    const promises = [];
     nodeIds.forEach(nodeId => {
       this.__responsesQueue.addResponseServiceListener(studyId, nodeId);
-      promises.push(this.__responsesQueue.waitUntilServiceReady(studyId, nodeId, timeout));
     });
-    return new Promise((resolve, reject) => {
-      Promise.all(promises)
-        .then(resps => {
-          resolve(resps);
-        })
-        .catch(err => {
-          console.error(this.__templateName, "could not be started", err);
-          reject(err);
-        });
-    });
+    for (let i=0; i<nodeIds.length; i++) {
+      const nodeId = nodeIds[i];
+      console.log("waiting for service:", nodeId);
+      await this.__responsesQueue.waitUntilServiceReady(studyId, nodeId, timeout);
+    }
   }
 
   async restoreIFrame() {
