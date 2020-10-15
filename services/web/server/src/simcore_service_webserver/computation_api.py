@@ -262,6 +262,8 @@ async def _set_adjacency_in_pipeline_db(
 async def _set_tasks_in_tasks_db(
     db_engine: Engine, project_id: str, tasks: Dict[str, Dict], replace_pipeline=True
 ):
+    """The replace_pipeline is missleading, it should be interpreted
+    as the "RUN" button was pressed on the UI."""
     # pylint: disable=no-value-for-parameter
 
     async def _task_already_exists(
@@ -328,14 +330,24 @@ async def _set_tasks_in_tasks_db(
             result = await conn.execute(query)
             tasks_rows = await result.fetchall()
 
-            # prune database from invalid tasks
+            # no longer prune database from invalid tasks
+            # mark comp tasks with job_id == NULL and set status to 0
+            # effectively marking a rest of the pipeline without loosing
+            # inputs from comp services
             for task_row in tasks_rows:
+                # for some reason the outputs are not present in the 
+                # tasks outputs. copy them over (will be used below)
+                tasks[task_row.node_id]["outputs"] = task_row.outputs
                 if not task_row.node_id in tasks:
-                    query = comp_tasks.delete().where(
-                        and_(
-                            comp_tasks.c.project_id == project_id,
-                            comp_tasks.c.node_id == task_row.node_id,
+                    query = (
+                        comp_tasks.update()
+                        .where(
+                            and_(
+                                comp_tasks.c.project_id == project_id,
+                                comp_tasks.c.node_id == task_row.node_id,
+                            )
                         )
+                        .values(job_id=None, state=UNKNOWN)
                     )
                     await conn.execute(query)
 
@@ -405,7 +417,7 @@ async def update_pipeline_db(
     project_data: Dict,
     replace_pipeline: bool = True,
 ) -> None:
-    """ Updates entries in comp_pipeline and comp_task pg tables for a given project
+    """Updates entries in comp_pipeline and comp_task pg tables for a given project
 
     :param replace_pipeline: Fully replaces instead of partial updates of existing entries, defaults to True
     """

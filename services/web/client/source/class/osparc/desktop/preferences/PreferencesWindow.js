@@ -76,6 +76,11 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
         }
       });
 
+    if (osparc.data.Permissions.getInstance().canDo("statics.read")) {
+      const testerPage = new osparc.desktop.preferences.pages.TesterPage();
+      tabView.add(testerPage);
+    }
+
     this.add(tabView);
   }
 });

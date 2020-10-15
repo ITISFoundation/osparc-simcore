@@ -1,8 +1,5 @@
 """ helpers to manage the projects's database and produce fixtures/mockup data for testing
 
-
-SEE services/web/server/src/simcore_service_webserver/projects/projects_models.py
-
 """
 # pylint: disable=no-value-for-parameter
 
@@ -10,6 +7,7 @@ import json
 import re
 import uuid as uuidlib
 from typing import Dict
+from simcore_service_webserver.utils import now_str
 
 from aiohttp import web
 
@@ -32,6 +30,19 @@ fake_project_resources = [
 ]
 
 
+def empty_project_data():
+    return {
+        "uuid": f"project-{uuidlib.uuid4()}",
+        "name": "Empty name",
+        "description": "some description of an empty project",
+        "prjOwner": "I'm the empty project owner, hi!",
+        "creationDate": now_str(),
+        "lastChangeDate": now_str(),
+        "thumbnail": "",
+        "workbench": {},
+    }
+
+
 def load_data(name):
     with resources.stream(name) as fp:
         return json.load(fp)
@@ -40,7 +51,7 @@ def load_data(name):
 async def create_project(
     app: web.Application, params: Dict = None, user_id=None, *, force_uuid=False
 ) -> Dict:
-    """ Injects new project in database for user or as template
+    """Injects new project in database for user or as template
 
     :param params: predefined project properties (except for non-writeable e.g. uuid), defaults to None
     :type params: Dict, optional
@@ -62,7 +73,7 @@ async def create_project(
     try:
         uuidlib.UUID(project_data["uuid"])
         assert new_project["uuid"] == project_data["uuid"]
-    except ValueError:
+    except (ValueError, AssertionError):
         # in that case the uuid gets replaced
         assert new_project["uuid"] != project_data["uuid"]
         project_data["uuid"] = new_project["uuid"]
@@ -74,7 +85,7 @@ async def create_project(
 
 
 async def delete_all_projects(app: web.Application):
-    from simcore_service_webserver.projects.projects_models import projects
+    from simcore_postgres_database.webserver_models import projects
 
     db = app[APP_PROJECT_DBAPI]
     async with db.engine.acquire() as conn:
@@ -90,7 +101,7 @@ class NewProject:
         clear_all=True,
         user_id=None,
         *,
-        force_uuid=False
+        force_uuid=False,
     ):
         self.params = params
         self.user_id = user_id

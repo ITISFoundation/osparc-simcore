@@ -6,12 +6,14 @@ import logging
 import re
 from distutils.version import StrictVersion
 from enum import Enum
+from pprint import pformat
 from typing import Dict, List, Optional, Tuple
 
-import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
 
+import aiodocker
+from servicelib.async_utils import run_sequentially_in_context
 from servicelib.monitor_services import service_started, service_stopped
 
 from . import config, docker_utils, exceptions, registry_proxy
@@ -105,7 +107,7 @@ async def _read_service_settings(
         json.loads(image_labels[settings_name]) if settings_name in image_labels else {}
     )
 
-    log.debug("Retrieved %s settings: %s", settings_name, settings)
+    log.debug("Retrieved %s settings: %s", settings_name, pformat(settings))
     return settings
 
 
@@ -216,6 +218,14 @@ async def _create_docker_service_params(
         "networks": [internal_network_id] if internal_network_id else [],
     }
 
+    if config.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS:
+        log.debug(
+            "adding custom constraints %s ", config.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS
+        )
+        docker_params["task_template"]["Placement"]["Constraints"] += [
+            config.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS
+        ]
+
     if reverse_proxy_settings:
         # some services define strip_path:true if they need the path to be stripped away
         if (
@@ -264,14 +274,8 @@ async def _create_docker_service_params(
             docker_params["labels"]["port"] = docker_params["labels"][
                 f"traefik.http.services.{service_name}.loadbalancer.server.port"
             ] = str(param["value"])
-            if config.DEBUG_MODE:
-                # special handling for we need to open a port with 0:XXX this tells the docker engine to allocate whatever free port
-                docker_params["endpoint_spec"]["Ports"] = [
-                    {"TargetPort": int(param["value"]), "PublishedPort": 0}
-                ]
-        elif (
-            config.DEBUG_MODE and param["type"] == "EndpointSpec"
-        ):  # REST-API compatible
+        # REST-API compatible
+        elif param["type"] == "EndpointSpec":
             if "Ports" in param["value"]:
                 if (
                     isinstance(param["value"]["Ports"], list)
@@ -280,8 +284,6 @@ async def _create_docker_service_params(
                     docker_params["labels"]["port"] = docker_params["labels"][
                         f"traefik.http.services.{service_name}.loadbalancer.server.port"
                     ] = str(param["value"]["Ports"][0]["TargetPort"])
-            if config.DEBUG_MODE:
-                docker_params["endpoint_spec"] = param["value"]
 
         # placement constraints
         elif param["name"] == "constraints":  # python-API compatible
@@ -314,8 +316,6 @@ async def _create_docker_service_params(
     except exceptions.DirectorException:
         log.exception("Could not find swarm network")
 
-    log.debug("Converted labels to docker runtime parameters: %s", docker_params)
-
     # set labels for CPU and Memory limits
     container_spec["Labels"]["nano_cpus_limit"] = str(
         docker_params["task_template"]["Resources"]["Limits"]["NanoCPUs"]
@@ -324,6 +324,9 @@ async def _create_docker_service_params(
         docker_params["task_template"]["Resources"]["Limits"]["MemoryBytes"]
     )
 
+    log.debug(
+        "Converted labels to docker runtime parameters: %s", pformat(docker_params)
+    )
     return docker_params
 
 
@@ -359,7 +362,7 @@ async def _get_swarm_network(client: aiodocker.docker.Docker) -> Dict:
 async def _get_docker_image_port_mapping(
     service: Dict,
 ) -> Tuple[Optional[str], Optional[int]]:
-    log.debug("getting port published by service: %s", service)
+    log.debug("getting port published by service: %s", pformat(service))
 
     published_ports = list()
     target_ports = list()
@@ -810,7 +813,11 @@ async def start_service(
         node_details = containers_meta_data[0]
         if config.MONITORING_ENABLED:
             service_started(
-                app, user_id, service_key, service_tag, "DYNAMIC",
+                app,
+                user_id,
+                service_key,
+                service_tag,
+                "DYNAMIC",
             )
         # we return only the info of the main service
         return node_details
@@ -918,6 +925,7 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
             ) from err
 
 
+@run_sequentially_in_context(target_args=["node_uuid"])
 async def stop_service(app: web.Application, node_uuid: str) -> None:
     log.debug("stopping service with uuid %s", node_uuid)
     # get the docker client

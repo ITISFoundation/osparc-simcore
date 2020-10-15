@@ -185,18 +185,28 @@ qx.Class.define("osparc.desktop.MainPage", {
     __startStudy: function(studyId) {
       this.__showLoadingPage(this.tr("Loading Study"));
 
-      const store = osparc.store.Store.getInstance();
-      store.getStudyWState(studyId, true)
+      const params = {
+        url: {
+          "projectId": studyId
+        }
+      };
+      osparc.data.Resources.getOne("studies", params)
         .then(latestStudyData => {
           if (!latestStudyData) {
             const msg = this.tr("Study not found");
             throw new Error(msg);
           }
-          const locked = ("locked" in latestStudyData) ? latestStudyData["locked"]["value"] : false;
+
+          let locked = false;
+          if ("state" in latestStudyData && "locked" in latestStudyData["state"]) {
+            locked = latestStudyData["state"]["locked"]["value"];
+          }
+
           if (locked) {
             const msg = this.tr("Study is opened");
             throw new Error(msg);
           }
+          const store = osparc.store.Store.getInstance();
           store.getInaccessibleServices(latestStudyData)
             .then(inaccessibleServices => {
               if (inaccessibleServices.length) {

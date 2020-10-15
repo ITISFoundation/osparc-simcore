@@ -14,12 +14,11 @@ import sys
 from asyncio import Future
 from pathlib import Path
 from typing import Dict
-from uuid import uuid4
 
 import pytest
 
 from simcore_service_webserver.resources import resources
-from simcore_service_webserver.utils import now_str
+from pytest_simcore.helpers.utils_projects import empty_project_data
 
 ## current directory
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -27,7 +26,10 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 ## Log
 log = logging.getLogger(__name__)
 
-pytest_plugins = ["pytest_simcore.environs"]
+pytest_plugins = [
+    "pytest_simcore.repository_paths",
+    "pytest_simcore.environment_configs",
+]
 
 
 @pytest.fixture(scope="session")
@@ -43,32 +45,16 @@ def fake_static_dir(fake_data_dir: Path) -> Dict:
 
 
 @pytest.fixture
-def fake_project(fake_data_dir: Path) -> Dict:
-    with (fake_data_dir / "fake-project.json").open() as fp:
-        yield json.load(fp)
-
-
-@pytest.fixture
 def api_version_prefix() -> str:
     return "v0"
 
 
 @pytest.fixture
 def empty_project():
-    def create():
-        empty_project = {
-            "uuid": f"project-{uuid4()}",
-            "name": "Empty name",
-            "description": "some description of an empty project",
-            "prjOwner": "I'm the empty project owner, hi!",
-            "creationDate": now_str(),
-            "lastChangeDate": now_str(),
-            "thumbnail": "",
-            "workbench": {},
-        }
-        return empty_project
+    def factory():
+        return empty_project_data()
 
-    return create
+    return factory
 
 
 @pytest.fixture

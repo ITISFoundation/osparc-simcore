@@ -23,7 +23,8 @@ readme = (current_dir / "README.md").read_text()
 version = (current_dir / "VERSION").read_text().strip()
 
 install_requirements = read_reqs(current_dir / "requirements" / "_base.txt") + [
-    "simcore-postgres-database"
+    "simcore-models-library",
+    "simcore-postgres-database",
 ]
 
 test_requirements = read_reqs(current_dir / "requirements" / "_test.txt")
@@ -45,8 +46,14 @@ setup(
     license="MIT license",
     python_requires="~=3.6",
     packages=find_packages(where="src"),
-    package_dir={"": "src",},
-    package_data={"": ["config/*.yaml",],},
+    package_dir={
+        "": "src",
+    },
+    package_data={
+        "": [
+            "config/*.yaml",
+        ],
+    },
     include_package_data=True,
     install_requires=install_requirements,
     test_suite="tests",
@@ -54,7 +61,7 @@ setup(
     extras_require={"test": test_requirements},
     entry_points={
         "console_scripts": [
-            "simcore-service-catalog = simcore_service_catalog.__main__:main",
+            "simcore-service-catalog=simcore_service_catalog.__main__:main",
         ],
     },
 )

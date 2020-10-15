@@ -2,6 +2,7 @@
 # Specifies third-party dependencies for 'services/catalog/src'
 #
 # NOTE: ALL version constraints MUST be commented
+-r ../../../packages/models-library/requirements/_base.in
 -r ../../../packages/postgres-database/requirements/_base.in
 
 pyyaml>=5.3         # Vulnerable
@@ -21,5 +22,4 @@ aiopg[sa]
 httpx
 
 # other
-attrs
 tenacity

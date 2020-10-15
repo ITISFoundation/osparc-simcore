@@ -368,6 +368,25 @@
             },
             "name": "user_id",
             "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Details",
+              "type": "boolean",
+              "default": true
+            },
+            "name": "details",
+            "in": "query"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "X-Simcore-Products-Name",
+              "type": "string"
+            },
+            "name": "x-simcore-products-name",
+            "in": "header"
           }
         ],
         "responses": {
@@ -410,7 +429,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$",
+              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
               "type": "string"
             },
             "name": "service_key",
@@ -434,6 +453,15 @@
             },
             "name": "user_id",
             "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "X-Simcore-Products-Name",
+              "type": "string"
+            },
+            "name": "x-simcore-products-name",
+            "in": "header"
           }
         ],
         "responses": {
@@ -470,7 +498,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$",
+              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
               "type": "string"
             },
             "name": "service_key",
@@ -494,13 +522,22 @@
             },
             "name": "user_id",
             "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "X-Simcore-Products-Name",
+              "type": "string"
+            },
+            "name": "x-simcore-products-name",
+            "in": "header"
           }
         ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ServiceIn"
+                "$ref": "#/components/schemas/ServiceUpdate"
               }
             }
           },
@@ -627,20 +664,6 @@
         },
         "additionalProperties": false
       },
-      "Connection": {
-        "title": "Connection",
-        "type": "object",
-        "properties": {
-          "nodeUuid": {
-            "title": "Nodeuuid",
-            "type": "string"
-          },
-          "output": {
-            "title": "Output",
-            "type": "string"
-          }
-        }
-      },
       "DAGIn": {
         "title": "DAGIn",
         "required": [
@@ -652,7 +675,7 @@
         "properties": {
           "key": {
             "title": "Key",
-            "pattern": "^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\\s]+)+$",
+            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
             "type": "string",
             "example": "simcore/services/frontend/nodes-group/macros/1"
           },
@@ -696,7 +719,7 @@
         "properties": {
           "key": {
             "title": "Key",
-            "pattern": "^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\\s]+)+$",
+            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
             "type": "string",
             "example": "simcore/services/frontend/nodes-group/macros/1"
           },
@@ -732,11 +755,12 @@
           }
         }
       },
-      "FilePickerOutput": {
-        "title": "FilePickerOutput",
+      "DatCoreFileLink": {
+        "title": "DatCoreFileLink",
         "required": [
           "store",
           "path",
+          "dataset",
           "label"
         ],
         "type": "object",
@@ -750,21 +774,40 @@
               {
                 "type": "integer"
               }
+            ],
+            "description": "The store identifier, '0' or 0 for simcore S3, '1' or 1 for datcore",
+            "example": [
+              "0",
+              1
+            ]
+          },
+          "path": {
+            "title": "Path",
+            "type": "string",
+            "description": "The path to the file in the storage provider domain",
+            "example": [
+              "N:package:b05739ef-260c-4038-b47d-0240d04b0599",
+              "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt"
             ]
           },
           "dataset": {
             "title": "Dataset",
-            "type": "string"
-          },
-          "path": {
-            "title": "Path",
-            "type": "string"
+            "type": "string",
+            "description": "Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
+            "example": [
+              "N:dataset:f9f5ac51-33ea-4861-8e08-5b4faf655041"
+            ]
           },
           "label": {
             "title": "Label",
-            "type": "string"
+            "type": "string",
+            "description": "The real file name (REQUIRED for datcore)",
+            "example": [
+              "MyFile.txt"
+            ]
           }
-        }
+        },
+        "additionalProperties": false
       },
       "HTTPValidationError": {
         "title": "HTTPValidationError",
@@ -821,94 +864,88 @@
           "key",
           "version",
           "label",
+          "progress",
+          "inputs",
+          "inputAccess",
+          "inputNodes",
+          "outputNodes",
           "position"
         ],
         "type": "object",
         "properties": {
           "key": {
             "title": "Key",
-            "pattern": "^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\\s]+)+$",
+            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
             "type": "string",
-            "example": "simcore/services/comp/sleeper"
+            "description": "distinctive name for the node based on the docker registry path",
+            "example": [
+              "simcore/services/comp/sleeper",
+              "simcore/services/dynamic/3dviewer",
+              "simcore/services/frontend/file-picker"
+            ]
           },
           "version": {
             "title": "Version",
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "type": "string",
-            "example": "6.2.0"
+            "description": "semantic version number of the node",
+            "example": [
+              "1.0.0",
+              "0.0.1"
+            ]
           },
           "label": {
             "title": "Label",
-            "type": "string"
+            "type": "string",
+            "description": "The short name of the node",
+            "example": [
+              "JupyterLab"
+            ]
           },
           "progress": {
             "title": "Progress",
             "maximum": 100.0,
             "minimum": 0.0,
             "type": "number",
-            "default": 0
+            "description": "the node progress value"
           },
           "thumbnail": {
             "title": "Thumbnail",
-            "type": "string"
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "description": "url of the latest screenshot of the node",
+            "format": "uri",
+            "example": [
+              "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
+            ]
           },
           "inputs": {
             "title": "Inputs",
             "type": "object",
-            "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "$ref": "#/components/schemas/Connection"
-                },
-                {
-                  "$ref": "#/components/schemas/FilePickerOutput"
-                }
-              ]
-            }
+            "description": "values of input properties"
           },
           "inputAccess": {
             "title": "Inputaccess",
             "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/AccessEnum"
-            }
+            "description": "map with key - access level pairs"
           },
           "inputNodes": {
             "title": "Inputnodes",
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid4"
             },
-            "default": []
+            "description": "node IDs of where the node is connected to",
+            "example": [
+              "nodeUuid1",
+              "nodeUuid2"
+            ]
           },
           "outputs": {
             "title": "Outputs",
-            "type": "object",
-            "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "$ref": "#/components/schemas/FilePickerOutput"
-                }
-              ]
-            }
+            "type": "object"
           },
           "outputNode": {
             "title": "Outputnode",
@@ -919,20 +956,59 @@
             "title": "Outputnodes",
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid4"
             },
-            "default": []
+            "description": "Used in group-nodes. Node IDs of those connected to the output",
+            "example": [
+              "nodeUuid1",
+              "nodeUuid2"
+            ]
           },
           "parent": {
             "title": "Parent",
             "type": "string",
             "description": "Parent's (group-nodes') node ID s.",
-            "example": "nodeUUid1"
+            "format": "uuid4",
+            "example": [
+              "nodeUUid1",
+              "nodeUuid2"
+            ]
           },
           "position": {
             "$ref": "#/components/schemas/Position"
           }
-        }
+        },
+        "additionalProperties": false
+      },
+      "PortLink": {
+        "title": "PortLink",
+        "required": [
+          "nodeUuid",
+          "output"
+        ],
+        "type": "object",
+        "properties": {
+          "nodeUuid": {
+            "title": "Nodeuuid",
+            "type": "string",
+            "description": "The node to get the port output from",
+            "format": "uuid4",
+            "example": [
+              "da5068e0-8a8d-4fb9-9516-56e5ddaef15b"
+            ]
+          },
+          "output": {
+            "title": "Output",
+            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
+            "type": "string",
+            "description": "The port key in the node given by nodeUuid",
+            "example": [
+              "out_2"
+            ]
+          }
+        },
+        "additionalProperties": false
       },
       "Position": {
         "title": "Position",
@@ -944,13 +1020,22 @@
         "properties": {
           "x": {
             "title": "X",
-            "type": "integer"
+            "type": "integer",
+            "description": "The x position",
+            "example": [
+              "12"
+            ]
           },
           "y": {
             "title": "Y",
-            "type": "integer"
+            "type": "integer",
+            "description": "The y position",
+            "example": [
+              "15"
+            ]
           }
-        }
+        },
+        "additionalProperties": false
       },
       "SelectBox": {
         "title": "SelectBox",
@@ -985,48 +1070,6 @@
             "type": "boolean",
             "description": "defines whether the group can modify the service",
             "default": false
-          }
-        }
-      },
-      "ServiceIn": {
-        "title": "ServiceIn",
-        "required": [
-          "name",
-          "description"
-        ],
-        "type": "object",
-        "properties": {
-          "access_rights": {
-            "title": "Access Rights",
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ServiceGroupAccessRights"
-            },
-            "description": "service access rights per group id"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string",
-            "description": "short, human readable name for the node",
-            "example": "Fast Counter"
-          },
-          "thumbnail": {
-            "title": "Thumbnail",
-            "maxLength": 2083,
-            "minLength": 1,
-            "type": "string",
-            "description": "url to the thumbnail",
-            "format": "uri",
-            "example": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string",
-            "description": "human readable description of the purpose of the node",
-            "example": [
-              "Our best node type",
-              "The mother of all nodes, makes your numbers shine!"
-            ]
           }
         }
       },
@@ -1160,9 +1203,24 @@
               "The mother of all nodes, makes your numbers shine!"
             ]
           },
+          "classifiers": {
+            "title": "Classifiers",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "access_rights": {
+            "title": "Access Rights",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ServiceGroupAccessRights"
+            },
+            "description": "service access rights per group id"
+          },
           "key": {
             "title": "Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$",
+            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path",
             "example": [
@@ -1224,19 +1282,16 @@
             "type": "object",
             "description": "definition of the outputs of this node"
           },
-          "access_rights": {
-            "title": "Access Rights",
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ServiceGroupAccessRights"
-            },
-            "description": "service access rights per group id"
+          "owner": {
+            "title": "Owner",
+            "type": "string",
+            "format": "email"
           }
         },
         "additionalProperties": false
       },
-      "ServiceProperty": {
-        "title": "ServiceProperty",
+      "ServiceOutput": {
+        "title": "ServiceOutput",
         "required": [
           "displayOrder",
           "label",
@@ -1325,6 +1380,78 @@
         ],
         "type": "string",
         "description": "An enumeration."
+      },
+      "ServiceUpdate": {
+        "title": "ServiceUpdate",
+        "type": "object",
+        "properties": {
+          "access_rights": {
+            "title": "Access Rights",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ServiceGroupAccessRights"
+            },
+            "description": "service access rights per group id"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "thumbnail": {
+            "title": "Thumbnail",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "classifiers": {
+            "title": "Classifiers",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "SimCoreFileLink": {
+        "title": "SimCoreFileLink",
+        "required": [
+          "store",
+          "path"
+        ],
+        "type": "object",
+        "properties": {
+          "store": {
+            "title": "Store",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "description": "The store identifier, '0' or 0 for simcore S3, '1' or 1 for datcore",
+            "example": [
+              "0",
+              1
+            ]
+          },
+          "path": {
+            "title": "Path",
+            "type": "string",
+            "description": "The path to the file in the storage provider domain",
+            "example": [
+              "N:package:b05739ef-260c-4038-b47d-0240d04b0599",
+              "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt"
+            ]
+          }
+        },
+        "additionalProperties": false
       },
       "Structure": {
         "title": "Structure",

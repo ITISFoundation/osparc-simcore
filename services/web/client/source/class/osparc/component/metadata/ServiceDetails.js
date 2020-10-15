@@ -169,7 +169,7 @@ qx.Class.define("osparc.component.metadata.ServiceDetails", {
 
     __createRawMetadata: function() {
       const container = new qx.ui.container.Scroll();
-      container.add(new osparc.component.widget.JsonTreeWidget(this.getService(), "serviceDescriptionSettings"));
+      container.add(new osparc.ui.basic.JsonTreeWidget(this.getService(), "serviceDescriptionSettings"));
       return container;
     }
   }

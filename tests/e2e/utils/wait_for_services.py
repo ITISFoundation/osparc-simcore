@@ -1,68 +1,66 @@
+import json
 import logging
-from pdb import Pdb
+import os
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
-from typing import List
+from pdb import Pdb
 from pprint import pformat
+from typing import Dict, List
 
 import docker
 import yaml
+from tenacity import (
+    RetryError,
+    Retrying,
+    before_sleep_log,
+    stop_after_attempt,
+    wait_fixed,
+)
 
 logger = logging.getLogger(__name__)
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-WAIT_TIME_SECS = 20
-RETRY_COUNT = 7
+WAIT_BEFORE_RETRY = 10
+MAX_RETRY_COUNT = 10
 MAX_WAIT_TIME = 240
 
-# https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
-pre_states = ["NEW", "PENDING", "ASSIGNED", "PREPARING", "STARTING"]
+# SEE https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
 
-failed_states = [
-    "COMPLETE",
-    "FAILED",
-    "SHUTDOWN",
-    "REJECTED",
-    "ORPHANED",
-    "REMOVE",
-    "CREATED",
+PRE_STATES = [
+    "new",  # The task was initialized.
+    "pending",  # Resources for the task were allocated.
+    "assigned",  # Docker assigned the task to nodes.
+    "accepted",  # The task was accepted by a worker node. If a worker node rejects the task, the state changes to REJECTED.
+    "preparing",  # Docker is preparing the task.
+    "starting",  # Docker is starting the task.
 ]
-# UTILS --------------------------------
+
+RUNNING_STATE = "running"  # The task is executing.
+
+FAILED_STATES = [
+    "complete",  # The task exited without an error code.
+    "failed",  # The task exited with an error code.
+    "shutdown",  # Docker requested the task to shut down.
+    "rejected",  # The worker node rejected the task.
+    "orphaned",  # The node was down for too long.
+    "remove",  # The task is not terminal but the associated service was removed or scaled down.
+]
 
 
-def get_tasks_summary(tasks):
+def get_tasks_summary(service_tasks):
     msg = ""
-    for t in tasks:
-        t["Status"].setdefault("Err", "")
-        msg += "- task ID:{ID}, STATE: {Status[State]}, ERROR: '{Status[Err]}' \n".format(
-            **t
-        )
+    for task in service_tasks:
+        status: Dict = task["Status"]
+        msg += f"- task ID:{task['ID']}, CREATED: {task['CreatedAt']}, UPDATED: {task['UpdatedAt']}, DESIRED_STATE: {task['DesiredState']}, STATE: {status['State']}"
+        error = status.get("Err")
+        if error:
+            msg += f", ERROR: {error}"
+        msg += "\n"
+
     return msg
-
-
-def get_failed_tasks_logs(service, docker_client):
-    failed_logs = ""
-    for t in service.tasks():
-        if t["Status"]["State"].upper() in failed_states:
-            cid = t["Status"]["ContainerStatus"]["ContainerID"]
-            failed_logs += "{2} {0} - {1} BEGIN {2}\n".format(
-                service.name, t["ID"], "=" * 10
-            )
-            if cid:
-                container = docker_client.containers.get(cid)
-                failed_logs += container.logs().decode("utf-8")
-            else:
-                failed_logs += "  log unavailable. container does not exists\n"
-            failed_logs += "{2} {0} - {1} END {2}\n".format(
-                service.name, t["ID"], "=" * 10
-            )
-
-    return failed_logs
-
-
-# --------------------------------------------------------------------------------
 
 
 def osparc_simcore_root_dir() -> Path:
@@ -100,52 +98,74 @@ def ops_services() -> List[str]:
         return [x for x in dc_specs["services"].keys()]
 
 
-def wait_for_services() -> None:
-    # get all services
-    services = core_services() + ops_services()
+def to_datetime(datetime_str: str) -> datetime:
+    # datetime_str is typically '2020-10-09T12:28:14.771034099Z'
+    #  - The T separates the date portion from the time-of-day portion
+    #  - The Z on the end means UTC, that is, an offset-from-UTC
+    # The 099 before the Z is not clear, therefore we will truncate the last part
+    N = len("2020-10-09T12:28:14.771034")
+    if len(datetime_str) > N:
+        datetime_str = datetime_str[:N]
+    return datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
+
+
+def by_service_creation(service):
+    datetime_str = service.attrs["CreatedAt"]
+    return to_datetime(datetime_str)
+
+
+def wait_for_services() -> int:
+    expected_services = core_services() + ops_services()
 
     client = docker.from_env()
-    running_services = [
-        x for x in client.services.list() if x.name.split("_")[-1] in services
-    ]
+    started_services = sorted(
+        [
+            s
+            for s in client.services.list()
+            if s.name.split("_")[-1] in expected_services
+        ],
+        key=by_service_creation,
+    )
 
-    # check all services are in
-    assert len(running_services), "no services started!"
-    assert len(services) == len(
-        running_services
-    ), f"Some services are missing or unexpected:\nexpected: {len(services)} {services}\ngot: {len(running_services)} {[service.name for service in running_services]}"
-    # now check they are in running mode
-    for service in running_services:
-        task = None
-        for n in range(RETRY_COUNT):
-            # get last updated task
-            sorted_tasks = sorted(service.tasks(), key=lambda task: task["UpdatedAt"])
-            task = sorted_tasks[-1]
+    assert len(started_services), "no services started!"
+    assert len(expected_services) == len(started_services), (
+        f"Some services are missing or unexpected:\n"
+        "expected: {len(expected_services)} {expected_services}\n"
+        "got: {len(started_services)} {[s.name for s in started_services]}"
+    )
 
-            if task["Status"]["State"].upper() in pre_states:
-                print(
-                    "Waiting [{}/{}] for {}...\n{}".format(
-                        n, RETRY_COUNT, service.name, get_tasks_summary(service.tasks())
+    for service in started_services:
+
+        expected_replicas = service.attrs["Spec"]["Mode"]["Replicated"]["Replicas"]
+        print(f"Service: {service.name} expects {expected_replicas} replicas", "-" * 10)
+
+        try:
+            for attempt in Retrying(
+                stop=stop_after_attempt(MAX_RETRY_COUNT),
+                wait=wait_fixed(WAIT_BEFORE_RETRY),
+            ):
+                with attempt:
+                    service_tasks: List[Dict] = service.tasks()  #  freeze
+                    print(get_tasks_summary(service_tasks))
+
+                    #
+                    # NOTE: a service could set 'ready' as desired-state instead of 'running' if
+                    # it constantly breaks and the swarm desides to "stopy trying".
+                    #
+                    valid_replicas = sum(
+                        task["Status"]["State"] == RUNNING_STATE
+                        for task in service_tasks
                     )
-                )
-                time.sleep(WAIT_TIME_SECS)
-            elif task["Status"]["State"].upper() in failed_states:
-                print(
-                    f"Waiting [{n}/{RETRY_COUNT}] Service {service.name} failed once...\n{get_tasks_summary(service.tasks())}"
-                )
-                time.sleep(WAIT_TIME_SECS)
-            else:
-                break
-        assert task
-        assert (
-            task["Status"]["State"].upper() == "RUNNING"
-        ), "Expected running, got \n{}\n{}".format(
-            pformat(task), get_tasks_summary(service.tasks())
-        )
-        # get_failed_tasks_logs(service, client))
+                    assert valid_replicas == expected_replicas
+        except RetryError:
+            print(
+                f"ERROR: Service {service.name} failed to start {expected_replicas} replica/s"
+            )
+            print(json.dumps(service.attrs, indent=1))
+            return os.EX_SOFTWARE
+
+    return os.EX_OK
 
 
 if __name__ == "__main__":
-    # get retry parameters
-    # wait for the services
     sys.exit(wait_for_services())

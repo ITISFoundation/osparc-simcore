@@ -8,9 +8,6 @@ services:
       - LOGLEVEL=${LOG_LEVEL:-INFO}
     env_file:
       - ../.env
-    depends_on:
-      - postgres
-      - webserver
     deploy:
       labels:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
@@ -39,9 +36,6 @@ services:
       - POSTGRES_PORT=${POSTGRES_PORT}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
       - BACKGROUND_TASK_REST_TIME=${CATALOG_BACKGROUND_TASK_REST_TIME:-60}
-    depends_on:
-      - postgres
-      - director
     networks:
       - default
 
@@ -56,6 +50,7 @@ services:
       - REGISTRY_SSL=${REGISTRY_SSL}
       - DIRECTOR_REGISTRY_CACHING=${DIRECTOR_REGISTRY_CACHING}
       - DIRECTOR_REGISTRY_CACHING_TTL=${DIRECTOR_REGISTRY_CACHING_TTL}
+      - DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS=${DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS}
       - DIRECTOR_SELF_SIGNED_SSL_SECRET_ID=${DIRECTOR_SELF_SIGNED_SSL_SECRET_ID}
       - DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME=${DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME}
       - DIRECTOR_SELF_SIGNED_SSL_FILENAME=${DIRECTOR_SELF_SIGNED_SSL_FILENAME}
@@ -114,24 +109,17 @@ services:
       - STORAGE_HOST=${STORAGE_HOST:-storage}
       - STORAGE_PORT=${STORAGE_PORT:-8080}
       - CATALOG_HOST=${CATALOG_HOST:-catalog}
+      - CATALOG_PORT=${CATALOG_PORT:-8000}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - WEBSERVER_LOGLEVEL=${LOG_LEVEL:-WARNING}
       - DIAGNOSTICS_MAX_DELAY_SECS=30
       - DIAGNOSTICS_MAX_AVG_LATENCY=10
     env_file:
       - ../.env
-    depends_on:
-      - storage
-      - catalog
-      - director
-      - postgres
-      - rabbit
-      - redis
     deploy:
       placement:
         constraints:
           - node.platform.os == linux
-          - node.role == manager
       labels:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
         # gzip compression
@@ -157,7 +145,7 @@ services:
       endpoint_mode: dnsrr
       resources:
         reservations:
-          cpus: "0.1"
+          cpus: "0.10"
           memory: "100M"
     volumes:
       - input:/home/scu/input
@@ -190,10 +178,6 @@ services:
       - START_AS_MODE_CPU=${SIDECAR_FORCE_CPU_NODE:-0}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
-    depends_on:
-      - rabbit
-      - postgres
-      - redis
     networks:
       - computational_services_subnet
 
@@ -218,8 +202,6 @@ services:
       - BF_API_KEY=${BF_API_KEY}
       - TRACING_ENABLED=${TRACING_ENABLED:-True}
       - TRACING_ZIPKIN_ENDPOINT=${TRACING_ZIPKIN_ENDPOINT:-http://jaeger:9411}
-    depends_on:
-      - postgres
     deploy:
       placement:
         constraints:
@@ -249,8 +231,6 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
-    depends_on:
-      - postgres
     networks:
       - default
 
@@ -323,11 +303,9 @@ services:
       - "--tracing.jaeger=true"
       - "--tracing.jaeger.samplingServerURL=http://jaeger:5778/sampling"
       - "--tracing.jaeger.localAgentHostPort=jaeger:6831"
-
     volumes:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock
-
     deploy:
       placement:
         constraints:

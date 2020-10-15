@@ -6,18 +6,15 @@ import logging
 from typing import Dict, Optional
 
 from aiohttp import web
-from pydantic import BaseSettings, Field, HttpUrl
+from pydantic import BaseSettings, Field
 
-from .__version__ import app_name, api_version
+from .__version__ import api_version, app_name
+from .constants import APP_SETTINGS_KEY
+from .utils import snake_to_camel
 
-APP_SETTINGS_KEY = f"{__name__ }.app_settings"
 
 log = logging.getLogger(__name__)
 
-
-def snake_to_camel(subject: str) -> str:
-    parts = subject.lower().split("_")
-    return parts[0] + "".join(x.title() for x in parts[1:])
 
 
 class ApplicationSettings(BaseSettings):
@@ -51,19 +48,6 @@ class ApplicationSettings(BaseSettings):
     # CONTAINER RUN  ---
     # settings defined from environs defined when container runs
 
-    # urls to manuals
-    manual_main_url: Optional[HttpUrl] = None
-    manual_extra_url: Optional[HttpUrl] = None
-
-    # fogbugz tickets
-    # SEE https://support.fogbugz.com/hc/en-us/articles/360011241594-Generating-a-Case-Template-with-bookmarklets
-    # https://<your_fogbugz_URL>.fogbugz.com/f/cases/new?command=new&pg=pgEditBug&ixProject=<project-id>&ixArea=<area_id>&ixCategory=<category_id>&ixPersonAssignedTo=<assigned_user_id>&sTitle=<title_of_case>&sEvent=<body_of text>
-    fogbugz_origin_url: Optional[HttpUrl] = "https://z43.fogbugz.com"
-
-    fogbugz_project_id: Optional[int] = None
-
-    # extra feedback url
-    feedback_form_url: Optional[HttpUrl] = None
 
     class Config:
         env_prefix = "WEBSERVER_"
@@ -87,11 +71,6 @@ class ApplicationSettings(BaseSettings):
                 "vcs_url",
                 "vcs_ref",
                 "build_date",
-                "manual_main_url",
-                "manual_extra_url",
-                "fogbugz_origin_url",
-                "fogbugz_project_id",
-                "feedback_form_url",
                 "swarm_stack_name",
             },
             exclude_none=True,

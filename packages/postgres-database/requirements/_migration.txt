@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_migration.txt requirements/_migration.in
 #
-alembic==1.4.2            # via -r requirements/_migration.in
+alembic==1.4.3            # via -r requirements/_migration.in
 certifi==2020.6.20        # via requests
 chardet==3.0.4            # via requests
 click==7.1.2              # via -r requirements/_migration.in
@@ -23,4 +23,4 @@ tenacity==6.2.0           # via -r requirements/_migration.in
 typing-extensions==3.7.4.3  # via -r requirements/_base.txt, yarl
 urllib3==1.25.10          # via -r requirements/_migration.in, requests
 websocket-client==0.57.0  # via docker
-yarl==1.5.1               # via -r requirements/_base.txt
+yarl==1.6.0               # via -r requirements/_base.txt

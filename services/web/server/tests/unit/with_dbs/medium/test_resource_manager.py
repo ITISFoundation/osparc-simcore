@@ -36,9 +36,6 @@ API_VERSION = "v0"
 GARBAGE_COLLECTOR_INTERVAL = 1
 SERVICE_DELETION_DELAY = 1
 
-# SEE https://github.com/miguelgrinberg/python-socketio/releases
-SIO_VERSION = tuple(int(digit) for digit in socketio.__version__.split("."))
-
 
 @pytest.fixture
 def client(loop, aiohttp_client, app_cfg, postgres_db, mock_orphaned_services):
@@ -126,6 +123,7 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
     url = client.app.router["close_project"].url_for(project_id=project_uuid)
     resp = await client.post(url, json=client_session_id)
     await assert_status(resp, web.HTTPNoContent)
+
 
 # ------------------------ TESTS -------------------------------
 async def test_anonymous_websocket_connection(
@@ -472,7 +470,7 @@ async def test_interactive_services_removed_per_project(
     # assert dynamic services are still around
     mocked_director_api["stop_service"].assert_not_called()
     # wait the defined delay
-    await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL)
+    await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 2)
     # assert dynamic service 2,3 is removed
     calls = [
         call(client.server.app, service2["service_uuid"]),

@@ -15,6 +15,7 @@ def read_reqs(reqs_path: Path):
 # Hard requirements on third-parties and latest for in-repo packages
 install_requirements = read_reqs(current_dir / "requirements" / "_base.txt") + [
     "s3wrapper",
+    "simcore-models-library",
     "simcore-postgres-database",
     "simcore-sdk",
     "simcore-service-library",
@@ -25,7 +26,9 @@ setup(
     name="simcore-service-webserver",
     version="0.5.1",
     packages=find_packages(where="src"),
-    package_dir={"": "src",},
+    package_dir={
+        "": "src",
+    },
     include_package_data=True,
     package_data={
         "": [

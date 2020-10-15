@@ -1,4 +1,5 @@
 import logging
+from contextlib import suppress
 from typing import Callable
 
 from fastapi import FastAPI
@@ -18,7 +19,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
 
         # setup connection to remote debugger (if applies)
         setup_remote_debugging(
-            force_enabled=app.state.settings.boot_mode == BootModeEnum.debug
+            force_enabled=app.state.settings.boot_mode == BootModeEnum.DEBUG
         )
 
         # setup connection to pg db
@@ -27,9 +28,9 @@ def create_start_app_handler(app: FastAPI) -> Callable:
             await connect_to_db(app)
 
         # setup connection to director
-        if app.state.settings.director.enabled:
-            setup_director(app)
+        setup_director(app)
 
+        if app.state.settings.director.enabled:
             # FIXME: check director service is in place and ready. Hand-shake??
             # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1728
             await start_registry_sync_task(app)
@@ -39,14 +40,17 @@ def create_start_app_handler(app: FastAPI) -> Callable:
 
 def create_stop_app_handler(app: FastAPI) -> Callable:
     async def stop_app() -> None:
-        try:
-            logger.info("Application stopping")
-            if app.state.settings.postgres.enabled:
-                await close_db_connection(app)
-            if app.state.settings.director.enabled:
+        logger.info("Application stopping")
+
+        if app.state.settings.director.enabled:
+            with suppress(Exception):
                 await stop_registry_sync_task(app)
+
+            with suppress(Exception):
                 await close_director(app)
-        except Exception:  # pylint: disable=broad-except
-            logger.exception("Stopping application")
+
+        if app.state.settings.postgres.enabled:
+            with suppress(Exception):
+                await close_db_connection(app)
 
     return stop_app

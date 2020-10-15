@@ -37,11 +37,7 @@ async function logIn(page, user, pass) {
 async function logOut(page) {
   console.log("Logging out");
 
-
-  await page.waitForSelector('[osparc-test-id="userMenuMainBtn"]', {
-    visible: true,
-    timeout: 2000
-  });
+  await page.waitForSelector('[osparc-test-id="userMenuMainBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuMainBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuLogoutBtn"]');
 }
@@ -149,6 +145,28 @@ async function dashboardOpenFirstTemplate(page, templateName) {
 
   await page.waitForSelector('[osparc-test-id="templateStudiesList"]')
   const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templateStudiesList"]');
+
+  if (children.length) {
+    const firstChildId = '[osparc-test-id="' + children[0] + '"]';
+    await utils.waitAndClick(page, firstChildId);
+    return true;
+  }
+  console.log("Creating New Study from template: no template found");
+  return false;
+}
+
+async function dashboardOpenFirstService(page, serviceName) {
+  // Returns true if template is found
+  console.log("Creating New Study from template");
+
+  await utils.waitAndClick(page, '[osparc-test-id="discoverTabBtn"]')
+
+  if (serviceName) {
+    await __filterTemplatesByText(page, serviceName);
+  }
+
+  await page.waitForSelector('[osparc-test-id="servicesList"]')
+  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="servicesList"]');
 
   if (children.length) {
     const firstChildId = '[osparc-test-id="' + children[0] + '"]';
@@ -343,6 +361,7 @@ module.exports = {
   dashboardEditFristStudyThumbnail,
   dashboardNewStudy,
   dashboardOpenFirstTemplate,
+  dashboardOpenFirstService,
   clickLoggerTitle,
   runStudy,
   dashboardDeleteFirstStudy,

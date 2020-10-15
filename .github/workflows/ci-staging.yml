@@ -26,10 +26,10 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: set owner variable
-        run: echo ::set-env name=OWNER::${GITHUB_REPOSITORY%/*}
+        run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - name: set git tag
-        run: echo ::set-env name=GIT_TAG::${GITHUB_REF##*/}
+        run: echo "GIT_TAG=${GITHUB_REF##*/}" >> $GITHUB_ENV
       - name: deploy
         run: ./ci/deploy/dockerhub-tag-version.bash

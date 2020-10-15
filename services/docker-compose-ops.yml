@@ -71,7 +71,9 @@ services:
       - simcore_default
 
   flower:
-    image: mher/flower:latest
+    # NOTE: latest with DIGEST 9bcc31818a1c7 is broken!
+    # SEE https://github.com/mher/flower/issues/1029
+    image: mher/flower:0.9.5
     init: true
     restart: always
     environment:

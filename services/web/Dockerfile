@@ -70,14 +70,16 @@ FROM base as build
 
 ENV SC_BUILD_TARGET build
 
-RUN apt-get update &&\
-    apt-get install -y --no-install-recommends \
-    build-essential
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    build-essential \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
-RUN python -m venv ${VIRTUAL_ENV}
+RUN python -m venv "${VIRTUAL_ENV}"
 
 RUN pip --no-cache-dir install --upgrade \
     pip~=20.2.2  \
@@ -142,7 +144,7 @@ RUN chmod +x services/web/server/docker/*.sh
 
 # front-end client last (image name is the path to the Dockerfile)
 COPY --from=client/tools/qooxdoo-kit/builder:latest --chown=scu:scu \
-      /project/build-output ${SIMCORE_WEB_OUTDIR}
+      /project/build-output "${SIMCORE_WEB_OUTDIR}"
 
 HEALTHCHECK --interval=30s \
       --timeout=120s \
@@ -171,7 +173,7 @@ ENV SIMCORE_WEB_OUTDIR /devel/services/web/client
 
 WORKDIR /devel
 
-RUN chown -R scu:scu ${VIRTUAL_ENV}
+RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
 # NOTE: declaring VOLUMEs here makes troubles mounting
 #       the client's output folder to /devel/services/web/client.

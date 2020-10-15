@@ -12,7 +12,7 @@ import pytest
 import simcore_service_catalog
 
 pytest_plugins = [
-    "pytest_simcore.environs",
+    "pytest_simcore.repository_paths",
     "pytest_simcore.service_environs",
     "pytest_simcore.schemas",
     "pytest_simcore.docker_registry",
@@ -42,26 +42,6 @@ def installed_package_dir() -> Path:
     return dirpath
 
 
-@pytest.fixture(scope="session")
-def osparc_simcore_root_dir() -> Path:
-    root_dir = current_dir
-    while root_dir != root_dir.parent and not any(root_dir.glob("services/catalog")):
-        root_dir = root_dir.parent
-
-    assert (
-        root_dir and root_dir.exists()
-    ), "Did you renamed or moved the integration folder under catalog??"
-    assert any(root_dir.glob("services/catalog")), "%s not look like rootdir" % root_dir
-    return root_dir
-
-
-@pytest.fixture(scope="session")
-def api_specs_dir(osparc_simcore_root_dir: Path) -> Path:
-    specs_dir = osparc_simcore_root_dir / "api" / "specs" / "catalog"
-    assert specs_dir.exists()
-    return specs_dir
-
-
 # FAKE DATA ------
 
 
@@ -79,17 +59,17 @@ def fake_data_dag_in() -> Dict:
                 "version": "6.2.0",
                 "label": "string",
                 "progress": 0,
-                "thumbnail": "string",
+                "thumbnail": "https://string.com",
                 "inputs": {},
                 "inputAccess": {
                     "additionalProp1": "ReadAndWrite",
                     "additionalProp2": "ReadAndWrite",
                     "additionalProp3": "ReadAndWrite",
                 },
-                "inputNodes": ["string"],
+                "inputNodes": ["ba8e4558-1088-49b1-8fe6-f591634089e5"],
                 "outputs": {},
-                "outputNodes": ["string"],
-                "parent": "nodeUUid1",
+                "outputNodes": ["ba8e4558-1088-49b1-8fe6-f591634089e5"],
+                "parent": "ba8e4558-1088-49b1-8fe6-f591634089e5",
                 "position": {"x": 0, "y": 0},
             },
             "additionalProp2": {
@@ -97,17 +77,17 @@ def fake_data_dag_in() -> Dict:
                 "version": "6.2.0",
                 "label": "string",
                 "progress": 0,
-                "thumbnail": "string",
+                "thumbnail": "https://string.com",
                 "inputs": {},
                 "inputAccess": {
                     "additionalProp1": "ReadAndWrite",
                     "additionalProp2": "ReadAndWrite",
                     "additionalProp3": "ReadAndWrite",
                 },
-                "inputNodes": ["string"],
+                "inputNodes": ["ba8e4558-1088-49b1-8fe6-f591634089e5"],
                 "outputs": {},
-                "outputNodes": ["string"],
-                "parent": "nodeUUid1",
+                "outputNodes": ["ba8e4558-1088-49b1-8fe6-f591634089e5"],
+                "parent": "ba8e4558-1088-49b1-8fe6-f591634089e5",
                 "position": {"x": 0, "y": 0},
             },
             "additionalProp3": {
@@ -115,17 +95,17 @@ def fake_data_dag_in() -> Dict:
                 "version": "6.2.0",
                 "label": "string",
                 "progress": 0,
-                "thumbnail": "string",
+                "thumbnail": "https://string.com",
                 "inputs": {},
                 "inputAccess": {
                     "additionalProp1": "ReadAndWrite",
                     "additionalProp2": "ReadOnly",
                     "additionalProp3": "ReadAndWrite",
                 },
-                "inputNodes": ["string"],
+                "inputNodes": [],
                 "outputs": {},
-                "outputNodes": ["string"],
-                "parent": "nodeUUid1",
+                "outputNodes": [],
+                "parent": None,
                 "position": {"x": 0, "y": 0},
             },
         },

@@ -3,26 +3,20 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
-#
+# REFERENCES
+#   https://blog.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1
+
 import copy
-import difflib
 import json
 
-# https://blog.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1
-#
-from typing import Callable, Dict, List
-
-import attr
 import jsondiff
 import pytest
-from aiohttp import web
 
 from simcore_service_webserver.resources import resources
 from simcore_service_webserver.security_access_model import (
     RoleBasedAccessModel,
     check_access,
 )
-from simcore_service_webserver.security_permissions import and_, or_
 from simcore_service_webserver.security_roles import ROLES_PERMISSIONS, UserRole
 
 
@@ -108,9 +102,11 @@ def test_unique_permissions():
     for role in ROLES_PERMISSIONS:
         can = ROLES_PERMISSIONS[role].get("can", [])
         for permission in can:
-            assert permission not in used, (
-                "'%s' in %s is repeated in security_roles.ROLES_PERMISSIONS"
-                % (permission, role)
+            assert (
+                permission not in used
+            ), "'%s' in %s is repeated in security_roles.ROLES_PERMISSIONS" % (
+                permission,
+                role,
             )
             used.append(permission)
 

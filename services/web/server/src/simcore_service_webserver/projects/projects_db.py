@@ -24,6 +24,7 @@ from sqlalchemy import literal_column
 from sqlalchemy.sql import and_, select
 
 from servicelib.application_keys import APP_DB_ENGINE_KEY
+from simcore_postgres_database.webserver_models import ProjectType, projects
 
 from ..db_models import GroupType, groups, study_tags, user_to_groups, users
 from ..utils import format_datetime, now_str
@@ -33,7 +34,6 @@ from .projects_exceptions import (
     ProjectsException,
 )
 from .projects_fakes import Fake
-from .projects_models import ProjectType, projects
 
 log = logging.getLogger(__name__)
 
@@ -593,6 +593,23 @@ class ProjectDBAPI:
             ):
                 result.append(row[0])
             return list(result)
+
+    async def update_project_without_enforcing_checks(
+        self, project_data: Dict, project_uuid: str
+    ) -> bool:
+        """The garbage collector needs to alter the row without passing through the
+        permissions layer."""
+        async with self.engine.acquire() as conn:
+            # update timestamps
+            project_data["lastChangeDate"] = now_str()
+            # now update it
+            result = await conn.execute(
+                # pylint: disable=no-value-for-parameter
+                projects.update()
+                .values(**_convert_to_db_names(project_data))
+                .where(projects.c.uuid == project_uuid)
+            )
+            return result.rowcount == 1
 
 
 def setup_projects_db(app: web.Application):
