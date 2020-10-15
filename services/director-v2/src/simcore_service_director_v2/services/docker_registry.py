@@ -16,12 +16,12 @@ from ..core.settings import RegistrySettings
 logger = logging.getLogger(__name__)
 
 
-def setup_docker_registry(app: FastAPI) -> None:
+def on_start(app: FastAPI) -> None:
     settings: RegistrySettings = app.state.settings.registry
     app.state.docker_registry_api = RegistryApiClient(settings)
 
 
-async def shutdown_docker_registry(app: FastAPI) -> None:
+async def on_stop(app: FastAPI) -> None:
     with suppress(AttributeError):
         client: AsyncClient = app.state.docker_registry_api.client
         await client.aclose()

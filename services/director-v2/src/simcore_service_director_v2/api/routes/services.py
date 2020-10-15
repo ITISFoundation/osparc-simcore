@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, Path, Query
+from fastapi import APIRouter, Path, Query, Depends
 
 from ...models.schemas.services import (
     SERVICE_IMAGE_NAME_RE,
@@ -11,6 +11,8 @@ from ...models.schemas.services import (
     ServicesArrayEnveloped,
     ServiceType,
 )
+from ..dependencies.director_v0 import ReverseProxyClient, get_reverse_proxy_to_v0
+
 
 router = APIRouter()
 
@@ -28,10 +30,13 @@ async def list_services(
             "   - computational - a computational service\n"
             "   - interactive - an interactive service\n"
         ),
-    )
+    ),
+        director_v0: ReverseProxyClient = Depends(get_reverse_proxy_to_v0),
+
 ):
     # TODO: why service_type is optional??
     print(service_type)
+    return director_v0.request(service_type)
 
 
 ServiceKeyPath = Path(
@@ -50,9 +55,11 @@ ServiceKeyVersionPath = Path(
     response_model=ServicesArrayEnveloped,
 )
 async def get_service_versioned(
-    service_key: str = ServiceKeyPath, service_version: str = ServiceKeyVersionPath
+    service_key: str = ServiceKeyPath, service_version: str = ServiceKeyVersionPath,
+        director_v0: ReverseProxyClient = Depends(get_reverse_proxy_to_v0),
+
 ):
-    pass
+    return director_v0.request(service_key, service_version)
 
 
 @router.get(
@@ -61,6 +68,8 @@ async def get_service_versioned(
     response_model=ServiceExtrasEnveloped,
 )
 async def get_extra_service_versioned(
-    service_key: str = ServiceKeyPath, service_version: str = ServiceKeyVersionPath
+    service_key: str = ServiceKeyPath, service_version: str = ServiceKeyVersionPath,
+        director_v0: ReverseProxyClient = Depends(get_reverse_proxy_to_v0),
+
 ):
-    pass
+    return director_v0.request(service_key, service_version)
