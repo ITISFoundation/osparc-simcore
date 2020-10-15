@@ -108,7 +108,7 @@ def test_all_image_use_same_python_version(
     for dockerfile, python_version in python_in_dockerfiles:
         expected_python_version = expected_python_version(dockerfile)
         current_version, expected_version = make_versions_comparable(
-            python_version, expected_python_version(dockerfile)
+            python_version, expected_python_version
         )
         assert (
             current_version == expected_version

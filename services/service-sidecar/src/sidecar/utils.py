@@ -1,5 +1,4 @@
 import asyncio
-import uuid
 from contextlib import asynccontextmanager
 from typing import Tuple
 
