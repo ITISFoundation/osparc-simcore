@@ -59,7 +59,7 @@ def expected_pip_version(osparc_simcore_root_dir: Path) -> str:
 @pytest.fixture(scope="session")
 def expected_python_version() -> Tuple[int]:
     def factory(dockerfile=None):
-        if dockerfile is not None and "service-sidecar" in dockerfile:
+        if dockerfile is not None and "service-sidecar" in str(dockerfile)
             return (3, 8)
         return (3, 6)
 
