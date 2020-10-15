@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 import inspect
 
+
 def remote_debug_on_start(app: FastAPI):
     setup_remote_debugging(
         force_enabled=app.state.settings.boot_mode == BootModeEnum.DEBUG
@@ -29,7 +30,6 @@ submodules_events = [
 ]
 
 
-
 def create_start_app_handler(app: FastAPI) -> Callable:
     async def start_app() -> None:
         for module_name, on_start, _ in submodules_events:
@@ -42,8 +42,6 @@ def create_start_app_handler(app: FastAPI) -> Callable:
         print(WELCOME_MSG)
 
     return start_app
-
-
 
 
 def create_stop_app_handler(app: FastAPI) -> Callable:

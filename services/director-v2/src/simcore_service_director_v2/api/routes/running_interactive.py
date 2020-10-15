@@ -6,7 +6,6 @@ from ...models.constants import SERVICE_IMAGE_NAME_RE, VERSION_RE
 from ...models.schemas.services import RunningServicesEnveloped
 from ..dependencies.director_v0 import ReverseProxyClient, get_reverse_proxy_to_v0
 
-
 router = APIRouter()
 
 

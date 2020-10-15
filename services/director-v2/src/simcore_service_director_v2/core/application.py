@@ -22,7 +22,6 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings is None:
         settings = AppSettings.create_from_env()
 
-
     logging.basicConfig(level=settings.loglevel)
     logging.root.setLevel(settings.loglevel)
     logger.debug(settings.json(indent=2))
