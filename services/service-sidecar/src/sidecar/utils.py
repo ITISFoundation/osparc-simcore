@@ -6,7 +6,7 @@ from typing import Tuple
 import aiofiles
 import yaml
 
-from pathlib import Path
+import tempfile
 from sidecar import config
 
 
@@ -17,7 +17,7 @@ class InvalidComposeSpec(Exception):
 @asynccontextmanager
 async def write_to_tmp_file(file_contents):
     """Disposes of file on exit"""
-    file_path = Path("/tmp/") / str(uuid.uuid4())
+    file_path = tempfile.gettempdir()
     async with aiofiles.open(file_path, mode="w") as tmp_file:
         await tmp_file.write(file_contents)
     try:
