@@ -65,8 +65,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     "nodeSelected": "qx.event.type.Data",
     "dashboardPressed": "qx.event.type.Event",
     "slidesStart": "qx.event.type.Event",
-    "slidesStop": "qx.event.type.Event",
-    "slidesEdit": "qx.event.type.Event"
+    "slidesStop": "qx.event.type.Event"
   },
 
   properties: {
@@ -104,7 +103,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     __slidesMenu: null,
     __startSlidesBtn: null,
     __stopSlidesBtn: null,
-    __editSlidesBtn: null,
     __studyTitle: null,
     __workbenchNodesLayout: null,
     __guidedNodesLayout: null,
@@ -378,11 +376,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         if (this.getPageContext() === "slides") {
           this.__startSlidesBtn.setEnabled(false);
           this.__stopSlidesBtn.setEnabled(true);
-          this.__editSlidesBtn.setEnabled(false);
         } else {
           this.__startSlidesBtn.setEnabled(true);
           this.__stopSlidesBtn.setEnabled(false);
-          this.__editSlidesBtn.setEnabled(true);
         }
       } else {
         this.__slidesMenu.exclude();
@@ -423,12 +419,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         this.fireEvent("slidesStop");
       }, this);
       menu.add(stopBtn);
-
-      const editBtn = this.__editSlidesBtn = new qx.ui.menu.Button(this.tr("Edit"));
-      editBtn.addListener("execute", () => {
-        this.fireEvent("slidesEdit");
-      }, this);
-      menu.add(editBtn);
 
       return new qx.ui.form.MenuButton(this.tr("Slides"), null, menu);
     },

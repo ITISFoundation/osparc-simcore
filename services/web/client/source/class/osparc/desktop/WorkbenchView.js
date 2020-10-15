@@ -117,7 +117,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return this.__loggerView;
     },
 
-    editSlides: function() {
+    __editSlides: function() {
       const uiData = this.getStudy().getUi();
       const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(uiData.getSlideshow());
       const title = this.tr("Edit Slides");
@@ -349,6 +349,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const study = this.getStudy();
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree(study);
+      nodesTree.addListener("slidesEdit", () => {
+        this.__editSlides();
+      }, this);
       nodesTree.addListener("removeNode", e => {
         const nodeId = e.getData();
         this.__removeNode(nodeId);

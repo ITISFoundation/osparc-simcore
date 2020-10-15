@@ -51,6 +51,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   },
 
   events: {
+    "slidesEdit": "qx.event.type.Event",
     "nodeDoubleClicked": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
     "exportNode": "qx.event.type.Data",
@@ -80,6 +81,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   members: {
     __toolBar: null,
     __tree: null,
+    __editSlidesBtn: null,
     __exportButton: null,
     __openButton: null,
     __deleteButton: null,
@@ -116,6 +118,12 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     __buildToolbar: function() {
       const iconSize = 14;
       const toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
+
+      const editBtn = this.__editSlidesBtn = new qx.ui.toolbar.Button(this.tr("Slides"), "@FontAwesome5Solid/paw/"+iconSize);
+      editBtn.addListener("execute", () => {
+        this.fireEvent("slidesEdit");
+      }, this);
+      toolbar.add(editBtn);
 
       toolbar.addSpacer();
 

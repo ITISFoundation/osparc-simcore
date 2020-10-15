@@ -193,10 +193,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    editSlides: function() {
-      this.__workbenchView.editSlides();
-    },
-
     updateStudyDocument: function(run=false) {
       this.getStudy().setLastChangeDate(new Date());
       const newObj = this.getStudy().serialize();

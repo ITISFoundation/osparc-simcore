@@ -97,13 +97,6 @@ qx.Class.define("osparc.desktop.MainPage", {
         }
       }, this);
 
-      navBar.addListener("slidesEdit", () => {
-        if (this.__studyEditor) {
-          navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT[1]);
-          this.__studyEditor.editSlides();
-        }
-      }, this);
-
       navBar.addListener("nodeSelected", e => {
         if (this.__studyEditor) {
           let nodeId = e.getData();
