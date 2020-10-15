@@ -19,6 +19,7 @@ PYTHON_VERSION_DOCKER_PATTERN = re.compile(r"ARG PYTHON_VERSION=\"([\d\.]+)\"")
 
 # TODO: enhance version comparison with from packaging.version from setuptools
 
+
 def to_version(version: str) -> Tuple[int]:
     return tuple(int(v) for v in version.split("."))
 
@@ -57,7 +58,12 @@ def expected_pip_version(osparc_simcore_root_dir: Path) -> str:
 
 @pytest.fixture(scope="session")
 def expected_python_version() -> Tuple[int]:
-    return (3, 6)
+    def factory(dockerfile=None):
+        if dockerfile is not None and "service-sidecar" in dockerfile:
+            return (3, 8)
+        return (3, 6)
+
+    return factory
 
 
 @pytest.fixture(scope="session")
@@ -100,8 +106,9 @@ def test_all_image_use_same_python_version(
     python_in_dockerfiles, expected_python_version
 ):
     for dockerfile, python_version in python_in_dockerfiles:
+        expected_python_version = expected_python_version(dockerfile)
         current_version, expected_version = make_versions_comparable(
-            python_version, expected_python_version
+            python_version, expected_python_version(dockerfile)
         )
         assert (
             current_version == expected_version
@@ -109,6 +116,7 @@ def test_all_image_use_same_python_version(
 
 
 def test_running_python_version(expected_python_version):
+    expected_python_version = expected_python_version()
     current_version, expected_version = make_versions_comparable(
         sys.version_info, expected_python_version
     )
