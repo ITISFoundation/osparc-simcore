@@ -668,7 +668,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           .then(data => {
             this.__lastSavedStudy = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
             resolve();
-          }).catch(error => {
+          })
+          .catch(error => {
             this.getLogger().error(null, "Error updating pipeline");
             reject();
           });
