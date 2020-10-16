@@ -1,11 +1,9 @@
 # pylint: disable=unused-argument
-
-import json
 import asyncio
+import json
 from typing import List
 
 import aio_pika
-
 from simcore_sdk.config.rabbit import Config
 from simcore_service_sidecar.rabbitmq import RabbitMQ
 

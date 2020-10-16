@@ -155,6 +155,28 @@ async function dashboardOpenFirstTemplate(page, templateName) {
   return false;
 }
 
+async function dashboardOpenFirstService(page, serviceName) {
+  // Returns true if template is found
+  console.log("Creating New Study from template");
+
+  await utils.waitAndClick(page, '[osparc-test-id="discoverTabBtn"]')
+
+  if (serviceName) {
+    await __filterTemplatesByText(page, serviceName);
+  }
+
+  await page.waitForSelector('[osparc-test-id="servicesList"]')
+  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="servicesList"]');
+
+  if (children.length) {
+    const firstChildId = '[osparc-test-id="' + children[0] + '"]';
+    await utils.waitAndClick(page, firstChildId);
+    return true;
+  }
+  console.log("Creating New Study from template: no template found");
+  return false;
+}
+
 async function __filterStudiesByText(page, studyName) {
   console.log("Filtering by", studyName);
 
@@ -339,6 +361,7 @@ module.exports = {
   dashboardEditFristStudyThumbnail,
   dashboardNewStudy,
   dashboardOpenFirstTemplate,
+  dashboardOpenFirstService,
   clickLoggerTitle,
   runStudy,
   dashboardDeleteFirstStudy,

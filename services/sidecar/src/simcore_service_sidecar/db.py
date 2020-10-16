@@ -1,13 +1,11 @@
 """ database submodule associated to the postgres uservice
 
 """
-
 import logging
 import socket
 
 import tenacity
 from aiopg.sa import Engine
-
 from servicelib.aiopg_utils import (
     DataSourceName,
     PostgresRetryPolicyUponInitialization,

@@ -17,7 +17,7 @@ def is_service_valid(service: Dict):
             log.debug("service [%s] validated", service["key"])
             return True
         except ValidationError as exc:
-            log.debug("Node validation error: %s", exc.message)
+            log.debug("service [%s] validation error: %s", service["key"], exc.message)
             return False
         except SchemaError as exc:
             log.exception("Schema error:")

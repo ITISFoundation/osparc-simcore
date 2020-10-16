@@ -119,7 +119,7 @@ class ResponsesQueue {
     }
   }
 
-  async waitUntilServiceReady(studyId, nodeId, timeout = 30000) {
+  async waitUntilServiceReady(studyId, nodeId, timeout) {
     const url = "projects/" + studyId +"/nodes/" + nodeId;
     const resp = await this.waitUntilResponse(url, timeout);
     const status = resp["data"]["service_state"];
