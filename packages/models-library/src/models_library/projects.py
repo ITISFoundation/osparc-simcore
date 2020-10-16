@@ -138,7 +138,7 @@ class Node(BaseModel):
         ..., description="The short name of the node", example=["JupyterLab"]
     )
     progress: Optional[float] = Field(
-        0,
+        None,
         ge=0,
         le=100,
         description="the node progress value"
@@ -150,13 +150,13 @@ class Node(BaseModel):
     )
 
     inputs: Optional[Dict[InputID, InputTypes]] = Field(
-        {}, description="values of input properties"
+        None, description="values of input properties"
     )
     inputAccess: Optional[Dict[InputID, AccessEnum]] = Field(
-        {}, description="map with key - access level pairs"
+        None, description="map with key - access level pairs"
     )
     inputNodes: Optional[List[UUID4]] = Field(
-        [],
+        None,
         description="node IDs of where the node is connected to",
         example=["nodeUuid1", "nodeUuid2"],
     )
@@ -164,7 +164,7 @@ class Node(BaseModel):
     outputs: Optional[Dict[OutputID, OutputTypes]] = None
     outputNode: Optional[bool] = Field(None, deprecated=True)
     outputNodes: Optional[List[UUID4]] = Field(
-        [],
+        None,
         description="Used in group-nodes. Node IDs of those connected to the output",
         example=["nodeUuid1", "nodeUuid2"],
     )
