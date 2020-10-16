@@ -28,8 +28,10 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__tree = this._createChildControlImpl("tree");
-    const save = this._createChildControlImpl("save-button");
-    save.addListener("execute", () => this.__saveSlides(), this);
+    const disable = this._createChildControlImpl("disable");
+    disable.addListener("execute", () => this.__disableSlides(), this);
+    const enable = this._createChildControlImpl("enable");
+    enable.addListener("execute", () => this.__enableSlides(), this);
 
     const model = this.__initTree();
     this.__tree.setModel(model);
@@ -85,13 +87,28 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
             flex: 1
           });
           break;
-        case "save-button":
-          control = new qx.ui.form.Button(this.tr("Save")).set({
-            allowGrowX: false,
+        case "buttons":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
             alignX: "right"
-          });
+          }));
           this._add(control);
           break;
+        case "disable": {
+          control = new qx.ui.form.Button(this.tr("Disable")).set({
+            allowGrowX: false
+          });
+          const buttons = this.getChildControl("buttons");
+          buttons.add(control);
+          break;
+        }
+        case "enable": {
+          control = new qx.ui.form.Button(this.tr("Enable")).set({
+            allowGrowX: false
+          });
+          const buttons = this.getChildControl("buttons");
+          buttons.add(control);
+          break;
+        }
       }
 
       return control || this.base(arguments, id);
@@ -232,7 +249,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       this.__tree.refresh();
     },
 
-    __saveSlides: function() {
+    __enableSlides: function() {
       let slideshow = {};
       const model = this.__tree.getModel();
       const children = model.getChildren().toArray();
@@ -245,6 +262,12 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       });
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       study.getUi().setSlideshow(slideshow);
+      this.fireEvent("finished");
+    },
+
+    __disableSlides: function() {
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      study.getUi().setSlideshow({});
       this.fireEvent("finished");
     }
   }

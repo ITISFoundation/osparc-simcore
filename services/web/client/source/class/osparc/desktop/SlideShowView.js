@@ -60,8 +60,10 @@ qx.Class.define("osparc.desktop.SlideShowView", {
             nodeId
           });
         }
-        nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
-        this.nodeSelected(nodes[0].nodeId);
+        if (nodes.length) {
+          nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
+          this.nodeSelected(nodes[0].nodeId);
+        }
       }
     },
 
