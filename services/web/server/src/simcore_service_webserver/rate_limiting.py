@@ -5,26 +5,31 @@ from datetime import datetime, timedelta
 
 from aiohttp.web_exceptions import HTTPTooManyRequests
 
-
-def global_rate_limit_route(reqs: int, interval_seconds: int):
+def global_rate_limit_route(number_of_requests: int, interval_seconds: int):
     """
     Limits the requests per given interval to this endpoint
     from all incoming sources.
     Used to prevent abuse of unauthenticated endpoints.
 
-    reqs: number of max requests per total interval
+    The limit rate is set as number_of_requests / interval_seconds
+
+    number_of_requests: number of max requests per total interval
     interval_seconds: interval expressed in seconds
     """
 
     # compute the amount of requests per
-    def internal(decorated_function):
+    def decorating_function(decorated_function):
         @attr.s(auto_attribs=True)
         class Context:
-            max_allowed: int  # maimum allowed requests per interval
+            max_allowed: int  # maximum allowed requests per interval
             remaining: int  # remaining requests
             rate_limit_reset: int  # utc timestamp
 
-        context = Context(max_allowed=reqs, remaining=reqs, rate_limit_reset=0)
+        context = Context(
+            max_allowed=number_of_requests,
+            remaining=number_of_requests,
+            rate_limit_reset=0,
+        )
 
         @wraps(decorated_function)
         async def wrapper(*args, **kwargs):
@@ -62,6 +67,7 @@ def global_rate_limit_route(reqs: int, interval_seconds: int):
             context.remaining -= 1
             return await decorated_function(*args, **kwargs)
 
+        wrapper.rate_limit_setup = (number_of_requests, interval_seconds)
         return wrapper
 
-    return internal
+    return decorating_function
