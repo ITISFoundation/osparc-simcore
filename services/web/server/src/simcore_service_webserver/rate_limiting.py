@@ -1,8 +1,9 @@
 import attr
+import json
 from functools import wraps
 from datetime import datetime, timedelta
 
-from aiohttp import web
+from aiohttp import web_exceptions
 
 
 def global_rate_limit_route(reqs: int, interval_seconds: int):
@@ -42,19 +43,19 @@ def global_rate_limit_route(reqs: int, interval_seconds: int):
                 and context.remaining <= 0
             ):
                 # show error and return from here
-                return web.json_response(
-                    status=403,
+                raise web_exceptions.HTTPTooManyRequests(
                     headers={
-                        "X-RateLimit-Limit": str(context.max_allowed),
-                        "X-RateLimit-Remaining": str(max(0, context.remaining)),
-                        "X-RateLimit-Reset": str(int(context.rate_limit_reset)),
+                        "Content-Type": "application/json",
+                        "Retry-After": str(int(context.rate_limit_reset)),
                     },
-                    data={
-                        "error": {
-                            "logs": [{"message": "API rate limit exceeded."}],
-                            "status": 403,
+                    text=json.dumps(
+                        {
+                            "error": {
+                                "logs": [{"message": "API rate limit exceeded."}],
+                                "status": 403,
+                            }
                         }
-                    },
+                    ),
                 )
 
             # increase counter and return original function call
