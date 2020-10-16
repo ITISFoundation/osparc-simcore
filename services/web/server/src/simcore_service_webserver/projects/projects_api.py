@@ -14,16 +14,26 @@ from typing import Any, Dict, Optional, Set
 from uuid import uuid4
 
 from aiohttp import web
-from models_library.projects import Owner, ProjectLocked, ProjectState
+
+from models_library.projects import (
+    Owner,
+    ProjectLocked,
+    ProjectRunningState,
+    ProjectState,
+)
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
-from ..computation_api import delete_pipeline_db
+from ..computation_api import delete_pipeline_db, get_pipeline_state
 from ..director import director_api
 from ..resource_manager.websocket_manager import managed_resource
-from ..socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT, post_group_messages
+from ..socketio.events import (
+    SOCKET_IO_PROJECT_UPDATED_EVENT,
+    SOCKET_IO_NODE_UPDATED_EVENT,
+    post_group_messages,
+)
 from ..storage_api import copy_data_folders_from_project  # mocked in unit-tests
 from ..storage_api import (
     delete_data_folders_of_project,
@@ -63,22 +73,20 @@ async def get_project_for_user(
     """
     db = app[APP_PROJECT_DBAPI]
 
-    is_template = False
+    project: Dict = None
     if include_templates:
         project = await db.get_template_project(project_uuid)
-        is_template = bool(project)
 
-    if not is_template:
+    if not project:
         project = await db.get_user_project(user_id, project_uuid)
+
+    # adds state if it is not a template
+    if include_state:
+        project["state"] = await get_project_state_for_user(user_id, project_uuid, app)
 
     # TODO: how to handle when database has an invalid project schema???
     # Notice that db model does not include a check on project schema.
     validate_project(app, project)
-
-    # adds state if it is not a template
-    if include_state:
-        project_state = await get_project_state_for_user(user_id, project_uuid, app)
-        project["state"] = project_state.dict()
     return project
 
 
@@ -269,6 +277,24 @@ async def delete_project_node(
     )
 
 
+async def update_project_node_state(
+    app: web.Application, user_id: int, project_id: str, node_id: str, new_state: str
+) -> Dict:
+    log.debug(
+        "updating node %s state in project %s for user %s", node_id, project_id, user_id
+    )
+    project = await get_project_for_user(app, project_id, user_id)
+    if not node_id in project["workbench"]:
+        raise NodeNotFoundError(project_id, node_id)
+    project["workbench"][node_id]["state"] = new_state
+    db = app[APP_PROJECT_DBAPI]
+    updated_project = await db.update_user_project(project, user_id, project_id)
+    updated_project["state"] = await get_project_state_for_user(
+        user_id, project_id, app
+    )
+    return updated_project
+
+
 async def update_project_node_progress(
     app: web.Application, user_id: int, project_id: str, node_id: str, progress: float
 ) -> Optional[Dict]:
@@ -285,8 +311,11 @@ async def update_project_node_progress(
 
     project["workbench"][node_id]["progress"] = int(100.0 * float(progress) + 0.5)
     db = app[APP_PROJECT_DBAPI]
-    await db.update_user_project(project, user_id, project_id)
-    return project["workbench"][node_id]
+    updated_project = await db.update_user_project(project, user_id, project_id)
+    updated_project["state"] = await get_project_state_for_user(
+        user_id, project_id, app
+    )
+    return updated_project
 
 
 async def update_project_node_outputs(
@@ -312,27 +341,27 @@ async def update_project_node_outputs(
     if not node_id in project["workbench"]:
         raise NodeNotFoundError(project_id, node_id)
 
-    if data:
-        # NOTE: update outputs (not required) if necessary as the UI expects a
-        # dataset/label field that is missing
-        outputs: Dict[str, Any] = project["workbench"][node_id].setdefault(
-            "outputs", {}
-        )
-        outputs.update(data)
+    # NOTE: update outputs (not required) if necessary as the UI expects a
+    # dataset/label field that is missing
+    outputs: Dict[str, Any] = project["workbench"][node_id].setdefault("outputs", {})
+    outputs.update(data)
 
-        for output_key in outputs.keys():
-            if not isinstance(outputs[output_key], dict):
-                continue
-            if "path" in outputs[output_key]:
-                # file_id is of type study_id/node_id/file.ext
-                file_id = outputs[output_key]["path"]
-                study_id, _, file_ext = file_id.split("/")
-                outputs[output_key]["dataset"] = study_id
-                outputs[output_key]["label"] = file_ext
+    for output_key in outputs.keys():
+        if not isinstance(outputs[output_key], dict):
+            continue
+        if "path" in outputs[output_key]:
+            # file_id is of type study_id/node_id/file.ext
+            file_id = outputs[output_key]["path"]
+            study_id, _, file_ext = file_id.split("/")
+            outputs[output_key]["dataset"] = study_id
+            outputs[output_key]["label"] = file_ext
 
-        db = app[APP_PROJECT_DBAPI]
-        await db.update_user_project(project, user_id, project_id)
-    return project["workbench"][node_id]
+    db = app[APP_PROJECT_DBAPI]
+    updated_project = await db.update_user_project(project, user_id, project_id)
+    updated_project["state"] = await get_project_state_for_user(
+        user_id, project_id, app
+    )
+    return updated_project
 
 
 async def get_workbench_node_ids_from_project_uuid(
@@ -353,9 +382,7 @@ async def is_node_id_present_in_any_project_workbench(
     return node_id in await db.get_all_node_ids_from_workbenches()
 
 
-async def notify_project_state_update(
-    app: web.Application, project: Dict, state: ProjectState
-) -> None:
+async def notify_project_state_update(app: web.Application, project: Dict) -> None:
     rooms_to_notify = [
         f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
     ]
@@ -363,7 +390,7 @@ async def notify_project_state_update(
     messages = {
         SOCKET_IO_PROJECT_UPDATED_EVENT: {
             "project_uuid": project["uuid"],
-            "data": state.dict(),
+            "data": project["state"],
         }
     }
 
@@ -371,7 +398,51 @@ async def notify_project_state_update(
         await post_group_messages(app, room, messages)
 
 
-async def get_project_state_for_user(user_id, project_uuid, app) -> ProjectState:
+async def notify_project_node_update(
+    app: web.Application, project: Dict, node_id: str
+) -> None:
+    rooms_to_notify = [
+        f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
+    ]
+
+    messages = {
+        SOCKET_IO_NODE_UPDATED_EVENT: {
+            "Node": node_id,
+            "data": project["workbench"][node_id],
+        }
+    }
+
+    for room in rooms_to_notify:
+        await post_group_messages(app, room, messages)
+
+
+async def _get_project_lock_state(
+    user_id: int, project_uuid: str, app: web.Application
+) -> ProjectLocked:
+    with managed_resource(user_id, None, app) as rt:
+        # checks who is using it
+        users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
+        usernames = [await get_user_name(app, uid) for uid in set(users_of_project)]
+        assert len(usernames) <= 1  # currently not possible to have more than 1
+
+        # based on usage, sets an state
+        is_locked: bool = len(usernames) > 0
+        if is_locked:
+            return ProjectLocked(
+                value=is_locked,
+                owner=Owner(**usernames[0]),
+            )
+        return ProjectLocked(value=is_locked)
+
+
+async def _get_project_running_state(
+    project_uuid: str, app: web.Application
+) -> ProjectRunningState:
+    pipeline_state = await get_pipeline_state(app, project_uuid)
+    return ProjectRunningState(value=pipeline_state)
+
+
+async def get_project_state_for_user(user_id, project_uuid, app) -> Dict:
     """
     Returns state of a project with respect to a given user
     E.g.
@@ -382,18 +453,9 @@ async def get_project_state_for_user(user_id, project_uuid, app) -> ProjectState
     NOTE: This adds a dependency to the socket registry sub-module. Many tests
         might require a mock for this function to work properly
     """
-    with managed_resource(user_id, None, app) as rt:
-        # checks who is using it
-        users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
-        usernames = [await get_user_name(app, uid) for uid in set(users_of_project)]
-        assert len(usernames) <= 1  # currently not possible to have more than 1
-
-        # based on usage, sets an state
-        is_locked: bool = len(usernames) > 0
-        project_state = ProjectState(
-            locked=ProjectLocked(
-                value=is_locked,
-                owner=Owner(**usernames[0]) if is_locked else None,
-            ),
-        )
-        return project_state
+    lock_state = await _get_project_lock_state(user_id, project_uuid, app)
+    running_state = await _get_project_running_state(project_uuid, app)
+    return ProjectState(
+        locked=lock_state,
+        state=running_state,
+    ).dict(by_alias=True, exclude_unset=True)

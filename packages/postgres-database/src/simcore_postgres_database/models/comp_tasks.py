@@ -6,7 +6,7 @@ import enum
 import sqlalchemy as sa
 
 from .base import metadata
-from .comp_pipeline import UNKNOWN
+from .comp_pipeline import StateType
 
 
 class NodeClass(enum.Enum):
@@ -32,7 +32,9 @@ comp_tasks = sa.Table(
     sa.Column("inputs", sa.JSON),
     sa.Column("outputs", sa.JSON),
     sa.Column("image", sa.JSON),
-    sa.Column("state", sa.Integer, default=UNKNOWN),
+    sa.Column(
+        "state", sa.Enum(StateType), nullable=False, server_default=StateType.NOT_STARTED.value
+    ),
     # utc timestamps for submission/start/end
     sa.Column("submit", sa.DateTime),
     sa.Column("start", sa.DateTime),
@@ -51,9 +53,10 @@ task_output_changed_trigger = sa.DDL(
     f"""
 DROP TRIGGER IF EXISTS {DB_TRIGGER_NAME} on comp_tasks;
 CREATE TRIGGER {DB_TRIGGER_NAME}
-AFTER UPDATE OF outputs ON comp_tasks
+AFTER UPDATE OF outputs,state ON comp_tasks
     FOR EACH ROW
-    WHEN (OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb AND NEW.node_class <> 'FRONTEND')
+    WHEN ((OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb OR OLD.state IS DISTINCT FROM NEW.state)
+        AND NEW.node_class <> 'FRONTEND')
     EXECUTE PROCEDURE {DB_PROCEDURE_NAME}();
 """
 )
@@ -87,5 +90,7 @@ $$ LANGUAGE plpgsql;
 
 sa.event.listen(comp_tasks, "after_create", task_output_changed_procedure)
 sa.event.listen(
-    comp_tasks, "after_create", task_output_changed_trigger,
+    comp_tasks,
+    "after_create",
+    task_output_changed_trigger,
 )

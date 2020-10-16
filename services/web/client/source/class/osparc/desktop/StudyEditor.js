@@ -582,7 +582,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.getLogger().error(null, "Error submitting pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.getLogger().error(null, "Failed submitting pipeline");
+        if (e.getTarget().getResponse().error.status == "403") {
+          this.getLogger().error(null, "Pipeline is already running");
+        } else {
+          this.getLogger().error(null, "Failed submitting pipeline");
+        }
       }, this);
       req.send();
 
@@ -752,7 +756,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           const nodeData = d["Data"];
           const workbench = this.getStudy().getWorkbench();
           const node = workbench.getNode(nodeId);
-          if (node) {
+          if (node && nodeData) {
             node.setOutputData(nodeData.outputs);
             if (nodeData.progress) {
               const progress = Number.parseInt(nodeData.progress);

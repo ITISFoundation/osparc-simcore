@@ -8,7 +8,7 @@ from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.client_session import get_client_session
 from servicelib.request_keys import RQT_USERID_KEY
 
-from ..computation_handlers import get_celery
+from ..computation_api import get_celery
 from ..login.decorators import login_required
 
 

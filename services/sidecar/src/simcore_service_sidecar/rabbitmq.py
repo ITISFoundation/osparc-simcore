@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Union
 import aio_pika
 import tenacity
 from pydantic import BaseModel  # pylint: disable=no-name-in-module
-
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 
