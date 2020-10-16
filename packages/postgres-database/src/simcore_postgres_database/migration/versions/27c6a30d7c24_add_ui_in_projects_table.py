@@ -1,7 +1,7 @@
 """add ui in projects table
 
 Revision ID: 27c6a30d7c24
-Revises: 350103a7efbd
+Revises: 009c81406676
 Create Date: 2020-10-09 09:46:27.364227+00:00
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '27c6a30d7c24'
-down_revision = '350103a7efbd'
+down_revision = '009c81406676'
 branch_labels = None
 depends_on = None
 
