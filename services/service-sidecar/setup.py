@@ -19,7 +19,7 @@ tests_require = read_reqs(current_dir / "requirements" / "_test.txt")
 current_version = (current_dir / "VERSION").read_text().strip()
 
 setup(
-    name="sidecar",
+    name="simcore_service_service_sidecar",
     version=current_version,
     packages=find_packages(where="src"),
     package_dir={"": "src",},
@@ -30,7 +30,7 @@ setup(
     setup_requires=["setuptools_scm"],
     entry_points={
         "console_scripts": [
-            "service-sidecar-startup = sidecar.main:main",
+            "simcore_service_service_sidecar_startup = sidecar.main:main",
         ],
     },
 )

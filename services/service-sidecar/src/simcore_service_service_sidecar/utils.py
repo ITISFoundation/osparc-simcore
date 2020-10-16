@@ -1,13 +1,11 @@
 import asyncio
+import tempfile
 from contextlib import asynccontextmanager
 from typing import Tuple
-import tempfile
 
 import aiofiles
 import yaml
-
-
-from sidecar import config
+from simcore_service_service_sidecar import config
 
 
 class InvalidComposeSpec(Exception):

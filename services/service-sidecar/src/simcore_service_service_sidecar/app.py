@@ -5,10 +5,9 @@ import aiodocker
 import yaml
 from fastapi import FastAPI, Query, Request, Response
 from fastapi.responses import PlainTextResponse
-
-from sidecar import config
-from sidecar.storage import store
-from sidecar.utils import (
+from simcore_service_service_sidecar import config
+from simcore_service_service_sidecar.storage import store
+from simcore_service_service_sidecar.utils import (
     InvalidComposeSpec,
     assemble_container_name,
     async_command,

@@ -32,5 +32,5 @@ then
   # this way we can have reload in place as well
   exec uvicorn sidecar.app:app --reload --host 0.0.0.0
 else
-  exec service-sidecar-startup
+  exec simcore_service_service_sidecar_startup
 fi
