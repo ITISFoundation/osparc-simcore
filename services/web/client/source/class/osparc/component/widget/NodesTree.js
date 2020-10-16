@@ -88,7 +88,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
             }
           });
       });
-    },
+    }
   },
 
   members: {
