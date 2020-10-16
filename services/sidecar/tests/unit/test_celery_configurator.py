@@ -4,7 +4,6 @@ import asyncio
 import aiodocker
 import pytest
 from celery import Celery
-
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 from simcore_service_sidecar import config
 from simcore_service_sidecar.celery_configurator import (

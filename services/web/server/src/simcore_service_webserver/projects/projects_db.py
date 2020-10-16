@@ -38,7 +38,11 @@ from .projects_fakes import Fake
 log = logging.getLogger(__name__)
 
 APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
-DB_EXCLUSIVE_COLUMNS = ["type", "id", "published"]
+DB_EXCLUSIVE_COLUMNS = [
+    "type",
+    "id",
+    "published",
+]
 
 
 class ProjectAccessRights(Enum):
@@ -465,7 +469,7 @@ class ProjectDBAPI:
         user_id: int,
         project_uuid: str,
         include_templates: Optional[bool] = False,
-    ):
+    ) -> Dict:
         """updates a project from a user"""
         log.info("Updating project %s for user %s", project_uuid, user_id)
 

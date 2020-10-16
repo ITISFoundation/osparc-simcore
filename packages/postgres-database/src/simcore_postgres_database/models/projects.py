@@ -17,8 +17,8 @@ log = logging.getLogger(__name__)
 
 class ProjectType(enum.Enum):
     """
-        template: template project
-        standard: standard project
+    template: template project
+    standard: standard project
     """
 
     TEMPLATE = "template"

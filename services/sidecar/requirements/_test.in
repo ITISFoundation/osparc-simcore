@@ -6,12 +6,15 @@
 -r _base.txt
 -r _packages.txt
 
+alembic
+
 # testing
 coverage
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
 pytest-instafail
+pytest-icdiff
 pytest-mock
 pytest-sugar
 pytest-lazy-fixture
