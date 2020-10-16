@@ -62,13 +62,13 @@ qx.Class.define("osparc.component.metadata.StudyInfo", {
       return moreInfoButton;
     },
 
-    _applyStudy: function(newStudy) {
+    _applyStudy: function(study) {
       if (this.__studyDetails) {
         this._remove(this.__studyDetails);
       }
 
       const windowWidth = 400;
-      const studyDetails = this.__studyDetails = new osparc.component.metadata.StudyDetails(newStudy, windowWidth);
+      const studyDetails = this.__studyDetails = new osparc.component.metadata.StudyDetails(study, windowWidth);
       this._add(studyDetails);
     },
 
