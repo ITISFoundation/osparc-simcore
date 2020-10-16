@@ -139,8 +139,10 @@ paths:
     $ref: "./openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1datasets"
 
   # SERVICES ------------------------------------------------------------------------
-  /computation/pipeline/{project_id}/start:
+  /computation/pipeline/{project_id}:start:
     $ref: "./openapi-services.yaml#/paths/~1computation~1pipeline~1{project_id}~1start"
+  /computation/pipeline/{project_id}:stop:
+    $ref: "./openapi-services.yaml#/paths/~1computation~1pipeline~1{project_id}~1stop"
 
   # PROJECT SERVICES -----------------------------------------------------------------
 
