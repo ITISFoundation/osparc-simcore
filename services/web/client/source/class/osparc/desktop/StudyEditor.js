@@ -43,6 +43,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   },
 
   properties: {
+    study: {
+      check: "osparc.data.model.Study",
+      nullable: true,
+      apply: "_applyStudy"
+    },
+
     pageContext: {
       check: ["workbench", "slides"],
       nullable: false,
@@ -83,44 +89,42 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           .then(values => {
             studyData = values[0];
             const study = new osparc.data.model.Study(studyData);
-            this.__study = study;
-            this.__settingStudy = false;
-
-            this._hideLoadingPage();
-
+            this.setStudy(study);
             resolve();
-
-            osparc.store.Store.getInstance().setCurrentStudy(study);
-            study.buildWorkbench();
-            study.openStudy()
-              .then(() => {
-                study.getWorkbench().initWorkbench();
-              })
-              .catch(err => {
-                if ("status" in err && err["status"] == 423) { // Locked
-                  const msg = study.getName() + this.tr(" is already opened");
-                  osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-                  this.fireEvent("studyIsLocked");
-                } else {
-                  console.error(err);
-                }
-              });
-
-            this.__workbenchView.setStudy(study);
-            this.__workbenchView.initViews();
-
-            this.__slideshowView.setStudy(study);
-            this.__slideshowView.initViews();
-
-            this.__startAutoSaveTimer();
-
-            this.__workbenchView.openOneNode();
           });
       });
     },
 
-    getStudy: function() {
-      return this.__study;
+    _applyStudy: function(study) {
+      this.__settingStudy = false;
+
+      this._hideLoadingPage();
+
+      osparc.store.Store.getInstance().setCurrentStudy(study);
+      study.buildWorkbench();
+      study.openStudy()
+        .then(() => {
+          study.getWorkbench().initWorkbench();
+        })
+        .catch(err => {
+          if ("status" in err && err["status"] == 423) { // Locked
+            const msg = study.getName() + this.tr(" is already opened");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            this.fireEvent("studyIsLocked");
+          } else {
+            console.error(err);
+          }
+        });
+
+      this.__workbenchView.setStudy(study);
+      this.__workbenchView.initViews();
+
+      this.__slideshowView.setStudy(study);
+      this.__slideshowView.initViews();
+
+      this.__startAutoSaveTimer();
+
+      this.__workbenchView.openOneNode();
     },
 
     // overridden
