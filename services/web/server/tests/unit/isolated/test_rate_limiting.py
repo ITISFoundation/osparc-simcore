@@ -70,13 +70,13 @@ async def test_global_rate_limit_route(requests_per_second, aiohttp_client, loop
         assert not fut.exception()
         print("%2d" % i, fut.result().status)
 
-    expected_status = HTTPTooManyRequests.status_code
+    expected_status = 200
 
     # first requests are OK
     assert all(f.result().status == expected_status for f in futures[:MAX_NUM_REQUESTS])
 
     if requests_per_second >= MAX_REQUEST_RATE:
-        expected_status = 403
+        expected_status = HTTPTooManyRequests.status_code
 
     # after ...
     assert all(f.result().status == expected_status for f in futures[MAX_NUM_REQUESTS:])
