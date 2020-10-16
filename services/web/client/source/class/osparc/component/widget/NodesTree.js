@@ -137,7 +137,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       });
       this.self().areSlidesEnabled()
         .then(areSlidesEnabled => {
-          editBtn.setVisibility(areSlidesEnabled ? "show" : "excluded");
+          editBtn.setVisibility(areSlidesEnabled ? "visible" : "excluded");
         });
       editBtn.addListener("execute", () => {
         this.fireEvent("slidesEdit");

@@ -135,7 +135,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       });
       this.self().areSlidesEnabled()
         .then(areSlidesEnabled => {
-          slidesMenu.setVisibility(areSlidesEnabled ? "show" : "excluded");
+          slidesMenu.setVisibility(areSlidesEnabled ? "visible" : "excluded");
         });
 
       this._add(new qx.ui.core.Spacer(20));
