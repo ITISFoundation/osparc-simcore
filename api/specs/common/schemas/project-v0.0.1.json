@@ -101,7 +101,7 @@
     "workbench": {
       "type": "object",
       "patternProperties": {
-        "^\\S+$": {
+        "^\\d+$": {
           "type": "object",
           "additionalProperties": false,
           "required": [
