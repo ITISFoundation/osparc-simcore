@@ -53,6 +53,7 @@ services:
       # force to start as cpu mode otherwise it will boot in gpu mode in development
       - START_AS_MODE_CPU=1
       - SC_BOOT_MODE=debug-ptvsd
+      - SIDECAR_LOGLEVEL=DEBUG
     ports:
       - "3002:3000"
     deploy:
