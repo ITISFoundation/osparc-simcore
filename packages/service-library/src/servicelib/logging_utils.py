@@ -58,7 +58,7 @@ class CustomFormatter(logging.Formatter):
         if levelname in COLORS:
             levelname_color = COLORS[levelname] + levelname + NORMAL
             record.levelname = levelname_color
-        return super(CustomFormatter, self).format(record)
+        return super().format(record)
 
 
 def set_logging_handler(logger: logging.Logger) -> None:
