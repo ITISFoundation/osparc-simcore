@@ -12,6 +12,7 @@ import sqlalchemy as sa
 from aiohttp import web, web_exceptions
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
+from aiopg.sa.result import RowProxy
 from celery import Celery
 from sqlalchemy import and_
 
@@ -345,6 +346,13 @@ async def _set_tasks_in_tasks_db(
             for task_row in tasks_rows:
                 # for some reason the outputs are not present in the
                 # tasks outputs. copy them over (will be used below)
+
+                # make sure old tasks related to older nodes are removed from the
+                # database when the RUN button is pressed
+                if task_row.node_id not in tasks:
+                    await delete_comp_task_from_db(db_engine, task_row)
+                    continue
+
                 tasks[task_row.node_id]["outputs"] = task_row.outputs
                 if not task_row.node_id in tasks:
                     query = (
@@ -586,6 +594,13 @@ async def delete_pipeline_db(app: web.Application, project_id: str) -> None:
         query = comp_tasks.delete().where(comp_tasks.c.project_id == project_id)
         await conn.execute(query)
         query = comp_pipeline.delete().where(comp_pipeline.c.project_id == project_id)
+        await conn.execute(query)
+
+
+async def delete_comp_task_from_db(db_engine: Engine, comp_task: RowProxy) -> None:
+    async with db_engine.acquire() as conn:
+        # pylint: disable=no-value-for-parameter
+        query = comp_tasks.delete().where(comp_tasks.c.task_id == comp_task.task_id)
         await conn.execute(query)
 
 
