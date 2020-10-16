@@ -7,16 +7,10 @@ from uuid import uuid4
 
 import faker
 
-from simcore_postgres_database.models.comp_pipeline import (
-    FAILED,
-    PENDING,
-    RUNNING,
-    SUCCESS,
-    UNKNOWN,
-)
+from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.webserver_models import ProjectType, UserStatus
 
-STATES = [UNKNOWN, PENDING, RUNNING, SUCCESS, FAILED]
+STATES = [StateType.NOT_STARTED, StateType.PENDING, StateType.RUNNING, StateType.SUCCESS, StateType.FAILED]
 
 
 _index_in_sequence = itertools.count(start=1)
