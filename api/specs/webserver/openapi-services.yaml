@@ -1,18 +1,4 @@
 paths:
-  /computation/pipeline/{project_id}:
-    put:
-      description: "Update a pipeline using workbench section from given project"
-      tags:
-        - service
-      operationId: update_pipeline
-      parameters:
-        - $ref: "#/components/parameters/ProjectId"
-      responses:
-        "204":
-          description: Succesfully updated the pipeline
-        default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-
   /computation/pipeline/{project_id}/start:
     post:
       description: Starts a pipeline of a given project
@@ -30,7 +16,6 @@ paths:
                 $ref: "./components/schemas/pipeline.yaml#/components/schemas/PipelineCreatedEnveloped"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
-
   # PROJECT SERVICES -----------------------------------------------------------------
 components:
   parameters:

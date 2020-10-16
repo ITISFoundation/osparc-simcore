@@ -11,7 +11,8 @@ from servicelib.client_session import APP_CLIENT_SESSION_KEY
 LOGLEVEL_STR = os.environ.get("LOGLEVEL", "WARNING").upper()
 log_level = getattr(logging, LOGLEVEL_STR)
 logging.basicConfig(
-    level=log_level, format="%(levelname)s:%(name)s-%(lineno)d: %(message)s",
+    level=log_level,
+    format="%(levelname)s:%(name)s-%(lineno)d: %(message)s",
 )
 logging.root.setLevel(log_level)
 
@@ -36,6 +37,10 @@ DIRECTOR_REGISTRY_CACHING: bool = strtobool(
 )
 DIRECTOR_REGISTRY_CACHING_TTL: int = int(
     os.environ.get("DIRECTOR_REGISTRY_CACHING_TTL", 15 * 60)
+)
+
+DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS: str = os.environ.get(
+    "DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS", ""
 )
 
 # for passing self-signed certificate to spawned services

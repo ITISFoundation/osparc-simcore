@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
-WAIT_TIME_SECS = 20
+WAIT_TIME_SECS = 40
 RETRY_COUNT = 7
 MAX_WAIT_TIME = 240
 
@@ -157,7 +157,11 @@ def test_core_service_running(
     ],
 )
 def test_product_frontend_app_served(
-    make_up_prod: Dict, traefik_service: URL, test_url: str, expected_in_content: str, loop
+    make_up_prod: Dict,
+    traefik_service: URL,
+    test_url: str,
+    expected_in_content: str,
+    loop,
 ):
     # NOTE: it takes a bit of time until traefik sets up the correct proxy and
     # the webserver takes time to start

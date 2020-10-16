@@ -4,10 +4,11 @@ from itertools import chain
 from typing import Dict
 
 from aiohttp import web
-
 from aiopg.sa.result import RowProxy
 from servicelib.observer import emit
 from servicelib.utils import logged_gather
+from simcore_service_webserver import users_exceptions
+from simcore_service_webserver.db_models import GroupType
 from simcore_service_webserver.director.director_api import (
     get_running_interactive_services,
     stop_service,
@@ -16,11 +17,12 @@ from simcore_service_webserver.director.director_exceptions import (
     DirectorException,
     ServiceNotFoundError,
 )
+from simcore_service_webserver.groups_api import get_group_from_gid
 from simcore_service_webserver.projects.projects_api import (
     delete_project_from_db,
+    get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
     is_node_id_present_in_any_project_workbench,
-    get_project_for_user,
 )
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
@@ -30,13 +32,11 @@ from simcore_service_webserver.projects.projects_exceptions import ProjectNotFou
 from simcore_service_webserver.users_api import (
     delete_user,
     get_guest_user_ids,
+    get_user,
+    get_user_id_from_gid,
     is_user_guest,
 )
-from simcore_service_webserver import users_exceptions
-from simcore_service_webserver.users_api import get_user, get_user_id_from_gid
 from simcore_service_webserver.users_to_groups_api import get_users_for_gid
-from simcore_service_webserver.groups_api import get_group_from_gid
-from simcore_service_webserver.db_models import GroupType
 
 from .config import APP_GARBAGE_COLLECTOR_KEY, get_garbage_collector_interval
 from .registry import RedisResourceRegistry, get_registry
@@ -45,7 +45,8 @@ logger = logging.getLogger(__name__)
 
 
 async def setup_garbage_collector_task(app: web.Application):
-    app[APP_GARBAGE_COLLECTOR_KEY] = app.loop.create_task(garbage_collector_task(app))
+    loop = asyncio.get_event_loop()
+    app[APP_GARBAGE_COLLECTOR_KEY] = loop.create_task(garbage_collector_task(app))
     yield
     task = app[APP_GARBAGE_COLLECTOR_KEY]
     task.cancel()

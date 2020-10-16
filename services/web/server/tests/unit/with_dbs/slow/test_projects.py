@@ -1,7 +1,6 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
 import asyncio
 import json
 import time
@@ -13,12 +12,16 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import mock
 import pytest
 import socketio
+from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
 from aiohttp import web
 from mock import call
-from socketio.exceptions import ConnectionError as SocketConnectionError
-
-from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
-from models_library.projects import Owner, ProjectLocked, ProjectState
+from models_library.projects import (
+    Owner,
+    ProjectLocked,
+    ProjectRunningState,
+    ProjectState,
+    RunningState,
+)
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
 from pytest_simcore.helpers.utils_mock import future_with_result
@@ -42,6 +45,7 @@ from simcore_service_webserver.socketio import setup_sockets
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.tags import setup_tags
 from simcore_service_webserver.utils import now_str, to_datetime
+from socketio.exceptions import ConnectionError as SocketConnectionError
 
 API_VERSION = "v0"
 RESOURCE_NAME = "projects"
@@ -113,7 +117,7 @@ async def logged_user(client, user_role: UserRole):
 
 
 @pytest.fixture
-def mocks_on_projects_api(mocker, logged_user):
+def mocks_on_projects_api(mocker, logged_user) -> Dict:
     """
     All projects in this module are UNLOCKED
 
@@ -124,8 +128,9 @@ def mocks_on_projects_api(mocker, logged_user):
     state = ProjectState(
         locked=ProjectLocked(
             value=False, owner=Owner(first_name=nameparts[0], last_name=nameparts[1])
-        )
-    )
+        ),
+        state=ProjectRunningState(value=RunningState.NOT_STARTED),
+    ).dict(by_alias=True, exclude_unset=True)
     mocker.patch(
         "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
         return_value=future_with_result(state),
@@ -1324,7 +1329,8 @@ async def _state_project(
     data, error = await assert_status(resp, expected)
     if not error:
         # the project is locked
-        assert data == expected_project_state.dict()
+        received_state = ProjectState(**data)
+        assert received_state == expected_project_state
 
 
 async def _assert_project_state_updated(
@@ -1353,7 +1359,9 @@ async def _assert_project_state_updated(
                 json.dumps(
                     {
                         "project_uuid": shared_project["uuid"],
-                        "data": expected_project_state.dict(),
+                        "data": expected_project_state.dict(
+                            by_alias=True, exclude_unset=True
+                        ),
                     }
                 )
             )
@@ -1392,7 +1400,10 @@ async def test_open_shared_project_2_users_locked(
         client_id1,
         {SOCKET_IO_PROJECT_UPDATED_EVENT: mock_project_state_updated_handler},
     )
-    expected_project_state = ProjectState(locked={"value": False})
+    expected_project_state = ProjectState(
+        locked={"value": False},
+        state=ProjectRunningState(value=RunningState.NOT_STARTED),
+    )
     await _state_project(
         client_1,
         shared_project,
@@ -1453,7 +1464,10 @@ async def test_open_shared_project_2_users_locked(
     await _close_project(client_1, client_id1, shared_project, expected.no_content)
     if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
         # Guests cannot close projects
-        expected_project_state = ProjectState(locked=ProjectLocked(value=False))
+        expected_project_state = ProjectState(
+            locked=ProjectLocked(value=False),
+            state=ProjectRunningState(value=RunningState.NOT_STARTED),
+        )
 
     # we should receive an event that the project lock state changed
     # NOTE: there are 3 calls since we are part of the primary group and the all group and user 2 is part of the all group

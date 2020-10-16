@@ -170,22 +170,33 @@ class TutorialBase {
     return resp;
   }
 
-  async waitForServices(studyId, nodeIds) {
-    const promises = [];
+  async openService(waitFor = 1000) {
+    await this.takeScreenshot("dashboardOpenFirstService_before");
+    this.__responsesQueue.addResponseListener("open");
+    let resp = null;
+    try {
+      const serviceFound = await auto.dashboardOpenFirstService(this.__page, this.__templateName);
+      assert(serviceFound, "Expected service, got nothing. TIP: is it available??");
+      resp = await this.__responsesQueue.waitUntilResponse("open");
+    }
+    catch(err) {
+      console.error(`"${this.__templateName}" service could not be started:\n`, err);
+      throw(err);
+    }
+    await this.__page.waitFor(waitFor);
+    await this.takeScreenshot("dashboardOpenFirstService_after");
+    return resp;
+  }
+
+  async waitForServices(studyId, nodeIds, timeout = 40000) {
     nodeIds.forEach(nodeId => {
       this.__responsesQueue.addResponseServiceListener(studyId, nodeId);
-      promises.push(this.__responsesQueue.waitUntilServiceReady(studyId, nodeId));
     });
-    return new Promise((resolve, reject) => {
-      Promise.all(promises)
-        .then(resps => {
-          resolve(resps);
-        })
-        .catch(err => {
-          console.error(this.__templateName, "could not be started", err);
-          reject(err);
-        });
-    });
+    for (let i=0; i<nodeIds.length; i++) {
+      const nodeId = nodeIds[i];
+      console.log("waiting for service:", nodeId);
+      await this.__responsesQueue.waitUntilServiceReady(studyId, nodeId, timeout);
+    }
   }
 
   async restoreIFrame() {
