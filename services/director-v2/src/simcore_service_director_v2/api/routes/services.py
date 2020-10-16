@@ -1,8 +1,8 @@
 # pylint: disable=unused-argument
 
-from typing import Optional
+from typing import Optional, Callable
 
-from fastapi import APIRouter, Depends, Path, Query
+from fastapi import APIRouter, Depends, Path, Query, Response
 
 from ...models.schemas.services import (
     SERVICE_IMAGE_NAME_RE,
@@ -11,7 +11,7 @@ from ...models.schemas.services import (
     ServicesArrayEnveloped,
     ServiceType,
 )
-from ..dependencies.director_v0 import ReverseProxyClient, get_reverse_proxy_to_v0
+from ..dependencies.director_v0 import get_reverse_proxy_to_v0
 
 router = APIRouter()
 
@@ -22,6 +22,7 @@ router = APIRouter()
     response_model=ServicesArrayEnveloped,
 )
 async def list_services(
+    # TODO: why service_type is optional??
     service_type: Optional[ServiceType] = Query(
         None,
         description=(
@@ -30,11 +31,10 @@ async def list_services(
             "   - interactive - an interactive service\n"
         ),
     ),
-    director_v0: ReverseProxyClient = Depends(get_reverse_proxy_to_v0),
+    forward_request: Callable = Depends(get_reverse_proxy_to_v0),
 ):
-    # TODO: why service_type is optional??
-    print(service_type)
-    return director_v0.request(service_type)
+    # service_type has been validated
+    return await forward_request(params={ "service_type": service_type })
 
 
 ServiceKeyPath = Path(
@@ -55,9 +55,9 @@ ServiceKeyVersionPath = Path(
 async def get_service_versioned(
     service_key: str = ServiceKeyPath,
     service_version: str = ServiceKeyVersionPath,
-    director_v0: ReverseProxyClient = Depends(get_reverse_proxy_to_v0),
+    forward_request: Callable = Depends(get_reverse_proxy_to_v0),
 ):
-    return director_v0.request(service_key, service_version)
+    return await forward_request()
 
 
 @router.get(
@@ -68,6 +68,6 @@ async def get_service_versioned(
 async def get_extra_service_versioned(
     service_key: str = ServiceKeyPath,
     service_version: str = ServiceKeyVersionPath,
-    director_v0: ReverseProxyClient = Depends(get_reverse_proxy_to_v0),
+    forward_request: Callable = Depends(get_reverse_proxy_to_v0),
 ):
-    return director_v0.request(service_key, service_version)
+    return await forward_request()
