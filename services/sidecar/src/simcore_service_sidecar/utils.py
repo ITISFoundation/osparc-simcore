@@ -4,17 +4,16 @@ import uuid
 from typing import Awaitable, List
 
 import aiodocker
-from aiopg.sa.result import RowProxy
 import networkx as nx
 from aiodocker.volumes import DockerVolume
 from aiopg.sa import SAConnection
-from sqlalchemy import and_
-
+from aiopg.sa.result import RowProxy
 from celery import Celery
-from simcore_postgres_database.sidecar_models import SUCCESS, comp_tasks
+from simcore_postgres_database.sidecar_models import StateType, comp_tasks
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 from simcore_service_sidecar import config
 from simcore_service_sidecar.mpi_lock import acquire_mpi_lock
+from sqlalchemy import and_
 
 from .exceptions import SidecarException
 
@@ -59,7 +58,7 @@ async def is_node_ready(
             dep_task.internal_id,
             dep_task.state,
         )
-        if not dep_task.state == SUCCESS:
+        if not dep_task.state == StateType.SUCCESS:
             return False
     _logger.debug("TASK %s is ready", task.internal_id)
     return True

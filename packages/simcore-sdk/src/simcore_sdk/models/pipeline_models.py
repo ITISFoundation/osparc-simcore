@@ -1,16 +1,8 @@
 # DEPRECATED: Use instead postgres-database
 import networkx as nx
-from sqlalchemy.orm import mapper
-
-from simcore_postgres_database.models.comp_pipeline import (
-    FAILED,
-    PENDING,
-    RUNNING,
-    SUCCESS,
-    UNKNOWN,
-    comp_pipeline,
-)
+from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
+from sqlalchemy.orm import mapper
 
 from .base import metadata
 
@@ -62,9 +54,5 @@ __all__ = [
     "metadata",
     "ComputationalPipeline",
     "ComputationalTask",
-    "UNKNOWN",
-    "PENDING",
-    "RUNNING",
-    "SUCCESS",
-    "FAILED",
+    "StateType",
 ]

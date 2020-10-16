@@ -1,11 +1,8 @@
-from simcore_service_sidecar.log_parser import (
-    LogType,
-    parse_line,
-    monitor_logs_task,
-)
-import pytest
 from asyncio import Future, ensure_future, sleep
 from pathlib import Path
+
+import pytest
+from simcore_service_sidecar.log_parser import LogType, monitor_logs_task, parse_line
 
 
 @pytest.mark.parametrize(
