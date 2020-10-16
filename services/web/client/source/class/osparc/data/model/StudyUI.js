@@ -43,7 +43,8 @@ qx.Class.define("osparc.data.model.StudyUI", {
 
     slideshow: {
       check: "Object",
-      nullable: true
+      nullable: true,
+      event: "changeSlideshow"
     },
 
     currentNodeId: {

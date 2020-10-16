@@ -113,7 +113,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
   members: {
     __dashboardBtn: null,
     __dashboardLabel: null,
-    __slidesMenu: null,
+    __slideBtns: null,
     __startSlidesBtn: null,
     __stopSlidesBtn: null,
     __studyTitle: null,
@@ -130,7 +130,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
       this._add(new qx.ui.core.Spacer(20));
 
-      this.__slidesMenu = this.getChildControl("slides-menu").set({
+      this.__slideBtns = this.getChildControl("slide-buttons").set({
         visibility: "excluded"
       });
 
@@ -193,12 +193,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           });
           this._add(control);
           break;
-        case "slides-menu":
-          control = this.__createSlidesMenuBtn();
-          control.set({
-            ...this.self().BUTTON_OPTIONS,
-            font: "text-14"
-          });
+        case "slide-buttons":
+          control = this.__createSlideBtns();
           this._add(control);
           break;
         case "study-title":
@@ -370,14 +366,14 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         case "dashboard":
           this.__dashboardLabel.show();
           this.__dashboardBtn.exclude();
-          this.__setSlidesMenuVis(false);
+          this.__resetSlideBtnsVis(false);
           this.__setWorkbenchBtnsVis(false);
           this.__setSlidesBtnsVis(false);
           break;
         case "workbench":
           this.__dashboardLabel.exclude();
           this.__dashboardBtn.show();
-          this.__setSlidesMenuVis(true);
+          this.__resetSlideBtnsVis(true);
           this.__setWorkbenchBtnsVis(true);
           this.__setSlidesBtnsVis(false);
           this.__populateWorkbenchNodesLayout();
@@ -385,7 +381,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         case "slides":
           this.__dashboardLabel.exclude();
           this.__dashboardBtn.show();
-          this.__setSlidesMenuVis(true);
+          this.__resetSlideBtnsVis(true);
           this.__setWorkbenchBtnsVis(false);
           this.__setSlidesBtnsVis(true);
           this.__populateGuidedNodesLayout();
@@ -393,21 +389,26 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       }
     },
 
-    __setSlidesMenuVis: function(show) {
+    __resetSlideBtnsVis: function() {
       this.self().areSlidesEnabled()
         .then(areSlidesEnabled => {
-          if (show && areSlidesEnabled && osparc.data.model.Study.isOwner(this.getStudy())) {
-            this.__slidesMenu.show();
-            if (this.getPageContext() === "slides") {
-              this.__startSlidesBtn.setEnabled(false);
-              this.__stopSlidesBtn.setEnabled(true);
-            } else {
-              this.__startSlidesBtn.setEnabled(true);
-              this.__stopSlidesBtn.setEnabled(false);
+          const context = ["workbench", "slides"].includes(this.getPageContext());
+          if (areSlidesEnabled && context) {
+            const study = this.getStudy();
+            const slides = Object.keys(study.getUi().getSlideshow()).length;
+            if (slides && osparc.data.model.Study.isOwner(study)) {
+              this.__slideBtns.show();
+              if (this.getPageContext() === "slides") {
+                this.__startSlidesBtn.exclude();
+                this.__stopSlidesBtn.show();
+              } else if (this.getPageContext() === "workbench") {
+                this.__startSlidesBtn.show();
+                this.__stopSlidesBtn.exclude();
+              }
+              return;
             }
-          } else {
-            this.__slidesMenu.exclude();
           }
+          this.__slideBtns.exclude();
         });
     },
 
@@ -429,24 +430,22 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       }
     },
 
-    __createSlidesMenuBtn: function() {
-      const menu = new qx.ui.menu.Menu().set({
-        font: "text-14"
-      });
+    __createSlideBtns: function() {
+      const menu = new qx.ui.toolbar.Part();
 
-      const startBtn = this.__startSlidesBtn = new qx.ui.menu.Button(this.tr("Start"));
+      const startBtn = this.__startSlidesBtn = new qx.ui.toolbar.Button(this.tr("Start slides"));
       startBtn.addListener("execute", () => {
         this.fireEvent("slidesStart");
       }, this);
       menu.add(startBtn);
 
-      const stopBtn = this.__stopSlidesBtn = new qx.ui.menu.Button(this.tr("Stop"));
+      const stopBtn = this.__stopSlidesBtn = new qx.ui.toolbar.Button(this.tr("Stop slides"));
       stopBtn.addListener("execute", () => {
         this.fireEvent("slidesStop");
       }, this);
       menu.add(stopBtn);
 
-      return new qx.ui.form.MenuButton(this.tr("Slides"), null, menu);
+      return menu;
     },
 
     __createManualMenuBtn: function() {
@@ -625,6 +624,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     _applyStudy: function(study) {
       if (study) {
         study.bind("name", this.__studyTitle, "value");
+        study.getUi().addListener("changeSlideshow", () => {
+          this.__resetSlideBtnsVis();
+        });
         study.getUi().addListener("changeCurrentNodeId", () => {
           if (this.getPageContext() === "workbench") {
             this.__populateWorkbenchNodesLayout();
