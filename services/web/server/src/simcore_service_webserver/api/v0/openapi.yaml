@@ -5911,6 +5911,7 @@ paths:
                                         - RETRY
                                         - SUCCESS
                                         - FAILURE
+                                        - ABORTED
                                       type: string
                               additionalProperties: true
                             ui:
@@ -6404,6 +6405,7 @@ paths:
                             - RETRY
                             - SUCCESS
                             - FAILURE
+                            - ABORTED
                           type: string
                   additionalProperties: true
                 ui:
@@ -6777,6 +6779,7 @@ paths:
                                       - RETRY
                                       - SUCCESS
                                       - FAILURE
+                                      - ABORTED
                                     type: string
                             additionalProperties: true
                           ui:
@@ -7268,6 +7271,7 @@ paths:
                                       - RETRY
                                       - SUCCESS
                                       - FAILURE
+                                      - ABORTED
                                     type: string
                             additionalProperties: true
                           ui:
@@ -7765,6 +7769,7 @@ paths:
                                       - RETRY
                                       - SUCCESS
                                       - FAILURE
+                                      - ABORTED
                                     type: string
                             additionalProperties: true
                           ui:
@@ -8253,6 +8258,7 @@ paths:
                             - RETRY
                             - SUCCESS
                             - FAILURE
+                            - ABORTED
                           type: string
                   additionalProperties: true
                 ui:
@@ -8626,6 +8632,7 @@ paths:
                                       - RETRY
                                       - SUCCESS
                                       - FAILURE
+                                      - ABORTED
                                     type: string
                             additionalProperties: true
                           ui:
@@ -9139,6 +9146,7 @@ paths:
                                       - RETRY
                                       - SUCCESS
                                       - FAILURE
+                                      - ABORTED
                                     type: string
                             additionalProperties: true
                           ui:
@@ -10464,6 +10472,7 @@ paths:
                                       - RETRY
                                       - SUCCESS
                                       - FAILURE
+                                      - ABORTED
                                     type: string
                             additionalProperties: true
                           ui:
@@ -10954,6 +10963,7 @@ paths:
                                       - RETRY
                                       - SUCCESS
                                       - FAILURE
+                                      - ABORTED
                                     type: string
                             additionalProperties: true
                           ui:

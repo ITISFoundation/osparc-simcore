@@ -242,6 +242,7 @@ properties:
               - RETRY
               - SUCCESS
               - FAILURE
+              - ABORTED
             type: string
     additionalProperties: true
   ui:

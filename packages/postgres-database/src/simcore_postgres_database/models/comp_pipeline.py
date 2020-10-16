@@ -16,6 +16,7 @@ class StateType(enum.Enum):
     RUNNING = "RUNNING"
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
+    ABORTED = "ABORTED"
 
 
 def _new_uuid():
