@@ -9,7 +9,6 @@ How it works:
 - If it works start a task which updates the expiration every X second is spawned.
 - Ensures sleeper can be started as MPI sleeper again.
 """
-
 import asyncio
 import datetime
 import logging
@@ -17,7 +16,6 @@ from threading import Thread
 from typing import Any, Callable, Optional, Tuple
 
 from aioredlock import Aioredlock, Lock, LockError
-
 from simcore_service_sidecar import config
 
 logger = logging.getLogger(__name__)

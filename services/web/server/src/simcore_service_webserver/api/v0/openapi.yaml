@@ -5500,106 +5500,6 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
-  '/computation/pipeline/{project_id}':
-    put:
-      description: Update a pipeline using workbench section from given project
-      tags:
-        - service
-      operationId: update_pipeline
-      parameters:
-        - in: path
-          name: project_id
-          required: true
-          description: the uuid of the project
-          schema:
-            type: string
-            example: 123e4567-e89b-12d3-a456-426655440000
-      responses:
-        '204':
-          description: Succesfully updated the pipeline
-        default:
-          description: Default http error response body
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    nullable: true
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
   '/computation/pipeline/{project_id}/start':
     post:
       description: Starts a pipeline of a given project
@@ -5998,6 +5898,19 @@ paths:
                                           type: integer
                                         'y':
                                           type: integer
+                                    state:
+                                      title: RunningState
+                                      description: the node's running state
+                                      enum:
+                                        - UNKNOWN
+                                        - NOT_STARTED
+                                        - PUBLISHED
+                                        - PENDING
+                                        - STARTED
+                                        - RETRY
+                                        - SUCCESS
+                                        - FAILURE
+                                      type: string
                               additionalProperties: true
                             ui:
                               type: object
@@ -6053,6 +5966,73 @@ paths:
                             dev:
                               type: object
                               description: object used for development purposes only
+                            state:
+                              title: State
+                              description: Project state
+                              allOf:
+                                - title: ProjectState
+                                  type: object
+                                  properties:
+                                    locked:
+                                      title: Locked
+                                      description: The project lock state
+                                      allOf:
+                                        - title: ProjectLocked
+                                          type: object
+                                          properties:
+                                            value:
+                                              title: Value
+                                              description: True if the project is locked by another user
+                                              type: boolean
+                                            owner:
+                                              title: Owner
+                                              description: The user that owns the lock
+                                              allOf:
+                                                - title: Owner
+                                                  type: object
+                                                  properties:
+                                                    first_name:
+                                                      title: First Name
+                                                      description: Owner first name
+                                                      example:
+                                                        - John
+                                                      type: string
+                                                    last_name:
+                                                      title: Last Name
+                                                      description: Owner last name
+                                                      example:
+                                                        - Smith
+                                                      type: string
+                                                  required:
+                                                    - first_name
+                                                    - last_name
+                                          required:
+                                            - value
+                                    state:
+                                      title: State
+                                      description: The project running state
+                                      allOf:
+                                        - title: ProjectRunningState
+                                          type: object
+                                          properties:
+                                            value:
+                                              title: RunningState
+                                              description: An enumeration.
+                                              enum:
+                                                - UNKNOWN
+                                                - NOT_STARTED
+                                                - PUBLISHED
+                                                - PENDING
+                                                - STARTED
+                                                - RETRY
+                                                - SUCCESS
+                                                - FAILURE
+                                              type: string
+                                          required:
+                                            - value
+                                  required:
+                                    - locked
+                                    - state
                         - type: object
                           properties:
                             state:
@@ -6410,6 +6390,19 @@ paths:
                               type: integer
                             'y':
                               type: integer
+                        state:
+                          title: RunningState
+                          description: the node's running state
+                          enum:
+                            - UNKNOWN
+                            - NOT_STARTED
+                            - PUBLISHED
+                            - PENDING
+                            - STARTED
+                            - RETRY
+                            - SUCCESS
+                            - FAILURE
+                          type: string
                   additionalProperties: true
                 ui:
                   type: object
@@ -6465,6 +6458,73 @@ paths:
                 dev:
                   type: object
                   description: object used for development purposes only
+                state:
+                  title: State
+                  description: Project state
+                  allOf:
+                    - title: ProjectState
+                      type: object
+                      properties:
+                        locked:
+                          title: Locked
+                          description: The project lock state
+                          allOf:
+                            - title: ProjectLocked
+                              type: object
+                              properties:
+                                value:
+                                  title: Value
+                                  description: True if the project is locked by another user
+                                  type: boolean
+                                owner:
+                                  title: Owner
+                                  description: The user that owns the lock
+                                  allOf:
+                                    - title: Owner
+                                      type: object
+                                      properties:
+                                        first_name:
+                                          title: First Name
+                                          description: Owner first name
+                                          example:
+                                            - John
+                                          type: string
+                                        last_name:
+                                          title: Last Name
+                                          description: Owner last name
+                                          example:
+                                            - Smith
+                                          type: string
+                                      required:
+                                        - first_name
+                                        - last_name
+                              required:
+                                - value
+                        state:
+                          title: State
+                          description: The project running state
+                          allOf:
+                            - title: ProjectRunningState
+                              type: object
+                              properties:
+                                value:
+                                  title: RunningState
+                                  description: An enumeration.
+                                  enum:
+                                    - UNKNOWN
+                                    - NOT_STARTED
+                                    - PUBLISHED
+                                    - PENDING
+                                    - STARTED
+                                    - RETRY
+                                    - SUCCESS
+                                    - FAILURE
+                                  type: string
+                              required:
+                                - value
+                      required:
+                        - locked
+                        - state
       responses:
         '201':
           description: project created
@@ -6702,6 +6762,19 @@ paths:
                                         type: integer
                                       'y':
                                         type: integer
+                                  state:
+                                    title: RunningState
+                                    description: the node's running state
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PUBLISHED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
                             additionalProperties: true
                           ui:
                             type: object
@@ -6757,6 +6830,73 @@ paths:
                           dev:
                             type: object
                             description: object used for development purposes only
+                          state:
+                            title: State
+                            description: Project state
+                            allOf:
+                              - title: ProjectState
+                                type: object
+                                properties:
+                                  locked:
+                                    title: Locked
+                                    description: The project lock state
+                                    allOf:
+                                      - title: ProjectLocked
+                                        type: object
+                                        properties:
+                                          value:
+                                            title: Value
+                                            description: True if the project is locked by another user
+                                            type: boolean
+                                          owner:
+                                            title: Owner
+                                            description: The user that owns the lock
+                                            allOf:
+                                              - title: Owner
+                                                type: object
+                                                properties:
+                                                  first_name:
+                                                    title: First Name
+                                                    description: Owner first name
+                                                    example:
+                                                      - John
+                                                    type: string
+                                                  last_name:
+                                                    title: Last Name
+                                                    description: Owner last name
+                                                    example:
+                                                      - Smith
+                                                    type: string
+                                                required:
+                                                  - first_name
+                                                  - last_name
+                                        required:
+                                          - value
+                                  state:
+                                    title: State
+                                    description: The project running state
+                                    allOf:
+                                      - title: ProjectRunningState
+                                        type: object
+                                        properties:
+                                          value:
+                                            title: RunningState
+                                            description: An enumeration.
+                                            enum:
+                                              - UNKNOWN
+                                              - NOT_STARTED
+                                              - PUBLISHED
+                                              - PENDING
+                                              - STARTED
+                                              - RETRY
+                                              - SUCCESS
+                                              - FAILURE
+                                            type: string
+                                        required:
+                                          - value
+                                required:
+                                  - locked
+                                  - state
                       - type: object
                         properties:
                           state:
@@ -7112,6 +7252,19 @@ paths:
                                         type: integer
                                       'y':
                                         type: integer
+                                  state:
+                                    title: RunningState
+                                    description: the node's running state
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PUBLISHED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
                             additionalProperties: true
                           ui:
                             type: object
@@ -7167,6 +7320,73 @@ paths:
                           dev:
                             type: object
                             description: object used for development purposes only
+                          state:
+                            title: State
+                            description: Project state
+                            allOf:
+                              - title: ProjectState
+                                type: object
+                                properties:
+                                  locked:
+                                    title: Locked
+                                    description: The project lock state
+                                    allOf:
+                                      - title: ProjectLocked
+                                        type: object
+                                        properties:
+                                          value:
+                                            title: Value
+                                            description: True if the project is locked by another user
+                                            type: boolean
+                                          owner:
+                                            title: Owner
+                                            description: The user that owns the lock
+                                            allOf:
+                                              - title: Owner
+                                                type: object
+                                                properties:
+                                                  first_name:
+                                                    title: First Name
+                                                    description: Owner first name
+                                                    example:
+                                                      - John
+                                                    type: string
+                                                  last_name:
+                                                    title: Last Name
+                                                    description: Owner last name
+                                                    example:
+                                                      - Smith
+                                                    type: string
+                                                required:
+                                                  - first_name
+                                                  - last_name
+                                        required:
+                                          - value
+                                  state:
+                                    title: State
+                                    description: The project running state
+                                    allOf:
+                                      - title: ProjectRunningState
+                                        type: object
+                                        properties:
+                                          value:
+                                            title: RunningState
+                                            description: An enumeration.
+                                            enum:
+                                              - UNKNOWN
+                                              - NOT_STARTED
+                                              - PUBLISHED
+                                              - PENDING
+                                              - STARTED
+                                              - RETRY
+                                              - SUCCESS
+                                              - FAILURE
+                                            type: string
+                                        required:
+                                          - value
+                                required:
+                                  - locked
+                                  - state
                       - type: object
                         properties:
                           state:
@@ -7528,6 +7748,19 @@ paths:
                                         type: integer
                                       'y':
                                         type: integer
+                                  state:
+                                    title: RunningState
+                                    description: the node's running state
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PUBLISHED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
                             additionalProperties: true
                           ui:
                             type: object
@@ -7583,6 +7816,73 @@ paths:
                           dev:
                             type: object
                             description: object used for development purposes only
+                          state:
+                            title: State
+                            description: Project state
+                            allOf:
+                              - title: ProjectState
+                                type: object
+                                properties:
+                                  locked:
+                                    title: Locked
+                                    description: The project lock state
+                                    allOf:
+                                      - title: ProjectLocked
+                                        type: object
+                                        properties:
+                                          value:
+                                            title: Value
+                                            description: True if the project is locked by another user
+                                            type: boolean
+                                          owner:
+                                            title: Owner
+                                            description: The user that owns the lock
+                                            allOf:
+                                              - title: Owner
+                                                type: object
+                                                properties:
+                                                  first_name:
+                                                    title: First Name
+                                                    description: Owner first name
+                                                    example:
+                                                      - John
+                                                    type: string
+                                                  last_name:
+                                                    title: Last Name
+                                                    description: Owner last name
+                                                    example:
+                                                      - Smith
+                                                    type: string
+                                                required:
+                                                  - first_name
+                                                  - last_name
+                                        required:
+                                          - value
+                                  state:
+                                    title: State
+                                    description: The project running state
+                                    allOf:
+                                      - title: ProjectRunningState
+                                        type: object
+                                        properties:
+                                          value:
+                                            title: RunningState
+                                            description: An enumeration.
+                                            enum:
+                                              - UNKNOWN
+                                              - NOT_STARTED
+                                              - PUBLISHED
+                                              - PENDING
+                                              - STARTED
+                                              - RETRY
+                                              - SUCCESS
+                                              - FAILURE
+                                            type: string
+                                        required:
+                                          - value
+                                required:
+                                  - locked
+                                  - state
                       - type: object
                         properties:
                           state:
@@ -7935,6 +8235,19 @@ paths:
                               type: integer
                             'y':
                               type: integer
+                        state:
+                          title: RunningState
+                          description: the node's running state
+                          enum:
+                            - UNKNOWN
+                            - NOT_STARTED
+                            - PUBLISHED
+                            - PENDING
+                            - STARTED
+                            - RETRY
+                            - SUCCESS
+                            - FAILURE
+                          type: string
                   additionalProperties: true
                 ui:
                   type: object
@@ -7990,6 +8303,73 @@ paths:
                 dev:
                   type: object
                   description: object used for development purposes only
+                state:
+                  title: State
+                  description: Project state
+                  allOf:
+                    - title: ProjectState
+                      type: object
+                      properties:
+                        locked:
+                          title: Locked
+                          description: The project lock state
+                          allOf:
+                            - title: ProjectLocked
+                              type: object
+                              properties:
+                                value:
+                                  title: Value
+                                  description: True if the project is locked by another user
+                                  type: boolean
+                                owner:
+                                  title: Owner
+                                  description: The user that owns the lock
+                                  allOf:
+                                    - title: Owner
+                                      type: object
+                                      properties:
+                                        first_name:
+                                          title: First Name
+                                          description: Owner first name
+                                          example:
+                                            - John
+                                          type: string
+                                        last_name:
+                                          title: Last Name
+                                          description: Owner last name
+                                          example:
+                                            - Smith
+                                          type: string
+                                      required:
+                                        - first_name
+                                        - last_name
+                              required:
+                                - value
+                        state:
+                          title: State
+                          description: The project running state
+                          allOf:
+                            - title: ProjectRunningState
+                              type: object
+                              properties:
+                                value:
+                                  title: RunningState
+                                  description: An enumeration.
+                                  enum:
+                                    - UNKNOWN
+                                    - NOT_STARTED
+                                    - PUBLISHED
+                                    - PENDING
+                                    - STARTED
+                                    - RETRY
+                                    - SUCCESS
+                                    - FAILURE
+                                  type: string
+                              required:
+                                - value
+                      required:
+                        - locked
+                        - state
       responses:
         '200':
           description: got detailed project
@@ -8227,6 +8607,19 @@ paths:
                                         type: integer
                                       'y':
                                         type: integer
+                                  state:
+                                    title: RunningState
+                                    description: the node's running state
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PUBLISHED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
                             additionalProperties: true
                           ui:
                             type: object
@@ -8282,6 +8675,73 @@ paths:
                           dev:
                             type: object
                             description: object used for development purposes only
+                          state:
+                            title: State
+                            description: Project state
+                            allOf:
+                              - title: ProjectState
+                                type: object
+                                properties:
+                                  locked:
+                                    title: Locked
+                                    description: The project lock state
+                                    allOf:
+                                      - title: ProjectLocked
+                                        type: object
+                                        properties:
+                                          value:
+                                            title: Value
+                                            description: True if the project is locked by another user
+                                            type: boolean
+                                          owner:
+                                            title: Owner
+                                            description: The user that owns the lock
+                                            allOf:
+                                              - title: Owner
+                                                type: object
+                                                properties:
+                                                  first_name:
+                                                    title: First Name
+                                                    description: Owner first name
+                                                    example:
+                                                      - John
+                                                    type: string
+                                                  last_name:
+                                                    title: Last Name
+                                                    description: Owner last name
+                                                    example:
+                                                      - Smith
+                                                    type: string
+                                                required:
+                                                  - first_name
+                                                  - last_name
+                                        required:
+                                          - value
+                                  state:
+                                    title: State
+                                    description: The project running state
+                                    allOf:
+                                      - title: ProjectRunningState
+                                        type: object
+                                        properties:
+                                          value:
+                                            title: RunningState
+                                            description: An enumeration.
+                                            enum:
+                                              - UNKNOWN
+                                              - NOT_STARTED
+                                              - PUBLISHED
+                                              - PENDING
+                                              - STARTED
+                                              - RETRY
+                                              - SUCCESS
+                                              - FAILURE
+                                            type: string
+                                        required:
+                                          - value
+                                required:
+                                  - locked
+                                  - state
                       - type: object
                         properties:
                           state:
@@ -8659,6 +9119,19 @@ paths:
                                         type: integer
                                       'y':
                                         type: integer
+                                  state:
+                                    title: RunningState
+                                    description: the node's running state
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PUBLISHED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
                             additionalProperties: true
                           ui:
                             type: object
@@ -8714,6 +9187,73 @@ paths:
                           dev:
                             type: object
                             description: object used for development purposes only
+                          state:
+                            title: State
+                            description: Project state
+                            allOf:
+                              - title: ProjectState
+                                type: object
+                                properties:
+                                  locked:
+                                    title: Locked
+                                    description: The project lock state
+                                    allOf:
+                                      - title: ProjectLocked
+                                        type: object
+                                        properties:
+                                          value:
+                                            title: Value
+                                            description: True if the project is locked by another user
+                                            type: boolean
+                                          owner:
+                                            title: Owner
+                                            description: The user that owns the lock
+                                            allOf:
+                                              - title: Owner
+                                                type: object
+                                                properties:
+                                                  first_name:
+                                                    title: First Name
+                                                    description: Owner first name
+                                                    example:
+                                                      - John
+                                                    type: string
+                                                  last_name:
+                                                    title: Last Name
+                                                    description: Owner last name
+                                                    example:
+                                                      - Smith
+                                                    type: string
+                                                required:
+                                                  - first_name
+                                                  - last_name
+                                        required:
+                                          - value
+                                  state:
+                                    title: State
+                                    description: The project running state
+                                    allOf:
+                                      - title: ProjectRunningState
+                                        type: object
+                                        properties:
+                                          value:
+                                            title: RunningState
+                                            description: An enumeration.
+                                            enum:
+                                              - UNKNOWN
+                                              - NOT_STARTED
+                                              - PUBLISHED
+                                              - PENDING
+                                              - STARTED
+                                              - RETRY
+                                              - SUCCESS
+                                              - FAILURE
+                                            type: string
+                                        required:
+                                          - value
+                                required:
+                                  - locked
+                                  - state
                       - type: object
                         properties:
                           state:
@@ -9903,6 +10443,19 @@ paths:
                                         type: integer
                                       'y':
                                         type: integer
+                                  state:
+                                    title: RunningState
+                                    description: the node's running state
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PUBLISHED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
                             additionalProperties: true
                           ui:
                             type: object
@@ -9958,6 +10511,73 @@ paths:
                           dev:
                             type: object
                             description: object used for development purposes only
+                          state:
+                            title: State
+                            description: Project state
+                            allOf:
+                              - title: ProjectState
+                                type: object
+                                properties:
+                                  locked:
+                                    title: Locked
+                                    description: The project lock state
+                                    allOf:
+                                      - title: ProjectLocked
+                                        type: object
+                                        properties:
+                                          value:
+                                            title: Value
+                                            description: True if the project is locked by another user
+                                            type: boolean
+                                          owner:
+                                            title: Owner
+                                            description: The user that owns the lock
+                                            allOf:
+                                              - title: Owner
+                                                type: object
+                                                properties:
+                                                  first_name:
+                                                    title: First Name
+                                                    description: Owner first name
+                                                    example:
+                                                      - John
+                                                    type: string
+                                                  last_name:
+                                                    title: Last Name
+                                                    description: Owner last name
+                                                    example:
+                                                      - Smith
+                                                    type: string
+                                                required:
+                                                  - first_name
+                                                  - last_name
+                                        required:
+                                          - value
+                                  state:
+                                    title: State
+                                    description: The project running state
+                                    allOf:
+                                      - title: ProjectRunningState
+                                        type: object
+                                        properties:
+                                          value:
+                                            title: RunningState
+                                            description: An enumeration.
+                                            enum:
+                                              - UNKNOWN
+                                              - NOT_STARTED
+                                              - PUBLISHED
+                                              - PENDING
+                                              - STARTED
+                                              - RETRY
+                                              - SUCCESS
+                                              - FAILURE
+                                            type: string
+                                        required:
+                                          - value
+                                required:
+                                  - locked
+                                  - state
                       - type: object
                         properties:
                           state:
@@ -10312,6 +10932,19 @@ paths:
                                         type: integer
                                       'y':
                                         type: integer
+                                  state:
+                                    title: RunningState
+                                    description: the node's running state
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PUBLISHED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                    type: string
                             additionalProperties: true
                           ui:
                             type: object
@@ -10367,6 +11000,73 @@ paths:
                           dev:
                             type: object
                             description: object used for development purposes only
+                          state:
+                            title: State
+                            description: Project state
+                            allOf:
+                              - title: ProjectState
+                                type: object
+                                properties:
+                                  locked:
+                                    title: Locked
+                                    description: The project lock state
+                                    allOf:
+                                      - title: ProjectLocked
+                                        type: object
+                                        properties:
+                                          value:
+                                            title: Value
+                                            description: True if the project is locked by another user
+                                            type: boolean
+                                          owner:
+                                            title: Owner
+                                            description: The user that owns the lock
+                                            allOf:
+                                              - title: Owner
+                                                type: object
+                                                properties:
+                                                  first_name:
+                                                    title: First Name
+                                                    description: Owner first name
+                                                    example:
+                                                      - John
+                                                    type: string
+                                                  last_name:
+                                                    title: Last Name
+                                                    description: Owner last name
+                                                    example:
+                                                      - Smith
+                                                    type: string
+                                                required:
+                                                  - first_name
+                                                  - last_name
+                                        required:
+                                          - value
+                                  state:
+                                    title: State
+                                    description: The project running state
+                                    allOf:
+                                      - title: ProjectRunningState
+                                        type: object
+                                        properties:
+                                          value:
+                                            title: RunningState
+                                            description: An enumeration.
+                                            enum:
+                                              - UNKNOWN
+                                              - NOT_STARTED
+                                              - PUBLISHED
+                                              - PENDING
+                                              - STARTED
+                                              - RETRY
+                                              - SUCCESS
+                                              - FAILURE
+                                            type: string
+                                        required:
+                                          - value
+                                required:
+                                  - locked
+                                  - state
                       - type: object
                         properties:
                           state:
