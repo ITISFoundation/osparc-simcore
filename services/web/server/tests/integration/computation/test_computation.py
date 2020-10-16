@@ -44,9 +44,7 @@ ops_services = [
 
 @pytest.fixture
 def client(
-    loop,
-    aiohttp_client,
-    app_config,  ## waits until swarm with *_services are up
+    loop, aiohttp_client, app_config,  ## waits until swarm with *_services are up
 ):
     assert app_config["rest"]["version"] == API_VERSION
 
@@ -130,6 +128,10 @@ def assert_db_contents(
 def assert_sleeper_services_completed(project_id, postgres_session):
     # pylint: disable=no-member
     # we wait 15 secs before testing...
+    TIMEOUT_SECONDS = 30
+    start_time = time.time()
+    pipeline_result = StateType.NOT_STARTED
+    # while results
     time.sleep(15)
     pipeline_db = (
         postgres_session.query(ComputationalPipeline)
@@ -179,11 +181,16 @@ async def test_start_pipeline(
     project_id = user_project["uuid"]
     mock_workbench_payload = user_project["workbench"]
 
-    url = client.app.router["start_pipeline"].url_for(project_id=project_id)
-    assert url == URL(API_PREFIX + "/computation/pipeline/{}:start".format(project_id))
+    url_get_state = client.app.router["state_project"].url_for(project_id=project_id)
+    assert url_get_state == URL(API_PREFIX + "/projects/{}/state".format(project_id))
+
+    url_state = client.app.router["start_pipeline"].url_for(project_id=project_id)
+    assert url_state == URL(
+        API_PREFIX + "/computation/pipeline/{}:start".format(project_id)
+    )
 
     # POST /v0/computation/pipeline/{project_id}:start
-    resp = await client.post(url)
+    resp = await client.post(url_state)
     data, error = await assert_status(resp, expected_response)
 
     if not error:
@@ -198,4 +205,4 @@ async def test_start_pipeline(
             mock_workbench_adjacency_list,
             check_outputs=False,
         )
-        # assert_sleeper_services_completed(project_id, postgres_session)
+        assert_sleeper_services_completed(project_id, postgres_session)
