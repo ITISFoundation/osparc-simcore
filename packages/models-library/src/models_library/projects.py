@@ -98,14 +98,14 @@ class Position(BaseModel):
 
 
 class WorkbenchUI(BaseModel):
-    position: Optional[Position] = Field(..., description="The node position in the workbench")
+    position: Position = Field(..., description="The node position in the workbench")
 
     class Config:
         extra = Extra.forbid
 
 
 class Slideshow(BaseModel):
-    position: Optional[int] = Field(..., description="Slide's position", example=["0", "2"])
+    position: int = Field(..., description="Slide's position", example=["0", "2"])
 
     class Config:
         extra = Extra.forbid
@@ -137,7 +137,12 @@ class Node(BaseModel):
     label: str = Field(
         ..., description="The short name of the node", example=["JupyterLab"]
     )
-    progress: float = Field(..., ge=0, le=100, description="the node progress value")
+    progress: Optional[float] = Field(
+        0,
+        ge=0,
+        le=100,
+        description="the node progress value"
+    )
     thumbnail: Optional[HttpUrl] = Field(
         None,
         description="url of the latest screenshot of the node",
@@ -145,13 +150,13 @@ class Node(BaseModel):
     )
 
     inputs: Optional[Dict[InputID, InputTypes]] = Field(
-        ..., description="values of input properties"
+        {}, description="values of input properties"
     )
     inputAccess: Optional[Dict[InputID, AccessEnum]] = Field(
-        ..., description="map with key - access level pairs"
+        {}, description="map with key - access level pairs"
     )
     inputNodes: Optional[List[UUID4]] = Field(
-        ...,
+        [],
         description="node IDs of where the node is connected to",
         example=["nodeUuid1", "nodeUuid2"],
     )
@@ -159,7 +164,7 @@ class Node(BaseModel):
     outputs: Optional[Dict[OutputID, OutputTypes]] = None
     outputNode: Optional[bool] = Field(None, deprecated=True)
     outputNodes: Optional[List[UUID4]] = Field(
-        ...,
+        [],
         description="Used in group-nodes. Node IDs of those connected to the output",
         example=["nodeUuid1", "nodeUuid2"],
     )
@@ -170,15 +175,15 @@ class Node(BaseModel):
         example=["nodeUUid1", "nodeUuid2"],
     )
 
-    position: Optional[Position] = Field(..., deprecated=True)
+    position: Optional[Position] = Field(None, deprecated=True)
 
     class Config:
         extra = Extra.forbid
 
 
 class StudyUI(BaseModel):
-    workbench: Optional[Dict[NodeID, WorkbenchUI]] = Field(...)
-    slideshow: Optional[Dict[NodeID, Slideshow]] = Field(...)
+    workbench: Optional[Dict[NodeID, WorkbenchUI]] = Field(None)
+    slideshow: Optional[Dict[NodeID, Slideshow]] = Field(None)
 
 
 class AccessRights(BaseModel):
