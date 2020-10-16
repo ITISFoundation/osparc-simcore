@@ -236,29 +236,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__workbenchUI.resetSelectedNodes();
     },
 
-    updateStudyDocument: function(run=false) {
-      this.getStudy().setLastChangeDate(new Date());
-      const newObj = this.getStudy().serialize();
-      const prjUuid = this.getStudy().getUuid();
-
-      const params = {
-        url: {
-          projectId: prjUuid,
-          run
-        },
-        data: newObj
-      };
-      return new Promise((resolve, reject) => {
-        osparc.data.Resources.fetch("studies", "put", params)
-          .then(data => {
-            resolve();
-          })
-          .catch(error => {
-            reject();
-          });
-      });
-    },
-
     __startPipeline: function() {
       if (!osparc.data.Permissions.getInstance().canDo("study.start", true)) {
         return;
@@ -290,7 +267,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.getLogger().error(null, "Error submitting pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.getLogger().error(null, "Failed submitting pipeline");
+        if (e.getTarget().getResponse().error.status == "403") {
+          this.getLogger().error(null, "Pipeline is already running");
+        } else {
+          this.getLogger().error(null, "Failed submitting pipeline");
+        }
       }, this);
       req.send();
 
@@ -628,6 +609,29 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       } else {
         this.nodeSelected(this.getStudy().getUuid());
       }
+    },
+
+    updateStudyDocument: function(run=false) {
+      this.getStudy().setLastChangeDate(new Date());
+      const newObj = this.getStudy().serialize();
+      const prjUuid = this.getStudy().getUuid();
+
+      const params = {
+        url: {
+          projectId: prjUuid,
+          run
+        },
+        data: newObj
+      };
+      return new Promise((resolve, reject) => {
+        osparc.data.Resources.fetch("studies", "put", params)
+          .then(data => {
+            resolve();
+          })
+          .catch(error => {
+            reject();
+          });
+      });
     }
   }
 });

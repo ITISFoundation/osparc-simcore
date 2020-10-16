@@ -145,12 +145,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return this.__workbenchView.getLogger();
     },
 
-    __getCurrentPipeline: function() {
-      const saveContainers = false;
-      const currentPipeline = this.getStudy().getWorkbench().serialize(saveContainers);
-      return currentPipeline;
-    },
-
     _applyPageContext: function(newCtxt) {
       switch (newCtxt) {
         case "workbench":
