@@ -23,10 +23,7 @@
 qx.Class.define("osparc.component.metadata.StudyInfo", {
   extend: qx.ui.core.Widget,
 
-  /**
-    * @param study {osparc.data.model.Study} Study model
-    */
-  construct: function(study) {
+  construct: function() {
     this.base(arguments);
 
     this.set({
@@ -36,7 +33,6 @@ qx.Class.define("osparc.component.metadata.StudyInfo", {
     this._setLayout(new qx.ui.layout.VBox(8));
 
     this._add(this.__getMoreInfoMenuButton());
-    this.setStudy(study);
   },
 
   properties: {

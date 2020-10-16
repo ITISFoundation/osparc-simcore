@@ -329,7 +329,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __initViews: function() {
       const study = this.getStudy();
 
-      const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree(study);
+      const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree();
+      nodesTree.setStudy(study);
       nodesTree.addListener("slidesEdit", () => {
         this.__editSlides();
       }, this);
@@ -341,7 +342,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         flex: 1
       });
 
-      const extraView = this.__extraView = new osparc.component.metadata.StudyInfo(study);
+      const extraView = this.__extraView = new osparc.component.metadata.StudyInfo();
+      extraView.setStudy(study);
       this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Study information"), extraView), 1, {
         flex: 1
       });

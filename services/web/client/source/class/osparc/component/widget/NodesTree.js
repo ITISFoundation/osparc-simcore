@@ -45,7 +45,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
     this.__toolBar = this._createChildControlImpl("toolbar");
     this.__tree = this._createChildControlImpl("tree");
-    this.populateTree();
 
     this.__attachEventHandlers();
   },
@@ -56,6 +55,14 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     "removeNode": "qx.event.type.Data",
     "exportNode": "qx.event.type.Data",
     "changeSelectedNode": "qx.event.type.Data"
+  },
+
+  properties: {
+    study: {
+      check: "osparc.data.model.Study",
+      nullable: false,
+      apply: "_applyStudy"
+    }
   },
 
   statics: {
@@ -119,6 +126,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       return control || this.base(arguments, id);
     },
 
+    _applyStudy: function(study) {
+      this.__populateToolbar();
+      this.populateTree();
+    },
+
     setCurrentNodeId: function(nodeId) {
       this.__currentNodeId = nodeId;
     },
@@ -135,12 +147,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       const editBtn = this.__editSlidesBtn = new qx.ui.toolbar.Button(this.tr("Slides"), "@FontAwesome5Solid/paw/"+iconSize).set({
         visibility: "excluded"
       });
-      this.self().areSlidesEnabled()
-        .then(areSlidesEnabled => {
-          const study = osparc.store.Store.getInstance().getCurrentStudy();
-          const isOwner = osparc.data.model.Study.isOwner(study);
-          editBtn.setVisibility(areSlidesEnabled && isOwner ? "visible" : "excluded");
-        });
       editBtn.addListener("execute", () => {
         this.fireEvent("slidesEdit");
       }, this);
@@ -223,6 +229,15 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       });
       osparc.utils.Utils.setIdToWidget(tree, "nodesTree");
       return tree;
+    },
+
+    __populateToolbar: function() {
+      this.self().areSlidesEnabled()
+        .then(areSlidesEnabled => {
+          const study = this.getStudy();
+          const isOwner = osparc.data.model.Study.isOwner(study);
+          this.__editSlidesBtn.setVisibility(areSlidesEnabled && isOwner ? "visible" : "excluded");
+        });
     },
 
     populateTree: function() {
