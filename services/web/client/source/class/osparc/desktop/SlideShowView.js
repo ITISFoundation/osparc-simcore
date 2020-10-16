@@ -94,6 +94,8 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     },
 
     __initViews: function() {
+      this._removeAll();
+
       const nodeView = this.__nodeView = new osparc.component.node.NodeView();
       this._add(nodeView, {
         flex: 1
