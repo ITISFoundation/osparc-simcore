@@ -320,7 +320,8 @@
                 "y": {
                   "type": "integer"
                 }
-              }
+              },
+              "deprecated": true
             }
           }
         }

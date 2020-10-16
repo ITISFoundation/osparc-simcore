@@ -159,7 +159,7 @@ class Node(BaseModel):
         example=["nodeUUid1", "nodeUuid2"],
     )
 
-    position: Optional[Position] = Field(...)
+    position: Optional[Position] = Field(..., deprecated=True)
 
     class Config:
         extra = Extra.forbid
