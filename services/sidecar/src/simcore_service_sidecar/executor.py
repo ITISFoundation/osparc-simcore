@@ -1,21 +1,20 @@
 import asyncio
 import json
 import logging
+import os
 import shutil
 import time
+import zipfile
 from pathlib import Path
 from typing import Dict, Optional
-import zipfile
-import os
 
 import aiopg
 import attr
 from aiodocker import Docker
 from aiodocker.containers import DockerContainer
 from aiodocker.exceptions import DockerContainerError, DockerError
-from packaging import version
-
 from celery.utils.log import get_task_logger
+from packaging import version
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_sdk import node_data, node_ports
 from simcore_sdk.node_ports.dbmanager import DBManager
