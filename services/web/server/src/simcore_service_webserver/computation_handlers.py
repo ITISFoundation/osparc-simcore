@@ -94,7 +94,7 @@ async def stop_pipeline(request: web.Request) -> web.Response:
             RunningState.STARTED,
             RunningState.RETRY,
         ]:
-            await stop_pipeline_computation(request.app, user_id, project_id)
+            await stop_pipeline_computation(request.app, project_id)
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_id} not found") from exc
 

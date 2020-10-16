@@ -511,9 +511,7 @@ async def start_pipeline_computation(
 
 
 @log_decorator(logger=log)
-async def stop_pipeline_computation(
-    app: web.Application, user_id: int, project_id: str
-) -> None:
+async def stop_pipeline_computation(app: web.Application, project_id: str) -> None:
     db_engine = app[APP_DB_ENGINE_KEY]
 
     async with db_engine.acquire() as conn:

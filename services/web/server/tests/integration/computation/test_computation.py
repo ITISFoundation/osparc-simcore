@@ -1,7 +1,6 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-import asyncio
 import json
 import sys
 import time
