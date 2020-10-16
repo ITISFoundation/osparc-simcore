@@ -59,7 +59,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __autoSaveTimer: null,
     __lastSavedStudy: null,
 
-    setStudy: function(studyData) {
+    setStudyData: function(studyData) {
       return new Promise((resolve, reject) => {
         if (this.__settingStudy) {
           resolve();

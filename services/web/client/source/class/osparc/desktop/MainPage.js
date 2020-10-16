@@ -230,7 +230,7 @@ qx.Class.define("osparc.desktop.MainPage", {
                 throw new Error(msg);
               }
               this.__showStudyEditor(this.__getStudyEditor());
-              this.__studyEditor.setStudy(latestStudyData)
+              this.__studyEditor.setStudyData(latestStudyData)
                 .then(() => {
                   this.__syncStudyEditor();
                 });
