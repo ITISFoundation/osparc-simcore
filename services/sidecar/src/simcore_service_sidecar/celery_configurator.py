@@ -93,7 +93,7 @@ def shared_task_dispatch(
                 celery_request.is_aborted,
             )
         )
-    except CancelledError as identifier:
+    except CancelledError:
         if celery_request.is_aborted():
             # the task is aborted by the client, let's just return here
             return
