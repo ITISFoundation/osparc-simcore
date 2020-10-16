@@ -47,7 +47,8 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     "showSettings": "qx.event.type.Event",
     "groupSelection": "qx.event.type.Event",
     "ungroupSelection": "qx.event.type.Event",
-    "startPipeline": "qx.event.type.Event"
+    "startPipeline": "qx.event.type.Event",
+    "stopPipeline": "qx.event.type.Event"
   },
 
   members: {
@@ -118,6 +119,8 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       this.add(moreCtrls);
 
       const simCtrls = new qx.ui.toolbar.Part();
+      const stopButton = this.__createStopButton();
+      simCtrls.add(stopButton);
       const startButton = this.__createStartButton();
       simCtrls.add(startButton);
       this.add(simCtrls);
@@ -175,6 +178,10 @@ qx.Class.define("osparc.desktop.ControlsBar", {
         }
       });
       return startButton;
+    },
+    __createStopButton: function() {
+      const stopButton = this.__stopButton = this.__createButton(this.tr("Stop"), "stop", "stopStudyBtn", "stopPipeline");
+      return stopButton;
     },
 
     __createRadioButton: function(label, icon, widgetId, singalName) {

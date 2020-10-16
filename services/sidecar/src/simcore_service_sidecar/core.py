@@ -136,6 +136,7 @@ async def _get_pipeline_from_db(
 async def _set_task_status(
     db_engine: Engine, project_id: str, node_id: str, run_result
 ):
+    log.debug("setting task status of %s:%s to %s", project_id, node_id, run_result)
     async with db_engine.acquire() as connection:
         await connection.execute(
             # FIXME: E1120:No value for argument 'dml' in method call
@@ -229,6 +230,7 @@ async def inspect(
         run_result = StateType.SUCCESS
     except asyncio.CancelledError:
         log.warning("Task has been cancelled")
+        run_result = StateType.ABORTED
         raise
 
     finally:

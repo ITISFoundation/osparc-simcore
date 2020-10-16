@@ -18,7 +18,7 @@
 qx.Class.define("osparc.desktop.StudyEditor", {
   extend: osparc.ui.basic.LoadingPageHandler,
 
-  construct: function() {
+  construct: function () {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
@@ -65,7 +65,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __autoSaveTimer: null,
     __lastSavedStudy: null,
 
-    setStudyData: function(studyData) {
+    setStudyData: function (studyData) {
       return new Promise((resolve, reject) => {
         if (this.__settingStudy) {
           resolve();
@@ -95,7 +95,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       });
     },
 
-    _applyStudy: function(study) {
+    _applyStudy: function (study) {
       this.__settingStudy = false;
 
       this._hideLoadingPage();
@@ -128,28 +128,28 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     // overridden
-    _showMainLayout: function(show) {
+    _showMainLayout: function (show) {
       this.__viewsStack.setVisibility(show ? "visible" : "excluded");
     },
 
     /**
      * Destructor
      */
-    destruct: function() {
+    destruct: function () {
       osparc.store.Store.getInstance().setCurrentStudy(null);
       this.__stopAutoSaveTimer();
     },
 
-    nodeSelected: function(nodeId) {
+    nodeSelected: function (nodeId) {
       this.__workbenchView.nodeSelected(nodeId);
       this.__slideshowView.nodeSelected(nodeId);
     },
 
-    getLogger: function() {
+    getLogger: function () {
       return this.__workbenchView.getLogger();
     },
 
-    _applyPageContext: function(newCtxt) {
+    _applyPageContext: function (newCtxt) {
       switch (newCtxt) {
         case "workbench":
           this.__viewsStack.setSelection([this.__workbenchView]);
@@ -161,7 +161,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    __startAutoSaveTimer: function() {
+    __startAutoSaveTimer: function () {
       let diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
       // Save every 5 seconds
       const interval = 5000;
@@ -184,14 +184,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       timer.start();
     },
 
-    __stopAutoSaveTimer: function() {
+    __stopAutoSaveTimer: function () {
       if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
         this.__autoSaveTimer.stop();
         this.__autoSaveTimer.setEnabled(false);
       }
     },
 
-    updateStudyDocument: function(run=false) {
+    updateStudyDocument: function (run = false) {
       this.getStudy().setLastChangeDate(new Date());
       const newObj = this.getStudy().serialize();
       const prjUuid = this.getStudy().getUuid();
@@ -213,7 +213,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
     },
 
-    closeStudy: function() {
+    closeStudy: function () {
       this.getStudy().closeStudy();
     }
   }

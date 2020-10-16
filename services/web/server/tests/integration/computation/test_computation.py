@@ -181,9 +181,9 @@ async def test_start_pipeline(
     mock_workbench_payload = user_project["workbench"]
 
     url = client.app.router["start_pipeline"].url_for(project_id=project_id)
-    assert url == URL(API_PREFIX + "/computation/pipeline/{}/start".format(project_id))
+    assert url == URL(API_PREFIX + "/computation/pipeline/{}:start".format(project_id))
 
-    # POST /v0/computation/pipeline/{project_id}/start
+    # POST /v0/computation/pipeline/{project_id}:start
     resp = await client.post(url)
     data, error = await assert_status(resp, expected_response)
 

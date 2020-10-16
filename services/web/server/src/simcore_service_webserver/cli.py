@@ -20,6 +20,7 @@ from typing import Dict, List, Optional
 
 from aiodebug import log_slow_callbacks
 from aiohttp.log import access_logger
+from servicelib.logging_utils import CustomFormatter, set_logging_handler
 
 from .application import run_service
 from .application_config import CLI_DEFAULT_CONFIGFILE, app_schema
@@ -48,7 +49,7 @@ def setup_parser(parser: ArgumentParser) -> ArgumentParser:
 
 
 def create_environ(*, skip_host_environ: bool = False) -> Dict[str, str]:
-    """ Build environment with substitutable variables
+    """Build environment with substitutable variables
 
 
     :param skip_host_environ: excludes os.environ , defaults to False
@@ -64,7 +65,9 @@ def create_environ(*, skip_host_environ: bool = False) -> Dict[str, str]:
     rootdir = search_osparc_repo_dir()
     if rootdir is not None:
         environ.update(
-            {"OSPARC_SIMCORE_REPO_ROOTDIR": str(rootdir),}
+            {
+                "OSPARC_SIMCORE_REPO_ROOTDIR": str(rootdir),
+            }
         )
 
     # DEFAULTS if not defined in environ
@@ -104,6 +107,8 @@ def main(args: Optional[List] = None):
     log_level = getattr(logging, config["main"]["log_level"])
     logging.basicConfig(level=log_level)
     logging.root.setLevel(log_level)
+    set_logging_handler(logging.root)
+
     # aiohttp access log-levels
     access_logger.setLevel(log_level)
 

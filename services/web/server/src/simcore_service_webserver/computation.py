@@ -43,6 +43,7 @@ def setup(app: web.Application):
     routes = map_handlers_with_operations(
         {
             "start_pipeline": computation_handlers.start_pipeline,
+            "stop_pipeline": computation_handlers.stop_pipeline,
         },
         filter(lambda o: "/computation" in o[1], iter_path_operations(specs)),
         strict=True,
