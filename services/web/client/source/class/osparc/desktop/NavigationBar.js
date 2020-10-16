@@ -395,8 +395,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           const context = ["workbench", "slides"].includes(this.getPageContext());
           if (areSlidesEnabled && context) {
             const study = this.getStudy();
-            const slides = Object.keys(study.getUi().getSlideshow()).length;
-            if (slides && osparc.data.model.Study.isOwner(study)) {
+            if (Object.keys(study.getUi().getSlideshow()).length) {
               this.__slideBtns.show();
               if (this.getPageContext() === "slides") {
                 this.__startSlidesBtn.exclude();

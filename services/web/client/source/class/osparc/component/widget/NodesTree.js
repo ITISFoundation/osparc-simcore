@@ -137,7 +137,9 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       });
       this.self().areSlidesEnabled()
         .then(areSlidesEnabled => {
-          editBtn.setVisibility(areSlidesEnabled ? "visible" : "excluded");
+          const study = osparc.store.Store.getInstance().getCurrentStudy();
+          const isOwner = osparc.data.model.Study.isOwner(study);
+          editBtn.setVisibility(areSlidesEnabled && isOwner ? "visible" : "excluded");
         });
       editBtn.addListener("execute", () => {
         this.fireEvent("slidesEdit");
