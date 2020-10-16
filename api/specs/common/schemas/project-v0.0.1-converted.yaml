@@ -229,6 +229,7 @@ properties:
                 type: integer
               'y':
                 type: integer
+            deprecated: true
           state:
             title: RunningState
             description: the node's running state
