@@ -4,8 +4,7 @@ import sys
 from pathlib import Path
 
 import pytest
-
-from simcore_service_sidecar.boot_mode import set_boot_mode, BootMode
+from simcore_service_sidecar.boot_mode import BootMode, set_boot_mode
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
