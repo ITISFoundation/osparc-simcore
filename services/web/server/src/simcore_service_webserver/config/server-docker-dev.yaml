@@ -43,9 +43,7 @@ rabbit:
   port: ${RABBIT_PORT}
   user: ${RABBIT_USER}
   password: ${RABBIT_PASSWORD}
-  channels:
-    log: "comp.backend.channels.log"
-    instrumentation: "comp.backend.channels.instrumentation"
+  channels: ${RABBIT_CHANNELS}
 activity:
   enabled: True
   prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}
