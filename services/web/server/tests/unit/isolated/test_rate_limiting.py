@@ -7,6 +7,7 @@ import time
 
 import pytest
 from aiohttp import web
+from aiohttp.web_exceptions import HTTPTooManyRequests
 from simcore_service_webserver.rate_limiting import global_rate_limit_route
 
 MAX_NUM_REQUESTS = 3
@@ -50,7 +51,13 @@ async def test_global_rate_limit_route(requests_per_second, aiohttp_client, loop
 
     elapsed = time.time() - t0
     count = len(futures)
-    print(count, "requests in", f"{elapsed:3.2f} seconds =>", f"{count / elapsed:3.2f}", "reqs/sec")
+    print(
+        count,
+        "requests in",
+        f"{elapsed:3.2f} seconds =>",
+        f"{count / elapsed:3.2f}",
+        "reqs/sec",
+    )
 
     # checks if cadence was right
     assert count == num_requests
@@ -63,7 +70,7 @@ async def test_global_rate_limit_route(requests_per_second, aiohttp_client, loop
         assert not fut.exception()
         print("%2d" % i, fut.result().status)
 
-    expected_status = 200
+    expected_status = HTTPTooManyRequests.status_code
 
     # first requests are OK
     assert all(f.result().status == expected_status for f in futures[:MAX_NUM_REQUESTS])

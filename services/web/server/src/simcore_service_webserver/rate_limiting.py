@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 from aiohttp.web_exceptions import HTTPTooManyRequests
 
+
 def global_rate_limit_route(number_of_requests: int, interval_seconds: int):
     """
     Limits the requests per given interval to this endpoint
