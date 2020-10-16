@@ -16,6 +16,17 @@ NodeID = constr(regex=r"^\d+$")
 ClassifierID = str
 
 
+class RunningState(str, Enum):
+    UNKNOWN = "UNKNOWN"
+    PUBLISHED = "PUBLISHED"
+    NOT_STARTED = "NOT_STARTED"
+    PENDING = "PENDING"
+    STARTED = "STARTED"
+    RETRY = "RETRY"
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
+
+
 class PortLink(BaseModel):
     nodeUuid: UUID4 = Field(
         ...,
@@ -87,7 +98,7 @@ class Position(BaseModel):
 
 
 class WorkbenchUI(BaseModel):
-    position: Optional[Position] = Field(...)
+    position: Optional[Position] = Field(..., description="The node position in the workbench"
 
     class Config:
         extra = Extra.forbid
@@ -159,7 +170,13 @@ class Node(BaseModel):
         example=["nodeUUid1", "nodeUuid2"],
     )
 
-    position: Optional[Position] = Field(...)
+    position: Optional[Position] = Field(..., description="The node position in the workbench")
+
+    state: Optional[RunningState] = Field(
+        RunningState.NOT_STARTED,
+        description="the node's running state",
+        example=["RUNNING", "FAILURE"],
+    )
 
     class Config:
         extra = Extra.forbid
@@ -169,9 +186,6 @@ class StudyUI(BaseModel):
     workbench: Optional[Dict[NodeID, WorkbenchUI]] = Field(...)
     slideshow: Optional[Dict[NodeID, Slideshow]] = Field(...)
 
-    class Config:
-        extra = Extra.forbid
-
 
 class AccessRights(BaseModel):
     read: bool = Field(..., description="gives read access")
@@ -180,6 +194,29 @@ class AccessRights(BaseModel):
 
     class Config:
         extra = Extra.forbid
+
+
+class Owner(BaseModel):
+    first_name: str = Field(..., description="Owner first name", example=["John"])
+    last_name: str = Field(..., description="Owner last name", example=["Smith"])
+
+
+class ProjectLocked(BaseModel):
+    value: bool = Field(
+        ..., description="True if the project is locked by another user"
+    )
+    owner: Optional[Owner] = Field(None, description="The user that owns the lock")
+
+
+class ProjectRunningState(BaseModel):
+    value: RunningState = Field(
+        ..., description="The running state of the project", example=["STARTED"]
+    )
+
+
+class ProjectState(BaseModel):
+    locked: ProjectLocked = Field(..., description="The project lock state")
+    state: ProjectRunningState = Field(..., description="The project running state")
 
 
 class Project(BaseModel):
@@ -233,6 +270,7 @@ class Project(BaseModel):
     dev: Optional[Dict] = Field(
         None, description="object used for development purposes only"
     )
+    state: Optional[ProjectState] = Field(None, description="Project state")
 
     class Config:
         description = "Description of a simcore project"
@@ -240,22 +278,10 @@ class Project(BaseModel):
         extra = Extra.forbid
 
 
-class Owner(BaseModel):
-    first_name: str
-    last_name: str
-
-
-class ProjectLocked(BaseModel):
-    value: bool
-    owner: Optional[Owner]
-
-
-class ProjectState(BaseModel):
-    locked: ProjectLocked
-
-
 __all__ = [
     "ProjectState",
+    "ProjectRunningState",
     "ProjectLocked",
+    "RunningState",
     "Owner",
 ]
