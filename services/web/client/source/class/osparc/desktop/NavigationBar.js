@@ -94,6 +94,19 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       0: "dashboard",
       1: "workbench",
       2: "slides"
+    },
+
+    areSlidesEnabled: function() {
+      return new Promise((resolve, reject) => {
+        osparc.utils.LibVersions.getPlatformName()
+          .then(platformName => {
+            if (["dev", "master"].includes(platformName)) {
+              resolve(true);
+            } else {
+              resolve(false);
+            }
+          });
+      });
     }
   },
 
@@ -117,7 +130,13 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
       this._add(new qx.ui.core.Spacer(20));
 
-      this.__slidesMenu = this.getChildControl("slides-menu");
+      const slidesMenu = this.__slidesMenu = this.getChildControl("slides-menu").set({
+        visibility: "excluded"
+      });
+      this.self().areSlidesEnabled()
+        .then(areSlidesEnabled => {
+          slidesMenu.setVisibility(areSlidesEnabled ? "show" : "excluded");
+        });
 
       this._add(new qx.ui.core.Spacer(20));
 

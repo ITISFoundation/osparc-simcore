@@ -75,7 +75,20 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         children.push(nodeInTree);
       }
       return children;
-    }
+    },
+
+    areSlidesEnabled: function() {
+      return new Promise((resolve, reject) => {
+        osparc.utils.LibVersions.getPlatformName()
+          .then(platformName => {
+            if (["dev", "master"].includes(platformName)) {
+              resolve(true);
+            } else {
+              resolve(false);
+            }
+          });
+      });
+    },
   },
 
   members: {
@@ -119,7 +132,13 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       const iconSize = 14;
       const toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
 
-      const editBtn = this.__editSlidesBtn = new qx.ui.toolbar.Button(this.tr("Slides"), "@FontAwesome5Solid/paw/"+iconSize);
+      const editBtn = this.__editSlidesBtn = new qx.ui.toolbar.Button(this.tr("Slides"), "@FontAwesome5Solid/paw/"+iconSize).set({
+        visibility: "excluded"
+      });
+      this.self().areSlidesEnabled()
+        .then(areSlidesEnabled => {
+          editBtn.setVisibility(areSlidesEnabled ? "show" : "excluded");
+        });
       editBtn.addListener("execute", () => {
         this.fireEvent("slidesEdit");
       }, this);
