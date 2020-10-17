@@ -22,9 +22,9 @@ async def sidecar_config():
 
 async def test_rabbitmq(
     loop,
-    sidecar_config,
     rabbit_service: RabbitConfig,
     rabbit_queue: aio_pika.Queue,
+    sidecar_config,
     mocker,
 ):
     rabbit = RabbitMQ()
