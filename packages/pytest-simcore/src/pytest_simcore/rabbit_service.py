@@ -5,7 +5,6 @@ import json
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 import logging
-import os
 import socket
 from typing import Any, Dict, Optional, Tuple
 
@@ -37,10 +36,7 @@ async def rabbit_config(
         password=devel_environ["RABBIT_PASSWORD"],
         host="127.0.0.1",
         port=get_service_published_port("rabbit", devel_environ["RABBIT_PORT"]),
-        channels={
-            "log": "logs_channel",
-            "instrumentation": "instrumentation_channel",
-        },
+        channels={"log": "logs_channel", "instrumentation": "instrumentation_channel",},
     )
 
     url = rabbit_config.dsn
@@ -103,8 +99,7 @@ async def rabbit_channel(
 
 @pytest.fixture(scope="function")
 async def rabbit_exchange(
-    rabbit_config: RabbitConfig,
-    rabbit_channel: aio_pika.Channel,
+    rabbit_config: RabbitConfig, rabbit_channel: aio_pika.Channel,
 ) -> Tuple[aio_pika.Exchange, aio_pika.Exchange]:
 
     # declare log exchange
