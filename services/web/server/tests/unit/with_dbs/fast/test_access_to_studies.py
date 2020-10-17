@@ -98,7 +98,7 @@ def client(
 
     cfg["projects"]["enabled"] = True
     cfg["storage"]["enabled"] = False
-    cfg["rabbit"]["enabled"] = False
+    cfg["computation"]["enabled"] = False
     cfg["main"]["client_outdir"] = qx_client_outdir
 
     app = create_safe_application(cfg)
