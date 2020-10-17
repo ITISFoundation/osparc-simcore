@@ -57,9 +57,7 @@ ops_services = [
 
 @pytest.fixture
 def client(
-    loop,
-    aiohttp_client,
-    app_config,  ## waits until swarm with *_services are up
+    loop, aiohttp_client, app_config,  ## waits until swarm with *_services are up
 ):
     assert app_config["rest"]["version"] == API_VERSION
 
@@ -144,7 +142,7 @@ def _assert_sleeper_services_completed(
     project_id: str, postgres_session: sa.orm.session.Session, expected_state: StateType
 ):
     # pylint: disable=no-member
-    TIMEOUT_SECONDS = 60
+    TIMEOUT_SECONDS = 90
     WAIT_TIME = 2
 
     @retry(
