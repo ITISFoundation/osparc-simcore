@@ -18,7 +18,6 @@
 import logging
 from pathlib import Path
 from typing import Dict
-from pydantic.env_settings import BaseSettings
 
 import trafaret as T
 from trafaret_config.simple import read_and_validate
@@ -28,7 +27,6 @@ from servicelib.config_schema_utils import addon_section, minimal_addon_schema
 
 from . import (
     catalog_config,
-    computation_config,
     db_config,
     email_config,
     rest_config,
