@@ -3,8 +3,6 @@
 # pylint:disable=redefined-outer-name
 import asyncio
 import logging
-import os
-from copy import deepcopy
 from typing import Dict, List
 
 import pytest
