@@ -37,6 +37,14 @@ class DirectorSettings(BaseSettings):
     port: PortInt = 8001
     vtag: VersionTag = "v0"
 
+    @property
+    def base_url(self) -> URL:
+        return URL.build(
+            scheme="http",
+            host=self.host,
+            port=self.port,
+        ).with_path(self.vtag)
+
 
 def build_api_url(config: Dict) -> URL:
     api_baseurl = URL.build(
