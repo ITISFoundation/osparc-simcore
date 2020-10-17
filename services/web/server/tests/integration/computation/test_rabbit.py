@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
-
 import json
 import time
 from asyncio import sleep
@@ -13,10 +12,9 @@ import aio_pika
 import pytest
 import sqlalchemy as sa
 from mock import call
-
+from models_library.rabbit import RabbitConfig
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
-from simcore_sdk.config.rabbit import Config
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.computation_config import CONFIG_SECTION_NAME
 from simcore_service_webserver.db import setup_db
@@ -42,14 +40,13 @@ def client(
     loop,
     aiohttp_client,
     app_config,  ## waits until swarm with *_services are up
-    rabbit_config: Config,
+    rabbit_config: RabbitConfig,
     rabbit_service,  ## waits until rabbit is responsive
     postgres_db: sa.engine.Engine,
 ):
     assert app_config["rest"]["version"] == API_VERSION
 
     app_config["storage"]["enabled"] = False
-    app_config[CONFIG_SECTION_NAME] = rabbit_config.dict()
 
     # fake config
     app = create_safe_application()
@@ -182,12 +179,7 @@ async def _wait_until(pred: Callable, timeout: int):
 
 
 @pytest.mark.parametrize(
-    "user_role",
-    [
-        (UserRole.GUEST),
-        (UserRole.USER),
-        (UserRole.TESTER),
-    ],
+    "user_role", [(UserRole.GUEST), (UserRole.USER), (UserRole.TESTER),],
 )
 async def test_rabbit_websocket_computation(
     loop,
