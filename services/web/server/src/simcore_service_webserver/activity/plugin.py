@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
-    __name__,
+    "simcore_service_webserver.activity",
     category=ModuleCategory.ADDON,
     depends=["simcore_service_webserver.rest"],
     logger=logger,
