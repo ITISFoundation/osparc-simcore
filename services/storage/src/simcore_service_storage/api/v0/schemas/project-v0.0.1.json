@@ -516,7 +516,8 @@
                         "STARTED",
                         "RETRY",
                         "SUCCESS",
-                        "FAILURE"
+                        "FAILURE",
+                        "ABORTED"
                       ],
                       "type": "string"
                     }

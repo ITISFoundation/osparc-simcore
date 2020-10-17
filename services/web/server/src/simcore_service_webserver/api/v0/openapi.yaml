@@ -5844,7 +5844,7 @@ paths:
                             workbench:
                               type: object
                               x-patternProperties:
-                                ^\S+$:
+                                ^\d+$:
                                   type: object
                                   additionalProperties: false
                                   required:
@@ -5996,8 +5996,14 @@ paths:
                                       properties:
                                         x:
                                           type: integer
+                                          description: The x position
+                                          example:
+                                            - '12'
                                         'y':
                                           type: integer
+                                          description: The y position
+                                          example:
+                                            - '15'
                                       deprecated: true
                                     state:
                                       title: RunningState
@@ -6036,8 +6042,14 @@ paths:
                                           properties:
                                             x:
                                               type: integer
+                                              description: The x position
+                                              example:
+                                                - '12'
                                             'y':
                                               type: integer
+                                              description: The y position
+                                              example:
+                                                - '15'
                                   additionalProperties: true
                                 slideshow:
                                   type: object
@@ -6129,6 +6141,7 @@ paths:
                                                 - RETRY
                                                 - SUCCESS
                                                 - FAILURE
+                                                - ABORTED
                                               type: string
                                           required:
                                             - value
@@ -6338,7 +6351,7 @@ paths:
                 workbench:
                   type: object
                   x-patternProperties:
-                    ^\S+$:
+                    ^\d+$:
                       type: object
                       additionalProperties: false
                       required:
@@ -6490,8 +6503,14 @@ paths:
                           properties:
                             x:
                               type: integer
+                              description: The x position
+                              example:
+                                - '12'
                             'y':
                               type: integer
+                              description: The y position
+                              example:
+                                - '15'
                           deprecated: true
                         state:
                           title: RunningState
@@ -6530,8 +6549,14 @@ paths:
                               properties:
                                 x:
                                   type: integer
+                                  description: The x position
+                                  example:
+                                    - '12'
                                 'y':
                                   type: integer
+                                  description: The y position
+                                  example:
+                                    - '15'
                       additionalProperties: true
                     slideshow:
                       type: object
@@ -6623,6 +6648,7 @@ paths:
                                     - RETRY
                                     - SUCCESS
                                     - FAILURE
+                                    - ABORTED
                                   type: string
                               required:
                                 - value
@@ -6712,7 +6738,7 @@ paths:
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\S+$:
+                              ^\d+$:
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -6864,8 +6890,14 @@ paths:
                                     properties:
                                       x:
                                         type: integer
+                                        description: The x position
+                                        example:
+                                          - '12'
                                       'y':
                                         type: integer
+                                        description: The y position
+                                        example:
+                                          - '15'
                                     deprecated: true
                                   state:
                                     title: RunningState
@@ -6904,8 +6936,14 @@ paths:
                                         properties:
                                           x:
                                             type: integer
+                                            description: The x position
+                                            example:
+                                              - '12'
                                           'y':
                                             type: integer
+                                            description: The y position
+                                            example:
+                                              - '15'
                                 additionalProperties: true
                               slideshow:
                                 type: object
@@ -6997,6 +7035,7 @@ paths:
                                               - RETRY
                                               - SUCCESS
                                               - FAILURE
+                                              - ABORTED
                                             type: string
                                         required:
                                           - value
@@ -7204,7 +7243,7 @@ paths:
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\S+$:
+                              ^\d+$:
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -7356,8 +7395,14 @@ paths:
                                     properties:
                                       x:
                                         type: integer
+                                        description: The x position
+                                        example:
+                                          - '12'
                                       'y':
                                         type: integer
+                                        description: The y position
+                                        example:
+                                          - '15'
                                     deprecated: true
                                   state:
                                     title: RunningState
@@ -7396,8 +7441,14 @@ paths:
                                         properties:
                                           x:
                                             type: integer
+                                            description: The x position
+                                            example:
+                                              - '12'
                                           'y':
                                             type: integer
+                                            description: The y position
+                                            example:
+                                              - '15'
                                 additionalProperties: true
                               slideshow:
                                 type: object
@@ -7489,6 +7540,7 @@ paths:
                                               - RETRY
                                               - SUCCESS
                                               - FAILURE
+                                              - ABORTED
                                             type: string
                                         required:
                                           - value
@@ -7702,7 +7754,7 @@ paths:
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\S+$:
+                              ^\d+$:
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -7854,8 +7906,14 @@ paths:
                                     properties:
                                       x:
                                         type: integer
+                                        description: The x position
+                                        example:
+                                          - '12'
                                       'y':
                                         type: integer
+                                        description: The y position
+                                        example:
+                                          - '15'
                                     deprecated: true
                                   state:
                                     title: RunningState
@@ -7894,8 +7952,14 @@ paths:
                                         properties:
                                           x:
                                             type: integer
+                                            description: The x position
+                                            example:
+                                              - '12'
                                           'y':
                                             type: integer
+                                            description: The y position
+                                            example:
+                                              - '15'
                                 additionalProperties: true
                               slideshow:
                                 type: object
@@ -7987,6 +8051,7 @@ paths:
                                               - RETRY
                                               - SUCCESS
                                               - FAILURE
+                                              - ABORTED
                                             type: string
                                         required:
                                           - value
@@ -8191,7 +8256,7 @@ paths:
                 workbench:
                   type: object
                   x-patternProperties:
-                    ^\S+$:
+                    ^\d+$:
                       type: object
                       additionalProperties: false
                       required:
@@ -8343,8 +8408,14 @@ paths:
                           properties:
                             x:
                               type: integer
+                              description: The x position
+                              example:
+                                - '12'
                             'y':
                               type: integer
+                              description: The y position
+                              example:
+                                - '15'
                           deprecated: true
                         state:
                           title: RunningState
@@ -8383,8 +8454,14 @@ paths:
                               properties:
                                 x:
                                   type: integer
+                                  description: The x position
+                                  example:
+                                    - '12'
                                 'y':
                                   type: integer
+                                  description: The y position
+                                  example:
+                                    - '15'
                       additionalProperties: true
                     slideshow:
                       type: object
@@ -8476,6 +8553,7 @@ paths:
                                     - RETRY
                                     - SUCCESS
                                     - FAILURE
+                                    - ABORTED
                                   type: string
                               required:
                                 - value
@@ -8565,7 +8643,7 @@ paths:
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\S+$:
+                              ^\d+$:
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -8717,8 +8795,14 @@ paths:
                                     properties:
                                       x:
                                         type: integer
+                                        description: The x position
+                                        example:
+                                          - '12'
                                       'y':
                                         type: integer
+                                        description: The y position
+                                        example:
+                                          - '15'
                                     deprecated: true
                                   state:
                                     title: RunningState
@@ -8757,8 +8841,14 @@ paths:
                                         properties:
                                           x:
                                             type: integer
+                                            description: The x position
+                                            example:
+                                              - '12'
                                           'y':
                                             type: integer
+                                            description: The y position
+                                            example:
+                                              - '15'
                                 additionalProperties: true
                               slideshow:
                                 type: object
@@ -8850,6 +8940,7 @@ paths:
                                               - RETRY
                                               - SUCCESS
                                               - FAILURE
+                                              - ABORTED
                                             type: string
                                         required:
                                           - value
@@ -9079,7 +9170,7 @@ paths:
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\S+$:
+                              ^\d+$:
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -9231,8 +9322,14 @@ paths:
                                     properties:
                                       x:
                                         type: integer
+                                        description: The x position
+                                        example:
+                                          - '12'
                                       'y':
                                         type: integer
+                                        description: The y position
+                                        example:
+                                          - '15'
                                     deprecated: true
                                   state:
                                     title: RunningState
@@ -9271,8 +9368,14 @@ paths:
                                         properties:
                                           x:
                                             type: integer
+                                            description: The x position
+                                            example:
+                                              - '12'
                                           'y':
                                             type: integer
+                                            description: The y position
+                                            example:
+                                              - '15'
                                 additionalProperties: true
                               slideshow:
                                 type: object
@@ -9364,6 +9467,7 @@ paths:
                                               - RETRY
                                               - SUCCESS
                                               - FAILURE
+                                              - ABORTED
                                             type: string
                                         required:
                                           - value
@@ -10405,7 +10509,7 @@ paths:
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\S+$:
+                              ^\d+$:
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -10557,8 +10661,14 @@ paths:
                                     properties:
                                       x:
                                         type: integer
+                                        description: The x position
+                                        example:
+                                          - '12'
                                       'y':
                                         type: integer
+                                        description: The y position
+                                        example:
+                                          - '15'
                                     deprecated: true
                                   state:
                                     title: RunningState
@@ -10597,8 +10707,14 @@ paths:
                                         properties:
                                           x:
                                             type: integer
+                                            description: The x position
+                                            example:
+                                              - '12'
                                           'y':
                                             type: integer
+                                            description: The y position
+                                            example:
+                                              - '15'
                                 additionalProperties: true
                               slideshow:
                                 type: object
@@ -10690,6 +10806,7 @@ paths:
                                               - RETRY
                                               - SUCCESS
                                               - FAILURE
+                                              - ABORTED
                                             type: string
                                         required:
                                           - value
@@ -10896,7 +11013,7 @@ paths:
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\S+$:
+                              ^\d+$:
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -11048,8 +11165,14 @@ paths:
                                     properties:
                                       x:
                                         type: integer
+                                        description: The x position
+                                        example:
+                                          - '12'
                                       'y':
                                         type: integer
+                                        description: The y position
+                                        example:
+                                          - '15'
                                     deprecated: true
                                   state:
                                     title: RunningState
@@ -11088,8 +11211,14 @@ paths:
                                         properties:
                                           x:
                                             type: integer
+                                            description: The x position
+                                            example:
+                                              - '12'
                                           'y':
                                             type: integer
+                                            description: The y position
+                                            example:
+                                              - '15'
                                 additionalProperties: true
                               slideshow:
                                 type: object
@@ -11181,6 +11310,7 @@ paths:
                                               - RETRY
                                               - SUCCESS
                                               - FAILURE
+                                              - ABORTED
                                             type: string
                                         required:
                                           - value

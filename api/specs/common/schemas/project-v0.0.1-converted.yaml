@@ -73,7 +73,7 @@ properties:
   workbench:
     type: object
     x-patternProperties:
-      ^\S+$:
+      ^\d+$:
         type: object
         additionalProperties: false
         required:
@@ -227,8 +227,14 @@ properties:
             properties:
               x:
                 type: integer
+                description: The x position
+                example:
+                  - '12'
               'y':
                 type: integer
+                description: The y position
+                example:
+                  - '15'
             deprecated: true
           state:
             title: RunningState
@@ -267,8 +273,14 @@ properties:
                 properties:
                   x:
                     type: integer
+                    description: The x position
+                    example:
+                      - '12'
                   'y':
                     type: integer
+                    description: The y position
+                    example:
+                      - '15'
         additionalProperties: true
       slideshow:
         type: object
@@ -360,6 +372,7 @@ properties:
                       - RETRY
                       - SUCCESS
                       - FAILURE
+                      - ABORTED
                     type: string
                 required:
                   - value
