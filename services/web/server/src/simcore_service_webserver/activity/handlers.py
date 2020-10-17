@@ -2,14 +2,14 @@ import asyncio
 from collections import defaultdict
 
 import aiohttp
-from yarl import URL
-
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.client_session import get_client_session
 from servicelib.request_keys import RQT_USERID_KEY
+from yarl import URL
 
 from ..computation_api import get_celery
 from ..login.decorators import login_required
+from .config import CONFIG_SECTION_NAME, ActivitySettings
 
 
 async def query_prometheus(session, url, query):
@@ -22,9 +22,6 @@ def celery_reserved(app):
     return get_celery(app).control.inspect().reserved()
 
 
-#
-# Functions getting the data to be executed async
-#
 async def get_cpu_usage(session, url, user_id):
     cpu_query = f'sum by (container_label_node_id) (irate(container_cpu_usage_seconds_total{{container_label_node_id=~".+", container_label_user_id="{user_id}"}}[20s])) * 100'
     return await query_prometheus(session, url, cpu_query)
@@ -54,14 +51,14 @@ def get_prometheus_result_or_default(result, default):
 @login_required
 async def get_status(request: aiohttp.web.Request):
     session = get_client_session(request.app)
-
     user_id = request.get(RQT_USERID_KEY, -1)
 
-    config = request.app[APP_CONFIG_KEY]["activity"]
-    url = (
-        URL(config.get("prometheus_host"))
-        .with_port(config.get("prometheus_port"))
-        .with_path("api/" + config.get("prometheus_api_version") + "/query")
+    config: ActivitySettings = request.app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    url = URL.build(
+        scheme="http",
+        host=config.prometheus_host,
+        port=config.prometheus_port,
+        path=f"api/{config.prometheus_api_version}/query",
     )
     results = await asyncio.gather(
         get_cpu_usage(session, url, user_id),
