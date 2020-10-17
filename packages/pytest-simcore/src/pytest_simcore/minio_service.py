@@ -1,8 +1,6 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-import os
-from copy import deepcopy
 from distutils.util import strtobool
 from typing import Dict
 
@@ -35,7 +33,7 @@ def minio_config(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
     for key, value in config["client"].items():
         os.environ[f"S3_{key.upper()}"] = str(value)
     os.environ["S3_SECURE"] = devel_environ["S3_SECURE"]
-    os.environ["S3_BUCKET_NAME"] = devel_environ["S3_BUCKET_NAME"]
+    os.environ["S3_BUCKET_NAME"] = config["bucket_name"]
 
     yield config
     # restore environ
@@ -43,7 +41,7 @@ def minio_config(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
 
 
 @pytest.fixture(scope="module")
-def minio_service(minio_config: Dict[str, str], docker_stack: Dict) -> S3Client:
+def minio_service(minio_config: Dict[str, str]) -> S3Client:
     assert wait_till_minio_responsive(minio_config)
 
     client = S3Client(**minio_config["client"])
