@@ -19,7 +19,8 @@ from pathlib import Path
 from typing import Dict
 
 import trafaret as T
-from pydantic import BaseSettings, conint
+from models_library.settings import LogLevel, PortInt
+from pydantic import BaseSettings, Field
 from servicelib import application_keys  # pylint:disable=unused-import
 from servicelib.config_schema_utils import addon_section, minimal_addon_schema
 from trafaret_config.simple import read_and_validate
@@ -116,8 +117,12 @@ app_schema = create_schema()
 
 class MainSettings(BaseSettings):
     host: str = "0.0.0.0"
-    port: conint(gt=0, lt=65535) = 8080
-    client_outdir: Path
-    log_level: int
+    port: PortInt = 8080
+    client_outdir: Path = Field(..., env="SIMCORE_WEB_OUTDIR")
+    log_level: LogLevel = Field(LogLevel.INFO, env="WEBSERVER_LOGLEVEL")
     testing: bool = False
     studies_access_enabled: bool = False
+
+    class Config:
+        case_sensitive = False
+        env_prefix = "WEBSERVER_"

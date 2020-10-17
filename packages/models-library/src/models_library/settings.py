@@ -1,3 +1,5 @@
+from enum import Enum
+
 # pylint: disable=no-self-argument
 # pylint: disable=no-self-use
 from typing import Optional
@@ -6,6 +8,13 @@ from pydantic import BaseSettings, PostgresDsn, SecretStr, conint, constr, valid
 
 PortInt = conint(gt=0, lt=65535)
 VersionTag = constr(regex=r"^v\d$")
+
+
+class LogLevel(str, Enum):
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
 
 
 class PostgresSettings(BaseSettings):
