@@ -3,7 +3,11 @@
     - config-file schema
     - settings
 """
+from typing import Optional
+
 import trafaret as T
+from models_library.settings import PortInt
+from pydantic import BaseSettings
 
 CONFIG_SECTION_NAME = "smtp"
 
@@ -20,3 +24,12 @@ schema = T.Dict(
         T.Key("password", default=None): T.Or(T.String, T.Null),
     }
 )
+
+
+class EmailSettings(BaseSettings):
+    sender: str = "OSPARC support <support@osparc.io>"
+    host: str
+    port: PortInt
+    tls: bool = False
+    username: Optional[str] = None
+    password: Optional[str] = None

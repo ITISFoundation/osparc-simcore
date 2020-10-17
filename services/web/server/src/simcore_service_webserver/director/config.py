@@ -3,13 +3,14 @@
     - config-file schema
     - settings
 """
-from typing import Dict
+from typing import Dict, Optional
 
 import trafaret as T
 from aiohttp import ClientSession, web
-from yarl import URL
-
+from models_library.settings import PortInt, VersionTag
+from pydantic import BaseSettings
 from servicelib.application_keys import APP_CLIENT_SESSION_KEY, APP_CONFIG_KEY
+from yarl import URL
 
 APP_DIRECTOR_API_KEY = __name__ + ".director_api"
 
@@ -18,13 +19,23 @@ CONFIG_SECTION_NAME = "director"
 schema = T.Dict(
     {
         T.Key("enabled", default=True, optional=True): T.Bool(),
-        T.Key("host", default="director",): T.String(),
+        T.Key(
+            "host",
+            default="director",
+        ): T.String(),
         T.Key("port", default=8001): T.ToInt(),
         T.Key("version", default="v0"): T.Regexp(
             regexp=r"^v\d+"
         ),  # storage API version basepath
     }
 )
+
+
+class DirectorSettings(BaseSettings):
+    enabled: Optional[bool] = True
+    host: str = "director"
+    port: PortInt = 8001
+    vtag: VersionTag = "v0"
 
 
 def build_api_url(config: Dict) -> URL:

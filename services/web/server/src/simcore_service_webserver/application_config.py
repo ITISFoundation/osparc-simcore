@@ -14,16 +14,15 @@
 # TODO: add support for versioning.
 #    - check shema fits version
 #    - parse/format version in schema
-
 import logging
 from pathlib import Path
 from typing import Dict
 
 import trafaret as T
-from trafaret_config.simple import read_and_validate
-
+from pydantic import BaseSettings, conint
 from servicelib import application_keys  # pylint:disable=unused-import
 from servicelib.config_schema_utils import addon_section, minimal_addon_schema
+from trafaret_config.simple import read_and_validate
 
 from . import (
     catalog_config,
@@ -113,3 +112,12 @@ def load_default_config(environs=None) -> Dict:
 
 
 app_schema = create_schema()
+
+
+class MainSettings(BaseSettings):
+    host: str = "0.0.0.0"
+    port: conint(gt=0, lt=65535) = 8080
+    client_outdir: Path
+    log_level: int
+    testing: bool = False
+    studies_access_enabled: bool = False

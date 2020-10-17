@@ -3,7 +3,10 @@
     - config-file schema
     - settings
 """
+from typing import Optional
+
 import trafaret as T
+from pydantic import BaseSettings
 
 from .cfg import DEFAULTS
 
@@ -23,6 +26,14 @@ schema = T.Dict(
         ),
     }
 )
+
+
+class LoginSettings(BaseSettings):
+    enabled: Optional[bool] = True
+    registration_confirmation_required: Optional[bool] = DEFAULTS[
+        "REGISTRATION_CONFIRMATION_REQUIRED"
+    ]
+    registration_invitation_required: Optional[bool] = False
 
 
 def get_login_config(app):

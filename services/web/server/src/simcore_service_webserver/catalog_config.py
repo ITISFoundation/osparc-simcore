@@ -8,7 +8,8 @@ from typing import Dict
 
 import trafaret as T
 from aiohttp import ClientSession, web
-
+from models_library.settings import PortInt, VersionTag
+from pydantic import BaseSettings, conint, constr
 from servicelib.application_keys import APP_CLIENT_SESSION_KEY, APP_CONFIG_KEY
 
 CONFIG_SECTION_NAME = "catalog"
@@ -29,6 +30,16 @@ schema = T.Dict(
         ),  # catalog API version basepath
     }
 )
+
+
+class CatalogSettings(BaseSettings):
+    enabled: bool = True
+    host: str = "catalog"
+    port: PortInt = 8000
+    vtag: VersionTag = "v0"
+
+    class Config:
+        prefix = "CATALOG_"
 
 
 def get_config(app: web.Application) -> Dict:

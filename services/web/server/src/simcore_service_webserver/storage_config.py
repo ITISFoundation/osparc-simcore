@@ -3,11 +3,12 @@
     - config-file schema
     - settings
 """
-from typing import Dict
+from typing import Dict, Optional
 
 import trafaret as T
 from aiohttp import ClientSession, web
-
+from models_library.settings import PortInt, VersionTag
+from pydantic import BaseSettings
 from servicelib.application_keys import APP_CLIENT_SESSION_KEY, APP_CONFIG_KEY
 
 CONFIG_SECTION_NAME = "storage"
@@ -22,6 +23,13 @@ schema = T.Dict(
         ),  # storage API version basepath
     }
 )
+
+
+class StorageSettings(BaseSettings):
+    enabled: Optional[bool] = True
+    host: str = "storage"
+    port: PortInt = 11111
+    vtag: VersionTag = "v0"
 
 
 def get_config(app: web.Application) -> Dict:
