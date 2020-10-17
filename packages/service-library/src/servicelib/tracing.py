@@ -4,14 +4,14 @@
 
 
 """
-
 import asyncio
 import logging
-from typing import Dict
+from typing import Dict, Optional
 
 import aiozipkin as az
 import trafaret as T
 from aiohttp import web
+from pydantic import AnyUrl, BaseSettings
 
 log = logging.getLogger(__name__)
 
@@ -28,10 +28,15 @@ def setup_tracing(
     az.setup(app, tracer)
     return True
 
-
+# TODO: deprecate
 schema = T.Dict(
     {
         T.Key("enabled", default=True, optional=True): T.Or(T.Bool(), T.ToInt),
         T.Key("zipkin_endpoint", default="http://jaeger:9411"): T.String(),
     }
 )
+
+
+class TracingSettings(BaseSettings):
+    enabled: Optional[bool] = True
+    zipkin_endpoint: AnyUrl = "http://jaeger:9411"
