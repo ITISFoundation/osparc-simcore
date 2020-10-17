@@ -39,7 +39,7 @@ def _channel_close_callback(sender: Any, exc: Optional[BaseException]):
 
 
 class RabbitMQ(BaseModel):
-    celery_config: CeleryConfig = CELERY_CONFIG
+    celery_config: CeleryConfig = None
     connection: aio_pika.Connection = None
     channel: aio_pika.Channel = None
     logs_exchange: aio_pika.Exchange = None
@@ -50,6 +50,8 @@ class RabbitMQ(BaseModel):
         arbitrary_types_allowed = True
 
     async def connect(self):
+        if not self.celery_config:
+            self.celery_config = CELERY_CONFIG
         url = self.celery_config.rabbit.rabbit_dsn
         log.debug("Connecting to %s", url)
         await _wait_till_rabbit_responsive(url)
@@ -125,12 +127,10 @@ class RabbitMQ(BaseModel):
         )
 
     async def post_instrumentation_message(
-        self,
-        instrumentation_data: Dict,
+        self, instrumentation_data: Dict,
     ):
         await self._post_message(
-            self.instrumentation_exchange,
-            data=instrumentation_data,
+            self.instrumentation_exchange, data=instrumentation_data,
         )
 
     async def __aenter__(self):
