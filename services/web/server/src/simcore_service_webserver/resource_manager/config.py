@@ -7,7 +7,7 @@ from typing import Optional
 
 import trafaret as T
 from aiohttp import web
-from pydantic import BaseSettings, PositiveInt, RedisDsn
+from pydantic import BaseSettings, Field, PositiveInt, RedisDsn
 from servicelib.application_keys import APP_CONFIG_KEY
 
 CONFIG_SECTION_NAME = "resource_manager"
@@ -38,10 +38,13 @@ schema = T.Dict(
 
 
 class ResourceManagerSettings(BaseSettings):
-    enabled: Optional[bool] = True
     resource_deletion_timeout_seconds: Optional[PositiveInt] = 900
     garbage_collection_interval_seconds: Optional[PositiveInt] = 30
-    redis: RedisDsn
+    redis: RedisDsn = Field(..., env="REDIS_DSN")
+
+    class Config:
+        case_sensitive = False
+        env_prefix = "WEBSERVER_"
 
 
 def get_service_deletion_timeout(app: web.Application) -> int:
