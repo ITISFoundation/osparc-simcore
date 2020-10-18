@@ -2,8 +2,6 @@
     - config-file schema
     - prometheus endpoint information
 """
-from typing import Optional
-
 import trafaret as T
 from models_library.settings import PortInt, VersionTag
 from pydantic import BaseSettings
@@ -22,7 +20,10 @@ schema = T.Dict(
 )
 
 class ActivitySettings(BaseSettings):
-    enabled: Optional[bool] = True
     prometheus_host: str = "prometheus"
     prometheus_port: PortInt = 9090
     prometheus_api_version: VersionTag = "v1"
+
+    class Config:
+        case_sensitive = False
+        env_prefix = "WEBSERVER_"
