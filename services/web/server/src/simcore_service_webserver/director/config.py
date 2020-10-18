@@ -3,7 +3,7 @@
     - config-file schema
     - settings
 """
-from typing import Dict, Optional
+from typing import Dict
 
 import trafaret as T
 from aiohttp import ClientSession, web
@@ -32,7 +32,6 @@ schema = T.Dict(
 
 
 class DirectorSettings(BaseSettings):
-    enabled: Optional[bool] = True
     host: str = "director"
     port: PortInt = 8001
     vtag: VersionTag = "v0"
