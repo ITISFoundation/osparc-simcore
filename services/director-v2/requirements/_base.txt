@@ -6,7 +6,7 @@
 #
 aiodocker==0.19.1         # via -r requirements/_base.in
 aiofiles==0.5.0           # via fastapi
-aiohttp==3.6.2            # via aiodocker
+aiohttp==3.6.3            # via aiodocker
 aniso8601==7.0.0          # via graphene
 async-exit-stack==1.0.1   # via -r requirements/_base.in, fastapi
 async-generator==1.10     # via -r requirements/_base.in, fastapi
@@ -43,8 +43,8 @@ starlette==0.13.6         # via fastapi
 tenacity==6.2.0           # via -r requirements/_base.in
 typing-extensions==3.7.4.3  # via aiodocker, aiohttp, yarl
 ujson==3.2.0              # via fastapi
-urllib3==1.25.10          # via requests
+urllib3==1.25.11          # via requests
 uvicorn==0.11.8           # via fastapi
 uvloop==0.14.0            # via uvicorn
 websockets==8.1           # via uvicorn
-yarl==1.6.0               # via aiohttp
+yarl==1.5.1               # via aiohttp
