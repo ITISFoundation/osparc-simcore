@@ -19,6 +19,9 @@ summary: str = next(
     if x.startswith("Summary:")
 )[-1]
 
+#
+# SEE https://patorjk.com/software/taag/#p=display&f=Small&t=Director
+#
 WELCOME_MSG = r"""
 ______ _               _
 |  _  (_)             | |

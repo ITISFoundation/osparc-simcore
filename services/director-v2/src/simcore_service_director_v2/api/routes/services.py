@@ -22,7 +22,6 @@ router = APIRouter()
     response_model=ServicesArrayEnveloped,
 )
 async def list_services(
-    # TODO: why service_type is optional??
     service_type: Optional[ServiceType] = Query(
         None,
         description=(
