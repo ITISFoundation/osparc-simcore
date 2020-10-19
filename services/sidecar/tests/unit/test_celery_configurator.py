@@ -4,7 +4,7 @@ import asyncio
 import aiodocker
 import pytest
 from celery import Celery
-from simcore_sdk.config.rabbit import Config as RabbitConfig
+from models_library.rabbit import RabbitConfig
 from simcore_service_sidecar import config
 from simcore_service_sidecar.celery_configurator import (
     get_rabbitmq_config_and_celery_app,
@@ -48,7 +48,12 @@ def force_gpu_mode(monkeypatch):
     monkeypatch.setattr(config, "FORCE_START_GPU_MODE", "1", raising=True)
 
 
-@pytest.mark.parametrize("gpu_support", [(pytest.lazy_fixture("mock_node_has_gpu")),])
+@pytest.mark.parametrize(
+    "gpu_support",
+    [
+        (pytest.lazy_fixture("mock_node_has_gpu")),
+    ],
+)
 def test_force_start_cpu_mode(mocker, force_cpu_mode, gpu_support) -> None:
     mocked_configure_cpu_mode = mocker.patch(
         "simcore_service_sidecar.celery_configurator.configure_cpu_mode"
@@ -61,7 +66,12 @@ def test_force_start_cpu_mode(mocker, force_cpu_mode, gpu_support) -> None:
     mocked_configure_cpu_mode.assert_called()
 
 
-@pytest.mark.parametrize("gpu_support", [(pytest.lazy_fixture("mock_node_has_gpu")),])
+@pytest.mark.parametrize(
+    "gpu_support",
+    [
+        (pytest.lazy_fixture("mock_node_has_gpu")),
+    ],
+)
 def test_force_start_gpu_mode(mocker, force_gpu_mode, gpu_support) -> None:
     mocked_configure_gpu_mode = mocker.patch(
         "simcore_service_sidecar.celery_configurator.configure_gpu_mode"
@@ -95,14 +105,24 @@ def test_proper_has_gpu_mocking(expected_value, gpu_support) -> None:
     assert is_gpu_node() is expected_value
 
 
-@pytest.mark.parametrize("gpu_support", [(pytest.lazy_fixture("mock_node_has_gpu")),])
+@pytest.mark.parametrize(
+    "gpu_support",
+    [
+        (pytest.lazy_fixture("mock_node_has_gpu")),
+    ],
+)
 def test_force_start_cpu_ext_dep_mocking(force_cpu_mode, gpu_support) -> None:
     rabbit_cfg, celery_app = get_rabbitmq_config_and_celery_app()
     assert isinstance(rabbit_cfg, RabbitConfig)
     assert isinstance(celery_app, Celery)
 
 
-@pytest.mark.parametrize("gpu_support", [(pytest.lazy_fixture("mock_node_has_gpu")),])
+@pytest.mark.parametrize(
+    "gpu_support",
+    [
+        (pytest.lazy_fixture("mock_node_has_gpu")),
+    ],
+)
 def test_force_start_gpu_ext_dep_mocking(force_gpu_mode, gpu_support) -> None:
     rabbit_cfg, celery_app = get_rabbitmq_config_and_celery_app()
     assert isinstance(rabbit_cfg, RabbitConfig)

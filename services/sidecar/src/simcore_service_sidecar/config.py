@@ -3,6 +3,9 @@ import multiprocessing
 import os
 from pathlib import Path
 from typing import Optional
+from models_library.celery import CeleryConfig
+
+from models_library.redis import RedisConfig
 
 from simcore_sdk.config.rabbit import Config as RabbitConfig
 
@@ -60,6 +63,7 @@ logging.getLogger("sqlalchemy.engine").setLevel(SIDECAR_LOGLEVEL)
 logging.getLogger("sqlalchemy.pool").setLevel(SIDECAR_LOGLEVEL)
 
 RABBIT_CONFIG = RabbitConfig()
+
 # sidecar celery starting mode overwrite
 FORCE_START_CPU_MODE: Optional[str] = os.environ.get("START_AS_MODE_CPU")
 FORCE_START_GPU_MODE: Optional[str] = os.environ.get("START_AS_MODE_GPU")
@@ -67,11 +71,10 @@ FORCE_START_GPU_MODE: Optional[str] = os.environ.get("START_AS_MODE_GPU")
 # if a node has this amount of CPUs it will be a candidate an MPI candidate
 TARGET_MPI_NODE_CPU_COUNT: int = int(os.environ.get("TARGET_MPI_NODE_CPU_COUNT", "-1"))
 
-# Redis configuration
-REDIS_CONNECTION_STRING: str = "redis://{host}:{password}/0".format(
-    host=os.environ.get("REDIS_HOST", "redis"),
-    password=os.environ.get("REDIS_PORT", "6379"),
-)
+REDIS_CONFIG = RedisConfig()
+
+CELERY_CONFIG = CeleryConfig()
+
 # used by the mpi lock to ensure the lock is acquired and released in time
 REDLOCK_REFRESH_INTERVAL_SECONDS: float = max(
     float(os.environ.get("REDLOCK_REFRESH_INTERVAL_SECONDS", "5.0")), 1.0

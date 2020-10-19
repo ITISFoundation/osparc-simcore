@@ -79,14 +79,15 @@ async def try_to_acquire_lock(
 
 async def acquire_lock(cpu_count: int) -> bool:
     resource_name = f"aioredlock:mpi_lock:{cpu_count}"
-    lock_manager = Aioredlock([config.REDIS_CONNECTION_STRING])
+    lock_manager = Aioredlock([config.REDIS_CONFIG.redis_dsn])
     logger.info("Will try to acquire an mpi_lock")
 
     def is_locked_factory():
         return lock_manager.is_locked(resource_name)
 
     is_lock_free, _ = await retry_for_result(
-        result_validator=lambda x: x is False, coroutine_factory=is_locked_factory,
+        result_validator=lambda x: x is False,
+        coroutine_factory=is_locked_factory,
     )
 
     if not is_lock_free:
@@ -105,7 +106,11 @@ async def acquire_lock(cpu_count: int) -> bool:
     if managed_to_acquire_lock:
         Thread(
             target=thread_worker,
-            args=(lock_manager, lock, asyncio.get_event_loop(),),
+            args=(
+                lock_manager,
+                lock,
+                asyncio.get_event_loop(),
+            ),
             daemon=True,
         ).start()
 

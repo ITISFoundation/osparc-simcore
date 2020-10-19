@@ -12,7 +12,7 @@ from typing import Optional, Tuple
 
 from celery import Celery, states
 from celery.contrib.abortable import AbortableTask
-from simcore_sdk.config.rabbit import Config as RabbitConfig
+from models_library.rabbit import RabbitConfig
 
 from . import config
 from .boot_mode import BootMode, get_boot_mode, set_boot_mode
@@ -26,10 +26,9 @@ log = get_task_logger(__name__)
 
 
 # used by internal queues in this module
-_rabbit_config = RabbitConfig()
-_celery_app_cpu = assemble_celery_app("celery", _rabbit_config)
-_celery_app_gpu = assemble_celery_app("celery_gpu_mode", _rabbit_config)
-_celery_app_mpi = assemble_celery_app("celery_mpi_mode", _rabbit_config)
+_celery_app_cpu = assemble_celery_app("celery")
+_celery_app_gpu = assemble_celery_app("celery_gpu_mode")
+_celery_app_mpi = assemble_celery_app("celery_mpi_mode")
 
 MAIN_QUEUE_NAME: str = "comp.task"
 CPU_QUEUE_NAME: str = f"{MAIN_QUEUE_NAME}.cpu"
