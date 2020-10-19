@@ -41,7 +41,7 @@ def handle_response(service_name: str, logger: logging.Logger):
                 )
                 raise HTTPException(
                     status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail=f"{service_name} is not reponsive",
+                    detail=f"{service_name} is not responsive",
                 ) from err
 
             else:
