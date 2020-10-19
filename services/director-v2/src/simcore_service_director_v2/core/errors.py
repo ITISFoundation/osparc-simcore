@@ -18,7 +18,6 @@ translate into something like
   }
 }
 """
-
 from typing import Optional
 
 

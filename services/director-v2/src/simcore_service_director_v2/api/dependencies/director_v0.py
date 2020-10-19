@@ -12,7 +12,7 @@ def get_request_to_director_v0(request: Request, response: Response) -> Coroutin
 
     async def forward():
         url_tail = URL(
-            path=request.url.path.replace("/v0",""),
+            path=request.url.path.replace("/v0", ""),
             fragment=request.url.fragment,
         )
         body: bytes = await request.body()

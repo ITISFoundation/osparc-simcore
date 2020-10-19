@@ -3,8 +3,8 @@
 
 """
 # TODO: code below simply copied from old director
-
 import logging
+
 import aiodocker
 from asyncio_extras import async_contextmanager  # Lt's try to avoid this??
 
@@ -15,6 +15,7 @@ log = logging.getLogger(__name__)
 
 
 # Module's business logic ---------------------------------------------
+
 
 @async_contextmanager
 async def docker_client() -> aiodocker.docker.Docker:

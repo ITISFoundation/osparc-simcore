@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 # Module's setup logic ---------------------------------------------
 
+
 def setup(app: FastAPI, settings: DirectorV0Settings):
     if not settings:
         settings = DirectorV0Settings()

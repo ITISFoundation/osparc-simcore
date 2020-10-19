@@ -14,7 +14,6 @@ from .settings import AppSettings, BootModeEnum
 logger = logging.getLogger(__name__)
 
 
-
 def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings is None:
         settings = AppSettings.create_from_env()
@@ -46,7 +45,6 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     app.add_event_handler("startup", create_start_app_handler(app))
     app.add_event_handler("shutdown", create_stop_app_handler(app))
-
 
     app.add_exception_handler(HTTPException, http_error_handler)
 

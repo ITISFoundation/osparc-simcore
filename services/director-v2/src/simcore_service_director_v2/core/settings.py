@@ -153,7 +153,8 @@ class AppSettings(BaseSettings):
         return cls(
             postgres=PostgresSettings(),
             director_v0=DirectorV0Settings(),
-            registry=RegistrySettings(), **settings_kwargs
+            registry=RegistrySettings(),
+            **settings_kwargs,
         )
 
     # DOCKER

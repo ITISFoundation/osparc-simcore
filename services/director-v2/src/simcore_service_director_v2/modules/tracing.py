@@ -1,6 +1,6 @@
 ## packages/service-library/src/servicelib/tracing.py
+from pydantic import AnyHttpUrl, BaseSettings
 
-from pydantic import BaseSettings, AnyHttpUrl
 from ..core.settings import CommonConfig
 
 
@@ -11,7 +11,6 @@ class TracingSettings(BaseSettings):
 
     class Config(CommonConfig):
         env_prefix = "TRACING_"
-
 
 
 # Module's business logic ---------------------------------------------

@@ -8,7 +8,6 @@ from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI
-
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings, BootModeEnum
 

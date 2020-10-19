@@ -26,9 +26,7 @@ def handle_retry(logger: logging.Logger):
 
 
 def handle_response(service_name: str, logger: logging.Logger):
-
     def decorator_func(request_func: Coroutine):
-
         @functools.wraps(request_func)
         async def wrapper_func(*args, **kwargs) -> httpx.Response:
             try:

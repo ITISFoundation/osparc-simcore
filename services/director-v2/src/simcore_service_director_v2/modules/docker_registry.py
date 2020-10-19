@@ -4,7 +4,6 @@
 # TODO: code below simply copied from old director and partially adapted
 # services/director/src/simcore_service_director/registry_proxy.py
 # services/director/src/simcore_service_director/registry_cache_task.py
-
 import logging
 from contextlib import suppress
 from typing import Dict, List
@@ -18,14 +17,13 @@ logger = logging.getLogger(__name__)
 
 # Module's setup logic ---------------------------------------------
 
+
 def setup(app: FastAPI, settings: RegistrySettings):
     if not settings:
         settings = RegistrySettings()
 
-
     def on_startup() -> None:
         app.state.docker_registry_api = RegistryApiClient(settings)
-
 
     async def on_shutdown() -> None:
         with suppress(AttributeError):
@@ -61,9 +59,7 @@ class RegistryApiClient:
         # TODO: add auth https://www.python-httpx.org/advanced/#customizing-authentication
         # TODO: see https://colin-b.github.io/httpx_auth/
 
-        self.client = AsyncClient(
-            base_url=self.settings.api_url
-        )
+        self.client = AsyncClient(base_url=self.settings.api_url)
 
     def get_basic_auth(self):
         auth = (self.settings.user, self.settings.pw.get_secret_value())

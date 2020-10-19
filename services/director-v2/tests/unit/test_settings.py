@@ -4,7 +4,6 @@
 import logging
 
 import pytest
-
 from simcore_service_director_v2.core.settings import (
     AppSettings,
     BootModeEnum,

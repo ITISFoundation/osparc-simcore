@@ -1,6 +1,5 @@
 # pylint: disable=unused-argument
-
-from typing import Optional, Coroutine
+from typing import Coroutine, Optional
 
 from fastapi import APIRouter, Depends, Path, Query
 

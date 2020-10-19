@@ -5,7 +5,6 @@
 
     Schema of metadata injected in docker image labels of services
 """
-
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
