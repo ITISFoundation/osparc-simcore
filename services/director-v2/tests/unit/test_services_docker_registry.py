@@ -9,22 +9,11 @@ from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from simcore_service_director_v2.core.application import init_app
-from simcore_service_director_v2.core.settings import (
-    AppSettings,
-    PostgresSettings,
-    RegistrySettings,
-    TracingSettings,
-)
-
+from simcore_service_director_v2.core.settings import AppSettings
 
 @pytest.fixture
 def minimal_app(loop, project_env_devel_environment) -> FastAPI:
-
-    settings = AppSettings(
-        registry=RegistrySettings(enabled=False),
-        postgres=PostgresSettings(enabled=False),
-        tracing=TracingSettings(enabled=False),
-    )
+    settings = AppSettings.create_from_env()
     app = init_app(settings)
 
     # NOTE: this way we ensure the events are run in the application
