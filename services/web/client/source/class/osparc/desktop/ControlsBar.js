@@ -189,7 +189,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
 
     __createButton: function(label, icon, widgetId, signalName, visibility="visible") {
       const button = new osparc.ui.toolbar.FetchButton(label, "@FontAwesome5Solid/"+icon+"/14").set({
-        visibility,
+        visibility
       });
       osparc.utils.Utils.setIdToWidget(button, widgetId);
       button.addListener("execute", () => {

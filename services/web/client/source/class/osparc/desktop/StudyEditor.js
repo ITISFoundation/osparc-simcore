@@ -612,7 +612,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.getLogger().error(null, "Submission failed");
       } else {
         this.getLogger().info(null, "Pipeline started");
-        /* If no projectStateUpdated comes in 60 seconds, client must 
+        /* If no projectStateUpdated comes in 60 seconds, client must
         check state of pipeline and update button accordingly. */
         const timer = setTimeout(() => {
           osparc.data.Resources.fetch("studies", "state", {
@@ -620,11 +620,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               projectId: pipelineId
             }
           })
-            .then(({ state }) => {
+            .then(({state}) => {
               if (state && (
-                  state.value === 'NOT_STARTED' ||
-                  state.value === 'SUCCESS' ||
-                  state.value === 'FAILED'
+                state.value === "NOT_STARTED" ||
+                state.value === "SUCCESS" ||
+                state.value === "FAILED"
               )) {
                 runButton.setFetching(false);
               }

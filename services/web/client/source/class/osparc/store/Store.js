@@ -51,7 +51,7 @@ qx.Class.define("osparc.store.Store", {
       check: "osparc.data.model.Study",
       init: null,
       nullable: true,
-      event: 'changeCurrentStudy'
+      event: "changeCurrentStudy"
     },
     currentStudyId: {
       check: "String",
