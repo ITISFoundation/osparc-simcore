@@ -7,7 +7,7 @@
 aiobotocore==1.0.7        # via -r requirements/_base.txt
 aiodebug==1.1.2           # via -r requirements/_base.txt
 aiofiles==0.5.0           # via -r requirements/_base.txt
-aiohttp==3.6.2            # via -r requirements/_base.txt, aiobotocore, aiozipkin, pytest-aiohttp
+aiohttp==3.6.3            # via -r requirements/_base.txt, aiobotocore, aiozipkin, pytest-aiohttp
 aioitertools==0.7.0       # via -r requirements/_base.txt, aiobotocore
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt
 aiozipkin==0.7.0          # via -r requirements/_base.txt
