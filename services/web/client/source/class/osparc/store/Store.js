@@ -214,7 +214,6 @@ qx.Class.define("osparc.store.Store", {
       // Set the state as well in the current study, as a plaing property
       const currentStudy = this.getCurrentStudy();
       if (currentStudy && currentStudy.getUuid() === studyId) {
-        console.log(currentStudy.getUuid(), studyId, state)
         currentStudy.state = state;
         this.fireDataEvent("changeCurrentStudy", currentStudy);
       }

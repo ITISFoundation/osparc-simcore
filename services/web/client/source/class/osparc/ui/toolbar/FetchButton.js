@@ -32,6 +32,7 @@ qx.Class.define("osparc.ui.toolbar.FetchButton", {
         }
         this.getChildControl("icon").getContentElement().removeClass("rotate");
       }
+      this.setEnabled(!isFetching);
     }
   }
 });
