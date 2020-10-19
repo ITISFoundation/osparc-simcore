@@ -2,14 +2,15 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
+import re
 
 import pytest
 import respx
 from fastapi import FastAPI
-from starlette.testclient import TestClient
-
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
+from starlette.testclient import TestClient
+
 
 @pytest.fixture
 def minimal_app(loop, project_env_devel_environment) -> FastAPI:
@@ -20,7 +21,7 @@ def minimal_app(loop, project_env_devel_environment) -> FastAPI:
     # since it starts the app on a test server
     with TestClient(app):
         yield app
-import re
+
 
 @pytest.fixture
 def mocked_registry_service_api(minimal_app):
@@ -51,6 +52,6 @@ async def test_docker_registry_client(minimal_app, mocked_registry_service_api):
     assert images_catalog
     assert mocked_registry_service_api["catalog"].called
 
-    #tags = await registry_api.list_image_tags(image_key="services/comp/itis/sleeper")
-    #assert tags == ["1.0", "2.0"]
-    #assert mocked_registry_service_api["sleeper-tags"].called
+    # tags = await registry_api.list_image_tags(image_key="services/comp/itis/sleeper")
+    # assert tags == ["1.0", "2.0"]
+    # assert mocked_registry_service_api["sleeper-tags"].called
