@@ -45,7 +45,7 @@ dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
 email-validator==1.1.1    # via -r requirements/_base.txt, pydantic
 expiringdict==1.2.1       # via -r requirements/_base.txt
-faker==4.4.0              # via -r requirements/_test.in
+faker==4.14.0             # via -r requirements/_test.in
 hiredis==1.1.0            # via -r requirements/_base.txt, aioredis
 icdiff==1.9.1             # via pytest-icdiff
 idna-ssl==1.1.0           # via -r requirements/_base.txt, aiohttp

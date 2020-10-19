@@ -35,7 +35,7 @@ docker[ssh]==4.3.1        # via -r requirements/_test.in, docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
 email-validator==1.1.1    # via -r requirements/_base.txt, fastapi
-faker==4.4.0              # via -r requirements/_test.in
+faker==4.14.0             # via -r requirements/_test.in
 fastapi[all]==0.61.1      # via -r requirements/_base.txt
 graphene==2.1.8           # via -r requirements/_base.txt, fastapi
 graphql-core==2.3.2       # via -r requirements/_base.txt, graphene, graphql-relay
