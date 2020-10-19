@@ -200,7 +200,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     __startStudy: function(startStudyData) {
       const {
         studyId,
-        mode
+        pageContext
       } = startStudyData;
       this.__showLoadingPage(this.tr("Loading Study"));
 
@@ -236,7 +236,7 @@ qx.Class.define("osparc.desktop.MainPage", {
               this.__showStudyEditor(this.__getStudyEditor());
               this.__studyEditor.setStudyData(latestStudyData)
                 .then(() => {
-                  this.__syncStudyEditor();
+                  this.__syncStudyEditor(pageContext);
                 });
             })
             .catch(err => {
@@ -252,12 +252,16 @@ qx.Class.define("osparc.desktop.MainPage", {
         });
     },
 
-    __syncStudyEditor: function() {
+    __syncStudyEditor: function(pageContext) {
       const studyEditor = this.__studyEditor;
       const study = studyEditor.getStudy();
       this.__navBar.setStudy(study);
-      this.__navBar.setPageContext("workbench");
-      studyEditor.setPageContext("workbench");
+      if (pageContext === "slideshow") {
+        this.__navBar.setPageContext("slides");
+        studyEditor.setPageContext("slides");
+      } else {
+        this.__navBar.setPageContext("workbench");
+      }
 
       this.__studyEditor.addListener("studyIsLocked", () => {
         this.__showDashboard();

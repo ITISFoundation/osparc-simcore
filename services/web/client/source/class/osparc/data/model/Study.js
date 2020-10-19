@@ -207,6 +207,13 @@ qx.Class.define("osparc.data.model.Study", {
         return aceessRights[myGid]["delete"];
       }
       return false;
+    },
+
+    hasSlideshow: function(studyData) {
+      if ("ui" in studyData && "slideshow" in studyData["ui"] && Object.keys(studyData["ui"]["slideshow"]).length) {
+        return true;
+      }
+      return false;
     }
   },
 
