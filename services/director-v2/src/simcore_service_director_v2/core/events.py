@@ -1,3 +1,4 @@
+import inspect
 import logging
 from typing import Callable
 
@@ -9,8 +10,6 @@ from ..services.remote_debug import setup_remote_debugging
 from .settings import BootModeEnum
 
 logger = logging.getLogger(__name__)
-
-import inspect
 
 
 def remote_debug_on_start(app: FastAPI):
