@@ -5,7 +5,7 @@
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
 aiofiles==0.5.0           # via -r requirements/_base.txt, fastapi
-aiohttp==3.6.2            # via pytest-aiohttp
+aiohttp==3.6.3            # via pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt
 alembic==1.4.2            # via -r requirements/_test.in
 aniso8601==7.0.0          # via -r requirements/_base.txt, graphene
