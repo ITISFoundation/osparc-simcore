@@ -189,14 +189,25 @@ class TutorialBase {
   }
 
   async waitForServices(studyId, nodeIds, timeout = 40000) {
-    nodeIds.forEach(nodeId => {
-      this.__responsesQueue.addResponseServiceListener(studyId, nodeId);
-    });
-    for (let i=0; i<nodeIds.length; i++) {
-      const nodeId = nodeIds[i];
-      console.log("waiting for service:", nodeId);
-      await this.__responsesQueue.waitUntilServiceReady(studyId, nodeId, timeout);
+    if (nodeIds.length < 1) {
+      return;
     }
+    const start = new Date().getTime();
+    while ((new Date().getTime())-start < timeout) {
+      for (let i = nodeIds.length-1; i>=0; i--) {
+        const nodeId = nodeIds[i];
+        if (await utils.isServiceReady(this.__page, this.__url+"v0", studyId, nodeId)) {
+          nodeIds.splice(i, 1);
+        }
+      }
+      await utils.sleep(2500);
+      if (nodeIds.length === 0) {
+        console.log("Services ready in", ((new Date().getTime())-start)/1000);
+        return;
+      }
+    }
+    console.log("Timeout reached waiting for services", ((new Date().getTime())-start)/1000);
+    return;
   }
 
   async restoreIFrame() {
