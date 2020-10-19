@@ -31,7 +31,7 @@ def test_create_registry_settings(project_env_devel_environment, monkeypatch):
     monkeypatch.setenv("REGISTRY_PW", "adminadmin")
     monkeypatch.setenv("REGISTRY_SSL", "1")
 
-    settings: RegistrySettings = AppSettings.create_from_env().registry
+    settings = RegistrySettings()
 
     # http -> https
     assert settings.api_url == "https://registry:5000/v2"
@@ -45,4 +45,4 @@ def test_registry_settings_error(project_env_devel_environment, monkeypatch):
     monkeypatch.setenv("REGISTRY_SSL", "False")
 
     with pytest.raises(ValueError, match="Authentication REQUIRES a secured channel"):
-        AppSettings.create_from_env()
+        RegistrySettings()

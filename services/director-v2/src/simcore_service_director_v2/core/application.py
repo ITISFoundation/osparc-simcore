@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from ..api.entrypoints import api_router
 from ..meta import api_version, api_vtag, project_name, summary
 from ..modules import director_v0, docker_registry, remote_debug
-from .settings import AppSettings
+from .settings import AppSettings, BootModeEnum
 from .events import create_start_app_handler, create_stop_app_handler
 
 # from fastapi.exceptions import RequestValidationError
@@ -40,9 +40,13 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     app.state.settings = settings
 
     # submodule setups
-    remote_debug.setup(app)
-    director_v0.setup(app)
-    docker_registry.setup(app)
+    if settings.boot_mode == BootModeEnum.DEBUG:
+        remote_debug.setup(app)
+
+    if settings.director_v0.enabled:
+        director_v0.setup(app, settings.director_v0)
+    if settings.registry.enabled:
+        docker_registry.setup(app, settings.registry)
 
 
     app.add_event_handler("startup", create_start_app_handler(app))

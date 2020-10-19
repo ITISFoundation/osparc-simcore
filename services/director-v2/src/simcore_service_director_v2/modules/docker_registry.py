@@ -18,8 +18,10 @@ logger = logging.getLogger(__name__)
 
 # Module's setup logic ---------------------------------------------
 
-def setup(app: FastAPI, **settings_kwargs):
-    settings = RegistrySettings(**settings_kwargs)
+def setup(app: FastAPI, settings: RegistrySettings):
+    if not settings:
+        settings = RegistrySettings()
+
 
     def on_startup() -> None:
         app.state.docker_registry_api = RegistryApiClient(settings)

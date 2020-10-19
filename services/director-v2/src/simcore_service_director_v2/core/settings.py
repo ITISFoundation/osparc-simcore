@@ -44,6 +44,66 @@ class CommonConfig:
     env_file = ".env"  # SEE https://pydantic-docs.helpmanual.io/usage/settings/#dotenv-env-support
 
 
+class ApiServiceSettings(BaseSettings):
+    """ Settings needed to connect a osparc-simcore service API"""
+
+    enabled: bool = Field(True, description="Enables/Disables connection with service")
+
+    host: str
+    port: conint(gt=0, lt=65535) = 8000
+    vtag: constr(regex=r"^v\d$") = "v0"
+
+    def base_url(self, include_tag=False) -> str:
+        url = f"http://{self.host}:{self.port}"
+        if include_tag:
+            url += f"/{self.vtag}"
+        return url
+
+
+class DirectorV0Settings(ApiServiceSettings):
+    class Config(CommonConfig):
+        env_prefix = "DIRECTOR_"
+
+
+class RegistrySettings(BaseSettings):
+    """ Settings for docker_registry module """
+
+    enabled: bool = Field(True, description="Enables/Disables connection with service")
+
+    # entrypoint
+    ssl: bool = True
+    url: AnyHttpUrl
+
+    # auth
+    auth: bool = True
+    user: Optional[str] = None
+    pw: Optional[SecretStr] = None
+
+    @validator("url", pre=True)
+    def secure_url(cls, v, values):
+        if values["ssl"]:
+            if v.startswith("http://"):
+                v = v.replace("http://", "https://")
+        return v
+
+    @root_validator
+    def check_auth_credentials(cls, values):
+        if values["auth"]:
+            user, pw = values.get("user"), values.get("pw")
+            if user is None or pw is None:
+                raise ValueError("Cannot authenticate without credentials user, pw")
+            if not values["ssl"]:
+                raise ValueError("Authentication REQUIRES a secured channel")
+        return values
+
+    @property
+    def api_url(self) -> str:
+        return f"{self.url}/v2"
+
+    class Config(CommonConfig):
+        env_prefix = "REGISTRY_"
+
+
 class PostgresSettings(BaseSettings):
     enabled: bool = True
 
@@ -92,6 +152,8 @@ class AppSettings(BaseSettings):
     def create_from_env(cls) -> "AppSettings":
         return cls(
             postgres=PostgresSettings(),
+            director_v0=DirectorV0Settings(),
+            registry=RegistrySettings(),
         )
 
     # DOCKER
@@ -111,6 +173,12 @@ class AppSettings(BaseSettings):
     @property
     def loglevel(self) -> int:
         return getattr(logging, self.log_level_name)
+
+    # DIRECTOR submodule
+    director_v0: DirectorV0Settings
+
+    # REGISTRY submodule
+    registry: RegistrySettings
 
     # POSTGRES
     postgres: PostgresSettings
@@ -166,60 +234,3 @@ class AppSettings(BaseSettings):
 
     class Config(CommonConfig):
         env_prefix = "DIRECTOR2_"
-
-
-# MODULES setttings ---------------------------------------
-
-class ApiServiceSettings(BaseSettings):
-    """ Settings needed to connect a osparc-simcore service API"""
-
-    enabled: bool = Field(True, description="Enables/Disables connection with service")
-
-    host: str
-    port: conint(gt=0, lt=65535) = 8000
-    vtag: constr(regex=r"^v\d$") = "v0"
-
-    def base_url(self, include_tag=False) -> str:
-        url = f"http://{self.host}:{self.port}"
-        if include_tag:
-            url += f"/{self.vtag}"
-        return url
-
-
-class RegistrySettings(BaseSettings):
-    """ Settings for docker_registry module """
-
-    enabled: bool = Field(True, description="Enables/Disables connection with service")
-
-    # entrypoint
-    ssl: bool = True
-    url: AnyHttpUrl
-
-    # auth
-    auth: bool = True
-    user: Optional[str] = None
-    pw: Optional[SecretStr] = None
-
-    @validator("url", pre=True)
-    def secure_url(cls, v, values):
-        if values["ssl"]:
-            if v.startswith("http://"):
-                v = v.replace("http://", "https://")
-        return v
-
-    @root_validator
-    def check_auth_credentials(cls, values):
-        if values["auth"]:
-            user, pw = values.get("user"), values.get("pw")
-            if user is None or pw is None:
-                raise ValueError("Cannot authenticate without credentials user, pw")
-            if not values["ssl"]:
-                raise ValueError("Authentication REQUIRES a secured channel")
-        return values
-
-    @property
-    def api_url(self) -> str:
-        return f"{self.url}/v2"
-
-    class Config(CommonConfig):
-        env_prefix = "REGISTRY_"

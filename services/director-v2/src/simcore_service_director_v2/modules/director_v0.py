@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import httpx
 from fastapi import FastAPI
 
-from ..core.settings import ApiServiceSettings, CommonConfig
+from ..core.settings import DirectorV0Settings
 from ..utils.client_policies import handle_response, handle_retry
 
 logger = logging.getLogger(__name__)
@@ -16,14 +16,9 @@ logger = logging.getLogger(__name__)
 
 # Module's setup logic ---------------------------------------------
 
-
-class DirectorV0Settings(ApiServiceSettings):
-    class Config(CommonConfig):
-        env_prefix = "DIRECTOR_"
-
-
-def setup(app: FastAPI, **settings_kwargs):
-    settings = DirectorV0Settings(**settings_kwargs)
+def setup(app: FastAPI, settings: DirectorV0Settings):
+    if not settings:
+        settings = DirectorV0Settings()
 
     def on_startup() -> None:
         DirectorV0Client.create(
