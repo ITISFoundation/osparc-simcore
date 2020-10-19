@@ -83,13 +83,6 @@ def web_client_dir(services_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def script_dir(osparc_simcore_root_dir: Path) -> Path:
-    script_dir = osparc_simcore_root_dir / "scripts"
-    assert script_dir.exists()
-    return script_dir
-
-
-@pytest.fixture(scope="session")
 def pylintrc(osparc_simcore_root_dir: Path) -> Path:
     pylintrc = osparc_simcore_root_dir / ".pylintrc"
     assert pylintrc.exists()
