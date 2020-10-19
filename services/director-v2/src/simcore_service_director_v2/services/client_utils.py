@@ -14,7 +14,7 @@ from tenacity import (
 )
 
 
-def retry_middleware(logger: logging.Logger):
+def handle_retry(logger: logging.Logger):
     return retry(
         # SEE https://www.python-httpx.org/exceptions/
         retry=retry_if_exception_type((httpx.TimeoutException, httpx.NetworkError)),
@@ -25,11 +25,12 @@ def retry_middleware(logger: logging.Logger):
     )
 
 
-def errors_middleware(service_name: str, logger: logging.Logger):
+def handle_response(service_name: str, logger: logging.Logger):
     def decorator_func(request_func: Coroutine):
         @functools.wraps(request_func)
         async def wrapper_func(*args, **kwargs) -> httpx.Response:
             try:
+                # TODO: assert signature!?
                 resp: httpx.Response = await request_func(*args, **kwargs)
 
             except httpx.RequestError as err:
@@ -40,21 +41,21 @@ def errors_middleware(service_name: str, logger: logging.Logger):
                     status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail=f"{service_name} is not reponsive",
                 ) from err
+            else:
+                if httpx.codes.is_client_error(resp.status_code):
+                    # Forward return clients errors
+                    raise HTTPException(resp.status_code, detail=resp.reason_phrase)
 
-            if httpx.codes.is_client_error(resp.status_code):
-                # Forward return clients errors
-                raise HTTPException(resp.status_code, detail=resp.reason_phrase)
-
-            elif httpx.codes.is_server_error(resp.status_code):  # 500<= code <=599
-                logger.error(
-                    "%s service error %d [%s]: %s",
-                    service_name,
-                    resp.reason_phrase,
-                    resp.status_code,
-                    resp.text(),
-                )
-                # Server errors are retured as service not available?
-                raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
+                if httpx.codes.is_server_error(resp.status_code):  # 500<= code <=599
+                    logger.error(
+                        "%s service error %d [%s]: %s",
+                        service_name,
+                        resp.reason_phrase,
+                        resp.status_code,
+                        resp.text(),
+                    )
+                    # Server errors are retured as service not available?
+                    raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
             return resp
 

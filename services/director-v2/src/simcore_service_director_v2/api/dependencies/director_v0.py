@@ -12,12 +12,12 @@ def get_request_to_director_v0(request: Request, response: Response) -> Coroutin
 
     async def forward():
         url_tail = URL(
-            path=request.url.path,
+            path=request.url.path.replace("/v0",""),
             fragment=request.url.fragment,
         )
         body: bytes = await request.body()
 
-        r = await client.request(
+        resp = await client.request(
             request.method,
             str(url_tail),
             params=dict(request.query_params),
@@ -26,8 +26,8 @@ def get_request_to_director_v0(request: Request, response: Response) -> Coroutin
         )
 
         # Prepared response
-        response.body = r.content
-        response.status_code = r.status_code
+        response.body = resp.content
+        response.status_code = resp.status_code
 
         # NOTE: the response is NOT validated!
         return response

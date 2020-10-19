@@ -1,12 +1,12 @@
 import logging
 from dataclasses import dataclass
-from typing import Dict, Iterator
+from typing import Iterator
 
 import httpx
 from fastapi import FastAPI
 
 from ..core.settings import DirectorV0Settings
-from .client_utils import errors_middleware, retry_middleware
+from .client_utils import handle_response, handle_retry
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def on_start(app: FastAPI) -> None:
     settings: DirectorV0Settings = app.state.settings.director_v0
     app.state.director_v0_client = DirectorV0Client(
-        client=httpx.AsyncClient(base_url=settings.api_base_url)
+        client=httpx.AsyncClient(base_url=settings.base_url(include_tag=True))
     )
 
 
@@ -26,7 +26,9 @@ async def on_stop(app: FastAPI) -> None:
 # TODO: add this functionlity
 async def on_cleanup_context(app: FastAPI) -> Iterator[None]:
     settings: DirectorV0Settings = app.state.settings.director_v0
-    async with httpx.AsyncClient(base_url=settings.api_base_url) as client:
+    async with httpx.AsyncClient(
+        base_url=settings.base_url(include_tag=True)
+    ) as client:
         app.state.director_v0_client = DirectorV0Client(client)
 
         yield
@@ -47,8 +49,7 @@ class DirectorV0Client:
     def instance(cls, app: FastAPI):
         return app.state.director_v0_client
 
-    @errors_middleware("Director", logger)
-    @retry_middleware(logger)
-    async def request(self, method: str, tail_path: str, **kwargs) -> Dict:
-        resp = await self.client.request(method, tail_path, **kwargs)
-        return resp.json()
+    @handle_response("Director", logger)
+    @handle_retry(logger)
+    async def request(self, method: str, tail_path: str, **kwargs):
+        return await self.client.request(method, tail_path, **kwargs)
