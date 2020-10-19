@@ -9,7 +9,7 @@ aiodebug==1.1.2           # via -r requirements/_packages.txt
 aiodocker==0.19.1         # via -r requirements/_base.txt
 aiofile==3.1.0            # via -r requirements/_base.txt
 aiofiles==0.5.0           # via -r requirements/_base.txt
-aiohttp==3.6.2            # via -r requirements/_base.txt, -r requirements/_packages.txt, aiodocker, aiozipkin, pytest-aiohttp
+aiohttp==3.6.3            # via -r requirements/_base.txt, -r requirements/_packages.txt, aiodocker, aiozipkin, pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt, -r requirements/_packages.txt, -r requirements/_test.in
 aioredis==1.3.1           # via -r requirements/_base.txt, aioredlock
 aioredlock==0.5.2         # via -r requirements/_base.txt
