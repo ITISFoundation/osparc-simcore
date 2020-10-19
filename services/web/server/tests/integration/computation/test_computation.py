@@ -12,10 +12,11 @@ from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
-from simcore_sdk.models.pipeline_models import (
-    ComputationalPipeline,
-    ComputationalTask,
+from simcore_postgres_database.webserver_models import (
+    NodeClass,
     StateType,
+    comp_pipeline,
+    comp_tasks,
 )
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
@@ -39,7 +40,7 @@ core_services = ["director", "rabbit", "postgres", "sidecar", "storage", "redis"
 
 ops_services = [
     "minio",
-]  # + ["adminer", "portainer"]
+] + ["adminer", "portainer", "redis-commander"]
 
 
 @pytest.fixture
@@ -97,8 +98,8 @@ def assert_db_contents(
 ):
     # pylint: disable=no-member
     pipeline_db = (
-        postgres_session.query(ComputationalPipeline)
-        .filter(ComputationalPipeline.project_id == project_id)
+        postgres_session.query(comp_pipeline)
+        .filter(comp_pipeline.c.project_id == project_id)
         .one()
     )
     assert pipeline_db.project_id == project_id
@@ -106,8 +107,8 @@ def assert_db_contents(
 
     # check db comp_tasks
     tasks_db = (
-        postgres_session.query(ComputationalTask)
-        .filter(ComputationalTask.project_id == project_id)
+        postgres_session.query(comp_tasks)
+        .filter(comp_tasks.c.project_id == project_id)
         .all()
     )
     mock_pipeline = mock_workbench_payload
@@ -136,13 +137,16 @@ def assert_sleeper_services_completed(project_id, postgres_session):
     # while results
     time.sleep(15)
     pipeline_db = (
-        postgres_session.query(ComputationalPipeline)
-        .filter(ComputationalPipeline.project_id == project_id)
+        postgres_session.query(comp_pipeline)
+        .filter(comp_pipeline.c.project_id == project_id)
         .one()
     )
     tasks_db = (
-        postgres_session.query(ComputationalTask)
-        .filter(ComputationalTask.project_id == project_id)
+        postgres_session.query(comp_tasks)
+        .filter(
+            (comp_tasks.c.project_id == project_id)
+            & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+        )
         .all()
     )
     for task_db in tasks_db:
