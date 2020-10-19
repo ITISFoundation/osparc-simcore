@@ -149,11 +149,11 @@ class PostgresSettings(BaseSettings):
 
 class AppSettings(BaseSettings):
     @classmethod
-    def create_from_env(cls) -> "AppSettings":
+    def create_from_env(cls, **settings_kwargs) -> "AppSettings":
         return cls(
             postgres=PostgresSettings(),
             director_v0=DirectorV0Settings(),
-            registry=RegistrySettings(),
+            registry=RegistrySettings(), **settings_kwargs
         )
 
     # DOCKER

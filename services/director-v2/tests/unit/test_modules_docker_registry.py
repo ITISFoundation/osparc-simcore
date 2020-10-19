@@ -6,21 +6,6 @@ import re
 
 import pytest
 import respx
-from fastapi import FastAPI
-from simcore_service_director_v2.core.application import init_app
-from simcore_service_director_v2.core.settings import AppSettings
-from starlette.testclient import TestClient
-
-
-@pytest.fixture
-def minimal_app(loop, project_env_devel_environment) -> FastAPI:
-    settings = AppSettings.create_from_env()
-    app = init_app(settings)
-
-    # NOTE: this way we ensure the events are run in the application
-    # since it starts the app on a test server
-    with TestClient(app):
-        yield app
 
 
 @pytest.fixture

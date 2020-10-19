@@ -1,15 +1,17 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
 import sys
 from pathlib import Path
 from typing import Dict
 
 import dotenv
 import pytest
-
 import simcore_service_director_v2
+from fastapi import FastAPI
+from simcore_service_director_v2.core.application import init_app
+from simcore_service_director_v2.core.settings import AppSettings, BootModeEnum
+from starlette.testclient import TestClient
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 pytest_plugins = [
@@ -45,3 +47,21 @@ def project_env_devel_dict(project_slug_dir: Path) -> Dict:
 def project_env_devel_environment(project_env_devel_dict, monkeypatch):
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
+
+
+@pytest.fixture(scope="function")
+def client(loop, project_env_devel_environment) -> TestClient:
+    settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
+    app = init_app(settings)
+
+    # NOTE: this way we ensure the events are run in the application
+    # since it starts the app on a test server
+    with TestClient(app, raise_server_exceptions=True) as client:
+        yield client
+
+
+@pytest.fixture(scope="function")
+def minimal_app(client) -> FastAPI:
+    # NOTICE that this app triggers events
+    # SEE: https://fastapi.tiangolo.com/advanced/testing-events/
+    return client.app

@@ -39,12 +39,13 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     app.state.settings = settings
 
-    # submodule setups
+
     if settings.boot_mode == BootModeEnum.DEBUG:
         remote_debug.setup(app)
 
     if settings.director_v0.enabled:
         director_v0.setup(app, settings.director_v0)
+
     if settings.registry.enabled:
         docker_registry.setup(app, settings.registry)
 

@@ -4,35 +4,13 @@
 # pylint:disable=protected-access
 import pytest
 import respx
-from fastapi import FastAPI, status
-from simcore_service_director_v2.core.application import init_app
-from simcore_service_director_v2.core.settings import AppSettings
-from starlette.testclient import TestClient
-
-
-@pytest.fixture
-def minimal_app(loop, project_env_devel_environment) -> FastAPI:
-    settings = AppSettings.create_from_env()
-    app = init_app(settings)
-    return app
-
-
-@pytest.fixture
-def client(minimal_app):
-    # NOTE: this way we ensure the events are run in the application
-    # since it starts the app on a test server
-    with TestClient(
-        minimal_app,
-        base_url="http://director-v2-test-server",
-        raise_server_exceptions=True,
-    ) as client:
-        yield client
+from fastapi import status
 
 
 @pytest.fixture
 def mocked_director_v0_service_api(minimal_app):
     with respx.mock(
-        base_url= minimal_app.state.settings.director_v0.base_url(include_tag=False),
+        base_url=minimal_app.state.settings.director_v0.base_url(include_tag=False),
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
