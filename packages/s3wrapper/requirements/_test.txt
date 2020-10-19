@@ -23,7 +23,7 @@ docopt==0.6.2             # via coveralls, docker-compose
 idna==2.10                # via requests
 importlib-metadata==2.0.0  # via jsonschema, pluggy, pytest
 iniconfig==1.0.1          # via pytest
-isort==5.5.4              # via pylint
+isort==5.6.4              # via pylint
 jsonschema==3.2.0         # via docker-compose
 lazy-object-proxy==1.4.3  # via astroid
 mccabe==0.6.1             # via pylint
