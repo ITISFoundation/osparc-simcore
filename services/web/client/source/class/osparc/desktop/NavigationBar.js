@@ -130,7 +130,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
       this._add(new qx.ui.core.Spacer(20));
 
-      this.__slideBtns = this.getChildControl("slide-buttons").set({
+      this.__slideBtns = this.getChildControl("slideshow-buttons").set({
         visibility: "excluded"
       });
 
@@ -193,7 +193,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           });
           this._add(control);
           break;
-        case "slide-buttons":
+        case "slideshow-buttons":
           control = this.__createSlideBtns();
           this._add(control);
           break;
