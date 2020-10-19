@@ -138,10 +138,7 @@ class Node(BaseModel):
         ..., description="The short name of the node", example=["JupyterLab"]
     )
     progress: Optional[float] = Field(
-        None,
-        ge=0,
-        le=100,
-        description="the node progress value"
+        None, ge=0, le=100, description="the node progress value"
     )
     thumbnail: Optional[HttpUrl] = Field(
         None,
@@ -176,6 +173,12 @@ class Node(BaseModel):
     )
 
     position: Optional[Position] = Field(None, deprecated=True)
+
+    state: Optional[RunningState] = Field(
+        RunningState.NOT_STARTED,
+        description="the node's running state",
+        example=["RUNNING", "FAILURE"],
+    )
 
     class Config:
         extra = Extra.forbid
@@ -269,6 +272,7 @@ class Project(BaseModel):
     dev: Optional[Dict] = Field(
         None, description="object used for development purposes only"
     )
+    state: Optional[ProjectState] = Field(None, description="Project state")
 
     class Config:
         description = "Description of a simcore project"
