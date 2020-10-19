@@ -39,67 +39,9 @@ class BootModeEnum(str, Enum):
     DEVELOPMENT = "development"
 
 
-class _CommonConfig:
+class CommonConfig:
     case_sensitive = False
     env_file = ".env"  # SEE https://pydantic-docs.helpmanual.io/usage/settings/#dotenv-env-support
-
-
-class ApiServiceSettings(BaseSettings):
-    """ Settings needed to connect a osparc-simcore service API"""
-
-    enabled: bool = Field(True, description="Enables/Disables connection with service")
-
-    host: str
-    port: conint(gt=0, lt=65535) = 8000
-    vtag: constr(regex=r"^v\d$") = "v0"
-
-    def base_url(self, include_tag=False) -> str:
-        url = f"http://{self.host}:{self.port}"
-        if include_tag:
-            url += f"/{self.vtag}"
-        return url
-
-
-class DirectorV0Settings(ApiServiceSettings):
-    class Config(_CommonConfig):
-        env_prefix = "DIRECTOR_"
-
-
-class RegistrySettings(BaseSettings):
-    enabled: bool = Field(True, description="Enables/Disables connection with service")
-
-    # entrypoint
-    ssl: bool = True
-    url: AnyHttpUrl
-
-    # auth
-    auth: bool = True
-    user: Optional[str] = None
-    pw: Optional[SecretStr] = None
-
-    @validator("url", pre=True)
-    def secure_url(cls, v, values):
-        if values["ssl"]:
-            if v.startswith("http://"):
-                v = v.replace("http://", "https://")
-        return v
-
-    @root_validator
-    def check_auth_credentials(cls, values):
-        if values["auth"]:
-            user, pw = values.get("user"), values.get("pw")
-            if user is None or pw is None:
-                raise ValueError("Cannot authenticate without credentials user, pw")
-            if not values["ssl"]:
-                raise ValueError("Authentication REQUIRES a secured channel")
-        return values
-
-    @property
-    def api_url(self) -> str:
-        return f"{self.url}/v2"
-
-    class Config(_CommonConfig):
-        env_prefix = "REGISTRY_"
 
 
 class PostgresSettings(BaseSettings):
@@ -141,26 +83,15 @@ class PostgresSettings(BaseSettings):
             )
         return v
 
-    class Config(_CommonConfig):
+    class Config(CommonConfig):
         env_prefix = "POSTGRES_"
-
-
-class TracingSettings(BaseSettings):
-    enabled: bool = True
-    zipkin_endpoint: AnyHttpUrl = "http://jaeger:9411"
-
-    class Config(_CommonConfig):
-        env_prefix = "TRACING_"
 
 
 class AppSettings(BaseSettings):
     @classmethod
     def create_from_env(cls) -> "AppSettings":
         return cls(
-            director_v0=DirectorV0Settings(),
-            registry=RegistrySettings(),
             postgres=PostgresSettings(),
-            tracing=TracingSettings(),
         )
 
     # DOCKER
@@ -180,12 +111,6 @@ class AppSettings(BaseSettings):
     @property
     def loglevel(self) -> int:
         return getattr(logging, self.log_level_name)
-
-    # DIRECTOR V0
-    director_v0: DirectorV0Settings
-
-    # REGISTRY
-    registry: RegistrySettings
 
     # POSTGRES
     postgres: PostgresSettings
@@ -234,13 +159,67 @@ class AppSettings(BaseSettings):
     # monitoring
     monitoring_enabled: str = Field(False, env="MONITORING_ENABLED")
 
-    # tracing
-    tracing: TracingSettings
-
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
     host: str = "0.0.0.0"  # nosec
     port: conint(gt=0, lt=65535) = 8000
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
 
-    class Config(_CommonConfig):
+    class Config(CommonConfig):
         env_prefix = "DIRECTOR2_"
+
+
+# MODULES setttings ---------------------------------------
+
+class ApiServiceSettings(BaseSettings):
+    """ Settings needed to connect a osparc-simcore service API"""
+
+    enabled: bool = Field(True, description="Enables/Disables connection with service")
+
+    host: str
+    port: conint(gt=0, lt=65535) = 8000
+    vtag: constr(regex=r"^v\d$") = "v0"
+
+    def base_url(self, include_tag=False) -> str:
+        url = f"http://{self.host}:{self.port}"
+        if include_tag:
+            url += f"/{self.vtag}"
+        return url
+
+
+class RegistrySettings(BaseSettings):
+    """ Settings for docker_registry module """
+
+    enabled: bool = Field(True, description="Enables/Disables connection with service")
+
+    # entrypoint
+    ssl: bool = True
+    url: AnyHttpUrl
+
+    # auth
+    auth: bool = True
+    user: Optional[str] = None
+    pw: Optional[SecretStr] = None
+
+    @validator("url", pre=True)
+    def secure_url(cls, v, values):
+        if values["ssl"]:
+            if v.startswith("http://"):
+                v = v.replace("http://", "https://")
+        return v
+
+    @root_validator
+    def check_auth_credentials(cls, values):
+        if values["auth"]:
+            user, pw = values.get("user"), values.get("pw")
+            if user is None or pw is None:
+                raise ValueError("Cannot authenticate without credentials user, pw")
+            if not values["ssl"]:
+                raise ValueError("Authentication REQUIRES a secured channel")
+        return values
+
+    @property
+    def api_url(self) -> str:
+        return f"{self.url}/v2"
+
+    class Config(CommonConfig):
+        env_prefix = "REGISTRY_"

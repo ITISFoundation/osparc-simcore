@@ -26,7 +26,9 @@ def handle_retry(logger: logging.Logger):
 
 
 def handle_response(service_name: str, logger: logging.Logger):
+
     def decorator_func(request_func: Coroutine):
+
         @functools.wraps(request_func)
         async def wrapper_func(*args, **kwargs) -> httpx.Response:
             try:
@@ -41,6 +43,7 @@ def handle_response(service_name: str, logger: logging.Logger):
                     status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail=f"{service_name} is not reponsive",
                 ) from err
+
             else:
                 if httpx.codes.is_client_error(resp.status_code):
                     # Forward return clients errors

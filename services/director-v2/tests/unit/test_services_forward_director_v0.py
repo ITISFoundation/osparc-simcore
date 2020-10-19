@@ -12,7 +12,6 @@ from starlette.testclient import TestClient
 
 @pytest.fixture
 def minimal_app(loop, project_env_devel_environment) -> FastAPI:
-
     settings = AppSettings.create_from_env()
     app = init_app(settings)
     return app

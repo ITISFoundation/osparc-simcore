@@ -1,58 +1,35 @@
-import inspect
-import logging
 from typing import Callable
 
 from fastapi import FastAPI
 
-from ..meta import WELCOME_MSG
-from ..services import director_v0, docker_registry, remote_debug
-from ..services.remote_debug import setup_remote_debugging
-from .settings import BootModeEnum
+from ..meta import __version__, project_name
 
-logger = logging.getLogger(__name__)
+#
+# SEE https://patorjk.com/software/taag/#p=display&f=Small&t=Director
+#
+WELCOME_MSG = r"""
+______ _               _
+|  _  (_)             | |
+| | | |_ _ __ ___  ___| |_ ___  _ __
+| | | | | '__/ _ \/ __| __/ _ \| '__|
+| |/ /| | | |  __/ (__| || (_) | |
+|___/ |_|_|  \___|\___|\__\___/|_|   {0}
 
-
-def remote_debug_on_start(app: FastAPI):
-    setup_remote_debugging(
-        force_enabled=app.state.settings.boot_mode == BootModeEnum.DEBUG
-    )
-
-
-submodules_events = [
-    (
-        remote_debug.__name__,
-        remote_debug_on_start,
-        lambda a: None,
-    ),
-    (docker_registry.__name__, docker_registry.on_start, docker_registry.on_stop),
-    (director_v0.__name__, director_v0.on_start, director_v0.on_stop),
-]
+""".format(
+    f"v{__version__}"
+)
 
 
-def create_start_app_handler(app: FastAPI) -> Callable:
-    async def start_app() -> None:
-        for module_name, on_start, _ in submodules_events:
-            logger.debug("Starting %s", module_name)
-            if inspect.iscoroutinefunction(on_start):
-                await on_start(app)
-            else:
-                on_start(app)
-        # Started, welcome!
+def create_start_app_handler(_app: FastAPI) -> Callable:
+    def on_startup() -> None:
         print(WELCOME_MSG)
 
-    return start_app
+    return on_startup
 
 
-def create_stop_app_handler(app: FastAPI) -> Callable:
-    async def stop_app() -> None:
-        for module_name, _, on_stop in reversed(submodules_events):
-            try:
-                logger.debug("Stopping %s", module_name)
-                if inspect.iscoroutinefunction(on_stop):
-                    await on_stop(app)
-                else:
-                    on_stop(app)
-            except Exception:  # pylint: disable=broad-except
-                logger.warning("Failed while stopping %s", module_name, exc_info=True)
+def create_stop_app_handler(_app: FastAPI) -> Callable:
+    def on_shutdown() -> None:
+        msg = project_name + f" v{__version__} SHUT DOWN"
+        print(f"{msg:=^100}")
 
-    return stop_app
+    return on_shutdown

@@ -3,7 +3,7 @@ from typing import Coroutine
 from fastapi import Request, Response
 from starlette.datastructures import URL
 
-from ...services.director_v0 import DirectorV0Client
+from ...modules.director_v0 import DirectorV0Client
 
 
 def get_request_to_director_v0(request: Request, response: Response) -> Coroutine:

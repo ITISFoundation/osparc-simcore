@@ -18,18 +18,3 @@ summary: str = next(
     for x in current_distribution.get_metadata_lines("PKG-INFO")
     if x.startswith("Summary:")
 )[-1]
-
-#
-# SEE https://patorjk.com/software/taag/#p=display&f=Small&t=Director
-#
-WELCOME_MSG = r"""
-______ _               _
-|  _  (_)             | |
-| | | |_ _ __ ___  ___| |_ ___  _ __
-| | | | | '__/ _ \/ __| __/ _ \| '__|
-| |/ /| | | |  __/ (__| || (_) | |
-|___/ |_|_|  \___|\___|\__\___/|_|   {0}
-
-""".format(
-    f"v{__version__}"
-)

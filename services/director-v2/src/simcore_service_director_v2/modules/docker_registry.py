@@ -1,9 +1,10 @@
-"""
-
-services/director/src/simcore_service_director/registry_proxy.py
-services/director/src/simcore_service_director/registry_cache_task.py
+""" Module responsible of communicating with docker registry API
 
 """
+# TODO: code below simply copied from old director and partially adapted
+# services/director/src/simcore_service_director/registry_proxy.py
+# services/director/src/simcore_service_director/registry_cache_task.py
+
 import logging
 from contextlib import suppress
 from typing import Dict, List
@@ -15,23 +16,28 @@ from ..core.settings import RegistrySettings
 
 logger = logging.getLogger(__name__)
 
+# Module's setup logic ---------------------------------------------
 
-def on_start(app: FastAPI) -> None:
-    settings: RegistrySettings = app.state.settings.registry
-    app.state.docker_registry_api = RegistryApiClient(settings)
+def setup(app: FastAPI, **settings_kwargs):
+    settings = RegistrySettings(**settings_kwargs)
 
-
-async def on_stop(app: FastAPI) -> None:
-    with suppress(AttributeError):
-        client: AsyncClient = app.state.docker_registry_api.client
-        await client.aclose()
-        del app.state.docker_registry_api
+    def on_startup() -> None:
+        app.state.docker_registry_api = RegistryApiClient(settings)
 
 
-# ----------------------------
+    async def on_shutdown() -> None:
+        with suppress(AttributeError):
+            client: AsyncClient = app.state.docker_registry_api.client
+            await client.aclose()
+            del app.state.docker_registry_api
+
+    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", on_shutdown)
+
+
+# Module's business logic ---------------------------------------------
 #
 # TODO: this is totally unfinished!!
-
 #
 # TODO: create a fetcher around the client whose responsitiblity is
 #    - retrial

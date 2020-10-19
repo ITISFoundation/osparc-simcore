@@ -1,10 +1,20 @@
-import logging
+""" Module responsible of interacting with docker daemon
 
+
+"""
+# TODO: code below simply copied from old director
+
+import logging
 import aiodocker
 from asyncio_extras import async_contextmanager  # Lt's try to avoid this??
 
 log = logging.getLogger(__name__)
 
+
+# Module's setup logic ---------------------------------------------
+
+
+# Module's business logic ---------------------------------------------
 
 @async_contextmanager
 async def docker_client() -> aiodocker.docker.Docker:

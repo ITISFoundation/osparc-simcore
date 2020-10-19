@@ -5,8 +5,9 @@ from fastapi import FastAPI
 
 from ..api.entrypoints import api_router
 from ..meta import api_version, api_vtag, project_name, summary
-from .events import create_start_app_handler, create_stop_app_handler
+from ..modules import director_v0, docker_registry, remote_debug
 from .settings import AppSettings
+from .events import create_start_app_handler, create_stop_app_handler
 
 # from fastapi.exceptions import RequestValidationError
 # from starlette.exceptions import HTTPException
@@ -38,11 +39,18 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     app.state.settings = settings
 
+    # submodule setups
+    remote_debug.setup(app)
+    director_v0.setup(app)
+    docker_registry.setup(app)
+
+
     app.add_event_handler("startup", create_start_app_handler(app))
     app.add_event_handler("shutdown", create_stop_app_handler(app))
 
     # app.add_exception_handler(HTTPException, http_error_handler)
     # app.add_exception_handler(RequestValidationError, http422_error_handler)
+
 
     # Routing
     app.include_router(api_router)
