@@ -64,16 +64,16 @@ services:
       context: ../
       dockerfile: services/director-v2/Dockerfile
       cache_from:
-        - local/director:${BUILD_TARGET:?build_target_required}
-        - ${DOCKER_REGISTRY:-itisfoundation}/director:cache
-        - ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
+        - local/director-v2:${BUILD_TARGET:?build_target_required}
+        - ${DOCKER_REGISTRY:-itisfoundation}/director-v2:cache
+        - ${DOCKER_REGISTRY:-itisfoundation}/director-v2:${DOCKER_IMAGE_TAG:-latest}
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "${VCS_URL}"
         org.label-schema.vcs-ref: "${VCS_REF}"
-        #io.osparc.api-version: "${DIRECTOR_V2_API_VERSION}"
+        io.osparc.api-version: "${DIRECTOR_V2_API_VERSION}"
 
   migration:
     image: local/migration:${BUILD_TARGET:?build_target_required}
