@@ -35,7 +35,7 @@ API_PREFIX = "/" + API_VERSION
 # TODO: create conftest at computation/ folder level
 
 # Selection of core and tool services started in this swarm fixture (integration)
-core_services = ["director", "rabbit", "postgres", "sidecar", "storage"]
+core_services = ["director", "rabbit", "postgres", "sidecar", "storage", "redis"]
 
 ops_services = [
     "minio",
@@ -172,6 +172,7 @@ async def test_check_health(loop, mock_orphaned_services, docker_stack, client):
 async def test_start_pipeline(
     rabbit_service,
     postgres_session,
+    redis_service,
     simcore_services,
     sleeper_service,
     client,
@@ -186,13 +187,13 @@ async def test_start_pipeline(
     url_get_state = client.app.router["state_project"].url_for(project_id=project_id)
     assert url_get_state == URL(API_PREFIX + "/projects/{}/state".format(project_id))
 
-    url_state = client.app.router["start_pipeline"].url_for(project_id=project_id)
-    assert url_state == URL(
+    url_start = client.app.router["start_pipeline"].url_for(project_id=project_id)
+    assert url_start == URL(
         API_PREFIX + "/computation/pipeline/{}:start".format(project_id)
     )
 
     # POST /v0/computation/pipeline/{project_id}:start
-    resp = await client.post(url_state)
+    resp = await client.post(url_start)
     data, error = await assert_status(resp, expected_response)
 
     if not error:

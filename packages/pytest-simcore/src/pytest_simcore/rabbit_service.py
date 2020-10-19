@@ -1,7 +1,6 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
 import logging
 import os
 import socket
@@ -10,7 +9,7 @@ from typing import Any, Dict, Optional, Tuple
 import aio_pika
 import pytest
 import tenacity
-from simcore_sdk.config.rabbit import RabbitConfig
+from models_library.rabbit import RabbitConfig
 
 from .helpers.utils_docker import get_service_published_port
 
@@ -28,23 +27,21 @@ def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> RabbitConfig:
         channels={
             "log": "logs_channel",
             "instrumentation": "instrumentation_channel",
-            "celery": {"result_backend": ""},
         },
     )
 
-    # sidecar takes its configuration from env variables
+    # env variables
     os.environ["RABBIT_HOST"] = "127.0.0.1"
     os.environ["RABBIT_PORT"] = str(rabbit_config.port)
     os.environ["RABBIT_USER"] = devel_environ["RABBIT_USER"]
     os.environ["RABBIT_PASSWORD"] = devel_environ["RABBIT_PASSWORD"]
-    os.environ["RABBIT_CHANNELS"] = devel_environ["RABBIT_CHANNELS"]
 
     yield rabbit_config
 
 
 @pytest.fixture(scope="function")
 async def rabbit_service(rabbit_config: RabbitConfig, docker_stack: Dict) -> str:
-    url = rabbit_config.broker_url
+    url = rabbit_config.rabbit_dsn
     await wait_till_rabbit_responsive(url)
     yield url
 

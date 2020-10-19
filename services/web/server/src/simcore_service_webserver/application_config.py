@@ -115,11 +115,3 @@ def load_default_config(environs=None) -> Dict:
 
 
 app_schema = create_schema()
-
-
-class MainSettings(BaseSettings):
-    rabbit: computation_config.ComputationSettings
-
-    class Config:
-        case_sensitive = False
-        env_prefix = "WEBSERVER_"

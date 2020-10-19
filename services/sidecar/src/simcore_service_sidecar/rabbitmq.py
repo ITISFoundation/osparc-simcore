@@ -8,7 +8,7 @@ import aio_pika
 import tenacity
 from pydantic import BaseModel  # pylint: disable=no-name-in-module
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
-from simcore_sdk.config.rabbit import Config as RabbitConfig
+from simcore_sdk.config.rabbit import RabbitConfig
 
 log = logging.getLogger(__file__)
 
@@ -48,7 +48,7 @@ class RabbitMQ(BaseModel):
         arbitrary_types_allowed = True
 
     async def connect(self):
-        url = self.config.broker_url
+        url = self.config.dsn
         log.debug("Connecting to %s", url)
         await _wait_till_rabbit_responsive(url)
 

@@ -99,8 +99,8 @@ async def subscribe(app: web.Application) -> None:
     # e.g. CRITICAL:pika.adapters.base_connection:Could not get addresses to use: [Errno -2] Name or service not known (rabbit)
     # This exception is catch and pika persists ... WARNING:pika.connection:Could not connect, 5 attempts l
 
-    rb_config: ComputationSettings = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    rabbit_broker = rb_config.broker_url
+    comp_settings: ComputationSettings = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    rabbit_broker = comp_settings.broker_url
 
     log.info("Creating pika connection for %s", rabbit_broker)
     await wait_till_rabbitmq_responsive(rabbit_broker)
@@ -113,7 +113,7 @@ async def subscribe(app: web.Application) -> None:
     channel = await connection.channel()
     await channel.set_qos(prefetch_count=1)
 
-    pika_log_channel = rb_config.channels["log"]
+    pika_log_channel = comp_settings.rabbit.channels["log"]
     logs_exchange = await channel.declare_exchange(
         pika_log_channel, aio_pika.ExchangeType.FANOUT
     )
@@ -136,7 +136,7 @@ async def subscribe(app: web.Application) -> None:
     )
 
     # instrumentation
-    pika_instrumentation_channel = rb_config.channels["instrumentation"]
+    pika_instrumentation_channel = comp_settings.rabbit.channels["instrumentation"]
     instrumentation_exchange = await channel.declare_exchange(
         pika_instrumentation_channel, aio_pika.ExchangeType.FANOUT
     )

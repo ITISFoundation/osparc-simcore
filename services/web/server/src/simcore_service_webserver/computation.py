@@ -28,7 +28,7 @@ log = logging.getLogger(__file__)
 )
 def setup(app: web.Application):
     # init settings
-    cfg = ComputationSettings()
+    cfg = ComputationSettings.create_default()
     app[APP_CONFIG_KEY][CONFIG_SECTION_NAME] = cfg
 
     # subscribe to rabbit upon startup

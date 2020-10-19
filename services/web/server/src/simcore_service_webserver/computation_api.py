@@ -451,20 +451,18 @@ async def update_pipeline_db(
 
 
 def get_celery(_app: web.Application) -> Celery:
-    config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
-    rabbit = ComputationSettings(**config)
+    comp_settings: ComputationSettings = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
     celery_app = Celery(
-        rabbit.name,
-        broker=rabbit.broker_url,
-        backend=rabbit.backend,
+        comp_settings.task_name,
+        broker=comp_settings.broker_url,
+        backend=comp_settings.result_backend,
     )
     return celery_app
 
 
 def get_celery_publication_timeout(app: web.Application) -> int:
-    config = app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
-    rabbit = ComputationSettings(**config)
-    return rabbit.publication_timeout
+    comp_settings: ComputationSettings = app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
+    return comp_settings.publication_timeout
 
 
 @log_decorator(logger=log)
