@@ -26,9 +26,9 @@ log = logging.getLogger(__file__)
 @app_module_setup(
     __name__, ModuleCategory.ADDON, config_section=CONFIG_SECTION_NAME, logger=log
 )
-def setup(app: web.Application, **cfg_settings):
+def setup(app: web.Application):
     # init settings
-    cfg = ComputationSettings(**cfg_settings)
+    cfg = ComputationSettings()
     app[APP_CONFIG_KEY][CONFIG_SECTION_NAME] = cfg
 
     # subscribe to rabbit upon startup

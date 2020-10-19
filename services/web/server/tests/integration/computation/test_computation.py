@@ -41,10 +41,6 @@ ops_services = [
     "minio",
 ]  # + ["adminer", "portainer"]
 
-from simcore_service_webserver.computation_config import (
-    CONFIG_SECTION_NAME as COMPUTATION_SECTION_NAME,
-)
-
 
 @pytest.fixture
 def client(
@@ -174,11 +170,11 @@ async def test_check_health(loop, mock_orphaned_services, docker_stack, client):
     ],
 )
 async def test_start_pipeline(
+    rabbit_service,
+    postgres_session,
+    simcore_services,
     sleeper_service,
     client,
-    postgres_session,
-    rabbit_service,
-    simcore_services,
     logged_user,
     user_project,
     mock_workbench_adjacency_list,
