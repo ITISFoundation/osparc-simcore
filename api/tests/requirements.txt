@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
-aiohttp==3.6.2            # via -r requirements.in, pytest-aiohttp
+aiohttp==3.6.3            # via -r requirements.in, pytest-aiohttp
 async-timeout==3.0.1      # via aiohttp
 attrs==20.2.0             # via aiohttp, jsonschema, openapi-core, pytest
 chardet==3.0.4            # via aiohttp

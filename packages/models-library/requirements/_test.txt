@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aiohttp==3.6.2            # via pytest-aiohttp
+aiohttp==3.6.3            # via pytest-aiohttp
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via aiohttp
 attrs==20.2.0             # via aiohttp, pytest
@@ -48,5 +48,5 @@ typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.3  # via aiohttp, yarl
 urllib3==1.25.10          # via requests
 wrapt==1.12.1             # via astroid
-yarl==1.6.0               # via aiohttp
+yarl==1.5.1               # via aiohttp
 zipp==3.2.0               # via importlib-metadata
