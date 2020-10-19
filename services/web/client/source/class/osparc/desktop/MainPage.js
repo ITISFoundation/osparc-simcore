@@ -156,11 +156,8 @@ qx.Class.define("osparc.desktop.MainPage", {
         exploreBrowser
       ].forEach(browser => {
         browser.addListener("startStudy", e => {
-          const {
-            studyId,
-            mode
-          } = e.getData();
-          this.__startStudy(studyId);
+          const startStudyData = e.getData();
+          this.__startStudy(startStudyData);
         }, this);
       });
 
@@ -200,7 +197,11 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__mainStack.setSelection([this.__studyEditor]);
     },
 
-    __startStudy: function(studyId) {
+    __startStudy: function(startStudyData) {
+      const {
+        studyId,
+        mode
+      } = startStudyData;
       this.__showLoadingPage(this.tr("Loading Study"));
 
       const params = {
@@ -266,8 +267,8 @@ qx.Class.define("osparc.desktop.MainPage", {
     __getStudyEditor: function() {
       const studyEditor = this.__studyEditor || new osparc.desktop.StudyEditor();
       studyEditor.addListenerOnce("startStudy", e => {
-        const studyId = e.getData();
-        this.__startStudy(studyId);
+        const startStudyData = e.getData();
+        this.__startStudy(startStudyData);
       }, this);
       return studyEditor;
     }
