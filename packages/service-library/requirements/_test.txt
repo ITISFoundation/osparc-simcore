@@ -27,7 +27,7 @@ docopt==0.6.2             # via coveralls, docker-compose
 idna==2.10                # via -r requirements/_base.txt, requests, yarl
 iniconfig==1.0.1          # via pytest
 isodate==0.6.0            # via -r requirements/_base.txt, openapi-core
-isort==5.6.3              # via pylint
+isort==5.6.4              # via pylint
 jsonschema==3.2.0         # via -r requirements/_base.txt, docker-compose, openapi-spec-validator
 lazy-object-proxy==1.4.3  # via -r requirements/_base.txt, astroid, openapi-core
 mccabe==0.6.1             # via pylint
