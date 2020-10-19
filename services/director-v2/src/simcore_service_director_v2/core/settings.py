@@ -8,13 +8,13 @@ from pydantic import (
     AnyHttpUrl,
     BaseSettings,
     Field,
+    PostgresDsn,
     SecretStr,
     conint,
     constr,
     root_validator,
     validator,
 )
-from yarl import URL
 
 from ..meta import api_vtag
 
@@ -53,9 +53,11 @@ class ApiServiceSettings(BaseSettings):
     port: conint(gt=0, lt=65535) = 8000
     vtag: constr(regex=r"^v\d$") = "v0"
 
-    @property
-    def api_base_url(self) -> str:
-        return f"http://{self.host}:{self.port}/{self.vtag}"
+    def base_url(self, include_tag=False) -> str:
+        url = f"http://{self.host}:{self.port}"
+        if include_tag:
+            url += f"/{self.vtag}"
+        return url
 
 
 class DirectorV0Settings(ApiServiceSettings):
@@ -92,14 +94,9 @@ class RegistrySettings(BaseSettings):
                 raise ValueError("Authentication REQUIRES a secured channel")
         return values
 
-    def api_url(self, with_credentials=True) -> str:
-        return AnyHttpUrl.build(
-            scheme=self.url.scheme,
-            user=self.user if with_credentials else None,
-            password=self.pw.get_secret_value() if with_credentials else None,
-            host=self.url.host,
-            path="/v2",
-        )
+    @property
+    def api_url(self) -> str:
+        return f"{self.url}/v2"
 
     class Config(_CommonConfig):
         env_prefix = "REGISTRY_"
@@ -123,22 +120,26 @@ class PostgresSettings(BaseSettings):
     minsize: int = 10
     maxsize: int = 10
 
+    dsn: Optional[PostgresDsn] = None
+
     @validator("maxsize")
     def check_size(cls, v, values):
         if not (values["minsize"] <= v):
             raise ValueError(f"assert minsize={values['minsize']} <= maxsize={v}")
         return v
 
-    @property
-    def dsn(self) -> URL:
-        return URL.build(
-            scheme="postgresql",
-            user=self.user,
-            password=self.password.get_secret_value(),
-            host=self.host,
-            port=self.port,
-            path=f"/{self.db}",
-        )
+    @validator("dsn", pre=True)
+    def autofill_dsn(cls, v, values):
+        if v is None:
+            return PostgresDsn.build(
+                scheme="postgresql",
+                user=values["user"],
+                password=values["password"].get_secret_value(),
+                host=values["host"],
+                port=f"{values['port']}",
+                path=f"/{values['db']}",
+            )
+        return v
 
     class Config(_CommonConfig):
         env_prefix = "POSTGRES_"

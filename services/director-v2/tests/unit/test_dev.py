@@ -6,12 +6,15 @@
 import httpx
 
 from simcore_service_director_v2.core.settings import AppSettings, RegistrySettings
+import pytest
 
 
+
+@pytest.mark.skip(reason="debug purposes")
 def test_it(project_env_devel_environment):
 
     settings: RegistrySettings = AppSettings.create_from_env().registry
 
-    with httpx.Client(base_url=settings.api_url) as client:
+    with httpx.Client(base_url=settings.api_url()) as client:
         r = client.get("/_catalog")
         print(r.json())

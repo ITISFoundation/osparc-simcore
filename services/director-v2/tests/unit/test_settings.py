@@ -4,7 +4,6 @@
 import logging
 
 import pytest
-from yarl import URL
 
 from simcore_service_director_v2.core.settings import (
     AppSettings,
@@ -22,7 +21,7 @@ def test_loading_env_devel_in_settings(project_env_devel_environment):
     assert settings.boot_mode == BootModeEnum.DEBUG
     assert settings.loglevel == logging.DEBUG
 
-    assert settings.postgres.dsn == URL("postgresql://test:test@localhost:5432/test")
+    assert settings.postgres.dsn == "postgresql://test:test@localhost:5432/test"
 
 
 def test_create_registry_settings(project_env_devel_environment, monkeypatch):
@@ -35,8 +34,7 @@ def test_create_registry_settings(project_env_devel_environment, monkeypatch):
     settings: RegistrySettings = AppSettings.create_from_env().registry
 
     # http -> https
-    assert settings.api_url() == "https://admin:adminadmin@registry/v2"
-    assert settings.api_url(with_credentials=False) == "https://registry/v2"
+    assert settings.api_url == "https://registry:5000/v2"
 
 
 def test_registry_settings_error(project_env_devel_environment, monkeypatch):
