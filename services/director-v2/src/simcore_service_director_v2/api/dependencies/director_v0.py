@@ -1,49 +1,35 @@
-from fastapi import Request
+from typing import Coroutine
+
+from fastapi import Request, Response
+from starlette.datastructures import URL
 
 from ...services.director_v0 import DirectorV0Client
 
-import httpx
 
+def get_request_to_director_v0(request: Request, response: Response) -> Coroutine:
 
-class ReverseProxyClient:
-    def __init__(self, current_request: Request, director_v0_client: DirectorV0Client):
-        pass
+    client = DirectorV0Client.instance(request.app)
 
-    async def forward_request(self):
-        # director client
-        pass
-
-
-from starlette.datastructures import URL
-
-
-from fastapi import Response
-import httpx
-
-
-def get_reverse_proxy_to_v0(request: Request, response: Response) -> ReverseProxyClient:
-
-    async def forward(params):
-        # client: DirectorV0Client = request.state.director_api_client
-        import pdb; pdb.set_trace()
-
+    async def forward():
         url_tail = URL(
             path=request.url.path,
             fragment=request.url.fragment,
         )
         body: bytes = await request.body()
 
-        with httpx.Client(base_url="director:8080") as client:
-            r = client.request(
-                request.method,
-                url_tail,
-                params=params,
-                content=body,
-                headers=request.headers,
-            )
+        r = await client.request(
+            request.method,
+            str(url_tail),
+            params=dict(request.query_params),
+            content=body,
+            headers=dict(request.headers),
+        )
 
+        # Prepared response
         response.body = r.content
         response.status_code = r.status_code
+
+        # NOTE: the response is NOT validated!
         return response
 
     return forward

@@ -1,8 +1,8 @@
 # pylint: disable=unused-argument
 
-from typing import Optional, Callable
+from typing import Optional, Coroutine
 
-from fastapi import APIRouter, Depends, Path, Query, Response
+from fastapi import APIRouter, Depends, Path, Query
 
 from ...models.schemas.services import (
     SERVICE_IMAGE_NAME_RE,
@@ -11,7 +11,7 @@ from ...models.schemas.services import (
     ServicesArrayEnveloped,
     ServiceType,
 )
-from ..dependencies.director_v0 import get_reverse_proxy_to_v0
+from ..dependencies.director_v0 import get_request_to_director_v0
 
 router = APIRouter()
 
@@ -31,10 +31,9 @@ async def list_services(
             "   - interactive - an interactive service\n"
         ),
     ),
-    forward_request: Callable = Depends(get_reverse_proxy_to_v0),
+    forward_request: Coroutine = Depends(get_request_to_director_v0),
 ):
-    # service_type has been validated
-    return await forward_request(params={ "service_type": service_type })
+    return await forward_request()
 
 
 ServiceKeyPath = Path(
@@ -55,7 +54,7 @@ ServiceKeyVersionPath = Path(
 async def get_service_versioned(
     service_key: str = ServiceKeyPath,
     service_version: str = ServiceKeyVersionPath,
-    forward_request: Callable = Depends(get_reverse_proxy_to_v0),
+    forward_request: Coroutine = Depends(get_request_to_director_v0),
 ):
     return await forward_request()
 
@@ -68,6 +67,6 @@ async def get_service_versioned(
 async def get_extra_service_versioned(
     service_key: str = ServiceKeyPath,
     service_version: str = ServiceKeyVersionPath,
-    forward_request: Callable = Depends(get_reverse_proxy_to_v0),
+    forward_request: Coroutine = Depends(get_request_to_director_v0),
 ):
     return await forward_request()
