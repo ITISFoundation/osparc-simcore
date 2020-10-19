@@ -13,8 +13,14 @@ api_vtag: str = f"v{major}"
 
 __version__ = current_distribution.version
 
+
+try:
+    metadata = current_distribution.get_metadata_lines("METADATA")
+except FileNotFoundError:
+    metadata = current_distribution.get_metadata_lines("PKG-INFO")
+
 summary: str = next(
     x.split(":")
-    for x in current_distribution.get_metadata_lines("PKG-INFO")
+    for x in metadata
     if x.startswith("Summary:")
 )[-1]
