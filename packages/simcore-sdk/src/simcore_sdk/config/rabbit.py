@@ -4,44 +4,11 @@
 
 from typing import Dict, Union
 
-import trafaret as T
 from pydantic import BaseSettings
+from pydantic.types import SecretStr
 
-# TODO: adapt all data below!
-CONFIG_SCHEMA = T.Dict(
-    {
-        T.Key("name", default="tasks", optional=True): T.String(),
-        T.Key("enabled", default=True, optional=True): T.Bool(),
-        T.Key("host", default="rabbit", optional=True): T.String(),
-        T.Key("port", default=5672, optional=True): T.Int(),
-        "user": T.String(),
-        "password": T.String(),
-        "channels": T.Dict(
-            {
-                "log": T.String(),
-                "instrumentation": T.String(),
-                T.Key(
-                    "celery", default=dict(result_backend="rpc://"), optional=True
-                ): T.Dict(
-                    {
-                        T.Key(
-                            "result_backend",
-                            default="${CELERY_RESULT_BACKEND}",
-                            optional=True,
-                        ): T.String(),
-                        T.Key(
-                            "publication_timeout",
-                            default=60,
-                            optional=True,
-                        ): T.Int(),
-                    }
-                ),
-            }
-        ),
-    }
-)
-# TODO: use BaseSettings instead of BaseModel and remove trafaret ! -----------------------------------------------------------------------------
-class Config(BaseSettings):
+
+class RabbitConfig(BaseSettings):
     name: str = "tasks"
     enabled: bool = True
     user: str = "simcore"
@@ -68,3 +35,6 @@ class Config(BaseSettings):
     @property
     def publication_timeout(self):
         return self.channels["celery"]["publication_timeout"]
+
+
+# TODO: create a CELERY config as well

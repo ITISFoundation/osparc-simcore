@@ -35,15 +35,6 @@ resource_manager:
     enabled: True
     host: redis
     port: 6379
-rabbit:
-  enabled: True
-  host: rabbit
-  port: 5672
-  user: simcore
-  password: simcore
-  channels:
-    log: comp.backend.channels.log
-    instrumentation: "comp.backend.channels.instrumentation"
 login:
   enabled: True
   registration_invitation_required: False

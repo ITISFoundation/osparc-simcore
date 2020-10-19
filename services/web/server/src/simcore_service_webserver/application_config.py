@@ -18,6 +18,7 @@
 import logging
 from pathlib import Path
 from typing import Dict
+from pydantic.env_settings import BaseSettings
 
 import trafaret as T
 from trafaret_config.simple import read_and_validate
@@ -51,8 +52,8 @@ assert resources.exists("config/" + CLI_DEFAULT_CONFIGFILE)  # nosec
 
 def create_schema() -> T.Dict:
     """
-        Build schema for the configuration's file
-        by aggregating all the subsystem configurations
+    Build schema for the configuration's file
+    by aggregating all the subsystem configurations
     """
     # pylint: disable=protected-access
     schema = T.Dict(
@@ -76,7 +77,6 @@ def create_schema() -> T.Dict:
             rest_config.CONFIG_SECTION_NAME: rest_config.schema,
             projects_config.CONFIG_SECTION_NAME: projects_config.schema,
             email_config.CONFIG_SECTION_NAME: email_config.schema,
-            computation_config.CONFIG_SECTION_NAME: computation_config.schema,
             storage_config.CONFIG_SECTION_NAME: storage_config.schema,
             addon_section(
                 login_config.CONFIG_SECTION_NAME, optional=True
@@ -96,6 +96,7 @@ def create_schema() -> T.Dict:
             addon_section("publications", optional=True): minimal_addon_schema(),
             addon_section("catalog", optional=True): catalog_config.schema,
             addon_section("products", optional=True): minimal_addon_schema(),
+            addon_section("computation", optional=True): minimal_addon_schema(),
         }
     )
 
@@ -114,3 +115,11 @@ def load_default_config(environs=None) -> Dict:
 
 
 app_schema = create_schema()
+
+
+class MainSettings(BaseSettings):
+    rabbit: computation_config.ComputationSettings
+
+    class Config:
+        case_sensitive = False
+        env_prefix = "WEBSERVER_"

@@ -9,13 +9,14 @@
 import logging
 
 from aiohttp import web
+from servicelib.application_keys import APP_CONFIG_KEY
 
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
 
 from . import computation_handlers
 from .computation_comp_tasks_listening_task import setup as setup_comp_tasks_listener
-from .computation_config import CONFIG_SECTION_NAME
+from .computation_config import CONFIG_SECTION_NAME, ComputationSettings
 from .computation_subscribe import subscribe
 from .rest_config import APP_OPENAPI_SPECS_KEY
 
@@ -25,7 +26,11 @@ log = logging.getLogger(__file__)
 @app_module_setup(
     __name__, ModuleCategory.ADDON, config_section=CONFIG_SECTION_NAME, logger=log
 )
-def setup(app: web.Application):
+def setup(app: web.Application, **cfg_settings):
+    # init settings
+    cfg = ComputationSettings(**cfg_settings)
+    app[APP_CONFIG_KEY][CONFIG_SECTION_NAME] = cfg
+
     # subscribe to rabbit upon startup
     # TODO: Define connection policies (e.g. {on-startup}, lazy). Could be defined in config-file
     app.on_startup.append(subscribe)

@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional, Tuple
 import aio_pika
 import pytest
 import tenacity
-from simcore_sdk.config.rabbit import Config
+from simcore_sdk.config.rabbit import RabbitConfig
 
 from .helpers.utils_docker import get_service_published_port
 
@@ -18,9 +18,9 @@ log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="module")
-def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> Config:
+def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> RabbitConfig:
     assert "simcore_rabbit" in docker_stack["services"]
-    rabbit_config = Config(
+    rabbit_config = RabbitConfig(
         user=devel_environ["RABBIT_USER"],
         password=devel_environ["RABBIT_PASSWORD"],
         host="127.0.0.1",
@@ -43,7 +43,7 @@ def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> Config:
 
 
 @pytest.fixture(scope="function")
-async def rabbit_service(rabbit_config: Config, docker_stack: Dict) -> str:
+async def rabbit_service(rabbit_config: RabbitConfig, docker_stack: Dict) -> str:
     url = rabbit_config.broker_url
     await wait_till_rabbit_responsive(url)
     yield url
@@ -92,7 +92,7 @@ async def rabbit_channel(
 
 @pytest.fixture(scope="function")
 async def rabbit_exchange(
-    rabbit_config: Config,
+    rabbit_config: RabbitConfig,
     rabbit_channel: aio_pika.Channel,
 ) -> Tuple[aio_pika.Exchange, aio_pika.Exchange]:
 

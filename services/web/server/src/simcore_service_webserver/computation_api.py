@@ -23,13 +23,13 @@ from simcore_postgres_database.webserver_models import (
     comp_pipeline,
     comp_tasks,
 )
-from simcore_sdk.config.rabbit import Config as RabbitConfig
 
 # TODO: move this to computation_models
 from simcore_service_webserver.computation_models import to_node_class
 from sqlalchemy import and_
 
 from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
+from .computation_config import ComputationSettings
 from .director import director_api
 
 log = logging.getLogger(__file__)
@@ -452,7 +452,7 @@ async def update_pipeline_db(
 
 def get_celery(_app: web.Application) -> Celery:
     config = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
-    rabbit = RabbitConfig(**config)
+    rabbit = ComputationSettings(**config)
     celery_app = Celery(
         rabbit.name,
         broker=rabbit.broker_url,
@@ -463,7 +463,7 @@ def get_celery(_app: web.Application) -> Celery:
 
 def get_celery_publication_timeout(app: web.Application) -> int:
     config = app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
-    rabbit = RabbitConfig(**config)
+    rabbit = ComputationSettings(**config)
     return rabbit.publication_timeout
 
 

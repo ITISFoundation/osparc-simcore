@@ -7,8 +7,6 @@ from typing import Callable, Coroutine, Dict
 
 import aio_pika
 from aiohttp import web
-from tenacity import retry
-
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.monitor_services import (
     SERVICE_STARTED_LABELS,
@@ -17,11 +15,12 @@ from servicelib.monitor_services import (
     service_stopped,
 )
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
-from simcore_sdk.config.rabbit import Config as RabbitConfig
+from tenacity import retry
 
 from .computation_config import (
     APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
     CONFIG_SECTION_NAME,
+    ComputationSettings,
 )
 from .projects import projects_api
 from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
@@ -101,7 +100,7 @@ async def subscribe(app: web.Application) -> None:
     # This exception is catch and pika persists ... WARNING:pika.connection:Could not connect, 5 attempts l
 
     rb_config: Dict = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    rabbit_broker = RabbitConfig(**rb_config).broker_url
+    rabbit_broker = rb_config.broker_url
 
     log.info("Creating pika connection for %s", rabbit_broker)
     await wait_till_rabbitmq_responsive(rabbit_broker)

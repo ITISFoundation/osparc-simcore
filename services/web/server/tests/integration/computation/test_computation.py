@@ -41,10 +41,16 @@ ops_services = [
     "minio",
 ]  # + ["adminer", "portainer"]
 
+from simcore_service_webserver.computation_config import (
+    CONFIG_SECTION_NAME as COMPUTATION_SECTION_NAME,
+)
+
 
 @pytest.fixture
 def client(
-    loop, aiohttp_client, app_config,  ## waits until swarm with *_services are up
+    loop,
+    aiohttp_client,
+    app_config,  ## waits until swarm with *_services are up
 ):
     assert app_config["rest"]["version"] == API_VERSION
 

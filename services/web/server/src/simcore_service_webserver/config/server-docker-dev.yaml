@@ -38,12 +38,6 @@ resource_manager:
   redis:
     host: ${REDIS_HOST}
     port: ${REDIS_PORT}
-rabbit:
-  host: ${RABBIT_HOST}
-  port: ${RABBIT_PORT}
-  user: ${RABBIT_USER}
-  password: ${RABBIT_PASSWORD}
-  channels: ${RABBIT_CHANNELS}
 activity:
   enabled: True
   prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}
