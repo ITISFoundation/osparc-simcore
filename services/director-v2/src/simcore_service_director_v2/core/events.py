@@ -24,7 +24,7 @@ submodules_events = [
         remote_debug_on_start,
         lambda a: None,
     ),
-    (docker_registry.__name__, docker_registry.on_stop, docker_registry.on_stop),
+    (docker_registry.__name__, docker_registry.on_start, docker_registry.on_stop),
     (director_v0.__name__, director_v0.on_start, director_v0.on_stop),
 ]
 
@@ -45,7 +45,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
 
 def create_stop_app_handler(app: FastAPI) -> Callable:
     async def stop_app() -> None:
-        for module_name, _, on_stop in submodules_events.reverse():
+        for module_name, _, on_stop in reversed(submodules_events):
             try:
                 logger.debug("Stopping %s", module_name)
                 if inspect.iscoroutinefunction(on_stop):

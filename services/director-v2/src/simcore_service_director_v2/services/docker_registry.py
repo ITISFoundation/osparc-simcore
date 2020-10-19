@@ -30,6 +30,8 @@ async def on_stop(app: FastAPI) -> None:
 
 # ----------------------------
 #
+# TODO: this is totally unfinished!!
+
 #
 # TODO: create a fetcher around the client whose responsitiblity is
 #    - retrial
@@ -52,7 +54,7 @@ class RegistryApiClient:
         # TODO: see https://colin-b.github.io/httpx_auth/
 
         self.client = AsyncClient(
-            base_url=self.settings.api_url(with_credentials=False)
+            base_url=self.settings.api_url
         )
 
     def get_basic_auth(self):
@@ -79,10 +81,10 @@ class RegistryApiClient:
         # returning domain models here or outside??
         return repos
 
-    async def list_image_tags(self, image_tag: str) -> List[str]:
+    async def list_image_tags(self, image_key: str) -> List[str]:
         pass
 
-    async def get_image_labels(self, image: str, tag: str) -> Dict:
+    async def get_image_labels(self, image_key: str, tag: str) -> Dict:
         pass
 
     async def get_image_details(self, image_key: str, image_tag: str) -> Dict:
