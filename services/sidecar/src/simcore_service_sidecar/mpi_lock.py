@@ -16,7 +16,8 @@ from threading import Thread
 from typing import Any, Callable, Optional, Tuple
 
 from aioredlock import Aioredlock, Lock, LockError
-from simcore_service_sidecar import config
+
+from . import config
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +80,7 @@ async def try_to_acquire_lock(
 
 async def acquire_lock(cpu_count: int) -> bool:
     resource_name = f"aioredlock:mpi_lock:{cpu_count}"
-    lock_manager = Aioredlock([config.REDIS_CONFIG.redis_dsn])
+    lock_manager = Aioredlock([config.CELERY_CONFIG.redis.redis_dsn])
     logger.info("Will try to acquire an mpi_lock")
 
     def is_locked_factory():

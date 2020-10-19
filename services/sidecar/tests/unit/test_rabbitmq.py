@@ -4,14 +4,14 @@ import json
 from typing import List
 
 import aio_pika
-from simcore_sdk.config.rabbit import Config
+from models_library.rabbit import RabbitConfig
 from simcore_service_sidecar.rabbitmq import RabbitMQ
 
 core_services = ["rabbit"]
 
 
 async def test_rabbitmq(
-    loop, rabbit_config: Config, rabbit_queue: aio_pika.Queue, mocker
+    loop, rabbit_config: RabbitConfig, rabbit_queue: aio_pika.Queue, mocker
 ):
     rabbit = RabbitMQ()
     assert rabbit
@@ -38,7 +38,7 @@ async def test_rabbitmq(
 
     await rabbit_queue.consume(rabbit_message_handler, exclusive=True, no_ack=True)
 
-    async with RabbitMQ(config=rabbit_config) as rabbitmq:
+    async with RabbitMQ() as rabbitmq:
         assert rabbitmq.connection.ready
 
         await rabbitmq.post_log_message(user_id, project_id, node_id, log_msg)

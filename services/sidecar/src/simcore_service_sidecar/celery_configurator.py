@@ -127,7 +127,7 @@ def define_celery_task(app, name: str) -> None:
         log.info("Completed task %s", self.request.id)
 
 
-def configure_cpu_mode() -> Tuple[RabbitConfig, Celery]:
+def configure_cpu_mode() -> Celery:
     """Will configure and return a celery app targetting CPU mode nodes."""
     log.info("Initializing celery app...")
     app = _celery_app_cpu
@@ -137,10 +137,10 @@ def configure_cpu_mode() -> Tuple[RabbitConfig, Celery]:
 
     set_boot_mode(BootMode.CPU)
     log.info("Initialized celery app in %s ", get_boot_mode())
-    return (_rabbit_config, app)
+    return app
 
 
-def configure_gpu_mode() -> Tuple[RabbitConfig, Celery]:
+def configure_gpu_mode() -> Celery:
     """Will configure and return a celery app targetting GPU mode nodes."""
     log.info("Initializing celery app...")
     app = _celery_app_gpu
@@ -150,10 +150,10 @@ def configure_gpu_mode() -> Tuple[RabbitConfig, Celery]:
 
     set_boot_mode(BootMode.GPU)
     log.info("Initialized celery app in %s", get_boot_mode())
-    return (_rabbit_config, app)
+    return app
 
 
-def configure_mpi_node() -> Tuple[RabbitConfig, Celery]:
+def configure_mpi_node() -> Celery:
     """Will configure and return a celery app targetting GPU mode nodes."""
     log.info("Initializing celery app...")
     app = _celery_app_mpi
@@ -163,7 +163,7 @@ def configure_mpi_node() -> Tuple[RabbitConfig, Celery]:
 
     set_boot_mode(BootMode.MPI)
     log.info("Initialized celery app in %s", get_boot_mode())
-    return (_rabbit_config, app)
+    return app
 
 
 def get_rabbitmq_config_and_celery_app() -> Tuple[RabbitConfig, Celery]:

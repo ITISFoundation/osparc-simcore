@@ -5,7 +5,6 @@ from typing import Callable, List, Optional
 import click
 
 from .celery_task_utils import cancel_task
-from .config import RABBIT_CONFIG
 from .core import inspect
 from .db import DBContextManager
 from .rabbitmq import RabbitMQ
@@ -65,7 +64,7 @@ async def run_sidecar(
     )
     try:
         async with DBContextManager() as db_engine:
-            async with RabbitMQ(config=RABBIT_CONFIG) as rabbit_mq:
+            async with RabbitMQ() as rabbit_mq:
                 next_task_nodes: Optional[List[str]] = await inspect(
                     db_engine, rabbit_mq, job_id, user_id, project_id, node_id=node_id
                 )

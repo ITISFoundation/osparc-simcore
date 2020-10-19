@@ -112,8 +112,7 @@ def test_proper_has_gpu_mocking(expected_value, gpu_support) -> None:
     ],
 )
 def test_force_start_cpu_ext_dep_mocking(force_cpu_mode, gpu_support) -> None:
-    rabbit_cfg, celery_app = get_rabbitmq_config_and_celery_app()
-    assert isinstance(rabbit_cfg, RabbitConfig)
+    celery_app = get_rabbitmq_config_and_celery_app()
     assert isinstance(celery_app, Celery)
 
 
@@ -124,6 +123,5 @@ def test_force_start_cpu_ext_dep_mocking(force_cpu_mode, gpu_support) -> None:
     ],
 )
 def test_force_start_gpu_ext_dep_mocking(force_gpu_mode, gpu_support) -> None:
-    rabbit_cfg, celery_app = get_rabbitmq_config_and_celery_app()
-    assert isinstance(rabbit_cfg, RabbitConfig)
+    celery_app = get_rabbitmq_config_and_celery_app()
     assert isinstance(celery_app, Celery)
