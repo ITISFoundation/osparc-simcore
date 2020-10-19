@@ -18,6 +18,7 @@ from typing import Any, Callable, Optional, Tuple
 from aioredlock import Aioredlock, Lock, LockError
 
 from . import config
+from .utils import wrap_async_call
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +126,6 @@ def acquire_mpi_lock(cpu_count: int) -> bool:
     Will try to acquire a distributed shared lock.
     This operation will last up to 2 x config.REDLOCK_REFRESH_INTERVAL_SECONDS
     """
-    from simcore_service_sidecar.utils import wrap_async_call
 
     was_acquired = wrap_async_call(acquire_lock(cpu_count))
     return was_acquired
