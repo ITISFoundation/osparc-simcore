@@ -50,7 +50,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     pageContext: {
-      check: ["workbench", "slides"],
+      check: ["workbench", "slideshow"],
       nullable: false,
       apply: "_applyPageContext"
     }
@@ -154,7 +154,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         case "workbench":
           this.__viewsStack.setSelection([this.__workbenchView]);
           break;
-        case "slides":
+        case "slideshow":
           this.__viewsStack.setSelection([this.__slideshowView]);
           this.__slideshowView.startSlides();
           break;

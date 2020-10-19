@@ -76,7 +76,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     pageContext: {
-      check: ["dashboard", "workbench", "slides"],
+      check: ["dashboard", "workbench", "slideshow"],
       nullable: false,
       apply: "_applyPageContext"
     }
@@ -93,7 +93,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     PAGE_CONTEXT: {
       0: "dashboard",
       1: "workbench",
-      2: "slides"
+      2: "slideshow"
     },
 
     areSlidesEnabled: function() {
@@ -378,7 +378,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this.__setSlidesBtnsVis(false);
           this.__populateWorkbenchNodesLayout();
           break;
-        case "slides":
+        case "slideshow":
           this.__dashboardLabel.exclude();
           this.__dashboardBtn.show();
           this.__resetSlideBtnsVis(true);
@@ -392,12 +392,12 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     __resetSlideBtnsVis: function() {
       this.self().areSlidesEnabled()
         .then(areSlidesEnabled => {
-          const context = ["workbench", "slides"].includes(this.getPageContext());
+          const context = ["workbench", "slideshow"].includes(this.getPageContext());
           if (areSlidesEnabled && context) {
             const study = this.getStudy();
             if (Object.keys(study.getUi().getSlideshow()).length) {
               this.__slideBtns.show();
-              if (this.getPageContext() === "slides") {
+              if (this.getPageContext() === "slideshow") {
                 this.__startSlidesBtn.exclude();
                 this.__stopSlidesBtn.show();
               } else if (this.getPageContext() === "workbench") {
@@ -629,7 +629,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         study.getUi().addListener("changeCurrentNodeId", () => {
           if (this.getPageContext() === "workbench") {
             this.__populateWorkbenchNodesLayout();
-          } else if (this.getPageContext() === "slides") {
+          } else if (this.getPageContext() === "slideshow") {
             this.__populateGuidedNodesLayout();
           }
         });

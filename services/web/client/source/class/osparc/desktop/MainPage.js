@@ -257,8 +257,8 @@ qx.Class.define("osparc.desktop.MainPage", {
       const study = studyEditor.getStudy();
       this.__navBar.setStudy(study);
       if (pageContext === "slideshow") {
-        this.__navBar.setPageContext("slides");
-        studyEditor.setPageContext("slides");
+        this.__navBar.setPageContext("slideshow");
+        studyEditor.setPageContext("slideshow");
       } else {
         this.__navBar.setPageContext("workbench");
       }
