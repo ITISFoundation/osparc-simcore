@@ -328,7 +328,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __startStudy: function(studyId) {
-      this.fireDataEvent("startStudy", studyId);
+      const data = {
+        studyId: studyId
+      };
+      this.fireDataEvent("startStudy", data);
     },
 
     __resetStudyItem: function(studyData) {

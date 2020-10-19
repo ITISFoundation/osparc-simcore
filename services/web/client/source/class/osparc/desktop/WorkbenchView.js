@@ -146,7 +146,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         osparc.data.Resources.getOne("studies", params)
           .then(studyData => {
             study.removeIFrames();
-            this.fireDataEvent("startStudy", studyData.uuid);
+            const data = {
+              studyId: studyData.uuid
+            };
+            this.fireDataEvent("startStudy", data);
           });
       });
     },

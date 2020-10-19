@@ -156,7 +156,10 @@ qx.Class.define("osparc.desktop.MainPage", {
         exploreBrowser
       ].forEach(browser => {
         browser.addListener("startStudy", e => {
-          const studyId = e.getData();
+          const {
+            studyId,
+            mode
+          } = e.getData();
           this.__startStudy(studyId);
         }, this);
       });
