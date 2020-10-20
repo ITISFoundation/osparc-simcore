@@ -46,7 +46,9 @@ SIDECAR_LOGLEVEL: str = getattr(
     logging, os.environ.get("SIDECAR_LOGLEVEL", "WARNING").upper(), logging.DEBUG
 )
 
-DOCKER_REGISTRY: str = os.environ.get("REGISTRY_URL", "masu.speag.com")
+DOCKER_REGISTRY: str = os.environ.get(
+    "REGISTRY_PATH", os.environ.get("REGISTRY_URL", "masu.speag.com")
+)
 DOCKER_USER: str = os.environ.get("REGISTRY_USER", "z43")
 DOCKER_PASSWORD: str = os.environ.get("REGISTRY_PW", "z43")
 

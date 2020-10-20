@@ -60,12 +60,15 @@ def docker_registry(keep_docker_up: bool) -> str:
     private_image = docker_client.images.pull(repo)
     docker_client.images.remove(image=private_image.id)
 
-    # necessary for old school configs
+    # provide os.environs
     os.environ["REGISTRY_SSL"] = "False"
     os.environ["REGISTRY_AUTH"] = "False"
     os.environ[
         "REGISTRY_URL"
-    ] = f"{get_ip()}:5000"  # this needs to be set like this to access from docker containers
+    ] = f"{get_ip()}:5000"  # the registry URL is how to access from the container (e.g. for accessing the API)
+    os.environ[
+        "REGISTRY_PATH"
+    ] = "127.0.0.1:5000"  # the registry PATH is how the docker engine shall access the images (usually same as REGISTRY_URL but for testing)
     os.environ["REGISTRY_USER"] = "simcore"
     os.environ["REGISTRY_PW"] = ""
 
