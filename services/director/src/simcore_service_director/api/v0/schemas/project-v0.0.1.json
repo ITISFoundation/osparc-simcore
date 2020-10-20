@@ -107,8 +107,7 @@
           "required": [
             "key",
             "version",
-            "label",
-            "position"
+            "label"
           ],
           "properties": {
             "key": {
@@ -321,7 +320,8 @@
                 "y": {
                   "type": "integer"
                 }
-              }
+              },
+              "deprecated": true
             },
             "state": {
               "title": "RunningState",
@@ -337,6 +337,64 @@
                 "FAILURE"
               ],
               "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "workbench": {
+          "type": "object",
+          "patternProperties": {
+            "^\\S+$": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "position"
+              ],
+              "properties": {
+                "position": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "x",
+                    "y"
+                  ],
+                  "properties": {
+                    "x": {
+                      "type": "integer"
+                    },
+                    "y": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "slideshow": {
+          "type": "object",
+          "patternProperties": {
+            "^\\S+$": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "position"
+              ],
+              "properties": {
+                "position": {
+                  "type": "integer",
+                  "description": "Slide's position",
+                  "examples": [
+                    0,
+                    2
+                  ]
+                }
+              }
             }
           }
         }

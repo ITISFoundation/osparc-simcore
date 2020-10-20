@@ -59,6 +59,10 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
 
       // The label
       this.addLabel();
+      const label = this.getChildControl("label");
+      if (label) {
+        label.setMaxWidth(150);
+      }
 
       // All else should be right justified
       this.addWidget(new qx.ui.core.Spacer(), {

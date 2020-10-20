@@ -436,9 +436,9 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    _applyStudy: function(newStudy) {
-      if (newStudy) {
-        this.setCurrentStudyId(newStudy.getStudyId());
+    _applyStudy: function(study) {
+      if (study) {
+        this.setCurrentStudyId(study.getStudyId());
       } else {
         this.setCurrentStudyId(null);
       }

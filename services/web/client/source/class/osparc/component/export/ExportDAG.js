@@ -164,7 +164,7 @@ qx.Class.define("osparc.component.export.ExportDAG", {
       nodesGroupService["name"] = this.__groupName.getValue();
       nodesGroupService["description"] = this.__groupDesc.getValue();
       nodesGroupService["contact"] = osparc.auth.Data.getInstance().getEmail();
-      nodesGroupService["workbench"] = outputWorkbench.serializeWorkbench();
+      nodesGroupService["workbench"] = outputWorkbench.serialize();
 
       // Use editorValues
       const innerNodes = this.getOutputWorkbench().getNodes(true);

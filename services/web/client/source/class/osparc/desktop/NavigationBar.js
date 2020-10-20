@@ -63,7 +63,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
   events: {
     "nodeSelected": "qx.event.type.Data",
-    "dashboardPressed": "qx.event.type.Event"
+    "dashboardPressed": "qx.event.type.Event",
+    "slidesStart": "qx.event.type.Event",
+    "slidesStop": "qx.event.type.Event"
   },
 
   properties: {
@@ -71,23 +73,51 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       check: "osparc.data.model.Study",
       nullable: true,
       apply: "_applyStudy"
+    },
+
+    pageContext: {
+      check: ["dashboard", "workbench", "slideshow"],
+      nullable: false,
+      apply: "_applyPageContext"
     }
   },
 
   statics: {
     BUTTON_OPTIONS: {
-      font: "title-14",
+      font: "text-14",
       allowGrowY: false,
       minWidth: 32,
       minHeight: 32
+    },
+
+    PAGE_CONTEXT: {
+      0: "dashboard",
+      1: "workbench",
+      2: "slideshow"
+    },
+
+    areSlidesEnabled: function() {
+      return new Promise((resolve, reject) => {
+        osparc.utils.LibVersions.getPlatformName()
+          .then(platformName => {
+            if (["dev", "master"].includes(platformName)) {
+              resolve(true);
+            } else {
+              resolve(false);
+            }
+          });
+      });
     }
   },
 
   members: {
     __dashboardBtn: null,
     __dashboardLabel: null,
+    __startSlidesBtn: null,
+    __stopSlidesBtn: null,
     __studyTitle: null,
-    __mainViewCaptionLayout: null,
+    __workbenchNodesLayout: null,
+    __guidedNodesLayout: null,
 
     buildLayout: function() {
       this.getChildControl("logo");
@@ -96,13 +126,39 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
       this.__dashboardBtn = this.getChildControl("dashboard-button");
       this.__dashboardLabel = this.getChildControl("dashboard-label");
-      this.__dashboardContext();
 
       this._add(new qx.ui.core.Spacer(20));
 
-      const studyTitle = this.__studyTitle = this.__createStudyTitle();
-      this._add(studyTitle);
-      this.__mainViewCaptionLayout = this.getChildControl("study-path-container");
+      this.__startSlidesBtn = this.getChildControl("slideshow-start").set({
+        visibility: "excluded"
+      });
+      this.__stopSlidesBtn = this.getChildControl("slideshow-stop").set({
+        visibility: "excluded"
+      });
+
+      this._add(new qx.ui.core.Spacer(20));
+
+      const studyTitle = this.__studyTitle = this.getChildControl("study-title");
+      studyTitle.addListener("editValue", evt => {
+        if (evt.getData() !== studyTitle.getValue()) {
+          studyTitle.setFetching(true);
+          const params = {
+            name: evt.getData()
+          };
+          this.getStudy().updateStudy(params)
+            .then(() => {
+              studyTitle.setFetching(false);
+            })
+            .catch(err => {
+              studyTitle.setFetching(false);
+              console.error(err);
+              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the title."), "ERROR");
+            });
+        }
+      }, this);
+
+      this.__workbenchNodesLayout = this.getChildControl("workbench-nodes-path-container");
+      this.__guidedNodesLayout = this.getChildControl("guided-nodes-path-container");
 
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
@@ -112,6 +168,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       this.getChildControl("feedback");
       this.getChildControl("theme-switch");
       this.getChildControl("user-menu");
+
+      this.setPageContext("dashboard");
     },
 
     _createChildControlImpl: function(id) {
@@ -123,9 +181,11 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           break;
         }
         case "dashboard-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/14");
+          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/16").set({
+            ...this.self().BUTTON_OPTIONS,
+            font: "title-14"
+          });
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
-          control.set(this.self().BUTTON_OPTIONS);
           control.addListener("execute", () => {
             this.fireEvent("dashboardPressed");
           }, this);
@@ -137,26 +197,43 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           });
           this._add(control);
           break;
-        case "study-path-container":
+        case "slideshow-start":
+          control = this.__createSlideStartBtn();
+          this._add(control);
+          break;
+        case "slideshow-stop":
+          control = this.__createSlideStopBtn();
+          this._add(control);
+          break;
+        case "study-title":
+          control = new osparc.ui.form.EditLabel().set({
+            visibility: "excluded",
+            labelFont: "title-14",
+            inputFont: "text-14",
+            editable: osparc.data.Permissions.getInstance().canDo("study.update")
+          });
+          this._add(control);
+          break;
+        case "workbench-nodes-path-container":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignY: "middle"
           }));
           this._add(control);
           break;
+        case "guided-nodes-path-container":
+          control = new qx.ui.toolbar.Part().set({
+            alignY: "middle"
+          });
+          this._add(control);
+          break;
         case "manual":
           control = this.__createManualMenuBtn();
-          control.set({
-            ...this.self().BUTTON_OPTIONS,
-            font: "text-14"
-          });
+          control.set(this.self().BUTTON_OPTIONS);
           this._add(control);
           break;
         case "feedback":
           control = this.__createFeedbackMenuBtn();
-          control.set({
-            ...this.self().BUTTON_OPTIONS,
-            font: "text-14"
-          });
+          control.set(this.self().BUTTON_OPTIONS);
           this._add(control);
           break;
         case "theme-switch":
@@ -167,10 +244,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           break;
         case "user-menu":
           control = this.__createUserMenuBtn();
-          control.set({
-            ...this.self().BUTTON_OPTIONS,
-            font: "text-14"
-          });
+          control.set(this.self().BUTTON_OPTIONS);
           this._add(control);
           break;
       }
@@ -181,65 +255,206 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       return this.__dashboardBtn;
     },
 
-    setPathButtons: function(nodeIds) {
-      this.__mainViewCaptionLayout.removeAll();
-      nodeIds.length === 1 ? this.__studyTitle.show() : this.__studyTitle.exclude();
-      if (nodeIds.length === 0) {
-        this.__dashboardContext(true);
-        return;
-      }
-      this.__dashboardContext(false);
-      if (nodeIds.length === 1) {
-        return;
-      }
-
+    __createNodePathBtn: function(nodeId) {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      for (let i=0; i<nodeIds.length; i++) {
-        const btn = new qx.ui.form.Button().set(this.self().BUTTON_OPTIONS);
-        const nodeId = nodeIds[i];
-        if (nodeId === study.getUuid()) {
-          study.bind("name", btn, "label");
-        } else {
-          const node = study.getWorkbench().getNode(nodeId);
-          if (node) {
-            node.bind("label", btn, "label");
-          }
+      const btn = new qx.ui.form.Button().set({
+        ...this.self().BUTTON_OPTIONS,
+        maxWidth: 200
+      });
+      if (nodeId === study.getUuid()) {
+        study.bind("name", btn, "label");
+        study.bind("name", btn, "toolTipText");
+      } else {
+        const node = study.getWorkbench().getNode(nodeId);
+        if (node) {
+          node.bind("label", btn, "label");
+          node.bind("label", btn, "toolTipText");
         }
-        btn.addListener("execute", function() {
-          this.fireDataEvent("nodeSelected", nodeId);
-        }, this);
-        this.__mainViewCaptionLayout.add(btn);
+      }
+      btn.addListener("execute", () => {
+        this.fireDataEvent("nodeSelected", nodeId);
+      }, this);
+      return btn;
+    },
+
+    __createNodeSlideBtn: function(nodeId, pos) {
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const btn = new qx.ui.toolbar.RadioButton().set({
+        ...this.self().BUTTON_OPTIONS,
+        maxWidth: 200
+      });
+      const node = study.getWorkbench().getNode(nodeId);
+      if (node) {
+        node.bind("label", btn, "label", {
+          converter: val => (pos+1).toString() + " - " + val
+        });
+        node.bind("label", btn, "toolTipText");
+      }
+      btn.addListener("execute", () => {
+        this.fireDataEvent("nodeSelected", nodeId);
+      }, this);
+      return btn;
+    },
+
+    __setPathButtons: function(nodeIds) {
+      if (this.getPageContext() === "workbench") {
+        this.__setWorkbenchBtnsVis(true);
+        this.__setSlidesBtnsVis(false);
+
+        if (nodeIds.length > 1) {
+          this.__studyTitle.exclude();
+          this.__workbenchNodesLayout.show();
+        } else {
+          this.__studyTitle.show();
+          this.__workbenchNodesLayout.exclude();
+        }
+      } else {
+        this.__setWorkbenchBtnsVis(false);
+        this.__setSlidesBtnsVis(true);
+      }
+    },
+
+    __populateWorkbenchNodesLayout: function() {
+      const study = this.getStudy();
+      const nodeIds = study.getWorkbench().getPathIds(study.getUi().getCurrentNodeId());
+      this.__setPathButtons(nodeIds);
+
+      this.__workbenchNodesLayout.removeAll();
+      for (let i=0; i<nodeIds.length; i++) {
+        const nodeId = nodeIds[i];
+        const btn = this.__createNodePathBtn(nodeId);
+        this.__workbenchNodesLayout.add(btn);
 
         if (i<nodeIds.length-1) {
           const arrow = new qx.ui.basic.Label(">").set({
             font: "text-14"
           });
-          this.__mainViewCaptionLayout.add(arrow);
+          this.__workbenchNodesLayout.add(arrow);
         }
         if (i === nodeIds.length-1) {
-          this.__dashboardContext(false);
           btn.setFont("title-14");
         }
       }
     },
 
-    __dashboardContext: function(dashboardContext = true) {
-      this.__dashboardLabel.setVisibility(dashboardContext ? "visible" : "excluded");
-      this.__dashboardBtn.setVisibility(dashboardContext ? "excluded" : "visible");
+    __populateGuidedNodesLayout: function() {
+      const study = this.getStudy();
+      if (study) {
+        this.__guidedNodesLayout.removeAll();
+        const radioGroup = new qx.ui.form.RadioGroup();
+        const currentNodeId = study.getUi().getCurrentNodeId();
+        const slideShow = study.getUi().getSlideshow();
+        const nodes = [];
+        for (let nodeId in slideShow) {
+          const node = slideShow[nodeId];
+          nodes.push({
+            ...node,
+            nodeId
+          });
+        }
+        nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
+        let selectedBtn = null;
+        nodes.forEach(node => {
+          const btn = this.__createNodeSlideBtn(node.nodeId, node.position);
+          if (node.nodeId === currentNodeId) {
+            selectedBtn = btn;
+          }
+          this.__guidedNodesLayout.add(btn);
+          radioGroup.add(btn);
+        });
+        if (selectedBtn) {
+          radioGroup.setSelection([selectedBtn]);
+        }
+        radioGroup.setAllowEmptySelection(false);
+      }
     },
 
-    studySaved: function() {
-      for (let i=0; i<this.__mainViewCaptionLayout.getChildren().length; i++) {
-        let widget = this.__mainViewCaptionLayout.getChildren()[i];
-        if (widget instanceof qx.ui.form.Button) {
-          const waitFor = 500;
-          qx.event.Timer.once(ev => {
-            widget.removeState("hovered");
-          }, this, waitFor);
-          widget.addState("hovered");
-          return;
-        }
+    _applyPageContext: function(newCtxt) {
+      switch (newCtxt) {
+        case "dashboard":
+          this.__dashboardLabel.show();
+          this.__dashboardBtn.exclude();
+          this.__resetSlideBtnsVis(false);
+          this.__setWorkbenchBtnsVis(false);
+          this.__setSlidesBtnsVis(false);
+          break;
+        case "workbench":
+          this.__dashboardLabel.exclude();
+          this.__dashboardBtn.show();
+          this.__resetSlideBtnsVis(true);
+          this.__setWorkbenchBtnsVis(true);
+          this.__setSlidesBtnsVis(false);
+          this.__populateWorkbenchNodesLayout();
+          break;
+        case "slideshow":
+          this.__dashboardLabel.exclude();
+          this.__dashboardBtn.show();
+          this.__resetSlideBtnsVis(true);
+          this.__setWorkbenchBtnsVis(false);
+          this.__setSlidesBtnsVis(true);
+          this.__populateGuidedNodesLayout();
+          break;
       }
+    },
+
+    __resetSlideBtnsVis: function() {
+      this.self().areSlidesEnabled()
+        .then(areSlidesEnabled => {
+          const context = ["workbench", "slideshow"].includes(this.getPageContext());
+          if (areSlidesEnabled && context) {
+            const study = this.getStudy();
+            if (Object.keys(study.getUi().getSlideshow()).length) {
+              if (this.getPageContext() === "slideshow") {
+                this.__startSlidesBtn.exclude();
+                this.__stopSlidesBtn.show();
+              } else if (this.getPageContext() === "workbench") {
+                this.__startSlidesBtn.show();
+                this.__stopSlidesBtn.exclude();
+              }
+              return;
+            }
+          }
+          this.__startSlidesBtn.exclude();
+          this.__stopSlidesBtn.exclude();
+        });
+    },
+
+    __setWorkbenchBtnsVis: function(show) {
+      if (show) {
+        this.__studyTitle.show();
+        this.__workbenchNodesLayout.show();
+      } else {
+        this.__studyTitle.exclude();
+        this.__workbenchNodesLayout.exclude();
+      }
+    },
+
+    __setSlidesBtnsVis: function(show) {
+      if (show) {
+        this.__guidedNodesLayout.show();
+      } else {
+        this.__guidedNodesLayout.exclude();
+      }
+    },
+
+    __createSlideStartBtn: function() {
+      const startBtn = new qx.ui.form.Button(this.tr("Start Guided mode"), "@FontAwesome5Solid/caret-square-right/16").set({
+        ...this.self().BUTTON_OPTIONS
+      });
+      startBtn.addListener("execute", () => {
+        this.fireEvent("slidesStart");
+      }, this);
+      return startBtn;
+    },
+
+    __createSlideStopBtn: function() {
+      const stopBtn = new qx.ui.form.Button(this.tr("Stop Guided mode"), "@FontAwesome5Solid/stop/16").set({
+        ...this.self().BUTTON_OPTIONS
+      });
+      stopBtn.addListener("execute", () => {
+        this.fireEvent("slidesStop");
+      }, this);
+      return stopBtn;
     },
 
     __createManualMenuBtn: function() {
@@ -418,35 +633,17 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     _applyStudy: function(study) {
       if (study) {
         study.bind("name", this.__studyTitle, "value");
+        study.getUi().addListener("changeSlideshow", () => {
+          this.__resetSlideBtnsVis();
+        });
+        study.getUi().addListener("changeCurrentNodeId", () => {
+          if (this.getPageContext() === "workbench") {
+            this.__populateWorkbenchNodesLayout();
+          } else if (this.getPageContext() === "slideshow") {
+            this.__populateGuidedNodesLayout();
+          }
+        });
       }
-      this.__studyTitle.show();
-    },
-
-    __createStudyTitle: function() {
-      const studyTitle = new osparc.ui.form.EditLabel().set({
-        visibility: "excluded",
-        labelFont: "title-14",
-        inputFont: "text-14",
-        editable: osparc.data.Permissions.getInstance().canDo("study.update")
-      });
-      studyTitle.addListener("editValue", evt => {
-        if (evt.getData() !== this.__studyTitle.getValue()) {
-          this.__studyTitle.setFetching(true);
-          const params = {
-            name: evt.getData()
-          };
-          this.getStudy().updateStudy(params)
-            .then(() => {
-              this.__studyTitle.setFetching(false);
-            })
-            .catch(err => {
-              this.__studyTitle.setFetching(false);
-              console.error(err);
-              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the title."), "ERROR");
-            });
-        }
-      }, this);
-      return studyTitle;
     }
   }
 });

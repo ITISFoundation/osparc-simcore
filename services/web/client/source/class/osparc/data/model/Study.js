@@ -56,7 +56,8 @@ qx.Class.define("osparc.data.model.Study", {
     });
 
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
-    this.setWorkbench(new osparc.data.model.Workbench(wbData));
+    this.setWorkbench(new osparc.data.model.Workbench(wbData, studyData.ui));
+    this.setUi(new osparc.data.model.StudyUI(studyData.ui));
 
     this.setSweeper(new osparc.data.model.Sweeper(studyData));
   },
@@ -119,6 +120,11 @@ qx.Class.define("osparc.data.model.Study", {
 
     workbench: {
       check: "osparc.data.model.Workbench",
+      nullable: false
+    },
+
+    ui: {
+      check: "osparc.data.model.StudyUI",
       nullable: false
     },
 
@@ -201,6 +207,13 @@ qx.Class.define("osparc.data.model.Study", {
         return aceessRights[myGid]["delete"];
       }
       return false;
+    },
+
+    hasSlideshow: function(studyData) {
+      if ("ui" in studyData && "slideshow" in studyData["ui"] && Object.keys(studyData["ui"]["slideshow"]).length) {
+        return true;
+      }
+      return false;
     }
   },
 
@@ -239,17 +252,20 @@ qx.Class.define("osparc.data.model.Study", {
       }
     },
 
-    serializeStudy: function() {
+    serialize: function() {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
-        // TODO OM: Hacky
         if (key === "sweeper") {
           jsonObject["dev"] = {};
-          jsonObject["dev"]["sweeper"] = this.getSweeper().serializeSweeper();
+          jsonObject["dev"]["sweeper"] = this.getSweeper().serialize();
           return;
         }
-        let value = key === "workbench" ? this.getWorkbench().serializeWorkbench() : this.get(key);
+        if (key === "ui") {
+          jsonObject["ui"] = this.getUi().serialize();
+          return;
+        }
+        let value = key === "workbench" ? this.getWorkbench().serialize() : this.get(key);
         if (value !== null) {
           // only put the value in the payload if there is a value
           jsonObject[key] = value;
@@ -260,7 +276,7 @@ qx.Class.define("osparc.data.model.Study", {
 
     updateStudy: function(params) {
       return this.self().updateStudy({
-        ...this.serializeStudy(),
+        ...this.serialize(),
         ...params
       })
         .then(data => {
