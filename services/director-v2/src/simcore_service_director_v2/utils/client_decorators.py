@@ -1,5 +1,11 @@
 """ Collection of decorators for httpx request functions
 
+    Each decorator implements a specific feature on the request workflow:
+    - retrial
+    - error handling
+    - TODO: circuit breaker?
+    - TODO: diagnostic tracker?
+    - TODO: cache?
 """
 
 import functools
