@@ -6,10 +6,16 @@ import sys
 import time
 from pathlib import Path
 from pprint import pprint
+from typing import Dict
 
 import pytest
+import sqlalchemy as sa
 from aiohttp import web
+from yarl import URL
+
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import LoggedUser
+from pytest_simcore.helpers.utils_projects import NewProject
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_postgres_database.webserver_models import (
@@ -26,7 +32,6 @@ from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-from yarl import URL
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -40,7 +45,7 @@ core_services = ["director", "rabbit", "postgres", "sidecar", "storage", "redis"
 
 ops_services = [
     "minio",
-] + ["adminer", "portainer", "redis-commander"]
+]
 
 
 @pytest.fixture
@@ -82,7 +87,7 @@ def client(
 
 
 @pytest.fixture(scope="session")
-def mock_workbench_adjacency_list():
+def mock_workbench_adjacency_list() -> Dict:
     file_path = current_dir / "workbench_sleeper_dag_adjacency_list.json"
     with file_path.open() as fp:
         return json.load(fp)
@@ -174,16 +179,16 @@ async def test_check_health(loop, mock_orphaned_services, docker_stack, client):
     ],
 )
 async def test_start_pipeline(
-    rabbit_service,
-    postgres_session,
-    redis_service,
-    simcore_services,
-    sleeper_service,
+    rabbit_service: str,
+    postgres_session: sa.orm.session.Session,
+    redis_service: URL,
+    simcore_services: Dict[str, URL],
+    sleeper_service: Dict[str, str],
     client,
-    logged_user,
-    user_project,
-    mock_workbench_adjacency_list,
-    expected_response,
+    logged_user: LoggedUser,
+    user_project: NewProject,
+    mock_workbench_adjacency_list: Dict,
+    expected_response: web.Response,
 ):
     project_id = user_project["uuid"]
     mock_workbench_payload = user_project["workbench"]
