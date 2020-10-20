@@ -84,7 +84,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
   statics: {
     BUTTON_OPTIONS: {
-      font: "title-14",
+      font: "text-14",
       allowGrowY: false,
       minWidth: 32,
       minHeight: 32
@@ -179,9 +179,11 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           break;
         }
         case "dashboard-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/16");
+          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/16").set({
+            ...this.self().BUTTON_OPTIONS,
+            font: "title-14"
+          });
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
-          control.set(this.self().BUTTON_OPTIONS);
           control.addListener("execute", () => {
             this.fireEvent("dashboardPressed");
           }, this);
@@ -220,18 +222,12 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           break;
         case "manual":
           control = this.__createManualMenuBtn();
-          control.set({
-            ...this.self().BUTTON_OPTIONS,
-            font: "text-14"
-          });
+          control.set(this.self().BUTTON_OPTIONS);
           this._add(control);
           break;
         case "feedback":
           control = this.__createFeedbackMenuBtn();
-          control.set({
-            ...this.self().BUTTON_OPTIONS,
-            font: "text-14"
-          });
+          control.set(this.self().BUTTON_OPTIONS);
           this._add(control);
           break;
         case "theme-switch":
@@ -242,10 +238,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           break;
         case "user-menu":
           control = this.__createUserMenuBtn();
-          control.set({
-            ...this.self().BUTTON_OPTIONS,
-            font: "text-14"
-          });
+          control.set(this.self().BUTTON_OPTIONS);
           this._add(control);
           break;
       }
@@ -258,16 +251,21 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     __createNodePathBtn: function(nodeId) {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const btn = new qx.ui.form.Button().set(this.self().BUTTON_OPTIONS);
+      const btn = new qx.ui.form.Button().set({
+        ...this.self().BUTTON_OPTIONS,
+        maxWidth: 200
+      });
       if (nodeId === study.getUuid()) {
         study.bind("name", btn, "label");
+        study.bind("name", btn, "toolTipText");
       } else {
         const node = study.getWorkbench().getNode(nodeId);
         if (node) {
           node.bind("label", btn, "label");
+          node.bind("label", btn, "toolTipText");
         }
       }
-      btn.addListener("execute", function() {
+      btn.addListener("execute", () => {
         this.fireDataEvent("nodeSelected", nodeId);
       }, this);
       return btn;
@@ -275,14 +273,18 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     __createNodeSlideBtn: function(nodeId, pos) {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const btn = new qx.ui.toolbar.RadioButton().set(this.self().BUTTON_OPTIONS);
+      const btn = new qx.ui.toolbar.RadioButton().set({
+        ...this.self().BUTTON_OPTIONS,
+        maxWidth: 200
+      });
       const node = study.getWorkbench().getNode(nodeId);
       if (node) {
         node.bind("label", btn, "label", {
           converter: val => (pos+1).toString() + " - " + val
         });
+        node.bind("label", btn, "toolTipText");
       }
-      btn.addListener("execute", function() {
+      btn.addListener("execute", () => {
         this.fireDataEvent("nodeSelected", nodeId);
       }, this);
       return btn;
