@@ -142,7 +142,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       rect.remove();
     },
 
-    updateColor: function(curve, color) {
+    updateCurveColor: function(curve, color) {
       if (curve.type === "path") {
         curve.attr({
           stroke: color
