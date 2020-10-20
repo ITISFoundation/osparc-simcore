@@ -1,7 +1,3 @@
-from typing import Callable
-
-from fastapi import FastAPI
-
 from ..meta import __version__, project_name
 
 #
@@ -20,16 +16,10 @@ ______ _               _
 )
 
 
-def create_start_app_handler(_app: FastAPI) -> Callable:
-    def on_startup() -> None:
-        print(WELCOME_MSG)
-
-    return on_startup
+def on_startup() -> None:
+    print(WELCOME_MSG)
 
 
-def create_stop_app_handler(_app: FastAPI) -> Callable:
-    def on_shutdown() -> None:
-        msg = project_name + f" v{__version__} SHUT DOWN"
-        print(f"{msg:=^100}")
-
-    return on_shutdown
+def on_shutdown() -> None:
+    msg = project_name + f" v{__version__} SHUT DOWN"
+    print(f"{msg:=^100}")

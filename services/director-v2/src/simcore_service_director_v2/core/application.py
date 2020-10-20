@@ -8,7 +8,7 @@ from ..api.entrypoints import api_router
 from ..api.errors.http_error import http_error_handler
 from ..meta import api_version, api_vtag, project_name, summary
 from ..modules import director_v0, docker_registry, remote_debug
-from .events import create_start_app_handler, create_stop_app_handler
+from .events import on_shutdown, on_startup
 from .settings import AppSettings, BootModeEnum
 
 logger = logging.getLogger(__name__)
@@ -43,8 +43,8 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings.registry.enabled:
         docker_registry.setup(app, settings.registry)
 
-    app.add_event_handler("startup", create_start_app_handler(app))
-    app.add_event_handler("shutdown", create_stop_app_handler(app))
+    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", on_shutdown)
 
     app.add_exception_handler(HTTPException, http_error_handler)
 
