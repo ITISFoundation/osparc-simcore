@@ -432,13 +432,15 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     __createSlideBtns: function() {
       const menu = new qx.ui.toolbar.Part();
 
-      const startBtn = this.__startSlidesBtn = new qx.ui.toolbar.Button(this.tr("Start Guided mode"), "@FontAwesome5Solid/caret-square-right/18");
+      const startBtn = this.__startSlidesBtn = new qx.ui.toolbar.Button(this.tr("Start Guided mode"), "@FontAwesome5Solid/caret-square-right/16");
+      startBtn.set(this.self().BUTTON_OPTIONS);
       startBtn.addListener("execute", () => {
         this.fireEvent("slidesStart");
       }, this);
       menu.add(startBtn);
 
-      const stopBtn = this.__stopSlidesBtn = new qx.ui.toolbar.Button(this.tr("Stop Guided mode"), "@FontAwesome5Solid/stop/18");
+      const stopBtn = this.__stopSlidesBtn = new qx.ui.toolbar.Button(this.tr("Stop Guided mode"), "@FontAwesome5Solid/stop/16");
+      stopBtn.set(this.self().BUTTON_OPTIONS);
       stopBtn.addListener("execute", () => {
         this.fireEvent("slidesStop");
       }, this);
