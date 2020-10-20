@@ -38,8 +38,6 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 API_VERSION = "v0"
 API_PREFIX = "/" + API_VERSION
 
-# TODO: create conftest at computation/ folder level
-
 # Selection of core and tool services started in this swarm fixture (integration)
 core_services = ["director", "rabbit", "postgres", "sidecar", "storage", "redis"]
 
