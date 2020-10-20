@@ -9,7 +9,7 @@ import httpx
 from fastapi import FastAPI
 
 from ..core.settings import DirectorV0Settings
-from ..utils.client_policies import handle_response, handle_retry
+from ..utils.client_decorators import handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class DirectorV0Client:
     def instance(cls, app: FastAPI):
         return app.state.director_v0_client
 
-    @handle_response("Director", logger)
+    @handle_errors("Director", logger)
     @handle_retry(logger)
     async def request(self, method: str, tail_path: str, **kwargs):
         return await self.client.request(method, tail_path, **kwargs)
