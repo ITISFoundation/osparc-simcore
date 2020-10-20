@@ -414,6 +414,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
               return;
             }
           }
+          this.__startSlidesBtn.exclude();
+          this.__stopSlidesBtn.exclude();
         });
     },
 
