@@ -261,6 +261,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         studyEditor.setPageContext("slideshow");
       } else {
         this.__navBar.setPageContext("workbench");
+        studyEditor.setPageContext("workbench");
       }
 
       this.__studyEditor.addListener("studyIsLocked", () => {
