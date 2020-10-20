@@ -113,7 +113,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
   members: {
     __dashboardBtn: null,
     __dashboardLabel: null,
-    __slideBtns: null,
     __startSlidesBtn: null,
     __stopSlidesBtn: null,
     __studyTitle: null,
@@ -130,7 +129,10 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
       this._add(new qx.ui.core.Spacer(20));
 
-      this.__slideBtns = this.getChildControl("slideshow-buttons").set({
+      this.__startSlidesBtn = this.getChildControl("slideshow-start").set({
+        visibility: "excluded"
+      });
+      this.__stopSlidesBtn = this.getChildControl("slideshow-stop").set({
         visibility: "excluded"
       });
 
@@ -195,8 +197,12 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           });
           this._add(control);
           break;
-        case "slideshow-buttons":
-          control = this.__createSlideBtns();
+        case "slideshow-start":
+          control = this.__createSlideStartBtn();
+          this._add(control);
+          break;
+        case "slideshow-stop":
+          control = this.__createSlideStopBtn();
           this._add(control);
           break;
         case "study-title":
@@ -398,7 +404,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           if (areSlidesEnabled && context) {
             const study = this.getStudy();
             if (Object.keys(study.getUi().getSlideshow()).length) {
-              this.__slideBtns.show();
               if (this.getPageContext() === "slideshow") {
                 this.__startSlidesBtn.exclude();
                 this.__stopSlidesBtn.show();
@@ -409,7 +414,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
               return;
             }
           }
-          this.__slideBtns.exclude();
         });
     },
 
@@ -431,24 +435,24 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       }
     },
 
-    __createSlideBtns: function() {
-      const menu = new qx.ui.toolbar.Part();
-
-      const startBtn = this.__startSlidesBtn = new qx.ui.toolbar.Button(this.tr("Start Guided mode"), "@FontAwesome5Solid/caret-square-right/16");
-      startBtn.set(this.self().BUTTON_OPTIONS);
+    __createSlideStartBtn: function() {
+      const startBtn = new qx.ui.form.Button(this.tr("Start Guided mode"), "@FontAwesome5Solid/caret-square-right/16").set({
+        ...this.self().BUTTON_OPTIONS
+      });
       startBtn.addListener("execute", () => {
         this.fireEvent("slidesStart");
       }, this);
-      menu.add(startBtn);
+      return startBtn;
+    },
 
-      const stopBtn = this.__stopSlidesBtn = new qx.ui.toolbar.Button(this.tr("Stop Guided mode"), "@FontAwesome5Solid/stop/16");
-      stopBtn.set(this.self().BUTTON_OPTIONS);
+    __createSlideStopBtn: function() {
+      const stopBtn = new qx.ui.form.Button(this.tr("Stop Guided mode"), "@FontAwesome5Solid/stop/16").set({
+        ...this.self().BUTTON_OPTIONS
+      });
       stopBtn.addListener("execute", () => {
         this.fireEvent("slidesStop");
       }, this);
-      menu.add(stopBtn);
-
-      return menu;
+      return stopBtn;
     },
 
     __createManualMenuBtn: function() {
