@@ -1,5 +1,5 @@
 # pylint: disable=unused-argument
-# pylint: disable=redefine-outer-name
+# pylint: disable=redefined-outer-name
 import asyncio
 import json
 from pprint import pformat
