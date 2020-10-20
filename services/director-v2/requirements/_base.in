@@ -5,8 +5,9 @@
 
 # fastapi and extensions
 fastapi[all]
-async-exit-stack  # not needed when python>=3.7
-async-generator   # not needed when python>=3.7
+async-exit-stack; python_version < '3.7'
+async-generator; python_version < '3.7'
+dataclasses; python_version < '3.7'
 
 # data models
 pydantic[dotenv]

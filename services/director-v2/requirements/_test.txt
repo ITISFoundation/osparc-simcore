@@ -10,8 +10,8 @@ aiohttp==3.6.3            # via -r requirements/_base.txt, aiodocker, pytest-aio
 alembic==1.4.3            # via -r requirements/_test.in
 aniso8601==7.0.0          # via -r requirements/_base.txt, graphene
 astroid==2.4.2            # via pylint
-async-exit-stack==1.0.1   # via -r requirements/_base.txt, fastapi
-async-generator==1.10     # via -r requirements/_base.txt, fastapi
+async-exit-stack==1.0.1 ; python_version < "3.7"  # via -r requirements/_base.txt, fastapi
+async-generator==1.10 ; python_version < "3.7"  # via -r requirements/_base.txt, fastapi
 async-timeout==3.0.1      # via -r requirements/_base.txt, aiohttp
 attrs==20.2.0             # via -r requirements/_base.txt, aiohttp, jsonschema, pytest, pytest-docker
 bcrypt==3.2.0             # via paramiko
@@ -25,7 +25,7 @@ contextvars==2.4          # via sniffio
 coverage==5.3             # via codecov, coveralls, pytest-cov
 coveralls==2.1.2          # via -r requirements/_test.in
 cryptography==3.1.1       # via paramiko
-dataclasses==0.7          # via -r requirements/_base.txt, pydantic
+dataclasses==0.7 ; python_version < "3.7"  # via -r requirements/_base.txt, pydantic
 distro==1.5.0             # via docker-compose
 dnspython==2.0.0          # via -r requirements/_base.txt, email-validator
 docker-compose==1.27.4    # via pytest-docker
