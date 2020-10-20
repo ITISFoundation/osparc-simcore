@@ -38,8 +38,7 @@ def setup(app: FastAPI, settings: RegistrySettings):
 # Module's business logic ---------------------------------------------
 #
 # TODO: this is totally unfinished!!
-#
-# TODO: create a fetcher around the client whose responsitiblity is
+# TODO: use utils.client_decorators to implement
 #    - retrial
 #    - circuit breaker
 #    - diagnostic tracker
@@ -66,7 +65,7 @@ class RegistryApiClient:
         return auth
 
     async def list_repositories(self, number_of_retrieved_repos=50) -> List[str]:
-        ## r"^<https://foo\.com\/v2\/(.*)>\;"
+        # NOTE: r"^<https://foo\.com\/v2\/(.*)>\;"
         r = await self.client.get("/_catalog", params={"n": number_of_retrieved_repos})
         repos = r.json().get("repositories")
 
@@ -85,29 +84,30 @@ class RegistryApiClient:
         # returning domain models here or outside??
         return repos
 
+
     async def list_image_tags(self, image_key: str) -> List[str]:
-        pass
+        raise NotImplementedError()
 
     async def get_image_labels(self, image_key: str, tag: str) -> Dict:
-        pass
+        raise NotImplementedError()
 
     async def get_image_details(self, image_key: str, image_tag: str) -> Dict:
-        pass
+        raise NotImplementedError()
 
     async def get_repo_details(self, image_key: str) -> List[Dict]:
-        pass
+        raise NotImplementedError()
 
     async def list_services(
         self,  # service_type: ServiceType
     ) -> List[Dict]:
-        pass
+        raise NotImplementedError()
 
     async def list_interactive_service_dependencies(
         self, service_key: str, service_tag: str
     ) -> List[Dict]:
-        pass
+        raise NotImplementedError()
 
     async def get_service_extras(
         self, image_key: str, image_tag: str
     ) -> Dict[str, str]:
-        pass
+        raise NotImplementedError()
