@@ -8,6 +8,7 @@ use a look ahead function to check the type of upcoming task and
 schedule it accordingly.
 """
 from asyncio import CancelledError
+from pprint import pformat
 from typing import Optional, Tuple
 
 from celery import Celery, states
@@ -102,6 +103,7 @@ def shared_task_dispatch(
     log.info("Sidecar successfuly completed run.")
     celery_request.update_state(state=states.SUCCESS)
     if next_task_nodes:
+        log.debug("dispatching other tasks: %s", pformat(next_task_nodes))
         for _node_id in next_task_nodes:
             if not celery_request.is_aborted():
                 dispatch_comp_task(user_id, project_id, _node_id)
