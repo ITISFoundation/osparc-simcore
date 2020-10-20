@@ -3,15 +3,15 @@
 #
 # NOTE: ALL version constraints MUST be commented
 
+async-exit-stack; python_version < '3.7'
+async-generator ; python_version < '3.7'
+dataclasses ; python_version < '3.7'
+
 # fastapi and extensions
 fastapi[all]
-async-exit-stack; python_version < '3.7'
-async-generator; python_version < '3.7'
-dataclasses; python_version < '3.7'
 
 # data models
 pydantic[dotenv]
-
 
 # docker daemon
 aiodocker
