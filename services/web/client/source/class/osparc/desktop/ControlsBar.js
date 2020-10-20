@@ -107,15 +107,15 @@ qx.Class.define("osparc.desktop.ControlsBar", {
         this.add(groupCtrls);
       }
 
-      const iterationCtrls = new qx.ui.toolbar.Part();
-      const sweeperButton = this.__createShowSweeperButton();
-      iterationCtrls.add(sweeperButton);
+      const moreCtrls = new qx.ui.toolbar.Part();
       osparc.data.model.Sweeper.isSweeperEnabled()
         .then(isSweeperEnabled => {
           if (isSweeperEnabled) {
-            this.add(iterationCtrls);
+            const sweeperButton = this.__createShowSweeperButton();
+            moreCtrls.add(sweeperButton);
           }
         });
+      this.add(moreCtrls);
 
       const simCtrls = new qx.ui.toolbar.Part();
       const startButton = this.__createStartButton();

@@ -388,6 +388,7 @@ async def _new_project(
             "workbench": {},
             "tags": [],
             "classifiers": [],
+            "ui": {},
             "dev": {},
         }
         if project:

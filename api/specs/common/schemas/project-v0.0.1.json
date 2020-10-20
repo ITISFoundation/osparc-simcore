@@ -101,14 +101,13 @@
     "workbench": {
       "type": "object",
       "patternProperties": {
-        "^\\S+$": {
+        "^\\d+$": {
           "type": "object",
           "additionalProperties": false,
           "required": [
             "key",
             "version",
-            "label",
-            "position"
+            "label"
           ],
           "properties": {
             "key": {
@@ -316,12 +315,21 @@
               ],
               "properties": {
                 "x": {
-                  "type": "integer"
+                  "type": "integer",
+                  "description": "The x position",
+                  "example": [
+                    "12"
+                  ]
                 },
                 "y": {
-                  "type": "integer"
+                  "type": "integer",
+                  "description": "The y position",
+                  "example": [
+                    "15"
+                  ]
                 }
-              }
+              },
+              "deprecated": true
             },
             "state": {
               "title": "RunningState",
@@ -337,6 +345,72 @@
                 "FAILURE"
               ],
               "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "workbench": {
+          "type": "object",
+          "patternProperties": {
+            "^\\S+$": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "position"
+              ],
+              "properties": {
+                "position": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "x",
+                    "y"
+                  ],
+                  "properties": {
+                    "x": {
+                      "type": "integer",
+                      "description": "The x position",
+                      "example": [
+                        "12"
+                      ]
+                    },
+                    "y": {
+                      "type": "integer",
+                      "description": "The y position",
+                      "example": [
+                        "15"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "slideshow": {
+          "type": "object",
+          "patternProperties": {
+            "^\\S+$": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "position"
+              ],
+              "properties": {
+                "position": {
+                  "type": "integer",
+                  "description": "Slide's position",
+                  "examples": [
+                    0,
+                    2
+                  ]
+                }
+              }
             }
           }
         }

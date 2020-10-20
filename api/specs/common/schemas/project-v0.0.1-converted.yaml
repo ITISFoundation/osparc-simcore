@@ -80,7 +80,6 @@ properties:
           - key
           - version
           - label
-          - position
         properties:
           key:
             type: string
@@ -230,6 +229,7 @@ properties:
                 type: integer
               'y':
                 type: integer
+            deprecated: true
           state:
             title: RunningState
             description: the node's running state
@@ -244,6 +244,47 @@ properties:
               - FAILURE
             type: string
     additionalProperties: true
+  ui:
+    type: object
+    additionalProperties: true
+    properties:
+      workbench:
+        type: object
+        x-patternProperties:
+          ^\S+$:
+            type: object
+            additionalProperties: false
+            required:
+              - position
+            properties:
+              position:
+                type: object
+                additionalProperties: false
+                required:
+                  - x
+                  - 'y'
+                properties:
+                  x:
+                    type: integer
+                  'y':
+                    type: integer
+        additionalProperties: true
+      slideshow:
+        type: object
+        x-patternProperties:
+          ^\S+$:
+            type: object
+            additionalProperties: false
+            required:
+              - position
+            properties:
+              position:
+                type: integer
+                description: Slide's position
+                example:
+                  - 0
+                  - 2
+        additionalProperties: true
   tags:
     type: array
     items:

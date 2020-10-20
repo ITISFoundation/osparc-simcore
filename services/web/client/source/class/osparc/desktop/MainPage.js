@@ -83,6 +83,20 @@ qx.Class.define("osparc.desktop.MainPage", {
         }
       }, this);
 
+      navBar.addListener("slidesStart", () => {
+        if (this.__studyEditor) {
+          navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT[2]);
+          this.__studyEditor.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT[2]);
+        }
+      }, this);
+
+      navBar.addListener("slidesStop", () => {
+        if (this.__studyEditor) {
+          navBar.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT[1]);
+          this.__studyEditor.setPageContext(osparc.desktop.NavigationBar.PAGE_CONTEXT[1]);
+        }
+      }, this);
+
       navBar.addListener("nodeSelected", e => {
         if (this.__studyEditor) {
           let nodeId = e.getData();
@@ -142,8 +156,8 @@ qx.Class.define("osparc.desktop.MainPage", {
         exploreBrowser
       ].forEach(browser => {
         browser.addListener("startStudy", e => {
-          const studyId = e.getData();
-          this.__startStudy(studyId);
+          const startStudyData = e.getData();
+          this.__startStudy(startStudyData);
         }, this);
       });
 
@@ -161,7 +175,8 @@ qx.Class.define("osparc.desktop.MainPage", {
 
       this.__mainStack.setSelection([this.__dashboardLayout]);
       this.__dashboard.getStudyBrowser().reloadUserStudies();
-      this.__navBar.setPathButtons([]);
+      this.__navBar.setStudy(null);
+      this.__navBar.setPageContext("dashboard");
       if (this.__studyEditor) {
         this.__studyEditor.destruct();
       }
@@ -182,7 +197,11 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__mainStack.setSelection([this.__studyEditor]);
     },
 
-    __startStudy: function(studyId) {
+    __startStudy: function(startStudyData) {
+      const {
+        studyId,
+        pageContext
+      } = startStudyData;
       this.__showLoadingPage(this.tr("Loading Study"));
 
       const params = {
@@ -215,9 +234,9 @@ qx.Class.define("osparc.desktop.MainPage", {
                 throw new Error(msg);
               }
               this.__showStudyEditor(this.__getStudyEditor());
-              this.__studyEditor.setStudy(latestStudyData)
+              this.__studyEditor.setStudyData(latestStudyData)
                 .then(() => {
-                  this.__syncStudyEditor();
+                  this.__syncStudyEditor(pageContext);
                 });
             })
             .catch(err => {
@@ -233,34 +252,28 @@ qx.Class.define("osparc.desktop.MainPage", {
         });
     },
 
-    __syncStudyEditor: function() {
+    __syncStudyEditor: function(pageContext) {
       const studyEditor = this.__studyEditor;
       const study = studyEditor.getStudy();
       this.__navBar.setStudy(study);
-      this.__navBar.setPathButtons(this.__studyEditor.getCurrentPathIds());
-
-      this.__studyEditor.addListener("changeMainViewCaption", ev => {
-        const elements = ev.getData();
-        this.__navBar.setPathButtons(elements);
-      }, this);
+      if (pageContext === "slideshow") {
+        this.__navBar.setPageContext("slideshow");
+        studyEditor.setPageContext("slideshow");
+      } else {
+        this.__navBar.setPageContext("workbench");
+        studyEditor.setPageContext("workbench");
+      }
 
       this.__studyEditor.addListener("studyIsLocked", () => {
         this.__showDashboard();
-      }, this);
-
-      this.__studyEditor.addListener("studySaved", ev => {
-        const wasSaved = ev.getData();
-        if (wasSaved) {
-          this.__navBar.studySaved();
-        }
       }, this);
     },
 
     __getStudyEditor: function() {
       const studyEditor = this.__studyEditor || new osparc.desktop.StudyEditor();
       studyEditor.addListenerOnce("startStudy", e => {
-        const studyId = e.getData();
-        this.__startStudy(studyId);
+        const startStudyData = e.getData();
+        this.__startStudy(startStudyData);
       }, this);
       return studyEditor;
     }
