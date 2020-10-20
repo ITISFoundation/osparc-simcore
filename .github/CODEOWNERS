@@ -15,6 +15,7 @@ Makefile                                  @pcrespov, @sanderegg
 /scripts/json-schema-to-openapi-schema    @sanderegg
 /scripts/template-projects                @odeimaiz, @pcrespov
 /services/api-server                      @pcrespov
+/services/director*                       @sanderegg, @pcrespov
 /services/catalog                         @pcrespov, @sanderegg
 /services/migration                       @pcrespov
 /services/sidecar                         @pcrespov, @mguidon
