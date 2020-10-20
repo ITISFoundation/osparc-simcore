@@ -1,115 +1,115 @@
 {
-    "workbench": {
-        "f6f67f96-ad56-47ac-a658-1a8b93dde1f0": {
-            "key": "simcore/services/frontend/file-picker",
-            "version": "1.0.0",
-            "label": "File Picker",
-            "inputs": {},
-            "inputNodes": [],
-            "outputs": {
-                "outFile": {
-                    "store": "0",
-                    "path": "885f2bb2-5c6a-439a-b55d-b1c422bbf998/e92dcf7c-af2a-4a56-b62e-b72ab86e2444/allresult_1Hz.txt"
-                }
-            },
-            "parent": null,
-            "progress": 0,
-            "thumbnail": "",
-            "position": {
-                "x": 0,
-                "y": 0
-            }
-        },
-        "ee8d7b25-f203-4472-9210-86409b4364e2": {
-            "key": "simcore/services/comp/itis/sleeper",
-            "version": "1.0.0",
-            "label": "sleeper",
-            "inputs": {
-                "in_1": null,
-                "in_2": 2
-            },
-            "inputNodes": [
-                "f6f67f96-ad56-47ac-a658-1a8b93dde1f0"
-            ],
-            "outputs": {},
-            "parent": null,
-            "progress": 0,
-            "thumbnail": "",
-            "position": {
-                "x": 0,
-                "y": 0
-            }
-        },
-        "884fa617-615f-407b-ad41-88c899561cda": {
-            "key": "simcore/services/comp/itis/sleeper",
-            "version": "1.0.0",
-            "label": "sleeper",
-            "inputs": {
-                "in_1": null,
-                "in_2": 2
-            },
-            "inputNodes": [],
-            "outputs": {},
-            "parent": null,
-            "progress": 0,
-            "thumbnail": "",
-            "position": {
-              "x": 0,
-              "y": 0
-            }
-        },
-        "d5012020-7a5d-4b04-a017-9560fa1ede7e": {
-            "key": "simcore/services/comp/itis/sleeper",
-            "version": "1.0.0",
-            "label": "sleeper",
-            "inputs": {
-                "in_1": {
-                    "nodeUuid": "884fa617-615f-407b-ad41-88c899561cda",
-                    "output": "out_1"
-                },
-                "in_2": {
-                    "nodeUuid": "884fa617-615f-407b-ad41-88c899561cda",
-                    "output": "out_2"
-                }
-            },
-            "inputNodes": [
-                "884fa617-615f-407b-ad41-88c899561cda"
-            ],
-            "outputs": {},
-            "parent": null,
-            "progress": 0,
-            "thumbnail": "",
-            "position": {
-                "x": 0,
-                "y": 0
-            }
-        },
-        "c5ff9180-702e-4b6e-af26-b88b190dcd6f": {
-            "key": "simcore/services/comp/itis/sleeper",
-            "version": "1.0.0",
-            "label": "sleeper",
-            "inputs": {
-                "in_1": {
-                    "nodeUuid": "ee8d7b25-f203-4472-9210-86409b4364e2",
-                    "output": "out_1"
-                },
-                "in_2": {
-                    "nodeUuid": "d5012020-7a5d-4b04-a017-9560fa1ede7e",
-                    "output": "out_2"
-                }
-            },
-            "inputNodes": [
-                "ee8d7b25-f203-4472-9210-86409b4364e2",
-                "d5012020-7a5d-4b04-a017-9560fa1ede7e"
-            ],
-            "outputs": {},
-            "parent": null,
-            "progress": 0,
-            "thumbnail": "",
-            "position": {
-                "x": 0,
-                "y": 0
-            }
+  "workbench": {
+    "f6f67f96-ad56-47ac-a658-1a8b93dde1f0": {
+      "key": "simcore/services/frontend/file-picker",
+      "version": "1.0.0",
+      "label": "File Picker",
+      "inputs": {},
+      "inputNodes": [],
+      "outputs": {
+        "outFile": {
+          "store": "0",
+          "path": "885f2bb2-5c6a-439a-b55d-b1c422bbf998/e92dcf7c-af2a-4a56-b62e-b72ab86e2444/allresult_1Hz.txt"
         }
+      },
+      "parent": null,
+      "progress": 0,
+      "thumbnail": "",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "ee8d7b25-f203-4472-9210-86409b4364e2": {
+      "key": "simcore/services/comp/itis/sleeper",
+      "version": "1.0.0",
+      "label": "sleeper",
+      "inputs": {
+        "in_1": null,
+        "in_2": 2
+      },
+      "inputNodes": [
+        "f6f67f96-ad56-47ac-a658-1a8b93dde1f0"
+      ],
+      "outputs": {},
+      "parent": null,
+      "progress": 0,
+      "thumbnail": "",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "884fa617-615f-407b-ad41-88c899561cda": {
+      "key": "simcore/services/comp/itis/sleeper",
+      "version": "1.0.0",
+      "label": "sleeper",
+      "inputs": {
+        "in_1": null,
+        "in_2": 10
+      },
+      "inputNodes": [],
+      "outputs": {},
+      "parent": null,
+      "progress": 0,
+      "thumbnail": "",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "d5012020-7a5d-4b04-a017-9560fa1ede7e": {
+      "key": "simcore/services/comp/itis/sleeper",
+      "version": "1.0.0",
+      "label": "sleeper",
+      "inputs": {
+        "in_1": {
+          "nodeUuid": "884fa617-615f-407b-ad41-88c899561cda",
+          "output": "out_1"
+        },
+        "in_2": {
+          "nodeUuid": "884fa617-615f-407b-ad41-88c899561cda",
+          "output": "out_2"
+        }
+      },
+      "inputNodes": [
+        "884fa617-615f-407b-ad41-88c899561cda"
+      ],
+      "outputs": {},
+      "parent": null,
+      "progress": 0,
+      "thumbnail": "",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "c5ff9180-702e-4b6e-af26-b88b190dcd6f": {
+      "key": "simcore/services/comp/itis/sleeper",
+      "version": "1.0.0",
+      "label": "sleeper",
+      "inputs": {
+        "in_1": {
+          "nodeUuid": "ee8d7b25-f203-4472-9210-86409b4364e2",
+          "output": "out_1"
+        },
+        "in_2": {
+          "nodeUuid": "d5012020-7a5d-4b04-a017-9560fa1ede7e",
+          "output": "out_2"
+        }
+      },
+      "inputNodes": [
+        "ee8d7b25-f203-4472-9210-86409b4364e2",
+        "d5012020-7a5d-4b04-a017-9560fa1ede7e"
+      ],
+      "outputs": {},
+      "parent": null,
+      "progress": 0,
+      "thumbnail": "",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
     }
+  }
 }
