@@ -6,9 +6,9 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-if sys.version_info.major != 3 and sys.version_info.minor != 6:
+if sys.version_info.major != 3 and sys.version_info.minor >= 6:
     raise RuntimeError(
-        "Expected ~=3.6, got %s. Did you forget to activate virtualenv?"
+        "Expected ~=3.6, got %s (Tip: did you forget to 'source .venv/bin/activate' or 'pyenv local'?)"
         % str(sys.version_info)
     )
 
