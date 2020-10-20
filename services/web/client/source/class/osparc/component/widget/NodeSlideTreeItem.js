@@ -60,6 +60,10 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       this.addOpenButton();
       this.addIcon();
       this.addLabel();
+      const label = this.getChildControl("label");
+      if (label) {
+        label.setMaxWidth(150);
+      }
 
       this.addWidget(new qx.ui.core.Spacer(), {
         flex: 1
