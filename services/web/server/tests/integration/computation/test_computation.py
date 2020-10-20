@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 import json
 import sys
-import time
 from pathlib import Path
 from pprint import pprint
 from typing import Dict
@@ -11,6 +10,7 @@ from typing import Dict
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 from yarl import URL
 
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -92,7 +92,7 @@ def mock_workbench_adjacency_list() -> Dict:
 
 
 # HELPERS ----------------------------------
-def assert_db_contents(
+def _assert_db_contents(
     project_id,
     postgres_session,
     mock_workbench_payload,
@@ -131,30 +131,35 @@ def assert_db_contents(
         assert task_db.image["tag"] == mock_pipeline[task_db.node_id]["version"]
 
 
-def assert_sleeper_services_completed(project_id, postgres_session):
+def _assert_sleeper_services_completed(project_id, postgres_session):
     # pylint: disable=no-member
-    # we wait 15 secs before testing...
     TIMEOUT_SECONDS = 30
-    start_time = time.time()
-    pipeline_result = StateType.NOT_STARTED
-    # while results
-    time.sleep(15)
-    pipeline_db = (
-        postgres_session.query(comp_pipeline)
-        .filter(comp_pipeline.c.project_id == project_id)
-        .one()
+    WAIT_TIME = 2
+
+    @retry(
+        stop=stop_after_attempt(TIMEOUT_SECONDS / WAIT_TIME),
+        wait=wait_fixed(WAIT_TIME),
+        retry=retry_if_exception_type(AssertionError),
     )
-    tasks_db = (
-        postgres_session.query(comp_tasks)
-        .filter(
-            (comp_tasks.c.project_id == project_id)
-            & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+    def check_pipeline_results():
+        pipeline_db = (
+            postgres_session.query(comp_pipeline)
+            .filter(comp_pipeline.c.project_id == project_id)
+            .one()
         )
-        .all()
-    )
-    for task_db in tasks_db:
-        if "sleeper" in task_db.image["name"]:
-            assert task_db.state == StateType.SUCCESS
+        tasks_db = (
+            postgres_session.query(comp_tasks)
+            .filter(
+                (comp_tasks.c.project_id == project_id)
+                & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+            )
+            .all()
+        )
+        for task_db in tasks_db:
+            if "sleeper" in task_db.image["name"]:
+                assert task_db.state == StateType.SUCCESS
+
+    check_pipeline_results()
 
 
 # TESTS ------------------------------------------
@@ -191,9 +196,6 @@ async def test_start_pipeline(
     project_id = user_project["uuid"]
     mock_workbench_payload = user_project["workbench"]
 
-    url_get_state = client.app.router["state_project"].url_for(project_id=project_id)
-    assert url_get_state == URL(API_PREFIX + "/projects/{}/state".format(project_id))
-
     url_start = client.app.router["start_pipeline"].url_for(project_id=project_id)
     assert url_start == URL(
         API_PREFIX + "/computation/pipeline/{}:start".format(project_id)
@@ -208,11 +210,11 @@ async def test_start_pipeline(
         assert "project_id" in data
         assert data["project_id"] == project_id
 
-        assert_db_contents(
+        _assert_db_contents(
             project_id,
             postgres_session,
             mock_workbench_payload,
             mock_workbench_adjacency_list,
             check_outputs=False,
         )
-        assert_sleeper_services_completed(project_id, postgres_session)
+        _assert_sleeper_services_completed(project_id, postgres_session)
