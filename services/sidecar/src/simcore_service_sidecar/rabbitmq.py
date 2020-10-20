@@ -10,7 +10,7 @@ from models_library.celery import CeleryConfig
 from pydantic import BaseModel  # pylint: disable=no-name-in-module
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 
-from .config import CELERY_CONFIG
+from . import config
 
 log = logging.getLogger(__file__)
 
@@ -51,7 +51,7 @@ class RabbitMQ(BaseModel):
 
     async def connect(self):
         if not self.celery_config:
-            self.celery_config = CELERY_CONFIG
+            self.celery_config = config.CELERY_CONFIG
         url = self.celery_config.rabbit.rabbit_dsn
         log.debug("Connecting to %s", url)
         await _wait_till_rabbit_responsive(url)
@@ -127,10 +127,12 @@ class RabbitMQ(BaseModel):
         )
 
     async def post_instrumentation_message(
-        self, instrumentation_data: Dict,
+        self,
+        instrumentation_data: Dict,
     ):
         await self._post_message(
-            self.instrumentation_exchange, data=instrumentation_data,
+            self.instrumentation_exchange,
+            data=instrumentation_data,
         )
 
     async def __aenter__(self):

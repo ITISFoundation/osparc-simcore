@@ -1,3 +1,5 @@
+import json
+
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -35,6 +37,7 @@ def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> RabbitConfig:
     os.environ["RABBIT_PORT"] = str(rabbit_config.port)
     os.environ["RABBIT_USER"] = devel_environ["RABBIT_USER"]
     os.environ["RABBIT_PASSWORD"] = devel_environ["RABBIT_PASSWORD"]
+    os.environ["RABBIT_CHANNELS"] = json.dumps(rabbit_config.channels)
 
     yield rabbit_config
 
@@ -79,7 +82,7 @@ async def rabbit_channel(
             print("sender was %s", sender)
 
     # create channel
-    channel = await rabbit_connection.channel()
+    channel = await rabbit_connection.channel(publisher_confirms=False)
     assert channel
     channel.add_close_callback(channel_close_callback)
     yield channel
