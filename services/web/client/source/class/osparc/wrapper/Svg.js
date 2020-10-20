@@ -155,6 +155,29 @@ qx.Class.define("osparc.wrapper.Svg", {
           });
         }
       }
+    },
+
+    drawPolygon: function(draw, controls) {
+      const polygon = draw.polygon(controls.join())
+        .fill("#404040")
+        .stroke({
+          width: 0
+        })
+        .move(0, 0);
+      return polygon;
+    },
+
+    updatePolygonColor: function(polygon, color) {
+      polygon.fill(color);
+    },
+
+    drawLine: function(draw, controls) {
+      const line = draw.line(controls.join())
+        .stroke({
+          color: "#BFBFBF",
+          width: 1
+        });
+      return line;
     }
   },
 
