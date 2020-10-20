@@ -33,6 +33,8 @@ ORG_LABELS_TO_SCHEMA_LABELS = {
 }
 
 
+PortInt = conint(gt=0, lt=65535)
+
 class BootModeEnum(str, Enum):
     DEBUG = "debug-ptvsd"
     PRODUCTION = "production"
@@ -50,7 +52,7 @@ class ApiServiceSettings(BaseSettings):
     enabled: bool = Field(True, description="Enables/Disables connection with service")
 
     host: str
-    port: conint(gt=0, lt=65535) = 8000
+    port: PortInt= 8000
     vtag: constr(regex=r"^v\d$") = "v0"
 
     def base_url(self, include_tag=False) -> str:
@@ -109,7 +111,7 @@ class PostgresSettings(BaseSettings):
 
     # entrypoint
     host: str
-    port: conint(gt=0, lt=65535) = 5432
+    port: PortInt= 5432
 
     # auth
     user: str
@@ -230,8 +232,10 @@ class AppSettings(BaseSettings):
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
     host: str = "0.0.0.0"  # nosec
-    port: conint(gt=0, lt=65535) = 8000
+    port: PortInt = 8000
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
+
+    remote_debug_port: PortInt = 3000
 
     class Config(CommonConfig):
         env_prefix = "DIRECTOR2_"
