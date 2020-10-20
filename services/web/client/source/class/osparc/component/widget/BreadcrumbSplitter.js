@@ -93,9 +93,36 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
     },
 
     getSlashControls: function(w = 16, h = 32) {
+      const offset = 3;
       return [
-        [2, w-2],
-        [h-2, 2]
+        [offset, w-offset],
+        [h-offset, offset]
+      ];
+    },
+
+    getArrowControlsLeft: function(w = 16, h = 32) {
+      return [
+        [0, 0],
+        [w, h/2],
+        [0, h]
+      ];
+    },
+
+    getArrowControlsRight: function(w = 16, h = 32) {
+      return [
+        [w, 0],
+        [0, 0],
+        [w, h/2],
+        [0, h],
+        [w, h]
+      ];
+    },
+
+    getArrowControls: function(w = 16, h = 32) {
+      return [
+        [0, 0],
+        [w, h/2],
+        [0, h]
       ];
     }
   },
@@ -113,12 +140,17 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
           this.__leftPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controlsLeft);
           break;
         }
+        case "arrow": {
+          const controlsLeft = this.self().getArrowControlsLeft(32, 16);
+          this.__leftPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controlsLeft);
+          break;
+        }
       }
     },
 
     _applyLeftWidget: function(leftWidget) {
       if (this.__leftPart === null) {
-        this.setShape("slash");
+        this.setShape("arrow");
       }
       this.setZIndex(leftWidget.getZIndex()+1);
       leftWidget.addListener("changeBackgroundColor", e => {
@@ -129,10 +161,22 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
 
     _applyRightWidget: function(rightWidget) {
       this.setZIndex(rightWidget.getZIndex()+1);
-      const controlsRight = this.self().getTriangleControlsRight(32, 16);
-      this.__rightPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controlsRight);
-      const controlsSlash = this.self().getSlashControls(32, 16);
-      osparc.wrapper.Svg.drawLine(this.__canvas, controlsSlash);
+      switch (this.getShape()) {
+        case "slash": {
+          const controlsRight = this.self().getTriangleControlsRight(32, 16);
+          this.__rightPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controlsRight);
+          const controlsSlash = this.self().getSlashControls(32, 16);
+          osparc.wrapper.Svg.drawLine(this.__canvas, controlsSlash);
+          break;
+        }
+        case "arrow": {
+          const controlsRight = this.self().getArrowControlsRight(32, 16);
+          this.__rightPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controlsRight);
+          const controlsArrow = this.self().getArrowControls(32, 16);
+          osparc.wrapper.Svg.drawLine(this.__canvas, controlsArrow);
+          break;
+        }
+      }
     }
   }
 });

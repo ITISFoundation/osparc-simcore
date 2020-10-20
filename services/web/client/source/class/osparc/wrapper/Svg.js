@@ -175,7 +175,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       const line = draw.line(controls.join())
         .stroke({
           color: "#BFBFBF",
-          width: 1
+          width: 2
         });
       return line;
     }
