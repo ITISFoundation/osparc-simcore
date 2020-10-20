@@ -1,0 +1,32 @@
+#
+# Specifies dependencies required to run 'services/director-v2/test'
+#  both for unit and integration tests!!
+#
+
+# frozen specs
+-r _base.txt
+
+# 'services/director-v2/tests/unit' dependencies
+
+
+# testing
+pytest
+pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-cov
+pytest-mock
+pytest-runner
+pytest-docker
+
+# fixtures
+Faker
+
+# migration due to pytest_simcore.postgres_service2
+alembic
+docker
+respx
+
+# tools
+pylint
+coveralls
+codecov
+ptvsd
