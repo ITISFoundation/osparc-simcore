@@ -203,7 +203,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           }
 
           if (locked) {
-            const msg = this.tr("Study is open");
+            const msg = this.tr("Study is already open");
             throw new Error(msg);
           }
           const store = osparc.store.Store.getInstance();

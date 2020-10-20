@@ -11,28 +11,5 @@
  */
 qx.Class.define("osparc.ui.toolbar.FetchButton", {
   extend: qx.ui.toolbar.Button,
-  properties: {
-    fetching: {
-      check: "Boolean",
-      nullable: false,
-      init: false,
-      apply: "_applyFetching"
-    }
-  },
-  members: {
-    __icon: null,
-    _applyFetching: function(isFetching) {
-      if (isFetching) {
-        this.__icon = this.getIcon();
-        this.setIcon("@FontAwesome5Solid/circle-notch/12");
-        this.getChildControl("icon").getContentElement().addClass("rotate");
-      } else {
-        if (this.__icon !== null) {
-          this.setIcon(this.__icon);
-        }
-        this.getChildControl("icon").getContentElement().removeClass("rotate");
-      }
-      this.setEnabled(!isFetching);
-    }
-  }
+  include: osparc.ui.mixin.FetchButton
 });
