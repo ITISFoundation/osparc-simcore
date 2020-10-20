@@ -176,7 +176,7 @@ qx.Class.define("osparc.wrapper.Svg", {
         .fill("none")
         .stroke({
           color: "#BFBFBF",
-          width: 2
+          width: 1
         });
       return line;
     }
