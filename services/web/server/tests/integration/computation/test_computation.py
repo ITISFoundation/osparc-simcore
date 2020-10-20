@@ -131,12 +131,15 @@ def _assert_db_contents(
         assert task_db.image["tag"] == mock_pipeline[task_db.node_id]["version"]
 
 
-def _assert_sleeper_services_completed(project_id, postgres_session):
+def _assert_sleeper_services_completed(
+    project_id: str, postgres_session: sa.orm.session.Session, expected_state: StateType
+):
     # pylint: disable=no-member
     TIMEOUT_SECONDS = 30
     WAIT_TIME = 2
 
     @retry(
+        reraise=True,
         stop=stop_after_attempt(TIMEOUT_SECONDS / WAIT_TIME),
         wait=wait_fixed(WAIT_TIME),
         retry=retry_if_exception_type(AssertionError),
@@ -155,9 +158,24 @@ def _assert_sleeper_services_completed(project_id, postgres_session):
             )
             .all()
         )
-        for task_db in tasks_db:
-            if "sleeper" in task_db.image["name"]:
-                assert task_db.state == StateType.SUCCESS
+        # get the different states in a set of states
+        set_of_states = {task_db.state for task_db in tasks_db}
+        if expected_state in [StateType.ABORTED, StateType.FAILED]:
+            # only one is necessary
+            assert expected_state in set_of_states
+
+        assert not any(
+            x in set_of_states
+            for x in [
+                StateType.PUBLISHED,
+                StateType.PENDING,
+                StateType.NOT_STARTED,
+            ]
+        ), "pipeline did not start yet..."
+
+        assert len(set_of_states) == 1, "there are more than one state"
+
+        assert expected_state in set_of_states
 
     check_pipeline_results()
 
@@ -175,12 +193,12 @@ async def test_check_health(
 
 
 @pytest.mark.parametrize(
-    "user_role,expected_response",
+    "user_role,expected_start_response, expected_stop_response",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk, web.HTTPNoContent),
+        (UserRole.USER, web.HTTPOk, web.HTTPNoContent),
+        (UserRole.TESTER, web.HTTPOk, web.HTTPNoContent),
     ],
 )
 async def test_start_pipeline(
@@ -193,7 +211,8 @@ async def test_start_pipeline(
     logged_user: LoggedUser,
     user_project: NewProject,
     mock_workbench_adjacency_list: Dict,
-    expected_response: web.Response,
+    expected_start_response: web.Response,
+    expected_stop_response: web.Response,
 ):
     project_id = user_project["uuid"]
     mock_workbench_payload = user_project["workbench"]
@@ -205,9 +224,13 @@ async def test_start_pipeline(
 
     # POST /v0/computation/pipeline/{project_id}:start
     resp = await client.post(url_start)
-    data, error = await assert_status(resp, expected_response)
+    data, error = await assert_status(resp, expected_start_response)
 
     if not error:
+        # starting again should be disallowed
+        resp = await client.post(url_start)
+        await assert_status(resp, web.HTTPForbidden)
+
         assert "pipeline_name" in data
         assert "project_id" in data
         assert data["project_id"] == project_id
@@ -219,4 +242,22 @@ async def test_start_pipeline(
             mock_workbench_adjacency_list,
             check_outputs=False,
         )
-        _assert_sleeper_services_completed(project_id, postgres_session)
+        _assert_sleeper_services_completed(
+            project_id, postgres_session, StateType.SUCCESS
+        )
+
+        # starting now should be ok
+        resp = await client.post(url_start)
+        data, error = await assert_status(resp, expected_start_response)
+        assert not error
+    # stop the pipeline
+    url_stop = client.app.router["stop_pipeline"].url_for(project_id=project_id)
+    assert url_stop == URL(
+        API_PREFIX + "/computation/pipeline/{}:stop".format(project_id)
+    )
+    resp = await client.post(url_stop)
+    data, error = await assert_status(resp, expected_stop_response)
+    if not error:
+        _assert_sleeper_services_completed(
+            project_id, postgres_session, StateType.ABORTED
+        )
