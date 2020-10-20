@@ -10,7 +10,7 @@ aiohttp-jinja2==1.2.0     # via -r requirements/_base.txt
 aiohttp-security==0.4.0   # via -r requirements/_base.txt
 aiohttp-session[secure]==2.9.0  # via -r requirements/_base.txt
 aiohttp-swagger[performance]==1.0.15  # via -r requirements/_base.txt
-aiohttp==3.6.2            # via -r requirements/_base.txt, aiohttp-jinja2, aiohttp-security, aiohttp-session, aiohttp-swagger, aiozipkin, pytest-aiohttp
+aiohttp==3.6.3            # via -r requirements/_base.txt, aiohttp-jinja2, aiohttp-security, aiohttp-session, aiohttp-swagger, aiozipkin, pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt
 aioredis==1.3.1           # via -r requirements/_base.txt, aioredlock
 aioredlock==0.5.2         # via -r requirements/_base.txt
@@ -45,7 +45,7 @@ dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
 email-validator==1.1.1    # via -r requirements/_base.txt, pydantic
 expiringdict==1.2.1       # via -r requirements/_base.txt
-faker==4.4.0              # via -r requirements/_test.in
+faker==4.14.0             # via -r requirements/_test.in
 hiredis==1.1.0            # via -r requirements/_base.txt, aioredis
 icdiff==1.9.1             # via pytest-icdiff
 idna-ssl==1.1.0           # via -r requirements/_base.txt, aiohttp
