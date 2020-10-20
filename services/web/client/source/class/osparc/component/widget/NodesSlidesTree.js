@@ -95,7 +95,8 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           break;
         case "disable": {
           control = new qx.ui.form.Button(this.tr("Disable")).set({
-            allowGrowX: false
+            allowGrowX: false,
+            appearance: "no-shadow-button"
           });
           const buttons = this.getChildControl("buttons");
           buttons.add(control);
@@ -103,7 +104,8 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         }
         case "enable": {
           control = new qx.ui.form.Button(this.tr("Enable")).set({
-            allowGrowX: false
+            allowGrowX: false,
+            appearance: "no-shadow-button"
           });
           const buttons = this.getChildControl("buttons");
           buttons.add(control);
@@ -119,7 +121,8 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         decorator: "service-tree",
         openMode: "none",
         contentPadding: 0,
-        padding: 0
+        padding: 0,
+        backgroundColor: "material-button-background"
       });
       return tree;
     },
