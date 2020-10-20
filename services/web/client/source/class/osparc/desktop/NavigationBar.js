@@ -323,6 +323,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       for (let i=0; i<nodeIds.length; i++) {
         const nodeId = nodeIds[i];
         const btn = this.__createNodePathBtn(nodeId);
+        if (i === nodeIds.length-1) {
+          btn.setFont("title-14");
+        }
         this.__workbenchNodesLayout.add(btn);
 
         if (i<nodeIds.length-1) {
@@ -330,9 +333,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
             font: "text-14"
           });
           this.__workbenchNodesLayout.add(arrow);
-        }
-        if (i === nodeIds.length-1) {
-          btn.setFont("title-14");
         }
       }
     },
