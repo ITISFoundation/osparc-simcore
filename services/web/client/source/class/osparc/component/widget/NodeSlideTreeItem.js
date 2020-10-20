@@ -86,7 +86,8 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       this.addWidget(posLbl);
 
       const hideBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye-slash/10").set({
-        marginRight: 5
+        marginRight: 5,
+        appearance: "no-shadow-button"
       });
       hideBtn.addListener("execute", () => {
         this.fireEvent("showNode");
@@ -105,7 +106,8 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       this.addWidget(hideBtn);
 
       const showBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye/10").set({
-        marginRight: 5
+        marginRight: 5,
+        appearance: "no-shadow-button"
       });
       showBtn.addListener("execute", () => {
         this.fireEvent("hideNode");
@@ -123,7 +125,9 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       });
       this.addWidget(showBtn);
 
-      const moveUpBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/10");
+      const moveUpBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/10").set({
+        appearance: "no-shadow-button"
+      });
       moveUpBtn.addListener("execute", () => {
         this.fireEvent("moveUp");
       }, this);
@@ -137,7 +141,9 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       });
       this.addWidget(moveUpBtn);
 
-      const moveDownBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-down/10");
+      const moveDownBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-down/10").set({
+        appearance: "no-shadow-button"
+      });
       moveDownBtn.addListener("execute", () => {
         this.fireEvent("moveDown");
       }, this);
