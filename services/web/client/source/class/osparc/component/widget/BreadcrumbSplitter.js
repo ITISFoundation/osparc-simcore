@@ -94,8 +94,8 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
 
     getSlashControls: function(w = 16, h = 32) {
       return [
-        [0, w],
-        [h, 0]
+        [2, w-2],
+        [h-2, 2]
       ];
     }
   },
@@ -120,6 +120,7 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
       if (this.__leftPart === null) {
         this.setShape("slash");
       }
+      this.setZIndex(leftWidget.getZIndex()+1);
       leftWidget.addListener("changeBackgroundColor", e => {
         const data = e.getData();
         osparc.wrapper.Svg.updatePolygonColor(this.__leftPart, data);
@@ -127,6 +128,7 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
     },
 
     _applyRightWidget: function(rightWidget) {
+      this.setZIndex(rightWidget.getZIndex()+1);
       const controlsRight = this.self().getTriangleControlsRight(32, 16);
       this.__rightPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controlsRight);
       const controlsSlash = this.self().getSlashControls(32, 16);
