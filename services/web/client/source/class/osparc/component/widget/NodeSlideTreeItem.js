@@ -65,7 +65,9 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
         flex: 1
       });
 
-      const posLbl = new qx.ui.basic.Label();
+      const posLbl = new qx.ui.basic.Label().set({
+        marginRight: 5
+      });
       this.bind("position", posLbl, "value", {
         converter: val => {
           if (val === null) {
@@ -79,7 +81,9 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       });
       this.addWidget(posLbl);
 
-      const hideBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye-slash/10");
+      const hideBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye-slash/10").set({
+        marginRight: 5
+      });
       hideBtn.addListener("execute", () => {
         this.fireEvent("showNode");
       }, this);
@@ -96,7 +100,9 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       });
       this.addWidget(hideBtn);
 
-      const showBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye/10");
+      const showBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye/10").set({
+        marginRight: 5
+      });
       showBtn.addListener("execute", () => {
         this.fireEvent("hideNode");
       }, this);

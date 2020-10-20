@@ -144,7 +144,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       const iconSize = 14;
       const toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
 
-      const editBtn = this.__editSlidesBtn = new qx.ui.toolbar.Button(this.tr("Slides"), "@FontAwesome5Solid/paw/"+iconSize).set({
+      const editBtn = this.__editSlidesBtn = new qx.ui.toolbar.Button(this.tr("Edit Guided mode"), "@FontAwesome5Solid/caret-square-right/"+iconSize).set({
         visibility: "excluded"
       });
       editBtn.addListener("execute", () => {

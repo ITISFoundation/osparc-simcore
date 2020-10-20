@@ -179,7 +179,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           break;
         }
         case "dashboard-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/14");
+          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/16");
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
           control.set(this.self().BUTTON_OPTIONS);
           control.addListener("execute", () => {
@@ -432,13 +432,13 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     __createSlideBtns: function() {
       const menu = new qx.ui.toolbar.Part();
 
-      const startBtn = this.__startSlidesBtn = new qx.ui.toolbar.Button(this.tr("Start slides"));
+      const startBtn = this.__startSlidesBtn = new qx.ui.toolbar.Button(this.tr("Start Guided mode"), "@FontAwesome5Solid/caret-square-right/18");
       startBtn.addListener("execute", () => {
         this.fireEvent("slidesStart");
       }, this);
       menu.add(startBtn);
 
-      const stopBtn = this.__stopSlidesBtn = new qx.ui.toolbar.Button(this.tr("Stop slides"));
+      const stopBtn = this.__stopSlidesBtn = new qx.ui.toolbar.Button(this.tr("Stop Guided mode"), "@FontAwesome5Solid/stop/18");
       stopBtn.addListener("execute", () => {
         this.fireEvent("slidesStop");
       }, this);
