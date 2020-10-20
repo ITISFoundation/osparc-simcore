@@ -4,7 +4,6 @@ from typing import Callable
 from fastapi import FastAPI
 
 from ..db.events import close_db_connection, connect_to_db
-from ..services.catalog import close_catalog, setup_catalog
 from ..services.remote_debug import setup_remote_debugging
 from ..services.webserver import close_webserver, setup_webserver
 from .settings import BootModeEnum
@@ -28,9 +27,6 @@ def create_start_app_handler(app: FastAPI) -> Callable:
         if app.state.settings.webserver.enabled:
             setup_webserver(app)
 
-        if app.state.settings.catalog.enabled:
-            setup_catalog(app)
-
     return start_app
 
 
@@ -40,7 +36,6 @@ def create_stop_app_handler(app: FastAPI) -> Callable:
     _closing_sequence = [
         (app.state.settings.postgres.enabled, close_db_connection),
         (app.state.settings.webserver.enabled, close_webserver),
-        (app.state.settings.catalog.enabled, close_catalog),
     ]
 
     is_dev = app.state.settings.debug

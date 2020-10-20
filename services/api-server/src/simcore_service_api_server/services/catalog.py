@@ -1,83 +1,38 @@
-import functools
 import logging
 from contextlib import suppress
-from typing import Coroutine, Dict, Optional
 
-from fastapi import FastAPI, HTTPException
-from httpx import AsyncClient, codes, Response
-from starlette import status
+import httpx
+from fastapi import FastAPI
+from typing import Dict
 
 from ..core.settings import CatalogSettings
+from ..utils.client_decorators import handle_errors, handle_retry, JsonDataType
 
 logger = logging.getLogger(__name__)
 
 
-# TODO: refactor as template
+def setup(app: FastAPI, settings: CatalogSettings) -> None:
+    if not settings:
+        settings = CatalogSettings()
 
-def setup_catalog(app: FastAPI) -> None:
-    settings: CatalogSettings = app.state.settings.catalog
+    def on_startup() -> None:
+        logger.debug("Setup catalog at %s...", settings.base_url)
+        app.state.catalog_api = CatalogApi(
+            base_url=settings.base_url, vtag=app.state.settings.catalog.vtag
+        )
 
-    # init client-api
-    logger.debug("Setup catalog at %s...", settings.base_url)
-    app.state.catalog_api = CatalogApi(
-        base_url=settings.base_url, vtag=app.state.settings.catalog.vtag
-    )
+    async def on_shutdown() -> None:
+        with suppress(AttributeError):
+            client: httpx.AsyncClient = app.state.catalog_api.client
+            await client.aclose()
+            del app.state.catalog_api
+        logger.debug("Catalog client closed successfully")
 
-    # does NOT communicate with catalog service
-
-
-async def close_catalog(app: FastAPI) -> None:
-    with suppress(AttributeError):
-        client: AsyncClient = app.state.catalog_api.client
-        await client.aclose()
-        del app.state.catalog_api
-
-    logger.debug("Catalog client closed successfully")
+    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", on_shutdown)
 
 
 # API CLASS ---------------------------------------------
-
-
-def safe_request(request_func: Coroutine):
-    """
-        Creates a context for safe inter-process communication (IPC)
-    """
-
-    @functools.wraps(request_func)
-    async def request_wrapper(zelf: "CatalogApi", path: str, *args, **kwargs) -> Dict:
-        try:
-            normalized_path = path.lstrip("/")
-
-            resp: Response= await request_func(zelf, path=normalized_path, *args, **kwargs)
-
-        except Exception as err:
-            logger.exception(
-                "Failed request %s to %s%s",
-                request_func.__name__,
-                zelf.client.base_url,
-                normalized_path,
-            )
-            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
-
-        # get body
-        data: Dict = resp.json()
-
-        # translate error
-        if codes.is_server_error(resp.status_code):
-            logger.error(
-                "catalog error %d [%s]",
-                resp.status_code,
-                resp.reason_phrase
-            )
-            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
-
-        if codes.is_client_error(resp.status_code):
-            raise HTTPException(resp.status_code, detail=resp.reason_phrase)
-
-        return data or {}
-
-    return request_wrapper
-
 
 
 class CatalogApi:
@@ -91,13 +46,13 @@ class CatalogApi:
     """
 
     def __init__(self, base_url: str, vtag: str):
-        self.client = AsyncClient(base_url=base_url)
+        self.client = httpx.AsyncClient(base_url=base_url)
         self.vtag = vtag
 
     # OPERATIONS
-    # TODO: policy to retry if NetworkError/timeout?
     # TODO: add ping to healthcheck
 
-    @safe_request
-    async def get(self, path: str, *args, **kwargs) -> Optional[Dict]:
+    @handle_errors("catalog", logger, return_json=True)
+    @handle_retry(logger)
+    async def get(self, path: str, *args, **kwargs) -> JsonDataType:
         return await self.client.get(path, *args, **kwargs)

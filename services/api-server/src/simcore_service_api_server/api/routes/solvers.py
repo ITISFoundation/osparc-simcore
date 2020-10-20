@@ -3,10 +3,11 @@ import logging
 import uuid as uuidlib
 from operator import attrgetter
 from typing import Callable, Dict, List, Optional
+from urllib.request import pathname2url
 from uuid import UUID
 
+import packaging
 from fastapi import APIRouter, Depends, HTTPException
-from packaging import version
 from pydantic import ValidationError
 from starlette import status
 
@@ -32,7 +33,6 @@ router = APIRouter()
 
 
 ## SOLVERS ------------
-from urllib.request import pathname2url
 
 @router.get("", response_model=List[SolverOverview])
 async def list_solvers(
@@ -58,9 +58,9 @@ async def list_solvers(
             service_key = service["key"]
             solver = latest_solvers.get(service_key)
 
-            if not solver or version.parse(solver.latest_version) < version.parse(
-                service["version"]
-            ):
+            if not solver or packaging.version.parse(
+                solver.latest_version
+            ) < packaging.version.parse(service["version"]):
                 try:
                     latest_solvers[service_key] = SolverOverview(
                         solver_key=service_key,
@@ -110,7 +110,7 @@ async def get_solver_released_by_version(
 
 @router.get("/{solver_id}", response_model=Solver)
 async def get_solver_released(solver_id: UUID):
-    pass
+    raise NotImplementedError()
 
 
 ## RUNS ---------------
@@ -131,34 +131,34 @@ async def list_runs(solver_id: UUID):
     """ List of all runs (could be finished) by user of a given solver """
     # TODO: add pagination
     # similar to ps = process status
-    pass
+    raise NotImplementedError()
 
 
 @router.get("/{solver_id}/runs/{run_id}:stop", response_model=RunProxy)
 async def stop_run(solver_id: UUID, run_id: UUID):
-    pass
+    raise NotImplementedError()
 
 
 @router.get("/{solver_id}/runs/{run_id}", response_model=RunProxy)
 async def get_run(solver_id: UUID, run_id: UUID):
-    pass
+    raise NotImplementedError()
 
 
 @router.get("/{solver_id}/runs/{run_id}:inspect", response_model=RunState)
 async def inspect_run(solver_id: UUID):
-    pass
+    raise NotImplementedError()
 
 
 @router.get("/{solver_id}/runs/{run_id}/outputs", response_model=List[RunOutput])
 async def list_run_outputs(solver_id: UUID, run_id: UUID):
-    pass
+    raise NotImplementedError()
 
 
 @router.get(
     "/{solver_id}/runs/{run_id}/outputs/{output_key}", response_model=SolverOutput
 )
 async def get_run_output(solver_id: UUID, run_id: UUID, output_key: KeyIdentifier):
-    pass
+    raise NotImplementedError()
 
 
 # HELPERS ----

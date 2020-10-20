@@ -14,6 +14,7 @@ from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .redoc import create_redoc_handler
 from .settings import AppSettings
+from ..services import catalog
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,9 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     app.state.settings = settings
 
     override_openapi_method(app)
+
+    if settings.catalog.enabled:
+        catalog.setup(app, settings.catalog)
 
     app.add_event_handler("startup", create_start_app_handler(app))
     app.add_event_handler("shutdown", create_stop_app_handler(app))
