@@ -172,7 +172,8 @@ qx.Class.define("osparc.wrapper.Svg", {
     },
 
     drawLine: function(draw, controls) {
-      const line = draw.line(controls.join())
+      const line = draw.polyline(controls.join())
+        .fill("none")
         .stroke({
           color: "#BFBFBF",
           width: 2

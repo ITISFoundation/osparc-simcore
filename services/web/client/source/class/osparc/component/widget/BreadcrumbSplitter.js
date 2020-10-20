@@ -39,7 +39,6 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
         this.__canvas = svgWrapper.createEmptyCanvas(randomID);
         this.setReady(true);
         this.fireDataEvent("SvgWidgetReady", true);
-        this.setShape("slash");
       });
       svgWrapper.init();
     });
@@ -54,8 +53,7 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
     shape: {
       check: ["slash", "arrow"],
       nullable: true,
-      event: "changeShape",
-      apply: "_applyShape"
+      init: "slash"
     },
 
     leftWidget: {
@@ -79,24 +77,24 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
     getTriangleControlsLeft: function(w = 16, h = 32) {
       return [
         [0, 0],
-        [h, 0],
-        [0, w]
+        [0, h],
+        [w, 0]
       ];
     },
 
     getTriangleControlsRight: function(w = 16, h = 32) {
       return [
-        [h, 0],
-        [0, w],
-        [h, w]
+        [0, h],
+        [w, 0],
+        [w, h]
       ];
     },
 
     getSlashControls: function(w = 16, h = 32) {
       const offset = 3;
       return [
-        [offset, w-offset],
-        [h-offset, offset]
+        [w-offset, offset],
+        [offset, h-offset]
       ];
     },
 
@@ -132,47 +130,56 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
     __leftPart: null,
     __rightPart: null,
 
-    _applyShape: function(shape) {
-      console.log(shape);
-      switch (shape) {
+    _applyLeftWidget: function(leftWidget) {
+      this.setZIndex(leftWidget.getZIndex()+1);
+      let controls;
+      switch (this.getShape()) {
         case "slash": {
-          const controlsLeft = this.self().getTriangleControlsLeft(32, 16);
-          this.__leftPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controlsLeft);
+          controls = this.self().getTriangleControlsLeft(16, 32);
           break;
         }
         case "arrow": {
-          const controlsLeft = this.self().getArrowControlsLeft(32, 16);
-          this.__leftPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controlsLeft);
+          controls = this.self().getArrowControlsLeft(16, 32);
           break;
         }
       }
-    },
-
-    _applyLeftWidget: function(leftWidget) {
-      if (this.__leftPart === null) {
-        this.setShape("arrow");
+      if (controls) {
+        this.__leftPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controls);
+        leftWidget.addListener("changeBackgroundColor", e => {
+          const data = e.getData();
+          osparc.wrapper.Svg.updatePolygonColor(this.__leftPart, data);
+        }, this);
       }
-      this.setZIndex(leftWidget.getZIndex()+1);
-      leftWidget.addListener("changeBackgroundColor", e => {
-        const data = e.getData();
-        osparc.wrapper.Svg.updatePolygonColor(this.__leftPart, data);
-      }, this);
     },
 
     _applyRightWidget: function(rightWidget) {
       this.setZIndex(rightWidget.getZIndex()+1);
+      let controls;
       switch (this.getShape()) {
         case "slash": {
-          const controlsRight = this.self().getTriangleControlsRight(32, 16);
-          this.__rightPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controlsRight);
-          const controlsSlash = this.self().getSlashControls(32, 16);
+          controls = this.self().getTriangleControlsRight(16, 32);
+          break;
+        }
+        case "arrow": {
+          controls = this.self().getArrowControlsRight(16, 32);
+          break;
+        }
+      }
+      if (controls) {
+        this.__rightPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controls);
+        rightWidget.addListener("changeBackgroundColor", e => {
+          const data = e.getData();
+          osparc.wrapper.Svg.updatePolygonColor(this.__rightPart, data);
+        }, this);
+      }
+      switch (this.getShape()) {
+        case "slash": {
+          const controlsSlash = this.self().getSlashControls(16, 32);
           osparc.wrapper.Svg.drawLine(this.__canvas, controlsSlash);
           break;
         }
         case "arrow": {
-          const controlsRight = this.self().getArrowControlsRight(32, 16);
-          this.__rightPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controlsRight);
-          const controlsArrow = this.self().getArrowControls(32, 16);
+          const controlsArrow = this.self().getArrowControls(16, 32);
           osparc.wrapper.Svg.drawLine(this.__canvas, controlsArrow);
           break;
         }
