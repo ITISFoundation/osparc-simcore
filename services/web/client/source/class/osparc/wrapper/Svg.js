@@ -31,12 +31,6 @@
 qx.Class.define("osparc.wrapper.Svg", {
   extend: qx.core.Object,
 
-  statics: {
-    NAME: "svg.js",
-    VERSION: "2.7.1",
-    URL: "https://github.com/svgdotjs/svg.js"
-  },
-
   construct: function() {
   },
 
@@ -52,36 +46,12 @@ qx.Class.define("osparc.wrapper.Svg", {
     "svgLibReady": "qx.event.type.Data"
   },
 
-  members: {
-    init: function() {
-      // initialize the script loading
-      let svgPath = "svg/svg.js";
-      let svgPathPath = "svg/svg.path.js";
-      let dynLoader = new qx.util.DynamicScriptLoader([
-        svgPath,
-        svgPathPath
-      ]);
+  statics: {
+    NAME: "svg.js",
+    VERSION: "2.7.1",
+    URL: "https://github.com/svgdotjs/svg.js",
 
-      dynLoader.addListenerOnce("ready", e => {
-        console.log(svgPath + " loaded");
-        this.setLibReady(true);
-        this.fireDataEvent("svgLibReady", true);
-      }, this);
-
-      dynLoader.addListener("failed", e => {
-        let data = e.getData();
-        console.error("failed to load " + data.script);
-        this.fireDataEvent("svgLibReady", false);
-      }, this);
-
-      dynLoader.start();
-    },
-
-    createEmptyCanvas: function(id) {
-      return SVG(id);
-    },
-
-    __curateControls: function(controls) {
+    curateCurveControls: function(controls) {
       [
         controls[0],
         controls[1],
@@ -100,7 +70,7 @@ qx.Class.define("osparc.wrapper.Svg", {
     drawCurve: function(draw, controls, dashed, edgeWidth = 3, portSphereDiameter = 4, arrowSize = 4) {
       const edgeColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-comp-active"];
 
-      this.__curateControls(controls);
+      osparc.wrapper.Svg.curateCurveControls(controls);
 
       const path = draw.path()
         .M(controls[0].x, controls[0].y)
@@ -185,6 +155,36 @@ qx.Class.define("osparc.wrapper.Svg", {
           });
         }
       }
+    }
+  },
+
+  members: {
+    init: function() {
+      // initialize the script loading
+      let svgPath = "svg/svg.js";
+      let svgPathPath = "svg/svg.path.js";
+      let dynLoader = new qx.util.DynamicScriptLoader([
+        svgPath,
+        svgPathPath
+      ]);
+
+      dynLoader.addListenerOnce("ready", e => {
+        console.log(svgPath + " loaded");
+        this.setLibReady(true);
+        this.fireDataEvent("svgLibReady", true);
+      }, this);
+
+      dynLoader.addListener("failed", e => {
+        let data = e.getData();
+        console.error("failed to load " + data.script);
+        this.fireDataEvent("svgLibReady", false);
+      }, this);
+
+      dynLoader.start();
+    },
+
+    createEmptyCanvas: function(id) {
+      return SVG(id);
     }
   }
 });

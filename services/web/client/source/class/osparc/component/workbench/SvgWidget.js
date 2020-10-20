@@ -43,13 +43,13 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
     this.addListenerOnce("appear", () => {
       let el = this.getContentElement().getDomElement();
       qx.bom.element.Attribute.set(el, "id", svgLayerId);
-      this.__svgWrapper = new osparc.wrapper.Svg();
-      this.__svgWrapper.addListener(("svgLibReady"), () => {
-        this.__canvas = this.__svgWrapper.createEmptyCanvas(svgLayerId);
+      const svgWrapper = new osparc.wrapper.Svg();
+      svgWrapper.addListener("svgLibReady", () => {
+        this.__canvas = svgWrapper.createEmptyCanvas(svgLayerId);
         this.setReady(true);
         this.fireDataEvent("SvgWidgetReady", true);
       });
-      this.__svgWrapper.init();
+      svgWrapper.init();
     });
   },
 
@@ -64,11 +64,8 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
     "SvgWidgetReady": "qx.event.type.Data"
   },
 
-  members: {
-    __svgWrapper: null,
-    __canvas: null,
-
-    __getControls: function(x1, y1, x2, y2, offset = 60) {
+  statics: {
+    getCurveControls: function(x1, y1, x2, y2, offset = 60) {
       return [{
         x: x1,
         y: y1
@@ -84,34 +81,38 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
       }];
     },
 
-    drawCurve: function(x1, y1, x2, y2, dashed = false) {
-      const controls = this.__getControls(x1, y1, x2, y2);
-      return this.__svgWrapper.drawCurve(this.__canvas, controls, dashed);
-    },
-
     updateCurve: function(curve, x1, y1, x2, y2, dashed = false) {
-      const controls = this.__getControls(x1, y1, x2, y2);
-      this.__svgWrapper.updateCurve(curve, controls, dashed);
+      const controls = osparc.component.workbench.SvgWidget.getCurveControls(x1, y1, x2, y2);
+      osparc.wrapper.Svg.updateCurve(curve, controls, dashed);
     },
 
     removeCurve: function(curve) {
-      this.__svgWrapper.removeCurve(curve);
-    },
-
-    drawDashedRect: function(width, height, x, y) {
-      return this.__svgWrapper.drawDashedRect(this.__canvas, width, height, x, y);
+      osparc.wrapper.Svg.removeCurve(curve);
     },
 
     updateRect: function(rect, x, y) {
-      this.__svgWrapper.updateRect(rect, x, y);
+      osparc.wrapper.Svg.updateRect(rect, x, y);
     },
 
     removeRect: function(rect) {
-      this.__svgWrapper.removeRect(rect);
+      osparc.wrapper.Svg.removeRect(rect);
     },
 
     updateColor: function(curve, color) {
-      this.__svgWrapper.updateColor(curve, color);
+      osparc.wrapper.Svg.updateColor(curve, color);
+    }
+  },
+
+  members: {
+    __canvas: null,
+
+    drawCurve: function(x1, y1, x2, y2, dashed = false) {
+      const controls = this.self().getCurveControls(x1, y1, x2, y2);
+      return osparc.wrapper.Svg.drawCurve(this.__canvas, controls, dashed);
+    },
+
+    drawDashedRect: function(width, height, x, y) {
+      return osparc.wrapper.Svg.drawDashedRect(this.__canvas, width, height, x, y);
     }
   }
 });

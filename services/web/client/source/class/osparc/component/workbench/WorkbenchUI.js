@@ -596,7 +596,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           const y1 = pointList[0][1];
           const x2 = pointList[1][0];
           const y2 = pointList[1][1];
-          this.__svgWidgetLinks.updateCurve(edgeUI.getRepresentation(), x1, y1, x2, y2, !edgeUI.getEdge().getIsPortConnected());
+          osparc.component.workbench.SvgWidget.updateCurve(edgeUI.getRepresentation(), x1, y1, x2, y2, !edgeUI.getEdge().getIsPortConnected());
         }
       });
     },
@@ -659,13 +659,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__tempEdgeRepr === null) {
         this.__tempEdgeRepr = this.__svgWidgetLinks.drawCurve(x1, y1, x2, y2);
       } else {
-        this.__svgWidgetLinks.updateCurve(this.__tempEdgeRepr, x1, y1, x2, y2);
+        osparc.component.workbench.SvgWidget.updateCurve(this.__tempEdgeRepr, x1, y1, x2, y2);
       }
     },
 
     __removeTempEdge: function() {
       if (this.__tempEdgeRepr !== null) {
-        this.__svgWidgetLinks.removeCurve(this.__tempEdgeRepr);
+        osparc.component.workbench.SvgWidget.removeCurve(this.__tempEdgeRepr);
       }
       this.__tempEdgeRepr = null;
       this.__tempEdgeNodeId = null;
@@ -736,7 +736,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __clearEdge: function(edge) {
       if (edge) {
-        this.__svgWidgetLinks.removeCurve(edge.getRepresentation());
+        osparc.component.workbench.SvgWidget.removeCurve(edge.getRepresentation());
         const index = this.__edgesUI.indexOf(edge);
         if (index > -1) {
           this.__edgesUI.splice(index, 1);
@@ -834,7 +834,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         if (this.__isSelectedItemAnEdge()) {
           const unselectedEdge = this.__getEdgeUI(oldId);
           const unselectedColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-comp-active"];
-          this.__svgWidgetLinks.updateColor(unselectedEdge.getRepresentation(), unselectedColor);
+          osparc.component.workbench.SvgWidget.updateColor(unselectedEdge.getRepresentation(), unselectedColor);
         }
       }
 
@@ -842,7 +842,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__isSelectedItemAnEdge()) {
         const selectedEdge = this.__getEdgeUI(newID);
         const selectedColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-selected"];
-        this.__svgWidgetLinks.updateColor(selectedEdge.getRepresentation(), selectedColor);
+        osparc.component.workbench.SvgWidget.updateColor(selectedEdge.getRepresentation(), selectedColor);
       } else if (newID) {
         this.fireDataEvent("changeSelectedNode", newID);
       }
@@ -976,10 +976,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           left: posX + parseInt(nodeWidth/2) - parseInt(dropBounds.width/2),
           top: posY + parseInt(nodeHeight/2) - parseInt(dropBounds.height/2)
         });
-        this.__svgWidgetDrop.updateRect(this.__dropHint.rect, posX, posY);
+        osparc.component.workbench.SvgWidget.updateRect(this.__dropHint.rect, posX, posY);
       } else {
         this.__dropHint.setVisibility("excluded");
-        this.__svgWidgetDrop.removeRect(this.__dropHint.rect);
+        osparc.component.workbench.SvgWidget.removeRect(this.__dropHint.rect);
         this.__dropHint = null;
       }
     },
