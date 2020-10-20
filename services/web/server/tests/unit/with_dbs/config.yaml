@@ -6,6 +6,8 @@ main:
   port: 8080
   testing: True
   studies_access_enabled: True
+computation:
+  enabled: False
 director:
   enabled: False
   host: director
