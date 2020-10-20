@@ -646,6 +646,6 @@ qx.Theme.define("osparc.theme.Appearance", {
           padding: [3, 5]
         };
       }
-    },
+    }
   }
 });
