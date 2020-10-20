@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 # pylint:disable=unused-variable
@@ -11,11 +12,19 @@ from typing import Any, Dict, Optional, Tuple
 import aio_pika
 import pytest
 import tenacity
+
 from models_library.rabbit import RabbitConfig
 
 from .helpers.utils_docker import get_service_published_port
 
 log = logging.getLogger(__name__)
+
+
+@pytest.fixture(scope="module")
+def loop(request) -> asyncio.AbstractEventLoop:
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 
 @pytest.fixture(scope="module")
@@ -43,7 +52,9 @@ def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> RabbitConfig:
 
 
 @pytest.fixture(scope="function")
-async def rabbit_service(rabbit_config: RabbitConfig, docker_stack: Dict) -> str:
+async def rabbit_service(
+    loop: asyncio.AbstractEventLoop, rabbit_config: RabbitConfig, docker_stack: Dict
+) -> str:
     url = rabbit_config.rabbit_dsn
     await wait_till_rabbit_responsive(url)
     yield url
