@@ -111,7 +111,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               })
               .catch(err => {
                 if ("status" in err && err["status"] == 423) { // Locked
-                  const msg = study.getName() + this.tr(" was already opened");
+                  const msg = study.getName() + this.tr(" is already open");
                   osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
                   this.fireEvent("studyIsLocked");
                 } else {
