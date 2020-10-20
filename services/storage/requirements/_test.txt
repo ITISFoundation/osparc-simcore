@@ -7,7 +7,7 @@
 aiobotocore==1.0.7        # via -r requirements/_base.txt
 aiodebug==1.1.2           # via -r requirements/_base.txt
 aiofiles==0.5.0           # via -r requirements/_base.txt
-aiohttp==3.6.2            # via -r requirements/_base.txt, aiobotocore, aiozipkin, pytest-aiohttp
+aiohttp==3.6.3            # via -r requirements/_base.txt, aiobotocore, aiozipkin, pytest-aiohttp
 aioitertools==0.7.0       # via -r requirements/_base.txt, aiobotocore
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt
 aiozipkin==0.7.0          # via -r requirements/_base.txt
@@ -40,7 +40,7 @@ idna==2.10                # via -r requirements/_base.txt, idna-ssl, requests, y
 importlib-metadata==1.7.0  # via -r requirements/_base.txt, jsonschema, pluggy, pytest
 iniconfig==1.0.1          # via pytest
 isodate==0.6.0            # via -r requirements/_base.txt, openapi-core
-isort==5.5.4              # via pylint
+isort==5.6.4              # via pylint
 jmespath==0.10.0          # via -r requirements/_base.txt, boto3, botocore
 jsonschema==3.2.0         # via -r requirements/_base.txt, docker-compose, openapi-spec-validator
 lazy-object-proxy==1.4.3  # via -r requirements/_base.txt, astroid, openapi-core

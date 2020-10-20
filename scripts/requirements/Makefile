@@ -17,6 +17,7 @@
 # locations
 REPODIR := $(abspath $(CURDIR)/../..)
 PACKAGES_DIR := $(abspath $(REPODIR)/packages)
+SERVICES_DIR := $(abspath $(REPODIR)/services)
 
 UPGRADE_OPTION := $(if $(upgrade),upgrade=$(upgrade),)
 
@@ -31,6 +32,8 @@ _input-requirements = $(shell find ${PACKAGES_DIR} -type f -name _base.in)
 _input-requirements += $(shell find $(REPODIR)/api/tests/ -type f -name "*.in")
 # system tests
 _input-requirements += $(shell find $(REPODIR)/tests/ -type f -name "*.in")
+# services/*/_test.in (ONLY tests tools)
+_input-requirements = $(shell find ${SERVICES_DIR} -type f -name _test.in)
 
 $(info Found $(_input-requirements))
 
