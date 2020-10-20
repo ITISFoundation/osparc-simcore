@@ -162,8 +162,8 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       const startButton = this.__startButton = this.__createButton(this.tr("Run"), "play", "runStudyBtn", "startPipeline");
       osparc.store.Store.getInstance().addListener("changeCurrentStudy", e => {
         const study = e.getData();
-        if (study && study.state && study.state.state) {
-          switch (study.state.state.value) {
+        if (study && study.getState() && study.getState().state) {
+          switch (study.getState().state.value) {
             case "PENDING":
             case "PUBLISHED":
             case "STARTED":

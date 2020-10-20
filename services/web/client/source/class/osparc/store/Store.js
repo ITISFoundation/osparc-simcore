@@ -211,10 +211,11 @@ qx.Class.define("osparc.store.Store", {
       if (idx !== -1) {
         studiesWStateCache[idx]["state"] = state;
       }
-      // Set the state as well in the current study, as a plaing property
+      // Set the state as well in the current study, as a plain property
       const currentStudy = this.getCurrentStudy();
       if (currentStudy && currentStudy.getUuid() === studyId) {
-        currentStudy.state = state;
+        currentStudy.setState(state);
+        this.setCurrentStudy(currentStudy);
         this.fireDataEvent("changeCurrentStudy", currentStudy);
       }
     },
