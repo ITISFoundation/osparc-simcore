@@ -215,7 +215,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this._add(control);
           break;
         case "workbench-nodes-path-container":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(0).set({
             alignY: "middle"
           }));
           this._add(control);
@@ -319,21 +319,45 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       const nodeIds = study.getWorkbench().getPathIds(study.getUi().getCurrentNodeId());
       this.__setPathButtons(nodeIds);
 
-      this.__workbenchNodesLayout.removeAll();
+      const btns = [];
       for (let i=0; i<nodeIds.length; i++) {
         const nodeId = nodeIds[i];
         const btn = this.__createNodePathBtn(nodeId);
         if (i === nodeIds.length-1) {
           btn.setFont("title-14");
         }
-        this.__workbenchNodesLayout.add(btn);
+        btns.push(btn);
+      }
 
-        if (i<nodeIds.length-1) {
-          const arrow = new qx.ui.basic.Label(">").set({
-            font: "text-14"
-          });
-          this.__workbenchNodesLayout.add(arrow);
+      this.__workbenchNodesLayout.removeAll();
+      for (let i=0; i<btns.length; i++) {
+        const thisBtn = btns[i];
+        let nextBtn = null;
+        if (i+1<btns.length) {
+          nextBtn = btns[i+1];
         }
+
+        this.__workbenchNodesLayout.add(thisBtn);
+
+        const breadcrumbSplitter = new osparc.component.widget.BreadcrumbSplitter(16, 32).set({
+          marginTop: (50-32)/2,
+          marginLeft: -1,
+          marginRight: -1
+        });
+        if (breadcrumbSplitter.getReady()) {
+          breadcrumbSplitter.setLeftWidget(thisBtn);
+          if (nextBtn) {
+            breadcrumbSplitter.setRightWidget(nextBtn);
+          }
+        } else {
+          breadcrumbSplitter.addListenerOnce("SvgWidgetReady", () => {
+            breadcrumbSplitter.setLeftWidget(thisBtn);
+            if (nextBtn) {
+              breadcrumbSplitter.setRightWidget(nextBtn);
+            }
+          }, this);
+        }
+        this.__workbenchNodesLayout.add(breadcrumbSplitter);
       }
     },
 
