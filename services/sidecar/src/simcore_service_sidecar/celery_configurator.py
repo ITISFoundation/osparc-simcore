@@ -166,7 +166,7 @@ def configure_mpi_node() -> Celery:
     return app
 
 
-def get_rabbitmq_config_and_celery_app() -> Tuple[RabbitConfig, Celery]:
+def get_celery_app() -> Tuple[RabbitConfig, Celery]:
     """Returns a CPU or GPU configured celery app"""
     if start_as_mpi_node():
         return configure_mpi_node()
