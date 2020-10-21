@@ -60,6 +60,7 @@ qx.Class.define("osparc.data.model.Study", {
     this.setUi(new osparc.data.model.StudyUI(studyData.ui));
 
     this.setSweeper(new osparc.data.model.Sweeper(studyData));
+    this.setState(studyData.state);
   },
 
   properties: {

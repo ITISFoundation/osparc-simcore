@@ -162,19 +162,33 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       const startButton = this.__startButton = this.__createButton(this.tr("Run"), "play", "runStudyBtn", "startPipeline");
       osparc.store.Store.getInstance().addListener("changeCurrentStudy", e => {
         const study = e.getData();
-        if (study && study.getState() && study.getState().state) {
-          switch (study.getState().state.value) {
-            case "PENDING":
-            case "PUBLISHED":
-            case "STARTED":
-              startButton.setFetching(true);
-              break;
-            default:
-              startButton.setFetching(false);
+        if (study) {
+          if (study.getState() && study.getState().state) {
+            this.__updatePipielineSate(study.getState().state);
+          } else {
+            osparc.store.Store.getInstance().getStudyState(study.getUuid());
           }
         }
       });
       return startButton;
+    },
+
+    __updatePipielineSate: function(state) {
+      const startButton = this.__startButton;
+      switch (state.value) {
+        case "PENDING":
+        case "PUBLISHED":
+        case "STARTED":
+          startButton.setFetching(true);
+          break;
+        case "NOT_STARTED":
+        case "SUCCESS":
+        case "FAILED":
+          startButton.setFetching(false);
+          break;
+        default:
+          startButton.setFetching(false);
+      }
     },
 
     __createRadioButton: function(label, icon, widgetId, singalName) {

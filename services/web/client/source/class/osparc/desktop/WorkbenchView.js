@@ -293,7 +293,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["project_id"];
-      const runButton = this.__mainPanel.getControls().getStartButton();
       this.getLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
@@ -303,20 +302,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         /* If no projectStateUpdated comes in 60 seconds, client must
         check state of pipeline and update button accordingly. */
         const timer = setTimeout(() => {
-          osparc.data.Resources.fetch("studies", "state", {
-            url: {
-              projectId: pipelineId
-            }
-          })
-            .then(({state}) => {
-              if (state && (
-                state.value === "NOT_STARTED" ||
-                state.value === "SUCCESS" ||
-                state.value === "FAILED"
-              )) {
-                runButton.setFetching(false);
-              }
-            });
+          osparc.store.Store.getInstance().getStudyState(pipelineId);
         }, 60000);
         const socket = osparc.wrapper.WebSocket.getInstance();
         socket.getSocket().once("projectStateUpdated", jsonStr => {
