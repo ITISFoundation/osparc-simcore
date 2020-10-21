@@ -135,7 +135,7 @@ def _assert_sleeper_services_completed(
     project_id: str, postgres_session: sa.orm.session.Session, expected_state: StateType
 ):
     # pylint: disable=no-member
-    TIMEOUT_SECONDS = 30
+    TIMEOUT_SECONDS = 60
     WAIT_TIME = 2
 
     @retry(
