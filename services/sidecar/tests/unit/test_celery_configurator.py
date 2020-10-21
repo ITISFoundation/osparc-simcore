@@ -1,12 +1,13 @@
 # pylint: disable=unused-argument,redefined-outer-name,no-member
 import asyncio
+from services.sidecar.src.simcore_service_sidecar.boot_mode import BootMode
 
 import pytest
 from celery import Celery
 
 import aiodocker
 from simcore_service_sidecar import config
-from simcore_service_sidecar.celery_configurator import get_celery_app
+from simcore_service_sidecar.celery_configurator import create_celery_app
 from simcore_service_sidecar.utils import is_gpu_node
 
 
@@ -54,14 +55,14 @@ def force_gpu_mode(monkeypatch):
 )
 def test_force_start_cpu_mode(mocker, force_cpu_mode, gpu_support) -> None:
     mocked_configure_cpu_mode = mocker.patch(
-        "simcore_service_sidecar.celery_configurator.configure_cpu_mode"
+        "simcore_service_sidecar.celery_configurator.configure_node"
     )
 
-    mocked_configure_cpu_mode.return_value = (None, None)
+    mocked_configure_cpu_mode.return_value = None
 
-    get_celery_app()
+    create_celery_app()
 
-    mocked_configure_cpu_mode.assert_called()
+    mocked_configure_cpu_mode.assert_called_with(BootMode.CPU)
 
 
 @pytest.mark.parametrize(
@@ -72,24 +73,24 @@ def test_force_start_cpu_mode(mocker, force_cpu_mode, gpu_support) -> None:
 )
 def test_force_start_gpu_mode(mocker, force_gpu_mode, gpu_support) -> None:
     mocked_configure_gpu_mode = mocker.patch(
-        "simcore_service_sidecar.celery_configurator.configure_gpu_mode"
+        "simcore_service_sidecar.celery_configurator.configure_node"
     )
-    mocked_configure_gpu_mode.return_value = (None, None)
+    mocked_configure_gpu_mode.return_value = None
 
-    get_celery_app()
+    create_celery_app()
 
-    mocked_configure_gpu_mode.assert_called()
+    mocked_configure_gpu_mode.assert_called_with(BootMode.GPU)
 
 
 def test_auto_detects_gpu(mocker, mock_node_with_gpu) -> None:
     mocked_configure_gpu_mode = mocker.patch(
-        "simcore_service_sidecar.celery_configurator.configure_gpu_mode"
+        "simcore_service_sidecar.celery_configurator.configure_node"
     )
-    mocked_configure_gpu_mode.return_value = (None, None)
+    mocked_configure_gpu_mode.return_value = None
 
-    get_celery_app()
+    create_celery_app()
 
-    mocked_configure_gpu_mode.assert_called()
+    mocked_configure_gpu_mode.assert_called_with(BootMode.GPU)
 
 
 @pytest.mark.parametrize(
@@ -110,7 +111,7 @@ def test_proper_has_gpu_mocking(expected_value, gpu_support) -> None:
     ],
 )
 def test_force_start_cpu_ext_dep_mocking(force_cpu_mode, gpu_support) -> None:
-    celery_app = get_celery_app()
+    celery_app = create_celery_app()
     assert isinstance(celery_app, Celery)
 
 
@@ -121,5 +122,5 @@ def test_force_start_cpu_ext_dep_mocking(force_cpu_mode, gpu_support) -> None:
     ],
 )
 def test_force_start_gpu_ext_dep_mocking(force_gpu_mode, gpu_support) -> None:
-    celery_app = get_celery_app()
+    celery_app = create_celery_app()
     assert isinstance(celery_app, Celery)
