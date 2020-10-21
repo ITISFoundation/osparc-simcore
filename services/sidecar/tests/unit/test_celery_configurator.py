@@ -1,5 +1,6 @@
 # pylint: disable=unused-argument,redefined-outer-name,no-member
 import asyncio
+from pathlib import Path
 
 import aiodocker
 import pytest
@@ -29,6 +30,13 @@ def mock_node_no_gpu(mocker) -> None:
 @pytest.fixture()
 def mock_node_with_gpu(mocker) -> None:
     _toggle_gpu_mock(mocker, True)
+
+
+@pytest.fixture()
+def mock_hostname(monkeypatch) -> None:
+    monkeypatch.setattr(
+        config, "SIDECAR_HOST_HOSTNAME_PATH", Path("/etc/hostname"), raising=True
+    )
 
 
 @pytest.fixture(params=[True, False])
@@ -109,7 +117,9 @@ def test_proper_has_gpu_mocking(expected_value, gpu_support) -> None:
         (pytest.lazy_fixture("mock_node_has_gpu")),
     ],
 )
-def test_force_start_cpu_ext_dep_mocking(force_cpu_mode, gpu_support) -> None:
+def test_force_start_cpu_ext_dep_mocking(
+    mock_hostname, force_cpu_mode, gpu_support
+) -> None:
     celery_app = create_celery_app()
     assert isinstance(celery_app, Celery)
 
@@ -120,6 +130,8 @@ def test_force_start_cpu_ext_dep_mocking(force_cpu_mode, gpu_support) -> None:
         (pytest.lazy_fixture("mock_node_has_gpu")),
     ],
 )
-def test_force_start_gpu_ext_dep_mocking(force_gpu_mode, gpu_support) -> None:
+def test_force_start_gpu_ext_dep_mocking(
+    mock_hostname, force_gpu_mode, gpu_support
+) -> None:
     celery_app = create_celery_app()
     assert isinstance(celery_app, Celery)
