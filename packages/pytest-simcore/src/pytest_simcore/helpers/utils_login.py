@@ -1,4 +1,5 @@
 import re
+from typing import Dict
 
 from aiohttp import web
 from yarl import URL
@@ -14,10 +15,10 @@ TEST_MARKS = re.compile(r"TEST (\w+):(.*)")
 
 
 def parse_test_marks(text):
-    """ Checs for marks as
+    """Checs for marks as
 
-        TEST name:123123
-        TEST link:some-value
+    TEST name:123123
+    TEST link:some-value
     """
     marks = {}
     for m in TEST_MARKS.finditer(text):
@@ -31,7 +32,7 @@ def parse_link(text):
     return URL(link).path
 
 
-async def create_user(data=None):
+async def create_user(data=None) -> Dict:
     data = data or {}
     password = get_random_string(10)
     params = {
@@ -48,14 +49,18 @@ async def create_user(data=None):
     return user
 
 
-async def log_client_in(client, user_data=None, *, enable_check=True):
+async def log_client_in(client, user_data=None, *, enable_check=True) -> Dict:
     # creates user directly in db
     user = await create_user(user_data)
 
     # login
     url = client.app.router["auth_login"].url_for()
     r = await client.post(
-        url, json={"email": user["email"], "password": user["raw_password"],}
+        url,
+        json={
+            "email": user["email"],
+            "password": user["raw_password"],
+        },
     )
 
     if enable_check:

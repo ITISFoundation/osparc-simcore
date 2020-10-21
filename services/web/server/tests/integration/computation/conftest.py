@@ -6,6 +6,7 @@ import json
 import sys
 import uuid
 from pathlib import Path
+from typing import Dict
 
 import pytest
 
@@ -32,7 +33,7 @@ def mock_project(fake_data_dir, mock_workbench_payload):
 
 
 @pytest.fixture
-async def logged_user(client, user_role: UserRole) -> LoggedUser:
+async def logged_user(client, user_role: UserRole) -> Dict:
     """adds a user in db and logs in with client
 
     NOTE: `user_role` fixture is defined as a parametrization below!!!
@@ -46,7 +47,7 @@ async def logged_user(client, user_role: UserRole) -> LoggedUser:
 
 
 @pytest.fixture
-async def user_project(client, mock_project, logged_user) -> NewProject:
+async def user_project(client, mock_project, logged_user) -> Dict:
     mock_project["prjOwner"] = logged_user["name"]
 
     async with NewProject(
