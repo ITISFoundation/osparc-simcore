@@ -216,6 +216,7 @@ qx.Class.define("osparc.store.Store", {
       if (currentStudy && currentStudy.getUuid() === studyId) {
         currentStudy.setState(state);
         this.setCurrentStudy(currentStudy);
+        this.fireDataEvent("changeCurrentStudy", currentStudy);
       }
     },
 
