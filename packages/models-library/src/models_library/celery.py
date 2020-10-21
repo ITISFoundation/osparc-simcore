@@ -11,7 +11,7 @@ class CeleryConfig(BaseSettings):
 
     rabbit: RabbitConfig = RabbitConfig()
     redis: RedisConfig = RedisConfig()
-    task_name: str = "tasks"
+    task_name: str = "simcore.comp.task"
     publication_timeout: PositiveInt = 60
 
     # class Config:
