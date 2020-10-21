@@ -265,11 +265,11 @@ qx.Class.define("osparc.data.model.Study", {
           return;
         }
         if (key === "workbench") {
-          jsonObject["ui"] = this.getWorkbench().serialize();
+          jsonObject[key] = this.getWorkbench().serialize();
           return;
         }
         if (key === "ui") {
-          jsonObject["ui"] = this.getUi().serialize();
+          jsonObject[key] = this.getUi().serialize();
           return;
         }
         if (key === "sweeper") {
