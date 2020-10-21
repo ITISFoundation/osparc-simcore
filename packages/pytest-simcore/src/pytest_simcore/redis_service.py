@@ -20,7 +20,7 @@ def redis_config(docker_stack: Dict, devel_environ: Dict) -> RedisConfig:
 
     config = RedisConfig(
         host="127.0.0.1",
-        port=get_service_published_port("redis", devel_environ["REDIS_PORT"]),
+        port=get_service_published_port("simcore_redis", devel_environ["REDIS_PORT"]),
     )
     os.environ["REDIS_HOST"] = "127.0.0.1"
     os.environ["REDIS_PORT"] = str(config.port)
