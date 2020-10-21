@@ -14,29 +14,20 @@ from celery import Celery
 from celery.contrib.abortable import AbortableTask
 from kombu import Queue
 
+from . import config
 from .boot_mode import BootMode, get_boot_mode, set_boot_mode
 from .celery_log_setup import get_task_logger
 from .celery_task import entrypoint
 from .celery_task_utils import on_task_failure_handler, on_task_success_handler
-from .config import (
-    CELERY_CONFIG,
-    CPU_QUEUE_NAME,
-    FORCE_START_CPU_MODE,
-    FORCE_START_GPU_MODE,
-    GPU_QUEUE_NAME,
-    MAIN_QUEUE_NAME,
-    MPI_QUEUE_NAME,
-    SIDECAR_HOST_HOSTNAME_PATH,
-)
 from .utils import is_gpu_node, start_as_mpi_node
 
 log = get_task_logger(__name__)
 
 
 CELERY_APP_CONFIGS = {
-    BootMode.CPU: {"app": "celery_cpu_mode", "queue_name": CPU_QUEUE_NAME},
-    BootMode.GPU: {"app": "celery_gpu_mode", "queue_name": GPU_QUEUE_NAME},
-    BootMode.MPI: {"app": "celery_mpi_mode", "queue_name": MPI_QUEUE_NAME},
+    BootMode.CPU: {"app": "celery_cpu_mode", "queue_name": config.CPU_QUEUE_NAME},
+    BootMode.GPU: {"app": "celery_gpu_mode", "queue_name": config.GPU_QUEUE_NAME},
+    BootMode.MPI: {"app": "celery_mpi_mode", "queue_name": config.MPI_QUEUE_NAME},
 }
 
 
@@ -72,25 +63,25 @@ def define_celery_task(app: Celery, name: str) -> None:
 def configure_node(bootmode: BootMode) -> Celery:
     log.info("Initializing celery app...")
     app = Celery(
-        f"sidecar.{str(bootmode.name).lower()}.{SIDECAR_HOST_HOSTNAME_PATH.read_text()}",
-        broker=CELERY_CONFIG.broker_url,
-        backend=CELERY_CONFIG.result_backend,
+        f"sidecar.{str(bootmode.name).lower()}.{config.SIDECAR_HOST_HOSTNAME_PATH.read_text()}",
+        broker=config.CELERY_CONFIG.broker_url,
+        backend=config.CELERY_CONFIG.result_backend,
     )
 
     app.conf.task_default_queue = "celery"
     app.conf.task_queues = [
         Queue("celery"),
-        Queue(MAIN_QUEUE_NAME),
+        Queue(config.MAIN_QUEUE_NAME),
         Queue(CELERY_APP_CONFIGS[bootmode]["queue_name"]),
     ]
     app.conf.task_routes = {
-        MAIN_QUEUE_NAME: MAIN_QUEUE_NAME,
-        CPU_QUEUE_NAME: CPU_QUEUE_NAME,
-        GPU_QUEUE_NAME: GPU_QUEUE_NAME,
-        MPI_QUEUE_NAME: MPI_QUEUE_NAME,
+        config.MAIN_QUEUE_NAME: config.MAIN_QUEUE_NAME,
+        config.CPU_QUEUE_NAME: config.CPU_QUEUE_NAME,
+        config.GPU_QUEUE_NAME: config.GPU_QUEUE_NAME,
+        config.MPI_QUEUE_NAME: config.MPI_QUEUE_NAME,
     }
 
-    define_celery_task(app, MAIN_QUEUE_NAME)
+    define_celery_task(app, config.MAIN_QUEUE_NAME)
     define_celery_task(app, CELERY_APP_CONFIGS[bootmode]["queue_name"])
     set_boot_mode(bootmode)
     log.info("Initialized celery app in %s", get_boot_mode())
@@ -104,9 +95,9 @@ def create_celery_app() -> Celery:
 
     if start_as_mpi_node():
         bootmode = BootMode.MPI
-    elif FORCE_START_CPU_MODE:
+    elif config.FORCE_START_CPU_MODE:
         bootmode = BootMode.CPU
-    elif FORCE_START_GPU_MODE or is_gpu_node():
+    elif config.FORCE_START_GPU_MODE or is_gpu_node():
         bootmode = BootMode.GPU
 
     return configure_node(bootmode)
