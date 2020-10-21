@@ -54,7 +54,7 @@ def celery_adapter(app: Celery) -> Callable:
     return decorator
 
 
-def _define_celery_task(app: Celery, name: str) -> None:
+def define_celery_task(app: Celery, name: str) -> None:
     task = app.task(
         name=name,
         base=AbortableTask,
@@ -68,7 +68,7 @@ def _define_celery_task(app: Celery, name: str) -> None:
     log.debug("Created task %s", task.name)
 
 
-def _configure_node(bootmode: BootMode) -> Celery:
+def configure_node(bootmode: BootMode) -> Celery:
     log.info("Initializing celery app...")
     app = Celery(
         f"sidecar.{str(bootmode.name).lower()}.{config.SIDECAR_HOST_HOSTNAME_PATH.read_text()}",
@@ -89,8 +89,8 @@ def _configure_node(bootmode: BootMode) -> Celery:
         MPI_QUEUE_NAME: MPI_QUEUE_NAME,
     }
 
-    _define_celery_task(app, config.MAIN_QUEUE_NAME)
-    _define_celery_task(app, CELERY_APP_CONFIGS[bootmode]["queue_name"])
+    define_celery_task(app, config.MAIN_QUEUE_NAME)
+    define_celery_task(app, CELERY_APP_CONFIGS[bootmode]["queue_name"])
     set_boot_mode(bootmode)
     log.info("Initialized celery app in %s", get_boot_mode())
     return app
@@ -108,7 +108,7 @@ def create_celery_app() -> Celery:
     elif config.FORCE_START_GPU_MODE or is_gpu_node():
         bootmode = BootMode.GPU
 
-    return _configure_node(bootmode)
+    return configure_node(bootmode)
 
 
 __all__ = ["create_celery_app"]
