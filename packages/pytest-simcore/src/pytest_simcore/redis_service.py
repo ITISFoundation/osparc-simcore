@@ -16,7 +16,7 @@ from .helpers.utils_docker import get_service_published_port
 
 @pytest.fixture(scope="module")
 def redis_config(docker_stack: Dict, devel_environ: Dict) -> RedisConfig:
-    assert "redis" in docker_stack["services"]
+    assert "simcore_redis" in docker_stack["services"]
 
     config = RedisConfig(
         host="127.0.0.1",
