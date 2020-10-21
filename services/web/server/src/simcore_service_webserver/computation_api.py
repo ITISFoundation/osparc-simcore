@@ -518,16 +518,26 @@ async def stop_pipeline_computation(app: web.Application, project_id: str) -> No
     db_engine = app[APP_DB_ENGINE_KEY]
 
     async with db_engine.acquire() as conn:
+        # start by setting all pending tasks to aborted, so the sidecar will stop taking them
+        await conn.execute(
+            sa.update(comp_tasks)
+            .where(
+                (comp_tasks.c.project_id == project_id)
+                & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+                & (
+                    (comp_tasks.c.state == StateType.PUBLISHED)
+                    | (comp_tasks.c.state == StateType.PENDING)
+                )
+            )
+            .values(state=StateType.ABORTED)
+        )
+        # now try to stop the remaining running tasks
         async for row in conn.execute(
             sa.select([comp_tasks]).where(
                 (comp_tasks.c.project_id == project_id)
                 & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                 & (comp_tasks.c.job_id != None)
-                & (
-                    (comp_tasks.c.state == StateType.PUBLISHED)
-                    | (comp_tasks.c.state == StateType.PENDING)
-                    | (comp_tasks.c.state == StateType.RUNNING)
-                )
+                & (comp_tasks.c.state == StateType.RUNNING)
             )
         ):
 
