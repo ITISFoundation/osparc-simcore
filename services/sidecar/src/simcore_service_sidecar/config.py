@@ -72,7 +72,7 @@ FORCE_START_GPU_MODE: Optional[str] = os.environ.get("START_AS_MODE_GPU")
 # if a node has this amount of CPUs it will be a candidate an MPI candidate
 TARGET_MPI_NODE_CPU_COUNT: int = int(os.environ.get("TARGET_MPI_NODE_CPU_COUNT", "-1"))
 
-CELERY_CONFIG = CeleryConfig.create_default()
+CELERY_CONFIG = CeleryConfig.create_from_env()
 
 MAIN_QUEUE_NAME: str = CELERY_CONFIG.task_name
 CPU_QUEUE_NAME: str = f"{MAIN_QUEUE_NAME}.cpu"

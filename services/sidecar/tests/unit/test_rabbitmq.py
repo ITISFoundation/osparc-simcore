@@ -17,7 +17,7 @@ core_services = ["rabbit"]
 
 @pytest.fixture
 async def sidecar_config():
-    config.CELERY_CONFIG = CeleryConfig.create_default()
+    config.CELERY_CONFIG = CeleryConfig.create_from_env()
 
 
 async def test_rabbitmq(

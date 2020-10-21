@@ -5,7 +5,7 @@ from .rabbit import RabbitConfig
 
 class CeleryConfig(BaseSettings):
     @classmethod
-    def create_default(cls) -> "CeleryConfig":
+    def create_from_env(cls) -> "CeleryConfig":
         # this calls trigger env parsers
         return cls(rabbit=RabbitConfig(), redis=RedisConfig())
 

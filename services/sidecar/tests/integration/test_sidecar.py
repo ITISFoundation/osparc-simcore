@@ -79,7 +79,7 @@ def sidecar_config(
     config.POSTGRES_USER = postgres_dsn["user"]
     config.POSTGRES_PW = postgres_dsn["password"]
 
-    config.CELERY_CONFIG = CeleryConfig.create_default()
+    config.CELERY_CONFIG = CeleryConfig.create_from_env()
 
 
 class LockedCollector:
@@ -250,7 +250,10 @@ SLEEPERS_STUDY = (
     "itisfoundation/sleeper",
     "1.0.0",
     {
-        "node_1": {"next": ["node_2", "node_3"], "inputs": {},},
+        "node_1": {
+            "next": ["node_2", "node_3"],
+            "inputs": {},
+        },
         "node_2": {
             "next": ["node_4"],
             "inputs": {
@@ -313,21 +316,29 @@ PYTHON_RUNNER_FACTORY_STUDY = (
     "1.0.0",
     {
         "node_1": {
-            "next": ["node_2",],
+            "next": [
+                "node_2",
+            ],
             "inputs": {
                 "input_1": {"store": SIMCORE_S3_ID, "path": "osparc_python_factory.py"}
             },
         },
         "node_2": {
             "next": [],
-            "inputs": {"input_1": {"nodeUuid": "node_1", "output": "output_1"},},
+            "inputs": {
+                "input_1": {"nodeUuid": "node_1", "output": "output_1"},
+            },
         },
     },
 )
 
 
 @pytest.mark.parametrize(
-    "service_repo, service_tag, pipeline_cfg", [SLEEPERS_STUDY, PYTHON_RUNNER_STUDY,],
+    "service_repo, service_tag, pipeline_cfg",
+    [
+        SLEEPERS_STUDY,
+        PYTHON_RUNNER_STUDY,
+    ],
 )
 async def test_run_services(
     loop,
