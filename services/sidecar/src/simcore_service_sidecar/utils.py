@@ -8,7 +8,6 @@ import networkx as nx
 from aiodocker.volumes import DockerVolume
 from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
-from celery import Celery
 from simcore_postgres_database.sidecar_models import StateType, comp_tasks
 from sqlalchemy import and_
 
