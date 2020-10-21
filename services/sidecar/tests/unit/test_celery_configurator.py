@@ -1,12 +1,11 @@
 # pylint: disable=unused-argument,redefined-outer-name,no-member
 import asyncio
-from services.sidecar.src.simcore_service_sidecar.boot_mode import BootMode
-
-import pytest
-from celery import Celery
 
 import aiodocker
+import pytest
+from celery import Celery
 from simcore_service_sidecar import config
+from simcore_service_sidecar.boot_mode import BootMode
 from simcore_service_sidecar.celery_configurator import create_celery_app
 from simcore_service_sidecar.utils import is_gpu_node
 
