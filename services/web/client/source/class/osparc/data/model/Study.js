@@ -261,6 +261,9 @@ qx.Class.define("osparc.data.model.Study", {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
+        if (key === 'state') {
+          return;
+        }
         if (key === "sweeper") {
           jsonObject["dev"] = {};
           jsonObject["dev"]["sweeper"] = this.getSweeper().serialize();
@@ -270,7 +273,7 @@ qx.Class.define("osparc.data.model.Study", {
           jsonObject["ui"] = this.getUi().serialize();
           return;
         }
-        let value = key === "workbench" ? this.getWorkbench().serialize() : this.get(key);
+        let value = this.get(key);
         if (value !== null) {
           // only put the value in the payload if there is a value
           jsonObject[key] = value;
