@@ -268,7 +268,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __requestStartPipeline: function(studyId) {
-      const url = "/computation/pipeline/" + encodeURIComponent(studyId) + "/start";
+      const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       const runButton = this.__mainPanel.getControls().getStartButton();
       req.addListener("success", this.__onPipelinesubmitted, this);
@@ -328,6 +328,44 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
+    __stopPipeline: function() {
+      if (!osparc.data.Permissions.getInstance().canDo("study.stop", true)) {
+        return;
+      }
+
+      
+      this.__doStartPipeline();
+    },
+
+    __doStopPipeline: function() {
+      if (this.getStudy().getSweeper().hasSecondaryStudies()) {
+        const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
+        secondaryStudyIds.forEach(secondaryStudyId => {
+          this.__requestStopPipeline(secondaryStudyId);
+        });
+      } else {
+        this.__requestStopPipeline(this.getStudy().getUuid());
+      }
+    },
+
+    __requestStopPipeline: function(studyId) {
+      const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":stop";
+      const req = new osparc.io.request.ApiRequest(url, "POST");
+      req.addListener("success", e => {
+        this.getLogger().debug(null, "Pipeline aborting")
+      }, this);
+      req.addListener("error", e => {
+        this.getLogger().error(null, "Error stopping pipeline");
+      }, this);
+      req.addListener("fail", e => {
+        this.getLogger().error(null, "Failed stopping pipeline");
+      }, this);
+      req.send();
+
+      this.getLogger().info(null, "Stopping pipeline");
+      return true;
+    },
+
     __maximizeIframe: function(maximize) {
       this.getBlocker().setStyles({
         display: maximize ? "none" : "block"
@@ -361,6 +399,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       controlsBar.addListener("groupSelection", this.__groupSelection, this);
       controlsBar.addListener("ungroupSelection", this.__ungroupSelection, this);
       controlsBar.addListener("startPipeline", this.__startPipeline, this);
+      controlsBar.addListener("stopPipeline", this.__stopPipeline, this);
     },
 
     __initViews: function() {
