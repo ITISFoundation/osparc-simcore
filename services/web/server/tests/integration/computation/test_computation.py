@@ -209,11 +209,11 @@ async def test_check_health(
     ],
 )
 async def test_start_pipeline(
+    sleeper_service: Dict[str, str],
     rabbit_service: str,
     postgres_session: sa.orm.session.Session,
     redis_service: URL,
     simcore_services: Dict[str, URL],
-    sleeper_service: Dict[str, str],
     client,
     logged_user: LoggedUser,
     user_project: NewProject,
