@@ -460,6 +460,11 @@ def get_celery(_app: web.Application) -> Celery:
     return celery_app
 
 
+def get_celery_task_name(app: web.Application) -> str:
+    comp_settings: ComputationSettings = app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
+    return comp_settings.task_name
+
+
 def get_celery_publication_timeout(app: web.Application) -> int:
     comp_settings: ComputationSettings = app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
     return comp_settings.publication_timeout
@@ -489,7 +494,7 @@ async def start_pipeline_computation(
 
     # publish the tasks to celery
     task = get_celery(app).send_task(
-        "comp.task",
+        get_celery_task_name(app),
         expires=get_celery_publication_timeout(app),
         kwargs={"user_id": user_id, "project_id": project_id},
     )
