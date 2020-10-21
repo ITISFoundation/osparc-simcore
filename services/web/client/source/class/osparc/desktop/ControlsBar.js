@@ -164,7 +164,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
         const study = e.getData();
         if (study) {
           if (study.getState() && study.getState().state) {
-            this.__updatePipielineSate(study.getState().state);
+            this.__updatePipelineState(study.getState().state);
           } else {
             osparc.store.Store.getInstance().getStudyState(study.getUuid());
           }
@@ -173,7 +173,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       return startButton;
     },
 
-    __updatePipielineSate: function(state) {
+    __updatePipelineState: function(state) {
       const startButton = this.__startButton;
       switch (state.value) {
         case "PENDING":
