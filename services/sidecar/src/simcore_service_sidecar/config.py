@@ -70,6 +70,11 @@ TARGET_MPI_NODE_CPU_COUNT: int = int(os.environ.get("TARGET_MPI_NODE_CPU_COUNT",
 
 CELERY_CONFIG = CeleryConfig.create_default()
 
+MAIN_QUEUE_NAME: str = CELERY_CONFIG.task_name
+CPU_QUEUE_NAME: str = f"{MAIN_QUEUE_NAME}.cpu"
+GPU_QUEUE_NAME: str = f"{MAIN_QUEUE_NAME}.gpu"
+MPI_QUEUE_NAME: str = f"{MAIN_QUEUE_NAME}.mpi"
+
 # used by the mpi lock to ensure the lock is acquired and released in time
 REDLOCK_REFRESH_INTERVAL_SECONDS: float = max(
     float(os.environ.get("REDLOCK_REFRESH_INTERVAL_SECONDS", "5.0")), 1.0

@@ -1,6 +1,6 @@
 from celery.signals import worker_shutting_down
 
-from .celery_configurator import get_celery_app
+from .celery_configurator import create_celery_app
 from .celery_log_setup import get_task_logger
 from .celery_task_utils import cancel_task
 from .cli import run_sidecar
@@ -8,7 +8,7 @@ from .remote_debug import setup_remote_debugging
 
 setup_remote_debugging()
 
-app = get_celery_app()
+app = create_celery_app()
 
 log = get_task_logger(__name__)
 

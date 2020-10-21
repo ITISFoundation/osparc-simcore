@@ -129,17 +129,6 @@ def start_as_mpi_node() -> bool:
     return is_mpi_node
 
 
-def assemble_celery_app(task_default_queue: str) -> Celery:
-    """Returns an instance of Celery using a different RabbitMQ queue"""
-    app = Celery(
-        config.CELERY_CONFIG.task_name,
-        broker=config.CELERY_CONFIG.broker_url,
-        backend=config.CELERY_CONFIG.result_backend,
-    )
-    app.conf.task_default_queue = task_default_queue
-    return app
-
-
 async def get_volume_mount_point(volume_name: str) -> str:
     try:
         async with aiodocker.Docker() as docker_client:
