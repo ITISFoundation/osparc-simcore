@@ -80,7 +80,7 @@ async def try_to_acquire_lock(
 
 async def acquire_lock(cpu_count: int) -> bool:
     resource_name = f"aioredlock:mpi_lock:{cpu_count}"
-    lock_manager = Aioredlock([config.CELERY_CONFIG.redis.redis_dsn])
+    lock_manager = Aioredlock([config.CELERY_CONFIG.redis.dsn])
     logger.info("Will try to acquire an mpi_lock")
 
     def is_locked_factory():

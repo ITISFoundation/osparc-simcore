@@ -30,7 +30,7 @@ def redis_config(docker_stack: Dict, devel_environ: Dict) -> RedisConfig:
 
 @pytest.fixture(scope="module")
 async def redis_service(redis_config: RedisConfig, docker_stack: Dict) -> URL:
-    url = URL(redis_config.redis_dsn)
+    url = URL(redis_config.dsn)
     await wait_till_redis_responsive(url)
     return url
 

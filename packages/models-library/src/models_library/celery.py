@@ -20,4 +20,4 @@ class CeleryConfig(BaseSettings):
 
     @property
     def result_backend(self):
-        return self.redis.redis_dsn
+        return self.redis.dsn
