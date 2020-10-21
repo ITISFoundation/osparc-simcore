@@ -22,12 +22,12 @@
 qx.Class.define("osparc.desktop.WorkbenchView", {
   extend: qx.ui.splitpane.Pane,
 
-  construct: function() {
+  construct: function () {
     this.base(arguments, "horizontal");
 
     const sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
       minWidth: 0,
-      width: Math.min(parseInt(window.innerWidth*0.25), 350)
+      width: Math.min(parseInt(window.innerWidth * 0.25), 350)
     });
     osparc.utils.Utils.addBorder(sidePanel, 2, "right");
     const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
@@ -66,13 +66,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __loggerView: null,
     __currentNodeId: null,
 
-    initViews: function() {
+    initViews: function () {
       this.__initViews();
       this.__connectEvents();
       this.__attachSocketEventHandlers();
     },
 
-    nodeSelected: function(nodeId) {
+    nodeSelected: function (nodeId) {
       if (!nodeId) {
         this.__loggerView.setCurrentNodeId();
         return;
@@ -113,11 +113,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    getLogger: function() {
+    getLogger: function () {
       return this.__loggerView;
     },
 
-    __editSlides: function() {
+    __editSlides: function () {
       const uiData = this.getStudy().getUi();
       const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(uiData.getSlideshow());
       const title = this.tr("Edit Slides");
@@ -130,7 +130,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __showSweeper: function() {
+    __showSweeper: function () {
       const study = this.getStudy();
       const sweeper = new osparc.component.sweeper.Sweeper(study);
       const title = this.tr("Sweeper");
@@ -154,7 +154,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __showWorkbenchUI: function() {
+    __showWorkbenchUI: function () {
       const workbench = this.getStudy().getWorkbench();
       const currentNode = workbench.getNode(this.__currentNodeId);
       if (currentNode === this.__workbenchUI.getCurrentModel()) {
@@ -164,7 +164,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __showSettings: function() {
+    __showSettings: function () {
       const workbench = this.getStudy().getWorkbench();
       const currentNode = workbench.getNode(this.__currentNodeId);
       if (this.__groupNodeView.isPropertyInitialized("node") && currentNode === this.__groupNodeView.getNode()) {
@@ -176,14 +176,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __isSelectionEmpty: function(selectedNodeUIs) {
+    __isSelectionEmpty: function (selectedNodeUIs) {
       if (selectedNodeUIs === null || selectedNodeUIs.length === 0) {
         return true;
       }
       return false;
     },
 
-    __groupSelection: function() {
+    __groupSelection: function () {
       // Some checks
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
         return;
@@ -209,7 +209,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__workbenchUI.resetSelectedNodes();
     },
 
-    __ungroupSelection: function() {
+    __ungroupSelection: function () {
       // Some checks
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
         return;
@@ -239,7 +239,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__workbenchUI.resetSelectedNodes();
     },
 
-    __startPipeline: function() {
+    __startPipeline: function () {
       if (!osparc.data.Permissions.getInstance().canDo("study.start", true)) {
         return;
       }
@@ -255,7 +255,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         });
     },
 
-    __doStartPipeline: function() {
+    __doStartPipeline: function () {
       if (this.getStudy().getSweeper().hasSecondaryStudies()) {
         const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
         secondaryStudyIds.forEach(secondaryStudyId => {
@@ -267,7 +267,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __requestStartPipeline: function(studyId) {
+    __requestStartPipeline: function (studyId) {
       const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       const runButton = this.__mainPanel.getControls().getStartButton();
@@ -290,7 +290,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return true;
     },
 
-    __onPipelinesubmitted: function(e) {
+    __onPipelinesubmitted: function (e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["project_id"];
       const runButton = this.__mainPanel.getControls().getStartButton();
@@ -328,15 +328,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __stopPipeline: function() {
+    __stopPipeline: function () {
       if (!osparc.data.Permissions.getInstance().canDo("study.stop", true)) {
         return;
       }
 
-      this.__doStartPipeline();
+      this.__doStopPipeline();
     },
 
-    __doStopPipeline: function() {
+    __doStopPipeline: function () {
       if (this.getStudy().getSweeper().hasSecondaryStudies()) {
         const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
         secondaryStudyIds.forEach(secondaryStudyId => {
@@ -347,7 +347,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __requestStopPipeline: function(studyId) {
+    __requestStopPipeline: function (studyId) {
       const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":stop";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       req.addListener("success", e => {
@@ -365,14 +365,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return true;
     },
 
-    __maximizeIframe: function(maximize) {
+    __maximizeIframe: function (maximize) {
       this.getBlocker().setStyles({
         display: maximize ? "none" : "block"
       });
       this.__scrollContainer.setVisibility(maximize ? "excluded" : "visible");
     },
 
-    __attachEventHandlers: function() {
+    __attachEventHandlers: function () {
       const blocker = this.getBlocker();
       blocker.addListener("tap", this.__sidePanel.toggleCollapsed.bind(this.__sidePanel));
 
@@ -401,7 +401,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       controlsBar.addListener("stopPipeline", this.__stopPipeline, this);
     },
 
-    __initViews: function() {
+    __initViews: function () {
       const study = this.getStudy();
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree();
@@ -449,7 +449,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
 
-    __removeNode: function(nodeId) {
+    __removeNode: function (nodeId) {
       if (nodeId === this.__currentNodeId) {
         return false;
       }
@@ -458,7 +458,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const connectedEdges = workbench.getConnectedEdges(nodeId);
       if (workbench.removeNode(nodeId)) {
         // remove first the connected edges
-        for (let i=0; i<connectedEdges.length; i++) {
+        for (let i = 0; i < connectedEdges.length; i++) {
           const edgeId = connectedEdges[i];
           this.__workbenchUI.clearEdge(edgeId);
         }
@@ -468,7 +468,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return false;
     },
 
-    __removeEdge: function(edgeId) {
+    __removeEdge: function (edgeId) {
       const workbench = this.getStudy().getWorkbench();
       const currentNode = workbench.getNode(this.__currentNodeId);
       const edge = workbench.getEdge(edgeId);
@@ -495,7 +495,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __updatePipelineAndRetrieve: function(node, portKey = null) {
+    __updatePipelineAndRetrieve: function (node, portKey = null) {
       this.updateStudyDocument(false)
         .then(() => {
           this.__retrieveInputs(node, portKey);
@@ -503,14 +503,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.getLogger().debug(null, "Updating pipeline");
     },
 
-    __retrieveInputs: function(node, portKey = null) {
+    __retrieveInputs: function (node, portKey = null) {
       this.getLogger().debug(null, "Retrieveing inputs");
       if (node) {
         node.retrieveInputs(portKey);
       }
     },
 
-    __showInMainView: function(widget, nodeId) {
+    __showInMainView: function (widget, nodeId) {
       this.__mainPanel.setMainView(widget);
 
       this.__nodesTree.nodeSelected(nodeId);
@@ -521,12 +521,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       controlsBar.setExtraViewVisibility(this.__groupNodeView && this.__groupNodeView.getNode() && nodeId === this.__groupNodeView.getNode().getNodeId());
     },
 
-    __workbenchChanged: function() {
+    __workbenchChanged: function () {
       this.__nodesTree.populateTree();
       this.__nodesTree.nodeSelected(this.__currentNodeId);
     },
 
-    __connectEvents: function() {
+    __connectEvents: function () {
       const workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
@@ -573,7 +573,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __exportMacro: function(nodeId) {
+    __exportMacro: function (nodeId) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.export", true)) {
         return;
       }
@@ -604,14 +604,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __attachSocketEventHandlers: function() {
+    __attachSocketEventHandlers: function () {
       // Listen to socket
       const socket = osparc.wrapper.WebSocket.getInstance();
 
       // callback for incoming logs
       const slotName = "logger";
       if (!socket.slotExists(slotName)) {
-        socket.on(slotName, function(jsonString) {
+        socket.on(slotName, function (jsonString) {
           const data = JSON.parse(jsonString);
           if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
             // Filtering out logs from other studies
@@ -625,7 +625,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       // callback for incoming progress
       const slotName2 = "progress";
       if (!socket.slotExists(slotName2)) {
-        socket.on(slotName2, function(data) {
+        socket.on(slotName2, function (data) {
           const d = JSON.parse(data);
           const nodeId = d["Node"];
           const progress = 100 * Number.parseFloat(d["Progress"]).toFixed(4);
@@ -657,7 +657,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __checkMaximizeable: function() {
+    __checkMaximizeable: function () {
       this.__scrollContainer.setVisibility("visible");
       this.__nodeView._maximizeIFrame(false); // eslint-disable-line no-underscore-dangle
       const node = this.getStudy().getWorkbench().getNode(this.__currentNodeId);
@@ -667,7 +667,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    openOneNode: function() {
+    openOneNode: function () {
       const validNodeIds = [];
       const allNodes = this.getStudy().getWorkbench().getNodes(true);
       Object.values(allNodes).forEach(node => {
@@ -688,7 +688,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    updateStudyDocument: function(run=false) {
+    updateStudyDocument: function (run = false) {
       this.getStudy().setLastChangeDate(new Date());
       const newObj = this.getStudy().serialize();
       const prjUuid = this.getStudy().getUuid();
