@@ -333,7 +333,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         return;
       }
 
-      
       this.__doStartPipeline();
     },
 
@@ -352,7 +351,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":stop";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       req.addListener("success", e => {
-        this.getLogger().debug(null, "Pipeline aborting")
+        this.getLogger().debug(null, "Pipeline aborting");
       }, this);
       req.addListener("error", e => {
         this.getLogger().error(null, "Error stopping pipeline");
