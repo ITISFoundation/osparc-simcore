@@ -14,9 +14,6 @@ class CeleryConfig(BaseSettings):
     task_name: str = "simcore.comp.task"
     publication_timeout: PositiveInt = 60
 
-    # class Config:
-    #     env_prefix = "CELERY_"
-
     @property
     def broker_url(self):
         return self.rabbit.rabbit_dsn
