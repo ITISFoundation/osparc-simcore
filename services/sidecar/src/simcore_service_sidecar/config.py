@@ -42,6 +42,10 @@ SIDECAR_HOST_HOSTNAME_PATH: Path = Path(
     os.environ.get("SIDECAR_HOST_HOSTNAME_PATH", Path.home() / "hostname")
 )
 
+SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S: int = int(
+    os.environ.get("SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S", 2)
+)
+
 SIDECAR_LOGLEVEL: str = getattr(
     logging, os.environ.get("SIDECAR_LOGLEVEL", "WARNING").upper(), logging.DEBUG
 )

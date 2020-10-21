@@ -5,6 +5,7 @@ from typing import Callable, List, Optional
 import click
 
 from .celery_task_utils import cancel_task
+from .config import SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S
 from .core import inspect
 from .db import DBContextManager
 from .rabbitmq import RabbitMQ
@@ -31,12 +32,9 @@ def main(
         log.exception("Uncaught exception")
 
 
-INTERVAL_TO_CHECK_TASK_ABORTED_S = 5
-
-
 async def perdiodicaly_check_if_aborted(is_aborted_cb: Callable[[], bool]) -> None:
     log.info("Starting periodic check of task abortion...")
-    while await asyncio.sleep(INTERVAL_TO_CHECK_TASK_ABORTED_S, result=True):
+    while await asyncio.sleep(SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S, result=True):
         if is_aborted_cb():
             log.info("Task was aborted. Cancelling...")
             asyncio.get_event_loop().call_soon(cancel_task(run_sidecar))
