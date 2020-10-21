@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 
-from pydantic import BaseSettings, Extra
+from pydantic import BaseSettings, Extra, validator
 from pydantic.networks import AnyUrl
 from pydantic.types import PositiveInt, SecretStr
 
@@ -10,8 +10,6 @@ class RabbitDsn(AnyUrl):
 
 
 class RabbitConfig(BaseSettings):
-    dsn: Optional[RabbitDsn] = None
-
     # host
     host: str = "rabbit"
     port: PositiveInt = 5672
@@ -20,24 +18,27 @@ class RabbitConfig(BaseSettings):
     user: str = "simcore"
     password: SecretStr = SecretStr("simcore")
 
+    dsn: Optional[RabbitDsn] = None
+
     # channels
     channels: Dict[str, str] = {
         "log": "comp.backend.channels.log",
         "instrumentation": "comp.backend.channels.instrumentation",
     }
 
-    @property
-    def rabbit_dsn(self):
-        if self.dsn:
-            return str(self.dsn)
-
-        return RabbitDsn.build(
-            scheme="amqp",
-            user=self.user,
-            password=self.password.get_secret_value(),
-            host=self.host,
-            port=f"{self.port}",
-        )
+    @validator("dsn", pre=True)
+    def autofill_dsn(cls, v, values):
+        # pylint: disable=no-self-argument
+        # pylint: disable=no-self-use
+        if v is None:
+            return RabbitDsn.build(
+                scheme="amqp",
+                user=values["user"],
+                password=values["password"].get_secret_value(),
+                host=values["host"],
+                port=f"{values['port']}",
+            )
+        return v
 
     class Config:
         env_prefix = "RABBIT_"

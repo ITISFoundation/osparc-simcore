@@ -55,7 +55,7 @@ def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> RabbitConfig:
 async def rabbit_service(
     loop: asyncio.AbstractEventLoop, rabbit_config: RabbitConfig, docker_stack: Dict
 ) -> str:
-    url = rabbit_config.rabbit_dsn
+    url = rabbit_config.dsn
     await wait_till_rabbit_responsive(url)
     yield url
 

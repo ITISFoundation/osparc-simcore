@@ -16,7 +16,7 @@ class CeleryConfig(BaseSettings):
 
     @property
     def broker_url(self):
-        return self.rabbit.rabbit_dsn
+        return self.rabbit.dsn
 
     @property
     def result_backend(self):

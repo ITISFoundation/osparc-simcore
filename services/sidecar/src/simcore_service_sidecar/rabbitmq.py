@@ -52,7 +52,7 @@ class RabbitMQ(BaseModel):
     async def connect(self):
         if not self.celery_config:
             self.celery_config = config.CELERY_CONFIG
-        url = self.celery_config.rabbit.rabbit_dsn
+        url = self.celery_config.rabbit.dsn
         log.debug("Connecting to %s", url)
         await _wait_till_rabbit_responsive(url)
 
