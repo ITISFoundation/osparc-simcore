@@ -39,7 +39,14 @@ API_VERSION = "v0"
 API_PREFIX = "/" + API_VERSION
 
 # Selection of core and tool services started in this swarm fixture (integration)
-core_services = ["director", "rabbit", "postgres", "sidecar", "storage", "redis"]
+core_services = [
+    "redis",
+    "rabbit",
+    "director",
+    "postgres",
+    "sidecar",
+    "storage",
+]
 
 ops_services = [
     "minio",
