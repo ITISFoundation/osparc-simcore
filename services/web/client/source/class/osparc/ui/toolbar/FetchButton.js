@@ -6,10 +6,10 @@
  */
 
 /**
- * A button that serves to fetch or load some data from the server. To indicate that some processing is being done, and
+ * A toolbar button that serves to fetch or load some data from the server. To indicate that some processing is being done, and
  * that the user has to wait, a rotating special icon is shown meanwhile.
  */
-qx.Class.define("osparc.ui.form.FetchButton", {
-  extend: qx.ui.form.Button,
+qx.Class.define("osparc.ui.toolbar.FetchButton", {
+  extend: qx.ui.toolbar.Button,
   include: osparc.ui.mixin.FetchButton
 });
