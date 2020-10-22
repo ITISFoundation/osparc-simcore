@@ -130,6 +130,7 @@ async def subscribe(app: web.Application) -> None:
 
     # Start listening the queue with name 'task_queue'
     partial_rabbit_message_handler = rabbit_adapter(app)(rabbit_message_handler)
+    # TODO: Why are we saving this in the app??
     app[APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY] = [partial_rabbit_message_handler]
     await logs_progress_queue.consume(
         partial_rabbit_message_handler, exclusive=True, no_ack=True
