@@ -20,9 +20,8 @@ class RedisConfig(BaseSettings):
     dsn: Optional[RedisDsn] = None
 
     @validator("dsn", pre=True)
+    @classmethod
     def autofill_dsn(cls, v, values):
-        # pylint: disable=no-self-argument
-        # pylint: disable=no-self-use
         if v is None:
             return RedisDsn.build(
                 scheme="redis",
