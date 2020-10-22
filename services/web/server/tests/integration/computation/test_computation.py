@@ -170,19 +170,19 @@ def _assert_sleeper_services_completed(
         if expected_state in [StateType.ABORTED, StateType.FAILED]:
             # only one is necessary
             assert expected_state in set_of_states
+        else:
+            assert not any(
+                x in set_of_states
+                for x in [
+                    StateType.PUBLISHED,
+                    StateType.PENDING,
+                    StateType.NOT_STARTED,
+                ]
+            ), "pipeline did not start yet..."
 
-        assert not any(
-            x in set_of_states
-            for x in [
-                StateType.PUBLISHED,
-                StateType.PENDING,
-                StateType.NOT_STARTED,
-            ]
-        ), "pipeline did not start yet..."
+            assert len(set_of_states) == 1, "there are more than one state"
 
-        assert len(set_of_states) == 1, "there are more than one state"
-
-        assert expected_state in set_of_states
+            assert expected_state in set_of_states
 
     check_pipeline_results()
 
