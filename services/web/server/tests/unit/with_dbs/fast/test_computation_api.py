@@ -153,7 +153,16 @@ def mock_get_celery_publication_timeout(monkeypatch):
                 "task0": (RunningState.STARTED, "fake.date_time()"),
                 "task1": (RunningState.FAILURE, "fake.date_time()"),
             },
-            RunningState.STARTED,
+            RunningState.FAILURE,
+        ),
+        (
+            # started pipeline if any of the node is started
+            {
+                "task0": (RunningState.SUCCESS, "fake.date_time()"),
+                "task1": (RunningState.PENDING, "fake.date_time()"),
+                "task2": (RunningState.PENDING, "fake.date_time()"),
+            },
+            RunningState.PENDING,
         ),
         (
             # empty tasks (could be an empty project or filled with dynamic services)
