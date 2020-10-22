@@ -47,6 +47,10 @@ def celery_adapter(app: Celery) -> Callable:
 
 
 def define_celery_task(app: Celery, name: str) -> None:
+    # we need to have the app in the entrypoint
+    # TODO: use functools.partial instead
+    partial_entrypoint = celery_adapter(app)(entrypoint)
+
     task = app.task(
         name=name,
         base=AbortableTask,
@@ -56,7 +60,7 @@ def define_celery_task(app: Celery, name: str) -> None:
         on_failure=on_task_failure_handler,
         on_success=on_task_success_handler,
         track_started=True,
-    )(celery_adapter(app)(entrypoint))
+    )(partial_entrypoint)
     log.debug("Created task %s", task.name)
 
 
