@@ -347,10 +347,6 @@ qx.Class.define("osparc.data.model.Node", {
 
         this.populateInputOutputData(nodeData);
 
-        if (nodeData.position) {
-          this.setPosition(nodeData.position.x, nodeData.position.y);
-        }
-
         if (nodeData.progress) {
           this.getStatus().setProgress(nodeData.progress);
         }
@@ -370,6 +366,13 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.isDynamic()) {
         this.__initLoadingIPage();
         this.__initIFrame();
+      }
+    },
+
+    populateNodeUIData: function(nodeUIData) {
+      if ("position" in nodeUIData) {
+        const pos = nodeUIData.position;
+        this.setPosition(pos.x, pos.y);
       }
     },
 
@@ -1126,11 +1129,7 @@ qx.Class.define("osparc.data.model.Node", {
       };
     },
 
-    serialize: function(saveContainers = true, savePosition = true) {
-      if (!saveContainers && this.isContainer()) {
-        return null;
-      }
-
+    serialize: function() {
       // node generic
       let nodeEntry = {
         key: this.getKey(),
@@ -1150,13 +1149,6 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.isFilePicker()) {
         nodeEntry.outputs = this.getOutputValues();
         nodeEntry.progress = this.getStatus().getProgress();
-      }
-
-      if (savePosition) {
-        nodeEntry.position = {
-          x: this.getPosition().x ? this.getPosition().x : 0,
-          y: this.getPosition().y ? this.getPosition().y : 0
-        };
       }
       // remove null entries from the payload
       let filteredNodeEntry = {};

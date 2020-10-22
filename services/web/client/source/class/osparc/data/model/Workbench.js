@@ -41,10 +41,11 @@ qx.Class.define("osparc.data.model.Workbench", {
   /**
     * @param workbenchData {Object} Object containing the workbench raw data
     */
-  construct: function(workbenchData) {
+  construct: function(workbenchData, workbenchUIData) {
     this.base(arguments);
 
     this.__workbenchInitData = workbenchData;
+    this.__workbenchUIInitData = workbenchUIData;
   },
 
   events: {
@@ -55,14 +56,16 @@ qx.Class.define("osparc.data.model.Workbench", {
 
   members: {
     __workbenchInitData: null,
+    __workbenchUIInitData: null,
     __rootNodes: null,
     __edges: null,
 
     buildWorkbench: function() {
       this.__rootNodes = {};
       this.__edges = {};
-      this.__deserializeWorkbench(this.__workbenchInitData);
+      this.__deserialize(this.__workbenchInitData, this.__workbenchUIInitData);
       this.__workbenchInitData = null;
+      this.__workbenchUIInitData = null;
     },
 
     initWorkbench: function() {
@@ -213,7 +216,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         workbench[innerNodeId]["parent"] = workbench[innerNodeId]["parent"] || parentNode.getNodeId();
       }
 
-      this.__deserializeWorkbench(workbench);
+      this.__deserialize(workbench);
 
       for (let innerNodeId in workbench) {
         this.getNode(innerNodeId).startInBackend();
@@ -340,12 +343,12 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    __deserializeWorkbench: function(workbenchData) {
-      this.__deserializeNodes(workbenchData);
+    __deserialize: function(workbenchData, workbenchUIData) {
+      this.__deserializeNodes(workbenchData, workbenchUIData);
       this.__deserializeEdges(workbenchData);
     },
 
-    __deserializeNodes: function(workbenchData) {
+    __deserializeNodes: function(workbenchData, workbenchUIData = {}) {
       let keys = Object.keys(workbenchData);
       // Create first all the nodes
       for (let i=0; i<keys.length; i++) {
@@ -381,6 +384,12 @@ qx.Class.define("osparc.data.model.Workbench", {
         const nodeId = keys[i];
         const nodeData = workbenchData[nodeId];
         this.getNode(nodeId).populateNodeData(nodeData);
+        if ("position" in nodeData) {
+          this.getNode(nodeId).populateNodeUIData(nodeData);
+        }
+        if ("workbench" in workbenchUIData && nodeId in workbenchUIData.workbench) {
+          this.getNode(nodeId).populateNodeUIData(workbenchUIData.workbench[nodeId]);
+        }
       }
       for (let i=0; i<keys.length; i++) {
         const nodeId = keys[i];
@@ -555,17 +564,28 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.removeNode(nodesGroup.getNodeId());
     },
 
-    serializeWorkbench: function(saveContainers = true, savePosition = true) {
+    serialize: function() {
       let workbench = {};
       const allModels = this.getNodes(true);
       const nodes = Object.values(allModels);
       for (const node of nodes) {
-        const data = node.serialize(saveContainers, savePosition);
+        const data = node.serialize();
         if (data) {
           workbench[node.getNodeId()] = data;
         }
       }
       return workbench;
+    },
+
+    serializeUI: function() {
+      let workbenchUI = {};
+      const nodes = this.getNodes(true);
+      for (const nodeUuid in nodes) {
+        const node = nodes[nodeUuid];
+        workbenchUI[nodeUuid] = {};
+        workbenchUI[nodeUuid]["position"] = node.getPosition();
+      }
+      return workbenchUI;
     }
   }
 });

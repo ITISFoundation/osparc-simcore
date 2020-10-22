@@ -35,7 +35,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
     this.__primaryStudyId = null;
 
     if ("dev" in studyData && "sweeper" in studyData["dev"]) {
-      this.deserializeSweeper(studyData["dev"]["sweeper"]);
+      this.deserialize(studyData["dev"]["sweeper"]);
     }
   },
 
@@ -223,7 +223,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
       });
     },
 
-    serializeSweeper: function() {
+    serialize: function() {
       const obj = {};
 
       if (this.hasParameters()) {
@@ -262,7 +262,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
       return obj;
     },
 
-    deserializeSweeper: function(sweeperData) {
+    deserialize: function(sweeperData) {
       if ("parameters" in sweeperData) {
         this.__setParameters(sweeperData["parameters"]);
       }

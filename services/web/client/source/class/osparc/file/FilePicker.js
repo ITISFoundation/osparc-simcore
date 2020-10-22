@@ -18,7 +18,7 @@
 /**
  * Built-in service used for selecting a single file from storage and make it available in the workflow
  *
- *   It consists of a VBox containing a FilesTree, Add button and Select button:
+ *   It consists of a widget containing a FilesTree, Add button and Select button:
  * - FilesTree will be populated with data provided by storage service (simcore.S3 and datcore)
  * - Add button will open a dialogue where the selected file will be upload to S3
  * - Select button puts the file in the output of the FilePicker node so that connected nodes can access it.
@@ -39,57 +39,13 @@ qx.Class.define("osparc.file.FilePicker", {
 
   /**
     * @param node {osparc.data.model.Node} Node owning the widget
-  */
+    */
   construct: function(node) {
     this.base(arguments);
 
     this.set({
       node
     });
-
-    const filePickerLayout = new qx.ui.layout.VBox();
-    this._setLayout(filePickerLayout);
-
-    const reloadButton = this._createChildControlImpl("reloadButton");
-    reloadButton.addListener("execute", function() {
-      this.__filesTree.resetCache();
-      this.__initResources();
-    }, this);
-
-    const filesTree = this.__filesTree = this._createChildControlImpl("filesTree");
-    filesTree.addListener("selectionChanged", this.__selectionChanged, this);
-    filesTree.addListener("itemSelected", this.__itemSelected, this);
-    filesTree.addListener("filesAddedToTree", this.__checkSelectedFileIsListed, this);
-
-    const toolbar = new qx.ui.toolbar.ToolBar();
-    const mainButtons = this.__mainButtons = new qx.ui.toolbar.Part();
-    toolbar.addSpacer();
-    toolbar.add(mainButtons);
-
-    this._add(toolbar);
-
-    const filesAdd = this.__filesAdder = this._createChildControlImpl("filesAdd");
-    filesAdd.addListener("fileAdded", e => {
-      const fileMetadata = e.getData();
-      if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
-        this.__setOutputFile(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
-      }
-      this.__filesTree.resetCache();
-      this.__initResources();
-    }, this);
-
-    const selectBtn = this.__selectBtn = this._createChildControlImpl("selectButton");
-    selectBtn.setEnabled(false);
-    selectBtn.addListener("execute", function() {
-      this.__itemSelected();
-    }, this);
-
-    if (this.__isOutputFileSelected()) {
-      const outFile = this.__getOutputFile();
-      this.__filesTree.loadFilePath(outFile.value);
-    } else {
-      this.__initResources();
-    }
   },
 
   properties: {
@@ -100,6 +56,20 @@ qx.Class.define("osparc.file.FilePicker", {
 
   events: {
     "finished": "qx.event.type.Event"
+  },
+
+  statics: {
+    getOutputLabel: function(outputValue) {
+      if ("outFile" in outputValue) {
+        const outInfo = outputValue["outFile"];
+        if ("label" in outInfo) {
+          return outInfo.label;
+        }
+        const splitFilename = outInfo.path.split("/");
+        return splitFilename[splitFilename.length-1];
+      }
+      return null;
+    }
   },
 
   members: {
@@ -138,6 +108,53 @@ qx.Class.define("osparc.file.FilePicker", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    buildLayout: function() {
+      this._setLayout(new qx.ui.layout.VBox(5));
+
+      const reloadButton = this._createChildControlImpl("reloadButton");
+      reloadButton.addListener("execute", function() {
+        this.__filesTree.resetCache();
+        this.__initResources();
+      }, this);
+
+      const filesTree = this.__filesTree = this._createChildControlImpl("filesTree");
+      filesTree.addListener("selectionChanged", this.__selectionChanged, this);
+      filesTree.addListener("itemSelected", this.__itemSelected, this);
+      filesTree.addListener("filesAddedToTree", this.__checkSelectedFileIsListed, this);
+
+      const toolbar = new qx.ui.toolbar.ToolBar();
+      const mainButtons = this.__mainButtons = new qx.ui.toolbar.Part();
+      toolbar.addSpacer();
+      toolbar.add(mainButtons);
+
+      this._add(toolbar);
+
+      const filesAdd = this.__filesAdder = this._createChildControlImpl("filesAdd");
+      filesAdd.addListener("fileAdded", e => {
+        const fileMetadata = e.getData();
+        if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
+          this.__setOutputFile(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
+        }
+        this.__filesTree.resetCache();
+        this.__initResources();
+      }, this);
+
+      const selectBtn = this.__selectBtn = this._createChildControlImpl("selectButton");
+      selectBtn.setEnabled(false);
+      selectBtn.addListener("execute", function() {
+        this.__itemSelected();
+      }, this);
+    },
+
+    init: function() {
+      if (this.__isOutputFileSelected()) {
+        const outFile = this.__getOutputFile();
+        this.__filesTree.loadFilePath(outFile.value);
+      } else {
+        this.__initResources();
+      }
     },
 
     uploadPendingFiles: function(files) {

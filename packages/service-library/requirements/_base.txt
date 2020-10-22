@@ -5,7 +5,7 @@
 #    pip-compile --output-file=requirements/_base.txt requirements/_base.in
 #
 aiodebug==1.1.2           # via -r requirements/_base.in
-aiohttp==3.6.2            # via -r requirements/_base.in, aiozipkin
+aiohttp==3.6.3            # via -r requirements/_base.in, aiozipkin
 aiopg[sa]==1.0.0          # via -r requirements/_base.in
 aiozipkin==0.7.1          # via -r requirements/_base.in
 async-timeout==3.0.1      # via aiohttp
@@ -30,10 +30,10 @@ strict-rfc3339==0.7       # via openapi-core
 tenacity==6.2.0           # via -r requirements/_base.in
 trafaret==2.1.0           # via -r requirements/_base.in
 typing-extensions==3.7.4.3  # via aiohttp, yarl
-ujson==3.2.0              # via -r requirements/_base.in
+ujson==4.0.1              # via -r requirements/_base.in
 werkzeug==1.0.1           # via -r requirements/_base.in
-yarl==1.6.0               # via aiohttp
-zipp==3.2.0               # via importlib-metadata
+yarl==1.5.1               # via aiohttp
+zipp==3.3.1               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

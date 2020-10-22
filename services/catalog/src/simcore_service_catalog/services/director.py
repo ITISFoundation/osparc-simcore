@@ -4,7 +4,7 @@ from contextlib import suppress
 from typing import Coroutine, Dict, Optional
 
 from fastapi import FastAPI, HTTPException
-from httpx import AsyncClient, Response, StatusCode
+from httpx import AsyncClient, codes, Response
 from starlette import status
 
 from ..core.settings import DirectorSettings
@@ -26,7 +26,7 @@ def setup_director(app: FastAPI) -> None:
 
 async def close_director(app: FastAPI) -> None:
     with suppress(AttributeError):
-        client: AsyncClient = app.state.director_client
+        client: AsyncClient = app.state.director_client.client
         await client.aclose()
         del app.state.director_client
 
@@ -53,7 +53,7 @@ def safe_request(request_func: Coroutine):
         data = body.get("data")
         error = body.get("error")
 
-        if StatusCode.is_server_error(resp.status_code):
+        if codes.is_server_error(resp.status_code):
             logger.error(
                 "director error %d [%s]: %s",
                 resp.status_code,
@@ -62,7 +62,7 @@ def safe_request(request_func: Coroutine):
             )
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        if StatusCode.is_client_error(resp.status_code):
+        if codes.is_client_error(resp.status_code):
             msg = error or resp.reason_phrase
             raise HTTPException(resp.status_code, detail=msg)
 
@@ -99,7 +99,7 @@ class DirectorApi:
     """
 
     def __init__(self, base_url: str, vtag: str):
-        self._client = AsyncClient(base_url=base_url)
+        self.client = AsyncClient(base_url=base_url)
         self.vtag = vtag
 
     # OPERATIONS
@@ -108,8 +108,8 @@ class DirectorApi:
 
     @safe_request
     async def get(self, path: str) -> Optional[Dict]:
-        return await self._client.get(path)
+        return await self.client.get(path)
 
     @safe_request
     async def put(self, path: str, body: Dict) -> Optional[Dict]:
-        return await self._client.put(path, json=body)
+        return await self.client.put(path, json=body)

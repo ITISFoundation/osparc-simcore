@@ -936,6 +936,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           };
           const nodeUI = this.__addServiceFromCatalog(data, pos);
           const filePicker = new osparc.file.FilePicker(nodeUI.getNode());
+          filePicker.buildLayout();
           filePicker.uploadPendingFiles(fileList);
         }
       } else {
