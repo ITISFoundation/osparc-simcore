@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.applications import State
 
-from ...services.catalog import CatalogApi
+from ...modules.catalog import CatalogApi
 
 
 def _get_app_state(request: Request) -> State:

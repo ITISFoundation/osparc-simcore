@@ -9,9 +9,9 @@ from models_library.settings.http_clients import ClientRequestSettings
 
 
 class BootModeEnum(str, Enum):
-    debug = "debug-ptvsd"
-    production = "production"
-    development = "development"
+    DEBUG = "debug-ptvsd"
+    PRODUCTION = "production"
+    DEVELOPMENT = "development"
 
 
 class _CommonConfig:
@@ -119,6 +119,7 @@ class AppSettings(BaseSettings):
     port: int = 8000
 
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
+    remote_debug_port: int = 3000
 
     class Config(_CommonConfig):
         env_prefix = ""

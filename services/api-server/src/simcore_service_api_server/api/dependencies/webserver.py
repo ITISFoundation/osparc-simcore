@@ -7,7 +7,7 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.requests import Request
 
 from ...core.settings import AppSettings, WebServerSettings
-from ...services.webserver import AuthSession
+from ...modules.webserver import AuthSession
 from .authentication import get_active_user_email
 
 UNAVAILBLE_MSG = "backend service is disabled or unreachable"

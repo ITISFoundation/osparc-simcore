@@ -7,12 +7,44 @@ from typing import Dict, Optional
 import attr
 from cryptography import fernet
 from fastapi import FastAPI, HTTPException
-from httpx import AsyncClient, codes, Response
+from httpx import AsyncClient, Response, codes
 from starlette import status
 
 from ..core.settings import WebServerSettings
 
 logger = logging.getLogger(__name__)
+
+
+# Module's setup logic ---------------------------------------------
+
+
+def setup(app: FastAPI, settings: Optional[WebServerSettings] = None) -> None:
+    if not settings:
+        settings = WebServerSettings()
+
+    def on_startup() -> None:
+        # normalize & encrypt
+        secret_key = _get_secret_key(settings)
+        app.state.webserver_fernet = fernet.Fernet(secret_key)
+
+        # init client
+        logger.debug("Setup webserver at %s...", settings.base_url)
+
+        client = AsyncClient(base_url=settings.base_url)
+        app.state.webserver_client = client
+
+    async def on_shutdown() -> None:
+        with suppress(AttributeError):
+            client: AsyncClient = app.state.webserver_client
+            await client.aclose()
+            del app.state.webserver_client
+        logger.debug("Webserver closed successfully")
+
+    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", on_shutdown)
+
+
+# Module's business logic ---------------------------------------------
 
 
 def _get_secret_key(settings: WebServerSettings):
@@ -26,34 +58,6 @@ def _get_secret_key(settings: WebServerSettings):
     elif isinstance(secret_key, (bytes, bytearray)):
         secret_key = base64.urlsafe_b64encode(secret_key)
     return secret_key
-
-
-def setup_webserver(app: FastAPI) -> None:
-    settings: WebServerSettings = app.state.settings.webserver
-
-    # normalize & encrypt
-    secret_key = _get_secret_key(settings)
-    app.state.webserver_fernet = fernet.Fernet(secret_key)
-
-    # init client
-    logger.debug("Setup webserver at %s...", settings.base_url)
-
-    client = AsyncClient(
-        base_url=settings.base_url,
-        timeout=app.state.settings.client_request.total_timeout,
-    )
-    app.state.webserver_client = client
-
-    # TODO: raise if attribute already exists
-    # TODO: ping?
-
-
-async def close_webserver(app: FastAPI) -> None:
-    with suppress(AttributeError):
-        client: AsyncClient = app.state.webserver_client
-        await client.aclose()
-        del app.state.webserver_client
-    logger.debug("Webserver closed successfully")
 
 
 @attr.s(auto_attribs=True)

@@ -4,57 +4,50 @@ from typing import Callable
 from fastapi import FastAPI
 
 from ..db.events import close_db_connection, connect_to_db
-from ..services.remote_debug import setup_remote_debugging
-from ..services.webserver import close_webserver, setup_webserver
-from .settings import BootModeEnum
+from ..meta import __version__, project_name
 
 logger = logging.getLogger(__name__)
 
+#
+# https://patorjk.com/software/taag/#p=display&f=JS%20Stick%20Letters&t=API-server%0A
+#
+WELCOME_MSG = r"""
+      __        __   ___  __        ___  __
+ /\  |__) | __ /__` |__  |__) \  / |__  |__)
+/~~\ |    |    .__/ |___ |  \  \/  |___ |  \  {0}
+
+""".format(
+    f"v{__version__}"
+)
+
 
 def create_start_app_handler(app: FastAPI) -> Callable:
-    async def start_app() -> None:
-        logger.info("Application started")
-
-        # setup connection to remote debugger (if applies)
-        setup_remote_debugging(
-            force_enabled=app.state.settings.boot_mode == BootModeEnum.debug
-        )
-
-        # setup connection to pg db
+    async def on_startup() -> None:
         if app.state.settings.postgres.enabled:
             await connect_to_db(app)
 
-        if app.state.settings.webserver.enabled:
-            setup_webserver(app)
+        print(WELCOME_MSG)
 
-    return start_app
+    return on_startup
 
 
 def create_stop_app_handler(app: FastAPI) -> Callable:
-
-    # NOTE: that the state is recorded at creation!
-    _closing_sequence = [
-        (app.state.settings.postgres.enabled, close_db_connection),
-        (app.state.settings.webserver.enabled, close_webserver),
-    ]
-
-    is_dev = app.state.settings.debug
-
-    async def stop_app() -> None:
+    async def on_shutdown() -> None:
         logger.info("Application stopping")
 
-        for enabled, close in _closing_sequence:
-            if enabled:
-                logger.debug("Closing %s ...", close.__name__)
-                try:
-                    await close(app)
-                except Exception as err:  # pylint: disable=broad-except
-                    logger.warning(
-                        "Failed to close %s: %s",
-                        close.__name__,
-                        err,
-                        exc_info=is_dev,
-                        stack_info=is_dev,
-                    )
+        if app.state.settings.postgres.enabled:
+            try:
+                await close_db_connection(app)
 
-    return stop_app
+            except Exception as err:  # pylint: disable=broad-except
+                logger.warning(
+                    "Failed to close app: %s",
+                    err,
+                    exc_info=app.state.settings.debug,
+                    stack_info=app.state.settings.debug,
+                )
+
+        msg = project_name + f" v{__version__} SHUT DOWN"
+        print(f"{msg:=^100}")
+
+    return on_shutdown

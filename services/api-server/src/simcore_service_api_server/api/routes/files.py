@@ -9,7 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 
-from ...__version__ import api_vtag
+from ...meta import api_vtag
 from ...models.schemas.files import FileUploaded
 
 current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()

@@ -3,10 +3,9 @@ from contextlib import suppress
 
 import httpx
 from fastapi import FastAPI
-from typing import Dict
 
 from ..core.settings import CatalogSettings
-from ..utils.client_decorators import handle_errors, handle_retry, JsonDataType
+from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
 
