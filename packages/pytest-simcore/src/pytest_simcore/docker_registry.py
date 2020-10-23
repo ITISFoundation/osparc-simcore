@@ -1,11 +1,11 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
 import json
 import logging
 import os
 import time
+from copy import deepcopy
 from typing import Dict
 
 import docker
@@ -61,6 +61,7 @@ def docker_registry(keep_docker_up: bool) -> str:
     docker_client.images.remove(image=private_image.id)
 
     # provide os.environs
+    old = deepcopy(os.environ)
     os.environ["REGISTRY_SSL"] = "False"
     os.environ["REGISTRY_AUTH"] = "False"
     os.environ[
@@ -73,7 +74,9 @@ def docker_registry(keep_docker_up: bool) -> str:
     os.environ["REGISTRY_PW"] = ""
 
     yield url
-
+    # restore environs
+    os.environ = old
+    # remove registry
     if not keep_docker_up:
         container.stop()
         container.remove(force=True)

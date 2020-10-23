@@ -1,14 +1,13 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
 import os
+from copy import deepcopy
 from distutils.util import strtobool
 from typing import Dict
 
 import pytest
 import tenacity
-
 from s3wrapper.s3_client import S3Client
 from servicelib.minio_utils import MinioRetryPolicyUponInitialization
 
@@ -32,12 +31,15 @@ def minio_config(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
     }
 
     # nodeports takes its configuration from env variables
+    old_environ = deepcopy(os.environ)
     for key, value in config["client"].items():
         os.environ[f"S3_{key.upper()}"] = str(value)
     os.environ["S3_SECURE"] = devel_environ["S3_SECURE"]
     os.environ["S3_BUCKET_NAME"] = devel_environ["S3_BUCKET_NAME"]
 
-    return config
+    yield config
+    # restore environ
+    os.environ = old_environ
 
 
 @pytest.fixture(scope="module")

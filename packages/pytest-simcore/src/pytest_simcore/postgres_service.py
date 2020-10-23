@@ -1,10 +1,10 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
-import logging
 import asyncio
+import logging
 import os
+from copy import deepcopy
 from typing import Dict, List
 
 import pytest
@@ -143,11 +143,14 @@ def postgres_dsn(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
         "port": get_service_published_port("postgres", devel_environ["POSTGRES_PORT"]),
     }
     # nodeports takes its configuration from env variables
+    old_environ = deepcopy(os.environ)
     os.environ["POSTGRES_ENDPOINT"] = f"{pg_config['host']}:{pg_config['port']}"
     os.environ["POSTGRES_USER"] = devel_environ["POSTGRES_USER"]
     os.environ["POSTGRES_PASSWORD"] = devel_environ["POSTGRES_PASSWORD"]
     os.environ["POSTGRES_DB"] = devel_environ["POSTGRES_DB"]
-    return pg_config
+    yield pg_config
+    # restore environ
+    os.environ = old_environ
 
 
 @pytest.fixture(scope="module")
