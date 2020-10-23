@@ -6,8 +6,8 @@ from typing import Callable, Dict, List, Optional
 from urllib.request import pathname2url
 from uuid import UUID
 
-import packaging
 from fastapi import APIRouter, Depends, HTTPException
+from packaging import version
 from pydantic import ValidationError
 from starlette import status
 
@@ -34,6 +34,7 @@ router = APIRouter()
 
 ## SOLVERS ------------
 
+
 @router.get("", response_model=List[SolverOverview])
 async def list_solvers(
     catalog_client: CatalogApi = Depends(get_catalog_api_client),
@@ -42,7 +43,7 @@ async def list_solvers(
     """ Lists an overview of all solvers. Each solver overview includes all released versions """
     # TODO: pagination
     # TODO: deduce user
-    user_id = 0
+    user_id = 1
 
     available_services = await catalog_client.get(
         "/services",
@@ -58,9 +59,9 @@ async def list_solvers(
             service_key = service["key"]
             solver = latest_solvers.get(service_key)
 
-            if not solver or packaging.version.parse(
-                solver.latest_version
-            ) < packaging.version.parse(service["version"]):
+            if not solver or version.parse(solver.latest_version) < version.parse(
+                service["version"]
+            ):
                 try:
                     latest_solvers[service_key] = SolverOverview(
                         solver_key=service_key,

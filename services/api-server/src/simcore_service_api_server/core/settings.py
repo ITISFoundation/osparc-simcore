@@ -39,6 +39,8 @@ class WebServerSettings(BaseServiceSettings):
 
 
 class CatalogSettings(BaseServiceSettings):
+    port: int = 8000
+
     class Config(_CommonConfig):
         env_prefix = "CATALOG_"
 
