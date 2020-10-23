@@ -1,5 +1,8 @@
-""" Current version of the simcore_service_api_server application
+""" Application's metadata
+
 """
+from contextlib import suppress
+
 import pkg_resources
 
 current_distribution = pkg_resources.get_distribution("simcore_service_api_server")
@@ -13,13 +16,15 @@ api_vtag: str = f"v{major}"
 __version__ = current_distribution.version
 
 
-try:
-    metadata = current_distribution.get_metadata_lines("METADATA")
-except FileNotFoundError:
-    metadata = current_distribution.get_metadata_lines("PKG-INFO")
+def get_summary() -> str:
+    with suppress(Exception):
+        try:
+            metadata = current_distribution.get_metadata_lines("METADATA")
+        except FileNotFoundError:
+            metadata = current_distribution.get_metadata_lines("PKG-INFO")
 
-summary: str = next(
-    x.split(":")
-    for x in metadata
-    if x.startswith("Summary:")
-)[-1]
+        return next(x.split(":") for x in metadata if x.startswith("Summary:"))[-1]
+    return ""
+
+
+summary: str = get_summary()
