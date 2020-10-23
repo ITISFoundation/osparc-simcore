@@ -169,7 +169,9 @@ def _assert_sleeper_services_completed(
         set_of_states = {task_db.state for task_db in tasks_db}
         if expected_state in [StateType.ABORTED, StateType.FAILED]:
             # only one is necessary
-            assert expected_state in set_of_states
+            assert (
+                expected_state in set_of_states
+            ), f"{expected_state} not found in {set_of_states}"
         else:
             assert not any(
                 x in set_of_states
@@ -178,11 +180,15 @@ def _assert_sleeper_services_completed(
                     StateType.PENDING,
                     StateType.NOT_STARTED,
                 ]
-            ), "pipeline did not start yet..."
+            ), f"pipeline did not start yet... {set_of_states}"
 
-            assert len(set_of_states) == 1, "there are more than one state"
+            assert (
+                len(set_of_states) == 1
+            ), f"there are more than one state in {set_of_states}"
 
-            assert expected_state in set_of_states
+            assert (
+                expected_state in set_of_states
+            ), f"{expected_state} not found in {set_of_states}"
 
     check_pipeline_results()
 
