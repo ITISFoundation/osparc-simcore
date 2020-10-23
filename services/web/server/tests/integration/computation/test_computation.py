@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from pprint import pprint
 from typing import Dict
+from models_library.redis import RedisConfig
 
 import pytest
 import sqlalchemy as sa
@@ -218,7 +219,7 @@ async def test_start_pipeline(
     sleeper_service: Dict[str, str],
     rabbit_service: str,
     postgres_session: sa.orm.session.Session,
-    redis_service: URL,
+    redis_service: RedisConfig,
     simcore_services: Dict[str, URL],
     client,
     logged_user: LoggedUser,
