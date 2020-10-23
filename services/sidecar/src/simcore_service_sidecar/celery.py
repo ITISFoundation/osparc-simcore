@@ -1,4 +1,4 @@
-from celery.signals import worker_shutting_down
+from celery.signals import worker_ready, worker_shutting_down
 
 from .celery_configurator import create_celery_app
 from .celery_log_setup import get_task_logger
@@ -24,6 +24,11 @@ def worker_shutting_down_handler(
     # NOTE: this function shall be adapted when we switch to python 3.7+
     log.warning("detected worker_shutting_down signal(%s, %s, %s)", sig, how, exitcode)
     cancel_task(run_sidecar)
+
+
+@worker_ready.connect
+def worker_ready_handler(*args, **kwargs):  # pylint: disable=unused-argument
+    log.info("!!!!!!!!!!!!!! Worker is READY now !!!!!!!!!!!!!!!!!!")
 
 
 __all__ = ["app"]

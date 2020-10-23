@@ -94,7 +94,6 @@ def configure_node(bootmode: BootMode) -> Celery:
 
 def create_celery_app() -> Celery:
     """ Configures the Celery APP for CPU, GPU, MPI mode."""
-
     bootmode = BootMode.CPU
 
     if start_as_mpi_node():

@@ -7,7 +7,9 @@ import os
 import sys
 from asyncio import iscoroutinefunction
 from inspect import getframeinfo, stack
-from typing import Callable, Dict
+from typing import Callable, Dict, Optional
+
+from celery.app.log import Logging
 
 log = logging.getLogger(__name__)
 
@@ -34,7 +36,7 @@ NORMAL = "\033[0m"
 
 COLORS = {
     "WARNING": BOLDYELLOW,
-    "INFO": WHITE,
+    "INFO": GREEN,
     "DEBUG": GRAY,
     "CRITICAL": ORANGE,
     "ERROR": RED,
@@ -61,14 +63,27 @@ class CustomFormatter(logging.Formatter):
         return super().format(record)
 
 
-def set_logging_handler(logger: logging.Logger) -> None:
-    handler = logging.StreamHandler()
-    handler.setFormatter(
-        CustomFormatter(
-            "%(levelname)s: %(name)s:%(funcName)s(%(lineno)s) - %(message)s"
+DEFAULT_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)] %(message)s"
+
+
+def set_logging_handler(
+    logger: logging.Logger,
+    formatter_base: Optional[Logging] = None,
+    formatting: Optional[str] = None,
+) -> None:
+    if not formatting:
+        formatting = DEFAULT_FORMATTING
+    if not formatter_base:
+        formatter_base = CustomFormatter
+    for handler in logger.handlers:
+
+        # handler = logging.StreamHandler()
+        handler.setFormatter(
+            formatter_base(
+                "%(levelname)s: %(name)s:%(funcName)s(%(lineno)s) - %(message)s"
+            )
         )
-    )
-    logger.addHandler(handler)
+    # logger.addHandler(handler)
 
 
 def _log_arguments(
