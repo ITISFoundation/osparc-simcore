@@ -28,7 +28,9 @@ def loop(request) -> asyncio.AbstractEventLoop:
 
 
 @pytest.fixture(scope="module")
-def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> RabbitConfig:
+async def rabbit_config(
+    loop: asyncio.AbstractEventLoop, docker_stack: Dict, devel_environ: Dict
+) -> RabbitConfig:
     assert "simcore_rabbit" in docker_stack["services"]
     rabbit_config = RabbitConfig(
         user=devel_environ["RABBIT_USER"],
@@ -41,27 +43,25 @@ def rabbit_config(docker_stack: Dict, devel_environ: Dict) -> RabbitConfig:
         },
     )
 
-    # env variables
-    os.environ["RABBIT_HOST"] = "127.0.0.1"
-    os.environ["RABBIT_PORT"] = str(rabbit_config.port)
-    os.environ["RABBIT_USER"] = devel_environ["RABBIT_USER"]
-    os.environ["RABBIT_PASSWORD"] = devel_environ["RABBIT_PASSWORD"]
-    os.environ["RABBIT_CHANNELS"] = json.dumps(rabbit_config.channels)
+    url = rabbit_config.dsn
+    await wait_till_rabbit_responsive(url)
 
     yield rabbit_config
 
 
 @pytest.fixture(scope="function")
-async def rabbit_service(
-    loop: asyncio.AbstractEventLoop, rabbit_config: RabbitConfig, docker_stack: Dict
-) -> str:
-    url = rabbit_config.dsn
-    await wait_till_rabbit_responsive(url)
-    yield url
+async def rabbit_service(rabbit_config: RabbitConfig, monkeypatch) -> RabbitConfig:
+    monkeypatch.setenv("RABBIT_HOST", rabbit_config.host)
+    monkeypatch.setenv("RABBIT_PORT", rabbit_config.port)
+    monkeypatch.setenv("RABBIT_USER", rabbit_config.user)
+    monkeypatch.setenv("RABBIT_PASSWORD", rabbit_config.password.get_secret_value())
+    monkeypatch.setenv("RABBIT_CHANNELS", json.dumps(rabbit_config.channels))
+
+    return RabbitConfig
 
 
 @pytest.fixture(scope="function")
-async def rabbit_connection(rabbit_service: str) -> aio_pika.RobustConnection:
+async def rabbit_connection(rabbit_config: RabbitConfig) -> aio_pika.RobustConnection:
     def reconnect_callback():
         pytest.fail("rabbit reconnected")
 
@@ -69,7 +69,7 @@ async def rabbit_connection(rabbit_service: str) -> aio_pika.RobustConnection:
     # NOTE: to show the connection name in the rabbitMQ UI see there
     # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
     connection = await aio_pika.connect_robust(
-        rabbit_service + f"?name={__name__}_{id(socket.gethostname())}",
+        rabbit_config.dsn + f"?name={__name__}_{id(socket.gethostname())}",
         client_properties={"connection_name": "pytest read connection"},
     )
     assert connection

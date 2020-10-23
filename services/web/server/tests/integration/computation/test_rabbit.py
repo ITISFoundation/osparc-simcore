@@ -40,8 +40,7 @@ def client(
     loop,
     aiohttp_client,
     app_config,  ## waits until swarm with *_services are up
-    rabbit_config: RabbitConfig,
-    rabbit_service,  ## waits until rabbit is responsive
+    rabbit_service: RabbitConfig,  ## waits until rabbit is responsive
     postgres_db: sa.engine.Engine,
 ):
     assert app_config["rest"]["version"] == API_VERSION
@@ -179,7 +178,12 @@ async def _wait_until(pred: Callable, timeout: int):
 
 
 @pytest.mark.parametrize(
-    "user_role", [(UserRole.GUEST), (UserRole.USER), (UserRole.TESTER),],
+    "user_role",
+    [
+        (UserRole.GUEST),
+        (UserRole.USER),
+        (UserRole.TESTER),
+    ],
 )
 async def test_rabbit_websocket_computation(
     loop,

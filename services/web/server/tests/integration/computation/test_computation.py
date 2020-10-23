@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from pprint import pprint
 from typing import Dict
+from models_library.rabbit import RabbitConfig
 from models_library.redis import RedisConfig
 
 import pytest
@@ -196,7 +197,7 @@ def _assert_sleeper_services_completed(
 
 # TESTS ------------------------------------------
 async def test_check_health(
-    rabbit_service: str, mock_orphaned_services, docker_stack, client
+    rabbit_service: RabbitConfig, mock_orphaned_services, docker_stack, client
 ):
     # TODO: check health of all core_services in list above!
     resp = await client.get(API_VERSION + "/")
@@ -217,7 +218,7 @@ async def test_check_health(
 )
 async def test_start_pipeline(
     sleeper_service: Dict[str, str],
-    rabbit_service: str,
+    rabbit_service: RabbitConfig,
     postgres_session: sa.orm.session.Session,
     redis_service: RedisConfig,
     simcore_services: Dict[str, URL],
