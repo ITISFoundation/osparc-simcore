@@ -1,7 +1,7 @@
 """add aborted state
 
 Revision ID: 64e91497d257
-Revises: 009c81406676
+Revises: 27c6a30d7c24
 Create Date: 2020-10-14 20:05:26.968038+00:00
 
 """
