@@ -16,7 +16,7 @@ def test_min_environ_for_settings(project_env_devel_environment, monkeypatch):
     settings = AppSettings.create_from_env()
     print("captured settings: \n", settings.json(indent=2))
 
-    assert settings.boot_mode == BootModeEnum.production
+    assert settings.boot_mode == BootModeEnum.PRODUCTION
     assert settings.loglevel == logging.DEBUG
 
     assert settings.postgres.dsn == URL("postgresql://test:test@localhost:5432/test")

@@ -25,7 +25,9 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     logging.basicConfig(level=settings.loglevel)
     logging.root.setLevel(settings.loglevel)
+    logger.debug(settings)
 
+    # creates app instance
     app = FastAPI(
         debug=settings.debug,
         title="Public API Server",
@@ -35,11 +37,9 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled, see below
     )
-
-    logger.debug(settings)
-    app.state.settings = settings
-
     override_openapi_method(app)
+
+    app.state.settings = settings
 
     # setup modules
     if settings.boot_mode == BootModeEnum.DEBUG:
@@ -51,14 +51,14 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings.catalog.enabled:
         catalog.setup(app, settings.catalog)
 
-    # setup app's event-handlers
+    # setup app
     app.add_event_handler("startup", create_start_app_handler(app))
     app.add_event_handler("shutdown", create_stop_app_handler(app))
 
     app.add_exception_handler(HTTPException, http_error_handler)
     app.add_exception_handler(RequestValidationError, http422_error_handler)
 
-    # Routing
+    # routing
 
     # healthcheck at / and at /v0/
     app.include_router(health_router)
