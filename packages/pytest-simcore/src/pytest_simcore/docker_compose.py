@@ -2,26 +2,27 @@
 
     Basically runs `docker-compose config
 """
+import logging
+
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
 import os
 import shutil
 import socket
 import sys
 from copy import deepcopy
 from pathlib import Path
+from pprint import pformat
 from typing import Dict, List
 
 import pytest
 import yaml
 from dotenv import dotenv_values
 
-from .helpers.utils_docker import (
-    run_docker_compose_config,
-    save_docker_infos,
-)
+from .helpers.utils_docker import run_docker_compose_config, save_docker_infos
+
+log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session")
@@ -115,7 +116,7 @@ def simcore_docker_compose(
         workdir=env_file.parent,
         destination_path=temp_folder / "simcore_docker_compose.yml",
     )
-
+    log.debug("simcore docker-compose:\n%s", pformat(config))
     return config
 
 
@@ -142,6 +143,7 @@ def ops_docker_compose(
         workdir=env_file.parent,
         destination_path=temp_folder / "ops_docker_compose.yml",
     )
+    log.debug("ops docker-compose:\n%s", pformat(config))
     return config
 
 
