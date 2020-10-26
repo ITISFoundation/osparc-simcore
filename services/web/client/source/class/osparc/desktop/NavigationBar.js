@@ -256,11 +256,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     __createNodePathBtn: function(nodeId) {
+      const btn = new qx.ui.form.Button();
+      this.__attachNodeBtnHandler(btn, nodeId);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const btn = new qx.ui.form.Button().set({
-        ...this.self().BUTTON_OPTIONS,
-        maxWidth: 200
-      });
       if (nodeId === study.getUuid()) {
         study.bind("name", btn, "label");
         study.bind("name", btn, "toolTipText");
@@ -278,11 +276,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     __createNodeSlideBtn: function(nodeId, pos) {
+      const btn = new qx.ui.toolbar.RadioButton();
+      this.__attachNodeBtnHandler(btn, nodeId);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const btn = new qx.ui.toolbar.RadioButton().set({
-        ...this.self().BUTTON_OPTIONS,
-        maxWidth: 200
-      });
       const node = study.getWorkbench().getNode(nodeId);
       if (node) {
         node.bind("label", btn, "label", {
@@ -290,10 +286,18 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         });
         node.bind("label", btn, "toolTipText");
       }
+      return btn;
+    },
+
+    __attachNodeBtnHandler: function(btn, nodeId) {
+      btn.set({
+        ...this.self().BUTTON_OPTIONS,
+        maxWidth: 200
+      });
       btn.addListener("execute", () => {
         this.fireDataEvent("nodeSelected", nodeId);
       }, this);
-      return btn;
+
     },
 
     __setPathButtons: function(nodeIds) {
