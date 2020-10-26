@@ -512,7 +512,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         nodesTree,
         workbenchUI
       ].forEach(widget => {
-        widget.addListener("nodeDoubleClicked", e => {
+        widget.addListener("nodeSelected", e => {
           const nodeId = e.getData();
           this.nodeSelected(nodeId);
         }, this);

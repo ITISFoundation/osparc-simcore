@@ -125,7 +125,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
   },
 
   events: {
-    "nodeDoubleClicked": "qx.event.type.Data",
+    "nodeSelected": "qx.event.type.Data",
     "removeEdge": "qx.event.type.Data",
     "changeSelectedNode": "qx.event.type.Data"
   },
@@ -280,7 +280,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
 
       nodeUI.addListener("dbltap", e => {
-        this.__nodeSelected(nodeUI.getNodeId());
+        this.fireDataEvent("nodeSelected", nodeUI.getNodeId());
         e.stopPropagation();
       }, this);
 
@@ -848,10 +848,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
 
       this.__unlinkButton.setVisibility(this.__isSelectedItemAnEdge() ? "visible" : "excluded");
-    },
-
-    __nodeSelected: function(nodeId) {
-      this.fireDataEvent("nodeDoubleClicked", nodeId);
     },
 
     __isSelectedItemAnEdge: function() {
