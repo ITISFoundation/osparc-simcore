@@ -477,7 +477,10 @@ async def _set_tasks_in_tasks_db_as_published(
     query = (
         # pylint: disable=no-value-for-parameter
         comp_tasks.update()
-        .where(comp_tasks.c.project_id == project_id)
+        .where(
+            (comp_tasks.c.project_id == project_id)
+            & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+        )
         .values(state=StateType.PUBLISHED)
     )
     async with db_engine.acquire() as conn:
