@@ -163,6 +163,7 @@ async def _set_pipeline_tasks_as_pending(
             .where(
                 (comp_tasks.c.node_id == node_id)
                 & (comp_tasks.c.project_id == project_id)
+                & (comp_tasks.c.state != StateType.ABORTED)
             )
             .values(state=StateType.PENDING)
         )
