@@ -243,7 +243,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (!osparc.data.Permissions.getInstance().canDo("study.start", true)) {
         return;
       }
-
       const runButton = this.__mainPanel.getControls().getStartButton();
       runButton.setFetching(true);
       this.updateStudyDocument(true)
@@ -271,7 +270,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __requestStartPipeline: function(studyId) {
       const url = "/computation/pipeline/" + encodeURIComponent(studyId) + "/start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
-
       const runButton = this.__mainPanel.getControls().getStartButton();
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
@@ -295,7 +293,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["project_id"];
-
       const runButton = this.__mainPanel.getControls().getStartButton();
       this.getLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
