@@ -192,8 +192,7 @@ qx.Class.define("osparc.wrapper.Svg", {
         svgPathPath
       ]);
 
-      dynLoader.addListenerOnce("ready", e => {
-        console.log(svgPath + " loaded");
+      dynLoader.addListenerOnce("ready", () => {
         this.setLibReady(true);
         this.fireDataEvent("svgLibReady", true);
       }, this);
