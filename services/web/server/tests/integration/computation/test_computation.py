@@ -147,9 +147,9 @@ def _assert_sleeper_services_completed(
     mock_workbench_payload,
 ):
     # pylint: disable=no-member
-    TIMEOUT_SECONDS = 90
+    TIMEOUT_SECONDS = 60
     WAIT_TIME = 2
-    number_of_comp_tasks = len(
+    NUM_COMP_TASKS_TO_WAIT_FOR = len(
         [x for x in mock_workbench_payload.values() if "/comp/" in x["key"]]
     )
 
@@ -160,21 +160,32 @@ def _assert_sleeper_services_completed(
         retry=retry_if_exception_type(AssertionError),
     )
     def check_pipeline_results():
-        pipeline_db = (
+        # this check is only there to check the comp_pipeline is there
+        assert (
             postgres_session.query(comp_pipeline)
             .filter(comp_pipeline.c.project_id == project_id)
             .one()
-        )
+        ), f"missing pipeline in the database under comp_pipeline {project_id}"
+
+        # get the tasks that should be completed either by being aborted, successfuly completed or failed
         tasks_db = (
             postgres_session.query(comp_tasks)
             .filter(
                 (comp_tasks.c.project_id == project_id)
                 & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+                & (
+                    # these are the options of a completed pipeline
+                    (comp_tasks.c.state == StateType.ABORTED)
+                    | (comp_tasks.c.state == StateType.SUCCESS)
+                    | (comp_tasks.c.state == StateType.FAILED)
+                )
             )
             .all()
         )
         # check that all computational tasks are completed
-        assert len(tasks_db) == number_of_comp_tasks
+        assert (
+            len(tasks_db) == NUM_COMP_TASKS_TO_WAIT_FOR
+        ), f"all tasks have not finished, expected {NUM_COMP_TASKS_TO_WAIT_FOR}, got {len(tasks_db)}"
         # get the different states in a set of states
         set_of_states = {task_db.state for task_db in tasks_db}
         if expected_state in [StateType.ABORTED, StateType.FAILED]:
@@ -204,19 +215,6 @@ def _assert_sleeper_services_completed(
 
 
 # TESTS ------------------------------------------
-async def test_check_health(
-    rabbit_service: RabbitConfig,
-    postgres_session: sa.orm.session.Session,
-    mock_orphaned_services,
-    docker_stack,
-    client,
-):
-    # TODO: check health of all core_services in list above!
-    resp = await client.get(API_VERSION + "/")
-    data, _ = await assert_status(resp, web.HTTPOk)
-
-    assert data["name"] == "simcore_service_webserver"
-    assert data["status"] == "SERVICE_RUNNING"
 
 
 @pytest.mark.parametrize(
@@ -282,11 +280,16 @@ async def test_start_pipeline(
             project_id, postgres_session, StateType.SUCCESS, mock_workbench_payload
         )
 
-        # starting now should be ok
+        # now let's try start and stop, so make one sleeper a long running one
+        LONG_SLEEPING_TIME = 30
+        mock_workbench_payload["ee8d7b25-f203-4472-9210-86409b4364e2"]["inputs"][
+            "in_2"
+        ] = LONG_SLEEPING_TIME
         resp = await client.post(url_start)
         data, error = await assert_status(resp, expected_start_response)
         assert not error
-    # stop the pipeline
+    # now stop the pipeline
+    # POST /v0/computation/pipeline/{project_id}:stop
     url_stop = client.app.router["stop_pipeline"].url_for(project_id=project_id)
     assert url_stop == URL(
         API_PREFIX + "/computation/pipeline/{}:stop".format(project_id)

@@ -46,7 +46,7 @@
       "label": "sleeper",
       "inputs": {
         "in_1": null,
-        "in_2": 10
+        "in_2": 2
       },
       "inputNodes": [],
       "outputs": {},
