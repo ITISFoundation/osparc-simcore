@@ -35,6 +35,7 @@ from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
+from simcore_service_webserver.users import setup_users
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -80,6 +81,7 @@ def client(
     setup_security(app)
     setup_rest(app)
     setup_login(app)
+    setup_users(app)
     setup_projects(app)
     setup_computation(app)
     setup_resource_manager(app)
