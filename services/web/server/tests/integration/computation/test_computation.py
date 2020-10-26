@@ -4,11 +4,12 @@
 import json
 import sys
 from pathlib import Path
-from typing import Dict
+from typing import Callable, Dict
 
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
+from socketio.exceptions import ConnectionError as SocketConnectionError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 from yarl import URL
 
@@ -226,6 +227,8 @@ async def test_start_pipeline(
     redis_service: RedisConfig,
     simcore_services: Dict[str, URL],
     client,
+    client_session_id: str,
+    socketio_client: Callable,
     logged_user: LoggedUser,
     user_project: NewProject,
     mock_workbench_adjacency_list: Dict,
@@ -234,6 +237,13 @@ async def test_start_pipeline(
 ):
     project_id = user_project["uuid"]
     mock_workbench_payload = user_project["workbench"]
+    # connect websocket (to prevent the GC to remove the project)
+    try:
+        sio = await socketio_client(client_session_id)
+        assert sio.sid
+    except SocketConnectionError:
+        if expected_start_response == web.HTTPOk:
+            pytest.fail("socket io connection should not fail")
 
     url_start = client.app.router["start_pipeline"].url_for(project_id=project_id)
     assert url_start == URL(

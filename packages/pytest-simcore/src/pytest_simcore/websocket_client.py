@@ -2,12 +2,14 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from typing import Callable, Optional
+from uuid import uuid4
+
 import pytest
 import socketio
-from yarl import URL
 from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
-from typing import Callable, Optional
+from yarl import URL
 
 
 @pytest.fixture
@@ -36,6 +38,11 @@ async def security_cookie_factory(client) -> Callable:
         return cookie
 
     yield creator
+
+
+@pytest.fixture
+def client_session_id() -> str:
+    return str(uuid4())
 
 
 @pytest.fixture
