@@ -53,7 +53,7 @@
       "class": "osparc.Application",
       "theme": "osparc.theme.ThemePurple",
       "name": "tis",
-      "title": "TI Solutions",
+      "title": "TI Treatment Planning",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load"

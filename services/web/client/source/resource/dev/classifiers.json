@@ -347,7 +347,7 @@
     },
     "organization::tisolutions": {
       "classifier": "z43::organization::tisolutions",
-      "display_name": "TI Solutions",
+      "display_name": "TI Treatment Planning",
       "short_description": "Temporal Interference Solutions",
       "logo": null,
       "aliases": [
