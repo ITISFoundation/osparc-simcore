@@ -576,9 +576,10 @@ async def get_pipeline_state(app: web.Application, project_id: str) -> RunningSt
             return next(iter(set_states))
 
         for state in [
+            RunningState.FAILURE,  # task is failed -> pipeline as well
             RunningState.PUBLISHED,  # still in publishing phase
             RunningState.STARTED,  # task is started or retrying
-            RunningState.FAILURE,  # task is failed -> pipeline as well
+            RunningState.PENDING,  # still running
         ]:
             if state in set_states:
                 return state
