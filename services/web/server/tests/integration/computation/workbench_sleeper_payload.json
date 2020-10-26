@@ -26,7 +26,7 @@
       "label": "sleeper",
       "inputs": {
         "in_1": null,
-        "in_2": 2
+        "in_2": 20
       },
       "inputNodes": [
         "f6f67f96-ad56-47ac-a658-1a8b93dde1f0"
