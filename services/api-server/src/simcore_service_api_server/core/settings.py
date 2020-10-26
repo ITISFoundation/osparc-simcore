@@ -19,6 +19,7 @@ class _CommonConfig:
     env_file = ".env"
 
 
+# SERVICES CLIENTS --------------------------------------------
 class BaseServiceSettings(BaseSettings):
     enabled: bool = Field(True, description="Enables/Disables connection with service")
     host: str
@@ -38,12 +39,26 @@ class WebServerSettings(BaseServiceSettings):
         env_prefix = "WEBSERVER_"
 
 
+# TODO: dynamically create types with minimal options?
 class CatalogSettings(BaseServiceSettings):
+    host: str = "catalog"
     port: int = 8000
 
     class Config(_CommonConfig):
         env_prefix = "CATALOG_"
 
+
+class StorageSettings(BaseServiceSettings):
+    class Config(_CommonConfig):
+        env_prefix = "STORAGE_"
+
+
+class DirectorSettings(BaseServiceSettings):
+    host: str = "director-v2"
+    port: int = 8000
+
+    class Config(_CommonConfig):
+        env_prefix = "DIRECTOR2_"
 
 class PostgresSettings(BaseSettings):
     enabled: bool = Field(
@@ -73,6 +88,9 @@ class PostgresSettings(BaseSettings):
         env_prefix = "POSTGRES_"
 
 
+# MAIN SETTINGS --------------------------------------------
+
+
 class AppSettings(BaseSettings):
     @classmethod
     def create_from_env(cls) -> "AppSettings":
@@ -82,6 +100,8 @@ class AppSettings(BaseSettings):
             webserver=WebServerSettings(),
             client_request=ClientRequestSettings(),
             catalog=CatalogSettings(),
+            storage=StorageSettings(),
+            director=DirectorSettings()
         )
 
     # pylint: disable=no-self-use
@@ -111,6 +131,8 @@ class AppSettings(BaseSettings):
     # SERVICES with http API
     webserver: WebServerSettings
     catalog: CatalogSettings
+    storage: StorageSettings
+    director: DirectorSettings
 
     client_request: ClientRequestSettings
 

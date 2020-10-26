@@ -1,21 +1,34 @@
-from fastapi import Depends, HTTPException, Request, status
-from fastapi.applications import State
+""" Dependences with any other services (except webserver)
 
-from ...modules.catalog import CatalogApi
+"""
+from typing import Callable, Type
+
+from fastapi import HTTPException, Request, status
+
+from ...utils.client_base import BaseServiceClientApi
 
 
-def _get_app_state(request: Request) -> State:
-    # TODO: make read-only?
-    return request.app.state
+def get_api_client(client_type: Type[BaseServiceClientApi]) -> Callable:
+    """
+        Retrieves API client from backend services EXCEPT web-server (see dependencies/webserver)
 
+        Usage:
 
-def get_catalog_api_client(state: State = Depends(_get_app_state)) -> CatalogApi:
-    try:
-        client = state.catalog_api
-    except AttributeError as err:
-        raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Catalog services is disabled",
-        ) from err
+            director_client: DirectorApi = Depends(get_api_client(DirectorApi)),
+            catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
+            storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+    """
+    assert issubclass(client_type, BaseServiceClientApi)  # nosec
 
-    return client
+    def _get_client_from_app(request: Request) -> client_type:
+        client_obj = client_type.get_instance(request.app)
+        if client_obj is None:
+            raise HTTPException(
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"{client_type.service_name.title()} service was disabled",
+            )
+
+        assert isinstance(client_obj, client_type)  # nosec
+        return client_obj
+
+    return _get_client_from_app

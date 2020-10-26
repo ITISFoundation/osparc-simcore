@@ -23,8 +23,9 @@ from ...models.schemas.solvers import (
     SolverOutput,
     SolverOverview,
 )
+from ...modules.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
-from ..dependencies.services import CatalogApi, get_catalog_api_client
+from ..dependencies.services import get_api_client
 
 # from fastapi.responses import RedirectResponse
 logger = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ router = APIRouter()
 
 @router.get("", response_model=List[SolverOverview])
 async def list_solvers(
-    catalog_client: CatalogApi = Depends(get_catalog_api_client),
+    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """ Lists an overview of all solvers. Each solver overview includes all released versions """

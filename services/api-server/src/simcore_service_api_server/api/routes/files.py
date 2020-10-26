@@ -6,11 +6,13 @@ from textwrap import dedent
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, File, UploadFile, Depends
 from fastapi.responses import FileResponse, HTMLResponse
 
 from ...meta import api_vtag
 from ...models.schemas.files import FileUploaded
+from ...modules.storage import StorageApi
+from ..dependencies.services import get_api_client
 
 current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 
@@ -18,17 +20,29 @@ router = APIRouter()
 
 
 @router.get("")
-async def list_files():
+async def list_files(
+        storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+    ):
     """ Lists all user's files """
+    # TODO: this is just a ping with retries
+    await storage_client.get("/")
+
     # TODO: pagination
-    pass
+    raise NotImplementedError()
 
 
 @router.post(":upload", response_model=FileUploaded)
-async def upload_single_file(file: UploadFile = File(...)):
+async def upload_single_file(
+    file: UploadFile = File(...),
+    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+):
     # TODO: every file uploaded is sent to S3 and a link is returned
     # TODO: every session has a folder. A session is defined by the access token
     #
+
+    # TODO: this is just a ping with retries
+    await storage_client.get("/")
+
     return FileUploaded(
         filename=file.filename,
         content_type=file.content_type,

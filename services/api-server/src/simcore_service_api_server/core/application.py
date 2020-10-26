@@ -10,7 +10,7 @@ from ..api.errors.http_error import http_error_handler
 from ..api.errors.validation_error import http422_error_handler
 from ..api.root import router as api_router
 from ..api.routes.health import router as health_router
-from ..modules import catalog, remote_debug, webserver
+from ..modules import catalog, remote_debug, webserver, storage, director
 from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .redoc import create_redoc_handler
@@ -50,6 +50,13 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     if settings.catalog.enabled:
         catalog.setup(app, settings.catalog)
+
+    if settings.storage.enabled:
+        storage.setup(app, settings.storage)
+
+    if settings.director.enabled:
+        director.setup(app, settings.director)
+
 
     # setup app
     app.add_event_handler("startup", create_start_app_handler(app))
