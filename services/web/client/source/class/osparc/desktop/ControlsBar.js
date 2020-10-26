@@ -184,10 +184,9 @@ qx.Class.define("osparc.desktop.ControlsBar", {
         case "NOT_STARTED":
         case "SUCCESS":
         case "FAILED":
-          startButton.setFetching(false);
-          break;
         default:
           startButton.setFetching(false);
+          break;
       }
     },
 
