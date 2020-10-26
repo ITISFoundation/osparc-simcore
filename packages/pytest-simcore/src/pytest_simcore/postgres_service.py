@@ -145,9 +145,7 @@ def postgres_dsn(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
 
 
 @pytest.fixture(scope="module")
-def postgres_engine(
-    postgres_dsn: Dict[str, str], docker_stack: Dict
-) -> sa.engine.Engine:
+def postgres_engine(postgres_dsn: Dict[str, str]) -> sa.engine.Engine:
     dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
         **postgres_dsn
     )
@@ -164,7 +162,8 @@ def postgres_engine(
 
 @pytest.fixture(scope="module")
 def postgres_db(
-    postgres_dsn: Dict, postgres_engine: sa.engine.Engine,
+    postgres_dsn: Dict[str, str],
+    postgres_engine: sa.engine.Engine,
 ) -> sa.engine.Engine:
 
     # upgrades database from zero
@@ -186,6 +185,16 @@ def postgres_db(
     # FIXME: migration downgrade fails to remove User types SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
     # Added drop_all as tmp fix
     metadata.drop_all(postgres_engine)
+
+
+@pytest.fixture(scope="function")
+def postgres_host_config(postgres_dsn: Dict[str, str], monkeypatch) -> Dict[str, str]:
+    monkeypatch.setenv("POSTGRES_USER", postgres_dsn["user"])
+    monkeypatch.setenv("POSTGRES_PASSWORD", postgres_dsn["password"])
+    monkeypatch.setenv("POSTGRES_DB", postgres_dsn["database"])
+    monkeypatch.setenv("POSTGRES_HOST", postgres_dsn["host"])
+    monkeypatch.setenv("POSTGRES_PORT", str(postgres_dsn["port"]))
+    return postgres_dsn
 
 
 @pytest.fixture(scope="module")

@@ -58,7 +58,7 @@ async def mock_sidecar_get_volume_mount_point(monkeypatch):
 
 @pytest.fixture
 def sidecar_config(
-    postgres_dsn: Dict[str, str],
+    postgres_host_config: Dict[str, str],
     docker_registry: str,
     rabbit_service: RabbitConfig,
     mock_sidecar_get_volume_mount_point,
@@ -74,10 +74,12 @@ def sidecar_config(
     config.DOCKER_USER = "simcore"
     config.DOCKER_PASSWORD = ""
 
-    config.POSTGRES_DB = postgres_dsn["database"]
-    config.POSTGRES_ENDPOINT = f"{postgres_dsn['host']}:{postgres_dsn['port']}"
-    config.POSTGRES_USER = postgres_dsn["user"]
-    config.POSTGRES_PW = postgres_dsn["password"]
+    config.POSTGRES_DB = postgres_host_config["database"]
+    config.POSTGRES_ENDPOINT = (
+        f"{postgres_host_config['host']}:{postgres_host_config['port']}"
+    )
+    config.POSTGRES_USER = postgres_host_config["user"]
+    config.POSTGRES_PW = postgres_host_config["password"]
 
     config.CELERY_CONFIG = CeleryConfig.create_from_env()
 
@@ -178,6 +180,7 @@ async def _assert_incoming_data_logs(
 
 @pytest.fixture
 async def pipeline(
+    postgres_host_config: Dict[str, str],
     postgres_session: sa.orm.session.Session,
     storage_service: URL,
     project_id: str,
@@ -250,7 +253,10 @@ SLEEPERS_STUDY = (
     "itisfoundation/sleeper",
     "1.0.0",
     {
-        "node_1": {"next": ["node_2", "node_3"], "inputs": {},},
+        "node_1": {
+            "next": ["node_2", "node_3"],
+            "inputs": {},
+        },
         "node_2": {
             "next": ["node_4"],
             "inputs": {
@@ -313,24 +319,33 @@ PYTHON_RUNNER_FACTORY_STUDY = (
     "1.0.0",
     {
         "node_1": {
-            "next": ["node_2",],
+            "next": [
+                "node_2",
+            ],
             "inputs": {
                 "input_1": {"store": SIMCORE_S3_ID, "path": "osparc_python_factory.py"}
             },
         },
         "node_2": {
             "next": [],
-            "inputs": {"input_1": {"nodeUuid": "node_1", "output": "output_1"},},
+            "inputs": {
+                "input_1": {"nodeUuid": "node_1", "output": "output_1"},
+            },
         },
     },
 )
 
 
 @pytest.mark.parametrize(
-    "service_repo, service_tag, pipeline_cfg", [SLEEPERS_STUDY, PYTHON_RUNNER_STUDY,],
+    "service_repo, service_tag, pipeline_cfg",
+    [
+        SLEEPERS_STUDY,
+        PYTHON_RUNNER_STUDY,
+    ],
 )
 async def test_run_services(
     loop,
+    postgres_host_config: Dict[str, str],
     postgres_session: sa.orm.session.Session,
     rabbit_queue: aio_pika.Queue,
     storage_service: URL,
