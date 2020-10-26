@@ -14,6 +14,8 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from celery import Celery
 from celery.contrib.abortable import AbortableAsyncResult
+from sqlalchemy import and_
+
 from models_library.projects import RunningState
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.logging_utils import log_decorator
@@ -26,7 +28,6 @@ from simcore_postgres_database.webserver_models import (
 
 # TODO: move this to computation_models
 from simcore_service_webserver.computation_models import to_node_class
-from sqlalchemy import and_
 
 from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
 from .computation_config import ComputationSettings
@@ -540,7 +541,6 @@ async def stop_pipeline_computation(app: web.Application, project_id: str) -> No
                 (comp_tasks.c.project_id == project_id)
                 & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                 & (comp_tasks.c.job_id != None)
-                & (comp_tasks.c.state == StateType.RUNNING)
             )
         ):
 
