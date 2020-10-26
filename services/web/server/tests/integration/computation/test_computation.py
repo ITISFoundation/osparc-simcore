@@ -1,6 +1,7 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+import asyncio
 import json
 import sys
 from pathlib import Path
@@ -148,7 +149,7 @@ def _assert_sleeper_services_completed(
 ):
     # pylint: disable=no-member
     TIMEOUT_SECONDS = 60
-    WAIT_TIME = 2
+    WAIT_TIME = 1
     NUM_COMP_TASKS_TO_WAIT_FOR = len(
         [x for x in mock_workbench_payload.values() if "/comp/" in x["key"]]
     )
@@ -279,12 +280,6 @@ async def test_start_pipeline(
         _assert_sleeper_services_completed(
             project_id, postgres_session, StateType.SUCCESS, mock_workbench_payload
         )
-
-        # now let's try start and stop, so make one sleeper a long running one
-        LONG_SLEEPING_TIME = 30
-        mock_workbench_payload["ee8d7b25-f203-4472-9210-86409b4364e2"]["inputs"][
-            "in_2"
-        ] = LONG_SLEEPING_TIME
         resp = await client.post(url_start)
         data, error = await assert_status(resp, expected_start_response)
         assert not error
@@ -294,6 +289,7 @@ async def test_start_pipeline(
     assert url_stop == URL(
         API_PREFIX + "/computation/pipeline/{}:stop".format(project_id)
     )
+    await asyncio.sleep(2)
     resp = await client.post(url_stop)
     data, error = await assert_status(resp, expected_stop_response)
     if not error:
