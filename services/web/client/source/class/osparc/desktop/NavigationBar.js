@@ -363,34 +363,32 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
     __populateGuidedNodesLayout: function() {
       const study = this.getStudy();
-      if (study) {
-        this.__guidedNodesLayout.removeAll();
-        const radioGroup = new qx.ui.form.RadioGroup();
-        const currentNodeId = study.getUi().getCurrentNodeId();
-        const slideShow = study.getUi().getSlideshow();
-        const nodes = [];
-        for (let nodeId in slideShow) {
-          const node = slideShow[nodeId];
-          nodes.push({
-            ...node,
-            nodeId
-          });
-        }
-        nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
-        let selectedBtn = null;
-        nodes.forEach(node => {
-          const btn = this.__createNodeSlideBtn(node.nodeId, node.position);
-          if (node.nodeId === currentNodeId) {
-            selectedBtn = btn;
-          }
-          this.__guidedNodesLayout.add(btn);
-          radioGroup.add(btn);
+      this.__guidedNodesLayout.removeAll();
+      const radioGroup = new qx.ui.form.RadioGroup();
+      const currentNodeId = study.getUi().getCurrentNodeId();
+      const slideShow = study.getUi().getSlideshow();
+      const nodes = [];
+      for (let nodeId in slideShow) {
+        const node = slideShow[nodeId];
+        nodes.push({
+          ...node,
+          nodeId
         });
-        if (selectedBtn) {
-          radioGroup.setSelection([selectedBtn]);
-        }
-        radioGroup.setAllowEmptySelection(false);
       }
+      nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
+      let selectedBtn = null;
+      nodes.forEach(node => {
+        const btn = this.__createNodeSlideBtn(node.nodeId, node.position);
+        if (node.nodeId === currentNodeId) {
+          selectedBtn = btn;
+        }
+        this.__guidedNodesLayout.add(btn);
+        radioGroup.add(btn);
+      });
+      if (selectedBtn) {
+        radioGroup.setSelection([selectedBtn]);
+      }
+      radioGroup.setAllowEmptySelection(false);
     },
 
     _applyPageContext: function(newCtxt) {
