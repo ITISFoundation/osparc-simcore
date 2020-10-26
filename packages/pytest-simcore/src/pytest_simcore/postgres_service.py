@@ -194,6 +194,9 @@ def postgres_host_config(postgres_dsn: Dict[str, str], monkeypatch) -> Dict[str,
     monkeypatch.setenv("POSTGRES_DB", postgres_dsn["database"])
     monkeypatch.setenv("POSTGRES_HOST", postgres_dsn["host"])
     monkeypatch.setenv("POSTGRES_PORT", str(postgres_dsn["port"]))
+    monkeypatch.setenv(
+        "POSTGRES_ENDPOINT", f"{postgres_dsn['host']}:{postgres_dsn['port']}"
+    )
     return postgres_dsn
 
 
