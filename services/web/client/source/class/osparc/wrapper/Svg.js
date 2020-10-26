@@ -159,7 +159,7 @@ qx.Class.define("osparc.wrapper.Svg", {
 
     drawPolygon: function(draw, controls) {
       const polygon = draw.polygon(controls.join())
-        .fill("#404040")
+        .fill("none")
         .stroke({
           width: 0
         })

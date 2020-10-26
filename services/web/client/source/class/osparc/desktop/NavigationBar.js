@@ -248,7 +248,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     __createNodeBtn: function(nodeId) {
-      const btn = new qx.ui.form.Button().set({
+      const btn = new qx.ui.form.ToggleButton().set({
         ...this.self().BUTTON_OPTIONS,
         maxWidth: 200
       });
@@ -337,7 +337,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         const nodeId = nodeIds[i];
         const btn = this.__createNodePathBtn(nodeId);
         if (i === nodeIds.length-1) {
-          btn.setFont("title-14");
+          btn.setValue(true);
         }
         btns.push(btn);
       }
@@ -366,7 +366,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       nodes.forEach(node => {
         const btn = this.__createNodeSlideBtn(node.nodeId, node.position);
         if (node.nodeId === currentNodeId) {
-          btn.setFont("title-14");
+          btn.setValue(true);
         }
         btns.push(btn);
       });

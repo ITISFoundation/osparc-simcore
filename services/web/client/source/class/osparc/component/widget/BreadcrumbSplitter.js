@@ -130,6 +130,12 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
     __leftPart: null,
     __rightPart: null,
 
+    __getBGColor: function(value) {
+      const bgColor = value ? "material-button-background-pressed" : "material-button-background";
+      const color = qx.theme.manager.Color.getInstance().resolve(bgColor);
+      return color;
+    },
+
     _applyLeftWidget: function(leftWidget) {
       this.setZIndex(leftWidget.getZIndex()+1);
       let controls;
@@ -145,9 +151,11 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
       }
       if (controls) {
         this.__leftPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controls);
-        leftWidget.addListener("changeBackgroundColor", e => {
-          const data = e.getData();
-          osparc.wrapper.Svg.updatePolygonColor(this.__leftPart, data);
+        const color = this.__getBGColor(leftWidget.getValue());
+        osparc.wrapper.Svg.updatePolygonColor(this.__leftPart, color);
+        leftWidget.addListener("changeValue", e => {
+          const newColor = this.__getBGColor(leftWidget.getValue());
+          osparc.wrapper.Svg.updatePolygonColor(this.__leftPart, newColor);
         }, this);
       }
     },
@@ -167,11 +175,14 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
       }
       if (controls) {
         this.__rightPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controls);
-        rightWidget.addListener("changeBackgroundColor", e => {
-          const data = e.getData();
-          osparc.wrapper.Svg.updatePolygonColor(this.__rightPart, data);
+        const color = this.__getBGColor(rightWidget.getValue());
+        osparc.wrapper.Svg.updatePolygonColor(this.__rightPart, color);
+        rightWidget.addListener("changeValue", e => {
+          const newColor = this.__getBGColor(rightWidget.getValue());
+          osparc.wrapper.Svg.updatePolygonColor(this.__rightPart, newColor);
         }, this);
       }
+
       switch (this.getShape()) {
         case "slash": {
           const controlsSlash = this.self().getSlashControls(16, 32);
