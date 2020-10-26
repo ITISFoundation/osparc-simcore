@@ -293,7 +293,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["project_id"];
-      const runButton = this.__mainPanel.getControls().getStartButton();
       this.getLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
