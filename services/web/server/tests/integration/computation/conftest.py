@@ -18,14 +18,15 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 
 @pytest.fixture(scope="session")
-def mock_workbench_payload():
+def mock_workbench_payload() -> Dict:
     file_path = current_dir / "workbench_sleeper_payload.json"
     with file_path.open() as fp:
         return json.load(fp)
 
 
 @pytest.fixture(scope="session")
-def mock_project(fake_data_dir, mock_workbench_payload):
+def mock_project(fake_data_dir: Path, mock_workbench_payload: Dict) -> Dict:
+    project: Dict = {}
     with (fake_data_dir / "fake-project.json").open() as fp:
         project = json.load(fp)
     project["workbench"] = mock_workbench_payload["workbench"]
@@ -47,7 +48,7 @@ async def logged_user(client, user_role: UserRole) -> Dict:
 
 
 @pytest.fixture
-async def user_project(client, mock_project, logged_user) -> Dict:
+async def user_project(client, mock_project: Dict, logged_user: Dict) -> Dict:
     mock_project["prjOwner"] = logged_user["name"]
 
     async with NewProject(
