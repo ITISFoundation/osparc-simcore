@@ -348,7 +348,7 @@
     "organization::tisolutions": {
       "classifier": "z43::organization::tisolutions",
       "display_name": "TI Treatment Planning",
-      "short_description": "Temporal Interference Solutions",
+      "short_description": "Temporal Interference Treatment Planning",
       "logo": null,
       "aliases": [
         "tisolutions"
@@ -359,7 +359,7 @@
       "url": null,
       "github_url": null,
       "wikipedia_url": null,
-      "markdown": "Temporal Interference Solutions\n"
+      "markdown": "Temporal Interference Treatment Planning\n"
     },
     "organization::itis": {
       "classifier": "z43::organization::itis",
