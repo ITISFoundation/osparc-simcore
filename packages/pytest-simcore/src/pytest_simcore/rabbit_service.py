@@ -36,7 +36,10 @@ async def rabbit_config(
         password=devel_environ["RABBIT_PASSWORD"],
         host="127.0.0.1",
         port=get_service_published_port("rabbit", devel_environ["RABBIT_PORT"]),
-        channels={"log": "logs_channel", "instrumentation": "instrumentation_channel",},
+        channels={
+            "log": "logs_channel",
+            "instrumentation": "instrumentation_channel",
+        },
     )
 
     url = rabbit_config.dsn
@@ -48,7 +51,7 @@ async def rabbit_config(
 @pytest.fixture(scope="function")
 async def rabbit_service(rabbit_config: RabbitConfig, monkeypatch) -> RabbitConfig:
     monkeypatch.setenv("RABBIT_HOST", rabbit_config.host)
-    monkeypatch.setenv("RABBIT_PORT", rabbit_config.port)
+    monkeypatch.setenv("RABBIT_PORT", str(rabbit_config.port))
     monkeypatch.setenv("RABBIT_USER", rabbit_config.user)
     monkeypatch.setenv("RABBIT_PASSWORD", rabbit_config.password.get_secret_value())
     monkeypatch.setenv("RABBIT_CHANNELS", json.dumps(rabbit_config.channels))
@@ -99,7 +102,8 @@ async def rabbit_channel(
 
 @pytest.fixture(scope="function")
 async def rabbit_exchange(
-    rabbit_config: RabbitConfig, rabbit_channel: aio_pika.Channel,
+    rabbit_config: RabbitConfig,
+    rabbit_channel: aio_pika.Channel,
 ) -> Tuple[aio_pika.Exchange, aio_pika.Exchange]:
 
     # declare log exchange

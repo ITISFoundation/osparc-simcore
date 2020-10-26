@@ -38,7 +38,7 @@ async def redis_config(loop, docker_stack: Dict, devel_environ: Dict) -> RedisCo
 @pytest.fixture(scope="function")
 async def redis_service(redis_config: RedisConfig, monkeypatch) -> RedisConfig:
     monkeypatch.setenv("REDIS_HOST", redis_config.host)
-    monkeypatch.setenv("REDIS_PORT", redis_config.port)
+    monkeypatch.setenv("REDIS_PORT", str(redis_config.port))
     return redis_config
 
 
