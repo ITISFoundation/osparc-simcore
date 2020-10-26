@@ -247,19 +247,19 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       return this.__dashboardBtn;
     },
 
-    __attachNodeBtnHandler: function(btn, nodeId) {
-      btn.set({
+    __createNodeBtn: function(nodeId) {
+      const btn = new qx.ui.form.Button().set({
         ...this.self().BUTTON_OPTIONS,
         maxWidth: 200
       });
       btn.addListener("execute", () => {
         this.fireDataEvent("nodeSelected", nodeId);
       }, this);
+      return btn;
     },
 
     __createNodePathBtn: function(nodeId) {
-      const btn = new qx.ui.form.Button();
-      this.__attachNodeBtnHandler(btn, nodeId);
+      const btn = this.__createNodeBtn(nodeId);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       if (nodeId === study.getUuid()) {
         study.bind("name", btn, "label");
@@ -275,13 +275,12 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     __createNodeSlideBtn: function(nodeId, pos) {
-      const btn = new qx.ui.toolbar.RadioButton();
-      this.__attachNodeBtnHandler(btn, nodeId);
+      const btn = this.__createNodeBtn(nodeId);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const node = study.getWorkbench().getNode(nodeId);
       if (node) {
         node.bind("label", btn, "label", {
-          converter: val => (pos+1).toString() + " - " + val
+          converter: val => (pos+1).toString() + "- " + val
         });
         node.bind("label", btn, "toolTipText");
       }
@@ -328,6 +327,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       if (nodeIds.length === 1) {
         this.__studyTitle.show();
         this.__navNodesLayout.exclude();
+      } else {
+        this.__studyTitle.exclude();
+        this.__navNodesLayout.show();
       }
 
       const btns = [];
@@ -344,6 +346,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     __populateGuidedNodesLayout: function() {
+      this.__navNodesLayout.show();
+      this.__studyTitle.exclude();
+
       const study = this.getStudy();
       const slideShow = study.getUi().getSlideshow();
       const nodes = [];
@@ -357,21 +362,14 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
 
       const btns = [];
-      let selectedBtn = null;
-      const radioGroup = new qx.ui.form.RadioGroup();
       const currentNodeId = study.getUi().getCurrentNodeId();
       nodes.forEach(node => {
         const btn = this.__createNodeSlideBtn(node.nodeId, node.position);
         if (node.nodeId === currentNodeId) {
-          selectedBtn = btn;
+          btn.setFont("title-14");
         }
         btns.push(btn);
-        radioGroup.add(btn);
       });
-      if (selectedBtn) {
-        radioGroup.setSelection([selectedBtn]);
-      }
-      radioGroup.setAllowEmptySelection(false);
 
       this.__buttonsToBreadcrumb(this.__navNodesLayout, btns, "arrow");
     },
@@ -382,22 +380,19 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this.__dashboardLabel.show();
           this.__dashboardBtn.exclude();
           this.__resetSlideCtrlBtnsVis(false);
+          this.__studyTitle.exclude();
           this.__navNodesLayout.exclude();
           break;
         case "workbench":
           this.__dashboardLabel.exclude();
           this.__dashboardBtn.show();
           this.__resetSlideCtrlBtnsVis(true);
-          this.__navNodesLayout.show();
-          this.__studyTitle.exclude();
           this.__populateWorkbenchNodesLayout();
           break;
         case "slideshow":
           this.__dashboardLabel.exclude();
           this.__dashboardBtn.show();
           this.__resetSlideCtrlBtnsVis(true);
-          this.__navNodesLayout.show();
-          this.__studyTitle.exclude();
           this.__populateGuidedNodesLayout();
           break;
       }
