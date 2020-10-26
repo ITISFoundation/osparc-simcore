@@ -1,0 +1,20 @@
+#
+# Specifies third-party dependencies for 'services/director-v2/src'
+#
+# NOTE: ALL version constraints MUST be commented
+
+async-exit-stack; python_version < '3.7'
+async-generator ; python_version < '3.7'
+dataclasses ; python_version < '3.7'
+
+# fastapi and extensions
+fastapi[all]
+
+# data models
+pydantic[dotenv]
+
+# docker daemon
+aiodocker
+
+# other
+tenacity

@@ -141,6 +141,11 @@ qx.Class.define("osparc.data.model.Study", {
     sweeper: {
       check: "osparc.data.model.Sweeper",
       nullable: false
+    },
+
+    state: {
+      check: "Object",
+      nullable: true
     }
   },
 
@@ -256,6 +261,9 @@ qx.Class.define("osparc.data.model.Study", {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
+        if (key === "state") {
+          return;
+        }
         if (key === "sweeper") {
           jsonObject["dev"] = {};
           jsonObject["dev"]["sweeper"] = this.getSweeper().serialize();

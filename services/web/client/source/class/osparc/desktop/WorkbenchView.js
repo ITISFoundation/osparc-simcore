@@ -244,9 +244,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         return;
       }
 
+      const runButton = this.__mainPanel.getControls().getStartButton();
+      runButton.setFetching(true);
       this.updateStudyDocument(true)
         .then(() => {
           this.__doStartPipeline();
+        })
+        .catch(() => {
+          this.getLogger().error(null, "Couldn't run the pipeline: Pipeline failed to save.");
+          runButton.setFetching(false);
         });
     },
 
@@ -265,9 +271,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __requestStartPipeline: function(studyId) {
       const url = "/computation/pipeline/" + encodeURIComponent(studyId) + "/start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
+
+      const runButton = this.__mainPanel.getControls().getStartButton();
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
         this.getLogger().error(null, "Error submitting pipeline");
+        runButton.setFetching(false);
       }, this);
       req.addListener("fail", e => {
         if (e.getTarget().getResponse().error.status == "403") {
@@ -275,6 +284,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         } else {
           this.getLogger().error(null, "Failed submitting pipeline");
         }
+        runButton.setFetching(false);
       }, this);
       req.send();
 
@@ -285,12 +295,39 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["project_id"];
+
+      const runButton = this.__mainPanel.getControls().getStartButton();
       this.getLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
         this.getLogger().error(null, "Submission failed");
       } else {
         this.getLogger().info(null, "Pipeline started");
+        /* If no projectStateUpdated comes in 60 seconds, client must
+        check state of pipeline and update button accordingly. */
+        const timer = setTimeout(() => {
+          osparc.data.Resources.fetch("studies", "state", {
+            url: {
+              projectId: pipelineId
+            }
+          })
+            .then(({state}) => {
+              if (state && (
+                state.value === "NOT_STARTED" ||
+                state.value === "SUCCESS" ||
+                state.value === "FAILED"
+              )) {
+                runButton.setFetching(false);
+              }
+            });
+        }, 60000);
+        const socket = osparc.wrapper.WebSocket.getInstance();
+        socket.getSocket().once("projectStateUpdated", jsonStr => {
+          const study = JSON.parse(jsonStr);
+          if (study["project_uuid"] === pipelineId) {
+            clearTimeout(timer);
+          }
+        });
       }
     },
 

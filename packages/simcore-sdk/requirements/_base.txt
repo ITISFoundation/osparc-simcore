@@ -5,7 +5,7 @@
 #    pip-compile --output-file=requirements/_base.txt requirements/_base.in
 #
 aiofiles==0.5.0           # via -r requirements/_base.in
-aiohttp==3.6.2            # via -r requirements/_base.in
+aiohttp==3.6.3            # via -r requirements/_base.in
 aiopg[sa]==1.0.0          # via -r requirements/_base.in
 async-timeout==3.0.1      # via aiohttp
 attrs==19.3.0             # via -r requirements/_base.in, aiohttp
@@ -13,10 +13,10 @@ chardet==3.0.4            # via aiohttp
 dataclasses==0.7          # via pydantic
 decorator==4.4.2          # via networkx
 idna-ssl==1.1.0           # via aiohttp
-idna==2.10                # via idna-ssl, yarl
+idna==2.10                # via yarl
 multidict==4.7.6          # via aiohttp, yarl
 networkx==2.5             # via -r requirements/_base.in
-psycopg2-binary==2.8.6    # via -r requirements/_base.in, aiopg, sqlalchemy
+psycopg2-binary==2.8.6    # via -r requirements/_base.in, aiopg
 pydantic==1.6.1           # via -r requirements/_base.in
 pyyaml==5.3.1             # via trafaret-config
 six==1.15.0               # via tenacity
@@ -25,4 +25,4 @@ tenacity==6.2.0           # via -r requirements/_base.in
 trafaret-config==2.0.2    # via -r requirements/_base.in
 trafaret==2.1.0           # via trafaret-config
 typing-extensions==3.7.4.3  # via aiohttp, yarl
-yarl==1.6.0               # via aiohttp
+yarl==1.5.1               # via aiohttp
