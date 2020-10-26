@@ -196,7 +196,11 @@ def _assert_sleeper_services_completed(
 
 # TESTS ------------------------------------------
 async def test_check_health(
-    rabbit_service: RabbitConfig, mock_orphaned_services, docker_stack, client
+    rabbit_service: RabbitConfig,
+    postgres_session: sa.orm.session.Session,
+    mock_orphaned_services,
+    docker_stack,
+    client,
 ):
     # TODO: check health of all core_services in list above!
     resp = await client.get(API_VERSION + "/")
