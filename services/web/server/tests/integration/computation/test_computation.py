@@ -4,7 +4,6 @@
 import json
 import sys
 from pathlib import Path
-from pprint import pprint
 from typing import Dict
 
 import pytest
@@ -19,7 +18,6 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import NewProject
 from servicelib.application import create_safe_application
-from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_postgres_database.webserver_models import (
     NodeClass,
     StateType,
@@ -68,13 +66,8 @@ def client(
     app_config["storage"]["enabled"] = False
     app_config["main"]["testing"] = True
 
-    pprint(app_config)
-
     # fake config
-    app = create_safe_application()
-    app[APP_CONFIG_KEY] = app_config
-
-    pprint(app_config)
+    app = create_safe_application(app_config)
 
     setup_db(app)
     setup_session(app)
@@ -82,6 +75,7 @@ def client(
     setup_rest(app)
     setup_login(app)
     setup_users(app)
+    setup_sockets(app)
     setup_projects(app)
     setup_computation(app)
     setup_resource_manager(app)
@@ -222,8 +216,8 @@ async def test_check_health(
 )
 async def test_start_pipeline(
     sleeper_service: Dict[str, str],
-    rabbit_service: RabbitConfig,
     postgres_session: sa.orm.session.Session,
+    rabbit_service: RabbitConfig,
     redis_service: RedisConfig,
     simcore_services: Dict[str, URL],
     client,
