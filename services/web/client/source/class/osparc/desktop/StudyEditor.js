@@ -203,17 +203,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         },
         data: newObj
       };
-      return new Promise((resolve, reject) => {
-        osparc.data.Resources.fetch("studies", "put", params)
-          .then(data => {
-            this.__lastSavedStudy = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
-            resolve();
-          })
-          .catch(error => {
-            this.getLogger().error(null, "Error updating pipeline");
-            reject();
-          });
-      });
+      return osparc.data.Resources.fetch("studies", "put", params)
+        .then(data => {
+          this.__lastSavedStudy = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
+        }).catch(error => {
+          this.getLogger().error(null, "Error updating pipeline");
+          // Need to throw the error to be able to handle it later
+          throw error;
+        });
     },
 
     closeStudy: function() {

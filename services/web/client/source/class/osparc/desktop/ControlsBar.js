@@ -160,6 +160,20 @@ qx.Class.define("osparc.desktop.ControlsBar", {
 
     __createStartButton: function() {
       const startButton = this.__startButton = this.__createButton(this.tr("Run"), "play", "runStudyBtn", "startPipeline");
+      osparc.store.Store.getInstance().addListener("changeCurrentStudy", e => {
+        const study = e.getData();
+        if (study && study.getState() && study.getState().state) {
+          switch (study.getState().state.value) {
+            case "PENDING":
+            case "PUBLISHED":
+            case "STARTED":
+              startButton.setFetching(true);
+              break;
+            default:
+              startButton.setFetching(false);
+          }
+        }
+      });
       return startButton;
     },
 
@@ -174,9 +188,8 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     },
 
     __createButton: function(label, icon, widgetId, signalName, visibility="visible") {
-      const button = new qx.ui.toolbar.Button(label).set({
-        visibility,
-        icon: icon ? "@FontAwesome5Solid/"+icon+"/14" : null
+      const button = new osparc.ui.toolbar.FetchButton(label, "@FontAwesome5Solid/"+icon+"/14").set({
+        visibility
       });
       osparc.utils.Utils.setIdToWidget(button, widgetId);
       button.addListener("execute", () => {
