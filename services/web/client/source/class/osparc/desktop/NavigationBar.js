@@ -255,6 +255,16 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       return this.__dashboardBtn;
     },
 
+    __attachNodeBtnHandler: function(btn, nodeId) {
+      btn.set({
+        ...this.self().BUTTON_OPTIONS,
+        maxWidth: 200
+      });
+      btn.addListener("execute", () => {
+        this.fireDataEvent("nodeSelected", nodeId);
+      }, this);
+    },
+
     __createNodePathBtn: function(nodeId) {
       const btn = new qx.ui.form.Button();
       this.__attachNodeBtnHandler(btn, nodeId);
@@ -269,9 +279,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           node.bind("label", btn, "toolTipText");
         }
       }
-      btn.addListener("execute", () => {
-        this.fireDataEvent("nodeSelected", nodeId);
-      }, this);
       return btn;
     },
 
@@ -287,17 +294,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         node.bind("label", btn, "toolTipText");
       }
       return btn;
-    },
-
-    __attachNodeBtnHandler: function(btn, nodeId) {
-      btn.set({
-        ...this.self().BUTTON_OPTIONS,
-        maxWidth: 200
-      });
-      btn.addListener("execute", () => {
-        this.fireDataEvent("nodeSelected", nodeId);
-      }, this);
-
     },
 
     __setPathButtons: function(nodeIds) {
