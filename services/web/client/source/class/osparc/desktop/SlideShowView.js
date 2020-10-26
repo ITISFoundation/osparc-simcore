@@ -110,7 +110,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
         flex: 1
       });
 
-      const prvsBtn = this.__prvsBtn = new qx.ui.form.Button(this.tr("Previuos")).set({
+      const prvsBtn = this.__prvsBtn = new qx.ui.form.Button(this.tr("Previous")).set({
         allowGrowX: false
       });
       prvsBtn.addListener("execute", () => {
