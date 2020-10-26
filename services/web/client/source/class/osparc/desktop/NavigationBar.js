@@ -221,9 +221,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this._add(control);
           break;
         case "guided-nodes-path-container":
-          control = new qx.ui.toolbar.Part().set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(0).set({
             alignY: "middle"
-          });
+          }));
           this._add(control);
           break;
         case "manual":
@@ -296,6 +296,40 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       return btn;
     },
 
+    __buttonsToBreadcrumb: function(layout, btns, shape = "slash") {
+      layout.removeAll();
+      for (let i=0; i<btns.length; i++) {
+        const thisBtn = btns[i];
+        let nextBtn = null;
+        if (i+1<btns.length) {
+          nextBtn = btns[i+1];
+        }
+
+        layout.add(thisBtn);
+
+        const breadcrumbSplitter = new osparc.component.widget.BreadcrumbSplitter(16, 32).set({
+          shape,
+          marginTop: (50-32)/2,
+          marginLeft: -1,
+          marginRight: -1
+        });
+        if (breadcrumbSplitter.getReady()) {
+          breadcrumbSplitter.setLeftWidget(thisBtn);
+          if (nextBtn) {
+            breadcrumbSplitter.setRightWidget(nextBtn);
+          }
+        } else {
+          breadcrumbSplitter.addListenerOnce("SvgWidgetReady", () => {
+            breadcrumbSplitter.setLeftWidget(thisBtn);
+            if (nextBtn) {
+              breadcrumbSplitter.setRightWidget(nextBtn);
+            }
+          }, this);
+        }
+        layout.add(breadcrumbSplitter);
+      }
+    },
+
     __setPathButtons: function(nodeIds) {
       if (this.getPageContext() === "workbench") {
         this.__setWorkbenchBtnsVis(true);
@@ -329,43 +363,11 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         btns.push(btn);
       }
 
-      this.__workbenchNodesLayout.removeAll();
-      for (let i=0; i<btns.length; i++) {
-        const thisBtn = btns[i];
-        let nextBtn = null;
-        if (i+1<btns.length) {
-          nextBtn = btns[i+1];
-        }
-
-        this.__workbenchNodesLayout.add(thisBtn);
-
-        const breadcrumbSplitter = new osparc.component.widget.BreadcrumbSplitter(16, 32).set({
-          marginTop: (50-32)/2,
-          marginLeft: -1,
-          marginRight: -1
-        });
-        if (breadcrumbSplitter.getReady()) {
-          breadcrumbSplitter.setLeftWidget(thisBtn);
-          if (nextBtn) {
-            breadcrumbSplitter.setRightWidget(nextBtn);
-          }
-        } else {
-          breadcrumbSplitter.addListenerOnce("SvgWidgetReady", () => {
-            breadcrumbSplitter.setLeftWidget(thisBtn);
-            if (nextBtn) {
-              breadcrumbSplitter.setRightWidget(nextBtn);
-            }
-          }, this);
-        }
-        this.__workbenchNodesLayout.add(breadcrumbSplitter);
-      }
+      this.__buttonsToBreadcrumb(this.__workbenchNodesLayout, btns, "slash");
     },
 
     __populateGuidedNodesLayout: function() {
       const study = this.getStudy();
-      this.__guidedNodesLayout.removeAll();
-      const radioGroup = new qx.ui.form.RadioGroup();
-      const currentNodeId = study.getUi().getCurrentNodeId();
       const slideShow = study.getUi().getSlideshow();
       const nodes = [];
       for (let nodeId in slideShow) {
@@ -376,19 +378,25 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         });
       }
       nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
+
+      const btns = [];
       let selectedBtn = null;
+      const radioGroup = new qx.ui.form.RadioGroup();
+      const currentNodeId = study.getUi().getCurrentNodeId();
       nodes.forEach(node => {
         const btn = this.__createNodeSlideBtn(node.nodeId, node.position);
         if (node.nodeId === currentNodeId) {
           selectedBtn = btn;
         }
-        this.__guidedNodesLayout.add(btn);
+        btns.push(btn);
         radioGroup.add(btn);
       });
       if (selectedBtn) {
         radioGroup.setSelection([selectedBtn]);
       }
       radioGroup.setAllowEmptySelection(false);
+
+      this.__buttonsToBreadcrumb(this.__guidedNodesLayout, btns, "arrow");
     },
 
     _applyPageContext: function(newCtxt) {
