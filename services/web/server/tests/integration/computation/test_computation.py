@@ -6,8 +6,6 @@ import sys
 from pathlib import Path
 from pprint import pprint
 from typing import Dict
-from models_library.rabbit import RabbitConfig
-from models_library.redis import RedisConfig
 
 import pytest
 import sqlalchemy as sa
@@ -15,6 +13,8 @@ from aiohttp import web
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 from yarl import URL
 
+from models_library.rabbit import RabbitConfig
+from models_library.redis import RedisConfig
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import NewProject
@@ -30,6 +30,7 @@ from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
+from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
@@ -57,7 +58,9 @@ ops_services = [
 
 @pytest.fixture
 def client(
-    loop, aiohttp_client, app_config,  ## waits until swarm with *_services are up
+    loop,
+    aiohttp_client,
+    app_config,  ## waits until swarm with *_services are up
 ):
     assert app_config["rest"]["version"] == API_VERSION
 
@@ -79,6 +82,7 @@ def client(
     setup_login(app)
     setup_projects(app)
     setup_computation(app)
+    setup_resource_manager(app)
 
     yield loop.run_until_complete(
         aiohttp_client(
