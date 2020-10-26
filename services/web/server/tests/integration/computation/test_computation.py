@@ -141,11 +141,17 @@ def _assert_db_contents(
 
 
 def _assert_sleeper_services_completed(
-    project_id: str, postgres_session: sa.orm.session.Session, expected_state: StateType
+    project_id: str,
+    postgres_session: sa.orm.session.Session,
+    expected_state: StateType,
+    mock_workbench_payload,
 ):
     # pylint: disable=no-member
     TIMEOUT_SECONDS = 90
     WAIT_TIME = 2
+    number_of_comp_tasks = len(
+        [x for x in mock_workbench_payload.values() if "/comp/" in x["key"]]
+    )
 
     @retry(
         reraise=True,
@@ -167,6 +173,8 @@ def _assert_sleeper_services_completed(
             )
             .all()
         )
+        # check that all computational tasks are completed
+        assert len(tasks_db) == number_of_comp_tasks
         # get the different states in a set of states
         set_of_states = {task_db.state for task_db in tasks_db}
         if expected_state in [StateType.ABORTED, StateType.FAILED]:
@@ -271,7 +279,7 @@ async def test_start_pipeline(
             check_outputs=False,
         )
         _assert_sleeper_services_completed(
-            project_id, postgres_session, StateType.SUCCESS
+            project_id, postgres_session, StateType.SUCCESS, mock_workbench_payload
         )
 
         # starting now should be ok
@@ -287,5 +295,5 @@ async def test_start_pipeline(
     data, error = await assert_status(resp, expected_stop_response)
     if not error:
         _assert_sleeper_services_completed(
-            project_id, postgres_session, StateType.ABORTED
+            project_id, postgres_session, StateType.ABORTED, mock_workbench_payload
         )
