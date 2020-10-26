@@ -180,6 +180,7 @@ async def _assert_incoming_data_logs(
 
 @pytest.fixture
 async def pipeline(
+    sidecar_config: None,
     postgres_host_config: Dict[str, str],
     postgres_session: sa.orm.session.Session,
     storage_service: URL,
