@@ -73,10 +73,19 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
       const node = this.getStudy().getWorkbench().getNode(nodeId);
       if (node) {
-        this.__nodeView.setNode(node);
-        this.__nodeView.populateLayout();
-        this.__nodeView.getInputsView().exclude();
-        this.__nodeView.getOutputsView().exclude();
+        if (node.isFilePicker()) {
+          const nodeView = new osparc.component.node.FilePickerNodeView(node);
+          nodeView.populateLayout();
+          nodeView.getInputsView().exclude();
+          nodeView.getOutputsView().exclude();
+          this.__showInMainView(nodeView);
+        } else {
+          this.__nodeView.setNode(node);
+          this.__nodeView.populateLayout();
+          this.__nodeView.getInputsView().exclude();
+          this.__nodeView.getOutputsView().exclude();
+          this.__showInMainView(this.__nodeView);
+        }
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
     },
@@ -95,12 +104,16 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
     __initViews: function() {
       this._removeAll();
+      this.__createNodeView();
+      this.__createControlsBar();
+    },
 
+    __createNodeView: function() {
       const nodeView = this.__nodeView = new osparc.component.node.NodeView();
-      this._add(nodeView, {
-        flex: 1
-      });
+      this.__showInMainView(nodeView);
+    },
 
+    __createControlsBar: function() {
       const controlsBar = this.__controlsBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         minHeight: 40,
         padding: 5
@@ -127,6 +140,18 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       controlsBar.add(nextBtn);
 
       this._add(controlsBar);
+    },
+
+    __showInMainView: function(nodeView) {
+      const children = this._getChildren();
+      for (let i=0; i<children.length; i++) {
+        if (children[i] !== this.__controlsBar) {
+          this._removeAt(i);
+        }
+      }
+      this._addAt(nodeView, 0, {
+        flex: 1
+      });
     },
 
     __next: function() {
