@@ -5809,7 +5809,7 @@ paths:
                               description: object containing the GroupID as key and read/write/execution permissions as value
                               additionalProperties: false
                               x-patternProperties:
-                                ^\d+$:
+                                ^\S+$:
                                   type: object
                                   description: the group id
                                   additionalProperties: false
@@ -5844,7 +5844,7 @@ paths:
                             workbench:
                               type: object
                               x-patternProperties:
-                                ^\d+$:
+                                ^\S+$:
                                   type: object
                                   additionalProperties: false
                                   required:
@@ -6343,7 +6343,7 @@ paths:
                   description: object containing the GroupID as key and read/write/execution permissions as value
                   additionalProperties: false
                   x-patternProperties:
-                    ^\d+$:
+                    ^\S+$:
                       type: object
                       description: the group id
                       additionalProperties: false
@@ -6378,7 +6378,7 @@ paths:
                 workbench:
                   type: object
                   x-patternProperties:
-                    ^\d+$:
+                    ^\S+$:
                       type: object
                       additionalProperties: false
                       required:
@@ -6757,7 +6757,7 @@ paths:
                             description: object containing the GroupID as key and read/write/execution permissions as value
                             additionalProperties: false
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 description: the group id
                                 additionalProperties: false
@@ -6792,7 +6792,7 @@ paths:
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -7289,7 +7289,7 @@ paths:
                             description: object containing the GroupID as key and read/write/execution permissions as value
                             additionalProperties: false
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 description: the group id
                                 additionalProperties: false
@@ -7324,7 +7324,7 @@ paths:
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -7827,7 +7827,7 @@ paths:
                             description: object containing the GroupID as key and read/write/execution permissions as value
                             additionalProperties: false
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 description: the group id
                                 additionalProperties: false
@@ -7862,7 +7862,7 @@ paths:
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -8356,7 +8356,7 @@ paths:
                   description: object containing the GroupID as key and read/write/execution permissions as value
                   additionalProperties: false
                   x-patternProperties:
-                    ^\d+$:
+                    ^\S+$:
                       type: object
                       description: the group id
                       additionalProperties: false
@@ -8391,7 +8391,7 @@ paths:
                 workbench:
                   type: object
                   x-patternProperties:
-                    ^\d+$:
+                    ^\S+$:
                       type: object
                       additionalProperties: false
                       required:
@@ -8770,7 +8770,7 @@ paths:
                             description: object containing the GroupID as key and read/write/execution permissions as value
                             additionalProperties: false
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 description: the group id
                                 additionalProperties: false
@@ -8805,7 +8805,7 @@ paths:
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -9324,7 +9324,7 @@ paths:
                             description: object containing the GroupID as key and read/write/execution permissions as value
                             additionalProperties: false
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 description: the group id
                                 additionalProperties: false
@@ -9359,7 +9359,7 @@ paths:
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -10690,7 +10690,7 @@ paths:
                             description: object containing the GroupID as key and read/write/execution permissions as value
                             additionalProperties: false
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 description: the group id
                                 additionalProperties: false
@@ -10725,7 +10725,7 @@ paths:
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -11221,7 +11221,7 @@ paths:
                             description: object containing the GroupID as key and read/write/execution permissions as value
                             additionalProperties: false
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 description: the group id
                                 additionalProperties: false
@@ -11256,7 +11256,7 @@ paths:
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 additionalProperties: false
                                 required:

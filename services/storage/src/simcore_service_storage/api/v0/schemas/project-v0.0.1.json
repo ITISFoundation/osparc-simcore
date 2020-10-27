@@ -49,7 +49,7 @@
       "description": "object containing the GroupID as key and read/write/execution permissions as value",
       "additionalProperties": false,
       "patternProperties": {
-        "^\\d+$": {
+        "^\\S+$": {
           "type": "object",
           "description": "the group id",
           "additionalProperties": false,
@@ -101,7 +101,7 @@
     "workbench": {
       "type": "object",
       "patternProperties": {
-        "^\\d+$": {
+        "^\\S+$": {
           "type": "object",
           "additionalProperties": false,
           "required": [

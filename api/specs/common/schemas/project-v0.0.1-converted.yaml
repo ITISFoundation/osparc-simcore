@@ -36,7 +36,7 @@ properties:
       as value
     additionalProperties: false
     x-patternProperties:
-      ^\d+$:
+      ^\S+$:
         type: object
         description: the group id
         additionalProperties: false
@@ -73,7 +73,7 @@ properties:
   workbench:
     type: object
     x-patternProperties:
-      ^\d+$:
+      ^\S+$:
         type: object
         additionalProperties: false
         required:
