@@ -29,14 +29,14 @@ qx.Class.define("osparc.data.model.StudyUI", {
     this.base(arguments);
 
     this.set({
-      workbech: studyDataUI.workbench || {},
+      workbench: studyDataUI.workbench || {},
       slideshow: studyDataUI.slideshow || {},
       currentNodeId: studyDataUI.currentNodeId || null
     });
   },
 
   properties: {
-    workbech: {
+    workbench: {
       check: "Object",
       nullable: true
     },
