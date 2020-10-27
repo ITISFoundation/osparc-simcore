@@ -116,6 +116,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     __startSlidesBtn: null,
     __stopSlidesBtn: null,
     __studyTitle: null,
+    __navNodes: null,
     __navNodesLayout: null,
 
     buildLayout: function() {
@@ -157,9 +158,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       }, this);
 
       this.__navNodesLayout = this.getChildControl("navigation-nodes-path-container");
-      this.__navNodesLayout.addListener("nodeSelected", e => {
-        this.fireDataEvent("nodeSelected", e.getData());
-      }, this);
 
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
@@ -216,10 +214,13 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this._add(control);
           break;
         case "navigation-nodes-path-container": {
-          const scroll = new qx.ui.container.Scroll();
-          control = new osparc.component.widget.BreadcrumbNavigation();
-          scroll.add(control);
-          this._add(scroll, {
+          control = new qx.ui.container.Scroll();
+          const breadcrumbNavigation = this.__navNodes = new osparc.component.widget.BreadcrumbNavigation();
+          breadcrumbNavigation.addListener("nodeSelected", e => {
+            this.fireDataEvent("nodeSelected", e.getData());
+          }, this);
+          control.add(breadcrumbNavigation);
+          this._add(control, {
             flex: 1
           });
           break;
@@ -262,9 +263,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       } else {
         this.__studyTitle.exclude();
         this.__navNodesLayout.show();
+        this.__navNodes.populateButtons(nodeIds, "slash");
       }
-
-      this.__navNodesLayout.populateButtons(nodeIds, "slash");
     },
 
     __populateGuidedNodesLayout: function() {
@@ -287,7 +287,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         nodeIds.push(node.nodeId);
       });
 
-      this.__navNodesLayout.populateButtons(nodeIds, "arrow");
+      this.__navNodes.populateButtons(nodeIds, "arrow");
     },
 
     _applyPageContext: function(newCtxt) {
