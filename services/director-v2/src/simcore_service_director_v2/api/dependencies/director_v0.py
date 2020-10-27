@@ -1,10 +1,10 @@
 from typing import Coroutine
 
-from fastapi import Request, Response
+from fastapi import HTTPException, Request, Response
+from models_library.services import ServiceDockerData, ServiceKeyVersion
 from starlette.datastructures import URL
 
 from ...modules.director_v0 import DirectorV0Client
-from models_library.services import ServiceKeyVersion, ServiceDockerData
 
 
 def get_request_to_director_v0(request: Request, response: Response) -> Coroutine:
@@ -13,7 +13,8 @@ def get_request_to_director_v0(request: Request, response: Response) -> Coroutin
 
     async def forward():
         url_tail = URL(
-            path=request.url.path.replace("/v0", ""), fragment=request.url.fragment,
+            path=request.url.path.replace("/v0", ""),
+            fragment=request.url.fragment,
         )
         body: bytes = await request.body()
 
@@ -36,10 +37,13 @@ def get_request_to_director_v0(request: Request, response: Response) -> Coroutin
 
 
 class DirectorClient:
-    def __init__(self):
-        pass
+    def __init__(self, request: Request):
+        self.client = DirectorV0Client.instance(request.app)
 
     async def get_service_details(
         self, service: ServiceKeyVersion
     ) -> ServiceDockerData:
-        pass
+        url_tail = URL(path=f"services/{service.key}/{service.version}")
+        resp = await self.client.get(str(url_tail))
+        if resp.status_code != 200:
+            raise HTTPException(status_code=500, detail=resp.content)
