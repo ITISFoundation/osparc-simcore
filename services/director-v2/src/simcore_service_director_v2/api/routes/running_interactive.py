@@ -2,8 +2,8 @@
 from typing import Coroutine
 
 from fastapi import APIRouter, Depends, Query, status
+from models_library.services import KEY_RE, VERSION_RE
 
-from ...models.constants import SERVICE_IMAGE_NAME_RE, VERSION_RE
 from ...models.schemas.services import RunningServicesEnveloped
 from ..dependencies.director_v0 import get_request_to_director_v0
 
@@ -43,7 +43,7 @@ async def start_interactive_service(
     service_key: str = Query(
         ...,
         description="distinctive name for the node based on the docker registry path",
-        regex=SERVICE_IMAGE_NAME_RE,
+        regex=KEY_RE,
         example=[
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",

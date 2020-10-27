@@ -13,8 +13,14 @@ fastapi[all]
 # data models
 pydantic[dotenv]
 
+# database
+aiopg[sa]
+
 # docker daemon
 aiodocker
+
+# celery
+celery[redis]
 
 # other
 tenacity

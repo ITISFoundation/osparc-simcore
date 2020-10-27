@@ -4,6 +4,7 @@ from fastapi import Request, Response
 from starlette.datastructures import URL
 
 from ...modules.director_v0 import DirectorV0Client
+from models_library.services import ServiceKeyVersion, ServiceDockerData
 
 
 def get_request_to_director_v0(request: Request, response: Response) -> Coroutine:
@@ -12,8 +13,7 @@ def get_request_to_director_v0(request: Request, response: Response) -> Coroutin
 
     async def forward():
         url_tail = URL(
-            path=request.url.path.replace("/v0", ""),
-            fragment=request.url.fragment,
+            path=request.url.path.replace("/v0", ""), fragment=request.url.fragment,
         )
         body: bytes = await request.body()
 
@@ -33,3 +33,13 @@ def get_request_to_director_v0(request: Request, response: Response) -> Coroutin
         return response
 
     return forward
+
+
+class DirectorClient:
+    def __init__(self):
+        pass
+
+    async def get_service_details(
+        self, service: ServiceKeyVersion
+    ) -> ServiceDockerData:
+        pass

@@ -1,7 +1,9 @@
 import sys
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
+from uuid import UUID
 
 from pydantic import UUID4, BaseModel, EmailStr, Extra, Field, HttpUrl, constr
 from pydantic.types import PositiveInt
@@ -283,10 +285,25 @@ class Project(BaseModel):
         extra = Extra.forbid
 
 
-__all__ = [
-    "ProjectState",
-    "ProjectRunningState",
-    "ProjectLocked",
-    "RunningState",
-    "Owner",
-]
+class ProjectAtDB(Project):
+    id: int
+    project_type: Any = Field(..., alias="type")
+    uuid: str = Field(...)
+    prjOwner: Optional[int] = Field(..., alias="prj_owner")
+    accessRights: Dict = Field(..., alias="access_rights")
+    creationDate: datetime = Field(
+        ...,
+        alias="creation_date",
+    )
+    lastChangeDate: datetime = Field(
+        ...,
+        alias="last_change_date",
+    )
+    published: bool
+    thumbnail: Optional[str] = Field(None)
+    ui: Optional[Dict] = Field(None)
+    workbench: Dict
+
+    class Config:
+        orm_mode = True
+        extra = Extra.forbid

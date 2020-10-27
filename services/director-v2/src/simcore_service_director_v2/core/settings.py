@@ -4,18 +4,17 @@ import logging
 from enum import Enum
 from typing import Optional
 
+from models_library.celery import CeleryConfig
+from models_library.postgres import PostgresSettings
 from pydantic import (
-    AnyHttpUrl,
     BaseSettings,
     Field,
-    PostgresDsn,
     SecretStr,
     conint,
     constr,
     root_validator,
     validator,
 )
-
 from ..meta import api_vtag
 
 MINS = 60
@@ -35,6 +34,7 @@ ORG_LABELS_TO_SCHEMA_LABELS = {
 
 PortInt = conint(gt=0, lt=65535)
 
+
 class BootModeEnum(str, Enum):
     DEBUG = "debug-ptvsd"
     PRODUCTION = "production"
@@ -52,7 +52,7 @@ class ApiServiceSettings(BaseSettings):
     enabled: bool = Field(True, description="Enables/Disables connection with service")
 
     host: str
-    port: PortInt= 8000
+    port: PortInt = 8000
     vtag: constr(regex=r"^v\d$") = "v0"
 
     def base_url(self, include_tag=False) -> str:
@@ -74,7 +74,7 @@ class RegistrySettings(BaseSettings):
 
     # entrypoint
     ssl: bool = True
-    url: AnyHttpUrl
+    url: str = Field(..., description="URL to the docker registry", env="REGISTRY_URL")
 
     # auth
     auth: bool = True
@@ -106,49 +106,6 @@ class RegistrySettings(BaseSettings):
         env_prefix = "REGISTRY_"
 
 
-class PostgresSettings(BaseSettings):
-    enabled: bool = True
-
-    # entrypoint
-    host: str
-    port: PortInt= 5432
-
-    # auth
-    user: str
-    password: SecretStr
-
-    # database
-    db: str
-
-    # pool connection limits
-    minsize: int = 10
-    maxsize: int = 10
-
-    dsn: Optional[PostgresDsn] = None
-
-    @validator("maxsize")
-    def check_size(cls, v, values):
-        if not (values["minsize"] <= v):
-            raise ValueError(f"assert minsize={values['minsize']} <= maxsize={v}")
-        return v
-
-    @validator("dsn", pre=True)
-    def autofill_dsn(cls, v, values):
-        if v is None:
-            return PostgresDsn.build(
-                scheme="postgresql",
-                user=values["user"],
-                password=values["password"].get_secret_value(),
-                host=values["host"],
-                port=f"{values['port']}",
-                path=f"/{values['db']}",
-            )
-        return v
-
-    class Config(CommonConfig):
-        env_prefix = "POSTGRES_"
-
-
 class AppSettings(BaseSettings):
     @classmethod
     def create_from_env(cls, **settings_kwargs) -> "AppSettings":
@@ -156,6 +113,7 @@ class AppSettings(BaseSettings):
             postgres=PostgresSettings(),
             director_v0=DirectorV0Settings(),
             registry=RegistrySettings(),
+            celery=CeleryConfig.create_from_env(),
             **settings_kwargs,
         )
 
@@ -177,6 +135,9 @@ class AppSettings(BaseSettings):
     def loglevel(self) -> int:
         return getattr(logging, self.log_level_name)
 
+    # CELERY submodule
+    celery: CeleryConfig
+
     # DIRECTOR submodule
     director_v0: DirectorV0Settings
 
@@ -187,7 +148,7 @@ class AppSettings(BaseSettings):
     postgres: PostgresSettings
 
     # STORAGE
-    storage_endpoint: AnyHttpUrl = Field("http://storage:8080", env="STORAGE_ENDPOINT")
+    storage_endpoint: str = Field("storage:8080", env="STORAGE_ENDPOINT")
 
     # caching registry and TTL (time-to-live)
     registry_caching: bool = True

@@ -1,15 +1,9 @@
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
-
-from ..constants import SERVICE_IMAGE_NAME_RE, VERSION_RE
-from .image_meta import ImageMetaData
-
-
-class ServiceType(str, Enum):
-    COMPUTATIONAL = "computational"
-    INTERACTIVE = "interactive"
+from models_library.services import KEY_RE, VERSION_RE, ServiceDockerData
+from pydantic import BaseModel, Field, constr
+from pydantic.types import UUID4, PositiveInt
 
 
 class NodeRequirement(str, Enum):
@@ -42,27 +36,30 @@ class ServiceState(str, Enum):
 
 
 class RunningServiceType(BaseModel):
-    published_port: int = Field(
-        ..., description="The ports where the service provides its interface", ge=1.0
+    published_port: PositiveInt = Field(
+        ..., description="The ports where the service provides its interface"
     )
     entry_point: Optional[str] = Field(
         None,
         description="The entry point where the service provides its interface if specified",
     )
-    service_uuid: str = Field(..., description="The UUID attached to this service")
-    service_key: str = Field(
+    service_uuid: UUID4 = Field(..., description="The UUID attached to this service")
+    service_key: constr(regex=KEY_RE) = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
-        regex=SERVICE_IMAGE_NAME_RE,
+        example=[
+            "simcore/services/comp/itis/sleeper",
+            "simcore/services/dynamic/3dviewer",
+        ],
     )
-    service_version: str = Field(
+    service_version: constr(regex=VERSION_RE) = Field(
         ...,
-        description="semantic version number",
-        regex=VERSION_RE,
+        description="service version number",
+        example=["1.0.0", "0.0.1"],
     )
     service_host: str = Field(..., description="service host name within the network")
-    service_port: int = Field(
-        ..., description="port to access the service within the network", ge=1.0
+    service_port: PositiveInt = Field(
+        ..., description="port to access the service within the network"
     )
     service_basepath: Optional[str] = Field(
         "",
@@ -84,4 +81,4 @@ class RunningServicesEnveloped(BaseModel):
 
 
 class ServicesArrayEnveloped(BaseModel):
-    data: List[ImageMetaData]
+    data: List[ServiceDockerData]

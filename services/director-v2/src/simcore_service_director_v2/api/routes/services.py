@@ -2,14 +2,9 @@
 from typing import Coroutine, Optional
 
 from fastapi import APIRouter, Depends, Path, Query
+from models_library.services import KEY_RE, VERSION_RE, ServiceType
 
-from ...models.schemas.services import (
-    SERVICE_IMAGE_NAME_RE,
-    VERSION_RE,
-    ServiceExtrasEnveloped,
-    ServicesArrayEnveloped,
-    ServiceType,
-)
+from ...models.schemas.services import ServiceExtrasEnveloped, ServicesArrayEnveloped
 from ..dependencies.director_v0 import get_request_to_director_v0
 
 router = APIRouter()
@@ -37,7 +32,7 @@ async def list_services(
 ServiceKeyPath = Path(
     ...,
     description="Distinctive name for the node based on the docker registry path",
-    regex=SERVICE_IMAGE_NAME_RE,
+    regex=KEY_RE,
 )
 ServiceKeyVersionPath = Path(
     ..., description="The tag/version of the service", regex=VERSION_RE

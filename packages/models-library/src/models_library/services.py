@@ -6,10 +6,12 @@ from typing import Dict, List, Optional, Union
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
 from pydantic.types import PositiveInt
 
+from .constants import VERSION_RE
+
 current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 
+
 KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$"
-VERSION_RE = r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
 PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
 
 PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"

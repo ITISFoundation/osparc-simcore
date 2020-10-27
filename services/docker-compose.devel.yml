@@ -33,6 +33,15 @@ services:
       - ../packages:/devel/packages
       - ../api:/devel/services/api
 
+  director-v2:
+    environment:
+      - SC_BOOT_MODE=debug-ptvsd
+      - LOGLEVEL=debug
+      - DEBUG=true
+    volumes:
+      - ./director-v2:/devel/services/director-v2
+      - ../packages:/devel/packages
+
   webserver:
     volumes:
       - ./web/server:/devel/services/web/server
