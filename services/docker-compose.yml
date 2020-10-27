@@ -255,7 +255,7 @@ services:
       ]
 
   redis:
-    image: redis:5.0-alpine
+    image: redis:5.0.9-alpine
     init: true
     networks:
       - default
