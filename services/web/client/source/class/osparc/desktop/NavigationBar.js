@@ -158,9 +158,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
       this.__navNodesLayout = this.getChildControl("navigation-nodes-path-container");
 
-      this._add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
+      this.getChildControl("spacer");
 
       this.getChildControl("manual");
       this.getChildControl("feedback");
@@ -212,11 +210,21 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           });
           this._add(control);
           break;
-        case "navigation-nodes-path-container":
+        case "navigation-nodes-path-container": {
+          const scroll = new qx.ui.container.Scroll();
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(0).set({
             alignY: "middle"
           }));
-          this._add(control);
+          scroll.add(control);
+          this._add(scroll, {
+            flex: 1
+          });
+          break;
+        }
+        case "spacer":
+          this._add(new qx.ui.core.Spacer(), {
+            flex: 1
+          });
           break;
         case "manual":
           control = this.__createManualMenuBtn();
