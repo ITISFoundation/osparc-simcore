@@ -8,14 +8,12 @@ import networkx as nx
 from aiodocker.volumes import DockerVolume
 from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
-from celery import Celery
 from simcore_postgres_database.sidecar_models import StateType, comp_tasks
-from simcore_sdk.config.rabbit import Config as RabbitConfig
-from simcore_service_sidecar import config
-from simcore_service_sidecar.mpi_lock import acquire_mpi_lock
 from sqlalchemy import and_
 
+from . import config
 from .exceptions import SidecarException
+from .mpi_lock import acquire_mpi_lock
 
 logger = logging.getLogger(__name__)
 
@@ -100,9 +98,7 @@ def is_gpu_node() -> bool:
                 return True
             except aiodocker.exceptions.DockerError as err:
                 logger.debug(
-                    "is_gpu_node DockerError while check-run %s: %s",
-                    spec_config,
-                    err
+                    "is_gpu_node DockerError while check-run %s: %s", spec_config, err
                 )
 
             return False
@@ -130,17 +126,6 @@ def start_as_mpi_node() -> bool:
     # it the mpi_lock is acquired, this service must start as MPI node
     is_mpi_node = acquire_mpi_lock(current_cpu_count)
     return is_mpi_node
-
-
-def assemble_celery_app(task_default_queue: str, rabbit_config: RabbitConfig) -> Celery:
-    """Returns an instance of Celery using a different RabbitMQ queue"""
-    app = Celery(
-        rabbit_config.name,
-        broker=rabbit_config.broker_url,
-        backend=rabbit_config.backend,
-    )
-    app.conf.task_default_queue = task_default_queue
-    return app
 
 
 async def get_volume_mount_point(volume_name: str) -> str:

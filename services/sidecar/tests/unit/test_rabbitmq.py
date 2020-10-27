@@ -1,17 +1,31 @@
 # pylint: disable=unused-argument
+# pylint: disable=redefined-outer-name
 import asyncio
 import json
+from pprint import pformat
 from typing import List
 
 import aio_pika
-from simcore_sdk.config.rabbit import Config
+import pytest
+from models_library.celery import CeleryConfig
+from models_library.rabbit import RabbitConfig
+from simcore_service_sidecar import config
 from simcore_service_sidecar.rabbitmq import RabbitMQ
 
 core_services = ["rabbit"]
 
 
+@pytest.fixture
+async def sidecar_config():
+    config.CELERY_CONFIG = CeleryConfig.create_from_env()
+
+
 async def test_rabbitmq(
-    loop, rabbit_config: Config, rabbit_queue: aio_pika.Queue, mocker
+    loop,
+    rabbit_service: RabbitConfig,
+    rabbit_queue: aio_pika.Queue,
+    sidecar_config,
+    mocker,
 ):
     rabbit = RabbitMQ()
     assert rabbit
@@ -38,7 +52,7 @@ async def test_rabbitmq(
 
     await rabbit_queue.consume(rabbit_message_handler, exclusive=True, no_ack=True)
 
-    async with RabbitMQ(config=rabbit_config) as rabbitmq:
+    async with RabbitMQ() as rabbitmq:
         assert rabbitmq.connection.ready
 
         await rabbitmq.post_log_message(user_id, project_id, node_id, log_msg)
@@ -53,7 +67,7 @@ async def test_rabbitmq(
     mock_close_connection_cb.assert_called_once()
 
     # if this fails the above sleep did not work
-    assert len(incoming_data) == 3
+    assert len(incoming_data) == 3, f"missing incoming data: {pformat(incoming_data)}"
 
     assert incoming_data[0] == {
         "Channel": "Log",

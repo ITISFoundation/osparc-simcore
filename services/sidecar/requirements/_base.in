@@ -10,6 +10,7 @@
 -c ../../../packages/postgres-database/requirements/_base.in
 -c ../../../packages/s3wrapper/requirements/_base.in
 -c ../../../packages/service-library/requirements/_base.in
+-c ../../../packages/models-library/requirements/_base.in
 #
 
 

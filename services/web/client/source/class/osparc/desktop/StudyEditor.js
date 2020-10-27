@@ -191,7 +191,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    updateStudyDocument: function(run=false) {
+    updateStudyDocument: function(run = false) {
       this.getStudy().setLastChangeDate(new Date());
       const newObj = this.getStudy().serialize();
       const prjUuid = this.getStudy().getUuid();

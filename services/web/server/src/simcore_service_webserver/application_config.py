@@ -27,7 +27,6 @@ from servicelib.config_schema_utils import addon_section, minimal_addon_schema
 
 from . import (
     catalog_config,
-    computation_config,
     db_config,
     email_config,
     rest_config,
@@ -51,8 +50,8 @@ assert resources.exists("config/" + CLI_DEFAULT_CONFIGFILE)  # nosec
 
 def create_schema() -> T.Dict:
     """
-        Build schema for the configuration's file
-        by aggregating all the subsystem configurations
+    Build schema for the configuration's file
+    by aggregating all the subsystem configurations
     """
     # pylint: disable=protected-access
     schema = T.Dict(
@@ -76,7 +75,6 @@ def create_schema() -> T.Dict:
             rest_config.CONFIG_SECTION_NAME: rest_config.schema,
             projects_config.CONFIG_SECTION_NAME: projects_config.schema,
             email_config.CONFIG_SECTION_NAME: email_config.schema,
-            computation_config.CONFIG_SECTION_NAME: computation_config.schema,
             storage_config.CONFIG_SECTION_NAME: storage_config.schema,
             addon_section(
                 login_config.CONFIG_SECTION_NAME, optional=True
@@ -96,6 +94,7 @@ def create_schema() -> T.Dict:
             addon_section("publications", optional=True): minimal_addon_schema(),
             addon_section("catalog", optional=True): catalog_config.schema,
             addon_section("products", optional=True): minimal_addon_schema(),
+            addon_section("computation", optional=True): minimal_addon_schema(),
         }
     )
 

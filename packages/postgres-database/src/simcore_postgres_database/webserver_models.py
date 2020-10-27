@@ -6,7 +6,7 @@
 """
 from .models.api_keys import api_keys
 from .models.classifiers import group_classifiers
-from .models.comp_pipeline import comp_pipeline
+from .models.comp_pipeline import comp_pipeline, StateType
 from .models.comp_tasks import DB_CHANNEL_NAME, comp_tasks, NodeClass
 from .models.confirmations import ConfirmationAction, confirmations
 from .models.groups import GroupType, groups, user_to_groups
@@ -32,6 +32,7 @@ __all__ = [
     "DB_CHANNEL_NAME",
     "NodeClass",
     "comp_pipeline",
+    "StateType",
     "tags",
     "study_tags",
     "api_keys",
