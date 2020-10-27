@@ -238,12 +238,13 @@ async def inspect(
         raise
 
     finally:
-        await rabbit_mq.post_log_message(
-            user_id,
-            project_id,
-            node_id,
-            f"[sidecar]Task completed with result: {run_result.name}",
-        )
-        await _set_task_status(db_engine, project_id, node_id, run_result)
+        if node_id:
+            await rabbit_mq.post_log_message(
+                user_id,
+                project_id,
+                node_id,
+                f"[sidecar]Task completed with result: {run_result.name}",
+            )
+            await _set_task_status(db_engine, project_id, node_id, run_result)
 
     return next_task_nodes
