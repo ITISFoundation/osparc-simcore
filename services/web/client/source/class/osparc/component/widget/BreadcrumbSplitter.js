@@ -137,15 +137,20 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
     },
 
     _applyLeftWidget: function(leftWidget) {
-      this.setZIndex(leftWidget.getZIndex()+1);
+      const bounds = leftWidget.getBounds();
+      this.set({
+        zIndex: leftWidget.getZIndex()+1,
+        marginTop: bounds.top
+      });
+
       let controls;
       switch (this.getShape()) {
         case "slash": {
-          controls = this.self().getTriangleControlsLeft(16, 32);
+          controls = this.self().getTriangleControlsLeft(16, bounds.height);
           break;
         }
         case "arrow": {
-          controls = this.self().getArrowControlsLeft(16, 32);
+          controls = this.self().getArrowControlsLeft(16, bounds.height);
           break;
         }
       }
@@ -161,15 +166,20 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
     },
 
     _applyRightWidget: function(rightWidget) {
-      this.setZIndex(rightWidget.getZIndex()+1);
+      const bounds = rightWidget.getBounds();
+      this.set({
+        zIndex: rightWidget.getZIndex()+1,
+        marginTop: bounds.top
+      });
+
       let controls;
       switch (this.getShape()) {
         case "slash": {
-          controls = this.self().getTriangleControlsRight(16, 32);
+          controls = this.self().getTriangleControlsRight(16, bounds.height);
           break;
         }
         case "arrow": {
-          controls = this.self().getArrowControlsRight(16, 32);
+          controls = this.self().getArrowControlsRight(16, bounds.height);
           break;
         }
       }
@@ -185,12 +195,12 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
 
       switch (this.getShape()) {
         case "slash": {
-          const controlsSlash = this.self().getSlashControls(16, 32);
+          const controlsSlash = this.self().getSlashControls(16, bounds.height);
           osparc.wrapper.Svg.drawLine(this.__canvas, controlsSlash);
           break;
         }
         case "arrow": {
-          const controlsArrow = this.self().getArrowControls(16, 32);
+          const controlsArrow = this.self().getArrowControls(16, bounds.height);
           osparc.wrapper.Svg.drawLine(this.__canvas, controlsArrow);
           break;
         }

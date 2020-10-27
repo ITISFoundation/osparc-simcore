@@ -125,7 +125,6 @@ qx.Class.define("osparc.component.widget.BreadcrumbNavigation", {
 
         const breadcrumbSplitter = new osparc.component.widget.BreadcrumbSplitter(16, 32).set({
           shape,
-          marginTop: (50-32)/2,
           marginLeft: -1,
           marginRight: -1
         });
