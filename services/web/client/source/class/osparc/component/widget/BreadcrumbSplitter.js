@@ -169,7 +169,7 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
         }
         leftWidget.addListener("changeDecorator", e => {
           const newColor = this.__getBGColor(leftWidget.getDecorator());
-          if (color) {
+          if (newColor) {
             osparc.wrapper.Svg.updatePolygonColor(this.__leftPart, newColor);
           }
         }, this);

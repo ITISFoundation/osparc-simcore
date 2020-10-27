@@ -182,7 +182,9 @@ qx.Class.define("osparc.wrapper.Svg", {
     },
 
     updatePolylineColor: function(polyline, color) {
-      polyline.fill(color);
+      polyline.stroke({
+        color: color
+      });
     }
   },
 
