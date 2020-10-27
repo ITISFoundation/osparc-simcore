@@ -1,11 +1,11 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
 import json
 import logging
 import os
 import time
+from copy import deepcopy
 from typing import Dict
 
 import docker
@@ -60,17 +60,23 @@ def docker_registry(keep_docker_up: bool) -> str:
     private_image = docker_client.images.pull(repo)
     docker_client.images.remove(image=private_image.id)
 
-    # necessary for old school configs
+    # provide os.environs
+    old = deepcopy(os.environ)
     os.environ["REGISTRY_SSL"] = "False"
     os.environ["REGISTRY_AUTH"] = "False"
     os.environ[
         "REGISTRY_URL"
-    ] = f"{get_ip()}:5000"  # this needs to be set like this to access from docker containers
+    ] = f"{get_ip()}:5000"  # the registry URL is how to access from the container (e.g. for accessing the API)
+    os.environ[
+        "REGISTRY_PATH"
+    ] = "127.0.0.1:5000"  # the registry PATH is how the docker engine shall access the images (usually same as REGISTRY_URL but for testing)
     os.environ["REGISTRY_USER"] = "simcore"
     os.environ["REGISTRY_PW"] = ""
 
     yield url
-
+    # restore environs
+    os.environ = old
+    # remove registry
     if not keep_docker_up:
         container.stop()
         container.remove(force=True)
@@ -135,7 +141,7 @@ def osparc_service(
     docker_registry: str, node_meta_schema: Dict, service_repo: str, service_tag: str
 ) -> Dict[str, str]:
     """pulls the service from service_repo:service_tag and pushes to docker_registry using the oSparc node meta schema
-        NOTE: 'service_repo' and 'service_tag' defined as parametrization
+    NOTE: 'service_repo' and 'service_tag' defined as parametrization
     """
     return _pull_push_service(
         service_repo, service_tag, docker_registry, node_meta_schema
@@ -144,9 +150,7 @@ def osparc_service(
 
 @pytest.fixture(scope="session")
 def sleeper_service(docker_registry: str, node_meta_schema: Dict) -> Dict[str, str]:
-    """ Adds a itisfoundation/sleeper in docker registry
-
-    """
+    """Adds a itisfoundation/sleeper in docker registry"""
     return _pull_push_service(
         "itisfoundation/sleeper", "1.0.0", docker_registry, node_meta_schema
     )
@@ -154,9 +158,7 @@ def sleeper_service(docker_registry: str, node_meta_schema: Dict) -> Dict[str, s
 
 @pytest.fixture(scope="session")
 def jupyter_service(docker_registry: str, node_meta_schema: Dict) -> Dict[str, str]:
-    """ Adds a itisfoundation/jupyter-base-notebook in docker registry
-
-    """
+    """Adds a itisfoundation/jupyter-base-notebook in docker registry"""
     return _pull_push_service(
         "itisfoundation/jupyter-base-notebook",
         "2.13.0",

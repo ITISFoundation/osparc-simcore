@@ -101,7 +101,7 @@
     "workbench": {
       "type": "object",
       "patternProperties": {
-        "^\\S+$": {
+        "^\\d+$": {
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -315,10 +315,18 @@
               ],
               "properties": {
                 "x": {
-                  "type": "integer"
+                  "type": "integer",
+                  "description": "The x position",
+                  "example": [
+                    "12"
+                  ]
                 },
                 "y": {
-                  "type": "integer"
+                  "type": "integer",
+                  "description": "The y position",
+                  "example": [
+                    "15"
+                  ]
                 }
               },
               "deprecated": true
@@ -334,7 +342,8 @@
                 "STARTED",
                 "RETRY",
                 "SUCCESS",
-                "FAILURE"
+                "FAILURE",
+                "ABORTED"
               ],
               "type": "string"
             }
@@ -365,10 +374,18 @@
                   ],
                   "properties": {
                     "x": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "The x position",
+                      "example": [
+                        "12"
+                      ]
                     },
                     "y": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "The y position",
+                      "example": [
+                        "15"
+                      ]
                     }
                   }
                 }
@@ -499,7 +516,8 @@
                         "STARTED",
                         "RETRY",
                         "SUCCESS",
-                        "FAILURE"
+                        "FAILURE",
+                        "ABORTED"
                       ],
                       "type": "string"
                     }

@@ -25,6 +25,7 @@ class RunningState(str, Enum):
     RETRY = "RETRY"
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
+    ABORTED = "ABORTED"
 
 
 class PortLink(BaseModel):

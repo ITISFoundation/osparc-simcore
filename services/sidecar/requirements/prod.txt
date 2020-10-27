@@ -16,6 +16,7 @@
 ../../packages/postgres-database/
 ../../packages/simcore-sdk/
 ../../packages/service-library/
+../../packages/models-library/
 
 # installs current package
 .

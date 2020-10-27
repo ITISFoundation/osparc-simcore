@@ -37,18 +37,6 @@ main:
   testing: true
 projects:
   enabled: false
-rabbit:
-  channels:
-    celery:
-      result_backend: rpc://
-    log: comp.backend.channels.log
-    instrumentation: comp.backend.channels.instrumentation
-  enabled: false
-  host: rabbit
-  name: tasks
-  password: simcore
-  port: 5672
-  user: simcore
 resource_manager:
   enabled: false
   garbage_collection_interval_seconds: 30

@@ -20,11 +20,6 @@ db:
     password: simcore
     port: 5432
     user: simcore
-rabbit:
-  channels:
-    log: comp.backend.channels.log
-  password: simcore
-  user: simcore
 # s3:
 #   access_key: 'Q3AM3UQ867SPQQA43P2F'
 #   bucket_name: simcore

@@ -27,7 +27,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     const sidePanel = this.__sidePanel = new osparc.desktop.SidePanel().set({
       minWidth: 0,
-      width: Math.min(parseInt(window.innerWidth*0.25), 350)
+      width: Math.min(parseInt(window.innerWidth * 0.25), 350)
     });
     osparc.utils.Utils.addBorder(sidePanel, 2, "right");
     const scroll = this.__scrollContainer = new qx.ui.container.Scroll().set({
@@ -268,7 +268,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __requestStartPipeline: function(studyId) {
-      const url = "/computation/pipeline/" + encodeURIComponent(studyId) + "/start";
+      const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       const runButton = this.__mainPanel.getControls().getStartButton();
       req.addListener("success", this.__onPipelinesubmitted, this);
@@ -328,6 +328,43 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
+    __stopPipeline: function() {
+      if (!osparc.data.Permissions.getInstance().canDo("study.stop", true)) {
+        return;
+      }
+
+      this.__doStopPipeline();
+    },
+
+    __doStopPipeline: function() {
+      if (this.getStudy().getSweeper().hasSecondaryStudies()) {
+        const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
+        secondaryStudyIds.forEach(secondaryStudyId => {
+          this.__requestStopPipeline(secondaryStudyId);
+        });
+      } else {
+        this.__requestStopPipeline(this.getStudy().getUuid());
+      }
+    },
+
+    __requestStopPipeline: function(studyId) {
+      const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":stop";
+      const req = new osparc.io.request.ApiRequest(url, "POST");
+      req.addListener("success", e => {
+        this.getLogger().debug(null, "Pipeline aborting");
+      }, this);
+      req.addListener("error", e => {
+        this.getLogger().error(null, "Error stopping pipeline");
+      }, this);
+      req.addListener("fail", e => {
+        this.getLogger().error(null, "Failed stopping pipeline");
+      }, this);
+      req.send();
+
+      this.getLogger().info(null, "Stopping pipeline");
+      return true;
+    },
+
     __maximizeIframe: function(maximize) {
       this.getBlocker().setStyles({
         display: maximize ? "none" : "block"
@@ -361,6 +398,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       controlsBar.addListener("groupSelection", this.__groupSelection, this);
       controlsBar.addListener("ungroupSelection", this.__ungroupSelection, this);
       controlsBar.addListener("startPipeline", this.__startPipeline, this);
+      controlsBar.addListener("stopPipeline", this.__stopPipeline, this);
     },
 
     __initViews: function() {
@@ -420,7 +458,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const connectedEdges = workbench.getConnectedEdges(nodeId);
       if (workbench.removeNode(nodeId)) {
         // remove first the connected edges
-        for (let i=0; i<connectedEdges.length; i++) {
+        for (let i = 0; i < connectedEdges.length; i++) {
           const edgeId = connectedEdges[i];
           this.__workbenchUI.clearEdge(edgeId);
         }
@@ -650,7 +688,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    updateStudyDocument: function(run=false) {
+    updateStudyDocument: function(run = false) {
       this.getStudy().setLastChangeDate(new Date());
       const newObj = this.getStudy().serialize();
       const prjUuid = this.getStudy().getUuid();

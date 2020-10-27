@@ -6,6 +6,8 @@ main:
   port: 8080
   testing: True
   studies_access_enabled: True
+computation:
+  enabled: False
 director:
   enabled: False
   host: director
@@ -28,13 +30,6 @@ resource_manager:
     enabled: True
     host: localhost
     port: 6379
-rabbit:
-  enabled: False
-  channels:
-    log: comp.backend.channels.log
-    instrumentation: comp.backend.channels.instrumentation
-  password: simcore
-  user: simcore
 # s3:
 #   enabled: False
 #   access_key: 'Q3AM3UQ867SPQQA43P2F'

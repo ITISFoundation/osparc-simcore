@@ -7,8 +7,6 @@ from typing import Callable, Coroutine, Dict
 
 import aio_pika
 from aiohttp import web
-from tenacity import retry
-
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.monitor_services import (
     SERVICE_STARTED_LABELS,
@@ -17,11 +15,12 @@ from servicelib.monitor_services import (
     service_stopped,
 )
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
-from simcore_sdk.config.rabbit import Config as RabbitConfig
+from tenacity import retry
 
 from .computation_config import (
     APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
     CONFIG_SECTION_NAME,
+    ComputationSettings,
 )
 from .projects import projects_api
 from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
@@ -100,8 +99,8 @@ async def subscribe(app: web.Application) -> None:
     # e.g. CRITICAL:pika.adapters.base_connection:Could not get addresses to use: [Errno -2] Name or service not known (rabbit)
     # This exception is catch and pika persists ... WARNING:pika.connection:Could not connect, 5 attempts l
 
-    rb_config: Dict = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    rabbit_broker = RabbitConfig(**rb_config).broker_url
+    comp_settings: ComputationSettings = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    rabbit_broker = comp_settings.broker_url
 
     log.info("Creating pika connection for %s", rabbit_broker)
     await wait_till_rabbitmq_responsive(rabbit_broker)
@@ -114,7 +113,7 @@ async def subscribe(app: web.Application) -> None:
     channel = await connection.channel()
     await channel.set_qos(prefetch_count=1)
 
-    pika_log_channel = rb_config["channels"]["log"]
+    pika_log_channel = comp_settings.rabbit.channels["log"]
     logs_exchange = await channel.declare_exchange(
         pika_log_channel, aio_pika.ExchangeType.FANOUT
     )
@@ -131,13 +130,14 @@ async def subscribe(app: web.Application) -> None:
 
     # Start listening the queue with name 'task_queue'
     partial_rabbit_message_handler = rabbit_adapter(app)(rabbit_message_handler)
+    # TODO: Why are we saving this in the app??
     app[APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY] = [partial_rabbit_message_handler]
     await logs_progress_queue.consume(
         partial_rabbit_message_handler, exclusive=True, no_ack=True
     )
 
     # instrumentation
-    pika_instrumentation_channel = rb_config["channels"]["instrumentation"]
+    pika_instrumentation_channel = comp_settings.rabbit.channels["instrumentation"]
     instrumentation_exchange = await channel.declare_exchange(
         pika_instrumentation_channel, aio_pika.ExchangeType.FANOUT
     )

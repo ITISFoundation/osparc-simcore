@@ -2,7 +2,7 @@
 
 # Concept
 
-Common REST API specifications and models (defined as openAPI- or JSON-schemas) are defined in a central location [``api/specs``](api/specs) to allow for **design-first development**.
+Common REST API specifications and models (defined as openAPI- or JSON-schemas) are defined in a central location [``api/specs``](/api/specs) to allow for **design-first development**.
 
 # Standards
 
@@ -67,7 +67,7 @@ In that case, a version subfolder shall be added in the __/common/__ subfolder a
 Mixing [JSONSchema] with OpenAPI schema needs some additional steps:
 
 1. Define the [JSONSchema] schema.
-2. Convert the [JSONSchema] formatted file to OpenAPI formatted file using a [converter](scripts/json-schema-to-openapi-schema) tool.
+2. Convert the [JSONSchema] formatted file to OpenAPI formatted file using a [converter](/scripts/json-schema-to-openapi-schema) tool.
 3. In the openapi specifications file ref the converted OpenAPI schema file
 
 This is automated in the makefiles as dependencies
