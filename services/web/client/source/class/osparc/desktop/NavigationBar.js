@@ -158,7 +158,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
 
       this.__navNodesLayout = this.getChildControl("navigation-nodes-path-container");
 
-      this.getChildControl("spacer");
+      this._add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
 
       this.getChildControl("manual");
       this.getChildControl("feedback");
@@ -221,11 +223,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           });
           break;
         }
-        case "spacer":
-          this._add(new qx.ui.core.Spacer(), {
-            flex: 1
-          });
-          break;
         case "manual":
           control = this.__createManualMenuBtn();
           control.set(this.self().BUTTON_OPTIONS);
