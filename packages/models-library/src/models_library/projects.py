@@ -5,8 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
-from pydantic import UUID4, BaseModel, EmailStr, Extra, Field, HttpUrl, constr
-from pydantic.types import PositiveInt
+from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr
 
 from .services import KEY_RE, PROPERTY_KEY_RE, VERSION_RE
 
@@ -16,6 +15,7 @@ DATE_RE = r"\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|
 
 GroupID = constr(regex=r"^\S+$")
 NodeID = constr(regex=r"^\S+$")
+ProjectID = UUID
 ClassifierID = str
 
 
@@ -32,7 +32,7 @@ class RunningState(str, Enum):
 
 
 class PortLink(BaseModel):
-    nodeUuid: UUID4 = Field(
+    nodeUuid: UUID = Field(
         ...,
         description="The node to get the port output from",
         example=["da5068e0-8a8d-4fb9-9516-56e5ddaef15b"],
@@ -156,7 +156,7 @@ class Node(BaseModel):
     inputAccess: Optional[Dict[InputID, AccessEnum]] = Field(
         None, description="map with key - access level pairs"
     )
-    inputNodes: Optional[List[UUID4]] = Field(
+    inputNodes: Optional[List[UUID]] = Field(
         None,
         description="node IDs of where the node is connected to",
         example=["nodeUuid1", "nodeUuid2"],
@@ -164,13 +164,13 @@ class Node(BaseModel):
 
     outputs: Optional[Dict[OutputID, OutputTypes]] = None
     outputNode: Optional[bool] = Field(None, deprecated=True)
-    outputNodes: Optional[List[UUID4]] = Field(
+    outputNodes: Optional[List[UUID]] = Field(
         None,
         description="Used in group-nodes. Node IDs of those connected to the output",
         example=["nodeUuid1", "nodeUuid2"],
     )
 
-    parent: Optional[UUID4] = Field(
+    parent: Optional[UUID] = Field(
         None,
         description="Parent's (group-nodes') node ID s.",
         example=["nodeUUid1", "nodeUuid2"],
@@ -203,7 +203,11 @@ class AccessRights(BaseModel):
 
 
 class Owner(BaseModel):
-    user_id: PositiveInt = Field(..., description="Owner's identifier when registered in the user's database table", example=[2])
+    user_id: PositiveInt = Field(
+        ...,
+        description="Owner's identifier when registered in the user's database table",
+        example=[2],
+    )
     first_name: str = Field(..., description="Owner first name", example=["John"])
     last_name: str = Field(..., description="Owner last name", example=["Smith"])
 
@@ -227,7 +231,7 @@ class ProjectState(BaseModel):
 
 
 class Project(BaseModel):
-    uuid: UUID4 = Field(
+    uuid: ProjectID = Field(
         ...,
         description="project unique identifier",
         example=[
