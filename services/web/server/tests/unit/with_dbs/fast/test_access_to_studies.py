@@ -190,6 +190,7 @@ def _assert_same_projects(got: Dict, expected: Dict):
             "uuid",
             "workbench",
             "accessRights",
+            "ui",
         ]
     )
     for key in expected.keys():

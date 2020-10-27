@@ -238,7 +238,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:

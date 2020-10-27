@@ -437,6 +437,7 @@ async def _new_project(
             "lastChangeDate",
             "accessRights",
             "workbench" if from_template else None,
+            "ui" if from_template else None,
         ]
 
         for key in new_project.keys():
