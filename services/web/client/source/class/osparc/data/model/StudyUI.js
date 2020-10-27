@@ -58,7 +58,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
     serialize: function() {
       const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
       let jsonObject = {};
-      jsonObject["workbench"] = currentStudy.getWorkbench().serializeUI();
+      jsonObject["workbench"] = currentStudy ? currentStudy.getWorkbench().serializeUI() : this.getWorkbench();
       jsonObject["slideshow"] = this.getSlideshow();
       jsonObject["currentNodeId"] = this.getCurrentNodeId();
       return jsonObject;
