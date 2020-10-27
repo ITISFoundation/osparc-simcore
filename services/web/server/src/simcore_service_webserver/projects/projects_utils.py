@@ -56,6 +56,7 @@ def clone_project_document(
         return node
 
     project_copy["workbench"] = _replace_uuids(project_copy.get("workbench", {}))
+    project_copy["ui"]["workbench"] = _replace_uuids(project_copy.get("ui", {}).get("workbench", {}))
     return project_copy, nodes_map
 
 
