@@ -130,10 +130,10 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
     __leftPart: null,
     __rightPart: null,
 
-    __getBGColor: function(value) {
-      const bgColor = value ? "material-button-background-pressed" : "material-button-background";
-      const color = qx.theme.manager.Color.getInstance().resolve(bgColor);
-      return color;
+    __getBGColor: function(decoratorName) {
+      const decorator = qx.theme.manager.Decoration.getInstance().resolve(decoratorName);
+      const decoratorBG = decorator.getBackgroundColor();
+      return qx.theme.manager.Color.getInstance().resolve(decoratorBG);
     },
 
     _applyLeftWidget: function(leftWidget) {
@@ -151,10 +151,10 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
       }
       if (controls) {
         this.__leftPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controls);
-        const color = this.__getBGColor(leftWidget.getValue());
+        const color = this.__getBGColor(leftWidget.getDecorator());
         osparc.wrapper.Svg.updatePolygonColor(this.__leftPart, color);
-        leftWidget.addListener("changeValue", e => {
-          const newColor = this.__getBGColor(leftWidget.getValue());
+        leftWidget.addListener("changeDecorator", e => {
+          const newColor = this.__getBGColor(leftWidget.getDecorator());
           osparc.wrapper.Svg.updatePolygonColor(this.__leftPart, newColor);
         }, this);
       }
@@ -175,10 +175,10 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
       }
       if (controls) {
         this.__rightPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controls);
-        const color = this.__getBGColor(rightWidget.getValue());
+        const color = this.__getBGColor(rightWidget.getDecorator());
         osparc.wrapper.Svg.updatePolygonColor(this.__rightPart, color);
-        rightWidget.addListener("changeValue", e => {
-          const newColor = this.__getBGColor(rightWidget.getValue());
+        rightWidget.addListener("changeDecorator", e => {
+          const newColor = this.__getBGColor(rightWidget.getDecorator());
           osparc.wrapper.Svg.updatePolygonColor(this.__rightPart, newColor);
         }, this);
       }
