@@ -18,7 +18,7 @@ chardet==3.0.4            # via -r requirements/_migration.txt, aiohttp, request
 click==7.1.2              # via -r requirements/_migration.txt
 coverage==5.3             # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==2.1.2          # via -r requirements/_test.in
-cryptography==3.1.1       # via paramiko
+cryptography==3.2.1       # via paramiko
 distro==1.5.0             # via docker-compose
 docker-compose==1.27.4    # via pytest-docker
 docker[ssh]==4.3.1        # via -r requirements/_migration.txt, docker-compose

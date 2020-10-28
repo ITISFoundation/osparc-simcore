@@ -17,7 +17,7 @@ cffi==1.14.3              # via bcrypt, cryptography, pynacl
 chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, requests
 coverage==5.3             # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==2.1.2          # via -r requirements/_test.in
-cryptography==3.1.1       # via paramiko
+cryptography==3.2.1       # via paramiko
 dataclasses==0.7          # via -r requirements/_base.txt, pydantic
 decorator==4.4.2          # via -r requirements/_base.txt, networkx
 distro==1.5.0             # via docker-compose

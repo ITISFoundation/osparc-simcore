@@ -15,7 +15,7 @@ cffi==1.14.2              # via cryptography
 chardet==3.0.4            # via httpx, requests
 click==7.1.2              # via uvicorn
 contextvars==2.4          # via sniffio
-cryptography==3.1         # via -r requirements/_base.in
+cryptography==3.2.1       # via -r requirements/_base.in
 dataclasses==0.7          # via pydantic
 dnspython==2.0.0          # via email-validator
 email-validator==1.1.1    # via fastapi

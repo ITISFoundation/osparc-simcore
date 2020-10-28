@@ -29,7 +29,7 @@ chardet==3.0.4            # via aiohttp
 click-didyoumean==0.0.3   # via celery
 click-repl==0.1.6         # via celery
 click==7.1.2              # via celery, click-didyoumean, click-repl
-cryptography==3.0         # via -r requirements/_base.in, aiohttp-session
+cryptography==3.2.1       # via -r requirements/_base.in, aiohttp-session
 dataclasses==0.7          # via pydantic
 dnspython==2.0.0          # via email-validator
 email-validator==1.1.1    # via pydantic
