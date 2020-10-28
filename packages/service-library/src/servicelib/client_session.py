@@ -5,7 +5,7 @@
 """
 import logging
 
-from aiohttp import ClientSession, web
+from aiohttp import ClientSession, ClientTimeout, web
 
 from .application_keys import APP_CLIENT_SESSION_KEY
 
@@ -13,18 +13,19 @@ log = logging.getLogger(__name__)
 
 
 def get_client_session(app: web.Application) -> ClientSession:
-    """ Lazy initialization of ClientSession
+    """Lazy initialization of ClientSession
 
     Ensures unique session
     """
     session = app.get(APP_CLIENT_SESSION_KEY)
     if session is None or session.closed:
-        app[APP_CLIENT_SESSION_KEY] = session = ClientSession()
+        timeout_settings = ClientTimeout(total=1, connect=1, sock_connect=1)
+        app[APP_CLIENT_SESSION_KEY] = session = ClientSession(timeout=timeout_settings)
     return session
 
 
 async def persistent_client_session(app: web.Application):
-    """ Ensures a single client session per application
+    """Ensures a single client session per application
 
     IMPORTANT: Use this function ONLY in cleanup context , i.e.
         app.cleanup_ctx.append(persistent_client_session)
