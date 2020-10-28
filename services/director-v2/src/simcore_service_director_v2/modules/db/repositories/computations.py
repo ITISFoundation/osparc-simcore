@@ -40,5 +40,5 @@ class CompTasksRepository(BaseRepository):
                 (comp_tasks.c.project_id == str(project_id))
                 & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
             )
-            .values(state=StateType.PUBLISHED)
+            .values(state=StateType.PUBLISHED, job_id=None)
         )

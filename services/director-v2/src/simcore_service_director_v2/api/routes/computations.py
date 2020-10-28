@@ -54,16 +54,16 @@ async def create_computation(
             project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
-        if pipeline_state in [
-            RunningState.PUBLISHED,
-            RunningState.PENDING,
-            RunningState.STARTED,
-            RunningState.RETRY,
-        ]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Projet {project_id} already started, current state is {pipeline_state}",
-            )
+        # if pipeline_state in [
+        #     RunningState.PUBLISHED,
+        #     RunningState.PENDING,
+        #     RunningState.STARTED,
+        #     RunningState.RETRY,
+        # ]:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_403_FORBIDDEN,
+        #         detail=f"Projet {project_id} already started, current state is {pipeline_state}",
+        #     )
 
         # ok so publish the tasks
         await computation_tasks.publish_tasks(project_id)
