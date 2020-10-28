@@ -2,6 +2,7 @@ from typing import Dict
 
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.projects import NodeID, ProjectID, RunningState
+from pydantic.main import BaseModel
 from pydantic.types import PositiveInt
 from simcore_service_director_v2.utils.exceptions import ProjectNotFoundError
 from starlette import status
@@ -34,7 +35,16 @@ async def list_computations(
     pass
 
 
-@router.post("", description="Create and Start a new computation")
+from uuid import UUID
+
+
+class ComputationTask(BaseModel):
+    id: UUID
+
+
+@router.post(
+    "", description="Create and Start a new computation", response_model=ComputationTask
+)
 async def create_computation(
     user_id: UserID,
     project_id: ProjectID,
@@ -54,32 +64,25 @@ async def create_computation(
             project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
-        # if pipeline_state in [
-        #     RunningState.PUBLISHED,
-        #     RunningState.PENDING,
-        #     RunningState.STARTED,
-        #     RunningState.RETRY,
-        # ]:
-        #     raise HTTPException(
-        #         status_code=status.HTTP_403_FORBIDDEN,
-        #         detail=f"Projet {project_id} already started, current state is {pipeline_state}",
-        #     )
+        if pipeline_state in [
+            RunningState.PUBLISHED,
+            RunningState.PENDING,
+            RunningState.STARTED,
+            RunningState.RETRY,
+        ]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Projet {project_id} already started, current state is {pipeline_state}",
+            )
 
         # ok so publish the tasks
         await computation_tasks.publish_tasks(project_id)
         # trigger celery
-        celery_client.send_computation_task(user_id, project_id)
+        async_result = celery_client.send_computation_task(user_id, project_id)
+        return ComputationTask(id=async_result.id)
 
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-
-    return pipeline_state
-
-    # get the state
-    # return forbidden if the state is not ok
-    # update the pipeline
-    # start the pipeline
-    # return the project/id, task id or else failed to start
 
 
 @router.get("/{computation_id}")

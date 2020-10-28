@@ -1,13 +1,15 @@
 import logging
+from celery.result import AsyncResult
 from dataclasses import dataclass
 
 from celery import Celery
+from celery.contrib.abortable import AbortableAsyncResult
 from fastapi import FastAPI
 from models_library.celery import CeleryConfig
 from models_library.projects import ProjectID
 
 from ..models.schemas.constants import UserID
-from ..utils.client_decorators import handle_errors, handle_retry
+from ..utils.client_decorators import handle_retry
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +52,13 @@ class CeleryClient:
 
     # @handle_errors("Celery", logger)
     @handle_retry(logger)
-    def send_task(self, task_name: str, *args, **kwargs):
+    def send_task(self, task_name: str, *args, **kwargs) -> AsyncResult:
         return self.client.send_task(task_name, *args, **kwargs)
 
-    def send_computation_task(self, user_id: UserID, project_id: ProjectID):
-        self.send_task(
+    def send_computation_task(
+        self, user_id: UserID, project_id: ProjectID
+    ) -> AbortableAsyncResult:
+        return self.send_task(
             self.settings.task_name,
             expires=self.settings.publication_timeout,
             kwargs={"user_id": user_id, "project_id": str(project_id)},
