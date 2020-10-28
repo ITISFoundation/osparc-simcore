@@ -24,7 +24,7 @@ NodeID = str
 @pytest.mark.parametrize(
     "db_state, expected_state",
     [
-        (StateType.FAILED, RunningState.FAILURE),
+        (StateType.FAILED, RunningState.FAILED),
         (StateType.PENDING, RunningState.PENDING),
         (StateType.RUNNING, RunningState.STARTED),
         (StateType.SUCCESS, RunningState.SUCCESS),
@@ -143,17 +143,17 @@ def mock_get_celery_publication_timeout(monkeypatch):
             # failed pipeline if any of the node is failed
             {
                 "task0": (RunningState.PENDING, "fake.date_time()"),
-                "task1": (RunningState.FAILURE, "fake.date_time()"),
+                "task1": (RunningState.FAILED, "fake.date_time()"),
             },
-            RunningState.FAILURE,
+            RunningState.FAILED,
         ),
         (
             # started pipeline if any of the node is started
             {
                 "task0": (RunningState.STARTED, "fake.date_time()"),
-                "task1": (RunningState.FAILURE, "fake.date_time()"),
+                "task1": (RunningState.FAILED, "fake.date_time()"),
             },
-            RunningState.FAILURE,
+            RunningState.FAILED,
         ),
         (
             # started pipeline if any of the node is started

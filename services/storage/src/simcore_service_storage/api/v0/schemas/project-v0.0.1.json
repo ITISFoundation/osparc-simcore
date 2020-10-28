@@ -374,7 +374,7 @@
                 "STARTED",
                 "RETRY",
                 "SUCCESS",
-                "FAILURE",
+                "FAILED",
                 "ABORTED"
               ],
               "type": "string"
@@ -557,7 +557,7 @@
                         "STARTED",
                         "RETRY",
                         "SUCCESS",
-                        "FAILURE",
+                        "FAILED",
                         "ABORTED"
                       ],
                       "type": "string"

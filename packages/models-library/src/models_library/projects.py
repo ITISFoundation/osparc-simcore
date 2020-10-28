@@ -27,7 +27,7 @@ class RunningState(str, Enum):
     STARTED = "STARTED"
     RETRY = "RETRY"
     SUCCESS = "SUCCESS"
-    FAILURE = "FAILURE"
+    FAILED = "FAILED"
     ABORTED = "ABORTED"
 
 
@@ -181,7 +181,7 @@ class Node(BaseModel):
     state: Optional[RunningState] = Field(
         RunningState.NOT_STARTED,
         description="the node's running state",
-        example=["RUNNING", "FAILURE"],
+        example=["RUNNING", "FAILED"],
     )
 
     class Config:

@@ -29,7 +29,7 @@ def get_pipeline_state_from_task_states(
             return next(iter(set_states))
 
         for state in [
-            RunningState.FAILURE,  # task is failed -> pipeline as well
+            RunningState.FAILED,  # task is failed -> pipeline as well
             RunningState.PUBLISHED,  # still in publishing phase
             RunningState.STARTED,  # task is started or retrying
             RunningState.PENDING,  # still running

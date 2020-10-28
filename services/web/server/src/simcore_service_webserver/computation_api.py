@@ -537,7 +537,7 @@ async def stop_pipeline_computation(app: web.Application, project_id: str) -> No
 
 
 DB_TO_RUNNING_STATE = {
-    StateType.FAILED: RunningState.FAILURE,
+    StateType.FAILED: RunningState.FAILED,
     StateType.PENDING: RunningState.PENDING,
     StateType.SUCCESS: RunningState.SUCCESS,
     StateType.PUBLISHED: RunningState.PUBLISHED,
@@ -594,7 +594,7 @@ async def get_pipeline_state(app: web.Application, project_id: str) -> RunningSt
             return next(iter(set_states))
 
         for state in [
-            RunningState.FAILURE,  # task is failed -> pipeline as well
+            RunningState.FAILED,  # task is failed -> pipeline as well
             RunningState.PUBLISHED,  # still in publishing phase
             RunningState.STARTED,  # task is started or retrying
             RunningState.PENDING,  # still running
