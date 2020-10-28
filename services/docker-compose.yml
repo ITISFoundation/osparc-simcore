@@ -221,7 +221,7 @@ services:
       - default
 
   postgres:
-    image: postgres:10.11@sha256:b679ae588cb304011db5548af06d052a96c34867f80af81f1104162ef1f7ec6b
+    image: "postgres@sha256:b679ae588cb304011db5548af06d052a96c34867f80af81f1104162ef1f7ec6b" # 10.11
     init: true
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -255,7 +255,7 @@ services:
       ]
 
   redis:
-    image: redis:5.0.9-alpine@sha256:c598b71ede86c93e9a57f4831a1c875f91a9c0b3c3b5ec82c4f5501312c51401
+    image: "redis@sha256:c598b71ede86c93e9a57f4831a1c875f91a9c0b3c3b5ec82c4f5501312c51401" # 5.0.9-alpine
     init: true
     networks:
       - default
