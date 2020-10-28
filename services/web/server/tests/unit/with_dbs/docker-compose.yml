@@ -22,6 +22,6 @@ services:
     command: postgres -c tcp_keepalives_idle=600 -c tcp_keepalives_interval=600 -c tcp_keepalives_count=5
 
   redis:
-    image: redis:5.0-alpine
+    image: redis:5.0.9-alpine
     ports:
       - "6379:6379"
