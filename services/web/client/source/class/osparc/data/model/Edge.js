@@ -45,9 +45,7 @@ qx.Class.define("osparc.data.model.Edge", {
     this.setEdgeId(edgeId || osparc.utils.Utils.uuidv4());
     this.setInputNode(node1);
     this.setOutputNode(node2);
-    if (node2.getPropsForm()) {
-      this.setIsPortConnected(node2.getPropsForm().hasAnyPortConnected());
-    }
+    this.__checkIsPortConnected(node2);
   },
 
   properties: {
@@ -86,9 +84,25 @@ qx.Class.define("osparc.data.model.Edge", {
     _applyOutputNode: function(node) {
       if (node.getPropsForm()) {
         node.getPropsForm().addListener("linkFieldModified", () => {
-          this.setIsPortConnected(node.getPropsForm().hasAnyPortConnected());
+          this.__checkIsPortConnected(node);
         });
-        this.setIsPortConnected(node.getPropsForm().hasAnyPortConnected());
+        this.__checkIsPortConnected(node);
+      }
+    },
+
+    __checkIsPortConnected: function(node2) {
+      if (node2.getPropsForm()) {
+        this.setIsPortConnected(node2.getPropsForm().hasAnyPortConnected());
+      }
+      if (node2.isContainer()) {
+        const innerNodes = node2.getInnerNodes();
+        for (const innerNodeId in innerNodes) {
+          const innerNode = innerNodes[innerNodeId];
+          if (innerNode.getPropsForm()) {
+            this.setIsPortConnected(innerNode.getPropsForm().hasAnyPortConnected());
+          }
+          break;
+        }
       }
     }
   }
