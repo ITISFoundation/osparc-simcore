@@ -29,7 +29,7 @@ services:
     depends_on:
       - postgres
   redis:
-    image: redis:5.0-alpine
+    image: redis:5.0.9-alpine
     ports:
       - "6379:6379"
   redis-commander:
