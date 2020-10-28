@@ -4,7 +4,7 @@ from typing import Dict, Tuple
 
 import sqlalchemy as sa
 from ....models.domains.comp_tasks import CompTaskAtDB
-from models_library.projects import NodeID, ProjectID, RunningState
+from models_library.projects import NodeID, ProjectID
 
 from ..tables import NodeClass, comp_tasks
 from ._base import BaseRepository
@@ -28,7 +28,7 @@ class CompTasksRepository(BaseRepository):
                 & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
             )
         ):
-            task_db = CompTaskAtDB(**row)
+            task_db = CompTaskAtDB.from_orm(row)
             tasks[task_db.node_id] = task_db
 
         return tasks
