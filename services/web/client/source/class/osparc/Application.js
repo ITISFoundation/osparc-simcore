@@ -47,7 +47,7 @@ qx.Class.define("osparc.Application", {
         window.localStorage.getItem("themeName") !== qx.theme.manager.Meta.getInstance().getTheme().name) {
         const preferredTheme = qx.Theme.getByName(window.localStorage.getItem("themeName"));
         const themes = qx.Theme.getAll();
-        if (Object.keys(themes).includes(preferredTheme)) {
+        if (preferredTheme && Object.keys(themes).includes(preferredTheme.name)) {
           qx.theme.manager.Meta.getInstance().setTheme(preferredTheme);
         }
       }
