@@ -36,7 +36,6 @@ qx.Class.define("osparc.desktop.SlideShowView", {
   },
 
   members: {
-    __nodeView: null,
     __controlsBar: null,
     __prvsBtn: null,
     __nextBtn: null,
@@ -73,18 +72,20 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
       const node = this.getStudy().getWorkbench().getNode(nodeId);
       if (node) {
-        if (node.isFilePicker()) {
-          const nodeView = new osparc.component.node.FilePickerNodeView(node);
-          nodeView.populateLayout();
-          nodeView.getInputsView().exclude();
-          nodeView.getOutputsView().exclude();
-          this.__showInMainView(nodeView);
+        let view;
+        if (node.isContainer()) {
+          view = new osparc.component.node.GroupNodeView();
+        } else if (node.isFilePicker()) {
+          view = new osparc.component.node.FilePickerNodeView();
         } else {
-          this.__nodeView.setNode(node);
-          this.__nodeView.populateLayout();
-          this.__nodeView.getInputsView().exclude();
-          this.__nodeView.getOutputsView().exclude();
-          this.__showInMainView(this.__nodeView);
+          view = new osparc.component.node.NodeView();
+        }
+        if (view) {
+          view.setNode(node);
+          view.populateLayout();
+          view.getInputsView().exclude();
+          view.getOutputsView().exclude();
+          this.__showInMainView(view);
         }
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
@@ -104,13 +105,8 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
     __initViews: function() {
       this._removeAll();
-      this.__createNodeView();
-      this.__createControlsBar();
-    },
 
-    __createNodeView: function() {
-      const nodeView = this.__nodeView = new osparc.component.node.NodeView();
-      this.__showInMainView(nodeView);
+      this.__createControlsBar();
     },
 
     __createControlsBar: function() {
