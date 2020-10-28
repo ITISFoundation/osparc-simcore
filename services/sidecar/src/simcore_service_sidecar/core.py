@@ -136,6 +136,7 @@ async def _get_pipeline_from_db(
 async def _set_task_status(
     db_engine: Engine, project_id: str, node_id: str, run_result
 ):
+    log.debug("setting task status of %s:%s to %s", project_id, node_id, run_result)
     async with db_engine.acquire() as connection:
         await connection.execute(
             # FIXME: E1120:No value for argument 'dml' in method call
@@ -162,6 +163,7 @@ async def _set_pipeline_tasks_as_pending(
             .where(
                 (comp_tasks.c.node_id == node_id)
                 & (comp_tasks.c.project_id == project_id)
+                & (comp_tasks.c.state != StateType.ABORTED)
             )
             .values(state=StateType.PENDING)
         )
@@ -176,48 +178,50 @@ async def inspect(
     project_id: str,
     node_id: Optional[str],
 ) -> Optional[List[str]]:
-    log.debug(
-        "ENTERING inspect with user %s pipeline:node %s: %s",
-        user_id,
-        project_id,
-        node_id,
-    )
-
-    task: Optional[RowProxy] = None
-    graph: Optional[nx.DiGraph] = None
-    async with db_engine.acquire() as connection:
-        pipeline: RowProxy = await _get_pipeline_from_db(connection, project_id)
-        graph = execution_graph(pipeline)
-        if not node_id:
-            log.debug("NODE id was zero, this was the entry node id")
-            await _set_pipeline_tasks_as_pending(connection, graph, project_id)
-            return find_entry_point(graph)
-        log.debug("NODE id is %s, getting the task from DB...", node_id)
-        task = await _try_get_task_from_db(
-            connection, graph, job_request_id, project_id, node_id
+    run_result = StateType.FAILED
+    try:
+        log.debug(
+            "ENTERING inspect with user %s pipeline:node %s: %s",
+            user_id,
+            project_id,
+            node_id,
         )
 
-    if not task:
-        log.debug("no task at hand, let's rest...")
-        return
+        task: Optional[RowProxy] = None
+        graph: Optional[nx.DiGraph] = None
+        async with db_engine.acquire() as connection:
+            pipeline: RowProxy = await _get_pipeline_from_db(connection, project_id)
+            graph = execution_graph(pipeline)
+            if not node_id:
+                log.debug("NODE id was zero, this was the entry node id")
+                await _set_pipeline_tasks_as_pending(connection, graph, project_id)
+                return find_entry_point(graph)
+            log.debug("NODE id is %s, getting the task from DB...", node_id)
+            task = await _try_get_task_from_db(
+                connection, graph, job_request_id, project_id, node_id
+            )
 
-    await rabbit_mq.post_log_message(
-        user_id,
-        project_id,
-        node_id,
-        "[sidecar]Task found: starting...",
-    )
+        if not task:
+            log.debug("no task at hand, let's rest...")
+            return
 
-    # config nodeports
-    node_ports.node_config.USER_ID = user_id
-    node_ports.node_config.NODE_UUID = task.node_id
-    node_ports.node_config.PROJECT_ID = task.project_id
+        await rabbit_mq.post_log_message(
+            user_id,
+            project_id,
+            node_id,
+            "[sidecar]Task found: starting...",
+        )
 
-    # now proceed actually running the task (we do that after the db session has been closed)
-    # try to run the task, return empyt list of next nodes if anything goes wrong
-    run_result = StateType.FAILED
-    next_task_nodes = []
-    try:
+        # config nodeports
+        node_ports.node_config.USER_ID = user_id
+        node_ports.node_config.NODE_UUID = task.node_id
+        node_ports.node_config.PROJECT_ID = task.project_id
+
+        # now proceed actually running the task (we do that after the db session has been closed)
+        # try to run the task, return empyt list of next nodes if anything goes wrong
+
+        next_task_nodes = []
+
         executor = Executor(
             db_engine=db_engine,
             rabbit_mq=rabbit_mq,
@@ -229,15 +233,18 @@ async def inspect(
         run_result = StateType.SUCCESS
     except asyncio.CancelledError:
         log.warning("Task has been cancelled")
+        run_result = StateType.ABORTED
+        await _set_task_status(db_engine, project_id, node_id, run_result)
         raise
 
     finally:
-        await rabbit_mq.post_log_message(
-            user_id,
-            project_id,
-            node_id,
-            f"[sidecar]Task completed with result: {run_result.name}",
-        )
-        await _set_task_status(db_engine, project_id, node_id, run_result)
+        if node_id:
+            await rabbit_mq.post_log_message(
+                user_id,
+                project_id,
+                node_id,
+                f"[sidecar]Task completed with result: {run_result.name}",
+            )
+            await _set_task_status(db_engine, project_id, node_id, run_result)
 
     return next_task_nodes

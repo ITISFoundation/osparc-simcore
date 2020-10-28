@@ -104,6 +104,10 @@
                                 "type": "string",
                                 "title": "Default value"
                             },
+                            "units": {
+                                "type": "string",
+                                "title": "Units"
+                            },
                             "description": {
                                 "type": "string",
                                 "title": "Description",
@@ -144,10 +148,14 @@
                                 "type": "string",
                                 "title": "Default value"
                             },
+                            "units": {
+                                "type": "string",
+                                "title": "Units"
+                            },
                             "description": {
                                 "type": "string",
                                 "title": "Description",
-                                "description": "Help text to understand the input and it's effects on the results."
+                                "description": "Description of this simulation result and its significance."
                             }
                         }
                     }

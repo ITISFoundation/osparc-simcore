@@ -15,6 +15,7 @@
 -e ../../packages/postgres-database/[migration]
 -e ../../packages/simcore-sdk/
 -e ../../packages/service-library/
+-e ../../packages/models-library/
 -e ../../packages/pytest-simcore/
 
 # installs current package

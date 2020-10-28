@@ -62,7 +62,7 @@ def client(
     app_config["main"]["testing"] = True
 
     app_config["storage"]["enabled"] = False
-    app_config["rabbit"]["enabled"] = False
+    app_config["computation"]["enabled"] = False
 
     pprint(app_config)
 

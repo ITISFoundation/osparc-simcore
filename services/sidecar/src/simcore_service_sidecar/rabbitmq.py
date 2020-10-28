@@ -6,9 +6,11 @@ from typing import Any, Dict, List, Optional, Union
 
 import aio_pika
 import tenacity
+from models_library.celery import CeleryConfig
 from pydantic import BaseModel  # pylint: disable=no-name-in-module
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
-from simcore_sdk.config.rabbit import Config as RabbitConfig
+
+from . import config
 
 log = logging.getLogger(__file__)
 
@@ -37,7 +39,7 @@ def _channel_close_callback(sender: Any, exc: Optional[BaseException]):
 
 
 class RabbitMQ(BaseModel):
-    config: RabbitConfig = RabbitConfig()
+    celery_config: CeleryConfig = None
     connection: aio_pika.Connection = None
     channel: aio_pika.Channel = None
     logs_exchange: aio_pika.Exchange = None
@@ -48,7 +50,9 @@ class RabbitMQ(BaseModel):
         arbitrary_types_allowed = True
 
     async def connect(self):
-        url = self.config.broker_url
+        if not self.celery_config:
+            self.celery_config = config.CELERY_CONFIG
+        url = self.celery_config.rabbit.dsn
         log.debug("Connecting to %s", url)
         await _wait_till_rabbit_responsive(url)
 
@@ -63,14 +67,17 @@ class RabbitMQ(BaseModel):
         self.channel = await self.connection.channel(publisher_confirms=False)
         self.channel.add_close_callback(_channel_close_callback)
 
-        log.debug("Declaring %s exchange", self.config.channels["log"])
+        log.debug("Declaring %s exchange", self.celery_config.rabbit.channels["log"])
         self.logs_exchange = await self.channel.declare_exchange(
-            self.config.channels["log"], aio_pika.ExchangeType.FANOUT
+            self.celery_config.rabbit.channels["log"], aio_pika.ExchangeType.FANOUT
         )
 
-        log.debug("Declaring %s exchange", self.config.channels["instrumentation"])
+        log.debug(
+            "Declaring %s exchange",
+            self.celery_config.rabbit.channels["instrumentation"],
+        )
         self.instrumentation_exchange = await self.channel.declare_exchange(
-            self.config.channels["instrumentation"],
+            self.celery_config.rabbit.channels["instrumentation"],
             aio_pika.ExchangeType.FANOUT,
         )
 

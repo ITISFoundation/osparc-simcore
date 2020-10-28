@@ -9,6 +9,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import json
 import os
 import sys
 from asyncio import Future
@@ -24,6 +25,7 @@ import socketio
 import sqlalchemy as sa
 import trafaret_config
 from aiohttp import web
+from pydantic import BaseSettings
 from yarl import URL
 
 import simcore_postgres_database.cli as pg_cli
@@ -33,6 +35,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
 from pytest_simcore.helpers.utils_mock import future_with_result
 from servicelib.aiopg_utils import DSN
+from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_config import app_schema as app_schema
 from simcore_service_webserver.groups_api import (
@@ -57,7 +60,9 @@ def default_app_cfg(osparc_simcore_root_dir, fake_static_dir):
 
     variables = dict(os.environ)
     variables.update(
-        {"OSPARC_SIMCORE_REPO_ROOTDIR": str(osparc_simcore_root_dir),}
+        {
+            "OSPARC_SIMCORE_REPO_ROOTDIR": str(osparc_simcore_root_dir),
+        }
     )
 
     # validates and fills all defaults/optional entries that normal load would not do
@@ -72,9 +77,7 @@ def default_app_cfg(osparc_simcore_root_dir, fake_static_dir):
 
 @pytest.fixture(scope="session")
 def docker_compose_file(default_app_cfg):
-    """ Overrides pytest-docker fixture
-
-    """
+    """Overrides pytest-docker fixture"""
     old = os.environ.copy()
 
     cfg = deepcopy(default_app_cfg["db"]["postgres"])
@@ -97,8 +100,8 @@ def docker_compose_file(default_app_cfg):
 
 @pytest.fixture(scope="function")
 def app_cfg(default_app_cfg, aiohttp_unused_port):
-    """ Can be overriden in any test module to configure
-        the app accordingly
+    """Can be overriden in any test module to configure
+    the app accordingly
     """
     cfg = deepcopy(default_app_cfg)
 
@@ -110,14 +113,23 @@ def app_cfg(default_app_cfg, aiohttp_unused_port):
     return cfg
 
 
+class _BaseSettingEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, BaseSettings):
+            return o.json()
+        # Let the base class default method raise the TypeError
+        return json.JSONEncoder.default(self, o)
+
+
 @pytest.fixture
 def web_server(loop, aiohttp_server, app_cfg, monkeypatch, postgres_db):
     # original APP
     app = create_application(app_cfg)
 
-    from servicelib.application_keys import APP_CONFIG_KEY
-    import json
-    print("Inits webserver with config", json.dumps(app[APP_CONFIG_KEY], indent=2))
+    print(
+        "Inits webserver with config",
+        json.dumps(app[APP_CONFIG_KEY], indent=2, cls=_BaseSettingEncoder),
+    )
 
     # with patched email
     _path_mail(monkeypatch)
@@ -151,9 +163,9 @@ def computational_system_mock(mocker):
 @pytest.fixture
 async def storage_subsystem_mock(loop, mocker):
     """
-        Patches client calls to storage service
+    Patches client calls to storage service
 
-        Patched functions are exposed within projects but call storage subsystem
+    Patched functions are exposed within projects but call storage subsystem
     """
     # requests storage to copy data
     mock = mocker.patch(
@@ -276,7 +288,9 @@ def postgres_service(docker_services, postgres_dsn):
 
     # Wait until service is responsive.
     docker_services.wait_until_responsive(
-        check=lambda: _is_postgres_responsive(url), timeout=30.0, pause=0.1,
+        check=lambda: _is_postgres_responsive(url),
+        timeout=30.0,
+        pause=0.1,
     )
 
     return url
@@ -314,7 +328,9 @@ def redis_service(docker_services, docker_ip):
     url = URL(f"redis://{host}:{port}")
 
     docker_services.wait_until_responsive(
-        check=lambda: _is_redis_responsive(host, port), timeout=30.0, pause=0.1,
+        check=lambda: _is_redis_responsive(host, port),
+        timeout=30.0,
+        pause=0.1,
     )
     return url
 
