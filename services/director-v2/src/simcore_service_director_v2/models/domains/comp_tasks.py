@@ -1,10 +1,27 @@
 from datetime import datetime
 from typing import Dict, Optional
+from uuid import UUID
 
 from models_library.projects import NodeID, ProjectID, RunningState
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field, HttpUrl, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
+
+TaskID = UUID
+
+
+class ComputationTask(BaseModel):
+    id: TaskID = Field(..., description="the id of the computation task")
+    state: RunningState = Field(..., description="the state of the computational task")
+    result: Optional[str] = Field(
+        None, description="the result of the computational task"
+    )
+
+
+class ComputationTaskOut(ComputationTask):
+    url: HttpUrl = Field(
+        ..., description="the link where to get the status of the task"
+    )
 
 
 DB_TO_RUNNING_STATE = {

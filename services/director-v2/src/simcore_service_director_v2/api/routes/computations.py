@@ -1,13 +1,20 @@
+import logging
 from typing import Dict
 
-from fastapi import APIRouter, Depends, HTTPException
+from celery.contrib.abortable import AbortableAsyncResult
+from celery.result import AsyncResult
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from models_library.projects import NodeID, ProjectID, RunningState
-from pydantic.main import BaseModel
-from pydantic.types import PositiveInt
 from simcore_service_director_v2.utils.exceptions import ProjectNotFoundError
 from starlette import status
+from starlette.requests import Request
 
-from ...models.domains.comp_tasks import CompTaskAtDB
+from ...models.domains.comp_tasks import (
+    CompTaskAtDB,
+    ComputationTask,
+    ComputationTaskOut,
+    TaskID,
+)
 from ...models.schemas.constants import UserID
 from ...modules.db.repositories.computations import (
     CompPipelinesRepository,
@@ -20,6 +27,7 @@ from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
 
 router = APIRouter()
+log = logging.getLogger(__file__)
 
 
 @router.get("")
@@ -35,19 +43,25 @@ async def list_computations(
     pass
 
 
-from uuid import UUID
+def celery_on_message(body):
+    log.warning(body)
 
 
-class ComputationTask(BaseModel):
-    id: UUID
+def background_on_message(task):
+    log.warning(task.get(on_message=celery_on_message, propagate=False))
 
 
 @router.post(
-    "", description="Create and Start a new computation", response_model=ComputationTask
+    "",
+    description="Create and Start a new computation",
+    response_model=ComputationTaskOut,
+    status_code=status.HTTP_201_CREATED,
 )
 async def create_computation(
     user_id: UserID,
     project_id: ProjectID,
+    background_tasks: BackgroundTasks,
+    request: Request,
     project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
     computation_tasks: CompTasksRepository = Depends(
         get_repository(CompTasksRepository)
@@ -78,18 +92,39 @@ async def create_computation(
         # ok so publish the tasks
         await computation_tasks.publish_tasks(project_id)
         # trigger celery
-        async_result = celery_client.send_computation_task(user_id, project_id)
-        return ComputationTask(id=async_result.id)
+        task = celery_client.send_computation_task(user_id, project_id)
+        background_tasks.add_task(background_on_message, task)
+        return ComputationTaskOut(
+            id=task.id, state=task.state, url=f"{request.base_url}{task.id}"
+        )
 
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
-@router.get("/{computation_id}")
-async def get_computation(computation_id: ProjectID):
-    pass
+@router.get(
+    "/{computation_id}",
+    response_model=ComputationTask,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def get_computation(computation_id: TaskID):
+    task = AsyncResult(str(computation_id))
+    if task.state == RunningState.SUCCESS:
+        return ComputationTask(id=task.id, state=task.state, result=task.result)
+    if task.state == RunningState.FAILED:
+        return ComputationTask(
+            id=task.id,
+            state=task.state,
+            result=task.backend.get(task.backend.get_key_for_task(task.id)),
+        )
+    return ComputationTask(id=task.id, state=task.state, result=task.info)
 
 
-@router.delete("/{computation_id}", description="Stops a computation")
-async def stop_computation(computation_id: ProjectID):
-    pass
+@router.delete(
+    "/{computation_id}",
+    description="Stops a computation",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def stop_computation(computation_id: TaskID):
+    abortable_task = AbortableAsyncResult(str(computation_id))
+    abortable_task.abort()
