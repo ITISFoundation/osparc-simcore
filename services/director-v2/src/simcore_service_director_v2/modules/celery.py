@@ -4,7 +4,9 @@ from dataclasses import dataclass
 from celery import Celery
 from fastapi import FastAPI
 from models_library.celery import CeleryConfig
+from models_library.projects import ProjectID
 
+from ..models.schemas.constants import UserID
 from ..utils.client_decorators import handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
@@ -22,6 +24,7 @@ def setup(app: FastAPI, settings: CeleryConfig):
                 broker=settings.broker_url,
                 backend=settings.result_backend,
             ),
+            settings=settings,
         )
 
     async def on_shutdown() -> None:
@@ -34,6 +37,7 @@ def setup(app: FastAPI, settings: CeleryConfig):
 @dataclass
 class CeleryClient:
     client: Celery
+    settings: CeleryConfig
 
     @classmethod
     def create(cls, app: FastAPI, *args, **kwargs):
@@ -48,3 +52,10 @@ class CeleryClient:
     @handle_retry(logger)
     def send_task(self, task_name: str, *args, **kwargs):
         return self.client.send_task(task_name, *args, **kwargs)
+
+    def send_computation_task(self, user_id: UserID, project_id: ProjectID):
+        self.send_task(
+            self.settings.task_name,
+            expires=self.settings.publication_timeout,
+            kwargs={"user_id": user_id, "project_id": project_id},
+        )

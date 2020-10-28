@@ -4,6 +4,7 @@ import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectAtDB, ProjectID
 
+from ....utils.exceptions import ProjectNotFoundError
 from ..tables import projects
 from ._base import BaseRepository
 
@@ -17,4 +18,6 @@ class ProjectsRepository(BaseRepository):
                 sa.select([projects]).where(projects.c.uuid == str(project_id))
             )
         ).first()
-        return ProjectAtDB(**row)
+        if not row:
+            raise ProjectNotFoundError(project_id)
+        return ProjectAtDB.from_orm(row)

@@ -3,10 +3,10 @@ from datetime import datetime
 from typing import Dict, Tuple
 
 import sqlalchemy as sa
-from ....models.domains.comp_tasks import CompTaskAtDB
 from models_library.projects import NodeID, ProjectID
 
-from ..tables import NodeClass, comp_tasks
+from ....models.domains.comp_tasks import CompTaskAtDB
+from ..tables import NodeClass, StateType, comp_tasks
 from ._base import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -32,3 +32,13 @@ class CompTasksRepository(BaseRepository):
             tasks[task_db.node_id] = task_db
 
         return tasks
+
+    async def publish_tasks(self, project_id: ProjectID) -> None:
+        await self.connection.execute(
+            sa.update(comp_tasks)
+            .where(
+                (comp_tasks.c.project_id == str(project_id))
+                & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+            )
+            .values(state=StateType.PUBLISHED)
+        )
