@@ -12,7 +12,7 @@ from ...modules.db.repositories.computations import (
 from ...modules.db.repositories.projects import ProjectsRepository
 from ..dependencies.celery import CeleryApp
 from ..dependencies.database import get_repository
-from ..dependencies.director_v0 import DirectorClient
+from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
 
 router = APIRouter()
 
@@ -41,13 +41,13 @@ async def create_computation(
         get_repository(CompTasksRepository)
     ),
     celery_client: CeleryApp = Depends(),
-    director_client: DirectorClient = Depends(),
+    director_client: DirectorV0Client = Depends(get_director_v0_client),
 ):
     project_repo = await project_repo.get_project(project_id)
-    task_states: Dict[NodeID, CompTaskAtDB] = await computation_tasks.get_comp_tasks(
+    comp_tasks: Dict[NodeID, CompTaskAtDB] = await computation_tasks.get_comp_tasks(
         project_id
     )
-    return task_states
+    return comp_tasks
 
     # get the state
     # return forbidden if the state is not ok

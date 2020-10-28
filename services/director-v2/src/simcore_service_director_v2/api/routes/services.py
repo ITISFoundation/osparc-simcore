@@ -1,11 +1,13 @@
 # pylint: disable=unused-argument
-from typing import Coroutine, Optional
+from typing import Optional
 
-from fastapi import APIRouter, Depends, Path, Query
+from fastapi import APIRouter, Depends, Path, Query, Response
 from models_library.services import KEY_RE, VERSION_RE, ServiceType
 
 from ...models.schemas.services import ServiceExtrasEnveloped, ServicesArrayEnveloped
-from ..dependencies.director_v0 import get_request_to_director_v0
+from ..dependencies.director_v0 import (
+    forward_to_director_v0,
+)
 
 router = APIRouter()
 
@@ -24,9 +26,9 @@ async def list_services(
             "   - interactive - an interactive service\n"
         ),
     ),
-    forward_request: Coroutine = Depends(get_request_to_director_v0),
+    forward_request: Response = Depends(forward_to_director_v0),
 ):
-    return await forward_request()
+    return forward_request
 
 
 ServiceKeyPath = Path(
@@ -47,9 +49,9 @@ ServiceKeyVersionPath = Path(
 async def get_service_versioned(
     service_key: str = ServiceKeyPath,
     service_version: str = ServiceKeyVersionPath,
-    forward_request: Coroutine = Depends(get_request_to_director_v0),
+    forward_request: Response = Depends(forward_to_director_v0),
 ):
-    return await forward_request()
+    return forward_request
 
 
 @router.get(
@@ -60,6 +62,6 @@ async def get_service_versioned(
 async def get_extra_service_versioned(
     service_key: str = ServiceKeyPath,
     service_version: str = ServiceKeyVersionPath,
-    forward_request: Coroutine = Depends(get_request_to_director_v0),
+    forward_request: Response = Depends(forward_to_director_v0),
 ):
-    return await forward_request()
+    return forward_request

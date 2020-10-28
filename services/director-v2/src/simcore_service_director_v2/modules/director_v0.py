@@ -60,7 +60,8 @@ class DirectorV0Client:
 
     async def forward(self, request: Request, response: Response) -> Response:
         url_tail = URL(
-            path=request.url.path.replace("/v0", ""), fragment=request.url.fragment,
+            path=request.url.path.replace("/v0", ""),
+            fragment=request.url.fragment,
         )
         body: bytes = await request.body()
 
@@ -75,6 +76,7 @@ class DirectorV0Client:
         # Prepared response
         response.body = resp.content
         response.status_code = resp.status_code
+        response.headers.update(resp.headers)
 
         # NOTE: the response is NOT validated!
         return response
