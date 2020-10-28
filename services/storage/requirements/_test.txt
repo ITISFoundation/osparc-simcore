@@ -93,7 +93,7 @@ trafaret==2.0.2           # via -r requirements/_base.txt, trafaret-config
 typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.2  # via -r requirements/_base.txt, aiohttp, aioitertools, yarl
 ujson==3.1.0              # via -r requirements/_base.txt
-urllib3==1.25.10          # via -r requirements/_base.txt, botocore, requests
+urllib3==1.25.11          # via -r requirements/_base.txt, botocore, requests
 websocket-client==0.57.0  # via -r requirements/_base.txt, blackfynn, docker, docker-compose
 werkzeug==1.0.1           # via -r requirements/_base.txt
 wrapt==1.12.1             # via -r requirements/_base.txt, aiobotocore, astroid, deprecated

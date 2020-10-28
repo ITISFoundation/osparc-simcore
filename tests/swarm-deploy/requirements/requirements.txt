@@ -45,7 +45,7 @@ tenacity==6.2.0           # via -r requirements/requirements.in
 termcolor==1.1.0          # via pytest-sugar
 toml==0.10.1              # via pytest
 typing-extensions==3.7.4.3  # via aiohttp, yarl
-urllib3==1.25.10          # via requests
+urllib3==1.25.11          # via requests
 websocket-client==0.57.0  # via docker
 yarl==1.5.1               # via aio-pika, aiohttp, aiormq
 zipp==3.2.0               # via importlib-metadata

@@ -50,7 +50,7 @@ six==1.15.0               # via -r requirements/_base.txt, astroid, bcrypt, cryp
 texttable==1.6.3          # via docker-compose
 toml==0.10.1              # via pylint, pytest
 typed-ast==1.4.1          # via astroid
-urllib3==1.25.10          # via -r requirements/_base.txt, minio, requests
+urllib3==1.25.11          # via -r requirements/_base.txt, minio, requests
 websocket-client==0.57.0  # via docker, docker-compose
 wrapt==1.12.1             # via astroid
 zipp==3.2.0               # via importlib-metadata

@@ -46,7 +46,7 @@ termcolor==1.1.0          # via pytest-sugar
 toml==0.10.1              # via pylint, pytest
 typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.3  # via aiohttp, yarl
-urllib3==1.25.10          # via requests
+urllib3==1.25.11          # via requests
 wrapt==1.12.1             # via astroid
 yarl==1.5.1               # via aiohttp
 zipp==3.2.0               # via importlib-metadata

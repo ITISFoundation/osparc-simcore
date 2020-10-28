@@ -51,7 +51,7 @@ starlette==0.13.6         # via fastapi
 tenacity==6.2.0           # via -r requirements/_base.in
 typing-extensions==3.7.4.3  # via yarl
 ujson==3.2.0              # via fastapi
-urllib3==1.25.10          # via requests
+urllib3==1.25.11          # via requests
 uvicorn==0.11.8           # via fastapi
 uvloop==0.14.0            # via uvicorn
 websockets==8.1           # via uvicorn

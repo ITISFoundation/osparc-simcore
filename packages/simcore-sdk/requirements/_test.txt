@@ -68,7 +68,7 @@ trafaret-config==2.0.2    # via -r requirements/_base.txt
 trafaret==2.1.0           # via -r requirements/_base.txt, trafaret-config
 typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.3  # via -r requirements/_base.txt, aiohttp, yarl
-urllib3==1.25.10          # via requests
+urllib3==1.25.11          # via requests
 websocket-client==0.57.0  # via docker, docker-compose
 wrapt==1.12.1             # via astroid
 yarl==1.5.1               # via -r requirements/_base.txt, aiohttp
