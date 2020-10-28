@@ -7,217 +7,103 @@ To decide where a task should be routed to, the current worker will
 use a look ahead function to check the type of upcoming task and
 schedule it accordingly.
 """
-from pprint import pformat
-from typing import Optional, Tuple
+from functools import wraps
+from typing import Callable
 
-from celery import Celery, states
-from simcore_sdk.config.rabbit import Config as RabbitConfig
+from celery import Celery
+from celery.contrib.abortable import AbortableTask
+from kombu import Queue
 
 from . import config
 from .boot_mode import BootMode, get_boot_mode, set_boot_mode
 from .celery_log_setup import get_task_logger
-from .cli import run_sidecar
-from .core import task_required_resources
-from .utils import assemble_celery_app, is_gpu_node, start_as_mpi_node, wrap_async_call
+from .celery_task import entrypoint
+from .celery_task_utils import on_task_failure_handler, on_task_success_handler
+from .utils import is_gpu_node, start_as_mpi_node
 
 log = get_task_logger(__name__)
 
 
-# used by internal queues in this module
-_rabbit_config = RabbitConfig()
-_celery_app_cpu = assemble_celery_app("celery", _rabbit_config)
-_celery_app_gpu = assemble_celery_app("celery_gpu_mode", _rabbit_config)
-_celery_app_mpi = assemble_celery_app("celery_mpi_mode", _rabbit_config)
+CELERY_APP_CONFIGS = {
+    BootMode.CPU: {"app": "celery_cpu_mode", "queue_name": config.CPU_QUEUE_NAME},
+    BootMode.GPU: {"app": "celery_gpu_mode", "queue_name": config.GPU_QUEUE_NAME},
+    BootMode.MPI: {"app": "celery_mpi_mode", "queue_name": config.MPI_QUEUE_NAME},
+}
 
 
-def dispatch_comp_task(user_id: str, project_id: str, node_id: str) -> None:
-    """Uses the director's API to determineate where the service needs
-    to be dispacted and sends it to the appropriate queue"""
-    # TODO: use _node_id to check if this service needs a GPU or NOT, ask director
-    # then schedule to the correct queue
-    # Add logging at #TODO: #1 and here to make sure the task with the same uuid is scheduled on the correct worker!
-    if node_id is None:
-        log.error("No node_id provided for project_id %s, skipping", project_id)
-        return
+def celery_adapter(app: Celery) -> Callable:
+    """this decorator allows passing additional paramters to celery tasks.
+    This allows to create a task of type `def function(*args, **kwargs, app: Celery)
+    """
 
-    # query comp_tasks for the thing you need and see if it is false
+    def decorator(func) -> Callable:
+        @wraps(func)
+        def wrapped(*args, **kwargs) -> Callable:
+            return func(*args, **kwargs, app=app)
 
-    required_resources = wrap_async_call(task_required_resources(node_id))
-    if required_resources is None:
-        return
+        return wrapped
 
-    if required_resources["requires_mpi"]:
-        _dispatch_to_mpi_queue(user_id, project_id, node_id)
-    elif required_resources["requires_gpu"]:
-        _dispatch_to_gpu_queue(user_id, project_id, node_id)
-    else:
-        _dispatch_to_cpu_queue(user_id, project_id, node_id)
+    return decorator
 
 
-def _dispatch_to_cpu_queue(user_id: str, project_id: str, node_id: str) -> None:
-    _celery_app_cpu.send_task(
-        "comp.task.cpu",
-        kwargs={"user_id": user_id, "project_id": project_id, "node_id": node_id},
-    )
+def define_celery_task(app: Celery, name: str) -> None:
+    # we need to have the app in the entrypoint
+    # TODO: use functools.partial instead
+    partial_entrypoint = celery_adapter(app)(entrypoint)
+
+    task = app.task(
+        name=name,
+        base=AbortableTask,
+        bind=True,
+        autoretry_for=(Exception,),
+        retry_kwargs={"max_retries": 3, "countdown": 2},
+        on_failure=on_task_failure_handler,
+        on_success=on_task_success_handler,
+        track_started=True,
+    )(partial_entrypoint)
+    log.debug("Created task %s", task.name)
 
 
-def _dispatch_to_gpu_queue(user_id: str, project_id: str, node_id: str) -> None:
-    _celery_app_gpu.send_task(
-        "comp.task.gpu",
-        kwargs={"user_id": user_id, "project_id": project_id, "node_id": node_id},
-    )
-
-
-def _dispatch_to_mpi_queue(user_id: str, project_id: str, node_id: str) -> None:
-    _celery_app_mpi.send_task(
-        "comp.task.mpi",
-        kwargs={"user_id": user_id, "project_id": project_id, "node_id": node_id},
-    )
-
-
-def shared_task_dispatch(
-    celery_request, user_id: str, project_id: str, node_id: Optional[str] = None
-) -> None:
-    log.info(
-        "Will dispatch to appropriate queue %s, %s, %s",
-        user_id,
-        project_id,
-        node_id,
-    )
-    next_task_nodes = wrap_async_call(
-        run_sidecar(celery_request.request.id, user_id, project_id, node_id)
-    )
-
-    # this needs to be done here since the tasks are created recursively and the state might not be upgraded yet
-    celery_request.update_state(state=states.SUCCESS)
-    if next_task_nodes:
-        for _node_id in next_task_nodes:
-            dispatch_comp_task(user_id, project_id, _node_id)
-
-
-def _on_task_failure_handler(
-    self, exc, task_id, args, kwargs, einfo
-):  # pylint: disable=unused-argument, too-many-arguments
-    log.error(
-        "Error while executing task %s with args=%s, kwargs=%s",
-        task_id,
-        args if args else "none",
-        pformat(kwargs) if kwargs else "none",
-    )
-
-
-def _on_task_success_handler(
-    self, retval, task_id, args, kwargs
-):  # pylint: disable=unused-argument
-    log.info(
-        "Task %s completed successfully with args=%s, kwargs=%s",
-        task_id,
-        args if args else "none",
-        pformat(kwargs) if kwargs else "none",
-    )
-
-
-def configure_cpu_mode() -> Tuple[RabbitConfig, Celery]:
-    """Will configure and return a celery app targetting CPU mode nodes."""
+def configure_node(bootmode: BootMode) -> Celery:
     log.info("Initializing celery app...")
-    app = _celery_app_cpu
-
-    # pylint: disable=unused-variable,unused-argument
-    @app.task(
-        name="comp.task",
-        bind=True,
-        autoretry_for=(Exception,),
-        retry_kwargs={"max_retries": 3, "countdown": 2},
-        on_failure=_on_task_failure_handler,
-        on_success=_on_task_success_handler,
-        track_started=True,
+    app = Celery(
+        f"sidecar.{str(bootmode.name).lower()}.{config.SIDECAR_HOST_HOSTNAME_PATH.read_text()}",
+        broker=config.CELERY_CONFIG.broker_url,
+        backend=config.CELERY_CONFIG.result_backend,
     )
-    def entrypoint(
-        self, *, user_id: str, project_id: str, node_id: Optional[str] = None
-    ) -> None:
-        shared_task_dispatch(self, user_id, project_id, node_id)
 
-    @app.task(
-        name="comp.task.cpu",
-        bind=True,
-        autoretry_for=(Exception,),
-        retry_kwargs={"max_retries": 3, "countdown": 2},
-        on_failure=_on_task_failure_handler,
-        on_success=_on_task_success_handler,
-        track_started=True,
-    )
-    def pipeline(
-        self, user_id: str, project_id: str, node_id: Optional[str] = None
-    ) -> None:
-        shared_task_dispatch(self, user_id, project_id, node_id)
+    app.conf.task_default_queue = "celery"
+    app.conf.task_queues = [
+        Queue("celery"),
+        Queue(config.MAIN_QUEUE_NAME),
+        Queue(CELERY_APP_CONFIGS[bootmode]["queue_name"]),
+    ]
+    app.conf.task_routes = {
+        config.MAIN_QUEUE_NAME: config.MAIN_QUEUE_NAME,
+        config.CPU_QUEUE_NAME: config.CPU_QUEUE_NAME,
+        config.GPU_QUEUE_NAME: config.GPU_QUEUE_NAME,
+        config.MPI_QUEUE_NAME: config.MPI_QUEUE_NAME,
+    }
 
-    set_boot_mode(BootMode.CPU)
-    log.info("Initialized celery app in %s ", get_boot_mode())
-    return (_rabbit_config, app)
-
-
-def configure_gpu_mode() -> Tuple[RabbitConfig, Celery]:
-    """Will configure and return a celery app targetting GPU mode nodes."""
-    log.info("Initializing celery app...")
-    app = _celery_app_gpu
-
-    # pylint: disable=unused-variable
-    @app.task(
-        name="comp.task.gpu",
-        bind=True,
-        autoretry_for=(Exception,),
-        retry_kwargs={"max_retries": 3, "countdown": 2},
-        on_failure=_on_task_failure_handler,
-        on_success=_on_task_success_handler,
-        track_started=True,
-    )
-    def pipeline(
-        self, user_id: str, project_id: str, node_id: Optional[str] = None
-    ) -> None:
-        shared_task_dispatch(self, user_id, project_id, node_id)
-
-    set_boot_mode(BootMode.GPU)
+    define_celery_task(app, config.MAIN_QUEUE_NAME)
+    define_celery_task(app, CELERY_APP_CONFIGS[bootmode]["queue_name"])
+    set_boot_mode(bootmode)
     log.info("Initialized celery app in %s", get_boot_mode())
-    return (_rabbit_config, app)
+    return app
 
 
-def configure_mpi_node() -> Tuple[RabbitConfig, Celery]:
-    """Will configure and return a celery app targetting GPU mode nodes."""
-    log.info("Initializing celery app...")
-    app = _celery_app_mpi
+def create_celery_app() -> Celery:
+    """ Configures the Celery APP for CPU, GPU, MPI mode."""
+    bootmode = BootMode.CPU
 
-    # pylint: disable=unused-variable
-    @app.task(
-        name="comp.task.mpi",
-        bind=True,
-        autoretry_for=(Exception,),
-        retry_kwargs={"max_retries": 3, "countdown": 2},
-        on_failure=_on_task_failure_handler,
-        on_success=_on_task_success_handler,
-        track_started=True,
-    )
-    def pipeline(
-        self, user_id: str, project_id: str, node_id: Optional[str] = None
-    ) -> None:
-        shared_task_dispatch(self, user_id, project_id, node_id)
-
-    set_boot_mode(BootMode.MPI)
-    log.info("Initialized celery app in %s", get_boot_mode())
-    return (_rabbit_config, app)
-
-
-def get_rabbitmq_config_and_celery_app() -> Tuple[RabbitConfig, Celery]:
-    """Returns a CPU or GPU configured celery app"""
     if start_as_mpi_node():
-        return configure_mpi_node()
+        bootmode = BootMode.MPI
+    elif config.FORCE_START_CPU_MODE:
+        bootmode = BootMode.CPU
+    elif config.FORCE_START_GPU_MODE or is_gpu_node():
+        bootmode = BootMode.GPU
 
-    # continue boot as before
-    node_has_gpu_support = is_gpu_node()
+    return configure_node(bootmode)
 
-    if config.FORCE_START_CPU_MODE:
-        return configure_cpu_mode()
 
-    if config.FORCE_START_GPU_MODE or node_has_gpu_support:
-        return configure_gpu_mode()
-
-    return configure_cpu_mode()
+__all__ = ["create_celery_app"]

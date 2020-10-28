@@ -201,7 +201,7 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
 
     __recreateIterations: function() {
       return new Promise((resolve, reject) => {
-        const primaryStudyData = this.__primaryStudy.serializeStudy();
+        const primaryStudyData = this.__primaryStudy.serialize();
         this.__primaryStudy.getSweeper().recreateIterations(primaryStudyData)
           .then(secondaryStudyIds => {
             const msg = secondaryStudyIds.length + this.tr(" Iterations created");

@@ -170,22 +170,49 @@ class TutorialBase {
     return resp;
   }
 
-  async waitForServices(studyId, nodeIds) {
-    const promises = [];
-    nodeIds.forEach(nodeId => {
-      this.__responsesQueue.addResponseServiceListener(studyId, nodeId);
-      promises.push(this.__responsesQueue.waitUntilServiceReady(studyId, nodeId));
-    });
-    return new Promise((resolve, reject) => {
-      Promise.all(promises)
-        .then(resps => {
-          resolve(resps);
-        })
-        .catch(err => {
-          console.error(this.__templateName, "could not be started", err);
-          reject(err);
-        });
-    });
+  async openService(waitFor = 1000) {
+    await this.takeScreenshot("dashboardOpenFirstService_before");
+    this.__responsesQueue.addResponseListener("open");
+    let resp = null;
+    try {
+      const serviceFound = await auto.dashboardOpenFirstService(this.__page, this.__templateName);
+      assert(serviceFound, "Expected service, got nothing. TIP: is it available??");
+      resp = await this.__responsesQueue.waitUntilResponse("open");
+    }
+    catch(err) {
+      console.error(`"${this.__templateName}" service could not be started:\n`, err);
+      throw(err);
+    }
+    await this.__page.waitFor(waitFor);
+    await this.takeScreenshot("dashboardOpenFirstService_after");
+    return resp;
+  }
+
+  async waitForServices(studyId, nodeIds, timeout = 40000) {
+    if (nodeIds.length < 1) {
+      return;
+    }
+    const getHost = () => {
+      return window.location.protocol + "//" + window.location.hostname;
+    }
+    const host = await this.__page.evaluate(getHost);
+
+    const start = new Date().getTime();
+    while ((new Date().getTime())-start < timeout) {
+      for (let i = nodeIds.length-1; i>=0; i--) {
+        const nodeId = nodeIds[i];
+        if (await utils.isServiceReady(this.__page, host+"/v0", studyId, nodeId)) {
+          nodeIds.splice(i, 1);
+        }
+      }
+      await utils.sleep(2500);
+      if (nodeIds.length === 0) {
+        console.log("Services ready in", ((new Date().getTime())-start)/1000);
+        return;
+      }
+    }
+    console.log("Timeout reached waiting for services", ((new Date().getTime())-start)/1000);
+    return;
   }
 
   async restoreIFrame() {

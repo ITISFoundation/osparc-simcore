@@ -1,17 +1,16 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
 import os
+from copy import deepcopy
 from typing import Dict
 
 import aiohttp
 import pytest
 import tenacity
-from yarl import URL
-
 from s3wrapper.s3_client import S3Client
 from servicelib.minio_utils import MinioRetryPolicyUponInitialization
+from yarl import URL
 
 from .helpers.utils_docker import get_service_published_port
 
@@ -23,9 +22,13 @@ def storage_endpoint(docker_stack: Dict, devel_environ: Dict) -> URL:
     endpoint = f"127.0.0.1:{get_service_published_port('storage', default_port)}"
 
     # nodeports takes its configuration from env variables
+    old_environ = deepcopy(os.environ)
     os.environ["STORAGE_ENDPOINT"] = endpoint
 
-    return URL(f"http://{endpoint}")
+    yield URL(f"http://{endpoint}")
+
+    # restore environ
+    os.environ = old_environ
 
 
 @pytest.fixture(scope="function")

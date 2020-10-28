@@ -17,8 +17,8 @@ log = logging.getLogger(__name__)
 
 class ProjectType(enum.Enum):
     """
-        template: template project
-        standard: standard project
+    template: template project
+    standard: standard project
     """
 
     TEMPLATE = "template"
@@ -61,6 +61,7 @@ projects = sa.Table(
         "access_rights", JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")
     ),
     sa.Column("workbench", sa.JSON, nullable=False),
+    sa.Column("ui", JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")),
     sa.Column(
         "classifiers",
         ARRAY(sa.String, dimensions=1),

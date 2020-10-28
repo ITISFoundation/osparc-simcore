@@ -5,6 +5,7 @@
 import logging
 import subprocess
 import time
+from datetime import datetime
 from pathlib import Path
 from pprint import pprint
 from typing import Dict
@@ -44,6 +45,22 @@ def docker_swarm(
             assert docker_client.swarm.leave(force=True)
 
 
+def to_datetime(datetime_str: str) -> datetime:
+    # datetime_str is typically '2020-10-09T12:28:14.771034099Z'
+    #  - The T separates the date portion from the time-of-day portion
+    #  - The Z on the end means UTC, that is, an offset-from-UTC
+    # The 099 before the Z is not clear, therefore we will truncate the last part
+    N = len("2020-10-09T12:28:14.771034")
+    if len(datetime_str) > N:
+        datetime_str = datetime_str[:N]
+    return datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
+
+
+def by_task_update(task: Dict) -> bool:
+    datetime_str = task["Status"]["Timestamp"]
+    return to_datetime(datetime_str)
+
+
 @tenacity.retry(
     wait=tenacity.wait_fixed(5),
     stop=tenacity.stop_after_attempt(20),
@@ -56,7 +73,8 @@ def _wait_for_services(docker_client: docker.client.DockerClient) -> None:
     for service in services:
         print(f"Waiting for {service.name}...")
         if service.tasks():
-            task = service.tasks()[0]
+            sorted_tasks = sorted(service.tasks(), key=by_task_update)
+            task = sorted_tasks[-1]
             if task["Status"]["State"].upper() not in pre_states:
                 if not task["Status"]["State"].upper() == "RUNNING":
                     raise Exception(f"service {service.name} not running")

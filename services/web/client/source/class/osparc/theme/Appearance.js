@@ -630,6 +630,22 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: state => ({
         font: "text-14"
       })
+    },
+
+    "no-shadow-button": {
+      alias: "atom",
+      style: function(states) {
+        var decorator = "toolbar-button";
+        if (states.hovered || states.pressed || states.checked) {
+          decorator += "-hovered";
+        }
+        return {
+          cursor: states.disabled ? undefined : "pointer",
+          decorator: decorator,
+          textColor: "material-button-text",
+          padding: [3, 5]
+        };
+      }
     }
   }
 });

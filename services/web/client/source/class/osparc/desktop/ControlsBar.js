@@ -47,7 +47,8 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     "showSettings": "qx.event.type.Event",
     "groupSelection": "qx.event.type.Event",
     "ungroupSelection": "qx.event.type.Event",
-    "startPipeline": "qx.event.type.Event"
+    "startPipeline": "qx.event.type.Event",
+    "stopPipeline": "qx.event.type.Event"
   },
 
   members: {
@@ -107,20 +108,40 @@ qx.Class.define("osparc.desktop.ControlsBar", {
         this.add(groupCtrls);
       }
 
-      const iterationCtrls = new qx.ui.toolbar.Part();
-      const sweeperButton = this.__createShowSweeperButton();
-      iterationCtrls.add(sweeperButton);
+      const moreCtrls = new qx.ui.toolbar.Part();
       osparc.data.model.Sweeper.isSweeperEnabled()
         .then(isSweeperEnabled => {
           if (isSweeperEnabled) {
-            this.add(iterationCtrls);
+            const sweeperButton = this.__createShowSweeperButton();
+            moreCtrls.add(sweeperButton);
           }
         });
+      this.add(moreCtrls);
 
       const simCtrls = new qx.ui.toolbar.Part();
+      const stopButton = this.__createStopButton();
+      stopButton.setEnabled(false);
+      simCtrls.add(stopButton);
       const startButton = this.__createStartButton();
       simCtrls.add(startButton);
       this.add(simCtrls);
+
+      osparc.store.Store.getInstance().addListener("changeCurrentStudy", e => {
+        const study = e.getData();
+        if (study && study.getState() && study.getState().state) {
+          switch (study.getState().state.value) {
+            case "PENDING":
+            case "PUBLISHED":
+            case "STARTED":
+              startButton.setFetching(true);
+              stopButton.setEnabled(true);
+              break;
+            default:
+              startButton.setFetching(false);
+              stopButton.setEnabled(false);
+          }
+        }
+      });
     },
 
     __createShowSweeperButton: function() {
@@ -162,6 +183,10 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       const startButton = this.__startButton = this.__createButton(this.tr("Run"), "play", "runStudyBtn", "startPipeline");
       return startButton;
     },
+    __createStopButton: function() {
+      const stopButton = this.__stopButton = this.__createButton(this.tr("Stop"), "stop", "stopStudyBtn", "stopPipeline");
+      return stopButton;
+    },
 
     __createRadioButton: function(label, icon, widgetId, singalName) {
       const button = new qx.ui.toolbar.RadioButton(label);
@@ -173,10 +198,9 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       return button;
     },
 
-    __createButton: function(label, icon, widgetId, signalName, visibility="visible") {
-      const button = new qx.ui.toolbar.Button(label).set({
-        visibility,
-        icon: icon ? "@FontAwesome5Solid/"+icon+"/14" : null
+    __createButton: function(label, icon, widgetId, signalName, visibility = "visible") {
+      const button = new osparc.ui.toolbar.FetchButton(label, "@FontAwesome5Solid/" + icon + "/14").set({
+        visibility
       });
       osparc.utils.Utils.setIdToWidget(button, widgetId);
       button.addListener("execute", () => {

@@ -4,9 +4,9 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-if sys.version_info.major != 3 and sys.version_info.minor != 6:
+if sys.version_info.major != 3 and sys.version_info.minor >= 6:
     raise RuntimeError(
-        "Expected ~=3.6, got %s. Did you forget to activate virtualenv?"
+        "Expected ~=3.6, got %s (Tip: did you forget to 'source .venv/bin/activate' or 'pyenv local'?)"
         % str(sys.version_info)
     )
 
@@ -25,6 +25,7 @@ install_requirements = read_reqs(current_dir / "requirements" / "_base.txt") + [
     "simcore-postgres-database",
     "simcore-sdk==0.1.0",
     "simcore-service-library",
+    "simcore-models-library",
 ]
 
 test_requirements = read_reqs(current_dir / "requirements" / "_test.txt") + [
@@ -47,7 +48,9 @@ setup(
     license="MIT license",
     python_requires="~=3.6",
     packages=find_packages(where="src"),
-    package_dir={"": "src",},
+    package_dir={
+        "": "src",
+    },
     include_package_data=True,
     install_requires=install_requirements,
     test_suite="tests",

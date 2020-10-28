@@ -1801,14 +1801,13 @@ paths:
                     workbench:
                       type: object
                       x-patternProperties:
-                        ^\S+$:
+                        ^\d+$:
                           type: object
                           additionalProperties: false
                           required:
                             - key
                             - version
                             - label
-                            - position
                           properties:
                             key:
                               type: string
@@ -1954,9 +1953,77 @@ paths:
                               properties:
                                 x:
                                   type: integer
+                                  description: The x position
+                                  example:
+                                    - '12'
                                 'y':
                                   type: integer
+                                  description: The y position
+                                  example:
+                                    - '15'
+                              deprecated: true
+                            state:
+                              title: RunningState
+                              description: the node's running state
+                              enum:
+                                - UNKNOWN
+                                - NOT_STARTED
+                                - PUBLISHED
+                                - PENDING
+                                - STARTED
+                                - RETRY
+                                - SUCCESS
+                                - FAILURE
+                                - ABORTED
+                              type: string
                       additionalProperties: true
+                    ui:
+                      type: object
+                      additionalProperties: true
+                      properties:
+                        workbench:
+                          type: object
+                          x-patternProperties:
+                            ^\S+$:
+                              type: object
+                              additionalProperties: false
+                              required:
+                                - position
+                              properties:
+                                position:
+                                  type: object
+                                  additionalProperties: false
+                                  required:
+                                    - x
+                                    - 'y'
+                                  properties:
+                                    x:
+                                      type: integer
+                                      description: The x position
+                                      example:
+                                        - '12'
+                                    'y':
+                                      type: integer
+                                      description: The y position
+                                      example:
+                                        - '15'
+                          additionalProperties: true
+                        slideshow:
+                          type: object
+                          x-patternProperties:
+                            ^\S+$:
+                              type: object
+                              additionalProperties: false
+                              required:
+                                - position
+                              properties:
+                                position:
+                                  type: integer
+                                  description: Slide's position
+                                  example:
+                                    - 0
+                                    - 2
+                          additionalProperties: true
                     tags:
                       type: array
                       items:
@@ -1970,6 +2037,74 @@ paths:
                     dev:
                       type: object
                       description: object used for development purposes only
+                    state:
+                      title: State
+                      description: Project state
+                      allOf:
+                        - title: ProjectState
+                          type: object
+                          properties:
+                            locked:
+                              title: Locked
+                              description: The project lock state
+                              allOf:
+                                - title: ProjectLocked
+                                  type: object
+                                  properties:
+                                    value:
+                                      title: Value
+                                      description: True if the project is locked by another user
+                                      type: boolean
+                                    owner:
+                                      title: Owner
+                                      description: The user that owns the lock
+                                      allOf:
+                                        - title: Owner
+                                          type: object
+                                          properties:
+                                            first_name:
+                                              title: First Name
+                                              description: Owner first name
+                                              example:
+                                                - John
+                                              type: string
+                                            last_name:
+                                              title: Last Name
+                                              description: Owner last name
+                                              example:
+                                                - Smith
+                                              type: string
+                                          required:
+                                            - first_name
+                                            - last_name
+                                  required:
+                                    - value
+                            state:
+                              title: State
+                              description: The project running state
+                              allOf:
+                                - title: ProjectRunningState
+                                  type: object
+                                  properties:
+                                    value:
+                                      title: RunningState
+                                      description: An enumeration.
+                                      enum:
+                                        - UNKNOWN
+                                        - NOT_STARTED
+                                        - PUBLISHED
+                                        - PENDING
+                                        - STARTED
+                                        - RETRY
+                                        - SUCCESS
+                                        - FAILURE
+                                        - ABORTED
+                                      type: string
+                                  required:
+                                    - value
+                          required:
+                            - locked
+                            - state
                 destination:
                   title: simcore project
                   description: Description of a simcore project
@@ -2042,14 +2177,13 @@ paths:
                     workbench:
                       type: object
                       x-patternProperties:
-                        ^\S+$:
+                        ^\d+$:
                           type: object
                           additionalProperties: false
                           required:
                             - key
                             - version
                             - label
-                            - position
                           properties:
                             key:
                               type: string
@@ -2195,9 +2329,77 @@ paths:
                               properties:
                                 x:
                                   type: integer
+                                  description: The x position
+                                  example:
+                                    - '12'
                                 'y':
                                   type: integer
+                                  description: The y position
+                                  example:
+                                    - '15'
+                              deprecated: true
+                            state:
+                              title: RunningState
+                              description: the node's running state
+                              enum:
+                                - UNKNOWN
+                                - NOT_STARTED
+                                - PUBLISHED
+                                - PENDING
+                                - STARTED
+                                - RETRY
+                                - SUCCESS
+                                - FAILURE
+                                - ABORTED
+                              type: string
                       additionalProperties: true
+                    ui:
+                      type: object
+                      additionalProperties: true
+                      properties:
+                        workbench:
+                          type: object
+                          x-patternProperties:
+                            ^\S+$:
+                              type: object
+                              additionalProperties: false
+                              required:
+                                - position
+                              properties:
+                                position:
+                                  type: object
+                                  additionalProperties: false
+                                  required:
+                                    - x
+                                    - 'y'
+                                  properties:
+                                    x:
+                                      type: integer
+                                      description: The x position
+                                      example:
+                                        - '12'
+                                    'y':
+                                      type: integer
+                                      description: The y position
+                                      example:
+                                        - '15'
+                          additionalProperties: true
+                        slideshow:
+                          type: object
+                          x-patternProperties:
+                            ^\S+$:
+                              type: object
+                              additionalProperties: false
+                              required:
+                                - position
+                              properties:
+                                position:
+                                  type: integer
+                                  description: Slide's position
+                                  example:
+                                    - 0
+                                    - 2
+                          additionalProperties: true
                     tags:
                       type: array
                       items:
@@ -2211,6 +2413,74 @@ paths:
                     dev:
                       type: object
                       description: object used for development purposes only
+                    state:
+                      title: State
+                      description: Project state
+                      allOf:
+                        - title: ProjectState
+                          type: object
+                          properties:
+                            locked:
+                              title: Locked
+                              description: The project lock state
+                              allOf:
+                                - title: ProjectLocked
+                                  type: object
+                                  properties:
+                                    value:
+                                      title: Value
+                                      description: True if the project is locked by another user
+                                      type: boolean
+                                    owner:
+                                      title: Owner
+                                      description: The user that owns the lock
+                                      allOf:
+                                        - title: Owner
+                                          type: object
+                                          properties:
+                                            first_name:
+                                              title: First Name
+                                              description: Owner first name
+                                              example:
+                                                - John
+                                              type: string
+                                            last_name:
+                                              title: Last Name
+                                              description: Owner last name
+                                              example:
+                                                - Smith
+                                              type: string
+                                          required:
+                                            - first_name
+                                            - last_name
+                                  required:
+                                    - value
+                            state:
+                              title: State
+                              description: The project running state
+                              allOf:
+                                - title: ProjectRunningState
+                                  type: object
+                                  properties:
+                                    value:
+                                      title: RunningState
+                                      description: An enumeration.
+                                      enum:
+                                        - UNKNOWN
+                                        - NOT_STARTED
+                                        - PUBLISHED
+                                        - PENDING
+                                        - STARTED
+                                        - RETRY
+                                        - SUCCESS
+                                        - FAILURE
+                                        - ABORTED
+                                      type: string
+                                  required:
+                                    - value
+                          required:
+                            - locked
+                            - state
                 nodes_map:
                   type: object
                   description: maps source and destination node uuids
@@ -2293,14 +2563,13 @@ paths:
                   workbench:
                     type: object
                     x-patternProperties:
-                      ^\S+$:
+                      ^\d+$:
                         type: object
                         additionalProperties: false
                         required:
                           - key
                           - version
                           - label
-                          - position
                         properties:
                           key:
                             type: string
@@ -2446,9 +2715,77 @@ paths:
                             properties:
                               x:
                                 type: integer
+                                description: The x position
+                                example:
+                                  - '12'
                               'y':
                                 type: integer
+                                description: The y position
+                                example:
+                                  - '15'
+                            deprecated: true
+                          state:
+                            title: RunningState
+                            description: the node's running state
+                            enum:
+                              - UNKNOWN
+                              - NOT_STARTED
+                              - PUBLISHED
+                              - PENDING
+                              - STARTED
+                              - RETRY
+                              - SUCCESS
+                              - FAILURE
+                              - ABORTED
+                            type: string
                     additionalProperties: true
+                  ui:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      workbench:
+                        type: object
+                        x-patternProperties:
+                          ^\S+$:
+                            type: object
+                            additionalProperties: false
+                            required:
+                              - position
+                            properties:
+                              position:
+                                type: object
+                                additionalProperties: false
+                                required:
+                                  - x
+                                  - 'y'
+                                properties:
+                                  x:
+                                    type: integer
+                                    description: The x position
+                                    example:
+                                      - '12'
+                                  'y':
+                                    type: integer
+                                    description: The y position
+                                    example:
+                                      - '15'
+                        additionalProperties: true
+                      slideshow:
+                        type: object
+                        x-patternProperties:
+                          ^\S+$:
+                            type: object
+                            additionalProperties: false
+                            required:
+                              - position
+                            properties:
+                              position:
+                                type: integer
+                                description: Slide's position
+                                example:
+                                  - 0
+                                  - 2
+                        additionalProperties: true
                   tags:
                     type: array
                     items:
@@ -2462,6 +2799,74 @@ paths:
                   dev:
                     type: object
                     description: object used for development purposes only
+                  state:
+                    title: State
+                    description: Project state
+                    allOf:
+                      - title: ProjectState
+                        type: object
+                        properties:
+                          locked:
+                            title: Locked
+                            description: The project lock state
+                            allOf:
+                              - title: ProjectLocked
+                                type: object
+                                properties:
+                                  value:
+                                    title: Value
+                                    description: True if the project is locked by another user
+                                    type: boolean
+                                  owner:
+                                    title: Owner
+                                    description: The user that owns the lock
+                                    allOf:
+                                      - title: Owner
+                                        type: object
+                                        properties:
+                                          first_name:
+                                            title: First Name
+                                            description: Owner first name
+                                            example:
+                                              - John
+                                            type: string
+                                          last_name:
+                                            title: Last Name
+                                            description: Owner last name
+                                            example:
+                                              - Smith
+                                            type: string
+                                        required:
+                                          - first_name
+                                          - last_name
+                                required:
+                                  - value
+                          state:
+                            title: State
+                            description: The project running state
+                            allOf:
+                              - title: ProjectRunningState
+                                type: object
+                                properties:
+                                  value:
+                                    title: RunningState
+                                    description: An enumeration.
+                                    enum:
+                                      - UNKNOWN
+                                      - NOT_STARTED
+                                      - PUBLISHED
+                                      - PENDING
+                                      - STARTED
+                                      - RETRY
+                                      - SUCCESS
+                                      - FAILURE
+                                      - ABORTED
+                                    type: string
+                                required:
+                                  - value
+                        required:
+                          - locked
+                          - state
         default:
           description: Unexpected error
           content:
@@ -2644,14 +3049,13 @@ components:
         workbench:
           type: object
           x-patternProperties:
-            ^\S+$:
+            ^\d+$:
               type: object
               additionalProperties: false
               required:
                 - key
                 - version
                 - label
-                - position
               properties:
                 key:
                   type: string
@@ -2797,9 +3201,77 @@ components:
                   properties:
                     x:
                       type: integer
+                      description: The x position
+                      example:
+                        - '12'
                     'y':
                       type: integer
+                      description: The y position
+                      example:
+                        - '15'
+                  deprecated: true
+                state:
+                  title: RunningState
+                  description: the node's running state
+                  enum:
+                    - UNKNOWN
+                    - NOT_STARTED
+                    - PUBLISHED
+                    - PENDING
+                    - STARTED
+                    - RETRY
+                    - SUCCESS
+                    - FAILURE
+                    - ABORTED
+                  type: string
           additionalProperties: true
+        ui:
+          type: object
+          additionalProperties: true
+          properties:
+            workbench:
+              type: object
+              x-patternProperties:
+                ^\S+$:
+                  type: object
+                  additionalProperties: false
+                  required:
+                    - position
+                  properties:
+                    position:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - x
+                        - 'y'
+                      properties:
+                        x:
+                          type: integer
+                          description: The x position
+                          example:
+                            - '12'
+                        'y':
+                          type: integer
+                          description: The y position
+                          example:
+                            - '15'
+              additionalProperties: true
+            slideshow:
+              type: object
+              x-patternProperties:
+                ^\S+$:
+                  type: object
+                  additionalProperties: false
+                  required:
+                    - position
+                  properties:
+                    position:
+                      type: integer
+                      description: Slide's position
+                      example:
+                        - 0
+                        - 2
+              additionalProperties: true
         tags:
           type: array
           items:
@@ -2813,6 +3285,74 @@ components:
         dev:
           type: object
           description: object used for development purposes only
+        state:
+          title: State
+          description: Project state
+          allOf:
+            - title: ProjectState
+              type: object
+              properties:
+                locked:
+                  title: Locked
+                  description: The project lock state
+                  allOf:
+                    - title: ProjectLocked
+                      type: object
+                      properties:
+                        value:
+                          title: Value
+                          description: True if the project is locked by another user
+                          type: boolean
+                        owner:
+                          title: Owner
+                          description: The user that owns the lock
+                          allOf:
+                            - title: Owner
+                              type: object
+                              properties:
+                                first_name:
+                                  title: First Name
+                                  description: Owner first name
+                                  example:
+                                    - John
+                                  type: string
+                                last_name:
+                                  title: Last Name
+                                  description: Owner last name
+                                  example:
+                                    - Smith
+                                  type: string
+                              required:
+                                - first_name
+                                - last_name
+                      required:
+                        - value
+                state:
+                  title: State
+                  description: The project running state
+                  allOf:
+                    - title: ProjectRunningState
+                      type: object
+                      properties:
+                        value:
+                          title: RunningState
+                          description: An enumeration.
+                          enum:
+                            - UNKNOWN
+                            - NOT_STARTED
+                            - PUBLISHED
+                            - PENDING
+                            - STARTED
+                            - RETRY
+                            - SUCCESS
+                            - FAILURE
+                            - ABORTED
+                          type: string
+                      required:
+                        - value
+              required:
+                - locked
+                - state
   responses:
     OK_NoContent_204:
       description: 'everything is OK, but there is no content to return'

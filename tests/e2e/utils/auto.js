@@ -155,6 +155,28 @@ async function dashboardOpenFirstTemplate(page, templateName) {
   return false;
 }
 
+async function dashboardOpenFirstService(page, serviceName) {
+  // Returns true if template is found
+  console.log("Creating New Study from template");
+
+  await utils.waitAndClick(page, '[osparc-test-id="discoverTabBtn"]')
+
+  if (serviceName) {
+    await __filterTemplatesByText(page, serviceName);
+  }
+
+  await page.waitForSelector('[osparc-test-id="servicesList"]')
+  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="servicesList"]');
+
+  if (children.length) {
+    const firstChildId = '[osparc-test-id="' + children[0] + '"]';
+    await utils.waitAndClick(page, firstChildId);
+    return true;
+  }
+  console.log("Creating New Study from template: no template found");
+  return false;
+}
+
 async function __filterStudiesByText(page, studyName) {
   console.log("Filtering by", studyName);
 
@@ -182,16 +204,16 @@ async function runStudy(page, waitFor = 0) {
   console.log("Running study");
 
   const responsesQueue = new responses.ResponsesQueue(page);
-  responsesQueue.addResponseListener("/start");
+  responsesQueue.addResponseListener(":start");
 
   await utils.waitAndClick(page, '[osparc-test-id="runStudyBtn"]')
 
   // make sure start request was sent
   const tries = 3;
-  let reqInQueue = responsesQueue.isRequestInQueue("/start");
+  let reqInQueue = responsesQueue.isRequestInQueue(":start");
   for (let i = 0; i < tries && reqInQueue; i++) {
     await utils.sleep(200);
-    reqInQueue = responsesQueue.isRequestInQueue("/start");
+    reqInQueue = responsesQueue.isRequestInQueue(":start");
   }
   if (reqInQueue) {
     console.log("Starting pipeline didn't work, pressing 'Run' again");
@@ -199,7 +221,7 @@ async function runStudy(page, waitFor = 0) {
   }
 
   try {
-    await responsesQueue.waitUntilResponse("/start");
+    await responsesQueue.waitUntilResponse(":start");
   }
   catch (err) {
     console.error(err);
@@ -339,6 +361,7 @@ module.exports = {
   dashboardEditFristStudyThumbnail,
   dashboardNewStudy,
   dashboardOpenFirstTemplate,
+  dashboardOpenFirstService,
   clickLoggerTitle,
   runStudy,
   dashboardDeleteFirstStudy,

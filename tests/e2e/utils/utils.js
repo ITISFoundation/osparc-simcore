@@ -145,6 +145,26 @@ async function waitForResponse(page, url) {
   })
 }
 
+async function isServiceReady(page, prefix, studyId, nodeId) {
+  const url = prefix + "/projects/" + studyId +"/nodes/" + nodeId;
+  console.log("-- Is service ready", url, ":");
+  const resp = await page.evaluate(async (url) => {
+    const resp = await fetch(url);
+    const jsonResp = await resp.json();
+    console.log(jsonResp)
+    return jsonResp;
+  }, url);
+
+  const status = resp["data"]["service_state"];
+  console.log("Status:", nodeId, status);
+  const stopListening = [
+    "running",
+    "complete",
+    "failed"
+  ];
+  return stopListening.includes(status);
+}
+
 async function waitForValidOutputFile(page) {
   return new Promise((resolve, reject) => {
     page.on("response", function callback(resp) {
@@ -243,6 +263,7 @@ module.exports = {
   emptyField,
   dragAndDrop,
   waitForResponse,
+  isServiceReady,
   waitForValidOutputFile,
   waitAndClick,
   clearInput,

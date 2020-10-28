@@ -38,14 +38,6 @@ resource_manager:
   redis:
     host: ${REDIS_HOST}
     port: ${REDIS_PORT}
-rabbit:
-  host: ${RABBIT_HOST}
-  port: ${RABBIT_PORT}
-  user: ${RABBIT_USER}
-  password: ${RABBIT_PASSWORD}
-  channels:
-    log: "comp.backend.channels.log"
-    instrumentation: "comp.backend.channels.instrumentation"
 login:
   enabled: True
   registration_invitation_required: ${WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED}

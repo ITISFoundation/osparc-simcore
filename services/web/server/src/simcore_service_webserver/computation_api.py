@@ -2,32 +2,41 @@
 
 """
 # pylint: disable=too-many-arguments
-
-import datetime
 import logging
+from datetime import datetime
 from pprint import pformat
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import psycopg2.errors
 import sqlalchemy as sa
 from aiohttp import web, web_exceptions
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
+from celery import Celery
+from celery.contrib.abortable import AbortableAsyncResult
 from sqlalchemy import and_
 
-from servicelib.application_keys import APP_DB_ENGINE_KEY
-from simcore_postgres_database.models.comp_pipeline import UNKNOWN
-from simcore_postgres_database.models.comp_tasks import NodeClass
-from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
+from models_library.projects import RunningState
+from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
+from servicelib.logging_utils import log_decorator
+from simcore_postgres_database.models.comp_pipeline import StateType
+from simcore_postgres_database.webserver_models import (
+    NodeClass,
+    comp_pipeline,
+    comp_tasks,
+)
 
 # TODO: move this to computation_models
 from simcore_service_webserver.computation_models import to_node_class
 
+from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
+from .computation_config import ComputationSettings
 from .director import director_api
 
 log = logging.getLogger(__file__)
 
 
+@log_decorator(logger=log)
 async def _get_node_details(
     node_key: str, node_version: str, app: web.Application
 ) -> Dict:
@@ -79,6 +88,7 @@ async def _get_node_details(
     return node_details
 
 
+@log_decorator(logger=log)
 async def _get_node_extras(
     node_key: str, node_version: str, app: web.Application
 ) -> Dict:
@@ -99,6 +109,7 @@ async def _get_node_extras(
     return node_extras
 
 
+@log_decorator(logger=log)
 async def _build_adjacency_list(
     node_uuid: str,
     node_schema: Dict,
@@ -144,6 +155,7 @@ async def _build_adjacency_list(
     return dag_adjacency_list
 
 
+@log_decorator(logger=log)
 async def _parse_project_data(pipeline_data: Dict, app: web.Application):
     dag_adjacency_list = dict()
     tasks = dict()
@@ -225,6 +237,7 @@ async def _parse_project_data(pipeline_data: Dict, app: web.Application):
     return dag_adjacency_list, tasks
 
 
+@log_decorator(logger=log)
 async def _set_adjacency_in_pipeline_db(
     db_engine: Engine, project_id: str, dag_adjacency_list: Dict
 ):
@@ -245,7 +258,7 @@ async def _set_adjacency_in_pipeline_db(
             query = comp_pipeline.insert().values(
                 project_id=project_id,
                 dag_adjacency_list=dag_adjacency_list,
-                state=UNKNOWN,
+                state=StateType.NOT_STARTED,
             )
         else:
             # update pipeline
@@ -253,12 +266,15 @@ async def _set_adjacency_in_pipeline_db(
             query = (
                 comp_pipeline.update()
                 .where(comp_pipeline.c.project_id == project_id)
-                .values(dag_adjacency_list=dag_adjacency_list, state=UNKNOWN)
+                .values(
+                    dag_adjacency_list=dag_adjacency_list, state=StateType.NOT_STARTED
+                )
             )
 
         await conn.execute(query)
 
 
+@log_decorator(logger=log)
 async def _set_tasks_in_tasks_db(
     db_engine: Engine, project_id: str, tasks: Dict[str, Dict], replace_pipeline=True
 ):
@@ -335,7 +351,7 @@ async def _set_tasks_in_tasks_db(
             # effectively marking a rest of the pipeline without loosing
             # inputs from comp services
             for task_row in tasks_rows:
-                # for some reason the outputs are not present in the 
+                # for some reason the outputs are not present in the
                 # tasks outputs. copy them over (will be used below)
                 tasks[task_row.node_id]["outputs"] = task_row.outputs
                 if not task_row.node_id in tasks:
@@ -347,7 +363,7 @@ async def _set_tasks_in_tasks_db(
                                 comp_tasks.c.node_id == task_row.node_id,
                             )
                         )
-                        .values(job_id=None, state=UNKNOWN)
+                        .values(job_id=None, state=StateType.NOT_STARTED)
                     )
                     await conn.execute(query)
 
@@ -369,7 +385,7 @@ async def _set_tasks_in_tasks_db(
                         schema=task["schema"],
                         inputs=task["inputs"],
                         outputs=task["outputs"] if task["outputs"] else {},
-                        submit=datetime.datetime.utcnow(),
+                        submit=datetime.utcnow(),
                     )
 
                     await conn.execute(query)
@@ -392,13 +408,13 @@ async def _set_tasks_in_tasks_db(
                         )
                         .values(
                             job_id=None,
-                            state=UNKNOWN,
+                            state=StateType.NOT_STARTED,
                             node_class=task["node_class"],
                             image=task["image"],
                             schema=task["schema"],
                             inputs=task["inputs"],
                             outputs=task["outputs"] if task["outputs"] else {},
-                            submit=datetime.datetime.utcnow(),
+                            submit=datetime.utcnow(),
                         )
                     )
                     await conn.execute(query)
@@ -411,6 +427,7 @@ async def _set_tasks_in_tasks_db(
 #
 
 
+@log_decorator(logger=log)
 async def update_pipeline_db(
     app: web.Application,
     project_id: str,
@@ -423,7 +440,6 @@ async def update_pipeline_db(
     """
     db_engine = app[APP_DB_ENGINE_KEY]
 
-    log.debug("Updating pipeline for project %s", project_id)
     dag_adjacency_list, tasks = await _parse_project_data(project_data, app)
 
     log.debug(
@@ -434,9 +450,175 @@ async def update_pipeline_db(
     log.debug("Saving dag-list to comp_tasks table:\n %s", pformat(tasks))
     await _set_tasks_in_tasks_db(db_engine, project_id, tasks, replace_pipeline)
 
-    log.info("Pipeline has been updated for project %s", project_id)
+
+def get_celery(_app: web.Application) -> Celery:
+    comp_settings: ComputationSettings = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
+    celery_app = Celery(
+        comp_settings.task_name,
+        broker=comp_settings.broker_url,
+        backend=comp_settings.result_backend,
+    )
+    return celery_app
 
 
+def get_celery_task_name(app: web.Application) -> str:
+    comp_settings: ComputationSettings = app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
+    return comp_settings.task_name
+
+
+def get_celery_publication_timeout(app: web.Application) -> int:
+    comp_settings: ComputationSettings = app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
+    return comp_settings.publication_timeout
+
+
+@log_decorator(logger=log)
+async def _set_tasks_in_tasks_db_as_published(
+    db_engine: Engine, project_id: str
+) -> None:
+    query = (
+        # pylint: disable=no-value-for-parameter
+        comp_tasks.update()
+        .where(
+            (comp_tasks.c.project_id == project_id)
+            & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+        )
+        .values(state=StateType.PUBLISHED)
+    )
+    async with db_engine.acquire() as conn:
+        await conn.execute(query)
+
+
+@log_decorator(logger=log)
+async def start_pipeline_computation(
+    app: web.Application, user_id: int, project_id: str
+) -> Optional[str]:
+
+    db_engine = app[APP_DB_ENGINE_KEY]
+    await _set_tasks_in_tasks_db_as_published(db_engine, project_id)
+
+    # publish the tasks to celery
+    task = get_celery(app).send_task(
+        get_celery_task_name(app),
+        expires=get_celery_publication_timeout(app),
+        kwargs={"user_id": user_id, "project_id": project_id},
+    )
+    if not task:
+        log.error(
+            "Task for user_id %s, project %s could not be started", user_id, project_id
+        )
+        return
+
+    log.debug(
+        "Task (task=%s, user_id=%s, project_id=%s) submitted for execution.",
+        task.task_id,
+        user_id,
+        project_id,
+    )
+    return task.task_id
+
+
+@log_decorator(logger=log)
+async def stop_pipeline_computation(app: web.Application, project_id: str) -> None:
+    db_engine = app[APP_DB_ENGINE_KEY]
+
+    async with db_engine.acquire() as conn:
+        # start by setting all pending tasks to aborted, so the sidecar will stop taking them
+        await conn.execute(
+            sa.update(comp_tasks)
+            .where(
+                (comp_tasks.c.project_id == project_id)
+                & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+                & (
+                    (comp_tasks.c.state == StateType.PUBLISHED)
+                    | (comp_tasks.c.state == StateType.PENDING)
+                )
+            )
+            .values(state=StateType.ABORTED)
+        )
+        # now try to stop the remaining running tasks
+        async for row in conn.execute(
+            sa.select([comp_tasks]).where(
+                (comp_tasks.c.project_id == project_id)
+                & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+                & (comp_tasks.c.job_id != None)
+            )
+        ):
+
+            task_result = AbortableAsyncResult(row.job_id)
+            if task_result:
+                task_result.abort()
+
+
+DB_TO_RUNNING_STATE = {
+    StateType.FAILED: RunningState.FAILURE,
+    StateType.PENDING: RunningState.PENDING,
+    StateType.SUCCESS: RunningState.SUCCESS,
+    StateType.PUBLISHED: RunningState.PUBLISHED,
+    StateType.NOT_STARTED: RunningState.NOT_STARTED,
+    StateType.RUNNING: RunningState.STARTED,
+    StateType.ABORTED: RunningState.ABORTED,
+}
+
+
+@log_decorator(logger=log)
+def convert_state_from_db(db_state: StateType) -> RunningState:
+    return RunningState(DB_TO_RUNNING_STATE[StateType(db_state)])
+
+
+@log_decorator(logger=log)
+async def get_task_states(
+    app: web.Application, project_id: str
+) -> Dict[str, Tuple[RunningState, datetime]]:
+    db_engine = app[APP_DB_ENGINE_KEY]
+    task_states: Dict[str, RunningState] = {}
+    async with db_engine.acquire() as conn:
+        async for row in conn.execute(
+            sa.select([comp_tasks]).where(comp_tasks.c.project_id == project_id)
+        ):
+            if row.node_class != NodeClass.COMPUTATIONAL:
+                continue
+            task_states[row.node_id] = (convert_state_from_db(row.state), row.submit)
+            # the task might be running, better ask celery (NOTE this remains only 24h and disappears and state will be pending)
+            # task_result = AsyncResult(row.job_id)
+
+            # running_state = _from_celery_state(task_result.state)
+            # task_states[row.node_id] = running_state
+    return task_states
+
+
+@log_decorator(logger=log)
+async def get_pipeline_state(app: web.Application, project_id: str) -> RunningState:
+    task_states: Dict[str, Tuple[RunningState, datetime]] = await get_task_states(
+        app, project_id
+    )
+    # compute pipeline state from task states
+    now = datetime.utcnow()
+    if task_states:
+        # put in a set of unique values
+        set_states = {state[0] for state in task_states.values()}
+        last_update = next(
+            iter(sorted([time[1] for time in task_states.values()], reverse=True))
+        )
+        if RunningState.PUBLISHED in set_states:
+            if (now - last_update).seconds > get_celery_publication_timeout(app):
+                return RunningState.NOT_STARTED
+        if len(set_states) == 1:
+            # this is typically for success, pending, published
+            return next(iter(set_states))
+
+        for state in [
+            RunningState.FAILURE,  # task is failed -> pipeline as well
+            RunningState.PUBLISHED,  # still in publishing phase
+            RunningState.STARTED,  # task is started or retrying
+            RunningState.PENDING,  # still running
+        ]:
+            if state in set_states:
+                return state
+
+    return RunningState.NOT_STARTED
+
+
+@log_decorator(logger=log)
 async def delete_pipeline_db(app: web.Application, project_id: str) -> None:
     db_engine = app[APP_DB_ENGINE_KEY]
 
@@ -448,6 +630,7 @@ async def delete_pipeline_db(app: web.Application, project_id: str) -> None:
         await conn.execute(query)
 
 
+@log_decorator(logger=log)
 async def get_task_output(
     app: web.Application, project_id: str, node_id: str
 ) -> Optional[Dict]:

@@ -14,27 +14,28 @@ DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
 export DOCKER_IMAGE_TAG
 
 install() {
-    bash ci/helpers/ensure_python_pip.bash
-    pushd tests/swarm-deploy; pip3 install -r requirements/ci.txt; popd
-    make pull-version || ( (make pull-cache || true) && make build-x tag-version)
-    make .env
-    pip list -v
-    make info-images
+  bash ci/helpers/ensure_python_pip.bash
+  pushd tests/swarm-deploy
+  pip3 install -r requirements/ci.txt
+  popd
+  make pull-version || ( (make pull-cache || true) && make build-x tag-version)
+  make .env
+  pip list -v
+  make info-images
 }
 
 test() {
-    pytest  --color=yes --cov-report=term-missing -v tests/swarm-deploy
+  pytest --color=yes --cov-report=term-missing -v tests/swarm-deploy --log-level=DEBUG
 }
 
 clean_up() {
-    docker images
-    make down
-    make leave
+  docker images
+  make down
+  make leave
 }
 
 # Check if the function exists (bash specific)
-if declare -f "$1" > /dev/null
-then
+if declare -f "$1" >/dev/null; then
   # call arguments verbatim
   "$@"
 else

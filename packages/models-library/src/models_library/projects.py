@@ -11,6 +11,22 @@ current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve
 
 DATE_RE = r"\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z"
 
+GroupID = constr(regex=r"^\d+$")
+NodeID = constr(regex=r"^\d+$")
+ClassifierID = str
+
+
+class RunningState(str, Enum):
+    UNKNOWN = "UNKNOWN"
+    PUBLISHED = "PUBLISHED"
+    NOT_STARTED = "NOT_STARTED"
+    PENDING = "PENDING"
+    STARTED = "STARTED"
+    RETRY = "RETRY"
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
+    ABORTED = "ABORTED"
+
 
 class PortLink(BaseModel):
     nodeUuid: UUID4 = Field(
@@ -82,6 +98,20 @@ class Position(BaseModel):
         extra = Extra.forbid
 
 
+class WorkbenchUI(BaseModel):
+    position: Position = Field(..., description="The node position in the workbench")
+
+    class Config:
+        extra = Extra.forbid
+
+
+class Slideshow(BaseModel):
+    position: int = Field(..., description="Slide's position", example=["0", "2"])
+
+    class Config:
+        extra = Extra.forbid
+
+
 InputTypes = Union[int, bool, str, float, PortLink, SimCoreFileLink, DatCoreFileLink]
 OutputTypes = Union[int, bool, str, float, SimCoreFileLink, DatCoreFileLink]
 InputID = constr(regex=PROPERTY_KEY_RE)
@@ -108,7 +138,9 @@ class Node(BaseModel):
     label: str = Field(
         ..., description="The short name of the node", example=["JupyterLab"]
     )
-    progress: float = Field(..., ge=0, le=100, description="the node progress value")
+    progress: Optional[float] = Field(
+        None, ge=0, le=100, description="the node progress value"
+    )
     thumbnail: Optional[HttpUrl] = Field(
         None,
         description="url of the latest screenshot of the node",
@@ -116,13 +148,13 @@ class Node(BaseModel):
     )
 
     inputs: Optional[Dict[InputID, InputTypes]] = Field(
-        ..., description="values of input properties"
+        None, description="values of input properties"
     )
     inputAccess: Optional[Dict[InputID, AccessEnum]] = Field(
-        ..., description="map with key - access level pairs"
+        None, description="map with key - access level pairs"
     )
     inputNodes: Optional[List[UUID4]] = Field(
-        ...,
+        None,
         description="node IDs of where the node is connected to",
         example=["nodeUuid1", "nodeUuid2"],
     )
@@ -130,7 +162,7 @@ class Node(BaseModel):
     outputs: Optional[Dict[OutputID, OutputTypes]] = None
     outputNode: Optional[bool] = Field(None, deprecated=True)
     outputNodes: Optional[List[UUID4]] = Field(
-        ...,
+        None,
         description="Used in group-nodes. Node IDs of those connected to the output",
         example=["nodeUuid1", "nodeUuid2"],
     )
@@ -141,10 +173,21 @@ class Node(BaseModel):
         example=["nodeUUid1", "nodeUuid2"],
     )
 
-    position: Position = Field(...)
+    position: Optional[Position] = Field(None, deprecated=True)
+
+    state: Optional[RunningState] = Field(
+        RunningState.NOT_STARTED,
+        description="the node's running state",
+        example=["RUNNING", "FAILURE"],
+    )
 
     class Config:
         extra = Extra.forbid
+
+
+class StudyUI(BaseModel):
+    workbench: Optional[Dict[NodeID, WorkbenchUI]] = Field(None)
+    slideshow: Optional[Dict[NodeID, Slideshow]] = Field(None)
 
 
 class AccessRights(BaseModel):
@@ -156,9 +199,27 @@ class AccessRights(BaseModel):
         extra = Extra.forbid
 
 
-GroupID = constr(regex=r"^\d+$")
-NodeID = constr(regex=r"^\d+$")
-ClassifierID = str
+class Owner(BaseModel):
+    first_name: str = Field(..., description="Owner first name", example=["John"])
+    last_name: str = Field(..., description="Owner last name", example=["Smith"])
+
+
+class ProjectLocked(BaseModel):
+    value: bool = Field(
+        ..., description="True if the project is locked by another user"
+    )
+    owner: Optional[Owner] = Field(None, description="The user that owns the lock")
+
+
+class ProjectRunningState(BaseModel):
+    value: RunningState = Field(
+        ..., description="The running state of the project", example=["STARTED"]
+    )
+
+
+class ProjectState(BaseModel):
+    locked: ProjectLocked = Field(..., description="The project lock state")
+    state: ProjectRunningState = Field(..., description="The project running state")
 
 
 class Project(BaseModel):
@@ -202,6 +263,7 @@ class Project(BaseModel):
         example=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )
     workbench: Dict[NodeID, Node]
+    ui: Optional[StudyUI]
     tags: Optional[List[int]] = Field(None)
     classifiers: Optional[List[ClassifierID]] = Field(
         None,
@@ -211,6 +273,7 @@ class Project(BaseModel):
     dev: Optional[Dict] = Field(
         None, description="object used for development purposes only"
     )
+    state: Optional[ProjectState] = Field(None, description="Project state")
 
     class Config:
         description = "Description of a simcore project"
@@ -218,22 +281,10 @@ class Project(BaseModel):
         extra = Extra.forbid
 
 
-class Owner(BaseModel):
-    first_name: str
-    last_name: str
-
-
-class ProjectLocked(BaseModel):
-    value: bool
-    owner: Optional[Owner]
-
-
-class ProjectState(BaseModel):
-    locked: ProjectLocked
-
-
 __all__ = [
     "ProjectState",
+    "ProjectRunningState",
     "ProjectLocked",
+    "RunningState",
     "Owner",
 ]

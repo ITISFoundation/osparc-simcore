@@ -23,10 +23,7 @@
 qx.Class.define("osparc.component.metadata.StudyInfo", {
   extend: qx.ui.core.Widget,
 
-  /**
-    * @param study {osparc.data.model.Study} Study model
-    */
-  construct: function(study) {
+  construct: function() {
     this.base(arguments);
 
     this.set({
@@ -36,7 +33,6 @@ qx.Class.define("osparc.component.metadata.StudyInfo", {
     this._setLayout(new qx.ui.layout.VBox(8));
 
     this._add(this.__getMoreInfoMenuButton());
-    this.setStudy(study);
   },
 
   properties: {
@@ -62,13 +58,13 @@ qx.Class.define("osparc.component.metadata.StudyInfo", {
       return moreInfoButton;
     },
 
-    _applyStudy: function(newStudy) {
+    _applyStudy: function(study) {
       if (this.__studyDetails) {
         this._remove(this.__studyDetails);
       }
 
       const windowWidth = 400;
-      const studyDetails = this.__studyDetails = new osparc.component.metadata.StudyDetails(newStudy, windowWidth);
+      const studyDetails = this.__studyDetails = new osparc.component.metadata.StudyDetails(study, windowWidth);
       this._add(studyDetails);
     },
 
@@ -76,7 +72,7 @@ qx.Class.define("osparc.component.metadata.StudyInfo", {
       const width = 500;
       const height = 500;
       const title = this.tr("Study Details Editor");
-      const studyDetailsEditor = new osparc.component.metadata.StudyDetailsEditor(this.getStudy().serializeStudy(), false, width);
+      const studyDetailsEditor = new osparc.component.metadata.StudyDetailsEditor(this.getStudy().serialize(), false, width);
       studyDetailsEditor.showOpenButton(false);
       const win = osparc.ui.window.Window.popUpInWindow(studyDetailsEditor, title, width, height);
       studyDetailsEditor.addListener("updateStudy", e => {

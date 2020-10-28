@@ -16,6 +16,8 @@
 ************************************************************************ */
 
 /**
+ * @asset(form/service.json)
+ * @asset(form/service-data.json)
  * @ignore(Headers)
  * @ignore(fetch)
  */
@@ -339,7 +341,10 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         return;
       }
 
-      this.fireDataEvent("startStudy", studyId);
+      const data = {
+        studyId: studyId
+      };
+      this.fireDataEvent("startStudy", data);
     },
 
     __resetTemplateItem: function(templateData) {

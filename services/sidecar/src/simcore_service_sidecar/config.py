@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from simcore_sdk.config.rabbit import Config as RabbitConfig
+from models_library.celery import CeleryConfig
 
 SERVICES_MAX_NANO_CPUS: int = min(
     multiprocessing.cpu_count() * pow(10, 9),
@@ -42,11 +42,17 @@ SIDECAR_HOST_HOSTNAME_PATH: Path = Path(
     os.environ.get("SIDECAR_HOST_HOSTNAME_PATH", Path.home() / "hostname")
 )
 
+SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S: int = int(
+    os.environ.get("SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S", 2)
+)
+
 SIDECAR_LOGLEVEL: str = getattr(
     logging, os.environ.get("SIDECAR_LOGLEVEL", "WARNING").upper(), logging.DEBUG
 )
 
-DOCKER_REGISTRY: str = os.environ.get("REGISTRY_URL", "masu.speag.com")
+DOCKER_REGISTRY: str = os.environ.get("REGISTRY_PATH", None) or os.environ.get(
+    "REGISTRY_URL", "masu.speag.com"
+)
 DOCKER_USER: str = os.environ.get("REGISTRY_USER", "z43")
 DOCKER_PASSWORD: str = os.environ.get("REGISTRY_PW", "z43")
 
@@ -59,7 +65,6 @@ logging.basicConfig(level=SIDECAR_LOGLEVEL)
 logging.getLogger("sqlalchemy.engine").setLevel(SIDECAR_LOGLEVEL)
 logging.getLogger("sqlalchemy.pool").setLevel(SIDECAR_LOGLEVEL)
 
-RABBIT_CONFIG = RabbitConfig()
 # sidecar celery starting mode overwrite
 FORCE_START_CPU_MODE: Optional[str] = os.environ.get("START_AS_MODE_CPU")
 FORCE_START_GPU_MODE: Optional[str] = os.environ.get("START_AS_MODE_GPU")
@@ -67,11 +72,13 @@ FORCE_START_GPU_MODE: Optional[str] = os.environ.get("START_AS_MODE_GPU")
 # if a node has this amount of CPUs it will be a candidate an MPI candidate
 TARGET_MPI_NODE_CPU_COUNT: int = int(os.environ.get("TARGET_MPI_NODE_CPU_COUNT", "-1"))
 
-# Redis configuration
-REDIS_CONNECTION_STRING: str = "redis://{host}:{password}/0".format(
-    host=os.environ.get("REDIS_HOST", "redis"),
-    password=os.environ.get("REDIS_PORT", "6379"),
-)
+CELERY_CONFIG = CeleryConfig.create_from_env()
+
+MAIN_QUEUE_NAME: str = CELERY_CONFIG.task_name
+CPU_QUEUE_NAME: str = f"{MAIN_QUEUE_NAME}.cpu"
+GPU_QUEUE_NAME: str = f"{MAIN_QUEUE_NAME}.gpu"
+MPI_QUEUE_NAME: str = f"{MAIN_QUEUE_NAME}.mpi"
+
 # used by the mpi lock to ensure the lock is acquired and released in time
 REDLOCK_REFRESH_INTERVAL_SECONDS: float = max(
     float(os.environ.get("REDLOCK_REFRESH_INTERVAL_SECONDS", "5.0")), 1.0
