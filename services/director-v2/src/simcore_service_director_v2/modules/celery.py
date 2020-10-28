@@ -23,12 +23,6 @@ def setup(app: FastAPI, settings: CeleryConfig):
                 backend=settings.result_backend,
             ),
         )
-        celery_app = Celery(
-            settings.task_name,
-            broker=settings.broker_url,
-            backend=settings.result_backend,
-        )
-        app.state.celery_client = celery_app
 
     async def on_shutdown() -> None:
         del app.state.celery_client

@@ -32,6 +32,9 @@ async def list_computations(
     pass
 
 
+from ...utils.computations import get_pipeline_state_from_task_states
+
+
 @router.post("", description="Create and Start a new computation")
 async def create_computation(
     user_id: UserId,
@@ -47,7 +50,8 @@ async def create_computation(
     comp_tasks: Dict[NodeID, CompTaskAtDB] = await computation_tasks.get_comp_tasks(
         project_id
     )
-    return comp_tasks
+    pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
+    return pipeline_state
 
     # get the state
     # return forbidden if the state is not ok
