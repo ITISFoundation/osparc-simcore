@@ -22,4 +22,5 @@ def test_docker_composes_service_versions(osparc_simcore_root_dir: Path, here: P
             for _service_name, service in compose_specs["services"].items()
         ]
 
+        print(service_image_names)
         assert all(elem in main_services_image_names for elem in service_image_names)

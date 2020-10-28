@@ -1,7 +1,7 @@
 version: '3.4'
 services:
   postgres:
-    image: postgres:10.11
+    image: "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f"
     environment:
       POSTGRES_USER: test
       POSTGRES_PASSWORD: test
