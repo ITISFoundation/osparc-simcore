@@ -208,6 +208,8 @@ class TutorialBase {
       await utils.sleep(2500);
       if (nodeIds.length === 0) {
         console.log("Services ready in", ((new Date().getTime())-start)/1000);
+        // after the service is responsive we need to a bit until the iframe is rendered
+        await utils.sleep(3000);
         return;
       }
     }
