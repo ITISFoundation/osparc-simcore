@@ -34,6 +34,7 @@ jinja2==2.11.2            # via fastapi
 markupsafe==1.1.1         # via jinja2
 multidict==4.7.6          # via -c requirements/./_constraints.txt, yarl
 orjson==3.4.0             # via fastapi
+packaging==20.4           # via -r requirements/_base.in
 promise==2.3              # via graphql-core, graphql-relay
 psycopg2-binary==2.8.6    # via aiopg, sqlalchemy
 pycparser==2.20           # via cffi

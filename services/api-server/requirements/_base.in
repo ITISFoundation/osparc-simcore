@@ -24,3 +24,4 @@ httpx
 attrs
 tenacity
 cryptography
+packaging # TODO: remove this dependency. Only used for version comparison

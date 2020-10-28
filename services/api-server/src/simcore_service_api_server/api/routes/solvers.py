@@ -6,8 +6,8 @@ from typing import Callable, Dict, List, Optional
 from urllib.request import pathname2url
 from uuid import UUID
 
+import packaging.version
 from fastapi import APIRouter, Depends, HTTPException
-from packaging import version
 from pydantic import ValidationError
 from starlette import status
 
@@ -60,9 +60,9 @@ async def list_solvers(
             service_key = service["key"]
             solver = latest_solvers.get(service_key)
 
-            if not solver or version.parse(solver.latest_version) < version.parse(
-                service["version"]
-            ):
+            if not solver or packaging.version.parse(
+                solver.latest_version
+            ) < packaging.version.parse(service["version"]):
                 try:
                     latest_solvers[service_key] = SolverOverview(
                         solver_key=service_key,
@@ -116,50 +116,58 @@ async def get_solver_released(solver_id: UUID):
 
 
 ## RUNS ---------------
-
-
-@router.post("/{solver_id}/runs", response_model=RunProxy)
-async def create_solver_run(solver_id: UUID, inputs: Optional[List[RunInput]] = None):
-    """ Runs a solver with given inputs """
-
-    # TODO: validate inputs against solver specs
-    # TODO: create a unique identifier of run based on solver_id and inputs
-
-    return RunProxy()
-
-
-@router.get("/{solver_id}/runs")
-async def list_runs(solver_id: UUID):
-    """ List of all runs (could be finished) by user of a given solver """
+@router.get("/{solver_id}/jobs")
+async def list_jobs(solver_id: UUID):
+    """ List of all jobs (could be finished) by user of a given solver """
     # TODO: add pagination
     # similar to ps = process status
     raise NotImplementedError()
 
 
-@router.get("/{solver_id}/runs/{run_id}:stop", response_model=RunProxy)
-async def stop_run(solver_id: UUID, run_id: UUID):
+@router.post("/{solver_id}/jobs", response_model=RunProxy)
+async def create_job(solver_id: UUID, inputs: Optional[List[RunInput]] = None):
+    """ Runs a solver with given inputs """
+
+    # TODO: validate inputs against solver specs
+    # TODO: create a unique identifier of job based on solver_id and inputs
+    return RunProxy()
+
+
+@router.get("/{solver_id}/jobs/{job_id}", response_model=RunProxy)
+async def get_job(solver_id: UUID, job_id: UUID):
     raise NotImplementedError()
 
 
-@router.get("/{solver_id}/runs/{run_id}", response_model=RunProxy)
-async def get_run(solver_id: UUID, run_id: UUID):
+@router.post("/{solver_id}/jobs/{job_id}:start", response_model=RunProxy)
+async def start_job(solver_id: UUID, job_id: UUID):
     raise NotImplementedError()
 
 
-@router.get("/{solver_id}/runs/{run_id}:inspect", response_model=RunState)
-async def inspect_run(solver_id: UUID):
+@router.post("/{solver_id}/jobs/{job_id}:run", response_model=RunProxy)
+async def run_job(solver_id: UUID, inputs: Optional[List[RunInput]] = None):
+    """ create + start job in a single call """
     raise NotImplementedError()
 
 
-@router.get("/{solver_id}/runs/{run_id}/outputs", response_model=List[RunOutput])
-async def list_run_outputs(solver_id: UUID, run_id: UUID):
+@router.post("/{solver_id}/jobs/{job_id}:stop", response_model=RunProxy)
+async def stop_job(solver_id: UUID, job_id: UUID):
+    raise NotImplementedError()
+
+
+@router.post("/{solver_id}/jobs/{job_id}:inspect", response_model=RunState)
+async def inspect_job(solver_id: UUID):
+    raise NotImplementedError()
+
+
+@router.get("/{solver_id}/jobs/{job_id}/outputs", response_model=List[RunOutput])
+async def list_job_outputs(solver_id: UUID, job_id: UUID):
     raise NotImplementedError()
 
 
 @router.get(
-    "/{solver_id}/runs/{run_id}/outputs/{output_key}", response_model=SolverOutput
+    "/{solver_id}/jobs/{job_id}/outputs/{output_key}", response_model=SolverOutput
 )
-async def get_run_output(solver_id: UUID, run_id: UUID, output_key: KeyIdentifier):
+async def get_job_output(solver_id: UUID, job_id: UUID, output_key: KeyIdentifier):
     raise NotImplementedError()
 
 

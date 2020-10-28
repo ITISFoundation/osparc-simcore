@@ -49,6 +49,7 @@ class CatalogSettings(BaseServiceSettings):
 
 
 class StorageSettings(BaseServiceSettings):
+    host: str = "storage"
     class Config(_CommonConfig):
         env_prefix = "STORAGE_"
 

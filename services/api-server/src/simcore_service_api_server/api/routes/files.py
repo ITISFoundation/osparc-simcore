@@ -41,7 +41,7 @@ async def upload_single_file(
     #
 
     # TODO: this is just a ping with retries
-    await storage_client.get("/")
+    ## await storage_client.get("/")
 
     return FileUploaded(
         filename=file.filename,
