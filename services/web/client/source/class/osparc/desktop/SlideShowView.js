@@ -36,7 +36,6 @@ qx.Class.define("osparc.desktop.SlideShowView", {
   },
 
   members: {
-    __nodeView: null,
     __controlsBar: null,
     __prvsBtn: null,
     __nextBtn: null,
@@ -73,10 +72,21 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
       const node = this.getStudy().getWorkbench().getNode(nodeId);
       if (node) {
-        this.__nodeView.setNode(node);
-        this.__nodeView.populateLayout();
-        this.__nodeView.getInputsView().exclude();
-        this.__nodeView.getOutputsView().exclude();
+        let view;
+        if (node.isContainer()) {
+          view = new osparc.component.node.GroupNodeView();
+        } else if (node.isFilePicker()) {
+          view = new osparc.component.node.FilePickerNodeView();
+        } else {
+          view = new osparc.component.node.NodeView();
+        }
+        if (view) {
+          view.setNode(node);
+          view.populateLayout();
+          view.getInputsView().exclude();
+          view.getOutputsView().exclude();
+          this.__showInMainView(view);
+        }
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
     },
@@ -96,11 +106,10 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     __initViews: function() {
       this._removeAll();
 
-      const nodeView = this.__nodeView = new osparc.component.node.NodeView();
-      this._add(nodeView, {
-        flex: 1
-      });
+      this.__createControlsBar();
+    },
 
+    __createControlsBar: function() {
       const controlsBar = this.__controlsBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         minHeight: 40,
         padding: 5
@@ -110,7 +119,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
         flex: 1
       });
 
-      const prvsBtn = this.__prvsBtn = new qx.ui.form.Button(this.tr("Previuos")).set({
+      const prvsBtn = this.__prvsBtn = new qx.ui.form.Button(this.tr("Previous")).set({
         allowGrowX: false
       });
       prvsBtn.addListener("execute", () => {
@@ -127,6 +136,18 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       controlsBar.add(nextBtn);
 
       this._add(controlsBar);
+    },
+
+    __showInMainView: function(nodeView) {
+      const children = this._getChildren();
+      for (let i=0; i<children.length; i++) {
+        if (children[i] !== this.__controlsBar) {
+          this._removeAt(i);
+        }
+      }
+      this._addAt(nodeView, 0, {
+        flex: 1
+      });
     },
 
     __next: function() {
