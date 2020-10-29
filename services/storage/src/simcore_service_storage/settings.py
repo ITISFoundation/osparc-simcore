@@ -15,9 +15,9 @@ See https://docs.aiohttp.org/en/stable/web_advanced.html#data-sharing-aka-no-sin
 """
 
 import logging
-from typing import List, Optional, Any, Dict
+from typing import Any, Dict, List, Optional
 
-from models_library.basic_types import PortInt
+from models_library.basic_types import LogLevel, PortInt
 from models_library.settings.postgres import PostgresSettings
 from models_library.settings.s3 import S3Config
 from pydantic import BaseSettings, Field
@@ -88,7 +88,9 @@ class ApplicationSettings(BaseSettings):
     host: str = "0.0.0.0"
     port: PortInt = 8080
 
-    loglevel: str = "INFO"
+    loglevel: LogLevel = Field(
+        "INFO", env=["STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+    )
     testing: bool = False
 
     max_workers: int = 8
