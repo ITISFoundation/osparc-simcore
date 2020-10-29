@@ -9,7 +9,7 @@ from uuid import uuid4
 
 import aiopg
 import aioredis
-from models_library.redis import RedisConfig
+from models_library.settings.redis import RedisConfig
 import pytest
 from pytest_simcore.helpers.utils_login import log_client_in
 from pytest_simcore.helpers.utils_projects import create_project, empty_project_data

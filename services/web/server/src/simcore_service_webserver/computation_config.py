@@ -3,7 +3,7 @@
     - config-file schema
     - settings
 """
-from models_library.celery import CeleryConfig
+from models_library.settings.celery import CeleryConfig
 
 SERVICE_NAME = "computation"
 CONFIG_SECTION_NAME = SERVICE_NAME

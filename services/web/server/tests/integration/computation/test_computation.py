@@ -14,8 +14,8 @@ from socketio.exceptions import ConnectionError as SocketConnectionError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 from yarl import URL
 
-from models_library.rabbit import RabbitConfig
-from models_library.redis import RedisConfig
+from models_library.settings.rabbit import RabbitConfig
+from models_library.settings.redis import RedisConfig
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import NewProject

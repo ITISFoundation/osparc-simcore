@@ -12,7 +12,7 @@ import aio_pika
 import pytest
 import sqlalchemy as sa
 from mock import call
-from models_library.rabbit import RabbitConfig
+from models_library.settings.rabbit import RabbitConfig
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.computation import setup_computation
