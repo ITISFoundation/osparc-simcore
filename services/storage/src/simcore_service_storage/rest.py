@@ -20,7 +20,6 @@ log = logging.getLogger(__name__)
 def setup(app: web.Application):
     """Setup the rest API module in the application in aiohttp fashion.
 
-        - users "rest" section of configuration (see schema in rest_config.py)
         - loads and validate openapi specs from a remote (e.g. apihub) or local location
         - connects openapi specs paths to handlers (see rest_routes.py)
         - enables error, validation and envelope middlewares on API routes

@@ -1,20 +1,17 @@
-version: '1.0'
-main:
-  disable_services: ['postgres', 's3']
-  host: 127.0.0.1
-  log_level: INFO
-  port: 8080
-  testing: False
-  monitoring_enabled: True
-  test_datcore:
-     token_key: ${BF_API_KEY}
-     token_secret: ${BF_API_SECRET}
+disable_services: ['postgres', 's3']
+host: 127.0.0.1
+log_level: INFO
+port: 8080
+testing: False
+monitoring_enabled: True
+test_datcore:
+    token_key: ${BF_API_KEY}
+    token_secret: ${BF_API_SECRET}
 postgres:
   database: simcoredb
-  endpoint: postgres:5432
   host: localhost
-  maxsize: 5
-  minsize: 1
+  maxsize: 10
+  minsize: 10
   password: simcore
   port: 5432
   user: simcore

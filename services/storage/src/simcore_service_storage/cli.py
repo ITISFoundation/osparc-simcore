@@ -17,6 +17,7 @@ import logging
 import os
 from pathlib import Path
 from pprint import pformat
+from typing import Dict, List, Optional, Union
 
 import click
 import yaml
@@ -26,6 +27,31 @@ from . import application
 from .settings import ApplicationSettings
 
 log = logging.getLogger(__name__)
+
+JsonNode = Union[Dict, List]
+
+
+def prune_config(cfg: JsonNode):
+    """
+    prun_config({
+        max_workers: 8
+        monitoring_enabled: ${STORAGE_MONITORING_ENABLED}
+        test_datcore:
+            token_key: ${BF_API_KEY}
+            token_secret: ${BF_API_SECRET}
+
+    """
+    if isinstance(cfg, Dict):
+        for key in list(cfg.keys()):
+            value = cfg[key]
+            if isinstance(value, str) and value.startswith("${"):
+                del cfg[key]
+            elif isinstance(value, (List, Dict)):
+                prune_config(cfg[key])
+
+    elif isinstance(cfg, List):
+        for item in cfg:
+            prune_config(item)
 
 
 @click.command("Service to manage data storage in simcore.")
@@ -43,21 +69,25 @@ log = logging.getLogger(__name__)
     is_flag=True,
     help="Checks settings, prints and exit",
 )
-def main(config: Path, check_config: bool):
+def main(config: Optional[Path] = None, check_config: bool = False):
     config_dict = {}
 
     try:
         if config:
             with open(config) as fh:
                 config_dict = yaml.safe_load(fh)
+            prune_config(config_dict)
             settings = ApplicationSettings(**config_dict)
         else:
             settings = ApplicationSettings.create_from_environ()
     except ValidationError as err:
+        HEADER = "{:-^50}"
         log.error(
-            "Invalid settings. %s: ----\n config_dict=%s \n environ: %s",
+            "Invalid settings. %s:\n%s\n%s\n%s\n%s",
             err,
+            HEADER.format("config_dict"),
             pformat(config_dict),
+            HEADER.format("environment variables"),
             pformat(dict(os.environ)),
             exc_info=False,
         )

@@ -17,7 +17,7 @@ class PostgresSettings(BaseSettings):
     password: SecretStr
 
     # database
-    db: str
+    db: str = Field(..., alias="database")
 
     # pool connection limits
     minsize: conint(ge=10) = 10
@@ -49,3 +49,4 @@ class PostgresSettings(BaseSettings):
     class Config:
         case_sensitive = False
         env_prefix = "POSTGRES_"
+        json_encoders = {"password": lambda v: v.get_secret_value()}
