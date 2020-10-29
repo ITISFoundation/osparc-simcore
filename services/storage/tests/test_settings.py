@@ -3,15 +3,10 @@
 # pylint:disable=redefined-outer-name
 import logging
 
-import pytest
-from simcore_service_storage.settings import (
-    ApplicationSettings,
-)
+from simcore_service_storage.settings import ApplicationSettings
 
 
 def test_loading_env_devel_in_settings(project_env_devel_environment):
-
-    # loads from environ
     settings = ApplicationSettings.create_from_environ()
     print("captured settings: \n", settings.json(indent=2))
 
