@@ -37,8 +37,13 @@
 qx.Class.define("osparc.component.node.NodeView", {
   extend: osparc.component.node.BaseNodeView,
 
-  construct: function() {
-    this.base(arguments);
+  statics: {
+    isPropsFormShowable: function(node) {
+      if (node && ("getPropsForm" in node) && node.getPropsForm()) {
+        return node.getPropsForm().hasVisibleInputs();
+      }
+      return false;
+    }
   },
 
   members: {
@@ -75,10 +80,7 @@ qx.Class.define("osparc.component.node.NodeView", {
 
     isSettingsGroupShowable: function() {
       const node = this.getNode();
-      if (node && ("getPropsForm" in node) && node.getPropsForm()) {
-        return node.getPropsForm().hasVisibleInputs();
-      }
-      return false;
+      return this.self().isPropsFormShowable(node);
     },
 
     __iFrameChanged: function() {
