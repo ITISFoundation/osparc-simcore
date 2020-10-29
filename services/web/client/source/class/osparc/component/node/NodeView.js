@@ -138,7 +138,9 @@ qx.Class.define("osparc.component.node.NodeView", {
       const propsFormEditor = this.getNode().getPropsFormEditor();
       settingsEditorLayout.add(propsFormEditor);
       const title = this.getNode().getLabel();
-      osparc.ui.window.Window.popUpInWindow(settingsEditorLayout, title, 800, 600);
+      osparc.ui.window.Window.popUpInWindow(settingsEditorLayout, title, 800, 600).set({
+        autoDestroy: false
+      });
     },
 
     _applyNode: function(node) {
