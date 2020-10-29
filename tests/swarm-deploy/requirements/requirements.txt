@@ -5,8 +5,8 @@
 #    pip-compile --output-file=requirements/requirements.txt requirements/requirements.in
 #
 aio-pika==6.7.1           # via -r requirements/requirements.in
-aiohttp==3.6.3            # via pytest-aiohttp
-aiormq==3.2.3             # via aio-pika
+aiohttp==3.7.2            # via pytest-aiohttp
+aiormq==3.3.1             # via aio-pika
 alembic==1.4.3            # via -r requirements/requirements.in
 async-timeout==3.0.1      # via aiohttp
 attrs==20.2.0             # via aiohttp, pytest
@@ -16,12 +16,12 @@ click==7.1.2              # via -r requirements/requirements.in
 coverage==5.3             # via -r requirements/requirements.in, pytest-cov
 docker==4.3.1             # via -r requirements/requirements.in
 idna-ssl==1.1.0           # via aiohttp
-idna==2.10                # via idna-ssl, requests, yarl
+idna==2.10                # via requests, yarl
 importlib-metadata==2.0.0  # via pluggy, pytest
-iniconfig==1.0.1          # via pytest
+iniconfig==1.1.1          # via pytest
 mako==1.1.3               # via alembic
 markupsafe==1.1.1         # via mako
-multidict==4.7.6          # via aiohttp, yarl
+multidict==5.0.0          # via aiohttp, yarl
 packaging==20.4           # via pytest, pytest-sugar
 pamqp==2.3.0              # via aiormq
 pluggy==0.13.1            # via pytest
@@ -33,19 +33,19 @@ pytest-instafail==0.4.2   # via -r requirements/requirements.in
 pytest-mock==3.3.1        # via -r requirements/requirements.in
 pytest-runner==5.2        # via -r requirements/requirements.in
 pytest-sugar==0.9.4       # via -r requirements/requirements.in
-pytest==6.1.1             # via -r requirements/requirements.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-mock, pytest-sugar
+pytest==6.1.2             # via -r requirements/requirements.in, pytest-aiohttp, pytest-cov, pytest-instafail, pytest-mock, pytest-sugar
 python-dateutil==2.8.1    # via alembic
-python-dotenv==0.14.0     # via -r requirements/requirements.in
+python-dotenv==0.15.0     # via -r requirements/requirements.in
 python-editor==1.0.4      # via alembic
 pyyaml==5.3.1             # via -r requirements/requirements.in
 requests==2.24.0          # via docker
 six==1.15.0               # via docker, packaging, python-dateutil, tenacity, websocket-client
-sqlalchemy==1.3.19        # via alembic
+sqlalchemy==1.3.20        # via alembic
 tenacity==6.2.0           # via -r requirements/requirements.in
 termcolor==1.1.0          # via pytest-sugar
 toml==0.10.1              # via pytest
 typing-extensions==3.7.4.3  # via aiohttp, yarl
-urllib3==1.25.10          # via requests
+urllib3==1.25.11          # via requests
 websocket-client==0.57.0  # via docker
-yarl==1.5.1               # via aio-pika, aiohttp, aiormq
-zipp==3.2.0               # via importlib-metadata
+yarl==1.6.2               # via aio-pika, aiohttp, aiormq
+zipp==3.4.0               # via importlib-metadata

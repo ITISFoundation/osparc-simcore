@@ -10,4 +10,4 @@ minio==6.0.0              # via -r requirements/_base.in
 python-dateutil==2.8.1    # via minio
 pytz==2020.1              # via minio
 six==1.15.0               # via python-dateutil
-urllib3==1.25.10          # via -r requirements/_base.in, minio
+urllib3==1.25.11          # via -r requirements/_base.in, minio
