@@ -13,3 +13,4 @@ aiofiles
 aiopg[sa]
 tenacity
 semantic_version
+click

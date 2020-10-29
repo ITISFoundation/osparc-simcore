@@ -18,6 +18,7 @@ boto3==1.12.32            # via -c requirements/./constraints.txt, blackfynn
 botocore==1.15.32         # via aiobotocore, boto3, s3transfer
 certifi==2020.6.20        # via minio, requests
 chardet==3.0.4            # via aiohttp, requests
+click==7.1.2              # via -r requirements/_base.in
 configparser==5.0.1       # via blackfynn, minio
 dataclasses==0.7          # via pydantic
 deprecated==1.2.10        # via blackfynn
