@@ -72,7 +72,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     # docs
     redoc_html = create_redoc_handler(app)
-    app.add_route("/doc", redoc_html, include_in_schema=False)
+    app.add_route("/doc", redoc_html, name="redoc_html", include_in_schema=False)
 
     # api under /v*
     app.include_router(api_router, prefix=f"/{api_vtag}")
