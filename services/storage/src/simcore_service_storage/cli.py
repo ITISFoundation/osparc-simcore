@@ -18,6 +18,7 @@ import os
 from pathlib import Path
 from pprint import pformat
 from typing import Dict, List, Optional, Union
+import json
 
 import click
 import yaml
@@ -33,12 +34,20 @@ JsonNode = Union[Dict, List]
 
 def prune_config(cfg: JsonNode):
     """
-    prun_config({
+    Converts
+    {
         max_workers: 8
         monitoring_enabled: ${STORAGE_MONITORING_ENABLED}
         test_datcore:
             token_key: ${BF_API_KEY}
             token_secret: ${BF_API_SECRET}
+    }
+        -->
+
+    {
+        max_workers: 8
+        test_datcore: {}
+    }
 
     """
     if isinstance(cfg, Dict):
@@ -101,4 +110,6 @@ def main(config: Optional[Path] = None, check_config: bool = False):
     logging.basicConfig(level=getattr(logging, log_level))
     logging.root.setLevel(getattr(logging, log_level))
 
-    application.run(config=settings.dict())
+    # TODO: tmp converts all fields into primitive types
+    cfg = json.loads(settings.json())
+    application.run(config=cfg)

@@ -49,4 +49,3 @@ class PostgresSettings(BaseSettings):
     class Config:
         case_sensitive = False
         env_prefix = "POSTGRES_"
-        json_encoders = {"password": lambda v: v.get_secret_value()}

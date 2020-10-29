@@ -21,7 +21,7 @@ from models_library.basic_types import LogLevel
 from models_library.settings.application_bases import BaseAiohttpAppSettings
 from models_library.settings.postgres import PostgresSettings
 from models_library.settings.s3 import S3Config
-from pydantic import BaseSettings, Field
+from pydantic import BaseSettings, Field, SecretStr
 from servicelib import application_keys
 from servicelib.tracing import TracingSettings
 
@@ -109,6 +109,7 @@ class ApplicationSettings(BaseAiohttpAppSettings):
     class Config:
         case_sensitive = False
         env_prefix = "STORAGE_"
+        json_encoders = {SecretStr: lambda v: v.get_secret_value()}
 
     @classmethod
     def create_from_environ(cls):
