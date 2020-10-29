@@ -21,8 +21,9 @@ logger = logging.getLogger(__name__)
 def setup_activity(app: web.Application, **cfg_settings):
 
     # submodule settings and store in app
-    cfg = ActivitySettings(**cfg_settings)
-    app[APP_CONFIG_KEY][CONFIG_SECTION_NAME] = cfg
+    if cfg_settings:
+        cfg = ActivitySettings(**cfg_settings)
+        app[APP_CONFIG_KEY][CONFIG_SECTION_NAME] = cfg
 
     # setup routes ------------
     specs = app[APP_OPENAPI_SPECS_KEY]

@@ -1,1 +1,1 @@
-from .plugin import setup_director
+from .setup import setup_director

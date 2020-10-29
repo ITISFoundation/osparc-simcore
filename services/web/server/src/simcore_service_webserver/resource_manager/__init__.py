@@ -1,1 +1,1 @@
-from .plugin import setup_resource_manager
+from .setup import setup_resource_manager

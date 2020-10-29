@@ -25,11 +25,14 @@ from .registry import RedisResourceRegistry
 logger = logging.getLogger(__name__)
 
 
-@app_module_setup(__name__, ModuleCategory.SYSTEM, logger=logger)
+@app_module_setup(
+    "simcore_service_webserver.resource_manager", ModuleCategory.SYSTEM, logger=logger
+)
 def setup_resource_manager(app: web.Application, **cfg_settings) -> bool:
     """Sets up resource manager subsystem in the application"""
-    cfg = ResourceManagerSettings(**cfg_settings)
-    app[APP_CONFIG_KEY][CONFIG_SECTION_NAME] = cfg
+    if cfg_settings:
+        cfg = ResourceManagerSettings(**cfg_settings)
+        app[APP_CONFIG_KEY][CONFIG_SECTION_NAME] = cfg
 
     app[APP_RESOURCE_MANAGER_TASKS_KEY] = []
     setup_redis_client(app)

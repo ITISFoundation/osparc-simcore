@@ -1,1 +1,1 @@
-from .plugin import setup_activity
+from .setup import setup_activity
