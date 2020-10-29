@@ -83,6 +83,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
           view.getInputsView().exclude();
           view.getOutputsView().exclude();
           this.__showInMainView(view);
+          this.__syncButtons();
         }
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
@@ -145,6 +146,23 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       this._addAt(nodeView, 0, {
         flex: 1
       });
+    },
+
+    __syncButtons: function() {
+      const study = this.getStudy();
+      if (study) {
+        const nodes = this.self().getSortedNodes(study);
+        if (nodes.length && nodes[0].nodeId === this.__currentNodeId) {
+          this.__prvsBtn.setEnabled(false);
+        } else {
+          this.__prvsBtn.setEnabled(true);
+        }
+        if (nodes.length && nodes[nodes.length-1].nodeId === this.__currentNodeId) {
+          this.__nextBtn.setEnabled(false);
+        } else {
+          this.__nextBtn.setEnabled(true);
+        }
+      }
     },
 
     __showFirstNode: function() {
