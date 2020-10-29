@@ -1,32 +1,19 @@
+-r ../../../packages/s3wrapper/requirements/_base.in
 -r ../../../packages/postgres-database/requirements/_base.in
+-r ../../../packages/simcore-sdk/requirements/_base.in
 -r ../../../packages/service-library/requirements/_base.in
+-r ../../../packages/models-library/requirements/_base.in
 
 
 # These packages introduce incompatible dependencies:
-blackfynn
-aiobotocore
-# since
-#  botocore<1.18.0,>=1.17.10 (from boto3==1.14.10->blackfynn==3.6.3->-r requirements/_base.in (line 8))
-#  botocore<1.15.33,>=1.15.32 (from aiobotocore==1.0.7->-r requirements/_base.in (line 4))
-#
-# The limiting constraint is coming from boto3,
-# which blackfynn requires as bot3>1.4 (SEE https://github.com/Blackfynn/blackfynn-python/blob/master/requirements.txt#L2)
-#
-# So we are lowering boto3 until we fit botocore<1.15.33,>=1.15.32
-# ...
-# botocore<1.16.0,>=1.15.39 (from boto3==1.12.39->-r requirements/_base.in (line 9))
-# botocore<1.16.0,>=1.15.33 (from boto3==1.12.33->-r requirements/_base.in (line 11))
-#
-# We introduce the following extra constraint
-boto3==1.12.32
-# ---
+blackfynn==4.0.0
+aiobotocore==1.0.7
+-c ./constraints.txt
 
 
 aiohttp
 aiofiles
 aiopg[sa]
 marshmallow
-trafaret
-trafaret_config
 tenacity
 semantic_version
