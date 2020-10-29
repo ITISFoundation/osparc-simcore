@@ -15,8 +15,14 @@ See https://docs.aiohttp.org/en/stable/web_advanced.html#data-sharing-aka-no-sin
 """
 
 import logging
+from typing import List, Optional, Any, Dict
 
+from models_library.basic_types import PortInt
+from models_library.settings.postgres import PostgresSettings
+from models_library.settings.s3 import S3Config
+from pydantic import BaseSettings, Field
 from servicelib import application_keys
+from servicelib.tracing import TracingSettings
 
 # IMPORTANT: lowest level module
 #   I order to avoid cyclic dependences, please
@@ -71,3 +77,40 @@ APP_DB_ENGINE_KEY = __name__ + ".db_engine"
 APP_DSM_THREADPOOL = __name__ + ".dsm_threadpool"
 APP_DSM_KEY = __name__ + ".DSM"
 APP_S3_KEY = __name__ + ".S3_CLIENT"
+
+
+class BfApiToken(BaseSettings):
+    token_key: str = Field(..., env="BF_API_KEY")
+    token_secret: str = Field(..., env="BF_API_SECRET")
+
+
+class ApplicationSettings(BaseSettings):
+    host: str = "0.0.0.0"
+    port: PortInt = 8080
+
+    loglevel: str = "INFO"
+    testing: bool = False
+
+    max_workers: int = 8
+
+    monitoring_enabled: bool = False
+
+    test_datcore: Optional[BfApiToken] = None
+
+    disable_services: List[str] = []
+
+    # settings for sub-modules
+    postgres: PostgresSettings
+    s3: S3Config
+    rest: Dict[str, Any] = {"enabled": True}
+    tracing: TracingSettings
+
+    class Config:
+        case_sensitive = False
+        env_prefix = "STORAGE_"
+
+    @classmethod
+    def create_from_environ(cls):
+        return cls(
+            postgres=PostgresSettings(), s3=S3Config(), tracing=TracingSettings()
+        )
