@@ -24,7 +24,7 @@ codecov==2.1.10           # via -r requirements/_test.in
 contextvars==2.4          # via sniffio
 coverage==5.3             # via codecov, coveralls, pytest-cov
 coveralls==2.1.2          # via -r requirements/_test.in
-cryptography==3.1.1       # via paramiko
+cryptography==3.2.1       # via paramiko
 dataclasses==0.7 ; python_version < "3.7"  # via -r requirements/_base.txt, pydantic
 distro==1.5.0             # via docker-compose
 dnspython==2.0.0          # via -r requirements/_base.txt, email-validator
@@ -74,7 +74,7 @@ pytest-cov==2.10.1        # via -r requirements/_test.in
 pytest-docker==0.10.1     # via -r requirements/_test.in
 pytest-mock==3.3.1        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
-pytest==6.1.1             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-mock
+pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-mock
 python-dateutil==2.8.1    # via alembic, faker
 python-dotenv==0.14.0     # via -r requirements/_base.txt, docker-compose, pydantic
 python-editor==1.0.4      # via alembic
@@ -102,7 +102,7 @@ websocket-client==0.57.0  # via docker, docker-compose
 websockets==8.1           # via -r requirements/_base.txt, uvicorn
 wrapt==1.12.1             # via astroid
 yarl==1.5.1               # via -r requirements/_base.txt, aiohttp
-zipp==3.3.1               # via importlib-metadata
+zipp==3.4.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

@@ -14,7 +14,7 @@ chardet==3.0.4            # via requests
 configparser==5.0.0       # via -r requirements/_base.txt, minio
 coverage==5.3             # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==2.1.2          # via -r requirements/_test.in
-cryptography==3.1.1       # via paramiko
+cryptography==3.2.1       # via paramiko
 distro==1.5.0             # via docker-compose
 docker-compose==1.27.4    # via pytest-docker
 docker[ssh]==4.3.1        # via docker-compose
@@ -22,7 +22,7 @@ dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
 idna==2.10                # via requests
 importlib-metadata==2.0.0  # via jsonschema, pluggy, pytest
-iniconfig==1.0.1          # via pytest
+iniconfig==1.1.1          # via pytest
 isort==5.6.4              # via pylint
 jsonschema==3.2.0         # via docker-compose
 lazy-object-proxy==1.4.3  # via astroid
@@ -40,9 +40,9 @@ pyrsistent==0.17.3        # via jsonschema
 pytest-cov==2.10.1        # via -r requirements/_test.in
 pytest-docker==0.10.1     # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
-pytest==6.1.1             # via -r requirements/_test.in, pytest-cov, pytest-docker
+pytest==6.1.2             # via -r requirements/_test.in, pytest-cov, pytest-docker
 python-dateutil==2.8.1    # via -r requirements/_base.txt, minio
-python-dotenv==0.14.0     # via docker-compose
+python-dotenv==0.15.0     # via docker-compose
 pytz==2020.1              # via -r requirements/_base.txt, minio
 pyyaml==5.3.1             # via docker-compose
 requests==2.24.0          # via -r requirements/_test.in, coveralls, docker, docker-compose
@@ -50,10 +50,10 @@ six==1.15.0               # via -r requirements/_base.txt, astroid, bcrypt, cryp
 texttable==1.6.3          # via docker-compose
 toml==0.10.1              # via pylint, pytest
 typed-ast==1.4.1          # via astroid
-urllib3==1.25.10          # via -r requirements/_base.txt, minio, requests
+urllib3==1.25.11          # via -r requirements/_base.txt, minio, requests
 websocket-client==0.57.0  # via docker, docker-compose
 wrapt==1.12.1             # via astroid
-zipp==3.2.0               # via importlib-metadata
+zipp==3.4.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

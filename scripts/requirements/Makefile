@@ -22,7 +22,7 @@ SERVICES_DIR := $(abspath $(REPODIR)/services)
 UPGRADE_OPTION := $(if $(upgrade),upgrade=$(upgrade),)
 
 # tools
-MAKE_C := $(MAKE) --no-print-directory --directory
+MAKE_C := $(MAKE) --directory
 
 
 .PHONY: touch reqs _check_py36_version
@@ -32,8 +32,8 @@ _input-requirements = $(shell find ${PACKAGES_DIR} -type f -name _base.in)
 _input-requirements += $(shell find $(REPODIR)/api/tests/ -type f -name "*.in")
 # system tests
 _input-requirements += $(shell find $(REPODIR)/tests/ -type f -name "*.in")
-# services/*/_test.in (ONLY tests tools)
-_input-requirements = $(shell find ${SERVICES_DIR} -type f -name _test.in)
+# services/*/_*.in
+_input-requirements += $(shell find ${SERVICES_DIR} -type f -name "_*.in")
 
 $(info Found $(_input-requirements))
 
@@ -53,8 +53,9 @@ reqs: _check_py36_version ## updates requirements of all package libraries
 
 # SEE https://medium.com/faun/set-current-host-user-for-docker-container-4e521cef9ffc
 .PHONY: build
-build:
-	docker build --tag local/python-devkit:latest .
+build build-nc:
+	docker build $(if $(findstring -nc,$@),--no-cache,) --tag local/python-devkit:latest .
+
 
 .PHONY: run
 run: build ## Runs upgrade in a container
@@ -75,7 +76,7 @@ shell:
 		--workdir="/home/$(USER)" \
     --volume="/etc/group:/etc/group:ro" \
     --volume="/etc/passwd:/etc/passwd:ro" \
-    --volume="/etc/shadow:/etc/shadow:ro" \
+		--volume="/etc/shadow:/etc/shadow:ro" \
 		--volume=$(REPODIR):/home/$(USER) \
 		--user=$(shell id -u):$(shell id -g) \
 		--entrypoint=/bin/bash \
