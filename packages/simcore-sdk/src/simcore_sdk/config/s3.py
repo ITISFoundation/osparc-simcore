@@ -1,6 +1,9 @@
 """ Basic configuration file for S3
 
 """
+## DEPRECATED: use instead packages/models-library/src/models_library/settings/s3.py
+
+
 from os import environ as env
 import logging
 

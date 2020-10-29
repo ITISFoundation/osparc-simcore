@@ -11,7 +11,7 @@ from typing import Dict, Optional
 import aiozipkin as az
 import trafaret as T
 from aiohttp import web
-from pydantic import AnyUrl, BaseSettings
+from pydantic import AnyHttpUrl, BaseSettings
 
 log = logging.getLogger(__name__)
 
@@ -39,4 +39,4 @@ schema = T.Dict(
 
 class TracingSettings(BaseSettings):
     enabled: Optional[bool] = True
-    zipkin_endpoint: AnyUrl = "http://jaeger:9411"
+    zipkin_endpoint: AnyHttpUrl = "http://jaeger:9411"
