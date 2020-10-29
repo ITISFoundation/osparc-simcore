@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Dict
 
 import trafaret as T
-from models_library.settings import LogLevel, PortInt
+from models_library.basic_types import LogLevel, PortInt
 from pydantic import BaseSettings, Field
 from servicelib import application_keys  # pylint:disable=unused-import
 from servicelib.config_schema_utils import addon_section, minimal_addon_schema

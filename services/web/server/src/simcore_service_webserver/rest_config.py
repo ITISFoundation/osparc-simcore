@@ -7,7 +7,7 @@ from typing import Dict, Optional
 
 import trafaret as T
 from aiohttp import web
-from models_library.settings import VersionTag
+from models_library.basic_types import VersionTag
 from pydantic import BaseSettings
 from servicelib.application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
 

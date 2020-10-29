@@ -3,7 +3,7 @@
     - prometheus endpoint information
 """
 import trafaret as T
-from models_library.settings import PortInt, VersionTag
+from models_library.basic_types import PortInt, VersionTag
 from pydantic import BaseSettings
 
 CONFIG_SECTION_NAME = "activity"

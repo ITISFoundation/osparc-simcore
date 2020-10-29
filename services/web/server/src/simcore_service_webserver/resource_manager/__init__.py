@@ -1,1 +1,1 @@
-from .plugin import setup_garbage_collector
+from .plugin import setup_resource_manager

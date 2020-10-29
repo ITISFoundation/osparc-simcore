@@ -6,7 +6,7 @@
 from typing import Optional
 
 import trafaret as T
-from models_library.settings import PortInt
+from models_library.basic_types import PortInt
 from pydantic import BaseSettings
 
 CONFIG_SECTION_NAME = "smtp"

@@ -6,7 +6,7 @@
 import trafaret as T
 
 from simcore_sdk.config.db import CONFIG_SCHEMA as _PG_SCHEMA
-from models_library.settings import PostgresSettings
+from models_library.settings.postgres import PostgresSettings
 from pydantic import BaseSettings
 
 CONFIG_SECTION_NAME = "db"
