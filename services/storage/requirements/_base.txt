@@ -33,7 +33,6 @@ isodate==0.6.0            # via openapi-core
 jmespath==0.10.0          # via boto3, botocore
 jsonschema==3.2.0         # via -r requirements/../../../packages/service-library/requirements/_base.in, openapi-spec-validator
 lazy-object-proxy==1.4.3  # via -r requirements/../../../packages/service-library/requirements/_base.in, openapi-core
-marshmallow==3.8.0        # via -r requirements/_base.in
 minio==6.0.0              # via -r requirements/../../../packages/s3wrapper/requirements/_base.in
 multidict==5.0.0          # via aiohttp, yarl
 openapi-core==0.12.0      # via -r requirements/../../../packages/service-library/requirements/_base.in

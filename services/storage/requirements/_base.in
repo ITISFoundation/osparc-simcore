@@ -3,16 +3,13 @@
 -r ../../../packages/service-library/requirements/_base.in
 -r ../../../packages/models-library/requirements/_base.in
 
-
 # These packages introduce incompatible dependencies:
 blackfynn==4.0.0
 aiobotocore==1.0.7
 -c ./constraints.txt
 
-
 aiohttp
 aiofiles
 aiopg[sa]
-marshmallow
 tenacity
 semantic_version

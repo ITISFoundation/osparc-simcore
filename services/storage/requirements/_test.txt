@@ -47,7 +47,6 @@ isort==5.6.4              # via pylint
 jmespath==0.10.0          # via -r requirements/_base.txt, boto3, botocore
 jsonschema==3.2.0         # via -r requirements/_base.txt, docker-compose, openapi-spec-validator
 lazy-object-proxy==1.4.3  # via -r requirements/_base.txt, astroid, openapi-core
-marshmallow==3.8.0        # via -r requirements/_base.txt
 mccabe==0.6.1             # via pylint
 minio==6.0.0              # via -r requirements/_base.txt
 multidict==5.0.0          # via -r requirements/_base.txt, aiohttp, yarl
