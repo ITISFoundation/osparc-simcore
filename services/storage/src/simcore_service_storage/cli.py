@@ -20,13 +20,14 @@ import sys
 from servicelib.utils import search_osparc_repo_dir
 
 from . import application, cli_config
+from .settings import ApplicationSettings
 
 log = logging.getLogger(__name__)
 
 
 def create_environ(skip_system_environ=False):
     """
-        Build environment of substitutable variables
+    Build environment of substitutable variables
 
     """
     # system's environment variables
@@ -64,18 +65,15 @@ def parse(args, _parser):
 parser = argparse.ArgumentParser(
     description="Service to manage data storage in simcore."
 )
-setup(parser)
 
 
-def main(args=None):
-    config = parse(args, parser)
+def main(_args=None):
 
-    log_level = config["main"]["log_level"]
+    # TODO: args can be passed to arguments?
+    settings = ApplicationSettings.create_from_environ()
+
+    log_level = settings.loglevel
     logging.basicConfig(level=getattr(logging, log_level))
     logging.root.setLevel(getattr(logging, log_level))
 
-    application.run(config)
-
-
-# alias
-setup_parser = setup
+    application.run(config=settings.dict())
