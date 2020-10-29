@@ -24,7 +24,7 @@ async def pg_engine(app: web.Application):
     pg_cfg = app[APP_CONFIG_KEY][THIS_SERVICE_NAME]
     dsn = DataSourceName(
         application_name=f"{__name__}_{id(app)}",
-        database=pg_cfg["db"],
+        database=pg_cfg["database"],
         user=pg_cfg["user"],
         password=pg_cfg["password"],
         host=pg_cfg["host"],

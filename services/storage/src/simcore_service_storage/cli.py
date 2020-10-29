@@ -12,7 +12,7 @@ Why does this file exist, and why not put this in __main__?
     there's no ``simcore_service_storage.__main__`` in ``sys.modules``.
 
 """
-
+import sys
 import logging
 import os
 from pathlib import Path
@@ -100,11 +100,11 @@ def main(config: Optional[Path] = None, check_config: bool = False):
             pformat(dict(os.environ)),
             exc_info=False,
         )
-        exit(os.EX_DATAERR)
+        sys.exit(os.EX_DATAERR)
 
     if check_config:
         click.echo(settings.json(indent=2))
-        exit(os.EX_OK)
+        sys.exit(os.EX_OK)
 
     log_level = settings.loglevel
     logging.basicConfig(level=getattr(logging, log_level))
