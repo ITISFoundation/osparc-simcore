@@ -17,7 +17,7 @@ class PostgresSettings(BaseSettings):
     password: SecretStr
 
     # database
-    db: str = Field(..., alias="database")
+    db: str
 
     # pool connection limits
     minsize: conint(ge=10) = 10
