@@ -135,7 +135,8 @@ qx.Class.define("osparc.component.node.NodeView", {
 
     _openEditAccessLevel: function() {
       const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
-      settingsEditorLayout.add(this.getNode().getPropsFormEditor());
+      const propsFormEditor = this.getNode().getPropsFormEditor();
+      settingsEditorLayout.add(propsFormEditor);
       const title = this.getNode().getLabel();
       osparc.ui.window.Window.popUpInWindow(settingsEditorLayout, title, 800, 600);
     },
