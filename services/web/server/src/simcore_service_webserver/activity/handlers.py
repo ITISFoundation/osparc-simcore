@@ -58,7 +58,7 @@ async def get_status(request: aiohttp.web.Request):
         scheme="http",
         host=config.prometheus_host,
         port=config.prometheus_port,
-        path=f"api/{config.prometheus_api_version}/query",
+        path=f"/api/{config.prometheus_api_version}/query",
     )
     results = await asyncio.gather(
         get_cpu_usage(session, url, user_id),
