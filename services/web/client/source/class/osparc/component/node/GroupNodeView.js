@@ -83,19 +83,16 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
     },
 
     isSettingsGroupShowable: function() {
-      let anyVisible = false;
       const innerNodes = this.getNode().getInnerNodes(true);
       const innerNodesArray = Object.values(innerNodes);
-      for (let i=0; i<innerNodesArray.length && !anyVisible; i++) {
+      for (let i=0; i<innerNodesArray.length; i++) {
         const innerNode = innerNodesArray[i];
         const propsForm = innerNode.getPropsForm();
-        if (propsForm) {
-          anyVisible = propsForm.hasVisibleInputs();
-        } else {
-          anyVisible = false;
+        if (propsForm && propsForm.hasVisibleInputs()) {
+          return true;
         }
       }
-      return anyVisible;
+      return false;
     },
 
     __iFrameChanged: function(innerNode, tabPage) {
