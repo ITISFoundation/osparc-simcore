@@ -1,11 +1,9 @@
-# pylint: disable=no-self-argument
-# pylint: disable=no-self-use
-
-from enum import Enum
 from typing import Optional
 
-from pydantic import BaseSettings, PostgresDsn, SecretStr, conint, constr, validator
-from ..basic_types import PortInt, VersionTag, LogLevel
+from pydantic import BaseSettings, Field, PostgresDsn, SecretStr, conint, validator
+
+from ..basic_types import PortInt
+
 
 class PostgresSettings(BaseSettings):
     dns: Optional[PostgresDsn] = None
@@ -22,28 +20,31 @@ class PostgresSettings(BaseSettings):
     db: str
 
     # pool connection limits
-    minsize: int = 10
-    maxsize: int = 10
+    minsize: conint(ge=10) = 10
+    maxsize: conint(ge=10) = 10
+
+    dsn: Optional[PostgresDsn] = Field(None, description="Database Source Name")
 
     @validator("maxsize")
+    @classmethod
     def check_size(cls, v, values):
         if not (values["minsize"] <= v):
             raise ValueError(f"assert minsize={values['minsize']} <= maxsize={v}")
         return v
 
-    @property
-    def postgres_dsn(self) -> str:
-        if self.dns:
-            return str(self.dns)
-        else:
+    @validator("dsn", pre=True)
+    @classmethod
+    def autofill_dsn(cls, v, values):
+        if v is None:
             return PostgresDsn.build(
                 scheme="postgresql",
-                user=self.user,
-                password=self.password.get_secret_value(),
-                host=self.host,
-                port=self.port,
-                path=f"/{self.db}",
+                user=values["user"],
+                password=values["password"].get_secret_value(),
+                host=values["host"],
+                port=f"{values['port']}",
+                path=f"/{values['db']}",
             )
+        return v
 
     class Config:
         case_sensitive = False

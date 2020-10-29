@@ -17,7 +17,8 @@ See https://docs.aiohttp.org/en/stable/web_advanced.html#data-sharing-aka-no-sin
 import logging
 from typing import Any, Dict, List, Optional
 
-from models_library.basic_types import LogLevel, PortInt
+from models_library.basic_types import LogLevel
+from models_library.settings.application_bases import BaseAiohttpAppSettings
 from models_library.settings.postgres import PostgresSettings
 from models_library.settings.s3 import S3Config
 from pydantic import BaseSettings, Field
@@ -84,13 +85,11 @@ class BfApiToken(BaseSettings):
     token_secret: str = Field(..., env="BF_API_SECRET")
 
 
-class ApplicationSettings(BaseSettings):
-    host: str = "0.0.0.0"
-    port: PortInt = 8080
-
+class ApplicationSettings(BaseAiohttpAppSettings):
     loglevel: LogLevel = Field(
         "INFO", env=["STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
+
     testing: bool = False
 
     max_workers: int = 8
