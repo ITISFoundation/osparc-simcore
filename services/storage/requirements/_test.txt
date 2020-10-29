@@ -28,7 +28,6 @@ coverage==5.3             # via -r requirements/_test.in, codecov, coveralls, py
 coveralls==2.1.2          # via -r requirements/_test.in
 cryptography==3.2.1       # via paramiko
 dataclasses==0.7          # via -r requirements/_base.txt, pydantic
-decorator==4.4.2          # via -r requirements/_base.txt, networkx
 deprecated==1.2.10        # via -r requirements/_base.txt, blackfynn
 distro==1.5.0             # via docker-compose
 dnspython==2.0.0          # via -r requirements/_base.txt, email-validator
@@ -52,7 +51,6 @@ marshmallow==3.8.0        # via -r requirements/_base.txt
 mccabe==0.6.1             # via pylint
 minio==6.0.0              # via -r requirements/_base.txt
 multidict==5.0.0          # via -r requirements/_base.txt, aiohttp, yarl
-networkx==2.5             # via -r requirements/_base.txt
 numpy==1.19.3             # via pandas
 openapi-core==0.12.0      # via -r requirements/_base.txt
 openapi-spec-validator==0.2.9  # via -r requirements/_base.txt, openapi-core
@@ -83,7 +81,7 @@ pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest
 python-dateutil==2.8.1    # via -r requirements/_base.txt, blackfynn, botocore, minio, pandas
 python-dotenv==0.15.0     # via docker-compose
 pytz==2020.1              # via -r requirements/_base.txt, blackfynn, minio, pandas
-pyyaml==5.3.1             # via -r requirements/_base.txt, docker-compose, openapi-spec-validator, trafaret-config
+pyyaml==5.3.1             # via -r requirements/_base.txt, docker-compose, openapi-spec-validator
 requests==2.24.0          # via -r requirements/_base.txt, blackfynn, codecov, coveralls, docker, docker-compose
 s3transfer==0.3.3         # via -r requirements/_base.txt, boto3
 semantic-version==2.8.5   # via -r requirements/_base.txt
@@ -95,8 +93,7 @@ tenacity==6.2.0           # via -r requirements/_base.txt
 termcolor==1.1.0          # via pytest-sugar
 texttable==1.6.3          # via docker-compose
 toml==0.10.1              # via pylint, pytest
-trafaret-config==2.0.2    # via -r requirements/_base.txt
-trafaret==2.1.0           # via -r requirements/_base.txt, trafaret-config
+trafaret==2.1.0           # via -r requirements/_base.txt
 typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.3  # via -r requirements/_base.txt, aiohttp, aioitertools, yarl
 ujson==4.0.1              # via -r requirements/_base.txt
