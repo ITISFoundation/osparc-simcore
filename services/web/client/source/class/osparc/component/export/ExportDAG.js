@@ -171,7 +171,11 @@ qx.Class.define("osparc.component.export.ExportDAG", {
       const nodes = Object.values(innerNodes);
       for (const node of nodes) {
         const nodeEntry = nodesGroupService["workbench"][node.getNodeId()];
-        for (let [portId, portValue] of Object.entries(node.getInputEditorValues())) {
+        let editorEntries = {};
+        if (node.isPropertyInitialized("propsFormEditor") && node.getPropsFormEditor()) {
+          editorEntries = node.getPropsFormEditor().getValues();
+        }
+        for (let [portId, portValue] of Object.entries(editorEntries)) {
           nodeEntry.inputs[portId] = portValue;
         }
       }
