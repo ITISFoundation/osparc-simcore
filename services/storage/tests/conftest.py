@@ -125,6 +125,7 @@ def postgres_service(docker_services, docker_ip):
     postgres_service = {
         "user": USER,
         "password": PASS,
+        "db": DATABASE,
         "database": DATABASE,
         "host": docker_ip,
         "port": docker_services.port_for("postgres", 5432),

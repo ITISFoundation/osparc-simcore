@@ -8,7 +8,7 @@ test_datcore:
     token_key: ${BF_API_KEY}
     token_secret: ${BF_API_SECRET}
 postgres:
-  database: ${POSTGRES_DB}
+  db: ${POSTGRES_DB}
   user: ${POSTGRES_USER}
   password: ${POSTGRES_PASSWORD}
   host: ${POSTGRES_HOST}
