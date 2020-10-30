@@ -22,6 +22,12 @@ class DiagnosticsSettings(BaseSettings):
         env="DIAGNOSTICS_MAX_TASK_DELAY",
     )
 
+    max_avg_response_latency: PositiveFloat = Field(
+        3.0, env="DIAGNOSTICS_MAX_AVG_LATENCY"
+    )
+
+    start_sensing_delay: Optional[PositiveFloat] = 60.0
+
     @validator("max_task_delay", pre=True)
     def validate_max_task_delay(cls, v, values):
         slow_duration_secs = values["slow_duration_secs"]
@@ -29,8 +35,3 @@ class DiagnosticsSettings(BaseSettings):
             10 * slow_duration_secs,
             v,
         )  # secs
-
-    max_avg_response_latency: PositiveFloat = Field(
-        3.0, env="DIAGNOSTICS_MAX_AVG_LATENCY"
-    )
-    start_sensing_delay: Optional[PositiveFloat] = 60.0
