@@ -5,8 +5,8 @@
 """
 import logging
 from typing import Optional
-from pydantic import Field, BaseSettings
-from ..basic_types import PortInt, BootModeEnum, LogLevel
+from pydantic import Field, BaseSettings, validator, AnyHttpUrl
+from ..basic_types import PortInt, BootModeEnum, LogLevel, VersionTag
 
 
 class BaseFastApiAppSettings(BaseSettings):
@@ -31,3 +31,25 @@ class BaseFastApiAppSettings(BaseSettings):
 
 class BaseAiohttpAppSettings(BaseFastApiAppSettings):
     port: PortInt = 8080
+
+
+class BaseServiceAPISettings(BaseSettings):
+    host: str
+    port: PortInt
+    vtag: VersionTag = Field(
+        "v0", alias="version", description="Service API's version tag"
+    )
+
+    url: Optional[AnyHttpUrl] = None
+
+    @validator("url", pre=True)
+    @classmethod
+    def autofill_url(cls, v, values):
+        if v is None:
+            return AnyHttpUrl.build(
+                scheme="http",
+                host=values["host"],
+                port=f"{values['port']}",
+                path=f"/{values['vtag']}",
+            )
+        return v

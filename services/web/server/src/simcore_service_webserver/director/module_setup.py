@@ -36,11 +36,11 @@ def setup_director(app: web.Application, *, disable_login=False):
     # ----------------------------------------------
     # TODO: temporary, just to check compatibility between
     # trafaret and pydantic schemas
-    cfg = assert_valid_config(app)
+    _ , settings = assert_valid_config(app)
     # ---------------------------------------------
 
     # director service API base url, e.g. http://director:8081/v0
-    app[APP_DIRECTOR_API_KEY] = cfg.base_url
+    app[APP_DIRECTOR_API_KEY] = str(settings.url)
 
     # setup routes ------------
     specs = app[APP_OPENAPI_SPECS_KEY]
