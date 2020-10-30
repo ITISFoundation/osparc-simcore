@@ -53,7 +53,7 @@ class CompTaskAtDB(BaseModel):
 
     @validator("state", pre=True)
     @classmethod
-    def secure_url(cls, v):
+    def convert_state_if_needed(cls, v):
         if isinstance(v, StateType):
             return RunningState(DB_TO_RUNNING_STATE[StateType(v)])
         return v
