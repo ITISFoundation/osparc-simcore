@@ -23,9 +23,14 @@ schema = T.Dict(
 )
 
 
+class PgSettings(PostgresSettings):
+    class Config:
+        fields = {"db": "database"}
+
+
 class DatabaseSettings(BaseSettings):
     enabled: bool = True
-    postgres: PostgresSettings
+    postgres: PgSettings
 
 
 def assert_valid_config(app: Application) -> Dict:
