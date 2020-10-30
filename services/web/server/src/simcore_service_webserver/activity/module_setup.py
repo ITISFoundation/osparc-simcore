@@ -1,13 +1,12 @@
 import logging
 
 from aiohttp import web
-from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
 
 from ..rest_config import APP_OPENAPI_SPECS_KEY
 from . import handlers
-from .config import CONFIG_SECTION_NAME, ActivitySettings
+from .config import assert_valid_config
 
 logger = logging.getLogger(__name__)
 
@@ -18,12 +17,13 @@ logger = logging.getLogger(__name__)
     depends=["simcore_service_webserver.rest"],
     logger=logger,
 )
-def setup_activity(app: web.Application, **cfg_settings):
+def setup_activity(app: web.Application):
 
-    # submodule settings and store in app
-    if cfg_settings:
-        cfg = ActivitySettings(**cfg_settings)
-        app[APP_CONFIG_KEY][CONFIG_SECTION_NAME] = cfg
+    #----------------------------------------------
+    # TODO: temporary, just to check compatibility between
+    # trafaret and pydantic schemas
+    assert_valid_config(app)
+    #---------------------------------------------
 
     # setup routes ------------
     specs = app[APP_OPENAPI_SPECS_KEY]

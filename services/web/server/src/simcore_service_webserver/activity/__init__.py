@@ -1,1 +1,1 @@
-from .setup import setup_activity
+from .module_setup import setup_activity

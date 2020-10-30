@@ -2,9 +2,12 @@
     - config-file schema
     - prometheus endpoint information
 """
+from aiohttp.web import Application
 import trafaret as T
 from models_library.basic_types import PortInt, VersionTag
 from pydantic import BaseSettings
+from servicelib.application_keys import APP_CONFIG_KEY
+from typing import Dict
 
 CONFIG_SECTION_NAME = "activity"
 
@@ -19,6 +22,7 @@ schema = T.Dict(
     }
 )
 
+
 class ActivitySettings(BaseSettings):
     prometheus_host: str = "prometheus"
     prometheus_port: PortInt = 9090
@@ -27,3 +31,9 @@ class ActivitySettings(BaseSettings):
     class Config:
         case_sensitive = False
         env_prefix = "WEBSERVER_"
+
+
+def assert_valid_config(app: Application) -> Dict:
+    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    _settings = ActivitySettings(**cfg)
+    return cfg
