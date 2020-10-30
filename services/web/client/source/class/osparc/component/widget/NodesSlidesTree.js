@@ -72,6 +72,13 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       };
     },
 
+    getItemsInTree: function(itemMdl, children = []) {
+      children.push(itemMdl);
+      for (let i=0; itemMdl.getChildren && i<itemMdl.getChildren().length; i++) {
+        this.self().getItemsInTree(itemMdl.getChildren().toArray()[i], children);
+      }
+    },
+
     moveElement: function(input, from, to) {
       let numberOfDeletedElm = 1;
       const elm = input.splice(from, numberOfDeletedElm)[0];
@@ -244,8 +251,10 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     },
 
     __recalculatePositions: function() {
-      const treeMdl = this.__tree.getModel();
-      const children = treeMdl.getChildren().toArray();
+      const rootModel = this.__tree.getModel();
+      let children = [];
+      this.self().getItemsInTree(rootModel, children);
+      children.shift();
       let pos = 0;
       for (let i=0; i<children.length; i++) {
         const child = children[i];
