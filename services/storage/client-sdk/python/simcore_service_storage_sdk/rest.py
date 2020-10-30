@@ -71,7 +71,7 @@ class RESTClientObject(object):
         )
 
         # https pool manager
-        timeout = ClientTimeout(total=None, connect=1, sock_connect=1)
+        timeout = aiohttp.ClientTimeout(total=None, connect=1, sock_connect=1)
         if configuration.proxy:
             self.pool_manager = aiohttp.ClientSession(
                 connector=connector,
