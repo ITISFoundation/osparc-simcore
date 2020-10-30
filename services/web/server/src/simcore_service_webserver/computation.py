@@ -16,7 +16,7 @@ from servicelib.rest_routing import iter_path_operations, map_handlers_with_oper
 
 from . import computation_handlers
 from .computation_comp_tasks_listening_task import setup as setup_comp_tasks_listener
-from .computation_config import CONFIG_SECTION_NAME, ComputationSettings
+from .computation_config import CONFIG_SECTION_NAME, assert_valid_config
 from .computation_subscribe import subscribe
 from .rest_config import APP_OPENAPI_SPECS_KEY
 
@@ -26,10 +26,12 @@ log = logging.getLogger(__file__)
 @app_module_setup(
     __name__, ModuleCategory.ADDON, config_section=CONFIG_SECTION_NAME, logger=log
 )
-def setup(app: web.Application):
-    # init settings
-    cfg = ComputationSettings.create_from_env()
-    app[APP_CONFIG_KEY][CONFIG_SECTION_NAME] = cfg
+def setup_computation(app: web.Application):
+    # ----------------------------------------------
+    # TODO: temporary, just to check compatibility between
+    # trafaret and pydantic schemas
+    assert_valid_config(app)
+    # ---------------------------------------------
 
     # subscribe to rabbit upon startup
     # TODO: Define connection policies (e.g. {on-startup}, lazy). Could be defined in config-file
@@ -57,7 +59,5 @@ def setup(app: web.Application):
     setup_comp_tasks_listener(app)
 
 
-# alias
-setup_computation = setup
 
 __all__ = "setup_computation"
