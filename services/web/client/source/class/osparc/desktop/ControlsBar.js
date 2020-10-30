@@ -129,19 +129,29 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       osparc.store.Store.getInstance().addListener("changeCurrentStudy", e => {
         const study = e.getData();
         if (study && study.getState() && study.getState().state) {
-          switch (study.getState().state.value) {
-            case "PENDING":
-            case "PUBLISHED":
-            case "STARTED":
-              startButton.setFetching(true);
-              stopButton.setEnabled(true);
-              break;
-            default:
-              startButton.setFetching(false);
-              stopButton.setEnabled(false);
-          }
+          this.__updatePipelineState(study.getState().state);
         }
       });
+    },
+
+    __updatePipelineState: function(pipelineState) {
+      const startButton = this.__startButton;
+      const stopButton = this.__stopButton;
+      switch (pipelineState.value) {
+        case "PENDING":
+        case "PUBLISHED":
+        case "STARTED":
+          startButton.setFetching(true);
+          stopButton.setEnabled(true);
+          break;
+        case "NOT_STARTED":
+        case "SUCCESS":
+        case "FAILED":
+        default:
+          startButton.setFetching(false);
+          stopButton.setEnabled(false);
+          break;
+      }
     },
 
     __createShowSweeperButton: function() {

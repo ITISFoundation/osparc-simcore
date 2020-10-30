@@ -60,6 +60,7 @@ qx.Class.define("osparc.data.model.Study", {
     this.setUi(new osparc.data.model.StudyUI(studyData.ui));
 
     this.setSweeper(new osparc.data.model.Sweeper(studyData));
+    this.setState(studyData.state);
   },
 
   properties: {
@@ -264,16 +265,19 @@ qx.Class.define("osparc.data.model.Study", {
         if (key === "state") {
           return;
         }
+        if (key === "workbench") {
+          jsonObject[key] = this.getWorkbench().serialize();
+        }
+        if (key === "ui") {
+          jsonObject[key] = this.getUi().serialize();
+          return;
+        }
         if (key === "sweeper") {
           jsonObject["dev"] = {};
           jsonObject["dev"]["sweeper"] = this.getSweeper().serialize();
           return;
         }
-        if (key === "ui") {
-          jsonObject["ui"] = this.getUi().serialize();
-          return;
-        }
-        let value = key === "workbench" ? this.getWorkbench().serialize() : this.get(key);
+        const value = this.get(key);
         if (value !== null) {
           // only put the value in the payload if there is a value
           jsonObject[key] = value;
