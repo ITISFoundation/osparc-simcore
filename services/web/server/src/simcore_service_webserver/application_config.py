@@ -19,11 +19,14 @@ from pathlib import Path
 from typing import Dict
 
 import trafaret as T
-from models_library.basic_types import LogLevel, PortInt
+from aiohttp.web import Application
 from pydantic import BaseSettings, Field
-from servicelib import application_keys  # pylint:disable=unused-import
-from servicelib.config_schema_utils import addon_section, minimal_addon_schema
 from trafaret_config.simple import read_and_validate
+
+from models_library.basic_types import LogLevel, PortInt
+from servicelib import application_keys  # pylint:disable=unused-import
+from servicelib.application_keys import APP_CONFIG_KEY
+from servicelib.config_schema_utils import addon_section, minimal_addon_schema
 
 from . import (
     catalog_config,
@@ -126,3 +129,9 @@ class MainSettings(BaseSettings):
     class Config:
         case_sensitive = False
         env_prefix = "WEBSERVER_"
+
+
+def assert_valid_config(app: Application) -> Dict:
+    cfg = app[APP_CONFIG_KEY]["main"]
+    _settings = MainSettings(**cfg)
+    return cfg
