@@ -1,6 +1,7 @@
 import logging
 from typing import Dict
 
+import networkx as nx
 from celery.contrib.abortable import AbortableAsyncResult
 from celery.result import AsyncResult
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -49,6 +50,10 @@ def celery_on_message(body):
 
 def background_on_message(task):
     log.warning(task.get(on_message=celery_on_message, propagate=False))
+
+
+def create_dag(project: ProjectAtDB) -> nx.DiGraph:
+    pass
 
 
 @router.post(
