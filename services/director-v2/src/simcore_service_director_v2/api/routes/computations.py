@@ -80,7 +80,8 @@ def create_dag_graph(workbench: Workbench) -> nx.DiGraph:
 
 
 def convert_graph_to_celery_canvas(dag_graph: nx.DiGraph) -> Signature:
-    pass
+    for node in nx.topological_sort(dag_graph):
+        node_deps = list(dag_graph.predecessors(node))
 
 
 @router.post(
