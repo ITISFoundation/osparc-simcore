@@ -3,10 +3,10 @@
     - config-file schema
     - settings
 """
-from typing import Optional
+from typing import Optional, Dict
 
 import trafaret as T
-from aiohttp import web
+from aiohttp.web import Application
 from pydantic import BaseSettings, Field, PositiveInt, RedisDsn
 from servicelib.application_keys import APP_CONFIG_KEY
 
@@ -47,7 +47,7 @@ class ResourceManagerSettings(BaseSettings):
         env_prefix = "WEBSERVER_"
 
 
-def get_service_deletion_timeout(app: web.Application) -> int:
+def get_service_deletion_timeout(app: Application) -> int:
     timeout = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME][
         "resource_deletion_timeout_seconds"
     ]
@@ -55,7 +55,12 @@ def get_service_deletion_timeout(app: web.Application) -> int:
     return int(timeout)
 
 
-def get_garbage_collector_interval(app: web.Application) -> int:
+def get_garbage_collector_interval(app: Application) -> int:
     return app[APP_CONFIG_KEY][CONFIG_SECTION_NAME][
         "garbage_collection_interval_seconds"
     ]
+
+def assert_valid_config(app: Application) -> Dict:
+    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    _settings = ResourceManagerSettings(**cfg)
+    return cfg

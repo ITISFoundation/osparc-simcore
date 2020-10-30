@@ -9,14 +9,12 @@
 import logging
 
 from aiohttp import web
-from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .config import (
     APP_CLIENT_SOCKET_REGISTRY_KEY,
     APP_RESOURCE_MANAGER_TASKS_KEY,
-    CONFIG_SECTION_NAME,
-    ResourceManagerSettings,
+    assert_valid_config,
 )
 from .garbage_collector import setup_garbage_collector
 from .redis import setup_redis_client
@@ -28,11 +26,14 @@ logger = logging.getLogger(__name__)
 @app_module_setup(
     "simcore_service_webserver.resource_manager", ModuleCategory.SYSTEM, logger=logger
 )
-def setup_resource_manager(app: web.Application, **cfg_settings) -> bool:
+def setup_resource_manager(app: web.Application) -> bool:
     """Sets up resource manager subsystem in the application"""
-    if cfg_settings:
-        cfg = ResourceManagerSettings(**cfg_settings)
-        app[APP_CONFIG_KEY][CONFIG_SECTION_NAME] = cfg
+
+    # ----------------------------------------------
+    # TODO: temporary, just to check compatibility between
+    # trafaret and pydantic schemas
+    assert_valid_config(app)
+    # ---------------------------------------------
 
     app[APP_RESOURCE_MANAGER_TASKS_KEY] = []
     setup_redis_client(app)
