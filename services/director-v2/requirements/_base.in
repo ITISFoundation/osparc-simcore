@@ -19,6 +19,9 @@ aiopg[sa]
 # docker daemon
 aiodocker
 
+# DAGs
+networkx
+
 # celery
 celery[redis]
 

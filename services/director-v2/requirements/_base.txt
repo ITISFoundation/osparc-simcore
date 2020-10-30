@@ -6,7 +6,7 @@
 #
 aiodocker==0.19.1         # via -r requirements/_base.in
 aiofiles==0.5.0           # via fastapi
-aiohttp==3.7.1            # via aiodocker
+aiohttp==3.7.2            # via aiodocker
 aiopg[sa]==1.0.0          # via -r requirements/_base.in
 amqp==5.0.1               # via kombu
 aniso8601==7.0.0          # via graphene
@@ -22,6 +22,7 @@ click-didyoumean==0.0.3   # via celery
 click-repl==0.1.6         # via celery
 click==7.1.2              # via celery, click-didyoumean, click-repl, uvicorn
 dataclasses==0.7 ; python_version < "3.7"  # via -r requirements/_base.in, pydantic
+decorator==4.4.2          # via networkx
 dnspython==2.0.0          # via email-validator
 email-validator==1.1.1    # via fastapi
 fastapi[all]==0.61.1      # via -r requirements/_base.in
@@ -38,12 +39,13 @@ jinja2==2.11.2            # via fastapi
 kombu==5.0.2              # via celery
 markupsafe==1.1.1         # via jinja2
 multidict==5.0.0          # via aiohttp, yarl
-orjson==3.4.1             # via fastapi
+networkx==2.5             # via -r requirements/_base.in
+orjson==3.4.2             # via fastapi
 promise==2.3              # via graphql-core, graphql-relay
 prompt-toolkit==3.0.8     # via click-repl
 psycopg2-binary==2.8.6    # via aiopg, sqlalchemy
-pydantic[dotenv]==1.7.2   # via -r requirements/_base.in, fastapi
-python-dotenv==0.14.0     # via pydantic
+pydantic[dotenv]==1.7.1   # via -r requirements/_base.in, fastapi
+python-dotenv==0.15.0     # via pydantic
 python-multipart==0.0.5   # via fastapi
 pytz==2020.1              # via celery
 pyyaml==5.3.1             # via fastapi

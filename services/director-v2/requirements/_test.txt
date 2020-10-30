@@ -6,7 +6,7 @@
 #
 aiodocker==0.19.1         # via -r requirements/_base.txt
 aiofiles==0.5.0           # via -r requirements/_base.txt, fastapi
-aiohttp==3.7.1            # via -r requirements/_base.txt, aiodocker, pytest-aiohttp
+aiohttp==3.7.2            # via -r requirements/_base.txt, aiodocker, pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt
 alembic==1.4.3            # via -r requirements/_test.in
 amqp==5.0.1               # via -r requirements/_base.txt, kombu
@@ -32,6 +32,7 @@ coverage==5.3             # via codecov, coveralls, pytest-cov
 coveralls==2.1.2          # via -r requirements/_test.in
 cryptography==3.2.1       # via paramiko
 dataclasses==0.7 ; python_version < "3.7"  # via -r requirements/_base.txt, pydantic
+decorator==4.4.2          # via -r requirements/_base.txt, networkx
 distro==1.5.0             # via docker-compose
 dnspython==2.0.0          # via -r requirements/_base.txt, email-validator
 docker-compose==1.27.4    # via pytest-docker
@@ -63,7 +64,8 @@ mako==1.1.3               # via alembic
 markupsafe==1.1.1         # via -r requirements/_base.txt, jinja2, mako
 mccabe==0.6.1             # via pylint
 multidict==5.0.0          # via -r requirements/_base.txt, aiohttp, yarl
-orjson==3.4.1             # via -r requirements/_base.txt, fastapi
+networkx==2.5             # via -r requirements/_base.txt
+orjson==3.4.2             # via -r requirements/_base.txt, fastapi
 packaging==20.4           # via pytest
 paramiko==2.7.2           # via docker
 pluggy==0.13.1            # via pytest
@@ -85,7 +87,7 @@ pytest-mock==3.3.1        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-mock
 python-dateutil==2.8.1    # via alembic, faker
-python-dotenv==0.14.0     # via -r requirements/_base.txt, docker-compose, pydantic
+python-dotenv==0.15.0     # via -r requirements/_base.txt, docker-compose, pydantic
 python-editor==1.0.4      # via alembic
 python-multipart==0.0.5   # via -r requirements/_base.txt, fastapi
 pytz==2020.1              # via -r requirements/_base.txt, celery
