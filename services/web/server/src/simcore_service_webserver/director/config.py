@@ -6,7 +6,8 @@
 from typing import Dict
 
 import trafaret as T
-from aiohttp import ClientSession, web
+from aiohttp import ClientSession
+from aiohttp.web import Application
 from models_library.basic_types import PortInt, VersionTag
 from pydantic import BaseSettings
 from servicelib.application_keys import APP_CLIENT_SESSION_KEY, APP_CONFIG_KEY
@@ -52,9 +53,15 @@ def build_api_url(config: Dict) -> URL:
     return api_baseurl
 
 
-def get_config(app: web.Application) -> Dict:
+def get_config(app: Application) -> Dict:
     return app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
 
 
-def get_client_session(app: web.Application) -> ClientSession:
+def get_client_session(app: Application) -> ClientSession:
     return app[APP_CLIENT_SESSION_KEY]
+
+
+def assert_valid_config(app: Application) -> Dict:
+    cfg = get_config(app)
+    _settings = DirectorSettings(**cfg)
+    return cfg

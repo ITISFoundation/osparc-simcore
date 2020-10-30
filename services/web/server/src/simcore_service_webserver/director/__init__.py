@@ -1,1 +1,1 @@
-from .setup import setup_director
+from .module_setup import setup_director

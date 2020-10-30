@@ -7,7 +7,6 @@ import logging
 
 from aiohttp import web
 
-from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_routing import (
     iter_path_operations,
@@ -15,7 +14,7 @@ from servicelib.rest_routing import (
 )
 
 from ..rest_config import APP_OPENAPI_SPECS_KEY
-from .config import APP_DIRECTOR_API_KEY, CONFIG_SECTION_NAME, DirectorSettings
+from .config import APP_DIRECTOR_API_KEY, assert_valid_config
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +25,7 @@ logger = logging.getLogger(__name__)
     depends=[],
     logger=logger,
 )
-def setup_director(app: web.Application, *, disable_login=False, **cfg_settings):
+def setup_director(app: web.Application, *, disable_login=False):
     """Sets up director's subsystem
 
     :param app: main application
@@ -34,8 +33,11 @@ def setup_director(app: web.Application, *, disable_login=False, **cfg_settings)
     :param disable_login: disabled auth requirements for subsystem's rest (for debugging), defaults to False
     :param disable_login: bool, optional
     """
-    cfg = DirectorSettings(**cfg_settings)
-    app[APP_CONFIG_KEY][CONFIG_SECTION_NAME] = cfg
+    # ----------------------------------------------
+    # TODO: temporary, just to check compatibility between
+    # trafaret and pydantic schemas
+    cfg = assert_valid_config(app)
+    # ---------------------------------------------
 
     # director service API base url, e.g. http://director:8081/v0
     app[APP_DIRECTOR_API_KEY] = cfg.base_url
