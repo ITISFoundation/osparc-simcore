@@ -46,9 +46,9 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
   },
 
   statics: {
-    convertModel: function(nodes) {
+    convertModel: function(nodes, lastPos = -1) {
       let children = [];
-      let i=0;
+      let i = ++lastPos;
       for (let nodeId in nodes) {
         const node = nodes[nodeId];
         let nodeInTree = {
@@ -59,12 +59,17 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         };
         nodeInTree.label = node.getLabel();
         if (node.isContainer()) {
-          nodeInTree.children = this.convertModel(node.getInnerNodes());
+          const innerChildren = this.convertModel(node.getInnerNodes(), i);
+          nodeInTree.children = innerChildren.children;
+          i = innerChildren.lastPos;
         }
         children.push(nodeInTree);
         i++;
       }
-      return children;
+      return {
+        children,
+        lastPos: i-1
+      };
     },
 
     moveElement: function(input, from, to) {
@@ -132,7 +137,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       const topLevelNodes = study.getWorkbench().getNodes();
       let rootData = {
         label: study.getName(),
-        children: this.self().convertModel(topLevelNodes),
+        children: this.self().convertModel(topLevelNodes).children,
         nodeId: study.getUuid(),
         skipNode: null,
         position: null
