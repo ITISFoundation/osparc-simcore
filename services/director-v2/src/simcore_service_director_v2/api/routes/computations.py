@@ -1,11 +1,18 @@
 import logging
-from typing import Dict
+from typing import Dict, List
 
 import networkx as nx
 from celery.contrib.abortable import AbortableAsyncResult
 from celery.result import AsyncResult
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from models_library.projects import NodeID, ProjectID, RunningState
+from models_library.projects import (
+    Node,
+    NodeID,
+    Project,
+    ProjectID,
+    RunningState,
+    Workbench,
+)
 from simcore_service_director_v2.utils.exceptions import ProjectNotFoundError
 from starlette import status
 from starlette.requests import Request
@@ -16,6 +23,7 @@ from ...models.domains.comp_tasks import (
     ComputationTaskOut,
     TaskID,
 )
+from ...models.domains.projects import ProjectAtDB
 from ...models.schemas.constants import UserID
 from ...modules.db.repositories.computations import (
     CompPipelinesRepository,
@@ -52,8 +60,21 @@ def background_on_message(task):
     log.warning(task.get(on_message=celery_on_message, propagate=False))
 
 
-def create_dag(project: ProjectAtDB) -> nx.DiGraph:
-    pass
+def find_entrypoints(graph: nx.DiGraph) -> List[NodeID]:
+    entrypoints = [n for n in graph.nodes if not list(graph.predecessors(n))]
+    log.debug("the entrypoints of the graph are %s", entrypoints)
+    return entrypoints
+
+
+def create_dag_graph(workbench: Workbench) -> nx.DiGraph:
+    dag_graph = nx.DiGraph()
+    for node_id, node in workbench.items():
+        dag_graph.add_node(node_id)
+        for input_node_id in node.inputNodes:
+            dag_graph.add_edge(input_node_id, node_id)
+    log.debug("created DAG graph: %s", dag_graph.adj)
+
+    return dag_graph
 
 
 @router.post(
@@ -76,9 +97,9 @@ async def create_computation(
 ):
     try:
         # get the project
-        await project_repo.get_project(project_id)
+        project: ProjectAtDB = await project_repo.get_project(project_id)
 
-        # check the current state is startable
+        # check if current state allow to start the computation
         comp_tasks: Dict[NodeID, CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             project_id
         )
@@ -94,6 +115,10 @@ async def create_computation(
                 detail=f"Projet {project_id} already started, current state is {pipeline_state}",
             )
 
+        # create the DAG
+        dag_graph = create_dag_graph(project.workbench)
+        # find the entrypoints
+        entrypoints = find_entrypoints(dag_graph)
         # ok so publish the tasks
         await computation_tasks.publish_tasks(project_id)
         # trigger celery
