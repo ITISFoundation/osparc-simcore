@@ -1,11 +1,10 @@
 import sys
-from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr
+from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
 
 from .services import KEY_RE, PROPERTY_KEY_RE, VERSION_RE
 
@@ -184,6 +183,13 @@ class Node(BaseModel):
         example=["RUNNING", "FAILED"],
     )
 
+    @validator("thumbnail", pre=True)
+    @classmethod
+    def convert_empty_str_to_none(v):
+        if isinstance(v, str) and v == "":
+            return None
+        return v
+
     class Config:
         extra = Extra.forbid
 
@@ -230,6 +236,9 @@ class ProjectState(BaseModel):
     state: ProjectRunningState = Field(..., description="The project running state")
 
 
+Workbench = Dict[NodeID, Node]
+
+
 class Project(BaseModel):
     uuid: ProjectID = Field(
         ...,
@@ -270,7 +279,7 @@ class Project(BaseModel):
         description="url of the project thumbnail",
         example=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )
-    workbench: Dict[NodeID, Node]
+    workbench: Workbench
     ui: Optional[StudyUI]
     tags: Optional[List[int]] = Field(None)
     classifiers: Optional[List[ClassifierID]] = Field(
@@ -286,28 +295,4 @@ class Project(BaseModel):
     class Config:
         description = "Description of a simcore project"
         title = "simcore project"
-        extra = Extra.forbid
-
-
-class ProjectAtDB(Project):
-    id: int
-    project_type: Any = Field(..., alias="type")
-    uuid: str = Field(...)
-    prjOwner: Optional[int] = Field(..., alias="prj_owner")
-    accessRights: Dict = Field(..., alias="access_rights")
-    creationDate: datetime = Field(
-        ...,
-        alias="creation_date",
-    )
-    lastChangeDate: datetime = Field(
-        ...,
-        alias="last_change_date",
-    )
-    published: bool
-    thumbnail: Optional[str] = Field(None)
-    ui: Optional[Dict] = Field(None)
-    workbench: Dict
-
-    class Config:
-        orm_mode = True
         extra = Extra.forbid
