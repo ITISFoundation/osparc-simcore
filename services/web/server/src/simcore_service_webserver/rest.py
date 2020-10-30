@@ -25,7 +25,8 @@ from simcore_service_webserver.resources import resources
 
 from . import rest_routes
 from .__version__ import api_version_prefix
-from .rest_config import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY, get_rest_config
+from .rest_config import APP_OPENAPI_SPECS_KEY, assert_valid_config
+from .diagnostics_config import get_diagnostics_config
 
 log = logging.getLogger(__name__)
 
@@ -55,7 +56,12 @@ def load_openapi_specs(spec_path: Optional[Path] = None) -> OpenApiSpecs:
     logger=log,
 )
 def setup(app: web.Application, *, swagger_doc_enabled: bool = True):
-    cfg = get_rest_config(app)
+    # ----------------------------------------------
+    # TODO: temporary, just to check compatibility between
+    # trafaret and pydantic schemas
+    cfg = assert_valid_config(app)
+    # ---------------------------------------------
+
     api_version_dir = cfg["version"]
     spec_path = get_openapi_specs_path(api_version_dir)
 
@@ -82,13 +88,12 @@ def setup(app: web.Application, *, swagger_doc_enabled: bool = True):
 
     # middlewares
     # NOTE: using safe get here since some tests use incomplete configs
-    is_diagnostics_enabled = (
-        app[APP_CONFIG_KEY].get("diagnostics", {}).get("enabled", {})
-    )
+    is_diagnostics_enabled = get_diagnostics_config(app).get("enabled", False)
     app.middlewares.extend(
         [
             error_middleware_factory(
-                api_version_prefix, log_exceptions=not is_diagnostics_enabled,
+                api_version_prefix,
+                log_exceptions=not is_diagnostics_enabled,
             ),
             envelope_middleware_factory(api_version_prefix),
         ]

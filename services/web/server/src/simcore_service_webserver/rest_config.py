@@ -5,6 +5,8 @@
 """
 from typing import Dict, Optional
 
+from .__version__ import api_vtag
+
 import trafaret as T
 from aiohttp import web
 from models_library.basic_types import VersionTag
@@ -21,13 +23,19 @@ schema = T.Dict(
 )
 
 
-class RestSettings(BaseSettings):
+class RestApiSettings(BaseSettings):
     enabled: Optional[bool] = True
-    vtag: VersionTag = "v0"
+    vtag: VersionTag = api_vtag
 
 
 def get_rest_config(app: web.Application) -> Dict:
     return app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+
+
+def assert_valid_config(app: web.Application) -> Dict:
+    cfg = get_rest_config(app)
+    _settings = RestApiSettings(**cfg)
+    return cfg
 
 
 __all__ = ["APP_OPENAPI_SPECS_KEY"]

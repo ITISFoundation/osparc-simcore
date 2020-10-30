@@ -1,8 +1,11 @@
 # pylint: disable=no-self-use
 # pylint: disable=no-self-argument
-from typing import Optional
+from typing import Dict, Optional
 
+from aiohttp.web import Application
 from pydantic import BaseSettings, Field, PositiveFloat, validator
+
+from servicelib.application_keys import APP_CONFIG_KEY
 
 
 class DiagnosticsSettings(BaseSettings):
@@ -35,3 +38,7 @@ class DiagnosticsSettings(BaseSettings):
             10 * slow_duration_secs,
             v,
         )  # secs
+
+
+def get_diagnostics_config(app: Application) -> Dict:
+    return app[APP_CONFIG_KEY].get("diagnostics", {})
