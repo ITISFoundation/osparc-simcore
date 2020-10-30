@@ -37,6 +37,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     this.__tree.setModel(model);
 
     this.__populateTree();
+    this.__recalculatePositions();
 
     this.__initData(initData);
   },
@@ -46,30 +47,23 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
   },
 
   statics: {
-    convertModel: function(nodes, lastPos = -1) {
+    convertModel: function(nodes) {
       let children = [];
-      let i = ++lastPos;
       for (let nodeId in nodes) {
         const node = nodes[nodeId];
         let nodeInTree = {
           label: "",
           nodeId: node.getNodeId(),
           skipNode: false,
-          position: i
+          position: -1
         };
         nodeInTree.label = node.getLabel();
         if (node.isContainer()) {
-          const innerChildren = this.convertModel(node.getInnerNodes(), i);
-          nodeInTree.children = innerChildren.children;
-          i = innerChildren.lastPos;
+          nodeInTree.children = this.convertModel(node.getInnerNodes());
         }
         children.push(nodeInTree);
-        i++;
       }
-      return {
-        children,
-        lastPos: i-1
-      };
+      return children;
     },
 
     getItemsInTree: function(itemMdl, children = []) {
@@ -144,7 +138,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       const topLevelNodes = study.getWorkbench().getNodes();
       let rootData = {
         label: study.getName(),
-        children: this.self().convertModel(topLevelNodes).children,
+        children: this.self().convertModel(topLevelNodes),
         nodeId: study.getUuid(),
         skipNode: null,
         position: null
@@ -155,15 +149,12 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     __populateTree: function() {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
 
-      let i = 0;
       this.__tree.setDelegate({
         createItem: () => {
           const nodeSlideTreeItem = new osparc.component.widget.NodeSlideTreeItem();
           nodeSlideTreeItem.set({
-            skipNode: false,
-            position: i
+            skipNode: false
           });
-          i++;
           return nodeSlideTreeItem;
         },
         bindItem: (c, item, id) => {
