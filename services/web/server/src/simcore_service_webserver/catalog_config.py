@@ -8,10 +8,11 @@ from typing import Dict
 
 import trafaret as T
 from aiohttp import ClientSession, web
-from pydantic import BaseSettings
+from pydantic import BaseSettings, Field
 
 from models_library.basic_types import PortInt, VersionTag
 from servicelib.application_keys import APP_CLIENT_SESSION_KEY, APP_CONFIG_KEY
+from .__version__ import api_vtag
 
 CONFIG_SECTION_NAME = "catalog"
 
@@ -37,7 +38,7 @@ class CatalogSettings(BaseSettings):
     enabled: bool = True
     host: str = "catalog"
     port: PortInt = 8000
-    vtag: VersionTag = "v0"
+    vtag: VersionTag = Field(api_vtag, alias="version")
 
     class Config:
         prefix = "CATALOG_"

@@ -68,7 +68,7 @@ async def _setup_config_and_pgpool(app: web.Application):
 
 
 @app_module_setup(
-    __name__,
+    "simcore_service_webserver.login",
     ModuleCategory.ADDON,
     depends=[f"simcore_service_webserver.{mod}" for mod in ("rest", "db")],
     logger=log,

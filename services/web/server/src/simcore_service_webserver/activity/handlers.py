@@ -9,7 +9,7 @@ from yarl import URL
 
 from ..computation_api import get_celery
 from ..login.decorators import login_required
-from .config import CONFIG_SECTION_NAME, ActivitySettings
+from .config import CONFIG_SECTION_NAME
 
 
 async def query_prometheus(session, url, query):
