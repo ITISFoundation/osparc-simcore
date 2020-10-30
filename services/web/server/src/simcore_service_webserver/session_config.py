@@ -15,7 +15,7 @@ schema = T.Dict({"secret_key": T.String})
 
 
 class SessionSettings(BaseSettings):
-    secret_key: constr(strip_whitespace=True, min_length=32, max_length=21)
+    secret_key: constr(strip_whitespace=True, min_length=32)
 
 
 def assert_valid_config(app: Application) -> Dict:

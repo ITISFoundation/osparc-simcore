@@ -53,12 +53,12 @@ async def get_status(request: aiohttp.web.Request):
     session = get_client_session(request.app)
     user_id = request.get(RQT_USERID_KEY, -1)
 
-    config: ActivitySettings = request.app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    config = request.app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     url = URL.build(
         scheme="http",
-        host=config.prometheus_host,
-        port=config.prometheus_port,
-        path=f"/api/{config.prometheus_api_version}/query",
+        host=config["prometheus_host"],
+        port=config["prometheus_port"],
+        path=f"/api/{config['prometheus_api_version']}/query",
     )
     results = await asyncio.gather(
         get_cpu_usage(session, url, user_id),

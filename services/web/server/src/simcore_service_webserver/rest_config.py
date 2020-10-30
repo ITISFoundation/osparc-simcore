@@ -10,7 +10,7 @@ from .__version__ import api_vtag
 import trafaret as T
 from aiohttp import web
 from models_library.basic_types import VersionTag
-from pydantic import BaseSettings
+from pydantic import BaseSettings, Field
 from servicelib.application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
 
 CONFIG_SECTION_NAME = "rest"
@@ -25,7 +25,7 @@ schema = T.Dict(
 
 class RestApiSettings(BaseSettings):
     enabled: Optional[bool] = True
-    vtag: VersionTag = api_vtag
+    vtag: VersionTag = Field(api_vtag, alias="version")
 
 
 def get_rest_config(app: web.Application) -> Dict:

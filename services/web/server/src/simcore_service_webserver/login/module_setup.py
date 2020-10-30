@@ -10,11 +10,10 @@ from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from ..db_config import CONFIG_SECTION_NAME as DB_SECTION
-from ..email_config import CONFIG_SECTION_NAME as SMTP_SECTION
 from ..rest_config import APP_OPENAPI_SPECS_KEY
 from ..statics import INDEX_RESOURCE_NAME
 from .cfg import APP_LOGIN_CONFIG, cfg
-from .config import CONFIG_SECTION_NAME, assert_valid_config
+from .config import assert_valid_config, create_login_internal_config
 from .routes import create_routes
 from .storage import AsyncpgStorage
 
@@ -22,30 +21,6 @@ log = logging.getLogger(__name__)
 
 
 MAX_TIME_TO_CLOSE_POOL_SECS = 5
-
-
-def _create_login_config(app: web.Application, storage: AsyncpgStorage) -> Dict:
-    """
-    Creates compatible config to update login.cfg.cfg object
-    """
-    login_cfg = app[APP_CONFIG_KEY].get(CONFIG_SECTION_NAME, {})  # optional!
-    smtp_cfg = app[APP_CONFIG_KEY][SMTP_SECTION]
-
-    config = {"APP": app, "STORAGE": storage}
-
-    def _fmt(val):
-        if isinstance(val, str):
-            if val.strip().lower() in ["null", "none", ""]:
-                return None
-        return val
-
-    for key, value in login_cfg.items():
-        config[key.upper()] = _fmt(value)
-
-    for key, value in smtp_cfg.items():
-        config["SMTP_{}".format(key.upper())] = _fmt(value)
-
-    return config
 
 
 async def _setup_config_and_pgpool(app: web.Application):
@@ -56,7 +31,7 @@ async def _setup_config_and_pgpool(app: web.Application):
     :param app: fully setup application on startup
     :type app: web.Application
     """
-    db_cfg = app[APP_CONFIG_KEY][DB_SECTION]["postgres"]
+    db_cfg: Dict = app[APP_CONFIG_KEY][DB_SECTION]["postgres"]
 
     # db
     pool = await asyncpg.create_pool(
@@ -69,7 +44,7 @@ async def _setup_config_and_pgpool(app: web.Application):
     storage = AsyncpgStorage(pool)  # NOTE: this key belongs to cfg, not settings!
 
     # config
-    config = _create_login_config(app, storage)
+    config = create_login_internal_config(app, storage)
     cfg.configure(config)
 
     if INDEX_RESOURCE_NAME in app.router:

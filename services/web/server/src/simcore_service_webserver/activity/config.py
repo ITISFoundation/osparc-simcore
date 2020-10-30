@@ -24,6 +24,7 @@ schema = T.Dict(
 
 
 class ActivitySettings(BaseSettings):
+    enabled: bool = True
     prometheus_host: str = "prometheus"
     prometheus_port: PortInt = 9090
     prometheus_api_version: VersionTag = "v1"
