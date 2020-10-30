@@ -3,11 +3,13 @@
     - config-file schema
     - settings
 """
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 import trafaret as T
 from aiohttp.web import Application
-from pydantic import BaseSettings, Field, PositiveInt, RedisDsn
+from pydantic import BaseSettings, PositiveInt
+
+from models_library.settings.redis import RedisConfig
 from servicelib.application_keys import APP_CONFIG_KEY
 
 CONFIG_SECTION_NAME = "resource_manager"
@@ -37,10 +39,17 @@ schema = T.Dict(
 )
 
 
+class RedisSection(RedisConfig):
+    enabled: bool = True
+
+
 class ResourceManagerSettings(BaseSettings):
+    enabled: bool = True
+
     resource_deletion_timeout_seconds: Optional[PositiveInt] = 900
     garbage_collection_interval_seconds: Optional[PositiveInt] = 30
-    redis: RedisDsn = Field(..., env="REDIS_DSN")
+
+    redis: RedisSection
 
     class Config:
         case_sensitive = False
@@ -59,6 +68,7 @@ def get_garbage_collector_interval(app: Application) -> int:
     return app[APP_CONFIG_KEY][CONFIG_SECTION_NAME][
         "garbage_collection_interval_seconds"
     ]
+
 
 def assert_valid_config(app: Application) -> Dict:
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
