@@ -21,8 +21,8 @@ db:
     password: admin
     host: localhost
     port: 5432
-    maxsize: 5
-    minsize: 1
+    maxsize: 10
+    minsize: 10
     endpoint: postgres:5432
 resource_manager:
   enabled: True
