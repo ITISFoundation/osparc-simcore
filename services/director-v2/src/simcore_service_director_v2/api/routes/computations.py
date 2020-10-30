@@ -1,7 +1,9 @@
 import logging
+from inspect import Signature
 from typing import Dict, List
 
 import networkx as nx
+from celery.canvas import Signature
 from celery.contrib.abortable import AbortableAsyncResult
 from celery.result import AsyncResult
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -69,12 +71,16 @@ def find_entrypoints(graph: nx.DiGraph) -> List[NodeID]:
 def create_dag_graph(workbench: Workbench) -> nx.DiGraph:
     dag_graph = nx.DiGraph()
     for node_id, node in workbench.items():
-        dag_graph.add_node(node_id)
+        dag_graph.add_node(node_id, name=node.label)
         for input_node_id in node.inputNodes:
             dag_graph.add_edge(input_node_id, node_id)
     log.debug("created DAG graph: %s", dag_graph.adj)
 
     return dag_graph
+
+
+def convert_graph_to_celery_canvas(dag_graph: nx.DiGraph) -> Signature:
+    pass
 
 
 @router.post(
@@ -103,26 +109,33 @@ async def create_computation(
         comp_tasks: Dict[NodeID, CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             project_id
         )
-        pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
-        if pipeline_state in [
-            RunningState.PUBLISHED,
-            RunningState.PENDING,
-            RunningState.STARTED,
-            RunningState.RETRY,
-        ]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Projet {project_id} already started, current state is {pipeline_state}",
-            )
+        # pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
+        # if pipeline_state in [
+        #     RunningState.PUBLISHED,
+        #     RunningState.PENDING,
+        #     RunningState.STARTED,
+        #     RunningState.RETRY,
+        # ]:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_403_FORBIDDEN,
+        #         detail=f"Projet {project_id} already started, current state is {pipeline_state}",
+        #     )
 
         # create the DAG
         dag_graph = create_dag_graph(project.workbench)
         # find the entrypoints
         entrypoints = find_entrypoints(dag_graph)
+        if not entrypoints:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Project {project_id} has no services to compute",
+            )
+        # convert the pipeline to celery tasks
+        canvas: Signature = convert_graph_to_celery_canvas(dag_graph)
         # ok so publish the tasks
         await computation_tasks.publish_tasks(project_id)
         # trigger celery
-        task = celery_client.send_computation_task(user_id, project_id)
+        # task = celery_client.send_computation_task(user_id, project_id)
         background_tasks.add_task(background_on_message, task)
         return ComputationTaskOut(
             id=task.id, state=task.state, url=f"{request.base_url}{task.id}"
