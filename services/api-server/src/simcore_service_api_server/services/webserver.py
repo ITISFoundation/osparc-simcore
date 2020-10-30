@@ -38,7 +38,7 @@ def setup_webserver(app: FastAPI) -> None:
     # init client
     logger.debug("Setup webserver at %s...", settings.base_url)
 
-    client = AsyncClient(base_url=settings.base_url)
+    client = AsyncClient(base_url=settings.base_url, timeout=1.0)
     app.state.webserver_client = client
 
     # TODO: raise if attribute already exists

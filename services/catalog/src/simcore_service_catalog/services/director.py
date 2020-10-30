@@ -74,7 +74,7 @@ def safe_request(request_func: Coroutine):
             normalized_path = path.lstrip("/")
             resp = await request_func(zelf, path=normalized_path, *args, **kwargs)
         except Exception as err:
-            #pylint: disable=protected-access
+            # pylint: disable=protected-access
             logger.exception(
                 "Failed request %s to %s%s",
                 request_func.__name__,
@@ -99,7 +99,7 @@ class DirectorApi:
     """
 
     def __init__(self, base_url: str, vtag: str):
-        self.client = AsyncClient(base_url=base_url)
+        self.client = AsyncClient(base_url=base_url, timeout=1.0)
         self.vtag = vtag
 
     # OPERATIONS

@@ -58,7 +58,7 @@ class RegistryApiClient:
         # TODO: add auth https://www.python-httpx.org/advanced/#customizing-authentication
         # TODO: see https://colin-b.github.io/httpx_auth/
 
-        self.client = AsyncClient(base_url=self.settings.api_url)
+        self.client = AsyncClient(base_url=self.settings.api_url, timeout=1.0)
 
     def get_basic_auth(self):
         auth = (self.settings.user, self.settings.pw.get_secret_value())
@@ -83,7 +83,6 @@ class RegistryApiClient:
         # TODO: should we do the validation and
         # returning domain models here or outside??
         return repos
-
 
     async def list_image_tags(self, image_key: str) -> List[str]:
         raise NotImplementedError()
