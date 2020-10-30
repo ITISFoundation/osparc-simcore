@@ -1,11 +1,12 @@
 # pylint: disable=no-self-use
 # pylint: disable=no-self-argument
-from typing import Dict, Optional
+from typing import Dict
 
 from aiohttp.web import Application
 from pydantic import BaseSettings, Field, PositiveFloat, validator
 
 from servicelib.application_keys import APP_CONFIG_KEY
+from models_library.basic_types import NonNegativeFloat
 
 
 class DiagnosticsSettings(BaseSettings):
@@ -29,7 +30,7 @@ class DiagnosticsSettings(BaseSettings):
         3.0, env="DIAGNOSTICS_MAX_AVG_LATENCY"
     )
 
-    start_sensing_delay: Optional[PositiveFloat] = 60.0
+    start_sensing_delay: NonNegativeFloat = 60.0
 
     @validator("max_task_delay", pre=True)
     def validate_max_task_delay(cls, v, values):

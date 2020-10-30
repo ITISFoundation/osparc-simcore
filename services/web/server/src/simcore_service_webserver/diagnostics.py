@@ -90,15 +90,17 @@ def setup_diagnostics(
     #
     app[kSTART_SENSING_DELAY_SECS] = start_sensing_delay
     log.info("start_sensing_delay = %3.2f secs ", start_sensing_delay)
+    if start_sensing_delay != 60: # default
+        settings_kwargs["start_sensing_delay"] = start_sensing_delay
 
     # ----------------------------------------------
     # TODO: temporary, just to check compatibility between
     # trafaret and pydantic schemas
     cfg = DiagnosticsSettings(**settings_kwargs)
-    assert cfg.slow_duration_secs == slow_duration_secs
-    assert cfg.max_task_delay == max_task_delay
-    assert cfg.max_avg_response_latency == max_avg_response_latency
-    assert start_sensing_delay == start_sensing_delay
+    assert cfg.slow_duration_secs == slow_duration_secs # nosec
+    assert cfg.max_task_delay == max_task_delay # nosec
+    assert cfg.max_avg_response_latency == max_avg_response_latency # nosec
+    assert cfg.start_sensing_delay == start_sensing_delay
     # ---------------------------------------------
 
     # -----
