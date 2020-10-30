@@ -8,8 +8,9 @@ from typing import Dict
 
 import trafaret as T
 from aiohttp import ClientSession, web
-from models_library.basic_types import PortInt, VersionTag
 from pydantic import BaseSettings
+
+from models_library.basic_types import PortInt, VersionTag
 from servicelib.application_keys import APP_CLIENT_SESSION_KEY, APP_CONFIG_KEY
 
 CONFIG_SECTION_NAME = "catalog"
@@ -44,6 +45,12 @@ class CatalogSettings(BaseSettings):
 
 def get_config(app: web.Application) -> Dict:
     return app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+
+
+def assert_valid_config(app: web.Application) -> Dict:
+    cfg = get_config(app)
+    _settings = CatalogSettings(**cfg)
+    return cfg
 
 
 def get_client_session(app: web.Application) -> ClientSession:
