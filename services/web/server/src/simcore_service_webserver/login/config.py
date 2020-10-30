@@ -3,7 +3,8 @@
     - config-file schema
     - settings
 """
-from typing import Optional
+from typing import Optional, Dict
+from aiohttp.web import Application
 
 import trafaret as T
 from pydantic import BaseSettings
@@ -39,8 +40,17 @@ class LoginSettings(BaseSettings):
         env_prefix = "WEBSERVER_"
 
 
-def get_login_config(app):
+def get_login_config(app: Application) -> Dict:
     from servicelib.application_keys import APP_CONFIG_KEY
 
     cfg = app[APP_CONFIG_KEY].get(CONFIG_SECTION_NAME, dict())
+    return cfg
+
+
+def assert_valid_config(app: Application) -> Dict:
+    """
+    raises pydantic.ValidationError if validation fails
+    """
+    cfg = get_login_config(app)
+    _settings = LoginSettings(**cfg)
     return cfg
