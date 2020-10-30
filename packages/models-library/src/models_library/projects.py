@@ -1,7 +1,7 @@
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
@@ -13,7 +13,7 @@ current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve
 DATE_RE = r"\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z"
 
 GroupID = constr(regex=r"^\S+$")
-NodeID = constr(regex=r"^\S+$")
+NodeID = UUID
 ProjectID = UUID
 ClassifierID = str
 
@@ -31,7 +31,7 @@ class RunningState(str, Enum):
 
 
 class PortLink(BaseModel):
-    nodeUuid: UUID = Field(
+    nodeUuid: NodeID = Field(
         ...,
         description="The node to get the port output from",
         example=["da5068e0-8a8d-4fb9-9516-56e5ddaef15b"],
@@ -39,7 +39,7 @@ class PortLink(BaseModel):
     output: str = Field(
         ...,
         description="The port key in the node given by nodeUuid",
-        regex=KEY_RE,
+        regex=PROPERTY_KEY_RE,
         example=["out_2"],
     )
 
@@ -118,6 +118,8 @@ InputTypes = Union[int, bool, str, float, PortLink, SimCoreFileLink, DatCoreFile
 OutputTypes = Union[int, bool, str, float, SimCoreFileLink, DatCoreFileLink]
 InputID = constr(regex=PROPERTY_KEY_RE)
 OutputID = InputID
+Inputs = Dict[InputID, InputTypes]
+Outputs = Dict[OutputID, OutputTypes]
 
 
 class Node(BaseModel):
@@ -149,9 +151,7 @@ class Node(BaseModel):
         example=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )
 
-    inputs: Optional[Dict[InputID, InputTypes]] = Field(
-        None, description="values of input properties"
-    )
+    inputs: Optional[Inputs] = Field(None, description="values of input properties")
     inputAccess: Optional[Dict[InputID, AccessEnum]] = Field(
         None, description="map with key - access level pairs"
     )
@@ -161,7 +161,7 @@ class Node(BaseModel):
         example=["nodeUuid1", "nodeUuid2"],
     )
 
-    outputs: Optional[Dict[OutputID, OutputTypes]] = None
+    outputs: Optional[Outputs] = None
     outputNode: Optional[bool] = Field(None, deprecated=True)
     outputNodes: Optional[List[UUID]] = Field(
         None,

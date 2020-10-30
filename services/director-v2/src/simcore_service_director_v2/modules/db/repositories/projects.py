@@ -2,8 +2,9 @@ import logging
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import ProjectID
 
+from ....models.domains.projects import ProjectAtDB
 from ....utils.exceptions import ProjectNotFoundError
 from ..tables import projects
 from ._base import BaseRepository
