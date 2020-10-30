@@ -34,6 +34,7 @@ schema = T.Dict(
 
 
 class LoginSettings(BaseSettings):
+    enabled: bool = True
     registration_confirmation_required: Optional[bool] = DEFAULTS[
         "REGISTRATION_CONFIRMATION_REQUIRED"
     ]

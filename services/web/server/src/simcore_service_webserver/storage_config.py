@@ -8,7 +8,7 @@ from typing import Dict, Optional
 import trafaret as T
 from aiohttp import ClientSession, web
 from models_library.basic_types import PortInt, VersionTag
-from pydantic import BaseSettings
+from pydantic import BaseSettings, Field
 from servicelib.application_keys import APP_CLIENT_SESSION_KEY, APP_CONFIG_KEY
 
 CONFIG_SECTION_NAME = "storage"
@@ -29,7 +29,9 @@ class StorageSettings(BaseSettings):
     enabled: Optional[bool] = True
     host: str = "storage"
     port: PortInt = 11111
-    vtag: VersionTag = "v0"
+    vtag: VersionTag = Field(
+        "v0", alias="version", description="Storage service API's version tag"
+    )
 
 
 def get_storage_config(app: web.Application) -> Dict:

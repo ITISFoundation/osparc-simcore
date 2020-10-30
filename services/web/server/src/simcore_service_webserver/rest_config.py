@@ -25,7 +25,9 @@ schema = T.Dict(
 
 class RestApiSettings(BaseSettings):
     enabled: Optional[bool] = True
-    vtag: VersionTag = Field(api_vtag, alias="version")
+    vtag: VersionTag = Field(
+        api_vtag, alias="version", description="web-server API's version tag"
+    )
 
 
 def get_rest_config(app: web.Application) -> Dict:

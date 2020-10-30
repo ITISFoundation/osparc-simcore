@@ -12,7 +12,6 @@ from pydantic import BaseSettings, Field
 
 from models_library.basic_types import PortInt, VersionTag
 from servicelib.application_keys import APP_CLIENT_SESSION_KEY, APP_CONFIG_KEY
-from .__version__ import api_vtag
 
 CONFIG_SECTION_NAME = "catalog"
 
@@ -38,7 +37,9 @@ class CatalogSettings(BaseSettings):
     enabled: bool = True
     host: str = "catalog"
     port: PortInt = 8000
-    vtag: VersionTag = Field(api_vtag, alias="version")
+    vtag: VersionTag = Field(
+        "v0", alias="version", description="Catalog service API's version tag"
+    )
 
     class Config:
         prefix = "CATALOG_"

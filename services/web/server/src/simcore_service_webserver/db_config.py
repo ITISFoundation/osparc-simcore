@@ -7,7 +7,8 @@ from typing import Dict
 
 import trafaret as T
 from aiohttp.web import Application
-from pydantic import BaseSettings
+from pydantic import BaseSettings, constr
+from typing import Optional
 
 from models_library.settings.postgres import PostgresSettings
 from servicelib.application_keys import APP_CONFIG_KEY
@@ -24,6 +25,8 @@ schema = T.Dict(
 
 
 class PgSettings(PostgresSettings):
+    endpoint: Optional[constr(strip_whitespace=True, regex=r"\w+:\d+")] = None
+
     class Config:
         fields = {"db": "database"}
 
