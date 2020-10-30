@@ -32,9 +32,15 @@ class StorageSettings(BaseSettings):
     vtag: VersionTag = "v0"
 
 
-def get_config(app: web.Application) -> Dict:
+def get_storage_config(app: web.Application) -> Dict:
     return app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
 
 
 def get_client_session(app: web.Application) -> ClientSession:
     return app[APP_CLIENT_SESSION_KEY]
+
+
+def assert_valid_config(app: web.Application) -> Dict:
+    cfg = get_storage_config(app)
+    _settings = StorageSettings(**cfg)
+    return cfg
