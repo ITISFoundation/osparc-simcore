@@ -3,11 +3,15 @@
     - config-file schema
     - settings
 """
-import trafaret as T
+from typing import Dict
 
-from simcore_sdk.config.db import CONFIG_SCHEMA as _PG_SCHEMA
-from models_library.settings.postgres import PostgresSettings
+import trafaret as T
+from aiohttp.web import Application
 from pydantic import BaseSettings
+
+from models_library.settings.postgres import PostgresSettings
+from servicelib.application_keys import APP_CONFIG_KEY
+from simcore_sdk.config.db import CONFIG_SCHEMA as _PG_SCHEMA
 
 CONFIG_SECTION_NAME = "db"
 
@@ -19,6 +23,12 @@ schema = T.Dict(
 )
 
 
-class DBSettings(BaseSettings):
+class DatabaseSettings(BaseSettings):
     enabled: bool = True
     postgres: PostgresSettings
+
+
+def assert_valid_config(app: Application) -> Dict:
+    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    _settings = DatabaseSettings(**cfg)
+    return cfg
