@@ -8,9 +8,13 @@ blackfynn==4.0.0
 aiobotocore==1.0.7
 -c ./constraints.txt
 
+
 aiohttp
+aiohttp-swagger[performance]
+
 aiofiles
 aiopg[sa]
+
 tenacity
 semantic_version
 click

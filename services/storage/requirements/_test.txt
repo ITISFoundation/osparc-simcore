@@ -7,7 +7,8 @@
 aiobotocore==1.0.7        # via -r requirements/_base.txt
 aiodebug==1.1.2           # via -r requirements/_base.txt
 aiofiles==0.6.0           # via -r requirements/_base.txt
-aiohttp==3.7.2            # via -r requirements/_base.txt, aiobotocore, aiozipkin, pytest-aiohttp
+aiohttp-swagger==1.0.15   # via -r requirements/_base.txt
+aiohttp==3.7.2            # via -r requirements/_base.txt, aiobotocore, aiohttp-swagger, aiozipkin, pytest-aiohttp
 aioitertools==0.7.0       # via -r requirements/_base.txt, aiobotocore
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt
 aiozipkin==0.7.1          # via -r requirements/_base.txt
@@ -45,9 +46,11 @@ importlib-metadata==2.0.0  # via -r requirements/_base.txt, jsonschema, pluggy, 
 iniconfig==1.1.1          # via pytest
 isodate==0.6.0            # via -r requirements/_base.txt, openapi-core
 isort==5.6.4              # via pylint
+jinja2==2.11.2            # via -r requirements/_base.txt, aiohttp-swagger
 jmespath==0.10.0          # via -r requirements/_base.txt, boto3, botocore
 jsonschema==3.2.0         # via -r requirements/_base.txt, docker-compose, openapi-spec-validator
 lazy-object-proxy==1.4.3  # via -r requirements/_base.txt, astroid, openapi-core
+markupsafe==1.1.1         # via -r requirements/_base.txt, aiohttp-swagger, jinja2
 mccabe==0.6.1             # via pylint
 minio==6.0.0              # via -r requirements/_base.txt
 multidict==5.0.0          # via -r requirements/_base.txt, aiohttp, yarl
@@ -81,7 +84,7 @@ pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest
 python-dateutil==2.8.1    # via -r requirements/_base.txt, blackfynn, botocore, minio, pandas
 python-dotenv==0.15.0     # via docker-compose
 pytz==2020.1              # via -r requirements/_base.txt, blackfynn, minio, pandas
-pyyaml==5.3.1             # via -r requirements/_base.txt, docker-compose, openapi-spec-validator
+pyyaml==5.3.1             # via -r requirements/_base.txt, aiohttp-swagger, docker-compose, openapi-spec-validator
 requests==2.24.0          # via -r requirements/_base.txt, blackfynn, codecov, coveralls, docker, docker-compose
 s3transfer==0.3.3         # via -r requirements/_base.txt, boto3
 semantic-version==2.8.5   # via -r requirements/_base.txt
@@ -96,7 +99,7 @@ toml==0.10.1              # via pylint, pytest
 trafaret==2.1.0           # via -r requirements/_base.txt
 typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.3  # via -r requirements/_base.txt, aiohttp, aioitertools, yarl
-ujson==4.0.1              # via -r requirements/_base.txt
+ujson==4.0.1              # via -r requirements/_base.txt, aiohttp-swagger
 urllib3==1.25.11          # via -r requirements/_base.txt, botocore, minio, requests
 websocket-client==0.57.0  # via -r requirements/_base.txt, blackfynn, docker, docker-compose
 werkzeug==1.0.1           # via -r requirements/_base.txt
