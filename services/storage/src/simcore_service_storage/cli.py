@@ -12,19 +12,20 @@ Why does this file exist, and why not put this in __main__?
     there's no ``simcore_service_storage.__main__`` in ``sys.modules``.
 
 """
-import sys
+import json
 import logging
 import os
+import sys
 from pathlib import Path
 from pprint import pformat
 from typing import Dict, List, Optional, Union
-import json
 
 import click
 import yaml
 from pydantic import ValidationError
 
 from . import application
+from .resources import resources
 from .settings import ApplicationSettings
 
 log = logging.getLogger(__name__)
@@ -67,9 +68,7 @@ def prune_config(cfg: JsonNode):
 @click.option(
     "--config",
     default=None,
-    type=click.Path(
-        exists=True, file_okay=True, dir_okay=False, writable=False, path_type=Path
-    ),
+    type=click.Path(exists=False, path_type=str),
 )
 @click.option(
     "--check-config",
@@ -83,8 +82,14 @@ def main(config: Optional[Path] = None, check_config: bool = False):
 
     try:
         if config:
-            with open(config) as fh:
+            # config can be a path or a resource
+            config_path = Path(config)
+            if not config_path.exists() and resources.exists(f"data/{config}"):
+                config_path = Path(resources.get_path(f"data/{config}"))
+
+            with open(config_path) as fh:
                 config_dict = yaml.safe_load(fh)
+
             prune_config(config_dict)
             settings = ApplicationSettings(**config_dict)
         else:
