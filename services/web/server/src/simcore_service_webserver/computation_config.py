@@ -12,15 +12,24 @@ from servicelib.application_keys import APP_CONFIG_KEY
 
 SERVICE_NAME = "computation"
 CONFIG_SECTION_NAME = SERVICE_NAME
-APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY = __name__ + ".rabbit_handlers"
-APP_COMP_TASKS_LISTENING_KEY: str = __name__ + ".comp_tasks_listening_key"
+APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY: str = f"{__name__}.rabbit_handlers"
+APP_COMP_TASKS_LISTENING_KEY: str = f"{__name__}.comp_tasks_listening_key"
 
 
 class ComputationSettings(CeleryConfig):
     enabled: bool = True
 
 
-def assert_valid_config(app: Application) -> Dict:
+def get_config(app: Application) -> Dict:
+    return app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+
+
+def create_settings(app: Application) -> ComputationSettings:
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    _settings = ComputationSettings(**cfg)
-    return cfg
+    settings = ComputationSettings.create_from_env(**cfg)
+    app[f"{__name__}.ComputationSettings"] = settings
+    return settings
+
+
+def get_settings(app: Application) -> ComputationSettings:
+    return app[f"{__name__}.ComputationSettings"]
