@@ -267,6 +267,7 @@ qx.Class.define("osparc.data.model.Study", {
         }
         if (key === "workbench") {
           jsonObject[key] = this.getWorkbench().serialize();
+          return;
         }
         if (key === "ui") {
           jsonObject[key] = this.getUi().serialize();

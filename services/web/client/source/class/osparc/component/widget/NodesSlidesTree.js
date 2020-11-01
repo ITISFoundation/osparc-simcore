@@ -170,20 +170,16 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         },
         configureItem: item => {
           item.addListener("showNode", () => {
-            this.__show(item.getModel());
-            this.__recalculatePositions();
+            this.__itemActioned(item, "show");
           }, this);
           item.addListener("hideNode", () => {
-            this.__hide(item.getModel());
-            this.__recalculatePositions();
+            this.__itemActioned(item, "hide");
           }, this);
           item.addListener("moveUp", () => {
-            this.__moveUp(item.getModel());
-            this.__recalculatePositions();
+            this.__itemActioned(item, "moveUp");
           }, this);
           item.addListener("moveDown", () => {
-            this.__moveDown(item.getModel());
-            this.__recalculatePositions();
+            this.__itemActioned(item, "moveDown");
           }, this);
         }
       });
@@ -202,6 +198,28 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
             child.setSkipNode(true);
           }
         });
+      }
+    },
+
+    __itemActioned: function(item, action) {
+      let fntc;
+      switch (action) {
+        case "show":
+          fntc = this.__show;
+          break;
+        case "hide":
+          fntc = this.__hide;
+          break;
+        case "moveUp":
+          fntc = this.__moveUp;
+          break;
+        case "moveDown":
+          fntc = this.__moveDown;
+          break;
+      }
+      if (fntc) {
+        fntc.call(this, item.getModel());
+        this.__recalculatePositions();
       }
     },
 
