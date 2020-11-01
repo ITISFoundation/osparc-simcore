@@ -17,7 +17,26 @@ class LogLevel(str, Enum):
 
 
 class BootModeEnum(str, Enum):
+    """
+    Values taken by SC_BOOT_MODE environment variable
+    set in Dockerfile and used during docker/boot.sh
+    """
+
+    DEFAULT = "default"
     LOCAL = "local-development"
     DEBUG = "debug-ptvsd"
+    PRODUCTION = "production"
+    DEVELOPMENT = "development"
+
+
+class BuildTargetEnum(str, Enum):
+    """
+    Values taken by SC_BUILD_TARGET environment variable
+    set in Dockerfile that defines the stage targeted in the
+    docker image build
+    """
+
+    BUILD = "build"
+    CACHE = "cache"
     PRODUCTION = "production"
     DEVELOPMENT = "development"

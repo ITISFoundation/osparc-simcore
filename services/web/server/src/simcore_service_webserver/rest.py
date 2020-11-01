@@ -99,10 +99,9 @@ def setup(app: web.Application, *, swagger_doc_enabled: bool = True):
         ]
     )
 
-    #
-    # rest API doc at /dev/doc (optional, e.g. for testing since it can be heavy)
-    #
-    # NOTE: avoid /api/* since traeffik uses for it's own API
+    # Adds swagger doc UI
+    #  - API doc at /dev/doc (optional, e.g. for testing since it can be heavy)
+    #  - NOTE: avoid /api/* since traeffik uses for it's own API
     #
     log.debug("OAS loaded from %s ", spec_path)
     if swagger_doc_enabled:
