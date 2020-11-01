@@ -1187,6 +1187,12 @@ jobs:
         with:
           name: e2e_screenshots
           path: tests/e2e/screenshots
+      - name: upload e2e logs
+        if: always()
+        uses: actions/upload-artifact@v1
+        with:
+          name: e2e_logs
+          path: tests/e2e/logs
       - name: cleanup
         if: always()
         run: ./ci/github/system-testing/e2e.bash clean_up

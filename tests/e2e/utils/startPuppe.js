@@ -1,5 +1,7 @@
 const puppeteer = require('puppeteer');
 
+const LOGS_DIR = "../logs/";
+
 async function getBrowser(demo) {
   let options = {};
   if (demo) {
@@ -26,6 +28,52 @@ async function getBrowser(demo) {
   return browser;
 }
 
+function listenToEvents(page) {
+  const pathLib = require('path');
+  const fs = require('fs');
+
+  const logsDir = pathLib.join(__dirname, LOGS_DIR);
+  if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir);
+  }
+
+  const event = new Date();
+  const time = event.toLocaleTimeString('de-CH');
+  let logsFilename = time + "_" + "devTools.log";
+  logsFilename = logsFilename.split(":").join("-")
+  const logsFile = pathLib.join(logsDir, logsFilename);
+
+  const log4js = require("log4js");
+  log4js.configure({
+    appenders: {
+      devTools: {
+        type: "file",
+        filename: logsFile
+      }
+    },
+    categories: {
+      default: {
+        appenders: ["devTools"],
+        level: "trace"
+      }
+    }
+  });
+
+  const logger = log4js.getLogger("devTools");
+  page.on('console', msg => {
+    logger.trace(msg.text());
+  });
+  page.on('pageerror', error => {
+    logger.fatal(error.message);
+  });
+  page.on('response', response => {
+    logger.info(response.status(), response.url());
+  });
+  page.on('requestfailed', request => {
+    logger.error(request.failure().errorText, request.url);
+  });
+}
+
 async function getPage(browser) {
   const page = await browser.newPage();
   page.setCacheEnabled(false);
@@ -33,6 +81,7 @@ async function getPage(browser) {
     width: 1920,
     height: 1080
   });
+  listenToEvents(page);
   return page;
 }
 
