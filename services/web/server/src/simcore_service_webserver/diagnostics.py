@@ -100,7 +100,7 @@ def setup_diagnostics(
     assert cfg.slow_duration_secs == slow_duration_secs # nosec
     assert cfg.max_task_delay == max_task_delay # nosec
     assert cfg.max_avg_response_latency == max_avg_response_latency # nosec
-    assert cfg.start_sensing_delay == start_sensing_delay
+    assert cfg.start_sensing_delay == start_sensing_delay # nosec
     # ---------------------------------------------
 
     # -----
