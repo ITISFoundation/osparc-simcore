@@ -218,6 +218,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           break;
       }
       if (fntc) {
+        this.__tree.setSelection(new qx.data.Array([item.getModel()]));
         fntc.call(this, item.getModel());
         this.__recalculatePositions();
       }
