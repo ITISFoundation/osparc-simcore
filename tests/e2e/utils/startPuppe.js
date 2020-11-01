@@ -28,7 +28,7 @@ async function getBrowser(demo) {
   return browser;
 }
 
-function listenToEvents(page) {
+function createLogFile() {
   const pathLib = require('path');
   const fs = require('fs');
 
@@ -42,6 +42,11 @@ function listenToEvents(page) {
   let logsFilename = time + "_" + "e2e_logs.log";
   logsFilename = logsFilename.split(":").join("-")
   const logsFile = pathLib.join(logsDir, logsFilename);
+  return logsFile;
+}
+
+function listenToEvents(page) {
+  const logsFile = createLogFile()
 
   const log4js = require("log4js");
   log4js.configure({
