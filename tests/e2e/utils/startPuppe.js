@@ -39,38 +39,38 @@ function listenToEvents(page) {
 
   const event = new Date();
   const time = event.toLocaleTimeString('de-CH');
-  let logsFilename = time + "_" + "devTools.log";
+  let logsFilename = time + "_" + "e2e_logs.log";
   logsFilename = logsFilename.split(":").join("-")
   const logsFile = pathLib.join(logsDir, logsFilename);
 
   const log4js = require("log4js");
   log4js.configure({
     appenders: {
-      devTools: {
+      e2eLogs: {
         type: "file",
         filename: logsFile
       }
     },
     categories: {
       default: {
-        appenders: ["devTools"],
+        appenders: ["e2eLogs"],
         level: "trace"
       }
     }
   });
 
-  const logger = log4js.getLogger("devTools");
+  const e2eLogger = log4js.getLogger("e2eLogs");
   page.on('console', msg => {
-    logger.trace(msg.text());
+    e2eLogger.trace(msg.text());
   });
   page.on('pageerror', error => {
-    logger.fatal(error.message);
+    e2eLogger.fatal(error.message);
   });
   page.on('response', response => {
-    logger.info(response.status(), response.url());
+    e2eLogger.info(response.status(), response.url());
   });
   page.on('requestfailed', request => {
-    logger.error(request.failure().errorText, request.url);
+    e2eLogger.error(request.failure().errorText, request.url);
   });
 }
 
