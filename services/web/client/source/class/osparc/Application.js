@@ -110,7 +110,7 @@ qx.Class.define("osparc.Application", {
               osparc.store.Store.getInstance().setCurrentStudyId(studyId);
               this.__loadMainPage();
             })
-            .catch(() => this.__loadLoginPage);
+            .catch(() => this.__loadLoginPage());
         } else if (urlFragment.nav[0] === "registration" && urlFragment.params && urlFragment.params.invitation) {
           // Route: /#/registration/?invitation={token}
           osparc.utils.Utils.cookie.deleteCookie("user");
@@ -177,7 +177,7 @@ qx.Class.define("osparc.Application", {
               this.__loadMainPage();
             }
           })
-          .catch(() => this.__loadLoginPage);
+          .catch(() => this.__loadLoginPage());
       }
     },
 

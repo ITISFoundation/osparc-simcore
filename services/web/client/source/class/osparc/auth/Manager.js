@@ -56,7 +56,7 @@ qx.Class.define("osparc.auth.Manager", {
     validateToken: function() {
       return new Promise((resolve, reject) => {
         if (osparc.auth.Data.getInstance().isLogout()) {
-          reject();
+          reject("User not logged in");
         } else {
           osparc.data.Resources.getOne("profile", {}, null, false)
             .then(profile => {
