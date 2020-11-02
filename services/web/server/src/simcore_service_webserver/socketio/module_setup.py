@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 
 @app_module_setup("simcore_service_webserver.socketio", ModuleCategory.SYSTEM, logger=log)
-def setup_sockets(app: web.Application):
+def setup_socketio(app: web.Application):
     # ----------------------------------------------
     # TODO: temporary, just to check compatibility between
     # trafaret and pydantic schemas

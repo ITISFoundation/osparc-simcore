@@ -26,7 +26,7 @@ from .rest import setup_rest
 from .security import setup_security
 from .session import setup_session
 from .settings import setup_settings
-from .socketio import setup_sockets
+from .socketio import setup_socketio
 from .statics import setup_statics
 from .storage import setup_storage
 from .studies_access import setup_studies_access
@@ -61,7 +61,7 @@ def create_application(config: Dict) -> web.Application:
     setup_diagnostics(app)
     setup_email(app)
     setup_computation(app)
-    setup_sockets(app)
+    setup_socketio(app)
     setup_login(app)
     setup_director(app)
     setup_storage(app)
