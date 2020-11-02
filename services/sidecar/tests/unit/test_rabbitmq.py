@@ -7,8 +7,8 @@ from typing import List
 
 import aio_pika
 import pytest
-from models_library.celery import CeleryConfig
-from models_library.rabbit import RabbitConfig
+from models_library.settings.celery import CeleryConfig
+from models_library.settings.rabbit import RabbitConfig
 from simcore_service_sidecar import config
 from simcore_service_sidecar.rabbitmq import RabbitMQ
 

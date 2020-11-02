@@ -13,7 +13,8 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import randrange
-from typing import Tuple
+from typing import Tuple, Dict
+import dotenv
 
 import pytest
 from aiohttp import web
@@ -30,8 +31,8 @@ from utils import (ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER,
                    USER_ID)
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+# TODO: replace by pytest_simcore
 sys.path.append(str(current_dir / "helpers"))
-
 
 @pytest.fixture(scope="session")
 def here():
@@ -59,6 +60,29 @@ def osparc_api_specs_dir(osparc_simcore_root_dir):
     dirpath = osparc_simcore_root_dir / "api" / "specs"
     assert dirpath.exists()
     return dirpath
+
+
+@pytest.fixture(scope="session")
+def project_slug_dir(osparc_simcore_root_dir) -> Path:
+    # uses pytest_simcore.environs.osparc_simcore_root_dir
+    service_folder = osparc_simcore_root_dir / "services" / "storage"
+    assert service_folder.exists()
+    assert any(service_folder.glob("src/simcore_service_storage"))
+    return service_folder
+
+
+@pytest.fixture(scope="session")
+def project_env_devel_dict(project_slug_dir: Path) -> Dict:
+    env_devel_file = project_slug_dir / ".env-devel"
+    assert env_devel_file.exists()
+    environ = dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
+    return environ
+
+
+@pytest.fixture(scope="function")
+def project_env_devel_environment(project_env_devel_dict, monkeypatch):
+    for key, value in project_env_devel_dict.items():
+        monkeypatch.setenv(key, value)
 
 
 @pytest.fixture(scope="session")
@@ -101,6 +125,7 @@ def postgres_service(docker_services, docker_ip):
     postgres_service = {
         "user": USER,
         "password": PASS,
+        "db": DATABASE,
         "database": DATABASE,
         "host": docker_ip,
         "port": docker_services.port_for("postgres", 5432),

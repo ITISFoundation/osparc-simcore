@@ -15,8 +15,8 @@ db:
     database: simcoredb
     endpoint: postgres:5432
     host: postgres
-    maxsize: 5
-    minsize: 1
+    maxsize: 10
+    minsize: 10
     password: simcore
     port: 5432
     user: simcore

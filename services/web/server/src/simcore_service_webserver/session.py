@@ -24,10 +24,9 @@ from aiohttp import web
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from cryptography import fernet
 
-from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
-from .session_config import CONFIG_SECTION_NAME
+from .session_config import assert_valid_config
 
 logger = logging.getLogger(__file__)
 
@@ -42,9 +41,13 @@ def generate_key():
 @app_module_setup(__name__, ModuleCategory.ADDON, logger=logger)
 def setup_session(app: web.Application):
     """
-        Inits and registers a session middleware in aiohttp.web.Application
+    Inits and registers a session middleware in aiohttp.web.Application
     """
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    # ----------------------------------------------
+    # TODO: temporary, just to check compatibility between
+    # trafaret and pydantic schemas
+    cfg = assert_valid_config(app)
+    # ---------------------------------------------
 
     # secret key needed by EncryptedCookieStorage: is *bytes* key with length of *32*
     secret_key_bytes = cfg["secret_key"].encode("utf-8")

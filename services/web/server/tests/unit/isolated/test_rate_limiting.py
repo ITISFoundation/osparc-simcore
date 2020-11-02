@@ -8,7 +8,7 @@ import time
 import pytest
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPTooManyRequests
-from simcore_service_webserver.rate_limiting import global_rate_limit_route
+from simcore_service_webserver.utils_rate_limiting import global_rate_limit_route
 
 MAX_NUM_REQUESTS = 3
 MEASURE_INTERVAL = 0.5

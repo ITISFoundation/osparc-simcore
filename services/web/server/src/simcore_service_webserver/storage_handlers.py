@@ -11,7 +11,7 @@ from servicelib.rest_utils import extract_and_validate
 
 from .login.decorators import login_required
 from .security_api import check_permission
-from .storage_config import get_client_session, get_config
+from .storage_config import get_client_session, get_storage_config
 
 
 def _resolve_storage_url(request: web.Request) -> URL:
@@ -19,7 +19,7 @@ def _resolve_storage_url(request: web.Request) -> URL:
 
     """
     userid = request[RQT_USERID_KEY]
-    cfg = get_config(request.app)
+    cfg = get_storage_config(request.app)
 
     # storage service API endpoint
     endpoint = URL.build(scheme="http", host=cfg["host"], port=cfg["port"]).with_path(
