@@ -67,7 +67,7 @@ qx.Class.define("osparc.auth.Manager", {
               reject(err);
             });
         }
-      }
+      });
     },
 
     login: function(email, password, successCbk, failCbk, context) {
