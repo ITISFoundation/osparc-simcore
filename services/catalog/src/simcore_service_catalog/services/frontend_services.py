@@ -28,7 +28,7 @@ def _node_group_service() -> ServiceDockerData:
     return ServiceDockerData(
         key="simcore/services/frontend/nodes-group",
         version="1.0.0",
-        type="dynamic",
+        type="frontend",
         name="Group",
         description="Group of nodes",
         authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],

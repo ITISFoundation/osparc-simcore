@@ -91,10 +91,11 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
     },
 
     getSlashControls: function(w = 16, h = 32) {
-      const offset = 3;
+      const offsetH = 4;
+      const offsetW = Math.round(offsetH*w/h);
       return [
-        [w-offset, offset],
-        [offset, h-offset]
+        [w-offsetW, offsetH],
+        [offsetW, h-offsetH]
       ];
     },
 

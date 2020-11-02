@@ -37,6 +37,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     this.__tree.setModel(model);
 
     this.__populateTree();
+    this.__recalculatePositions();
 
     this.__initData(initData);
   },
@@ -48,23 +49,28 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
   statics: {
     convertModel: function(nodes) {
       let children = [];
-      let i=0;
       for (let nodeId in nodes) {
         const node = nodes[nodeId];
         let nodeInTree = {
           label: "",
           nodeId: node.getNodeId(),
           skipNode: false,
-          position: i
+          position: -1
         };
         nodeInTree.label = node.getLabel();
         if (node.isContainer()) {
           nodeInTree.children = this.convertModel(node.getInnerNodes());
         }
         children.push(nodeInTree);
-        i++;
       }
       return children;
+    },
+
+    getItemsInTree: function(itemMdl, children = []) {
+      children.push(itemMdl);
+      for (let i=0; itemMdl.getChildren && i<itemMdl.getChildren().length; i++) {
+        this.self().getItemsInTree(itemMdl.getChildren().toArray()[i], children);
+      }
     },
 
     moveElement: function(input, from, to) {
@@ -143,15 +149,12 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     __populateTree: function() {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
 
-      let i = 0;
       this.__tree.setDelegate({
         createItem: () => {
           const nodeSlideTreeItem = new osparc.component.widget.NodeSlideTreeItem();
           nodeSlideTreeItem.set({
-            skipNode: false,
-            position: i
+            skipNode: false
           });
-          i++;
           return nodeSlideTreeItem;
         },
         bindItem: (c, item, id) => {
@@ -167,20 +170,16 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         },
         configureItem: item => {
           item.addListener("showNode", () => {
-            this.__show(item.getModel());
-            this.__recalculatePositions();
+            this.__itemActioned(item, "show");
           }, this);
           item.addListener("hideNode", () => {
-            this.__hide(item.getModel());
-            this.__recalculatePositions();
+            this.__itemActioned(item, "hide");
           }, this);
           item.addListener("moveUp", () => {
-            this.__moveUp(item.getModel());
-            this.__recalculatePositions();
+            this.__itemActioned(item, "moveUp");
           }, this);
           item.addListener("moveDown", () => {
-            this.__moveDown(item.getModel());
-            this.__recalculatePositions();
+            this.__itemActioned(item, "moveDown");
           }, this);
         }
       });
@@ -199,6 +198,29 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
             child.setSkipNode(true);
           }
         });
+      }
+    },
+
+    __itemActioned: function(item, action) {
+      let fntc;
+      switch (action) {
+        case "show":
+          fntc = this.__show;
+          break;
+        case "hide":
+          fntc = this.__hide;
+          break;
+        case "moveUp":
+          fntc = this.__moveUp;
+          break;
+        case "moveDown":
+          fntc = this.__moveDown;
+          break;
+      }
+      if (fntc) {
+        this.__tree.setSelection(new qx.data.Array([item.getModel()]));
+        fntc.call(this, item.getModel());
+        this.__recalculatePositions();
       }
     },
 
@@ -239,8 +261,10 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     },
 
     __recalculatePositions: function() {
-      const treeMdl = this.__tree.getModel();
-      const children = treeMdl.getChildren().toArray();
+      const rootModel = this.__tree.getModel();
+      let children = [];
+      this.self().getItemsInTree(rootModel, children);
+      children.shift();
       let pos = 0;
       for (let i=0; i<children.length; i++) {
         const child = children[i];
