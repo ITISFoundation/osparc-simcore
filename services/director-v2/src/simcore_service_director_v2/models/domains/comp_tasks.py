@@ -58,7 +58,7 @@ class CompTaskAtDB(BaseModel):
     node_id: NodeID
     job_id: Optional[str] = Field(None, description="The celery job ID")
     node_schema: NodeSchema = Field(..., alias="schema")
-    inputs: Inputs = Field(..., description="the inputs payload")
+    inputs: Optional[Inputs] = Field(..., description="the inputs payload")
     outputs: Optional[Outputs] = Field({}, description="the outputs payload")
     image: Image
     submit: datetime
