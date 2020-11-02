@@ -55,37 +55,44 @@ async def get_public_project(app: web.Application, project_uuid: str):
     return prj
 
 
-# TODO: from .users import create_temporary_user
 async def create_temporary_user(request: web.Request):
     """
         TODO: user should have an expiration date and limited persmissions!
     """
     from .login.cfg import get_storage
-    from .login.handlers import ACTIVE, GUEST
+    from .login.handlers import ACTIVE, GUEST, ANONYMOUS
     from .login.utils import get_client_ip, get_random_string
     from .security_api import encrypt_password
-
-    # from .utils import generate_passphrase
-    # from .utils import generate_password
+    from .resource_manager.websocket_manager import WebsocketRegistry
 
     db = get_storage(request.app)
 
     # TODO: avatar is an icon of the hero!
-    # FIXME: # username = generate_passphrase(number_of_words=2).replace(" ", "_").replace("'", "")
     username = get_random_string(min_len=5)
     email = username + "@guest-at-osparc.io"
     password = get_random_string(min_len=12)
 
+    # creates a user that is marked as ANONYMOUS
     user = await db.create_user(
         {
             "name": username,
             "email": email,
             "password_hash": encrypt_password(password),
             "status": ACTIVE,
-            "role": GUEST,
+            "role": ANONYMOUS,
             "created_ip": get_client_ip(request),
         }
     )
+
+    # creates an entry in the socket's registry to avoid garbage collector (GC) deleting it
+    # See https://github.com/ITISFoundation/osparc-simcore/issues/1853
+    registry = WebsocketRegistry(user["id"], f"{username}-guest-session", request.app)
+    await registry.set_socket_id(f"{username}-guest-socket-id")
+
+    # Now that we know the ID, we set the user as GUEST
+    # This extra step is to prevent the possibility that the GC is cleaning while
+    # the function above is creating the entry in the socket
+    await db.update_user(user, updates={"role": GUEST})
 
     return user
 
