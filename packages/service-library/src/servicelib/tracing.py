@@ -1,7 +1,4 @@
-"""
-
-    Adds aiohttp middleware for tracing using zipkin server instrumentation.
-
+""" Adds aiohttp middleware for tracing using zipkin server instrumentation.
 
 """
 import asyncio
@@ -28,7 +25,7 @@ def setup_tracing(
     az.setup(app, tracer)
     return True
 
-# TODO: deprecate
+
 schema = T.Dict(
     {
         T.Key("enabled", default=True, optional=True): T.Or(T.Bool(), T.ToInt),
