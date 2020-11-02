@@ -1,4 +1,12 @@
+from simcore_postgres_database.models.comp_pipeline import comp_pipeline
+from simcore_postgres_database.models.comp_tasks import NodeClass, StateType, comp_tasks
 from simcore_postgres_database.models.projects import ProjectType, projects
-from simcore_postgres_database.models.comp_tasks import comp_tasks, NodeClass, StateType
 
-__all__ = ["comp_tasks", "NodeClass", "projects", "ProjectType", "StateType"]
+__all__ = [
+    "comp_pipeline",
+    "comp_tasks",
+    "NodeClass",
+    "projects",
+    "ProjectType",
+    "StateType",
+]

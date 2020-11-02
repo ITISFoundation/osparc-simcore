@@ -107,6 +107,9 @@ async def create_computation(
     background_tasks: BackgroundTasks,
     request: Request,
     project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
+    computation_pipelines: CompPipelinesRepository = Depends(
+        get_repository(CompPipelinesRepository)
+    ),
     computation_tasks: CompTasksRepository = Depends(
         get_repository(CompTasksRepository)
     ),
@@ -149,6 +152,7 @@ async def create_computation(
                 detail=f"Project {project_id} has no services to compute",
             )
         # FIXME: directly pass the tasks to celery instead of the current recursive way
+        await computation_pipelines.publish_pipeline(project.uuid, dag_graph)
         # convert the pipeline to celery tasks
         # canvas: Signature = convert_graph_to_celery_canvas(dag_graph)
         # ok so publish the tasks

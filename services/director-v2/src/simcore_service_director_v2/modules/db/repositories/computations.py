@@ -2,18 +2,33 @@ import logging
 from datetime import datetime
 from typing import Dict, Tuple
 
+import networkx as nx
 import sqlalchemy as sa
 from models_library.projects import NodeID, ProjectID
 
 from ....models.domains.comp_tasks import CompTaskAtDB
-from ..tables import NodeClass, StateType, comp_tasks
+from ..tables import NodeClass, StateType, comp_pipeline, comp_tasks
 from ._base import BaseRepository
 
 logger = logging.getLogger(__name__)
 
 
 class CompPipelinesRepository(BaseRepository):
-    pass
+    async def publish_pipeline(
+        self, project_id: ProjectID, dag_graph: nx.DiGraph
+    ) -> None:
+        await self.connection.execute(
+            sa.insert(comp_pipeline)
+            .values(
+                project_id=str(project_id),
+                dag_adjacency_list=dag_graph.adj,
+                state=StateType.PUBLISHED,
+            )
+            .on_conflict_do_update(
+                index_elements=[comp_pipeline.c.project_id],
+                set_={"dag_adjacency_list": dag_graph.adj},
+            )
+        )
 
 
 class CompTasksRepository(BaseRepository):
