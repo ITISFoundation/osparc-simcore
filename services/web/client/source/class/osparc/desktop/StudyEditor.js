@@ -104,7 +104,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       study.buildWorkbench();
       study.openStudy()
         .then(() => {
-          study.getWorkbench().initWorkbench();
+          study.initStudy();
         })
         .catch(err => {
           if ("status" in err && err["status"] == 423) { // Locked
