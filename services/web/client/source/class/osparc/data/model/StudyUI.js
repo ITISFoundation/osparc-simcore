@@ -29,9 +29,9 @@ qx.Class.define("osparc.data.model.StudyUI", {
     this.base(arguments);
 
     this.set({
-      workbench: studyDataUI.workbench || {},
-      slideshow: studyDataUI.slideshow || {},
-      currentNodeId: studyDataUI.currentNodeId || null
+      workbench: studyDataUI && studyDataUI.workbench ? studyDataUI.workbench : {},
+      slideshow: studyDataUI && studyDataUI.slideshow ? studyDataUI.slideshow : {},
+      currentNodeId: studyDataUI && studyDataUI.currentNodeId ? studyDataUI.currentNodeId : null
     });
   },
 

@@ -46,6 +46,7 @@
       "type": "string",
       "description": "service type",
       "enum": [
+        "frontend",
         "computational",
         "dynamic"
       ],
