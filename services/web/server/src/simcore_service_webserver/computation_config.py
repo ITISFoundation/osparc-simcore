@@ -27,6 +27,7 @@ def get_config(app: Application) -> Dict:
 def create_settings(app: Application) -> ComputationSettings:
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     settings = ComputationSettings.create_from_env(**cfg)
+    # NOTE: we are saving it in a separate item to config
     app[f"{__name__}.ComputationSettings"] = settings
     return settings
 
