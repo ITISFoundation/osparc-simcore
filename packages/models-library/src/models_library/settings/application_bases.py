@@ -36,9 +36,7 @@ class BaseAiohttpAppSettings(BaseFastApiAppSettings):
 class BaseServiceAPISettings(BaseSettings):
     host: str
     port: PortInt
-    vtag: VersionTag = Field(
-        "v0", alias="version", description="Service API's version tag"
-    )
+    vtag: VersionTag = Field("v0", description="Service API's version tag")
 
     url: Optional[AnyHttpUrl] = None
 
