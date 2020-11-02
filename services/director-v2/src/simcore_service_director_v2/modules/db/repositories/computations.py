@@ -7,7 +7,13 @@ import networkx as nx
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 import sqlalchemy as sa
 from models_library.projects import Node, NodeID, ProjectID, RunningState
-from models_library.services import KEY_RE, ServiceDockerData, ServiceKeyVersion
+from models_library.services import (
+    Author,
+    KEY_RE,
+    ServiceDockerData,
+    ServiceKeyVersion,
+    ServiceType,
+)
 from simcore_service_director_v2.models.domains.projects import ProjectAtDB
 from simcore_service_director_v2.models.schemas.services import (
     NodeRequirement,
@@ -49,11 +55,37 @@ _STR_TO_NODECLASS = {
 }
 
 
-def _to_node_class(node_details: Node) -> NodeClass:
-    match = _node_key_re.match(node_details.key)
+def _to_node_class(service_key: str) -> NodeClass:
+    match = _node_key_re.match(service_key)
     if match:
         return _STR_TO_NODECLASS.get(match.group(3))
     raise ValueError
+
+
+def _get_fake_service_details(service: ServiceKeyVersion) -> ServiceDockerData:
+    if "file-picker" in service.key:
+        file_picker_outputs = {
+            "outFile": {
+                "label": "the output",
+                "displayOrder": 0,
+                "description": "a file",
+                "type": "data:*/*",
+            }
+        }
+        file_picker_type = ServiceType.FRONTEND
+        return ServiceDockerData(
+            **service.dict(),
+            name="file-picker",
+            description="file-picks",
+            authors=[
+                Author(name="ITIS", email="itis@support.com", affiliation="IT'IS")
+            ],
+            contact="itis@support.com",
+            inputs={},
+            outputs=file_picker_outputs,
+            type=file_picker_type,
+        )
+    raise ValueError("")
 
 
 class CompTasksRepository(BaseRepository):
@@ -98,21 +130,26 @@ class CompTasksRepository(BaseRepository):
                 key=dag_graph.nodes[node_id]["key"],
                 version=dag_graph.nodes[node_id]["version"],
             )
-
-            node_details: ServiceDockerData = await director_client.get_service_details(
-                service_key_version
-            )
-            node_extras: ServiceExtras = await director_client.get_service_extras(
-                service_key_version
-            )
+            node_class = _to_node_class(service_key_version.key)
+            node_details: ServiceDockerData = None
+            node_extras: ServiceExtras = None
+            if node_class == NodeClass.FRONTEND:
+                node_details = _get_fake_service_details(service_key_version)
+            else:
+                node_details = await director_client.get_service_details(
+                    service_key_version
+                )
+                node_extras: ServiceExtras = await director_client.get_service_extras(
+                    service_key_version
+                )
             requires_mpi = False
             requires_gpu = False
             if node_extras:
                 requires_gpu = node_extras.node_requirements == NodeRequirement.GPU
                 requires_mpi = node_extras.node_requirements == NodeRequirement.MPI
             image = Image(
-                name=node_details.key,
-                tag=node_details.version,
+                name=service_key_version.key,
+                tag=service_key_version.version,
                 requires_gpu=requires_gpu,
                 requires_mpi=requires_mpi,
             )
@@ -129,7 +166,7 @@ class CompTasksRepository(BaseRepository):
                 submit=datetime.utcnow(),
                 state=RunningState.PUBLISHED,
                 internal_id=internal_id,
-                node_class=_to_node_class(node_details),
+                node_class=node_class,
             )
             internal_id = internal_id + 1
 

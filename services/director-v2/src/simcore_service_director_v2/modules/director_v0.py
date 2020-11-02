@@ -125,8 +125,9 @@ class DirectorV0Client:
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     async def get_service_extras(self, service: ServiceKeyVersion) -> ServiceExtras:
-        resp = await self.client.get(
-            f"service_extras/{urllib.parse.quote_plus(service.key)}/{service.version}"
+        resp = await self.request(
+            "GET",
+            f"service_extras/{urllib.parse.quote_plus(service.key)}/{service.version}",
         )
         if resp.status_code == status.HTTP_200_OK:
             return ServiceExtras.parse_obj(_unenvelope_or_raise_error(resp))

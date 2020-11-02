@@ -155,7 +155,7 @@ class Node(BaseModel):
     inputAccess: Optional[Dict[InputID, AccessEnum]] = Field(
         None, description="map with key - access level pairs"
     )
-    inputNodes: Optional[List[UUID]] = Field(
+    inputNodes: Optional[List[NodeID]] = Field(
         None,
         description="node IDs of where the node is connected to",
         example=["nodeUuid1", "nodeUuid2"],
@@ -163,13 +163,13 @@ class Node(BaseModel):
 
     outputs: Optional[Outputs] = None
     outputNode: Optional[bool] = Field(None, deprecated=True)
-    outputNodes: Optional[List[UUID]] = Field(
+    outputNodes: Optional[List[NodeID]] = Field(
         None,
         description="Used in group-nodes. Node IDs of those connected to the output",
         example=["nodeUuid1", "nodeUuid2"],
     )
 
-    parent: Optional[UUID] = Field(
+    parent: Optional[NodeID] = Field(
         None,
         description="Parent's (group-nodes') node ID s.",
         example=["nodeUUid1", "nodeUuid2"],

@@ -26,9 +26,9 @@ GroupId = PositiveInt
 
 
 class ServiceType(str, Enum):
-    frontend = "frontend"
-    computational = "computational"
-    dynamic = "dynamic"
+    COMPUTATIONAL = "computational"
+    DYNAMIC = "dynamic"
+    FRONTEND = "frontend"
 
 
 class Badge(BaseModel):
