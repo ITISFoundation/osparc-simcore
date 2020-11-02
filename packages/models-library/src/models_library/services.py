@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
 from pydantic.types import PositiveInt
+from sqlalchemy.util.deprecations import deprecated
 
 from .constants import VERSION_RE
 
@@ -167,7 +168,11 @@ class ServiceInput(ServiceProperty):
 
 
 class ServiceOutput(ServiceProperty):
-    pass
+    widget: Optional[Widget] = Field(
+        None,
+        description="custom widget to use instead of the default one determined from the data-type",
+        deprecated=True,
+    )
 
 
 class ServiceKeyVersion(BaseModel):
