@@ -14,6 +14,7 @@ from models_library.projects import (
     RunningState,
     Workbench,
 )
+from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.utils.exceptions import ProjectNotFoundError
 from starlette import status
 from starlette.requests import Request
@@ -67,12 +68,24 @@ def find_entrypoints(graph: nx.DiGraph) -> List[NodeID]:
     return entrypoints
 
 
+from ...utils.computations import to_node_class
+from ...modules.db.tables import NodeClass
+
+
 def create_dag_graph(workbench: Workbench) -> nx.DiGraph:
     dag_graph = nx.DiGraph()
     for node_id, node in workbench.items():
-        dag_graph.add_node(node_id, name=node.label, key=node.key, version=node.version)
+        if to_node_class(node.key) == NodeClass.COMPUTATIONAL:
+            dag_graph.add_node(
+                node_id, name=node.label, key=node.key, version=node.version
+            )
         for input_node_id in node.inputNodes:
-            dag_graph.add_edge(input_node_id, node_id)
+            predecessor_node = workbench.get(input_node_id)
+            if (
+                predecessor_node
+                and to_node_class(predecessor_node.key) == NodeClass.COMPUTATIONAL
+            ):
+                dag_graph.add_edge(input_node_id, node_id)
     log.debug("created DAG graph: %s", dag_graph.adj)
 
     return dag_graph
@@ -155,9 +168,7 @@ async def create_computation(
         # convert the pipeline to celery tasks
         # canvas: Signature = convert_graph_to_celery_canvas(dag_graph)
         # ok so publish the tasks
-        await computation_tasks.publish_tasks_from_project(
-            project, dag_graph, director_client
-        )
+        await computation_tasks.publish_tasks_from_project(project, director_client)
         # trigger celery
         task = celery_client.send_computation_task(user_id, project_id)
         background_tasks.add_task(background_on_message, task)

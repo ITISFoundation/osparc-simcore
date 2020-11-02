@@ -1,19 +1,17 @@
 import logging
-import re
 from datetime import datetime
 from typing import Dict
 
 import networkx as nx
-from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 import sqlalchemy as sa
 from models_library.projects import Node, NodeID, ProjectID, RunningState
 from models_library.services import (
     Author,
-    KEY_RE,
     ServiceDockerData,
     ServiceKeyVersion,
     ServiceType,
 )
+from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.domains.projects import ProjectAtDB
 from simcore_service_director_v2.models.schemas.services import (
     NodeRequirement,
@@ -22,8 +20,9 @@ from simcore_service_director_v2.models.schemas.services import (
 from sqlalchemy.dialects.postgresql import insert
 
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
+from ....utils.computations import to_node_class
 from ...director_v0 import DirectorV0Client
-from ..tables import NodeClass, StateType, comp_pipeline, comp_tasks
+from ..tables import NodeClass, comp_pipeline, comp_tasks
 from ._base import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -45,21 +44,6 @@ class CompPipelinesRepository(BaseRepository):
             set_=pipeline_at_db.dict(by_alias=True, exclude_unset=True),
         )
         await self.connection.execute(on_update_stmt)
-
-
-_node_key_re = re.compile(KEY_RE)
-_STR_TO_NODECLASS = {
-    "comp": NodeClass.COMPUTATIONAL,
-    "dynamic": NodeClass.INTERACTIVE,
-    "frontend": NodeClass.FRONTEND,
-}
-
-
-def _to_node_class(service_key: str) -> NodeClass:
-    match = _node_key_re.match(service_key)
-    if match:
-        return _STR_TO_NODECLASS.get(match.group(3))
-    raise ValueError
 
 
 def _get_fake_service_details(service: ServiceKeyVersion) -> ServiceDockerData:
@@ -108,7 +92,6 @@ class CompTasksRepository(BaseRepository):
     async def publish_tasks_from_project(
         self,
         project: ProjectAtDB,
-        dag_graph: nx.DiGraph,
         director_client: DirectorV0Client,
     ) -> None:
         # start by removing the old tasks if they exist
@@ -118,19 +101,14 @@ class CompTasksRepository(BaseRepository):
         # create the tasks
         workbench = project.workbench
         internal_id = 1
-        for node_id in dag_graph.nodes:
-            if not node_id in workbench:
-                raise ValueError(
-                    f"Node {node_id} is not available in workbench of project {project.uuid}"
-                )
-
+        for node_id in workbench:
             node: Node = workbench[node_id]
 
             service_key_version = ServiceKeyVersion(
-                key=dag_graph.nodes[node_id]["key"],
-                version=dag_graph.nodes[node_id]["version"],
+                key=node.key,
+                version=node.version,
             )
-            node_class = _to_node_class(service_key_version.key)
+            node_class = to_node_class(service_key_version.key)
             node_details: ServiceDockerData = None
             node_extras: ServiceExtras = None
             if node_class == NodeClass.FRONTEND:
@@ -164,7 +142,9 @@ class CompTasksRepository(BaseRepository):
                 outputs=node.outputs,
                 image=image,
                 submit=datetime.utcnow(),
-                state=RunningState.PUBLISHED,
+                state=RunningState.PUBLISHED
+                if node_class == NodeClass.COMPUTATIONAL
+                else RunningState.NOT_STARTED,
                 internal_id=internal_id,
                 node_class=node_class,
             )

@@ -1,9 +1,11 @@
 import logging
+import re
 from typing import Dict
 
-from models_library.projects import NodeID, RunningState
+from models_library.projects import KEY_RE, NodeID, RunningState
 
 from ..models.domains.comp_tasks import CompTaskAtDB
+from ..modules.db.tables import NodeClass
 
 log = logging.getLogger(__file__)
 
@@ -38,3 +40,18 @@ def get_pipeline_state_from_task_states(
                 return state
 
     return RunningState.NOT_STARTED
+
+
+_node_key_re = re.compile(KEY_RE)
+_STR_TO_NODECLASS = {
+    "comp": NodeClass.COMPUTATIONAL,
+    "dynamic": NodeClass.INTERACTIVE,
+    "frontend": NodeClass.FRONTEND,
+}
+
+
+def to_node_class(service_key: str) -> NodeClass:
+    match = _node_key_re.match(service_key)
+    if match:
+        return _STR_TO_NODECLASS.get(match.group(3))
+    raise ValueError
