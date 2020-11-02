@@ -25,7 +25,7 @@ from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio import setup_sockets
+from simcore_service_webserver.socketio import setup_socketio
 
 API_VERSION = "v0"
 
@@ -58,7 +58,7 @@ def client(
     setup_login(app)
     setup_projects(app)
     setup_computation(app)
-    setup_sockets(app)
+    setup_socketio(app)
     setup_resource_manager(app)
 
     yield loop.run_until_complete(
