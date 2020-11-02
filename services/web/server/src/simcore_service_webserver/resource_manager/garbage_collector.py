@@ -83,27 +83,26 @@ async def garbage_collector_task(app: web.Application):
 
 async def collect_garbage(registry: RedisResourceRegistry, app: web.Application):
     """
-    Garbage collection has the task of removing trash from the system. The trash
+    Garbage collection has the task of removing trash (i.e. unused resources) from the system. The trash
     can be divided in:
 
     - Websockets & Redis (used to keep track of current active connections)
     - GUEST users (used for temporary access to the system which are created on the fly)
-    - deletion of users. If a user needs to be deleted it is manually marked as GUEST
-        in the database
+    - Deletion of users. If a user needs to be deleted it can be set as GUEST in the database
 
     The resources are Redis entries where all information regarding all the
-    websocket identifiers for all opened tabs accross all broser for each user
+    websocket identifiers for all opened tabs accross all browser for each user
     are stored.
 
-    The alive/dead keys are normal Redis keys. To each key and ALIVE key is associated,
-    which has an assigned TTL. The browser will call the `client_heartbeat` websocket
+    The alive/dead keys are normal Redis keys. To each key an ALIVE key is associated,
+    which has an assigned TTL (Time To Live). The browser will call the `client_heartbeat` websocket
     endpoint to refresh the TTL, thus declaring that the user (websocket connection) is
-    still active. The `resource_deletion_timeout_seconds` is theTTL of the key.
+    still active. The `resource_deletion_timeout_seconds` is the TTL of the key.
 
     The field `garbage_collection_interval_seconds` defines the interval at which this
     function will be called.
     """
-    logger.info("collecting garbage...")
+    logger.info("Collecting garbage...")
 
     # Removes disconnected user resources
     # Triggers signal to close possible pending opened projects
