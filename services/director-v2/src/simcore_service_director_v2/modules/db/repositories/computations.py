@@ -15,7 +15,7 @@ from simcore_service_director_v2.models.schemas.services import (
 )
 from sqlalchemy.dialects.postgresql import insert
 
-from ....models.domains.comp_tasks import CompTaskAtDB, Image
+from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from ...director_v0 import DirectorV0Client
 from ..tables import NodeClass, StateType, comp_pipeline, comp_tasks
 from ._base import BaseRepository
@@ -52,7 +52,7 @@ _STR_TO_NODECLASS = {
 def _to_node_class(node_details: Node) -> NodeClass:
     match = _node_key_re.match(node_details.key)
     if match:
-        return _STR_TO_NODECLASS.get(match.group(1))
+        return _STR_TO_NODECLASS.get(match.group(3))
     raise ValueError
 
 
@@ -120,12 +120,11 @@ class CompTasksRepository(BaseRepository):
             task_db = CompTaskAtDB(
                 project_id=project.uuid,
                 node_id=node_id,
-                node_schema={
-                    "inputs": node_details["inputs"],
-                    "outputs": node_details["outputs"],
-                },
-                inputs=node.inputs.dict(by_alias=True),
-                outputs=node.outputs.dict(by_alias=True),
+                schema=NodeSchema(
+                    inputs=node_details.inputs, outputs=node_details.outputs
+                ),
+                inputs=node.inputs,
+                outputs=node.outputs,
                 image=image,
                 submit=datetime.utcnow(),
                 state=RunningState.PUBLISHED,
@@ -134,14 +133,8 @@ class CompTasksRepository(BaseRepository):
             )
             internal_id = internal_id + 1
 
-        # set up the new tasks from the project
-
-        # query = comp_tasks.insert().values(
-        #     project_id=str(project.uuid),
-        #     node_id=str(node_id),
-        #     submit=datetime.utcnow(),
-        #     state=StateType.PUBLISHED,
-        #     internal_id=internal_id,
-        # )
-        # await self.connection.execute(query)
-        #
+            await self.connection.execute(
+                insert(comp_tasks).values(
+                    **task_db.dict(by_alias=True, exclude_unset=True)
+                )
+            )

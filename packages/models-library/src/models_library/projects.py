@@ -13,7 +13,7 @@ current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve
 DATE_RE = r"\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z"
 
 GroupID = constr(regex=r"^\S+$")
-NodeID = UUID
+NodeID = str
 ProjectID = UUID
 ClassifierID = str
 

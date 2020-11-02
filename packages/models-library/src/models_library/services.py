@@ -214,6 +214,10 @@ class ServiceCommonData(BaseModel):
         return value
 
 
+ServiceInputs = Dict[PropertyName, ServiceInput]
+ServiceOutputs = Dict[PropertyName, ServiceOutput]
+
+
 class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
     integration_version: Optional[constr(regex=VERSION_RE)] = Field(
         None,
@@ -237,10 +241,10 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
         description="email to correspond to the authors about the node",
         example=["lab@net.flix"],
     )
-    inputs: Optional[Dict[PropertyName, ServiceInput]] = Field(
+    inputs: Optional[ServiceInputs] = Field(
         ..., description="definition of the inputs of this node"
     )
-    outputs: Optional[Dict[PropertyName, ServiceOutput]] = Field(
+    outputs: Optional[ServiceOutputs] = Field(
         ..., description="definition of the outputs of this node"
     )
 

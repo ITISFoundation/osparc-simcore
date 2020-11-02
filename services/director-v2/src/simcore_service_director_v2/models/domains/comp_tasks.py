@@ -1,10 +1,10 @@
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Optional
 from uuid import UUID
 
 from models_library.constants import VERSION_RE
-from models_library.projects import NodeID, ProjectID, RunningState
-from models_library.services import KEY_RE
+from models_library.projects import Inputs, NodeID, Outputs, ProjectID, RunningState
+from models_library.services import KEY_RE, ServiceInputs, ServiceOutputs
 from pydantic import BaseModel, Extra, Field, HttpUrl, constr, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
@@ -44,21 +44,28 @@ class Image(BaseModel):
     requires_mpi: bool
 
 
+class NodeSchema(BaseModel):
+    inputs: ServiceInputs = Field(..., description="the inputs scheam")
+    outputs: ServiceOutputs = Field(..., description="the outputs schema")
+
+    class Config:
+        extra = Extra.forbid
+        orm_mode = True
+
+
 class CompTaskAtDB(BaseModel):
     project_id: ProjectID
     node_id: NodeID
     job_id: Optional[str] = Field(None, description="The celery job ID")
-    node_schema: Dict = Field(
-        ..., description="the schema for inputs/outputs", alias="schema"
-    )
-    inputs: Dict = Field(..., description="the inputs payload")
-    outputs: Dict = Field(..., description="the outputs payload")
+    node_schema: NodeSchema = Field(..., alias="schema")
+    inputs: Inputs = Field(..., description="the inputs payload")
+    outputs: Optional[Outputs] = Field({}, description="the outputs payload")
     image: Image
     submit: datetime
     start: Optional[datetime]
     end: Optional[datetime]
     state: RunningState
-    task_id: PositiveInt
+    task_id: Optional[PositiveInt]
     internal_id: PositiveInt
     node_class: NodeClass
 

@@ -20,7 +20,7 @@ class ServiceBuildDetails(BaseModel):
 
 class ServiceExtras(BaseModel):
     node_requirements: List[NodeRequirement]
-    service_build_details: ServiceBuildDetails
+    service_build_details: Optional[ServiceBuildDetails]
 
 
 class ServiceExtrasEnveloped(BaseModel):
