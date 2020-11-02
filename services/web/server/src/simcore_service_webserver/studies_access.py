@@ -32,10 +32,10 @@ BASE_UUID = uuid.UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
 @lru_cache()
 def compose_uuid(template_uuid, user_id, query="") -> str:
-    """ Creates a new uuid composing a project's and user ids such that
-        any template pre-assigned to a user
+    """Creates a new uuid composing a project's and user ids such that
+    any template pre-assigned to a user
 
-        Enforces a constraint: a user CANNOT have multiple copies of the same template
+    Enforces a constraint: a user CANNOT have multiple copies of the same template
     """
     new_uuid = str(
         uuid.uuid5(BASE_UUID, str(template_uuid) + str(user_id) + str(query))
@@ -46,7 +46,7 @@ def compose_uuid(template_uuid, user_id, query="") -> str:
 # TODO: from .projects import get_public_project
 async def get_public_project(app: web.Application, project_uuid: str):
     """
-        Returns project if project_uuid is a template and is marked as published, otherwise None
+    Returns project if project_uuid is a template and is marked as published, otherwise None
     """
     from .projects.projects_db import APP_PROJECT_DBAPI
 
@@ -57,13 +57,12 @@ async def get_public_project(app: web.Application, project_uuid: str):
 
 async def create_temporary_user(request: web.Request):
     """
-        TODO: user should have an expiration date and limited persmissions!
+    TODO: user should have an expiration date and limited persmissions!
     """
     from .login.cfg import get_storage
-    from .login.handlers import ACTIVE, GUEST, ANONYMOUS
+    from .login.handlers import ACTIVE, ANONYMOUS
     from .login.utils import get_client_ip, get_random_string
     from .security_api import encrypt_password
-    from .resource_manager.websocket_manager import WebsocketRegistry
 
     db = get_storage(request.app)
 
@@ -72,7 +71,7 @@ async def create_temporary_user(request: web.Request):
     email = username + "@guest-at-osparc.io"
     password = get_random_string(min_len=12)
 
-    # creates a user that is marked as ANONYMOUS
+    # creates a user that is marked as ANONYMOUS. see update_user_as_guest
     user = await db.create_user(
         {
             "name": username,
@@ -84,17 +83,27 @@ async def create_temporary_user(request: web.Request):
         }
     )
 
-    # creates an entry in the socket's registry to avoid garbage collector (GC) deleting it
-    # See https://github.com/ITISFoundation/osparc-simcore/issues/1853
-    registry = WebsocketRegistry(user["id"], f"{username}-guest-session", request.app)
-    await registry.set_socket_id(f"{username}-guest-socket-id")
-
-    # Now that we know the ID, we set the user as GUEST
-    # This extra step is to prevent the possibility that the GC is cleaning while
-    # the function above is creating the entry in the socket
-    await db.update_user(user, updates={"role": GUEST})
-
     return user
+
+
+async def register_as_guest_user(user: Dict, app: web.Application):
+    from .login.cfg import get_storage
+    from .login.handlers import GUEST, ANONYMOUS
+    from .resource_manager.websocket_manager import WebsocketRegistry
+
+    if user.get("role") == ANONYMOUS:
+        db = get_storage(app)
+        username = user["name"]
+
+        # creates an entry in the socket's registry to avoid garbage collector (GC) deleting it
+        # See https://github.com/ITISFoundation/osparc-simcore/issues/1853
+        registry = WebsocketRegistry(user["id"], f"{username}-guest-session", app)
+        await registry.set_socket_id(f"{username}-guest-socket-id")
+
+        # Now that we know the ID, we set the user as GUEST
+        # This extra step is to prevent the possibility that the GC is cleaning while
+        # the function above is creating the entry in the socket
+        await db.update_user(user, updates={"role": GUEST})
 
 
 # TODO: from .users import get_user?
@@ -113,10 +122,10 @@ async def copy_study_to_account(
     request: web.Request, template_project: Dict, user: Dict
 ):
     """
-        Creates a copy of the study to a given project in user's account
+    Creates a copy of the study to a given project in user's account
 
-        - Replaces template parameters by values passed in query
-        - Avoids multiple copies of the same template on each account
+    - Replaces template parameters by values passed in query
+    - Avoids multiple copies of the same template on each account
     """
     from .projects.projects_db import APP_PROJECT_DBAPI
     from .projects.projects_exceptions import ProjectNotFoundError
@@ -163,11 +172,11 @@ async def copy_study_to_account(
 # HANDLERS --------------------------------------------------------
 async def access_study(request: web.Request) -> web.Response:
     """
-        Handles requests to get and open a public study
+    Handles requests to get and open a public study
 
-        - public studies are templates that are marked as published in the database
-        - if user is not registered, it creates a temporary guest account with limited resources and expiration
-        - this handler is NOT part of the API and therefore does NOT respond with json
+    - public studies are templates that are marked as published in the database
+    - if user is not registered, it creates a temporary guest account with limited resources and expiration
+    - this handler is NOT part of the API and therefore does NOT respond with json
     """
     # TODO: implement nice error-page.html
     project_id = request.match_info["id"]
@@ -231,6 +240,7 @@ async def access_study(request: web.Request) -> web.Response:
         log.debug("Auto login for anonymous user %s", user["name"])
         identity = user["email"]
         await remember(request, response, identity)
+        await register_as_guest_user(user, request.app)
 
     raise response
 
@@ -250,7 +260,9 @@ def setup(app: web.Application):
 
     # TODO: make sure that these routes are filtered properly in active middlewares
     app.router.add_routes(
-        [web.get(r"/study/{id}", study_handler, name="study"),]
+        [
+            web.get(r"/study/{id}", study_handler, name="study"),
+        ]
     )
 
     return True
