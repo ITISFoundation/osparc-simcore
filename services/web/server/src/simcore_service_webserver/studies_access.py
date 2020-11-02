@@ -86,7 +86,7 @@ async def create_temporary_user(request: web.Request):
     return user
 
 
-async def register_as_guest_user(user: Dict, app: web.Application):
+async def activate_as_guest_user(user: Dict, app: web.Application):
     from .login.cfg import get_storage
     from .login.handlers import GUEST, ANONYMOUS
     from .resource_manager.websocket_manager import WebsocketRegistry
@@ -240,7 +240,7 @@ async def access_study(request: web.Request) -> web.Response:
         log.debug("Auto login for anonymous user %s", user["name"])
         identity = user["email"]
         await remember(request, response, identity)
-        await register_as_guest_user(user, request.app)
+        await activate_as_guest_user(user, request.app)
 
     raise response
 

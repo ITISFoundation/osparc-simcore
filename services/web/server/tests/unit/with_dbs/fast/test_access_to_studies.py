@@ -13,6 +13,7 @@ from typing import Dict
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
+
 from models_library.projects import (
     Owner,
     ProjectLocked,
@@ -88,6 +89,15 @@ def mocks_on_projects_api(mocker) -> Dict:
         "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
         return_value=future_with_result(state),
     )
+
+
+@pytest.fixture
+def mocks_on_websocket_manager(loop, mocker):
+    wr = mocker.patch(
+        "simcore_service_webserver.resource_manager.websocket_manager.WebsocketRegistry"
+    )
+    wr.return_value.set_socket_id.return_value = future_with_result(None)
+    return wr
 
 
 @pytest.fixture
@@ -264,6 +274,7 @@ async def test_access_study_anonymously(
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
+    mocks_on_websocket_manager,
 ):
 
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
@@ -299,6 +310,7 @@ async def test_access_study_by_logged_user(
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
+    mocks_on_websocket_manager,
 ):
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
     resp = await client.get(study_url)
@@ -322,6 +334,7 @@ async def test_access_cookie_of_expired_user(
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
+    mocks_on_websocket_manager,
 ):
     # emulates issue #1570
     app: web.Application = client.app

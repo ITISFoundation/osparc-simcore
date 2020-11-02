@@ -68,13 +68,15 @@ def create_application(config: Dict) -> web.Application:
     setup_users(app)
     setup_groups(app)
     setup_projects(app)  # needs storage
-    setup_studies_access(app)
     setup_activity(app)
     setup_resource_manager(app)
     setup_tags(app)
     setup_catalog(app)
     setup_publications(app)
     setup_products(app)
+
+    # top level plugins
+    setup_studies_access(app)
 
     return app
 
