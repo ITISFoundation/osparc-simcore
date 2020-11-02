@@ -9,17 +9,18 @@ from pydantic.types import UUID4, PositiveInt
 class NodeRequirement(str, Enum):
     CPU = "CPU"
     GPU = "GPU"
+    MPI = "MPI"
 
 
 class ServiceBuildDetails(BaseModel):
-    build_date: Optional[str] = None
-    vcs_ref: Optional[str] = None
-    vcs_url: Optional[str] = None
+    build_date: str
+    vcs_ref: str
+    vcs_url: str
 
 
 class ServiceExtras(BaseModel):
     node_requirements: List[NodeRequirement]
-    service_build_details: Optional[ServiceBuildDetails] = None
+    service_build_details: ServiceBuildDetails
 
 
 class ServiceExtrasEnveloped(BaseModel):

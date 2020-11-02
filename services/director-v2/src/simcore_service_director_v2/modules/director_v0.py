@@ -3,6 +3,7 @@
 
 """
 import logging
+import urllib
 from dataclasses import dataclass
 
 import httpx
@@ -21,6 +22,8 @@ logger = logging.getLogger(__name__)
 
 # Module's setup logic ---------------------------------------------
 
+from ..models.schemas.services import ServiceExtras
+
 
 def setup(app: FastAPI, settings: DirectorV0Settings):
     if not settings:
@@ -28,7 +31,8 @@ def setup(app: FastAPI, settings: DirectorV0Settings):
 
     def on_startup() -> None:
         DirectorV0Client.create(
-            app, client=httpx.AsyncClient(base_url=settings.base_url(include_tag=True))
+            app,
+            client=httpx.AsyncClient(base_url=settings.base_url(include_tag=True)),
         )
 
     async def on_shutdown() -> None:
@@ -84,8 +88,20 @@ class DirectorV0Client:
     async def get_service_details(
         self, service: ServiceKeyVersion
     ) -> ServiceDockerData:
-        url_tail = URL(path=f"services/{service.key}/{service.version}")
-        resp = await self.client.get(str(url_tail))
+        url_quoted_service_key = urllib.parse.quote_plus(service.key)
+        resp = await self.client.get(
+            f"services/{url_quoted_service_key}/{service.version}"
+        )
         if resp.status_code == status.HTTP_200_OK:
             return ServiceDockerData.parse_obj(resp.body.get("data"))
+        raise HTTPException(status_code=resp.status_code, detail=resp.content)
+
+    async def get_service_extras(self, service: ServiceKeyVersion) -> ServiceExtras:
+        url_quoted_service_key = urllib.parse.quote_plus(service.key)
+        url_tail = URL(
+            path=f"service_extras/{url_quoted_service_key}/{service.version}"
+        )
+        resp = await self.client.get(str(url_tail))
+        if resp.status_code == status.HTTP_200_OK:
+            return ServiceExtras.parse_obj(resp.body.get("data"))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)

@@ -2,8 +2,10 @@ from datetime import datetime
 from typing import Dict, Optional
 from uuid import UUID
 
+from models_library.constants import VERSION_RE
 from models_library.projects import NodeID, ProjectID, RunningState
-from pydantic import BaseModel, Extra, Field, HttpUrl, validator
+from models_library.services import KEY_RE
+from pydantic import BaseModel, Extra, Field, HttpUrl, constr, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
 
@@ -35,14 +37,23 @@ DB_TO_RUNNING_STATE = {
 }
 
 
+class Image(BaseModel):
+    name: constr(regex=KEY_RE)
+    tag: constr(regex=VERSION_RE)
+    requires_gpu: bool
+    requires_mpi: bool
+
+
 class CompTaskAtDB(BaseModel):
     project_id: ProjectID
     node_id: NodeID
-    job_id: Optional[str]
-    node_schema: Dict = Field(..., alias="schema")
-    inputs: Dict
-    outputs: Dict
-    image: Dict
+    job_id: Optional[str] = Field(None, description="The celery job ID")
+    node_schema: Dict = Field(
+        ..., description="the schema for inputs/outputs", alias="schema"
+    )
+    inputs: Dict = Field(..., description="the inputs payload")
+    outputs: Dict = Field(..., description="the outputs payload")
+    image: Image
     submit: datetime
     start: Optional[datetime]
     end: Optional[datetime]
