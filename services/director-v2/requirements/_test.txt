@@ -22,12 +22,12 @@ cached-property==1.5.2    # via docker-compose
 celery[redis]==5.0.1      # via -r requirements/_base.txt
 certifi==2020.6.20        # via -r requirements/_base.txt, httpx, requests
 cffi==1.14.3              # via bcrypt, cryptography, pynacl
-chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, requests
+chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, httpx, requests
 click-didyoumean==0.0.3   # via -r requirements/_base.txt, celery
 click-repl==0.1.6         # via -r requirements/_base.txt, celery
 click==7.1.2              # via -r requirements/_base.txt, celery, click-didyoumean, click-repl, uvicorn
 codecov==2.1.10           # via -r requirements/_test.in
-contextvars==2.4          # via sniffio
+contextvars==2.4          # via -r requirements/_base.txt, sniffio
 coverage==5.3             # via codecov, coveralls, pytest-cov
 coveralls==2.1.2          # via -r requirements/_test.in
 cryptography==3.2.1       # via paramiko
@@ -48,10 +48,10 @@ graphql-relay==2.0.1      # via -r requirements/_base.txt, graphene
 h11==0.9.0                # via -r requirements/_base.txt, httpcore, uvicorn
 httpcore==0.12.1          # via httpx
 httptools==0.1.1          # via -r requirements/_base.txt, uvicorn
-httpx==0.16.1             # via respx
+httpx==0.14.3             # via -r requirements/_base.txt, respx
 idna-ssl==1.1.0           # via -r requirements/_base.txt, aiohttp
 idna==2.10                # via -r requirements/_base.txt, email-validator, idna-ssl, requests, rfc3986, yarl
-immutables==0.14          # via contextvars
+immutables==0.14          # via -r requirements/_base.txt, contextvars
 importlib-metadata==2.0.0  # via -r requirements/_base.txt, jsonschema, kombu, pluggy, pytest
 iniconfig==1.1.1          # via pytest
 isort==5.6.4              # via pylint
@@ -65,7 +65,7 @@ markupsafe==1.1.1         # via -r requirements/_base.txt, jinja2, mako
 mccabe==0.6.1             # via pylint
 multidict==5.0.0          # via -r requirements/_base.txt, aiohttp, yarl
 networkx==2.5             # via -r requirements/_base.txt
-orjson==3.4.2             # via -r requirements/_base.txt, fastapi
+orjson==3.4.3             # via -r requirements/_base.txt, fastapi
 packaging==20.4           # via pytest
 paramiko==2.7.2           # via docker
 pluggy==0.13.1            # via pytest
@@ -90,15 +90,15 @@ python-dateutil==2.8.1    # via alembic, faker
 python-dotenv==0.15.0     # via -r requirements/_base.txt, docker-compose, pydantic
 python-editor==1.0.4      # via alembic
 python-multipart==0.0.5   # via -r requirements/_base.txt, fastapi
-pytz==2020.1              # via -r requirements/_base.txt, celery
+pytz==2020.4              # via -r requirements/_base.txt, celery
 pyyaml==5.3.1             # via -r requirements/_base.txt, docker-compose, fastapi
 redis==3.5.3              # via -r requirements/_base.txt, celery
 requests==2.24.0          # via -r requirements/_base.txt, codecov, coveralls, docker, docker-compose, fastapi
-respx==0.15.0             # via -r requirements/_test.in
-rfc3986[idna2008]==1.4.0  # via httpx
+respx==0.12.1             # via -r requirements/_test.in
+rfc3986[idna2008]==1.4.0  # via -r requirements/_base.txt, httpx
 rx==1.6.1                 # via -r requirements/_base.txt, graphql-core
 six==1.15.0               # via -r requirements/_base.txt, astroid, bcrypt, click-repl, cryptography, docker, dockerpty, graphene, graphql-core, graphql-relay, jsonschema, packaging, promise, pynacl, python-dateutil, python-multipart, tenacity, websocket-client
-sniffio==1.2.0            # via httpcore, httpx
+sniffio==1.2.0            # via -r requirements/_base.txt, httpcore, httpx
 sqlalchemy[postgresql_psycopg2binary]==1.3.20  # via -r requirements/_base.txt, aiopg, alembic
 starlette==0.13.6         # via -r requirements/_base.txt, fastapi
 tenacity==6.2.0           # via -r requirements/_base.txt

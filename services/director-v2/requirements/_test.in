@@ -23,7 +23,8 @@ Faker
 # migration due to pytest_simcore.postgres_service2
 alembic
 docker
-respx
+# [https://github.com/encode/httpx/releases/tag/0.15.0] due to PR#1285 [https://github.com/encode/httpx/pull/1285]
+respx<0.13.0
 
 # tools
 pylint
