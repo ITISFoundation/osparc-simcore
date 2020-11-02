@@ -1,5 +1,4 @@
 import logging
-from inspect import Signature
 from typing import Dict, List
 
 import networkx as nx
@@ -15,6 +14,7 @@ from models_library.projects import (
     RunningState,
     Workbench,
 )
+from networkx.classes import graph
 from simcore_service_director_v2.utils.exceptions import ProjectNotFoundError
 from starlette import status
 from starlette.requests import Request
@@ -84,6 +84,17 @@ def convert_graph_to_celery_canvas(dag_graph: nx.DiGraph) -> Signature:
         node_deps = list(dag_graph.predecessors(node))
 
 
+def topological_sort_grouping(dag_graph: nx.DiGraph) -> List[Signature]:
+    # copy the graph
+    graph_copy = dag_graph.copy()
+    res = []
+    while graph_copy:
+        zero_indegree = [v for v, d in graph_copy.in_degree() if d == 0]
+        res.append(zero_indegree)
+        graph_copy.remove_nodes_from(zero_indegree)
+    return res
+
+
 @router.post(
     "",
     description="Create and Start a new computation",
@@ -110,20 +121,26 @@ async def create_computation(
         comp_tasks: Dict[NodeID, CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             project_id
         )
-        # pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
-        # if pipeline_state in [
-        #     RunningState.PUBLISHED,
-        #     RunningState.PENDING,
-        #     RunningState.STARTED,
-        #     RunningState.RETRY,
-        # ]:
-        #     raise HTTPException(
-        #         status_code=status.HTTP_403_FORBIDDEN,
-        #         detail=f"Projet {project_id} already started, current state is {pipeline_state}",
-        #     )
+        pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
+        if pipeline_state in [
+            RunningState.PUBLISHED,
+            RunningState.PENDING,
+            RunningState.STARTED,
+            RunningState.RETRY,
+        ]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Projet {project_id} already started, current state is {pipeline_state}",
+            )
 
         # create the DAG
         dag_graph = create_dag_graph(project.workbench)
+        # validate DAG
+        if not nx.is_directed_acyclic_graph(dag_graph):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Project {project_id} is not a valid directed acyclic graph!",
+            )
         # find the entrypoints
         entrypoints = find_entrypoints(dag_graph)
         if not entrypoints:
@@ -131,12 +148,13 @@ async def create_computation(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=f"Project {project_id} has no services to compute",
             )
+        # FIXME: directly pass the tasks to celery instead of the current recursive way
         # convert the pipeline to celery tasks
-        canvas: Signature = convert_graph_to_celery_canvas(dag_graph)
+        # canvas: Signature = convert_graph_to_celery_canvas(dag_graph)
         # ok so publish the tasks
         await computation_tasks.publish_tasks(project_id)
         # trigger celery
-        # task = celery_client.send_computation_task(user_id, project_id)
+        task = celery_client.send_computation_task(user_id, project_id)
         background_tasks.add_task(background_on_message, task)
         return ComputationTaskOut(
             id=task.id, state=task.state, url=f"{request.base_url}{task.id}"
