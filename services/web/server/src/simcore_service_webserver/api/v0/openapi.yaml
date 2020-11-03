@@ -5515,7 +5515,7 @@ paths:
             type: string
             example: 123e4567-e89b-12d3-a456-426655440000
       responses:
-        '200':
+        '201':
           description: Succesffully started the pipeline
           content:
             application/json:
@@ -5527,12 +5527,8 @@ paths:
                   data:
                     type: object
                     required:
-                      - pipeline_name
                       - pipeline_id
                     properties:
-                      pipeline_name:
-                        type: string
-                        example: a pipeline named pipeline
                       pipeline_id:
                         type: string
                         example: 123e4567-e89b-12d3-a456-426655440000
@@ -6036,7 +6032,7 @@ paths:
                                         - STARTED
                                         - RETRY
                                         - SUCCESS
-                                        - FAILURE
+                                        - FAILED
                                         - ABORTED
                                       type: string
                               additionalProperties: true
@@ -6167,7 +6163,7 @@ paths:
                                                 - STARTED
                                                 - RETRY
                                                 - SUCCESS
-                                                - FAILURE
+                                                - FAILED
                                                 - ABORTED
                                               type: string
                                           required:
@@ -6570,7 +6566,7 @@ paths:
                             - STARTED
                             - RETRY
                             - SUCCESS
-                            - FAILURE
+                            - FAILED
                             - ABORTED
                           type: string
                   additionalProperties: true
@@ -6701,7 +6697,7 @@ paths:
                                     - STARTED
                                     - RETRY
                                     - SUCCESS
-                                    - FAILURE
+                                    - FAILED
                                     - ABORTED
                                   type: string
                               required:
@@ -6984,7 +6980,7 @@ paths:
                                       - STARTED
                                       - RETRY
                                       - SUCCESS
-                                      - FAILURE
+                                      - FAILED
                                       - ABORTED
                                     type: string
                             additionalProperties: true
@@ -7115,7 +7111,7 @@ paths:
                                               - STARTED
                                               - RETRY
                                               - SUCCESS
-                                              - FAILURE
+                                              - FAILED
                                               - ABORTED
                                             type: string
                                         required:
@@ -7516,7 +7512,7 @@ paths:
                                       - STARTED
                                       - RETRY
                                       - SUCCESS
-                                      - FAILURE
+                                      - FAILED
                                       - ABORTED
                                     type: string
                             additionalProperties: true
@@ -7647,7 +7643,7 @@ paths:
                                               - STARTED
                                               - RETRY
                                               - SUCCESS
-                                              - FAILURE
+                                              - FAILED
                                               - ABORTED
                                             type: string
                                         required:
@@ -8054,7 +8050,7 @@ paths:
                                       - STARTED
                                       - RETRY
                                       - SUCCESS
-                                      - FAILURE
+                                      - FAILED
                                       - ABORTED
                                     type: string
                             additionalProperties: true
@@ -8185,7 +8181,7 @@ paths:
                                               - STARTED
                                               - RETRY
                                               - SUCCESS
-                                              - FAILURE
+                                              - FAILED
                                               - ABORTED
                                             type: string
                                         required:
@@ -8583,7 +8579,7 @@ paths:
                             - STARTED
                             - RETRY
                             - SUCCESS
-                            - FAILURE
+                            - FAILED
                             - ABORTED
                           type: string
                   additionalProperties: true
@@ -8714,7 +8710,7 @@ paths:
                                     - STARTED
                                     - RETRY
                                     - SUCCESS
-                                    - FAILURE
+                                    - FAILED
                                     - ABORTED
                                   type: string
                               required:
@@ -8997,7 +8993,7 @@ paths:
                                       - STARTED
                                       - RETRY
                                       - SUCCESS
-                                      - FAILURE
+                                      - FAILED
                                       - ABORTED
                                     type: string
                             additionalProperties: true
@@ -9128,7 +9124,7 @@ paths:
                                               - STARTED
                                               - RETRY
                                               - SUCCESS
-                                              - FAILURE
+                                              - FAILED
                                               - ABORTED
                                             type: string
                                         required:
@@ -9551,7 +9547,7 @@ paths:
                                       - STARTED
                                       - RETRY
                                       - SUCCESS
-                                      - FAILURE
+                                      - FAILED
                                       - ABORTED
                                     type: string
                             additionalProperties: true
@@ -9682,7 +9678,7 @@ paths:
                                               - STARTED
                                               - RETRY
                                               - SUCCESS
-                                              - FAILURE
+                                              - FAILED
                                               - ABORTED
                                             type: string
                                         required:
@@ -10917,7 +10913,7 @@ paths:
                                       - STARTED
                                       - RETRY
                                       - SUCCESS
-                                      - FAILURE
+                                      - FAILED
                                       - ABORTED
                                     type: string
                             additionalProperties: true
@@ -11048,7 +11044,7 @@ paths:
                                               - STARTED
                                               - RETRY
                                               - SUCCESS
-                                              - FAILURE
+                                              - FAILED
                                               - ABORTED
                                             type: string
                                         required:
@@ -11448,7 +11444,7 @@ paths:
                                       - STARTED
                                       - RETRY
                                       - SUCCESS
-                                      - FAILURE
+                                      - FAILED
                                       - ABORTED
                                     type: string
                             additionalProperties: true
@@ -11579,7 +11575,7 @@ paths:
                                               - STARTED
                                               - RETRY
                                               - SUCCESS
-                                              - FAILURE
+                                              - FAILED
                                               - ABORTED
                                             type: string
                                         required:
