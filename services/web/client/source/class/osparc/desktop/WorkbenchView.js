@@ -654,7 +654,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    openOneNode: function() {
+    openFirstNode: function() {
       const validNodeIds = [];
       const allNodes = this.getStudy().getWorkbench().getNodes(true);
       Object.values(allNodes).forEach(node => {
