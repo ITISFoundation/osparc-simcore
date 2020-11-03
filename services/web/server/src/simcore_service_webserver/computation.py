@@ -41,10 +41,10 @@ def setup_computation(app: web.Application):
     specs = app[APP_OPENAPI_SPECS_KEY]
     routes = map_handlers_with_operations(
         {
-            "start_pipeline": computation_handlers.start_pipeline,
+            # "start_pipeline": computation_handlers.start_pipeline,
             "stop_pipeline": computation_handlers.stop_pipeline,
         },
-        filter(lambda o: "/computation" in o[1], iter_path_operations(specs)),
+        filter(lambda o: "stop_pipeline" in o[2], iter_path_operations(specs)),
         strict=True,
     )
     app.router.add_routes(routes)
