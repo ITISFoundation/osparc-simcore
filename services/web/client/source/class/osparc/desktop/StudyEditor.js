@@ -117,11 +117,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
 
       this.__workbenchView.setStudy(study);
-      this.__workbenchView.initViews();
-      this.__workbenchView.openFirstNode();
-
       this.__slideshowView.setStudy(study);
+
+      this.__workbenchView.initViews();
       this.__slideshowView.initViews();
+
+      this.__workbenchView.openFirstNode();
       this.__slideshowView.openFirstNode();
 
       this.__startAutoSaveTimer();
