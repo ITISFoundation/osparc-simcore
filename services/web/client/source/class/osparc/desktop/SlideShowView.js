@@ -57,12 +57,6 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     __nextBtn: null,
     __currentNodeId: null,
 
-    initViews: function() {
-      this.__initViews();
-
-      this.__showFirstNode();
-    },
-
     nodeSelected: function(nodeId) {
       this.__currentNodeId = nodeId;
       this.getStudy().getUi().setCurrentNodeId(nodeId);
@@ -97,11 +91,11 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       if (isValid && currentNodeId) {
         this.nodeSelected(currentNodeId);
       } else {
-        this.__showFirstNode();
+        this.openFirstNode();
       }
     },
 
-    __initViews: function() {
+    initViews: function() {
       this._removeAll();
 
       this.__createControlsBar();
@@ -165,7 +159,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       }
     },
 
-    __showFirstNode: function() {
+    openFirstNode: function() {
       const study = this.getStudy();
       if (study) {
         const nodes = this.self().getSortedNodes(study);
