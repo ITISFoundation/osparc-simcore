@@ -2,7 +2,6 @@ import logging
 from io import StringIO
 from typing import Any
 
-import aiopg
 import orjson
 from aiopg.sa import Engine, create_engine
 from aiopg.sa.engine import get_dialect

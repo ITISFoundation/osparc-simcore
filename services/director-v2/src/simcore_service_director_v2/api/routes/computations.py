@@ -7,9 +7,7 @@ from celery.contrib.abortable import AbortableAsyncResult
 from celery.result import AsyncResult
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from models_library.projects import (
-    Node,
     NodeID,
-    Project,
     ProjectID,
     RunningState,
     Workbench,
