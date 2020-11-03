@@ -13,8 +13,8 @@ from uuid import uuid4
 import aio_pika
 import pytest
 import sqlalchemy as sa
-from models_library.celery import CeleryConfig
-from models_library.rabbit import RabbitConfig
+from models_library.settings.celery import CeleryConfig
+from models_library.settings.rabbit import RabbitConfig
 from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
 from simcore_service_sidecar import config, utils
 from yarl import URL

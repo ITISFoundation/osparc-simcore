@@ -12,7 +12,7 @@
 # installs this repo's packages
 ../../packages/s3wrapper/
 ../../packages/postgres-database/
-../../packages/simcore-sdk/
+../../packages/models-library/
 ../../packages/service-library
 
 # installs current package

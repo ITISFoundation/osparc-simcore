@@ -14,8 +14,8 @@ from socketio.exceptions import ConnectionError as SocketConnectionError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 from yarl import URL
 
-from models_library.rabbit import RabbitConfig
-from models_library.redis import RedisConfig
+from models_library.settings.rabbit import RabbitConfig
+from models_library.settings.redis import RedisConfig
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import NewProject
@@ -35,7 +35,7 @@ from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio import setup_sockets
+from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.users import setup_users
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -78,7 +78,7 @@ def client(
     setup_rest(app)
     setup_login(app)
     setup_users(app)
-    setup_sockets(app)
+    setup_socketio(app)
     setup_projects(app)
     setup_computation(app)
     setup_resource_manager(app)

@@ -1,27 +1,35 @@
 """ Basic configuration file for S3
 
 """
-from os import environ as env
 import logging
+import warnings
+from os import environ as env
 
 import trafaret as T
+
+warnings.warn(
+    f"Module '{__name__}' will be remove in future versions. "
+    "All common settings have been moved to packages/model-slibrary. "
+    "Use instead 'models_library.settings.s3' ",
+    DeprecationWarning,
+)
 
 log = logging.getLogger(__name__)
 
 
-CONFIG_SCHEMA = T.Dict({
-    "endpoint": T.String(),
-    "access_key": T.String(),
-    "secret_key": T.String(),
-    "bucket_name": T.String(),
-    T.Key("secure", default=0): T.ToInt(),
-})
+CONFIG_SCHEMA = T.Dict(
+    {
+        "endpoint": T.String(),
+        "access_key": T.String(),
+        "secret_key": T.String(),
+        "bucket_name": T.String(),
+        T.Key("secure", default=0): T.ToInt(),
+    }
+)
 
 
-# TODO: deprecate!
-class Config():
+class Config:
     def __init__(self):
-        # TODO: uniform config classes . see server.config file
         S3_ENDPOINT = env.get("S3_ENDPOINT", "minio:9000")
         S3_ACCESS_KEY = env.get("S3_ACCESS_KEY", "12345678")
         S3_SECRET_KEY = env.get("S3_SECRET_KEY", "12345678")

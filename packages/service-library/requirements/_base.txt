@@ -11,6 +11,7 @@ aiozipkin==0.7.1          # via -r requirements/_base.in
 async-timeout==3.0.1      # via aiohttp
 attrs==20.2.0             # via -r requirements/_base.in, aiohttp, jsonschema, openapi-core
 chardet==3.0.4            # via aiohttp
+dataclasses==0.7          # via pydantic
 idna-ssl==1.1.0           # via aiohttp
 idna==2.10                # via idna-ssl, yarl
 importlib-metadata==2.0.0  # via jsonschema
@@ -22,6 +23,7 @@ openapi-core==0.12.0      # via -r requirements/_base.in
 openapi-spec-validator==0.2.9  # via openapi-core
 prometheus-client==0.8.0  # via -r requirements/_base.in
 psycopg2-binary==2.8.6    # via -r requirements/_base.in, aiopg, sqlalchemy
+pydantic==1.6.1           # via -r requirements/_base.in
 pyrsistent==0.17.3        # via jsonschema
 pyyaml==5.3.1             # via -r requirements/_base.in, openapi-spec-validator
 six==1.15.0               # via isodate, jsonschema, openapi-core, openapi-spec-validator, tenacity

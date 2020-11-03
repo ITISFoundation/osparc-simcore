@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from models_library.celery import CeleryConfig
+from models_library.settings.celery import CeleryConfig
 
 SERVICES_MAX_NANO_CPUS: int = min(
     multiprocessing.cpu_count() * pow(10, 9),

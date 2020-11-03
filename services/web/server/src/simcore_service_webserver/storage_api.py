@@ -9,13 +9,13 @@ from yarl import URL
 
 from servicelib.rest_responses import unwrap_envelope
 
-from .storage_config import get_client_session, get_config
+from .storage_config import get_client_session, get_storage_config
 
 log = logging.getLogger(__name__)
 
 
 def _get_storage_client(app: web.Application):
-    cfg = get_config(app)
+    cfg = get_storage_config(app)
 
     # storage service API endpoint
     endpoint = URL.build(scheme="http", host=cfg["host"], port=cfg["port"]).with_path(

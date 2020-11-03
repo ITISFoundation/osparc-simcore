@@ -29,7 +29,7 @@ from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio import setup_sockets
+from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.users import setup_users
 
 API_VERSION = "v0"
@@ -59,7 +59,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_db, mock_orphaned_services):
     setup_rest(app)
     setup_login(app)
     setup_users(app)
-    setup_sockets(app)
+    setup_socketio(app)
     setup_projects(app)
     setup_director(app)
     assert setup_resource_manager(app)

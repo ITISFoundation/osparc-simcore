@@ -5,77 +5,116 @@ Why does this file exist, and why not put this in __main__?
   You might be tempted to import things from __main__ later, but that will cause
   problems: the code will get executed twice:
 
-  - When you run `python -msimcore_service_storage` python will execute
+  - When you run `python -m simcore_service_storage` python will execute
     ``__main__.py`` as a script. That means there won't be any
     ``simcore_service_storage.__main__`` in ``sys.modules``.
   - When you import __main__ it will get executed again (as a module) because
     there's no ``simcore_service_storage.__main__`` in ``sys.modules``.
 
 """
-import argparse
+import json
 import logging
 import os
 import sys
+from pathlib import Path
+from pprint import pformat
+from typing import Dict, List, Optional, Union
 
-from servicelib.utils import search_osparc_repo_dir
+import click
+import yaml
+from pydantic import ValidationError
 
-from . import application, cli_config
+from . import application
+from .resources import resources
+from .settings import ApplicationSettings
 
 log = logging.getLogger(__name__)
 
+JsonNode = Union[Dict, List]
 
-def create_environ(skip_system_environ=False):
+
+def prune_config(cfg: JsonNode):
     """
-        Build environment of substitutable variables
+    Converts
+    {
+        max_workers: 8
+        monitoring_enabled: ${STORAGE_MONITORING_ENABLED}
+        test_datcore:
+            token_key: ${BF_API_KEY}
+            token_secret: ${BF_API_SECRET}
+    }
+        -->
+
+    {
+        max_workers: 8
+        test_datcore: {}
+    }
 
     """
-    # system's environment variables
-    environ = {} if skip_system_environ else dict(os.environ)
+    if isinstance(cfg, Dict):
+        for key in list(cfg.keys()):
+            value = cfg[key]
+            if isinstance(value, str) and value.startswith("${"):
+                del cfg[key]
+            elif isinstance(value, (List, Dict)):
+                prune_config(cfg[key])
 
-    # project-related environment variables
-    here = os.path.dirname(__file__)
-    environ["THIS_PACKAGE_DIR"] = here
-
-    rootdir = search_osparc_repo_dir(start=here)
-    if rootdir is not None:
-        environ["OSPARC_SIMCORE_REPO_ROOTDIR"] = str(rootdir)
-
-    return environ
-
-
-def setup(_parser):
-    cli_config.add_cli_options(_parser)
-    return _parser
+    elif isinstance(cfg, List):
+        for item in cfg:
+            prune_config(item)
 
 
-def parse(args, _parser):
-    """ Parse options and returns a configuration object """
-    if args is None:
-        args = sys.argv[1:]
-
-    # ignore unknown options
-    options, _ = _parser.parse_known_args(args)
-    config = cli_config.config_from_options(options, vars=create_environ())
-
-    # TODO: check whether extra options can be added to the config?!
-    return config
-
-
-parser = argparse.ArgumentParser(
-    description="Service to manage data storage in simcore."
+@click.command("Service to manage data storage in simcore.")
+@click.option(
+    "--config",
+    default=None,
+    type=click.Path(exists=False, path_type=str),
 )
-setup(parser)
+@click.option(
+    "--check-config",
+    "-C",
+    default=False,
+    is_flag=True,
+    help="Checks settings, prints and exit",
+)
+def main(config: Optional[Path] = None, check_config: bool = False):
+    config_dict = {}
 
+    try:
+        if config:
+            # config can be a path or a resource
+            config_path = Path(config)
+            if not config_path.exists() and resources.exists(f"data/{config}"):
+                config_path = Path(resources.get_path(f"data/{config}"))
 
-def main(args=None):
-    config = parse(args, parser)
+            with open(config_path) as fh:
+                config_dict = yaml.safe_load(fh)
 
-    log_level = config["main"]["log_level"]
+            prune_config(config_dict)
+            settings = ApplicationSettings(**config_dict)
+        else:
+            settings = ApplicationSettings.create_from_environ()
+    except ValidationError as err:
+        HEADER = "{:-^50}"
+        log.error(
+            "Invalid settings. %s:\n%s\n%s\n%s\n%s",
+            err,
+            HEADER.format("config_dict"),
+            pformat(config_dict),
+            HEADER.format("environment variables"),
+            pformat(dict(os.environ)),
+            exc_info=False,
+        )
+        sys.exit(os.EX_DATAERR)
+
+    if check_config:
+        click.echo(settings.json(indent=2))
+        sys.exit(os.EX_OK)
+
+    log_level = settings.loglevel
     logging.basicConfig(level=getattr(logging, log_level))
     logging.root.setLevel(getattr(logging, log_level))
 
-    application.run(config)
-
-
-# alias
-setup_parser = setup
+    # TODO: tmp converts all fields into primitive types
+    cfg = json.loads(settings.json())
+    application.run(config=cfg)
