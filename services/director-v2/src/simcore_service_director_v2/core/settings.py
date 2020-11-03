@@ -4,7 +4,7 @@ import logging
 from enum import Enum
 from typing import Optional
 
-from models_library.celery import CeleryConfig
+from models_library.settings.celery import CeleryConfig
 from models_library.postgres import PostgresSettings
 from pydantic import (
     BaseSettings,
@@ -62,6 +62,10 @@ class ApiServiceSettings(BaseSettings):
         return url
 
 
+class CelerySettings(CeleryConfig):
+    enabled: bool = Field(True, description="Enables/Disables connection with service")
+
+
 class DirectorV0Settings(ApiServiceSettings):
     class Config(CommonConfig):
         env_prefix = "DIRECTOR_"
@@ -113,7 +117,7 @@ class AppSettings(BaseSettings):
             postgres=PostgresSettings(),
             director_v0=DirectorV0Settings(),
             registry=RegistrySettings(),
-            celery=CeleryConfig.create_from_env(),
+            celery=CelerySettings.create_from_env(),
             **settings_kwargs,
         )
 
@@ -136,7 +140,7 @@ class AppSettings(BaseSettings):
         return getattr(logging, self.log_level_name)
 
     # CELERY submodule
-    celery: CeleryConfig
+    celery: CelerySettings
 
     # DIRECTOR submodule
     director_v0: DirectorV0Settings

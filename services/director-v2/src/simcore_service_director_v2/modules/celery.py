@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from celery import Celery, Task
 from fastapi import FastAPI
-from models_library.celery import CeleryConfig
+from models_library.settings.celery import CeleryConfig
 from models_library.projects import ProjectID
 
 from ..models.schemas.constants import UserID

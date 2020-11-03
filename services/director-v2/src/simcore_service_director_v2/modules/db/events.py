@@ -1,5 +1,6 @@
 import logging
 from io import StringIO
+import aiopg
 
 from aiopg.sa import Engine, create_engine
 from fastapi import FastAPI
@@ -29,15 +30,20 @@ def _compose_info_on_engine(app: FastAPI) -> str:
     return stm.getvalue()
 
 
+from aiopg.sa.engine import get_dialect
+import orjson
+
+
 @retry(**pg_retry_policy)
 async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
     logger.debug("Connecting db ...")
-
+    aiopg_dialect = get_dialect(json_serializer=orjson.dumps)
     engine: Engine = await create_engine(
         str(settings.dsn),
         application_name=f"{__name__}_{id(app)}",  # unique identifier per app
         minsize=settings.minsize,
         maxsize=settings.maxsize,
+        dialect=aiopg_dialect,
     )
     logger.debug("Connected to %s", engine.dsn)
     app.state.engine = engine
