@@ -217,12 +217,13 @@ qx.Class.define("osparc.desktop.MainPage", {
           }
 
           let locked = false;
+          let lockedBy = false;
           if ("state" in latestStudyData && "locked" in latestStudyData["state"]) {
             locked = latestStudyData["state"]["locked"]["value"];
+            lockedBy = latestStudyData["state"]["locked"]["owner"];
           }
-
-          if (locked) {
-            const msg = this.tr("Study is already open");
+          if (locked && lockedBy["first_name"] !== osparc.auth.Data.getInstance().getUserId()) {
+            const msg = this.tr("Study is already open by ") + lockedBy["first_name"];
             throw new Error(msg);
           }
           const store = osparc.store.Store.getInstance();
