@@ -1,8 +1,11 @@
 import logging
 from io import StringIO
-import aiopg
+from typing import Any
 
+import aiopg
+import orjson
 from aiopg.sa import Engine, create_engine
+from aiopg.sa.engine import get_dialect
 from fastapi import FastAPI
 from models_library.postgres import PostgresSettings
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
@@ -30,14 +33,14 @@ def _compose_info_on_engine(app: FastAPI) -> str:
     return stm.getvalue()
 
 
-from aiopg.sa.engine import get_dialect
-import orjson
+def json_serializer(o: Any) -> str:
+    return str(orjson.dumps(o), "utf-8")
 
 
 @retry(**pg_retry_policy)
 async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
     logger.debug("Connecting db ...")
-    aiopg_dialect = get_dialect(json_serializer=orjson.dumps)
+    aiopg_dialect = get_dialect(json_serializer=json_serializer)
     engine: Engine = await create_engine(
         str(settings.dsn),
         application_name=f"{__name__}_{id(app)}",  # unique identifier per app

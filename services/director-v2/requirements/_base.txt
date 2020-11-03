@@ -15,7 +15,7 @@ async-generator==1.10 ; python_version < "3.7"  # via -r requirements/_base.in, 
 async-timeout==3.0.1      # via aiohttp
 attrs==20.2.0             # via aiohttp
 billiard==3.6.3.0         # via celery
-celery[redis]==5.0.1      # via -r requirements/_base.in
+celery[redis]==5.0.2      # via -r requirements/_base.in
 certifi==2020.6.20        # via httpx, requests
 chardet==3.0.4            # via aiohttp, httpx, requests
 click-didyoumean==0.0.3   # via celery
@@ -44,7 +44,7 @@ kombu==5.0.2              # via celery
 markupsafe==1.1.1         # via jinja2
 multidict==5.0.0          # via aiohttp, yarl
 networkx==2.5             # via -r requirements/_base.in
-orjson==3.4.3             # via fastapi
+orjson==3.4.3             # via -r requirements/_base.in, fastapi
 promise==2.3              # via graphql-core, graphql-relay
 prompt-toolkit==3.0.8     # via click-repl
 psycopg2-binary==2.8.6    # via aiopg, sqlalchemy
