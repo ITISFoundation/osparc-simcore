@@ -151,7 +151,7 @@ class Node(BaseModel):
         example=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )
 
-    inputs: Optional[Inputs] = Field(None, description="values of input properties")
+    inputs: Inputs = Field(..., description="values of input properties")
     inputAccess: Optional[Dict[InputID, AccessEnum]] = Field(
         None, description="map with key - access level pairs"
     )
@@ -161,7 +161,7 @@ class Node(BaseModel):
         example=["nodeUuid1", "nodeUuid2"],
     )
 
-    outputs: Optional[Outputs] = None
+    outputs: Optional[Outputs] = Field({}, description="values of output properties")
     outputNode: Optional[bool] = Field(None, deprecated=True)
     outputNodes: Optional[List[NodeID]] = Field(
         None,
