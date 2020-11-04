@@ -9,6 +9,7 @@ from aiohttp import web
 
 from servicelib.application import create_safe_application
 
+from ._meta import WELCOME_MSG
 from .activity import setup_activity
 from .catalog import setup_catalog
 from .computation import setup_computation
@@ -84,6 +85,11 @@ def run_service(config: dict):
     log.debug("Serving app ... ")
 
     app = create_application(config)
+
+    async def welcome_banner(_app: web.Application):
+        print(WELCOME_MSG, flush=True)
+
+    app.on_startup.append(welcome_banner)
 
     web.run_app(app, host=config["main"]["host"], port=config["main"]["port"])
 
