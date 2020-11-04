@@ -15,7 +15,13 @@ def _toggle_gpu_mock(mocker, has_gpu: bool) -> None:
     containers_get = mocker.patch(
         "aiodocker.containers.DockerContainers.run", return_value=asyncio.Future()
     )
-    containers_get.return_value.set_result("")
+
+    class FakeContainer:
+        async def wait(self, **kwargs):
+            return {"StatusCode": 0 if has_gpu else 127}
+
+    containers_get.return_value.set_result(FakeContainer())
+
     if not has_gpu:
         containers_get.side_effect = aiodocker.exceptions.DockerError(
             "MOCK Error", {"message": "this is a mocked exception"}
