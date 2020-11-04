@@ -222,7 +222,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             locked = latestStudyData["state"]["locked"]["value"];
             lockedBy = latestStudyData["state"]["locked"]["owner"];
           }
-          if (locked && lockedBy["first_name"] !== osparc.auth.Data.getInstance().getUserId()) {
+          if (locked && lockedBy["user_id"] !== osparc.auth.Data.getInstance().getUserId()) {
             const msg = this.tr("Study is already open by ") + lockedBy["first_name"];
             throw new Error(msg);
           }
