@@ -31,6 +31,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
   properties: {
     study: {
       check: "osparc.data.model.Study",
+      apply: "_applyStudy",
       nullable: false
     }
   },
@@ -95,9 +96,14 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       }
     },
 
-    initViews: function() {
-      this._removeAll();
+    _applyStudy: function(study) {
+      if (study) {
+        this.__initViews();
+      }
+    },
 
+    __initViews: function() {
+      this._removeAll();
       this.__createControlsBar();
     },
 

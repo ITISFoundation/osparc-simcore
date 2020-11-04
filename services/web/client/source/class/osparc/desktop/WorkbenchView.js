@@ -50,6 +50,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   properties: {
     study: {
       check: "osparc.data.model.Study",
+      apply: "_applyStudy",
       nullable: false
     }
   },
@@ -66,10 +67,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __loggerView: null,
     __currentNodeId: null,
 
-    initViews: function() {
-      this.__initViews();
-      this.__connectEvents();
-      this.__attachSocketEventHandlers();
+    _applyStudy: function(study) {
+      if (study) {
+        this.__initViews();
+        this.__connectEvents();
+        this.__attachSocketEventHandlers();
+      }
     },
 
     nodeSelected: function(nodeId) {

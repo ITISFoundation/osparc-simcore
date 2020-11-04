@@ -105,6 +105,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       study.openStudy()
         .then(() => {
           study.initStudy();
+          this.__startAutoSaveTimer();
+          switch (this.getPageContext()) {
+            case "slideshow":
+              this.__slideshowView.startSlides();
+              break;
+            default:
+              this.__workbenchView.openFirstNode();
+              break;
+          }
         })
         .catch(err => {
           if ("status" in err && err["status"] == 423) { // Locked
@@ -118,14 +127,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       this.__workbenchView.setStudy(study);
       this.__slideshowView.setStudy(study);
-
-      this.__workbenchView.initViews();
-      this.__slideshowView.initViews();
-
-      this.__workbenchView.openFirstNode();
-      this.__slideshowView.openFirstNode();
-
-      this.__startAutoSaveTimer();
     },
 
     // overridden
