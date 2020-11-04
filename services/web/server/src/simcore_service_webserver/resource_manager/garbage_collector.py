@@ -63,10 +63,9 @@ async def garbage_collector_task(app: web.Application):
     while keep_alive:
         logger.info("Starting garbage collector...")
         try:
-            registry = get_registry(app)
             interval = get_garbage_collector_interval(app)
             while True:
-                await collect_garbage(registry, app)
+                await collect_garbage(app)
                 await asyncio.sleep(interval)
 
         except asyncio.CancelledError:
@@ -81,7 +80,7 @@ async def garbage_collector_task(app: web.Application):
             await asyncio.sleep(5)
 
 
-async def collect_garbage(registry: RedisResourceRegistry, app: web.Application):
+async def collect_garbage(app: web.Application):
     """
     Garbage collection has the task of removing trash (i.e. unused resources) from the system. The trash
     can be divided in:
@@ -103,6 +102,8 @@ async def collect_garbage(registry: RedisResourceRegistry, app: web.Application)
     function will be called.
     """
     logger.info("Collecting garbage...")
+
+    registry: RedisResourceRegistry = get_registry(app)
 
     # Removes disconnected user resources
     # Triggers signal to close possible pending opened projects
