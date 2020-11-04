@@ -16,7 +16,10 @@ LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 def setup_logging(*, level: Union[str, int]):
     # service log level
     logging.basicConfig(level=level)
+
     logging.root.setLevel(level)
+    level: int = logging.root.level
+
     set_logging_handler(logging.root)
 
     # aiohttp access log-levels
