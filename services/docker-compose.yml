@@ -162,6 +162,7 @@ services:
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - SIDECAR_LOGLEVEL=${LOG_LEVEL:-WARNING}
+      - START_AS_MODE_CPU=${SIDECAR_FORCE_CPU_NODE:-0}
 
     networks:
       - computational_services_subnet
