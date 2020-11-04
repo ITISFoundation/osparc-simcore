@@ -6,8 +6,6 @@ from ..basic_types import PortInt
 
 
 class PostgresSettings(BaseSettings):
-    dns: Optional[PostgresDsn] = None
-
     # entrypoint
     host: str
     port: PortInt = 5432
