@@ -6,6 +6,7 @@
 # pylint:disable=redefined-outer-name
 
 
+import logging
 import re
 import textwrap
 from copy import deepcopy
@@ -29,7 +30,9 @@ from pytest_simcore.helpers.utils_mock import future_with_result
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import catalog
+from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.projects_api import delete_project_from_db
+from simcore_service_webserver.resource_manager.garbage_collector import collect_garbage
 from simcore_service_webserver.statics import STATIC_DIRNAMES
 from simcore_service_webserver.users_api import delete_user, is_user_guest
 
@@ -67,9 +70,9 @@ def qx_client_outdir(tmpdir):
 
 @pytest.fixture
 def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_service):
-    """ App's configuration used for every test in this module
+    """App's configuration used for every test in this module
 
-        NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
+    NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
     """
     cfg = deepcopy(default_app_cfg)
 
@@ -108,6 +111,12 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_servic
         cfg[section]["enabled"] = True
     for section in exclude:
         cfg[section]["enabled"] = False
+
+    # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
+    setup_logging(level=logging.DEBUG)
+
+    # Enforces smallest GC in the background task
+    cfg["resource_manager"]["garbage_collection_interval_seconds"] = 1
 
     return cfg
 
@@ -267,7 +276,6 @@ async def test_access_to_forbidden_study(client, unpublished_project):
 
 async def test_access_study_anonymously(
     client,
-    qx_client_outdir,
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
@@ -303,7 +311,6 @@ async def test_access_study_anonymously(
 async def test_access_study_by_logged_user(
     client,
     logged_user,
-    qx_client_outdir,
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
@@ -327,7 +334,6 @@ async def test_access_study_by_logged_user(
 
 async def test_access_cookie_of_expired_user(
     client,
-    qx_client_outdir,
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
@@ -350,7 +356,7 @@ async def test_access_cookie_of_expired_user(
 
     async def garbage_collect_guest(uid):
         # Emulates garbage collector:
-        #   - anonymous user expired, cleaning it up
+        #   - GUEST user expired, cleaning it up
         #   - client still holds cookie with its identifier nonetheless
         #
         assert await is_user_guest(app, uid)
@@ -381,3 +387,43 @@ async def test_access_cookie_of_expired_user(
     # But I am another user
     assert data["id"] != user_id
     assert data["login"] != user_email
+
+
+async def test_guest_user_is_not_garbage_collected(
+    client,
+    published_project,
+    storage_subsystem_mock,
+    catalog_subsystem_mock,
+    mocks_on_projects_api,
+):
+    ## NOTE: use pytest -s --log-cli-level=DEBUG  to see GC logs
+    #
+
+    study_url = client.app.router["study"].url_for(id=published_project["uuid"])
+
+    # clicks link to study
+    await collect_garbage(client.app)  # <<--
+    resp = await client.get(study_url)
+
+    expected_prj_id = await assert_redirected_to_study(resp, client.session)
+
+    # has auto logged in as guest?
+    await collect_garbage(client.app)  # <<--
+    me_url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(me_url)
+
+    data, _ = await assert_status(resp, web.HTTPOk)
+    assert data["login"].endswith("guest-at-osparc.io")
+    assert data["gravatar_id"]
+    assert data["role"].upper() == UserRole.GUEST.name
+
+    # guest user only a copy of the template project
+    await collect_garbage(client.app)  # <<--
+    projects = await _get_user_projects(client)
+    assert len(projects) == 1
+    guest_project = projects[0]
+
+    assert expected_prj_id == guest_project["uuid"]
+    _assert_same_projects(guest_project, published_project)
+
+    assert guest_project["prjOwner"] == data["login"]
