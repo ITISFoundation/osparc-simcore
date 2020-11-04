@@ -17,16 +17,15 @@ def setup_logging(*, level: Union[str, int]):
     # service log level
     logging.basicConfig(level=level)
 
+    # root
     logging.root.setLevel(level)
-    level: int = logging.root.level
-
     set_logging_handler(logging.root)
 
     # aiohttp access log-levels
     access_logger.setLevel(level)
 
     # keep mostly quiet noisy loggers
-    quiet_level = max(min(level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING)
+    quiet_level: int = max(min(logging.root.level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING)
     logging.getLogger("engineio").setLevel(quiet_level)
     logging.getLogger("openapi_spec_validator").setLevel(quiet_level)
     logging.getLogger("sqlalchemy").setLevel(quiet_level)

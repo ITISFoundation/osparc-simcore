@@ -75,15 +75,13 @@ def set_logging_handler(
         formatting = DEFAULT_FORMATTING
     if not formatter_base:
         formatter_base = CustomFormatter
-    for handler in logger.handlers:
 
-        # handler = logging.StreamHandler()
+    for handler in logger.handlers:
         handler.setFormatter(
             formatter_base(
                 "%(levelname)s: %(name)s:%(funcName)s(%(lineno)s) - %(message)s"
             )
         )
-    # logger.addHandler(handler)
 
 
 def _log_arguments(
