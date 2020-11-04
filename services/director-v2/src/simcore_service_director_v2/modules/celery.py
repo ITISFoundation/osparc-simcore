@@ -1,10 +1,12 @@
 import logging
 from dataclasses import dataclass
+from typing import List
 
 from celery import Celery, Task
+from celery.contrib.abortable import AbortableAsyncResult
 from fastapi import FastAPI
-from models_library.settings.celery import CeleryConfig
 from models_library.projects import ProjectID
+from models_library.settings.celery import CeleryConfig
 
 from ..models.schemas.constants import UserID
 from ..utils.client_decorators import handle_retry
@@ -59,3 +61,10 @@ class CeleryClient:
             expires=self.settings.publication_timeout,
             kwargs={"user_id": user_id, "project_id": str(project_id)},
         )
+
+    @classmethod
+    def abort_computation_tasks(cls, task_ids: List[str]) -> None:
+        for task_id in task_ids:
+            task_result = AbortableAsyncResult(task_id)
+            if task_result:
+                task_result.abort()

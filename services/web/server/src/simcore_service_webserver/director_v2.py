@@ -26,11 +26,11 @@ log = logging.getLogger(__file__)
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def start_pipeline(request: web.Request) -> web.Response:
-    app = request.app
-    director2_settings: Directorv2Settings = get_settings(app)
+    director2_settings: Directorv2Settings = get_settings(request.app)
 
     user_id = request[RQT_USERID_KEY]
     project_id = request.match_info.get("project_id", None)
+
     backend_url = (
         URL(f"{director2_settings.endpoint}/computations")
         .with_query(request.rel_url.query)
@@ -43,7 +43,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
     if request.can_read_body:
         raw: bytes = await request.read()
 
-    session = get_client_session(app)
+    session = get_client_session(request.app)
     try:
         async with session.post(
             backend_url, data=raw, headers=request.headers.copy()

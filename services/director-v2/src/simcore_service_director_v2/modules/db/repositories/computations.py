@@ -4,6 +4,7 @@ from typing import Dict
 
 import networkx as nx
 import sqlalchemy as sa
+from celery.contrib.abortable import AbortableAsyncResult
 from models_library.projects import Node, NodeID, ProjectID, RunningState
 from models_library.services import (
     Author,
@@ -22,7 +23,7 @@ from sqlalchemy.dialects.postgresql import insert
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from ....utils.computations import to_node_class
 from ...director_v0 import DirectorV0Client
-from ..tables import NodeClass, comp_pipeline, comp_tasks
+from ..tables import NodeClass, StateType, comp_pipeline, comp_tasks
 from ._base import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -155,3 +156,18 @@ class CompTasksRepository(BaseRepository):
                     **task_db.dict(by_alias=True, exclude_unset=True)
                 )
             )
+
+    async def abort_tasks_from_project(self, project: ProjectAtDB) -> None:
+        # block all pending tasks, so the sidecars stop taking them
+        await self.connection.execute(
+            sa.update(comp_tasks)
+            .where(
+                (comp_tasks.c.project_id == str(project.uuid))
+                & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+                & (
+                    (comp_tasks.c.state == StateType.PUBLISHED)
+                    | (comp_tasks.c.state == StateType.PENDING)
+                )
+            )
+            .values(state=StateType.ABORTED)
+        )

@@ -107,7 +107,7 @@ def topological_sort_grouping(dag_graph: nx.DiGraph) -> List[Signature]:
 
 @router.post(
     "",
-    description="Create and Start a new computation",
+    summary="Create and Start a new computation",
     response_model=ComputationTaskOut,
     status_code=status.HTTP_201_CREATED,
 )
@@ -126,6 +126,9 @@ async def create_computation(
     celery_client: CeleryClient = Depends(get_celery_client),
     director_client: DirectorV0Client = Depends(get_director_v0_client),
 ):
+    log.debug(
+        "User %s is creating a new computation from project %s", user_id, project_id
+    )
     try:
         # get the project
         project: ProjectAtDB = await project_repo.get_project(project_id)
@@ -170,6 +173,12 @@ async def create_computation(
         # trigger celery
         task = celery_client.send_computation_task(user_id, project_id)
         background_tasks.add_task(background_on_message, task)
+        log.debug(
+            "Started computational task %s for user %s based on project %s",
+            task.id,
+            user_id,
+            project_id,
+        )
         return ComputationTaskOut(
             id=task.id, state=task.state, url=f"{request.base_url}{task.id}"
         )
@@ -196,11 +205,58 @@ async def get_computation(computation_id: TaskID):
     return ComputationTask(id=task.id, state=task.state, result=task.info)
 
 
-@router.delete(
-    "/{computation_id}",
-    description="Stops a computation",
+# @router.post(
+#     "/{computation_id}:stop",
+#     summary="Stops a computation",
+#     status_code=status.HTTP_204_NO_CONTENT,
+# )
+# async def stop_computation(computation_id: TaskID):
+#     abortable_task = AbortableAsyncResult(str(computation_id))
+#     abortable_task.abort()
+
+
+@router.post(
+    "/{project_id}:stop",
+    summary="Stops a computation",
+    response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def stop_computation(computation_id: TaskID):
-    abortable_task = AbortableAsyncResult(str(computation_id))
-    abortable_task.abort()
+async def stop_computation_project(
+    user_id: UserID,
+    project_id: ProjectID,
+    project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
+    computation_tasks: CompTasksRepository = Depends(
+        get_repository(CompTasksRepository)
+    ),
+    celery_client: CeleryClient = Depends(get_celery_client),
+):
+    log.debug("User %s stopping computation for project %s", user_id, project_id)
+    try:
+        # get the project
+        project: ProjectAtDB = await project_repo.get_project(project_id)
+        # check if current state allow to stop the computation
+        comp_tasks: Dict[NodeID, CompTaskAtDB] = await computation_tasks.get_comp_tasks(
+            project_id
+        )
+        pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
+        if pipeline_state not in [
+            RunningState.PUBLISHED,
+            RunningState.PENDING,
+            RunningState.STARTED,
+            RunningState.RETRY,
+        ]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Projet {project_id} already completed, current state is {pipeline_state}",
+            )
+
+        await computation_tasks.abort_tasks_from_project(project)
+        celery_client.abort_computation_tasks(
+            [str(c.job_id) for c in comp_tasks.values()]
+        )
+        log.debug(
+            "Computational task stopped by user %s for project %s", user_id, project_id
+        )
+
+    except ProjectNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
