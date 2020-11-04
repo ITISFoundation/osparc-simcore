@@ -127,7 +127,7 @@ def mocks_on_projects_api(mocker, logged_user) -> Dict:
     nameparts = logged_user["name"].split(".") + [""]
     state = ProjectState(
         locked=ProjectLocked(
-            value=False, owner=Owner(first_name=nameparts[0], last_name=nameparts[1])
+            value=False, owner=Owner(user_id=logged_user["id"], first_name=nameparts[0], last_name=nameparts[1])
         ),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     ).dict(by_alias=True, exclude_unset=True)

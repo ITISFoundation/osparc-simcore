@@ -430,7 +430,7 @@ async def _get_project_lock_state(
         if is_locked:
             return ProjectLocked(
                 value=is_locked,
-                owner=Owner(**usernames[0]),
+                owner=Owner(user_id, **usernames[0]),
             )
         return ProjectLocked(value=is_locked)
 
