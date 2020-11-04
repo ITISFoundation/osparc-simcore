@@ -2081,6 +2081,7 @@ paths:
                                                 - Smith
                                               type: string
                                           required:
+                                            - user_id
                                             - first_name
                                             - last_name
                                   required:
@@ -2463,6 +2464,7 @@ paths:
                                                 - Smith
                                               type: string
                                           required:
+                                            - user_id
                                             - first_name
                                             - last_name
                                   required:
@@ -2855,6 +2857,7 @@ paths:
                                               - Smith
                                             type: string
                                         required:
+                                          - user_id
                                           - first_name
                                           - last_name
                                 required:
@@ -3347,6 +3350,7 @@ components:
                                     - Smith
                                   type: string
                               required:
+                                - user_id
                                 - first_name
                                 - last_name
                       required:
