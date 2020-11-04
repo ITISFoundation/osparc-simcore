@@ -4,6 +4,8 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+
+
 import re
 import textwrap
 from copy import deepcopy
@@ -25,21 +27,10 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserRole
 from pytest_simcore.helpers.utils_mock import future_with_result
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
-from servicelib.application import create_safe_application
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import catalog
-from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.login import setup_login
-from simcore_service_webserver.products import setup_products
-from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.projects.projects_api import delete_project_from_db
-from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
-from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.settings import setup_settings
-from simcore_service_webserver.statics import STATIC_DIRNAMES, setup_statics
-from simcore_service_webserver.studies_access import setup_studies_access
-from simcore_service_webserver.users import setup_users
+from simcore_service_webserver.statics import STATIC_DIRNAMES
 from simcore_service_webserver.users_api import delete_user, is_user_guest
 
 SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
@@ -75,63 +66,50 @@ def qx_client_outdir(tmpdir):
 
 
 @pytest.fixture
-def mocks_on_projects_api(mocker) -> Dict:
+def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_service):
+    """ App's configuration used for every test in this module
+
+        NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
     """
-    All projects in this module are UNLOCKED
-    """
-    state = ProjectState(
-        locked=ProjectLocked(
-            value=False, owner=Owner(first_name="Speedy", last_name="Gonzalez")
-        ),
-        state=ProjectRunningState(value=RunningState.NOT_STARTED),
-    ).dict(by_alias=True, exclude_unset=True)
-    mocker.patch(
-        "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
-        return_value=future_with_result(state),
-    )
+    cfg = deepcopy(default_app_cfg)
 
+    cfg["main"]["port"] = aiohttp_unused_port()
+    cfg["main"]["client_outdir"] = str(qx_client_outdir)
+    cfg["main"]["studies_access_enabled"] = True
 
-@pytest.fixture
-def mocks_on_websocket_manager(loop, mocker):
-    wr = mocker.patch(
-        "simcore_service_webserver.resource_manager.websocket_manager.WebsocketRegistry"
-    )
-    wr.return_value.set_socket_id.return_value = future_with_result(None)
-    return wr
+    exclude = {
+        "tracing",
+        "director",
+        "smtp",
+        "storage",
+        "activity",
+        "diagnostics",
+        "groups",
+        "tags",
+        "publications",
+        "catalog",
+        "computation",
+    }
+    include = {
+        "db",
+        "rest",
+        "projects",
+        "login",
+        "socketio",
+        "resource_manager",
+        "users",
+        "studies_access",
+        "products",
+    }
 
+    assert include.intersection(exclude) == set()
 
-@pytest.fixture
-def client(
-    loop, aiohttp_client, app_cfg, postgres_db, qx_client_outdir, mocks_on_projects_api
-):
-    cfg = deepcopy(app_cfg)
+    for section in include:
+        cfg[section]["enabled"] = True
+    for section in exclude:
+        cfg[section]["enabled"] = False
 
-    cfg["projects"]["enabled"] = True
-    cfg["storage"]["enabled"] = False
-    cfg["computation"]["enabled"] = False
-    cfg["main"]["client_outdir"] = qx_client_outdir
-
-    app = create_safe_application(cfg)
-
-    setup_settings(app)
-    setup_statics(app)
-    setup_db(app)
-    setup_session(app)
-    setup_security(app)
-    setup_rest(app)  # TODO: why should we need this??
-    setup_login(app)
-    setup_users(app)
-    setup_products(app)
-    assert setup_projects(app), "Shall not skip this setup"
-    assert setup_studies_access(app), "Shall not skip this setup"
-
-    # server and client
-    yield loop.run_until_complete(
-        aiohttp_client(
-            app,
-            server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},
-        )
-    )
+    return cfg
 
 
 @pytest.fixture
@@ -232,7 +210,50 @@ async def assert_redirected_to_study(
     return redirected_project_id
 
 
-# TESTS --------------------------------------
+@pytest.fixture
+async def catalog_subsystem_mock(monkeypatch, published_project):
+    services_in_project = [
+        {"key": s["key"], "version": s["version"]}
+        for _, s in published_project["workbench"].items()
+    ]
+
+    async def mocked_get_services_for_user(*args, **kwargs):
+        return services_in_project
+
+    monkeypatch.setattr(
+        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
+    )
+
+
+@pytest.fixture
+def mocks_on_projects_api(mocker) -> Dict:
+    """
+    All projects in this module are UNLOCKED
+    """
+    state = ProjectState(
+        locked=ProjectLocked(
+            value=False, owner=Owner(first_name="Speedy", last_name="Gonzalez")
+        ),
+        state=ProjectRunningState(value=RunningState.NOT_STARTED),
+    ).dict(by_alias=True, exclude_unset=True)
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
+        return_value=future_with_result(state),
+    )
+
+
+@pytest.fixture
+def mocks_on_websocket_manager(loop, mocker):
+    wr = mocker.patch(
+        "simcore_service_webserver.resource_manager.websocket_manager.WebsocketRegistry"
+    )
+    wr.return_value.set_socket_id.return_value = future_with_result(None)
+    return wr
+
+
+# TESTS ----------------------------------------------------------------------------------------------
+
+
 async def test_access_to_invalid_study(client, published_project):
     resp = await client.get("/study/SOME_INVALID_UUID")
     content = await resp.text()
@@ -253,21 +274,6 @@ async def test_access_to_forbidden_study(client, unpublished_project):
     ), f"STANDARD studies are NOT sharable: {content}"
 
 
-@pytest.fixture
-async def catalog_subsystem_mock(monkeypatch, published_project):
-    services_in_project = [
-        {"key": s["key"], "version": s["version"]}
-        for _, s in published_project["workbench"].items()
-    ]
-
-    async def mocked_get_services_for_user(*args, **kwargs):
-        return services_in_project
-
-    monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
-    )
-
-
 async def test_access_study_anonymously(
     client,
     qx_client_outdir,
@@ -275,6 +281,7 @@ async def test_access_study_anonymously(
     storage_subsystem_mock,
     catalog_subsystem_mock,
     mocks_on_websocket_manager,
+    mocks_on_projects_api,
 ):
 
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
@@ -311,6 +318,7 @@ async def test_access_study_by_logged_user(
     storage_subsystem_mock,
     catalog_subsystem_mock,
     mocks_on_websocket_manager,
+    mocks_on_projects_api,
 ):
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
     resp = await client.get(study_url)
@@ -335,6 +343,7 @@ async def test_access_cookie_of_expired_user(
     storage_subsystem_mock,
     catalog_subsystem_mock,
     mocks_on_websocket_manager,
+    mocks_on_projects_api,
 ):
     # emulates issue #1570
     app: web.Application = client.app
