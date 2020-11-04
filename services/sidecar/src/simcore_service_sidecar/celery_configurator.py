@@ -65,7 +65,7 @@ def define_celery_task(app: Celery, name: str) -> None:
 
 
 def configure_node(bootmode: BootMode) -> Celery:
-    log.info("Initializing celery app...")
+    log.info("Initializing celery app in %s...", bootmode)
     app = Celery(
         f"sidecar.{str(bootmode.name).lower()}.{config.SIDECAR_HOST_HOSTNAME_PATH.read_text()}",
         broker=config.CELERY_CONFIG.broker_url,
