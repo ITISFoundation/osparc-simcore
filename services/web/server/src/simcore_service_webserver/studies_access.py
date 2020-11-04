@@ -91,14 +91,21 @@ async def activate_as_guest_user(user: Dict, app: web.Application):
     from .login.handlers import GUEST, ANONYMOUS
     from .resource_manager.websocket_manager import WebsocketRegistry
 
+    # Save time to allow user to be redirected back and not being deleted by GC
+    # SEE https://github.com/ITISFoundation/osparc-simcore/pull/1928#discussion_r517176479
+    EXTRA_TIME_TO_COMPLETE_REDIRECT = 3
+
     if user.get("role") == ANONYMOUS:
         db = get_storage(app)
         username = user["name"]
 
         # creates an entry in the socket's registry to avoid garbage collector (GC) deleting it
-        # See https://github.com/ITISFoundation/osparc-simcore/issues/1853
+        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1853
+        #
         registry = WebsocketRegistry(user["id"], f"{username}-guest-session", app)
-        await registry.set_socket_id(f"{username}-guest-socket-id")
+        await registry.set_socket_id(
+            f"{username}-guest-socket-id", extra_tll=EXTRA_TIME_TO_COMPLETE_REDIRECT
+        )
 
         # Now that we know the ID, we set the user as GUEST
         # This extra step is to prevent the possibility that the GC is cleaning while
