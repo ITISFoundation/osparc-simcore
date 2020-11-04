@@ -4,7 +4,7 @@
 
 from httpx import AsyncClient
 
-from simcore_service_api_server.__version__ import api_version, api_vtag
+from simcore_service_api_server._meta import api_version, api_vtag
 from simcore_service_api_server.models.schemas.meta import Meta
 
 

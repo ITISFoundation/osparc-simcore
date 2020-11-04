@@ -4,7 +4,7 @@ from typing import Callable
 from fastapi import FastAPI
 
 from ..db.events import close_db_connection, connect_to_db
-from ..meta import __version__, project_name
+from .._meta import __version__, project_name
 
 logger = logging.getLogger(__name__)
 

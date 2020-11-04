@@ -9,7 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, File, UploadFile, Depends
 from fastapi.responses import FileResponse, HTMLResponse
 
-from ...meta import api_vtag
+from ..._meta import api_vtag
 from ...models.schemas.files import FileUploaded
 from ...modules.storage import StorageApi
 from ..dependencies.services import get_api_client

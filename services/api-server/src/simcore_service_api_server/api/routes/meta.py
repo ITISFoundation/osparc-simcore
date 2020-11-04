@@ -2,7 +2,7 @@ from typing import Callable
 
 from fastapi import APIRouter, Depends
 
-from ...meta import __version__, api_version, api_vtag
+from ..._meta import __version__, api_version, api_vtag
 from ...models.schemas.meta import Meta
 from ..dependencies.application import get_reverse_url_mapper
 

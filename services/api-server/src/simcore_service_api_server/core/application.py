@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException
 
-from ..meta import api_version, api_vtag
+from .._meta import api_version, api_vtag
 from ..api.errors.http_error import http_error_handler
 from ..api.errors.validation_error import http422_error_handler
 from ..api.root import router as api_router
