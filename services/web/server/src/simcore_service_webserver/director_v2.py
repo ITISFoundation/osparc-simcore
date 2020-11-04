@@ -1,6 +1,6 @@
 import logging
 from asyncio import CancelledError
-from typing import Dict
+from typing import Dict, Optional
 
 from aiohttp import ContentTypeError, web
 from servicelib.application_setup import ModuleCategory, app_module_setup
@@ -21,6 +21,30 @@ from .security_decorators import permission_required
 
 log = logging.getLogger(__file__)
 
+async def _request_director_v2(app: web.Application,
+    method: str,
+    url: URL,
+    headers: Optional[Dict[str, str]] = None,
+    data: Optional[bytes] = None,) -> web.Response:
+    session = get_client_session(app)
+    try:
+        async with session.request(method, url, headers=headers, data=data) as resp:
+            is_error = resp.status >= 400
+            # backend sometimes sends error in plan=in text
+            try:
+                payload: Dict = await resp.json()
+            except ContentTypeError:
+                payload = await resp.text()
+                is_error = True
+
+            if is_error:
+                data = wrap_as_envelope(error=payload)
+            else:
+                data = wrap_as_envelope(data=payload)
+
+            return web.json_response(data, status=resp.status)
+    except (CancelledError, TimeoutError) as err:
+        raise web.HTTPServiceUnavailable(reason="unavailable catalog service") from err
 
 @login_required
 @permission_required("services.pipeline.*")
@@ -66,6 +90,11 @@ async def start_pipeline(request: web.Request) -> web.Response:
     except (CancelledError, TimeoutError) as err:
         raise web.HTTPServiceUnavailable(reason="unavailable catalog service") from err
 
+@login_required
+@permission_required("services.pipeline.*")
+@permission_required("project.read")
+async def stop_pipeline(request: web.Request) -> web.Response:
+
 
 @app_module_setup(
     __name__,
@@ -89,9 +118,9 @@ def setup_director_v2(app: web.Application):
     routes = map_handlers_with_operations(
         {
             "start_pipeline": start_pipeline,
-            # "stop_pipeline": computation_handlers.stop_pipeline,
+            "stop_pipeline": stop_pipeline,
         },
-        filter(lambda o: "start_pipeline" in o[2], iter_path_operations(specs)),
+        filter(lambda o: "computation" in o[1], iter_path_operations(specs)),
         strict=True,
     )
     app.router.add_routes(routes)
