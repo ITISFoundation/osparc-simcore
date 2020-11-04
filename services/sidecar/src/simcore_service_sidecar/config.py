@@ -3,7 +3,6 @@ import multiprocessing
 import os
 from distutils.util import strtobool
 from pathlib import Path
-from typing import Optional
 
 from models_library.settings.celery import CeleryConfig
 
