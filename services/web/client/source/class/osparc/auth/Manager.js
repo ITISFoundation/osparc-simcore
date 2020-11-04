@@ -53,6 +53,9 @@ qx.Class.define("osparc.auth.Manager", {
       return auth !== null && auth instanceof osparc.io.request.authentication.Token;
     },
 
+    /*
+     * Function that checks if there is a token and validates it aginst the server.
+     */
     validateToken: function() {
       return new Promise((resolve, reject) => {
         if (osparc.auth.Data.getInstance().isLogout()) {
