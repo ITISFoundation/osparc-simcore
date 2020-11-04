@@ -7,7 +7,7 @@ from typing import Dict
 
 import trafaret as T
 from aiohttp.web import Application
-from pydantic import BaseSettings, constr
+from pydantic import BaseSettings
 from typing import Optional
 
 from models_library.settings.postgres import PostgresSettings
