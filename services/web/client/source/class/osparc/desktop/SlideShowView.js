@@ -92,7 +92,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       if (isValid && currentNodeId) {
         this.nodeSelected(currentNodeId);
       } else {
-        this.openFirstNode();
+        this.__openFirstNode();
       }
     },
 
@@ -165,7 +165,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       }
     },
 
-    openFirstNode: function() {
+    __openFirstNode: function() {
       const study = this.getStudy();
       if (study) {
         const nodes = this.self().getSortedNodes(study);
