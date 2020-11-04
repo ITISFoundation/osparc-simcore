@@ -2062,6 +2062,12 @@ paths:
                                         - title: Owner
                                           type: object
                                           properties:
+                                            user_id:
+                                              title: User Id
+                                              type: integer
+                                              description: Owner user id
+                                              example:
+                                                - '2'
                                             first_name:
                                               title: First Name
                                               description: Owner first name
@@ -2438,6 +2444,12 @@ paths:
                                         - title: Owner
                                           type: object
                                           properties:
+                                            user_id:
+                                              title: User Id
+                                              type: integer
+                                              description: Owner user id
+                                              example:
+                                                - '2'
                                             first_name:
                                               title: First Name
                                               description: Owner first name
@@ -2824,6 +2836,12 @@ paths:
                                       - title: Owner
                                         type: object
                                         properties:
+                                          user_id:
+                                            title: User Id
+                                            type: integer
+                                            description: Owner user id
+                                            example:
+                                              - '2'
                                           first_name:
                                             title: First Name
                                             description: Owner first name
@@ -3310,6 +3328,12 @@ components:
                             - title: Owner
                               type: object
                               properties:
+                                user_id:
+                                  title: User Id
+                                  type: integer
+                                  description: Owner user id
+                                  example:
+                                    - '2'
                                 first_name:
                                   title: First Name
                                   description: Owner first name
