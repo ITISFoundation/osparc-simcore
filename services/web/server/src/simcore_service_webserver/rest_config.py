@@ -5,7 +5,7 @@
 """
 from typing import Dict, Optional
 
-from .__version__ import api_vtag
+from ._meta import api_vtag
 
 import trafaret as T
 from aiohttp import web

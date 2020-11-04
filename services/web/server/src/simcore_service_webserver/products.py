@@ -7,7 +7,7 @@ from aiohttp import web
 from pydantic import BaseModel, ValidationError, validator
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
-from .__version__ import api_vtag
+from ._meta import api_vtag
 from .constants import (
     APP_DB_ENGINE_KEY,
     APP_PRODUCTS_KEY,

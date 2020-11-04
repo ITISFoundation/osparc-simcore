@@ -9,6 +9,7 @@ from aiohttp import web
 
 from servicelib.application import create_safe_application
 
+from ._meta import WELCOME_MSG
 from .activity import setup_activity
 from .catalog import setup_catalog
 from .computation import setup_computation
@@ -67,14 +68,14 @@ def create_application(config: Dict) -> web.Application:
     setup_storage(app)
     setup_users(app)
     setup_groups(app)
-    setup_projects(app)  # needs storage
-    setup_studies_access(app)
+    setup_projects(app)
     setup_activity(app)
     setup_resource_manager(app)
     setup_tags(app)
     setup_catalog(app)
     setup_publications(app)
     setup_products(app)
+    setup_studies_access(app)
 
     return app
 
@@ -84,6 +85,11 @@ def run_service(config: dict):
     log.debug("Serving app ... ")
 
     app = create_application(config)
+
+    async def welcome_banner(_app: web.Application):
+        print(WELCOME_MSG, flush=True)
+
+    app.on_startup.append(welcome_banner)
 
     web.run_app(app, host=config["main"]["host"], port=config["main"]["port"])
 

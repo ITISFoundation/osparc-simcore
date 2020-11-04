@@ -24,7 +24,7 @@ from servicelib.rest_middlewares import (
 from simcore_service_webserver.resources import resources
 
 from . import rest_routes
-from .__version__ import api_version_prefix
+from ._meta import api_version_prefix
 from .rest_config import APP_OPENAPI_SPECS_KEY, assert_valid_config
 from .diagnostics_config import get_diagnostics_config
 
