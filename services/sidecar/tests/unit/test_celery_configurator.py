@@ -46,12 +46,12 @@ def mock_node_has_gpu(request, mocker) -> None:
 
 @pytest.fixture
 def force_cpu_mode(monkeypatch):
-    monkeypatch.setattr(config, "FORCE_START_CPU_MODE", "1", raising=True)
+    monkeypatch.setattr(config, "FORCE_START_CPU_MODE", True, raising=True)
 
 
 @pytest.fixture
 def force_gpu_mode(monkeypatch):
-    monkeypatch.setattr(config, "FORCE_START_GPU_MODE", "1", raising=True)
+    monkeypatch.setattr(config, "FORCE_START_GPU_MODE", True, raising=True)
 
 
 @pytest.mark.parametrize(

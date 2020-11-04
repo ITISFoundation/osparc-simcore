@@ -1,6 +1,7 @@
 import logging
 import multiprocessing
 import os
+from distutils.util import strtobool
 from pathlib import Path
 from typing import Optional
 
@@ -66,8 +67,8 @@ logging.getLogger("sqlalchemy.engine").setLevel(SIDECAR_LOGLEVEL)
 logging.getLogger("sqlalchemy.pool").setLevel(SIDECAR_LOGLEVEL)
 
 # sidecar celery starting mode overwrite
-FORCE_START_CPU_MODE: Optional[str] = os.environ.get("START_AS_MODE_CPU")
-FORCE_START_GPU_MODE: Optional[str] = os.environ.get("START_AS_MODE_GPU")
+FORCE_START_CPU_MODE: bool = strtobool(os.environ.get("START_AS_MODE_CPU", "false"))
+FORCE_START_GPU_MODE: bool = strtobool(os.environ.get("START_AS_MODE_GPU", "false"))
 
 # if a node has this amount of CPUs it will be a candidate an MPI candidate
 TARGET_MPI_NODE_CPU_COUNT: int = int(os.environ.get("TARGET_MPI_NODE_CPU_COUNT", "-1"))
