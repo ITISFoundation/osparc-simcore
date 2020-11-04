@@ -13,7 +13,7 @@ from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_routing import iter_path_operations
 
-from .__version__ import api_version_prefix
+from ._meta import api_version_prefix
 from .catalog_config import assert_valid_config, get_client_session
 from .constants import RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
 from .login.decorators import RQT_USERID_KEY, login_required

@@ -1,6 +1,6 @@
 import warnings
 
-from .__version__ import __version__
+from ._meta import __version__
 
 #
 # NOTE: Some BaseSettings are using aliases (e.g. version for vtag) to facility construct
