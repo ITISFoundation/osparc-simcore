@@ -1420,6 +1420,7 @@ async def test_open_shared_project_2_users_locked(
     )
     expected_project_state.locked.value = True
     expected_project_state.locked.owner = Owner(
+        user_id=logged_user["id"],
         first_name=(logged_user["name"].split(".") + [""])[0],
         last_name=(logged_user["name"].split(".") + [""])[1],
     )
@@ -1498,6 +1499,7 @@ async def test_open_shared_project_2_users_locked(
     if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
         expected_project_state.locked.value = True
         expected_project_state.locked.owner = Owner(
+            user_id=user_2["id"],
             first_name=(user_2["name"].split(".") + [""])[0],
             last_name=(user_2["name"].split(".") + [""])[1],
         )
