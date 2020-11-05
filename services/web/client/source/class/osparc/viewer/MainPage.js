@@ -27,7 +27,9 @@ qx.Class.define("osparc.viewer.MainPage", {
     this._add(navBar);
 
     const nodeView = this.__createNodeViewer(nodeId);
-    this._add(nodeView);
+    this._add(nodeView, {
+      flex: 1
+    });
   },
 
   members: {
