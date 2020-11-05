@@ -31,7 +31,8 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     this.__iFrameChanged();
 
     setTimeout(() => {
-      this.getIFrame().setSource("http://localhost:9000/#/services");
+      const src = window.location.href + "/x/" + nodeId;
+      this.getIFrame().setSource(src);
       this.__iFrameChanged();
     }, 10000);
   },
