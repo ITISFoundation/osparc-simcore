@@ -101,22 +101,7 @@ qx.Class.define("osparc.Application", {
     __initRouting: function() {
       const urlFragment = osparc.utils.Utils.parseURLFragment();
       if (urlFragment.nav && urlFragment.nav.length) {
-        if (urlFragment.nav[0] === "study" && urlFragment.nav.length > 1) {
-          // Route: /#/study/{id}
-          osparc.utils.Utils.cookie.deleteCookie("user");
-          osparc.auth.Manager.getInstance().validateToken(() => {
-            osparc.store.Store.getInstance().setCurrentStudyId(urlFragment.nav[1]);
-            this.__loadMainPage();
-          }, this.__loadLoginPage, this);
-        } else if (urlFragment.nav[0] === "registration" && urlFragment.params && urlFragment.params.invitation) {
-          // Route: /#/registration/?invitation={token}
-          osparc.utils.Utils.cookie.deleteCookie("user");
-          this.__restart();
-        } else if (urlFragment.nav[0] === "reset-password" && urlFragment.params && urlFragment.params.code) {
-          // Route: /#/reset-password/?code={resetCode}
-          osparc.utils.Utils.cookie.deleteCookie("user");
-          this.__restart();
-        }
+        this.__rerouteNav(urlFragment);
       } else if (urlFragment.params) {
         if (urlFragment.params.registered) {
           // Route: /#/?registered=true
@@ -128,6 +113,37 @@ qx.Class.define("osparc.Application", {
         }
       } else {
         this.__restart();
+      }
+    },
+
+    __rerouteNav: function(urlFragment) {
+      switch (urlFragment.nav[0]) {
+        case "study": {
+          // Route: /#/study/{id}
+          if (urlFragment.nav.length > 1) {
+            osparc.utils.Utils.cookie.deleteCookie("user");
+            osparc.auth.Manager.getInstance().validateToken(() => {
+              osparc.store.Store.getInstance().setCurrentStudyId(urlFragment.nav[1]);
+              this.__loadMainPage();
+            }, this.__loadLoginPage, this);
+          }
+          break;
+        }
+        case "registration": {
+          // Route: /#/registration/?invitation={token}
+          if (urlFragment.params && urlFragment.params.invitation) {
+            osparc.utils.Utils.cookie.deleteCookie("user");
+            this.__restart();
+          }
+          break;
+        }
+        case "reset-password": {
+          // Route: /#/reset-password/?code={resetCode}
+          if (urlFragment.params && urlFragment.params.code) {
+            osparc.utils.Utils.cookie.deleteCookie("user");
+            this.__restart();
+          }
+        }
       }
     },
 
