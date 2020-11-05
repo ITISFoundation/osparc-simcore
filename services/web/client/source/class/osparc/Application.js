@@ -129,6 +129,14 @@ qx.Class.define("osparc.Application", {
           }
           break;
         }
+        case "viewer": {
+          // Route: /#/viewer/{id}
+          if (urlFragment.nav.length > 1) {
+            osparc.utils.Utils.cookie.deleteCookie("user");
+            this.__loadNodeViewerPage(urlFragment.nav[1]);
+          }
+          break;
+        }
         case "registration": {
           // Route: /#/registration/?invitation={token}
           if (urlFragment.params && urlFragment.params.invitation) {
@@ -209,6 +217,16 @@ qx.Class.define("osparc.Application", {
     __loadMainPage: function() {
       this.__connectWebSocket();
       this.__loadView(new osparc.desktop.MainPage(), {
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0
+      });
+    },
+
+    __loadNodeViewerPage: function(nodeId) {
+      this.__connectWebSocket();
+      this.__loadView(new osparc.viewer.MainPage(nodeId), {
         top: 0,
         bottom: 0,
         left: 0,
