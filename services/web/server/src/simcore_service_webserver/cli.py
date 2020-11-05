@@ -99,7 +99,10 @@ def main(args: Optional[List] = None):
     config = parse(args, parser)
 
     # service log level
-    setup_logging(level=config["main"]["log_level"])
+    slow_duration = float(
+        os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0)
+    )  # TODO: move to settings.py::ApplicationSettings
+    setup_logging(level=config["main"]["log_level"], slow_duration=slow_duration)
 
     # run
     run_service(config)
