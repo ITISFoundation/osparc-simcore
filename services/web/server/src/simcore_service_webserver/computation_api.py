@@ -243,26 +243,16 @@ async def _set_adjacency_in_pipeline_db(
 ):
     # pylint: disable=no-value-for-parameter
     async with db_engine.acquire() as conn:
-        # READ
-        # get pipeline
-        query = sa.select([comp_pipeline]).where(
-            comp_pipeline.c.project_id == project_id
-        )
-        result = await conn.execute(query)
-        pipeline = await result.first()
-
-        # WRITE
-        if pipeline is None:
-            # create pipeline
-            log.debug("No pipeline for project %s, creating one", project_id)
+        # Because race conditions happen here, always try to create a new object
+        # if it fails, update the pipeline
+        try:
             query = comp_pipeline.insert().values(
                 project_id=project_id,
                 dag_adjacency_list=dag_adjacency_list,
                 state=StateType.NOT_STARTED,
             )
-        else:
-            # update pipeline
-            log.debug("Found pipeline for project %s, updating it", project_id)
+            await conn.execute(query)
+        except psycopg2.errors.UniqueViolation:  # pylint: disable=no-member
             query = (
                 comp_pipeline.update()
                 .where(comp_pipeline.c.project_id == project_id)
@@ -270,8 +260,7 @@ async def _set_adjacency_in_pipeline_db(
                     dag_adjacency_list=dag_adjacency_list, state=StateType.NOT_STARTED
                 )
             )
-
-        await conn.execute(query)
+            await conn.execute(query)
 
 
 @log_decorator(logger=log)
