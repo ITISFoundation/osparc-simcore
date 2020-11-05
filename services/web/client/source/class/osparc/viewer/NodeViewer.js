@@ -74,7 +74,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       if (src === null || src === "about:blank") {
         widget = loadingPage;
       } else {
-        this.set({
+        this.getLayoutParent().set({
           zIndex: 9
         });
         widget = iFrame;
