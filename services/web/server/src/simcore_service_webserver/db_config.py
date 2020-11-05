@@ -7,7 +7,7 @@ from typing import Dict
 
 import trafaret as T
 from aiohttp.web import Application
-from pydantic import BaseSettings, constr
+from pydantic import BaseSettings
 from typing import Optional
 
 from models_library.settings.postgres import PostgresSettings
@@ -25,7 +25,7 @@ schema = T.Dict(
 
 
 class PgSettings(PostgresSettings):
-    endpoint: Optional[constr(strip_whitespace=True, regex=r"\w+:\d+")] = None
+    endpoint: Optional[str] = None  # TODO: PC remove or deprecate that one
 
     class Config:
         fields = {"db": "database"}

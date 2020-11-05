@@ -117,19 +117,23 @@ class _BaseSettingEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, BaseSettings):
             return o.json()
+        elif isinstance(o, Path):
+            return str(o)
+
         # Let the base class default method raise the TypeError
         return json.JSONEncoder.default(self, o)
 
 
 @pytest.fixture
 def web_server(loop, aiohttp_server, app_cfg, monkeypatch, postgres_db):
+    print(
+        "Inits webserver with config",
+        json.dumps(app_cfg, indent=2, cls=_BaseSettingEncoder),
+    )
     # original APP
     app = create_application(app_cfg)
 
-    print(
-        "Inits webserver with config",
-        json.dumps(app[APP_CONFIG_KEY], indent=2, cls=_BaseSettingEncoder),
-    )
+    assert app[APP_CONFIG_KEY] == app_cfg
 
     # with patched email
     _path_mail(monkeypatch)
@@ -297,9 +301,7 @@ def postgres_service(docker_services, postgres_dsn):
 
 
 @pytest.fixture
-def postgres_db(
-    app_cfg: Dict, postgres_dsn: Dict, postgres_service: str
-) -> sa.engine.Engine:
+def postgres_db( postgres_dsn: Dict, postgres_service: str ) -> sa.engine.Engine:
     url = postgres_service
 
     # Configures db and initializes tables

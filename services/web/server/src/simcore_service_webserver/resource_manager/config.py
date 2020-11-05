@@ -7,7 +7,7 @@ from typing import Dict, Optional
 
 import trafaret as T
 from aiohttp.web import Application
-from pydantic import BaseSettings, PositiveInt
+from pydantic import BaseSettings, PositiveInt, Field
 
 from models_library.settings.redis import RedisConfig
 from servicelib.application_keys import APP_CONFIG_KEY
@@ -46,8 +46,12 @@ class RedisSection(RedisConfig):
 class ResourceManagerSettings(BaseSettings):
     enabled: bool = True
 
-    resource_deletion_timeout_seconds: Optional[PositiveInt] = 900
-    garbage_collection_interval_seconds: Optional[PositiveInt] = 30
+    resource_deletion_timeout_seconds: Optional[PositiveInt] = Field(
+        900, description="Expiration time (or Time to live (TTL) in redis jargon) for a registered resource"
+    )
+    garbage_collection_interval_seconds: Optional[PositiveInt] = Field(
+        30, description="Waiting time between consecutive runs of the garbage-colector"
+    )
 
     redis: RedisSection
 

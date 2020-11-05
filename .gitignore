@@ -153,9 +153,12 @@ prof/
 # outputs from make
 .stack-*.yml
 
-
-# Copies
+# copies
 services/**/.codeclimate.yml
+
 # WSL
 .fake_hostname_file
 .bash_history
+
+# pytest-fixture-tools output
+artifacts

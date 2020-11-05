@@ -8,7 +8,7 @@ from typing import Dict, Optional
 from aiohttp import web
 from pydantic import BaseSettings, Field
 
-from .__version__ import api_version, app_name
+from ._meta import api_version, app_name
 from .constants import APP_SETTINGS_KEY
 from .utils import snake_to_camel
 
