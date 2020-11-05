@@ -185,6 +185,10 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       show ? this.__restartButton.show() : this.__restartButton.exclude();
     },
 
+    getEmbeddedIframe: function() {
+      return this.__iFrame;
+    },
+
     __syncIframePos: function() {
       if (this.__syncScheduled) {
         return;
