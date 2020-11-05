@@ -249,7 +249,7 @@ async def _set_adjacency_in_pipeline_db(
             dag_adjacency_list=dag_adjacency_list,
             state=StateType.NOT_STARTED,
         )
-        on_update_stmt = insert_stmt.on_conflict_do_update(
+        upsert_stmt = insert_stmt.on_conflict_do_update(
             index_elements=[
                 comp_pipeline.c.project_id,
             ],
@@ -258,7 +258,7 @@ async def _set_adjacency_in_pipeline_db(
             ),
         )
 
-        await conn.execute(on_update_stmt)
+        await conn.execute(upsert_stmt)
 
 
 @log_decorator(logger=log)
