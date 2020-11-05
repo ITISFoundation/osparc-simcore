@@ -33,8 +33,8 @@ def create(config: Dict) -> web.Application:
         setup_tracing(
             app,
             "simcore_service_storage",
-            config["main"]["host"],
-            config["main"]["port"],
+            config["host"],
+            config["port"],
             config["tracing"],
         )
     setup_db(app)  # -> postgres service
@@ -42,7 +42,7 @@ def create(config: Dict) -> web.Application:
     setup_dsm(app)  # core subsystem. Needs s3 and db setups done
     setup_rest(app)  # lastly, we expose API to the world
 
-    if config["main"].get("monitoring_enabled", False):
+    if config.get("monitoring_enabled", False):
         setup_monitoring(app, "simcore_service_storage")
 
     return app
@@ -53,4 +53,4 @@ def run(config, app=None):
     if not app:
         app = create(config)
 
-    web.run_app(app, host=config["main"]["host"], port=config["main"]["port"])
+    web.run_app(app, host=config["host"], port=config["port"])

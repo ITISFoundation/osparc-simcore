@@ -22,17 +22,6 @@
 qx.Class.define("osparc.component.node.FilePickerNodeView", {
   extend: osparc.component.node.BaseNodeView,
 
-  /**
-    * @param node {osparc.data.model.Node} Node owning the widget
-    */
-  construct: function(node) {
-    this.base(arguments);
-
-    this.set({
-      node
-    });
-  },
-
   members: {
     __filePicker: null,
 
@@ -58,11 +47,18 @@ qx.Class.define("osparc.component.node.FilePickerNodeView", {
 
     // overridden
     _applyNode: function(node) {
-      return;
+      if (!node.isFilePicker()) {
+        console.error("Only file picker nodes are supported");
+      }
     },
 
     __buildMyLayout: function() {
-      const filePicker = this.__filePicker = new osparc.file.FilePicker(this.getNode());
+      const node = this.getNode();
+      if (!node) {
+        return;
+      }
+
+      const filePicker = this.__filePicker = new osparc.file.FilePicker(node);
       filePicker.buildLayout();
       filePicker.init();
 

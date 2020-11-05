@@ -1,21 +1,17 @@
 """
-    Main entry-point for computational backend
+    computation module is the main entry-point for computational backend
 
-
-    TODO: should be a central place where status of all services can be checked!
-    It would be perhaps possible to execute some requests with less services?
-    or could define different execution policies in case of services failures
 """
 import logging
 
 from aiohttp import web
-
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
 
 from . import computation_handlers
 from .computation_comp_tasks_listening_task import setup as setup_comp_tasks_listener
 from .computation_config import CONFIG_SECTION_NAME
+from .computation_config import create_settings as create_computation_settings
 from .computation_subscribe import subscribe
 from .rest_config import APP_OPENAPI_SPECS_KEY
 
@@ -25,7 +21,10 @@ log = logging.getLogger(__file__)
 @app_module_setup(
     __name__, ModuleCategory.ADDON, config_section=CONFIG_SECTION_NAME, logger=log
 )
-def setup(app: web.Application):
+def setup_computation(app: web.Application):
+    # create settings and injects in app
+    create_computation_settings(app)
+
     # subscribe to rabbit upon startup
     # TODO: Define connection policies (e.g. {on-startup}, lazy). Could be defined in config-file
     app.on_startup.append(subscribe)
@@ -43,6 +42,7 @@ def setup(app: web.Application):
     routes = map_handlers_with_operations(
         {
             "start_pipeline": computation_handlers.start_pipeline,
+            "stop_pipeline": computation_handlers.stop_pipeline,
         },
         filter(lambda o: "/computation" in o[1], iter_path_operations(specs)),
         strict=True,
@@ -50,8 +50,5 @@ def setup(app: web.Application):
     app.router.add_routes(routes)
     setup_comp_tasks_listener(app)
 
-
-# alias
-setup_computation = setup
 
 __all__ = "setup_computation"

@@ -26,7 +26,7 @@ from .utils import (
     render_and_send_mail,
     themed,
 )
-from simcore_service_webserver.rate_limiting import global_rate_limit_route
+from simcore_service_webserver.utils_rate_limiting import global_rate_limit_route
 
 # FIXME: do not use cfg singleton. use instead cfg = request.app[APP_LOGIN_CONFIG]
 

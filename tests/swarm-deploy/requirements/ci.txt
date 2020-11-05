@@ -14,4 +14,5 @@
 ../../packages/postgres-database/[migration]
 ../../packages/simcore-sdk/
 ../../packages/service-library/
+../../packages/models-library/
 ../../packages/pytest-simcore/

@@ -7,7 +7,7 @@ from aiohttp import web
 from aiohttp.web import middleware
 from multidict import MultiDict
 
-from simcore_service_webserver.__version__ import api_vtag
+from simcore_service_webserver._meta import api_vtag
 
 # FRONT_END ####################################
 frontend_folder = Path.home() / "devp/osparc-simcore/services/web/client"

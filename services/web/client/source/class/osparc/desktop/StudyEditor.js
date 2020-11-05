@@ -153,6 +153,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       switch (newCtxt) {
         case "workbench":
           this.__viewsStack.setSelection([this.__workbenchView]);
+          this.__workbenchView.nodeSelected(this.getStudy().getUi().getCurrentNodeId());
           break;
         case "slideshow":
           this.__viewsStack.setSelection([this.__slideshowView]);
@@ -191,7 +192,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    updateStudyDocument: function(run=false) {
+    updateStudyDocument: function(run = false) {
       this.getStudy().setLastChangeDate(new Date());
       const newObj = this.getStudy().serialize();
       const prjUuid = this.getStudy().getUuid();
@@ -207,6 +208,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         .then(data => {
           this.__lastSavedStudy = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
         }).catch(error => {
+          console.error(error);
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Error saving the study"), "ERROR");
           this.getLogger().error(null, "Error updating pipeline");
           // Need to throw the error to be able to handle it later
           throw error;

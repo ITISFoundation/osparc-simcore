@@ -276,7 +276,7 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_buildx.bash
-          echo ::set-env name=DOCKER_BUILDX::1
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v1.1.1
         with:
@@ -1221,10 +1221,16 @@ jobs:
           path: simcore_logs
       - name: upload screenshots
         if: always()
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: e2e_screenshots
           path: tests/e2e/screenshots
+      - name: upload e2e logs
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: e2e_logs
+          path: tests/e2e/logs
       - name: cleanup
         if: always()
         run: ./ci/github/system-testing/e2e.bash clean_up

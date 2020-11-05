@@ -15,16 +15,11 @@ db:
     database: simcoredb
     endpoint: postgres:5432
     host: postgres
-    maxsize: 5
-    minsize: 1
+    maxsize: 10
+    minsize: 10
     password: simcore
     port: 5432
     user: simcore
-rabbit:
-  channels:
-    log: comp.backend.channels.log
-  password: simcore
-  user: simcore
 # s3:
 #   access_key: 'Q3AM3UQ867SPQQA43P2F'
 #   bucket_name: simcore

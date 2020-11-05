@@ -9,7 +9,7 @@ import pytest
 
 from servicelib.application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
 from servicelib.application_setup import APP_SETUP_KEY
-from simcore_service_webserver.diagnostics_plugin import setup_diagnostics
+from simcore_service_webserver.diagnostics import setup_diagnostics
 from simcore_service_webserver.rest import get_openapi_specs_path, load_openapi_specs
 
 

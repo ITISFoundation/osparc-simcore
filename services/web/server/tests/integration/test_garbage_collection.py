@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import aiopg
 import aioredis
+from models_library.settings.redis import RedisConfig
 import pytest
 from pytest_simcore.helpers.utils_login import log_client_in
 from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
@@ -31,7 +32,7 @@ from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio import setup_sockets
+from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.users import setup_users
 
 log = logging.getLogger(__name__)
@@ -61,8 +62,8 @@ def __drop_and_recreate_postgres__(database_from_template_before_each_function) 
 
 
 @pytest.fixture(autouse=True)
-async def __delete_all_redis_keys__(loop, redis_service):
-    client = await aioredis.create_redis_pool(str(redis_service), encoding="utf-8")
+async def __delete_all_redis_keys__(redis_service: RedisConfig):
+    client = await aioredis.create_redis_pool(redis_service.dsn, encoding="utf-8")
     await client.flushall()
     client.close()
     await client.wait_closed()
@@ -98,7 +99,7 @@ def client(
     setup_rest(app)
     setup_login(app)
     setup_users(app)
-    setup_sockets(app)
+    setup_socketio(app)
     setup_projects(app)
     setup_director(app)
     assert setup_resource_manager(app)
@@ -161,7 +162,10 @@ async def get_group(client, user):
 async def invite_user_to_group(client, owner, invitee, group):
     """Invite a user to a group on which the owner has writes over"""
     await add_user_in_group(
-        client.app, owner["id"], group["gid"], new_user_id=invitee["id"],
+        client.app,
+        owner["id"],
+        group["gid"],
+        new_user_id=invitee["id"],
     )
 
 

@@ -175,6 +175,7 @@ paths:
                           type: string
                           description: service type
                           enum:
+                            - frontend
                             - computational
                             - dynamic
                           example: computational
@@ -559,6 +560,7 @@ paths:
                           type: string
                           description: service type
                           enum:
+                            - frontend
                             - computational
                             - dynamic
                           example: computational
@@ -2157,6 +2159,7 @@ components:
                 type: string
                 description: service type
                 enum:
+                  - frontend
                   - computational
                   - dynamic
                 example: computational

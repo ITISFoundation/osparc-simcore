@@ -78,6 +78,7 @@ services:
     restart: always
     environment:
       - CELERY_BROKER_URL=amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT}
+      - FLOWER_BROKER_API=http://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:15672/api/
       - FLOWER_PORT=5555
     ports:
       - "49555:5555"

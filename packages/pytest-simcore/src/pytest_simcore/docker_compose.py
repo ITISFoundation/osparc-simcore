@@ -2,32 +2,33 @@
 
     Basically runs `docker-compose config
 """
+import logging
+
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
 import os
 import shutil
 import socket
 import sys
 from copy import deepcopy
 from pathlib import Path
+from pprint import pformat
 from typing import Dict, List
 
 import pytest
 import yaml
 from dotenv import dotenv_values
 
-from .helpers.utils_docker import (
-    run_docker_compose_config,
-    save_docker_infos,
-)
+from .helpers.utils_docker import run_docker_compose_config, save_docker_infos
+
+log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session")
 def devel_environ(env_devel_file: Path) -> Dict[str, str]:
-    """ Loads and extends .env-devel returning
-        all environment variables key=value
+    """Loads and extends .env-devel returning
+    all environment variables key=value
     """
 
     env_devel_unresolved = dotenv_values(env_devel_file, verbose=True, interpolate=True)
@@ -36,8 +37,10 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
         key: os.environ.get(key, value) for key, value in env_devel_unresolved.items()
     }
 
+    env_devel["LOG_LEVEL"] = "DEBUG"
     env_devel["REGISTRY_SSL"] = "False"
     env_devel["REGISTRY_URL"] = "{}:5000".format(_get_ip())
+    env_devel["REGISTRY_PATH"] = "127.0.0.1:5000"
     env_devel["REGISTRY_USER"] = "simcore"
     env_devel["REGISTRY_PW"] = ""
     env_devel["REGISTRY_AUTH"] = "False"
@@ -50,7 +53,7 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
 @pytest.fixture(scope="module")
 def env_file(osparc_simcore_root_dir: Path, devel_environ: Dict[str, str]) -> Path:
     """
-        Creates a .env file from the .env-devel
+    Creates a .env file from the .env-devel
     """
     # preserves .env at git_root_dir after test if already exists
     env_path = osparc_simcore_root_dir / ".env"
@@ -89,9 +92,9 @@ def simcore_docker_compose(
     temp_folder: Path,
     make_up_prod_environ,
 ) -> Dict:
-    """ Resolves docker-compose for simcore stack in local host
+    """Resolves docker-compose for simcore stack in local host
 
-        Produces same as  `make .stack-simcore-version.yml` in a temporary folder
+    Produces same as  `make .stack-simcore-version.yml` in a temporary folder
     """
     COMPOSE_FILENAMES = ["docker-compose.yml", "docker-compose.local.yml"]
 
@@ -113,7 +116,7 @@ def simcore_docker_compose(
         workdir=env_file.parent,
         destination_path=temp_folder / "simcore_docker_compose.yml",
     )
-
+    log.debug("simcore docker-compose:\n%s", pformat(config))
     return config
 
 
@@ -121,9 +124,9 @@ def simcore_docker_compose(
 def ops_docker_compose(
     osparc_simcore_root_dir: Path, env_file: Path, temp_folder: Path
 ) -> Dict:
-    """ Filters only services in docker-compose-ops.yml and returns yaml data
+    """Filters only services in docker-compose-ops.yml and returns yaml data
 
-        Produces same as  `make .stack-ops.yml` in a temporary folder
+    Produces same as  `make .stack-ops.yml` in a temporary folder
     """
     # ensures .env at git_root_dir, which will be used as current directory
     assert env_file.exists()
@@ -140,6 +143,7 @@ def ops_docker_compose(
         workdir=env_file.parent,
         destination_path=temp_folder / "ops_docker_compose.yml",
     )
+    log.debug("ops docker-compose:\n%s", pformat(config))
     return config
 
 
@@ -156,8 +160,8 @@ def core_services(request) -> List[str]:
 def core_docker_compose_file(
     core_services: List[str], temp_folder: Path, simcore_docker_compose: Dict
 ) -> Path:
-    """ Creates a docker-compose config file for every stack of services in'core_services' module variable
-        File is created in a temp folder
+    """Creates a docker-compose config file for every stack of services in'core_services' module variable
+    File is created in a temp folder
     """
     docker_compose_path = Path(temp_folder / "simcore_docker_compose.filtered.yml")
 
@@ -178,8 +182,8 @@ def ops_services(request) -> List[str]:
 def ops_docker_compose_file(
     ops_services: List[str], temp_folder: Path, ops_docker_compose: Dict
 ) -> Path:
-    """ Creates a docker-compose config file for every stack of services in 'ops_services' module variable
-        File is created in a temp folder
+    """Creates a docker-compose config file for every stack of services in 'ops_services' module variable
+    File is created in a temp folder
     """
 
     docker_compose_path = Path(temp_folder / "ops_docker_compose.filtered.yml")
@@ -192,7 +196,7 @@ def ops_docker_compose_file(
 # HELPERS ---------------------------------------------
 def _minio_fix(service_environs: Dict) -> Dict:
     """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work.
-        172.17.0.1 is the docker0 interface, which redirect from inside a container onto the host network interface.
+    172.17.0.1 is the docker0 interface, which redirect from inside a container onto the host network interface.
     """
     if "S3_ENDPOINT" in service_environs:
         service_environs["S3_ENDPOINT"] = "172.17.0.1:9001"

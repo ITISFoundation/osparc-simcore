@@ -6,22 +6,23 @@ set -euo pipefail
 IFS=$'\n\t'
 
 install() {
-    bash ci/helpers/ensure_python_pip.bash
-    pushd tests/environment-setup; pip3 install -r requirements/ci.txt; popd
-    make .env
+  bash ci/helpers/ensure_python_pip.bash
+  pushd tests/environment-setup
+  pip3 install -r requirements/ci.txt
+  popd
+  make .env
 }
 
 test() {
-    pytest --color=yes -v tests/environment-setup
+  pytest --color=yes -v tests/environment-setup --log-level=DEBUG
 }
 
 clean_up() {
-    ls -la tests/environment-setup
+  ls -la tests/environment-setup
 }
 
 # Check if the function exists (bash specific)
-if declare -f "$1" > /dev/null
-then
+if declare -f "$1" >/dev/null; then
   # call arguments verbatim
   "$@"
 else

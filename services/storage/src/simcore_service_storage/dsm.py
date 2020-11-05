@@ -66,7 +66,7 @@ DatasetMetaDataVec = List[DatasetMetaData]
 async def _setup_dsm(app: web.Application):
     cfg = app[APP_CONFIG_KEY]
 
-    main_cfg = cfg["main"]
+    main_cfg = cfg
 
     engine = app.get(APP_DB_ENGINE_KEY)
     loop = asyncio.get_event_loop()
@@ -425,8 +425,8 @@ class DataStorageManager:
         """
         Will retry max_update_retries to update the metadata on the file after an upload.
         If it is not successfull it will exit and log an error.
-        
-        Note: MinIO bucket notifications are not available with S3, that's why we have the 
+
+        Note: MinIO bucket notifications are not available with S3, that's why we have the
         following hacky solution
         """
         current_iteraction = 0

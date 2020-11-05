@@ -18,7 +18,7 @@ aioredis
 aioredlock
 aiosmtplib
 asyncpg
-celery
+celery[redis]
 cryptography
 change_case
 expiringdict

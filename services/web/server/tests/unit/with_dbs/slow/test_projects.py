@@ -41,7 +41,7 @@ from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio import setup_sockets
+from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.tags import setup_tags
 from simcore_service_webserver.utils import now_str, to_datetime
@@ -86,7 +86,7 @@ def client(
     setup_rest(app)
     setup_login(app)  # needed for login_utils fixtures
     setup_resource_manager(app)
-    setup_sockets(app)
+    setup_socketio(app)
     setup_director(app)
     setup_tags(app)
     assert setup_projects(app)
@@ -437,6 +437,7 @@ async def _new_project(
             "lastChangeDate",
             "accessRights",
             "workbench" if from_template else None,
+            "ui" if from_template else None,
         ]
 
         for key in new_project.keys():

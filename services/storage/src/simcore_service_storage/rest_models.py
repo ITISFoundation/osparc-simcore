@@ -1,18 +1,13 @@
 """ RestAPI models
 
 """
-from marshmallow import Schema, fields
-
-# NOTE: using these, optional and required fields are always transmitted!
-# NOTE: make some attrs nullable by default!?
+from datetime import datetime
+from pydantic import BaseModel
 
 
-class FileMetaDataSchema(Schema):
-    filename = fields.Str()
-    version = fields.Str()
-    last_accessed = fields.DateTime()
-    owner = fields.Str()
-    storage_location = fields.Str()
-
-
-#  TODO: fix __all__
+class FileMetaData(BaseModel):
+    filename: str
+    version: str
+    last_accessed: datetime
+    owner: str
+    storage_location: str

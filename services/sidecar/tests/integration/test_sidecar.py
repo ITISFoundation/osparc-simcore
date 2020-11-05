@@ -13,6 +13,8 @@ from uuid import uuid4
 import aio_pika
 import pytest
 import sqlalchemy as sa
+from models_library.settings.celery import CeleryConfig
+from models_library.settings.rabbit import RabbitConfig
 from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
 from simcore_service_sidecar import config, utils
 from yarl import URL
@@ -56,9 +58,9 @@ async def mock_sidecar_get_volume_mount_point(monkeypatch):
 
 @pytest.fixture
 def sidecar_config(
-    postgres_dsn: Dict[str, str],
+    postgres_host_config: Dict[str, str],
     docker_registry: str,
-    rabbit_config: config.RabbitConfig,
+    rabbit_service: RabbitConfig,
     mock_sidecar_get_volume_mount_point,
 ) -> None:
     # NOTE: in integration tests the sidecar runs bare-metal which means docker volume cannot be used.
@@ -72,12 +74,14 @@ def sidecar_config(
     config.DOCKER_USER = "simcore"
     config.DOCKER_PASSWORD = ""
 
-    config.POSTGRES_DB = postgres_dsn["database"]
-    config.POSTGRES_ENDPOINT = f"{postgres_dsn['host']}:{postgres_dsn['port']}"
-    config.POSTGRES_USER = postgres_dsn["user"]
-    config.POSTGRES_PW = postgres_dsn["password"]
+    config.POSTGRES_DB = postgres_host_config["database"]
+    config.POSTGRES_ENDPOINT = (
+        f"{postgres_host_config['host']}:{postgres_host_config['port']}"
+    )
+    config.POSTGRES_USER = postgres_host_config["user"]
+    config.POSTGRES_PW = postgres_host_config["password"]
 
-    config.RABBIT_CONFIG = rabbit_config
+    config.CELERY_CONFIG = CeleryConfig.create_from_env()
 
 
 class LockedCollector:
@@ -176,6 +180,8 @@ async def _assert_incoming_data_logs(
 
 @pytest.fixture
 async def pipeline(
+    sidecar_config: None,
+    postgres_host_config: Dict[str, str],
     postgres_session: sa.orm.session.Session,
     storage_service: URL,
     project_id: str,
@@ -340,6 +346,7 @@ PYTHON_RUNNER_FACTORY_STUDY = (
 )
 async def test_run_services(
     loop,
+    postgres_host_config: Dict[str, str],
     postgres_session: sa.orm.session.Session,
     rabbit_queue: aio_pika.Queue,
     storage_service: URL,
@@ -390,7 +397,7 @@ async def test_run_services(
     for key in pipeline_cfg:
         dag.extend(pipeline_cfg[key]["next"])
     assert next_task_nodes == dag
-    await asyncio.sleep(5)  # wait a little bit for logs to come in
+    await asyncio.sleep(10)  # wait a little bit for logs to come in
     await _assert_incoming_data_logs(
         list(pipeline_cfg.keys()),
         incoming_data,

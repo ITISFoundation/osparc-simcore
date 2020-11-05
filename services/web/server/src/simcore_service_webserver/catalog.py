@@ -2,8 +2,8 @@
 
 """
 import logging
-from typing import Dict, List, Optional
 from asyncio import CancelledError
+from typing import Dict, List, Optional
 
 from aiohttp import ContentTypeError, web
 from yarl import URL
@@ -13,8 +13,8 @@ from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_routing import iter_path_operations
 
-from .__version__ import api_version_prefix
-from .catalog_config import get_client_session, get_config
+from ._meta import api_version_prefix
+from .catalog_config import assert_valid_config, get_client_session
 from .constants import RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
@@ -152,9 +152,13 @@ async def get_services_for_user_in_product(
     logger=logger,
 )
 def setup_catalog(app: web.Application, *, disable_auth=False):
+    # ----------------------------------------------
+    # TODO: temporary, just to check compatibility between
+    # trafaret and pydantic schemas
+    cfg = assert_valid_config(app).copy()
+    # ---------------------------------------------
 
     # resolve url
-    cfg = get_config(app).copy()
     app[f"{__name__}.catalog_origin"] = URL.build(
         scheme="http", host=cfg["host"], port=cfg["port"]
     )

@@ -22,6 +22,6 @@ file_meta_data = sa.Table(
     sa.Column("display_file_path", sa.String),
     sa.Column("created_at", sa.String),
     sa.Column("last_modified", sa.String),
-    sa.Column("file_size", sa.Integer)
+    sa.Column("file_size", sa.BigInteger)
     #    sa.Column("state", sa.String())
 )

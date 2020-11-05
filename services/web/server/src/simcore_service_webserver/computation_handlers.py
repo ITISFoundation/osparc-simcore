@@ -5,19 +5,19 @@
 import logging
 
 from aiohttp import web
-
 from models_library.projects import RunningState
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .computation_api import (
     get_pipeline_state,
     start_pipeline_computation,
+    stop_pipeline_computation,
     update_pipeline_db,
 )
 from .login.decorators import login_required
 from .projects.projects_api import get_project_for_user
 from .projects.projects_exceptions import ProjectNotFoundError
-from .security_api import check_permission
+from .security_decorators import permission_required
 
 log = logging.getLogger(__file__)
 
@@ -38,16 +38,14 @@ async def _process_request(request):
 
 
 @login_required
+@permission_required("services.pipeline.*")
+@permission_required("project.read")
 async def start_pipeline(request: web.Request) -> web.Response:
     """Starts pipeline described in the workbench section of a valid project
     already at the server side
     """
-    await check_permission(request, "services.pipeline.*")
-    await check_permission(request, "project.read")
-
     user_id, project_id = await _process_request(request)
 
-    # FIXME: if start is already ongoing. Do not re-start!
     try:
         project = await get_project_for_user(request.app, project_id, user_id)
 
@@ -78,3 +76,26 @@ async def start_pipeline(request: web.Request) -> web.Response:
         "task_id": task_id if task_id else "failed to start",
     }
     return data
+
+
+@login_required
+@permission_required("services.pipeline.*")
+@permission_required("project.read")
+async def stop_pipeline(request: web.Request) -> web.Response:
+    user_id, project_id = await _process_request(request)
+    try:
+        await get_project_for_user(request.app, project_id, user_id)
+
+        pipeline_state: RunningState = await get_pipeline_state(request.app, project_id)
+
+        if pipeline_state in [
+            RunningState.PUBLISHED,
+            RunningState.PENDING,
+            RunningState.STARTED,
+            RunningState.RETRY,
+        ]:
+            await stop_pipeline_computation(request.app, project_id)
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Project {project_id} not found") from exc
+
+    raise web.HTTPNoContent(content_type="application/json")

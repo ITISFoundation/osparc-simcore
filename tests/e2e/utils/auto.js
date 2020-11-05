@@ -204,16 +204,16 @@ async function runStudy(page, waitFor = 0) {
   console.log("Running study");
 
   const responsesQueue = new responses.ResponsesQueue(page);
-  responsesQueue.addResponseListener("/start");
+  responsesQueue.addResponseListener(":start");
 
   await utils.waitAndClick(page, '[osparc-test-id="runStudyBtn"]')
 
   // make sure start request was sent
   const tries = 3;
-  let reqInQueue = responsesQueue.isRequestInQueue("/start");
+  let reqInQueue = responsesQueue.isRequestInQueue(":start");
   for (let i = 0; i < tries && reqInQueue; i++) {
     await utils.sleep(200);
-    reqInQueue = responsesQueue.isRequestInQueue("/start");
+    reqInQueue = responsesQueue.isRequestInQueue(":start");
   }
   if (reqInQueue) {
     console.log("Starting pipeline didn't work, pressing 'Run' again");
@@ -221,7 +221,7 @@ async function runStudy(page, waitFor = 0) {
   }
 
   try {
-    await responsesQueue.waitUntilResponse("/start");
+    await responsesQueue.waitUntilResponse(":start");
   }
   catch (err) {
     console.error(err);

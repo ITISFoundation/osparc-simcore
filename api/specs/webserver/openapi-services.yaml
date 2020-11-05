@@ -16,6 +16,20 @@ paths:
                 $ref: "./components/schemas/pipeline.yaml#/components/schemas/PipelineCreatedEnveloped"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
+
+  /computation/pipeline/{project_id}/stop:
+    post:
+      description: Stops a pipeline of a given project
+      tags:
+        - service
+      operationId: stop_pipeline
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "204":
+          description: Succesffully stopped the pipeline
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
   # PROJECT SERVICES -----------------------------------------------------------------
 components:
   parameters:

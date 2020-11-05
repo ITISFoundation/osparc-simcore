@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
-
 import json
 import time
 from asyncio import sleep
@@ -13,10 +12,9 @@ import aio_pika
 import pytest
 import sqlalchemy as sa
 from mock import call
-
+from models_library.settings.rabbit import RabbitConfig
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
-from simcore_sdk.config.rabbit import Config
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.computation_config import CONFIG_SECTION_NAME
 from simcore_service_webserver.db import setup_db
@@ -27,7 +25,7 @@ from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio import setup_sockets
+from simcore_service_webserver.socketio import setup_socketio
 
 API_VERSION = "v0"
 
@@ -42,14 +40,12 @@ def client(
     loop,
     aiohttp_client,
     app_config,  ## waits until swarm with *_services are up
-    rabbit_config: Config,
-    rabbit_service,  ## waits until rabbit is responsive
+    rabbit_service: RabbitConfig,  ## waits until rabbit is responsive
     postgres_db: sa.engine.Engine,
 ):
     assert app_config["rest"]["version"] == API_VERSION
 
     app_config["storage"]["enabled"] = False
-    app_config[CONFIG_SECTION_NAME] = rabbit_config.dict()
 
     # fake config
     app = create_safe_application()
@@ -62,7 +58,7 @@ def client(
     setup_login(app)
     setup_projects(app)
     setup_computation(app)
-    setup_sockets(app)
+    setup_socketio(app)
     setup_resource_manager(app)
 
     yield loop.run_until_complete(
