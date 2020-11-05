@@ -15,6 +15,7 @@ from aiopg.sa.connection import SAConnection
 from celery import Celery
 from celery.contrib.abortable import AbortableAsyncResult
 from sqlalchemy import and_
+from sqlalchemy.dialects.postgresql import insert
 
 from models_library.projects import RunningState
 from servicelib.application_keys import APP_DB_ENGINE_KEY
@@ -241,26 +242,23 @@ async def _parse_project_data(pipeline_data: Dict, app: web.Application):
 async def _set_adjacency_in_pipeline_db(
     db_engine: Engine, project_id: str, dag_adjacency_list: Dict
 ):
-    # pylint: disable=no-value-for-parameter
     async with db_engine.acquire() as conn:
-        # Because race conditions happen here, always try to create a new object
-        # if it fails, update the pipeline
-        try:
-            query = comp_pipeline.insert().values(
-                project_id=project_id,
-                dag_adjacency_list=dag_adjacency_list,
-                state=StateType.NOT_STARTED,
-            )
-            await conn.execute(query)
-        except psycopg2.errors.UniqueViolation:  # pylint: disable=no-member
-            query = (
-                comp_pipeline.update()
-                .where(comp_pipeline.c.project_id == project_id)
-                .values(
-                    dag_adjacency_list=dag_adjacency_list, state=StateType.NOT_STARTED
-                )
-            )
-            await conn.execute(query)
+        # Because race conditions always use an upsert operation
+        insert_stmt = insert(comp_pipeline).values(
+            project_id=project_id,
+            dag_adjacency_list=dag_adjacency_list,
+            state=StateType.NOT_STARTED,
+        )
+        on_update_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=[
+                comp_pipeline.c.project_id,
+            ],
+            set_=dict(
+                dag_adjacency_list=dag_adjacency_list, state=StateType.NOT_STARTED
+            ),
+        )
+
+        await conn.execute(on_update_stmt)
 
 
 @log_decorator(logger=log)
