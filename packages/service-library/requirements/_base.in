@@ -10,7 +10,7 @@ lazy-object-proxy~=1.4.3 # cannot upgrade due to contraints in openapi-core
 
 aiohttp
 aiopg[sa]
-aiozipkin
+aiozipkin==0.7.1
 ujson
 werkzeug
 jsonschema
