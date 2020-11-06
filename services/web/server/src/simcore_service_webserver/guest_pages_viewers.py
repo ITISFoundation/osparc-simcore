@@ -40,22 +40,30 @@ from pydantic import BaseModel, HttpUrl, ValidationError
 from typing import Optional
 
 
+class ValidationMixin:
+    @classmethod
+    def create_from(cls, request: web.Request):
+        try:
+            obj = cls(**request.query.keys())
+        except ValidationError as err:
+            raise web.HTTPBadRequest(content_type="application/json", body=err.json())
+        else:
+            return obj
+
 # TODO: create dinamically pydantic class
-class RequestParams(BaseModel):
+class RequestParams(BaseModel, ValidationMixin):
     file_name: Optional[str] = None
     file_size: int
     file_type: str
     download_link: HttpUrl
 
 
+
 @page_routes.get("/view", name="get_redirection_to_viewer")
 async def get_redirection_to_viewer_with_specs(request: web.Request):
-    try:
-        params = RequestParams(**request.query.keys())
-    except ValidationError as err:
-        raise web.HTTPBadRequest(content_type="application/json", data=err.json())
+    params = RequestParams.create_from(request)
 
-    return await get_redirection_to_viewer_impl(request.app, **params)
+    return await get_redirection_to_viewer_impl(request.app, **params.dict())
 
 
 
@@ -63,6 +71,8 @@ async def get_redirection_to_viewer_with_specs(request: web.Request):
 async def get_redirection_to_viewer(request: web.Request):
     file_name, file_size = request.query["key"]
     download_link = request.query["src"]
+
+    raise NotImplementedError()
 
 
 
