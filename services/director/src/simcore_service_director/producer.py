@@ -977,7 +977,9 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
                         await response.text(),
                     )
         except ClientConnectionError:
-            log.exception("service %s could not be contacted, state not saved")
+            log.exception(
+                "service %s could not be contacted, state not saved", service_host_name
+            )
 
         # remove the services
         try:
