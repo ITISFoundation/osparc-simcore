@@ -1,7 +1,5 @@
 # pylint: disable=unused-argument
-from typing import Coroutine
-
-from fastapi import APIRouter, Depends, Query, status, Response
+from fastapi import APIRouter, Depends, Query, Response, status
 from models_library.services import KEY_RE, VERSION_RE
 
 from ...models.schemas.services import RunningServicesEnveloped

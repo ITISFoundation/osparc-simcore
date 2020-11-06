@@ -3,17 +3,10 @@ from typing import Dict, List
 
 import networkx as nx
 from celery.canvas import Signature
-from celery.contrib.abortable import AbortableAsyncResult
 from celery.result import AsyncResult
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from models_library.projects import (
-    NodeID,
-    ProjectID,
-    RunningState,
-    Workbench,
-)
+from models_library.projects import NodeID, ProjectID, RunningState, Workbench
 from simcore_postgres_database.models.comp_tasks import NodeClass
-from simcore_service_director_v2.utils.exceptions import ProjectNotFoundError
 from starlette import status
 from starlette.requests import Request
 
@@ -30,26 +23,15 @@ from ...modules.db.repositories.computations import (
     CompTasksRepository,
 )
 from ...modules.db.repositories.projects import ProjectsRepository
-from ...utils.computations import get_pipeline_state_from_task_states
+from ...modules.db.tables import NodeClass
+from ...utils.computations import get_pipeline_state_from_task_states, to_node_class
+from ...utils.exceptions import ProjectNotFoundError
 from ..dependencies.celery import CeleryClient, get_celery_client
 from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
 
 router = APIRouter()
 log = logging.getLogger(__file__)
-
-
-@router.get("")
-async def list_computations(
-    user_id: UserID,
-    computation_pipelines: CompPipelinesRepository = Depends(
-        get_repository(CompPipelinesRepository)
-    ),
-    computation_tasks: CompTasksRepository = Depends(
-        get_repository(CompTasksRepository)
-    ),
-):
-    pass
 
 
 def celery_on_message(body):
@@ -64,10 +46,6 @@ def find_entrypoints(graph: nx.DiGraph) -> List[NodeID]:
     entrypoints = [n for n in graph.nodes if not list(graph.predecessors(n))]
     log.debug("the entrypoints of the graph are %s", entrypoints)
     return entrypoints
-
-
-from ...utils.computations import to_node_class
-from ...modules.db.tables import NodeClass
 
 
 def create_dag_graph(workbench: Workbench) -> nx.DiGraph:
@@ -89,11 +67,6 @@ def create_dag_graph(workbench: Workbench) -> nx.DiGraph:
     return dag_graph
 
 
-def convert_graph_to_celery_canvas(dag_graph: nx.DiGraph) -> Signature:
-    for node in nx.topological_sort(dag_graph):
-        node_deps = list(dag_graph.predecessors(node))
-
-
 def topological_sort_grouping(dag_graph: nx.DiGraph) -> List[Signature]:
     # copy the graph
     graph_copy = dag_graph.copy()
@@ -112,6 +85,7 @@ def topological_sort_grouping(dag_graph: nx.DiGraph) -> List[Signature]:
     status_code=status.HTTP_201_CREATED,
 )
 async def create_computation(
+    # pylint: disable=too-many-arguments
     user_id: UserID,
     project_id: ProjectID,
     background_tasks: BackgroundTasks,
@@ -166,8 +140,6 @@ async def create_computation(
             )
         # FIXME: directly pass the tasks to celery instead of the current recursive way
         await computation_pipelines.publish_pipeline(project.uuid, dag_graph)
-        # convert the pipeline to celery tasks
-        # canvas: Signature = convert_graph_to_celery_canvas(dag_graph)
         # ok so publish the tasks
         await computation_tasks.publish_tasks_from_project(project, director_client)
         # trigger celery

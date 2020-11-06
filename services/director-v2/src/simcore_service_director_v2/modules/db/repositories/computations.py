@@ -4,7 +4,6 @@ from typing import Dict
 
 import networkx as nx
 import sqlalchemy as sa
-from celery.contrib.abortable import AbortableAsyncResult
 from models_library.projects import Node, NodeID, ProjectID, RunningState
 from models_library.services import (
     Author,
@@ -12,15 +11,12 @@ from models_library.services import (
     ServiceKeyVersion,
     ServiceType,
 )
-from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
-from simcore_service_director_v2.models.domains.projects import ProjectAtDB
-from simcore_service_director_v2.models.schemas.services import (
-    NodeRequirement,
-    ServiceExtras,
-)
 from sqlalchemy.dialects.postgresql import insert
 
+from ....models.domains.comp_pipelines import CompPipelineAtDB
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
+from ....models.domains.projects import ProjectAtDB
+from ....models.schemas.services import NodeRequirement, ServiceExtras
 from ....utils.computations import to_node_class
 from ...director_v0 import DirectorV0Client
 from ..tables import NodeClass, StateType, comp_pipeline, comp_tasks
