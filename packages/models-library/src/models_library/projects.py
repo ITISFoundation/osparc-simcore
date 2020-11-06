@@ -200,7 +200,7 @@ class AccessRights(BaseModel):
 
 
 class Owner(BaseModel):
-    user_id: conint(ge=1) = Field(..., description="Owner's identifier (if any) when registered in the user's database table", example=[2])
+    user_id: conint(ge=1) = Field(..., description="Owner's identifier when registered in the user's database table", example=[2])
     first_name: str = Field(..., description="Owner first name", example=["John"])
     last_name: str = Field(..., description="Owner last name", example=["Smith"])
 
