@@ -14,7 +14,6 @@
 -e ../s3wrapper/
 -e ../service-library/
 -e ../pytest-simcore/
--e ../models-library/
 ../../services/storage/client-sdk/python/ # Needed ONLY for testing
 
 # installs current package

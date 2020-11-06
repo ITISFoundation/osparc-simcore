@@ -11,7 +11,6 @@ from servicelib.utils import logged_gather
 
 from . import director_exceptions
 from .config import get_client_session, get_config
-from models_library.settings.services_common import ServicesCommonSettings
 
 log = logging.getLogger(__name__)
 
@@ -83,10 +82,7 @@ async def stop_service(app: web.Application, service_uuid: str) -> None:
     # bumping the stop command timeout to 1 hour
     # this will allow to sava bigger datasets from the services
     url = api_endpoint / "running_interactive_services" / service_uuid
-    async with session.delete(
-        url,
-        ssl=False,  # timeout=ServicesCommonSettings().director_stop_service_timeout
-    ) as resp:
+    async with session.delete(url, ssl=False, timeout=3600) as resp:
         if resp.status == 404:
             raise director_exceptions.ServiceNotFoundError(service_uuid)
         if resp.status != 204:

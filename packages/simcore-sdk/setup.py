@@ -15,7 +15,6 @@ install_requirements = read_reqs(here / "requirements" / "_base.in")
 test_requirements = read_reqs(here / "requirements" / "_test.txt") + [
     "simcore-postgres-database[migration]",
     "simcore-service-library",
-    "simcore-models-library",
     "s3wrapper",
     "simcore-service-storage-sdk",
 ]
