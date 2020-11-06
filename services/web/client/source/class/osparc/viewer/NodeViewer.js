@@ -54,6 +54,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     node: {
       check: "Object",
       apply: "__applyNode",
+      init: null,
       nullable: true
     }
   },
