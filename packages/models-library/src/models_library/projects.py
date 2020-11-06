@@ -3,7 +3,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from pydantic import UUID4, BaseModel, EmailStr, Extra, Field, HttpUrl, constr
+from pydantic import UUID4, BaseModel, EmailStr, Extra, Field, HttpUrl, constr, conint
 
 from .services import KEY_RE, PROPERTY_KEY_RE, VERSION_RE
 
