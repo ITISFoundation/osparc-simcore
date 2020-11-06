@@ -11,6 +11,7 @@ from yarl import URL
 import aiofiles
 from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
 from simcore_service_storage_sdk.rest import ApiException
+from models_library.settings.services_common import ServicesCommonSettings
 
 from . import config, exceptions
 
@@ -85,7 +86,7 @@ async def _get_link(store_id:int, file_id:str, apifct) -> URL:
             location_id=store_id, 
             user_id=config.USER_ID, 
             file_id=file_id, 
-            _request_timeout=3600
+            _request_timeout=ServicesCommonSettings().storage_service_upload_download_timeout
         )
 
         if resp.error:
