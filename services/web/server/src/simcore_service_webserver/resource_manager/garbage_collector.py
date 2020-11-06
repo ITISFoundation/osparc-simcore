@@ -73,7 +73,6 @@ async def garbage_collector_task(app: web.Application):
         try:
             interval = get_garbage_collector_interval(app)
             lock_manager: Aioredlock = app[APP_CLIENT_REDIS_LOCK_KEY]
-
             while True:
                 if not await lock_manager.is_locked(GC_EXECUTION_LOCK):
                     await collect_garbage(app)
@@ -174,8 +173,8 @@ async def remove_disconnected_user_resources(
     for dead_key in dead_keys:
 
         user_id = int(dead_key["user_id"])
-        if await lock_manager.is_locked(GUEST_USER_RC_LOCK_FORMAT.format(user_id)):
-            logger.debug("Skipping garbage-collecting user '%s' since it is still locked", user_id)
+        if await lock_manager.is_locked(GUEST_USER_RC_LOCK_FORMAT.format(user_id=user_id)):
+            logger.debug("Skipping garbage-collecting user '%d' since it is still locked", user_id)
             continue
 
         dead_key_resources = await registry.get_resources(dead_key)
@@ -225,7 +224,6 @@ async def remove_disconnected_user_resources(
                 )
 
                 # --- actual cleanup happens now ---
-
                 if resource_name == "project_id":
                     # inform that the project can be closed on the backend side
                     await emit(
@@ -271,7 +269,7 @@ async def remove_users_manually_marked_as_guests(
             continue
 
         if await lock_manager.is_locked(
-            GUEST_USER_RC_LOCK_FORMAT.format(guest_user_id)
+            GUEST_USER_RC_LOCK_FORMAT.format(user_id=guest_user_id)
         ):
             logger.debug(
                 "Skipping garbage-collecting user '%s' since it is still locked", guest_user_id

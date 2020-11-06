@@ -80,7 +80,7 @@ async def create_temporary_user(request: web.Request):
     lock_manager: Aioredlock = request.app[APP_CLIENT_REDIS_LOCK_KEY]
 
     try:
-        with lock_manager.lock(GC_EXECUTION_LOCK, lock_timeout=3):
+        async with await lock_manager.lock(GC_EXECUTION_LOCK, lock_timeout=3):
             user = await db.create_user(
                 {
                     "name": username,
@@ -93,13 +93,14 @@ async def create_temporary_user(request: web.Request):
             )
             # time-out lock to prevent GC from deleting this user until it acquires its first resources
             await lock_manager.lock(
-                GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["user_id"]),
+                GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
                 lock_timeout=30,
             )
     except LockError as err:
-        # Can only attend this request if the GC execution lock can be acquired
-        # to intentionally limit the rate in which these requests are done
-        # and the GC is not constantly disabled.
+        #
+        # Will only attend this request if the GC execution lock can be acquired
+        #
+        # This will prevent disabling GC permanently e.g. due to high frequency guest requests
         #
         # At the same time, the lock is timed so in the worst case
         # this will limit the througput to 1 request every 3 seconds
