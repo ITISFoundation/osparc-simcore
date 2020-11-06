@@ -469,9 +469,9 @@
                             "user_id": {
                               "title": "User Id",
                               "type": "integer",
-                              "description": "Owner user id",
+                              "description": "Owner's identifier when registered in the user's database table",
                               "example": [
-                                "2"
+                                2
                               ]
                             },
                             "first_name": {
