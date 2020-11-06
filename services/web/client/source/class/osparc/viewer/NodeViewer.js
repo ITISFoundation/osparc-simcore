@@ -23,8 +23,6 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    console.log();
-
     this.__initLoadingPage();
     this.__initIFrame();
 
