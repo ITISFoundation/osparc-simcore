@@ -130,7 +130,7 @@ qx.Class.define("osparc.Application", {
           break;
         }
         case "viewer": {
-          // Route: /#/viewer/{id}
+          // Route: /#/viewer/?dataset={downloadLink}
           if (urlFragment.nav.length > 1) {
             osparc.utils.Utils.cookie.deleteCookie("user");
             this.__loadNodeViewerPage(urlFragment.nav[1]);
