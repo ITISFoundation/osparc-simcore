@@ -14,7 +14,7 @@
 ../s3wrapper/
 ../service-library/
 ../pytest-simcore/
-../models_library/
+../models-library/
 ../../services/storage/client-sdk/python/ # Needed ONLY for testing
 
 
