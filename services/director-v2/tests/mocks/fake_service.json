@@ -1,0 +1,85 @@
+{
+  "name": "laborum Lorem ullamco minim",
+  "description": "qui Lorem quis ut occaecat",
+  "key": "simcore/services/frontend/I2HZjlT;/@.c!hG~/u`9+c#W,/L/^XQd3z@T\"o/>Wpe@N*quV",
+  "version": "844863.7218662994.388740048-9.127142757Xir8O6z.uPzMFCH.3399Y.214.7112.4935048219Qh4-k9LZJAA.0.18549123X+55gl.av.enudGN6.QszV6RAx3eF.VFWA3Vv7oo3.WV5Zd.K22.idGnQwZMb",
+  "type": "frontend",
+  "authors": [
+    {
+      "name": "amet sit culpa ea aliquip",
+      "email": "yFIu@gHLKCpBGDqBnVsbYnHXXSvpVwbA.jfj",
+      "affiliation": "laborum commodo"
+    },
+    {
+      "name": "dolore Ut enim",
+      "email": "fBiR3bMSO57CkD7@BuAXqyvUrwvMRYpFYTNjPXtiMjnZx.zl"
+    },
+    {
+      "name": "nulla elit in",
+      "email": "PNw7-63-eDIw1V@BMxLRwKVVLadFfzbKYfvBkh.fjry",
+      "affiliation": "pariatur adipisicing quis do"
+    },
+    {
+      "name": "in pariatur dolore consequat",
+      "email": "jFMyPGZZV7mvA-D@uOkTdAyvlupivonJmG.wid",
+      "affiliation": "magna culpa reprehenderit"
+    }
+  ],
+  "contact": "KQsW9uarb@pMV.tlyy",
+  "inputs": {
+    "aMKxsZ": {
+      "displayOrder": 10141230.40881309,
+      "label": "aliquip anim ullamco",
+      "description": "enim dolor irure",
+      "type": "data:?0E/[7(#&hG*w",
+      "defaultValue": -57410700,
+      "widget": {
+        "type": "TextArea",
+        "details": {
+          "minHeight": 79367234
+        }
+      }
+    }
+  },
+  "outputs": {
+    "GMpJ24EJc01": {
+      "displayOrder": 6922615.513955772,
+      "label": "voluptate cupidatat dolore nulla fugiat",
+      "description": "Excepteur culpa pariatur labore laborum",
+      "type": "string",
+      "defaultValue": -61271885,
+      "widget": {
+        "type": "SelectBox",
+        "details": {
+          "structure": [
+            {
+              "key": "aliqua",
+              "label": "sit deserunt ad"
+            },
+            {
+              "key": "veniam aliqua consectetur",
+              "label": "qui dolor"
+            },
+            {
+              "key": true,
+              "label": "do"
+            },
+            {
+              "key": 74258899.37388414,
+              "label": "laborum exercitation commodo"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "thumbnail": "https://some_thumbnail.com/askjgljlksdjflsdkj",
+  "integration-version": "0.0.6-2864FLp3OFp.0.0.0.89537877",
+  "badges": [
+    {
+      "name": "ea tempor reprehenderit",
+      "image": "https://some_image.com/sdflksjfdlsk/sdksjlfkj",
+      "url": "http://some_url.com/sdlfkjsdl/sdlkjsl"
+    }
+  ]
+}

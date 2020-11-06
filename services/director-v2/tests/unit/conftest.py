@@ -7,6 +7,7 @@ from typing import Dict
 
 import dotenv
 import pytest
+from respx import mocks
 import simcore_service_director_v2
 from fastapi import FastAPI
 from simcore_service_director_v2.core.application import init_app
@@ -16,6 +17,7 @@ from starlette.testclient import TestClient
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 pytest_plugins = [
     "pytest_simcore.repository_paths",
+    "pytest_simcore.schemas",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.postgres_service",
@@ -68,3 +70,17 @@ def minimal_app(client) -> FastAPI:
     # NOTICE that this app triggers events
     # SEE: https://fastapi.tiangolo.com/advanced/testing-events/
     return client.app
+
+
+@pytest.fixture(scope="session")
+def tests_dir(project_slug_dir: Path) -> Path:
+    testsdir = project_slug_dir / "tests"
+    assert testsdir.exists()
+    return testsdir
+
+
+@pytest.fixture(scope="session")
+def mocks_dir(tests_dir: Path) -> Path:
+    mocksdir = tests_dir / "mocks"
+    assert mocksdir.exists()
+    return mocksdir
