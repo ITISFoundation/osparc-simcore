@@ -273,6 +273,21 @@
                           "type": "string"
                         }
                       }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "downloadLink"
+                      ],
+                      "properties": {
+                        "downloadLink": {
+                          "type": "string"
+                        },
+                        "label": {
+                          "type": "string"
+                        }
+                      }
                     }
                   ]
                 }

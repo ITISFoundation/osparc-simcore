@@ -5966,6 +5966,15 @@ paths:
                                                   type: string
                                                 label:
                                                   type: string
+                                            - type: object
+                                              additionalProperties: false
+                                              required:
+                                                - downloadLink
+                                              properties:
+                                                downloadLink:
+                                                  type: string
+                                                label:
+                                                  type: string
                                     outputNode:
                                       type: boolean
                                       deprecated: true
@@ -6473,6 +6482,15 @@ paths:
                                       type: string
                                     label:
                                       type: string
+                                - type: object
+                                  additionalProperties: false
+                                  required:
+                                    - downloadLink
+                                  properties:
+                                    downloadLink:
+                                      type: string
+                                    label:
+                                      type: string
                         outputNode:
                           type: boolean
                           deprecated: true
@@ -6857,6 +6875,15 @@ paths:
                                               dataset:
                                                 type: string
                                               path:
+                                                type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
                                                 type: string
                                               label:
                                                 type: string
@@ -7362,6 +7389,15 @@ paths:
                                               dataset:
                                                 type: string
                                               path:
+                                                type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
                                                 type: string
                                               label:
                                                 type: string
@@ -7876,6 +7912,15 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                              label:
+                                                type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -8378,6 +8423,15 @@ paths:
                                       type: string
                                     label:
                                       type: string
+                                - type: object
+                                  additionalProperties: false
+                                  required:
+                                    - downloadLink
+                                  properties:
+                                    downloadLink:
+                                      type: string
+                                    label:
+                                      type: string
                         outputNode:
                           type: boolean
                           deprecated: true
@@ -8762,6 +8816,15 @@ paths:
                                               dataset:
                                                 type: string
                                               path:
+                                                type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
                                                 type: string
                                               label:
                                                 type: string
@@ -9289,6 +9352,15 @@ paths:
                                               dataset:
                                                 type: string
                                               path:
+                                                type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
                                                 type: string
                                               label:
                                                 type: string
@@ -10631,6 +10703,15 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                              label:
+                                                type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -11132,6 +11213,15 @@ paths:
                                               dataset:
                                                 type: string
                                               path:
+                                                type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
                                                 type: string
                                               label:
                                                 type: string

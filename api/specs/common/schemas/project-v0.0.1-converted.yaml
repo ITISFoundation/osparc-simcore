@@ -197,6 +197,15 @@ properties:
                         type: string
                       label:
                         type: string
+                  - type: object
+                    additionalProperties: false
+                    required:
+                      - downloadLink
+                    properties:
+                      downloadLink:
+                        type: string
+                      label:
+                        type: string
           outputNode:
             type: boolean
             deprecated: true
