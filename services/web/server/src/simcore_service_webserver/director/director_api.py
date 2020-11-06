@@ -4,7 +4,7 @@ import logging
 import urllib
 from typing import Dict, List, Optional
 
-from aiohttp import web, ClientTimeout
+from aiohttp import web
 from yarl import URL
 
 from servicelib.utils import logged_gather
@@ -82,10 +82,10 @@ async def stop_service(app: web.Application, service_uuid: str) -> None:
     # stopping a service can take a lot of time
     # bumping the stop command timeout to 1 hour
     # this will allow to sava bigger datasets from the services
-    service_common_settings = ServicesCommonSettings()
-    timeout = ClientTimeout(total=service_common_settings.director_stop_service_timeout)
     url = api_endpoint / "running_interactive_services" / service_uuid
-    async with session.delete(url, ssl=False, timeout=timeout) as resp:
+    async with session.delete(
+        url, ssl=False, timeout=ServicesCommonSettings().director_stop_service_timeout
+    ) as resp:
         if resp.status == 404:
             raise director_exceptions.ServiceNotFoundError(service_uuid)
         if resp.status != 204:
