@@ -9,5 +9,7 @@ aiodocker
 asyncio_extras
 requests
 tenacity
+aiozipkin==0.7.1 # avoids issues with last version of aiozipkin
+
 
 git+https://github.com/ITISFoundation/aiohttp_apiset.git@fixes_4_osparc#egg=aiohttp_apiset # TODO: constaints aiohttp >=1.2,<3.4
