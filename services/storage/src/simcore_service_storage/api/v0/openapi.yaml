@@ -1874,6 +1874,15 @@ paths:
                                           type: string
                                         label:
                                           type: string
+                                    - type: object
+                                      additionalProperties: false
+                                      required:
+                                        - downloadLink
+                                      properties:
+                                        downloadLink:
+                                          type: string
+                                        label:
+                                          type: string
                             inputAccess:
                               description: map with key - access level pairs
                               type: object
@@ -2256,6 +2265,15 @@ paths:
                                         dataset:
                                           type: string
                                         path:
+                                          type: string
+                                        label:
+                                          type: string
+                                    - type: object
+                                      additionalProperties: false
+                                      required:
+                                        - downloadLink
+                                      properties:
+                                        downloadLink:
                                           type: string
                                         label:
                                           type: string
@@ -2651,6 +2669,15 @@ paths:
                                       dataset:
                                         type: string
                                       path:
+                                        type: string
+                                      label:
+                                        type: string
+                                  - type: object
+                                    additionalProperties: false
+                                    required:
+                                      - downloadLink
+                                    properties:
+                                      downloadLink:
                                         type: string
                                       label:
                                         type: string
@@ -3146,6 +3173,15 @@ components:
                             dataset:
                               type: string
                             path:
+                              type: string
+                            label:
+                              type: string
+                        - type: object
+                          additionalProperties: false
+                          required:
+                            - downloadLink
+                          properties:
+                            downloadLink:
                               type: string
                             label:
                               type: string
