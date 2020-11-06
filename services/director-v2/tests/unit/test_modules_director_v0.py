@@ -1,9 +1,7 @@
 import json
-import pdb
 import urllib.parse
 from pathlib import Path
-from pprint import pformat
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, List, Tuple
 
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
@@ -11,9 +9,8 @@ from typing import Callable, Dict, List, Tuple
 # pylint:disable=protected-access
 import pytest
 import respx
-from fastapi import status
+from fastapi import FastAPI, status
 from models_library.services import ServiceDockerData, ServiceKeyVersion
-from pydantic import ValidationError
 from simcore_service_director_v2.models.schemas.services import ServiceExtras
 from simcore_service_director_v2.modules.director_v0 import DirectorV0Client
 
@@ -125,7 +122,7 @@ def fake_service_extras(random_json_from_schema: Callable) -> ServiceExtras:
 
 @pytest.fixture
 def mocked_director_service_fcts(
-    minimal_app, fake_service_details, fake_service_extras
+    minimal_app: FastAPI, fake_service_details, fake_service_extras
 ):
     with respx.mock(
         base_url=minimal_app.state.settings.director_v0.base_url(include_tag=False),
@@ -148,7 +145,7 @@ def mocked_director_service_fcts(
 
 
 async def test_get_service_details(
-    minimal_app,
+    minimal_app: FastAPI,
     mocked_director_service_fcts,
     fake_service_details: ServiceDockerData,
 ):
@@ -164,7 +161,9 @@ async def test_get_service_details(
 
 
 async def test_get_service_extras(
-    minimal_app, mocked_director_service_fcts, fake_service_extras: ServiceExtras
+    minimal_app: FastAPI,
+    mocked_director_service_fcts,
+    fake_service_extras: ServiceExtras,
 ):
     director_client: DirectorV0Client = minimal_app.state.director_v0_client
     service = ServiceKeyVersion(

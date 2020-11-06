@@ -7,7 +7,6 @@ from typing import Dict
 
 import dotenv
 import pytest
-from respx import mocks
 import simcore_service_director_v2
 from fastapi import FastAPI
 from simcore_service_director_v2.core.application import init_app
