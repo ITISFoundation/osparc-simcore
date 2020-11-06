@@ -5,6 +5,8 @@ from typing import Dict
 
 from aiohttp import web
 from aiopg.sa.result import RowProxy
+from aioredlock import Aioredlock
+
 from servicelib.observer import emit
 from servicelib.utils import logged_gather
 from simcore_service_webserver import users_exceptions
@@ -38,7 +40,13 @@ from simcore_service_webserver.users_api import (
 )
 from simcore_service_webserver.users_to_groups_api import get_users_for_gid
 
-from .config import APP_GARBAGE_COLLECTOR_KEY, get_garbage_collector_interval
+from .config import (
+    APP_CLIENT_REDIS_LOCK_KEY,
+    APP_GARBAGE_COLLECTOR_KEY,
+    GC_EXECUTION_LOCK,
+    GUEST_USER_RC_LOCK_FORMAT,
+    get_garbage_collector_interval,
+)
 from .registry import RedisResourceRegistry, get_registry
 
 logger = logging.getLogger(__name__)
@@ -64,19 +72,25 @@ async def garbage_collector_task(app: web.Application):
         logger.info("Starting garbage collector...")
         try:
             interval = get_garbage_collector_interval(app)
+            lock_manager: Aioredlock = app[APP_CLIENT_REDIS_LOCK_KEY]
+
             while True:
-                await collect_garbage(app)
+                if not await lock_manager.is_locked(GC_EXECUTION_LOCK):
+                    await collect_garbage(app)
                 await asyncio.sleep(interval)
 
         except asyncio.CancelledError:
             keep_alive = False
             logger.info("Garbage collection task was cancelled, it will not restart!")
+
         except Exception:  # pylint: disable=broad-except
             logger.warning(
                 "There was an error during garbage collection, restarting...",
                 exc_info=True,
             )
-            # will wait 5 seconds before restarting to avoid restart loops
+            # will wait 5 seconds to recover before restarting to avoid restart loops
+            # - it might be that db/redis is down, etc
+            #
             await asyncio.sleep(5)
 
 
@@ -129,46 +143,76 @@ async def collect_garbage(app: web.Application):
 async def remove_disconnected_user_resources(
     registry: RedisResourceRegistry, app: web.Application
 ) -> None:
+    lock_manager: Aioredlock = app[APP_CLIENT_REDIS_LOCK_KEY]
+
+    #
+    # In redis jargon, every entry is denoted as "key"
+    #   - A key can contain one or more fields: name-value pairs
+    #   - A key can have a limited livespan by setting the Time-to-live (TTL)
+    #
+    # - Every user can open multiple sessions (e.g. in different tabs and/or browser) and
+    #   each session is hierarchically represented in the redis registry with two keys:
+    #     - "alive" that keeps a TLL
+    #     - "resources" to keep a list of resources
+    # - A resource is defined as something that can be acquire/released and in some times
+    #   also shared. For instance, websocket_id, project_id are resource ids. The first is established
+    #   between the web-client and the backend.
+    #
+    # - If all sessions of a GUEST user close (i.e. "alive" key expires)
+    #
+    #
+
     # alive_keys = currently "active" users
-    # dead_keys = users considered as "inactive"
-    # these keys hold references to more then one websocket connection ids
-    # the websocket ids are referred to as resources
+    # dead_keys = users considered as "inactive" (TTL expired)
+    # these keys hold references to more than one websocket connection ids
+    # the websocket ids are referred to as resources (but NOT the only resource)
+
     alive_keys, dead_keys = await registry.get_all_resource_keys()
     logger.debug("potential dead keys: %s", dead_keys)
 
     # clean up all the the websocket ids for the disconnected user
     for dead_key in dead_keys:
+
+        user_id = int(dead_key["user_id"])
+        if await lock_manager.is_locked(GUEST_USER_RC_LOCK_FORMAT.format(user_id)):
+            logger.debug("Skipping garbage-collecting user '%s' since it is still locked", user_id)
+            continue
+
         dead_key_resources = await registry.get_resources(dead_key)
         if not dead_key_resources:
-            # no websocket associated with this user, just removing key
+            # no resources associated with this user, just cleaning up the key
             await registry.remove_key(dead_key)
             continue
 
         logger.debug("Dead key '%s' resources: '%s'", dead_key, dead_key_resources)
 
-        # removing all websocket references for the disconnected user
+        # removing all resources that are not needed anymore
         for resource_name, resource_value in dead_key_resources.items():
-            # list of other websocket references to be removed
-            other_keys = [
-                x
-                for x in await registry.find_keys((resource_name, resource_value))
-                if x != dead_key
+            # list of other references to be removed
+            other_keys_with_this_resource = [
+                rkey
+                for rkey in await registry.find_keys((resource_name, resource_value))
+                if rkey != dead_key
             ]
 
-            # it is safe to remove the current websocket entry for this user
+            # FIXME: What if the actual cleanup fails? we cannot GC it anymore since there
+            #       are not reference of the resources to deallocate
+            #
+            # it is safe to remove the current resource entry for this user
             logger.debug("removing resource '%s' for '%s' key", resource_name, dead_key)
             await registry.remove_resource(dead_key, resource_name)
 
             # check if the resource is still in use in the alive keys
-            if not any(elem in alive_keys for elem in other_keys):
-                # remove the remaining websocket entries
+            if not any(rk in alive_keys for rk in other_keys_with_this_resource):
+                # remove the remaining resource entries
                 remove_tasks = [
-                    registry.remove_resource(x, resource_name) for x in other_keys
+                    registry.remove_resource(rkey, resource_name)
+                    for rkey in other_keys_with_this_resource
                 ]
                 if remove_tasks:
                     logger.debug(
                         "removing resource entry: %s: %s",
-                        other_keys,
+                        other_keys_with_this_resource,
                         dead_key_resources,
                     )
                     await logged_gather(*remove_tasks, reraise=False)
@@ -179,13 +223,17 @@ async def remove_disconnected_user_resources(
                     resource_value,
                     dead_key,
                 )
-                # inform that the project can be closed on the backend side
-                await emit(
-                    event="SIGNAL_PROJECT_CLOSE",
-                    user_id=None,
-                    project_uuid=resource_value,
-                    app=app,
-                )
+
+                # --- actual cleanup happens now ---
+
+                if resource_name == "project_id":
+                    # inform that the project can be closed on the backend side
+                    await emit(
+                        event="SIGNAL_PROJECT_CLOSE",
+                        user_id=None,
+                        project_uuid=resource_value,
+                        app=app,
+                    )
 
                 # if this user was a GUEST also remove it from the database
                 # with the only associated project owned
@@ -202,6 +250,9 @@ async def remove_users_manually_marked_as_guests(
     Removes all the projects associated with GUEST users in the system.
     If the user defined a TEMPLATE, this one also gets removed.
     """
+    lock_manager: Aioredlock = app[APP_CLIENT_REDIS_LOCK_KEY]
+
+    # collects all users with registed sessions
     alive_keys, dead_keys = await registry.get_all_resource_keys()
 
     user_ids_to_ignore = set()
@@ -216,6 +267,14 @@ async def remove_users_manually_marked_as_guests(
             logger.info(
                 "Ignoring user '%s' as it previously had alive or dead resource keys ",
                 guest_user_id,
+            )
+            continue
+
+        if await lock_manager.is_locked(
+            GUEST_USER_RC_LOCK_FORMAT.format(guest_user_id)
+        ):
+            logger.debug(
+                "Skipping garbage-collecting user '%s' since it is still locked", guest_user_id
             )
             continue
 
@@ -238,6 +297,7 @@ async def remove_orphaned_services(
     If the service is a dynamic service
     """
     logger.info("Starting orphaned services removal...")
+
     currently_opened_projects_node_ids = set()
     alive_keys, _ = await registry.get_all_resource_keys()
     for alive_key in alive_keys:
