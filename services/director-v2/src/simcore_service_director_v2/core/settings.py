@@ -65,6 +65,9 @@ class ApiServiceSettings(BaseSettings):
 class CelerySettings(CeleryConfig):
     enabled: bool = Field(True, description="Enables/Disables connection with service")
 
+    class Config(CommonConfig):
+        env_prefix = "CELERY_"
+
 
 class DirectorV0Settings(ApiServiceSettings):
     class Config(CommonConfig):

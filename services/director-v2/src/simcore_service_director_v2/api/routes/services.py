@@ -42,11 +42,11 @@ ServiceKeyVersionPath = Path(
 
 
 @router.get(
-    "/{service_key}/{service_version}",
-    description="Returns details of the selected service if available in the platform",
-    response_model=ServicesArrayEnveloped,
+    "/{service_key:path}/{service_version}/extras",
+    description="Currently returns the node_requirements an array of resoruces needed for scheduling",
+    response_model=ServiceExtrasEnveloped,
 )
-async def get_service_versioned(
+async def get_extra_service_versioned(
     service_key: str = ServiceKeyPath,
     service_version: str = ServiceKeyVersionPath,
     forward_request: Response = Depends(forward_to_director_v0),
@@ -55,11 +55,11 @@ async def get_service_versioned(
 
 
 @router.get(
-    "/{service_key}/{service_version}/extras",
-    description="Currently returns the node_requirements an array of resoruces needed for scheduling",
-    response_model=ServiceExtrasEnveloped,
+    "/{service_key:path}/{service_version}",
+    description="Returns details of the selected service if available in the platform",
+    response_model=ServicesArrayEnveloped,
 )
-async def get_extra_service_versioned(
+async def get_service_versioned(
     service_key: str = ServiceKeyPath,
     service_version: str = ServiceKeyVersionPath,
     forward_request: Response = Depends(forward_to_director_v0),

@@ -102,7 +102,7 @@ class DirectorV0Client:
             request.method,
             str(url_tail),
             params=dict(request.query_params),
-            content=body,
+            data=body,
             headers=dict(request.headers),
         )
 
