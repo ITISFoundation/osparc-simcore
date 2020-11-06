@@ -84,7 +84,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
         widget = loadingPage;
       } else {
         this.getLayoutParent().set({
-          zIndex: 9
+          zIndex: iFrame.getZIndex()-1
         });
         widget = iFrame;
       }
