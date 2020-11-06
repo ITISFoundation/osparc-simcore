@@ -16,11 +16,17 @@ from functools import lru_cache
 from typing import Dict
 
 from aiohttp import web
+from aioredlock import Aioredlock, LockError
 
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .login.decorators import login_required
+from .resource_manager.config import (
+    APP_CLIENT_REDIS_LOCK_KEY,
+    GC_EXECUTION_LOCK,
+    GUEST_USER_RC_LOCK_FORMAT,
+)
 from .security_api import is_anonymous, remember
 from .statics import INDEX_RESOURCE_NAME
 from .utils import compose_error_msg
@@ -60,7 +66,7 @@ async def create_temporary_user(request: web.Request):
     TODO: user should have an expiration date and limited persmissions!
     """
     from .login.cfg import get_storage
-    from .login.handlers import ACTIVE, ANONYMOUS
+    from .login.handlers import ACTIVE, GUEST
     from .login.utils import get_client_ip, get_random_string
     from .security_api import encrypt_password
 
@@ -71,46 +77,39 @@ async def create_temporary_user(request: web.Request):
     email = username + "@guest-at-osparc.io"
     password = get_random_string(min_len=12)
 
-    # creates a user that is marked as ANONYMOUS. see update_user_as_guest
-    user = await db.create_user(
-        {
-            "name": username,
-            "email": email,
-            "password_hash": encrypt_password(password),
-            "status": ACTIVE,
-            "role": ANONYMOUS,
-            "created_ip": get_client_ip(request),
-        }
-    )
+    lock_manager: Aioredlock = request.app[APP_CLIENT_REDIS_LOCK_KEY]
+
+    try:
+        with lock_manager.lock(GC_EXECUTION_LOCK, lock_timeout=3):
+            user = await db.create_user(
+                {
+                    "name": username,
+                    "email": email,
+                    "password_hash": encrypt_password(password),
+                    "status": ACTIVE,
+                    "role": GUEST,
+                    "created_ip": get_client_ip(request),
+                }
+            )
+            # time-out lock to prevent GC from deleting this user until it acquires its first resources
+            await lock_manager.lock(
+                GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["user_id"]),
+                lock_timeout=30,
+            )
+    except LockError as err:
+        # Can only attend this request if the GC execution lock can be acquired
+        # to intentionally limit the rate in which these requests are done
+        # and the GC is not constantly disabled.
+        #
+        # At the same time, the lock is timed so in the worst case
+        # this will limit the througput to 1 request every 3 seconds
+        # (provided that nobody has permanently/temporary locked the GC for other reason)
+        #
+        raise web.HTTPTooManyRequests(
+            reason="Number of guests in platform are limited due to available resources"
+        ) from err
 
     return user
-
-
-async def activate_as_guest_user(user: Dict, app: web.Application):
-    from .login.cfg import get_storage
-    from .login.handlers import GUEST, ANONYMOUS
-    from .resource_manager.websocket_manager import WebsocketRegistry
-
-    # Save time to allow user to be redirected back and not being deleted by GC
-    # SEE https://github.com/ITISFoundation/osparc-simcore/pull/1928#discussion_r517176479
-    EXTRA_TIME_TO_COMPLETE_REDIRECT = 3
-
-    if user.get("role") == ANONYMOUS:
-        db = get_storage(app)
-        username = user["name"]
-
-        # creates an entry in the socket's registry to avoid garbage collector (GC) deleting it
-        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1853
-        #
-        registry = WebsocketRegistry(user["id"], f"{username}-guest-session", app)
-        await registry.set_socket_id(
-            f"{username}-guest-socket-id", extra_tll=EXTRA_TIME_TO_COMPLETE_REDIRECT
-        )
-
-        # Now that we know the ID, we set the user as GUEST
-        # This extra step is to prevent the possibility that the GC is cleaning while
-        # the function above is creating the entry in the socket
-        await db.update_user(user, updates={"role": GUEST})
 
 
 # TODO: from .users import get_user?
@@ -247,7 +246,6 @@ async def access_study(request: web.Request) -> web.Response:
         log.debug("Auto login for anonymous user %s", user["name"])
         identity = user["email"]
         await remember(request, response, identity)
-        await activate_as_guest_user(user, request.app)
 
     raise response
 
