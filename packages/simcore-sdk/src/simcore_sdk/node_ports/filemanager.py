@@ -85,7 +85,7 @@ async def _get_link(store_id:int, file_id:str, apifct) -> URL:
             location_id=store_id, 
             user_id=config.USER_ID, 
             file_id=file_id, 
-            _request_timeout=3600
+            # _request_timeout=3600
         )
 
         if resp.error:
