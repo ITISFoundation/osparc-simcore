@@ -3,7 +3,7 @@ import pdb
 import urllib.parse
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, List, Tuple
+from typing import Callable, Dict, List, Tuple
 
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
@@ -14,6 +14,7 @@ import respx
 from fastapi import status
 from models_library.services import ServiceDockerData, ServiceKeyVersion
 from pydantic import ValidationError
+from simcore_service_director_v2.models.schemas.services import ServiceExtras
 from simcore_service_director_v2.modules.director_v0 import DirectorV0Client
 
 
@@ -115,17 +116,32 @@ def fake_service_details(mocks_dir: Path) -> ServiceDockerData:
 
 
 @pytest.fixture
-def mocked_director_service_details(minimal_app, fake_service_details):
+def fake_service_extras(random_json_from_schema: Callable) -> ServiceExtras:
+    random_extras = ServiceExtras(
+        **random_json_from_schema(ServiceExtras.schema_json(indent=2))
+    )
+    return random_extras
+
+
+@pytest.fixture
+def mocked_director_service_fcts(
+    minimal_app, fake_service_details, fake_service_extras
+):
     with respx.mock(
         base_url=minimal_app.state.settings.director_v0.base_url(include_tag=False),
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-        # lists services
         respx_mock.get(
             "/v0/services/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
             content={"data": [fake_service_details.dict(by_alias=True)]},
             alias="get_service_version",
+        )
+
+        respx_mock.get(
+            "/v0/service_extras/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
+            content={"data": fake_service_extras.dict(by_alias=True)},
+            alias="get_service_extras",
         )
 
         yield respx_mock
@@ -133,7 +149,7 @@ def mocked_director_service_details(minimal_app, fake_service_details):
 
 async def test_get_service_details(
     minimal_app,
-    mocked_director_service_details,
+    mocked_director_service_fcts,
     fake_service_details: ServiceDockerData,
 ):
     director_client: DirectorV0Client = minimal_app.state.director_v0_client
@@ -143,5 +159,17 @@ async def test_get_service_details(
     service_details: ServiceDockerData = await director_client.get_service_details(
         service
     )
-    assert mocked_director_service_details["get_service_version"].called
+    assert mocked_director_service_fcts["get_service_version"].called
     assert fake_service_details == service_details
+
+
+async def test_get_service_extras(
+    minimal_app, mocked_director_service_fcts, fake_service_extras: ServiceExtras
+):
+    director_client: DirectorV0Client = minimal_app.state.director_v0_client
+    service = ServiceKeyVersion(
+        key="simcore/services/dynamic/myservice", version="1.3.4"
+    )
+    service_extras: ServiceExtras = await director_client.get_service_extras(service)
+    assert mocked_director_service_fcts["get_service_extras"].called
+    assert fake_service_extras == fake_service_extras
