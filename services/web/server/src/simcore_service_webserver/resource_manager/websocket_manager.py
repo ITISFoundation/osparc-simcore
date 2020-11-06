@@ -136,11 +136,6 @@ class WebsocketRegistry:
             key,
             value,
         )
-        assert key in (  # nosec
-            "project_id",  # nosec
-            SOCKET_ID_KEY,  # nosec
-        ), "Notice that these names were used somewhere else!"  # nosec
-
         registry = get_registry(self.app)
         await registry.set_resource(self._resource_key(), (key, value))
 
