@@ -12,7 +12,7 @@
 
 ## How to test
 
-<!-- Please explain how this can be tested. Also state wether this PR needs a full rebuild, database changes, etc. -->
+<!-- Please explain how this can be tested. Also state whether this PR needs a full rebuild, database changes, etc. -->
 
 
 ## Checklist
