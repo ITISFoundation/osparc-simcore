@@ -18,12 +18,12 @@
 qx.Class.define("osparc.viewer.NodeViewer", {
   extend: qx.ui.core.Widget,
 
-  construct: function(nodeId) {
+  construct: function() {
     this.base();
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    console.log(nodeId);
+    console.log();
 
     this.__initLoadingPage();
     this.__initIFrame();
@@ -31,7 +31,8 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     this.__iFrameChanged();
 
     setTimeout(() => {
-      const src = window.location.href + "/x/" + nodeId;
+      // const src = window.location.href + "/x/" + nodeId;
+      const src = "http://localhost:9000/#/stacks/master-simcore?type=1&external=true";
       this.getIFrame().setSource(src);
       this.__iFrameChanged();
     }, 10000);
@@ -47,6 +48,12 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     iFrame: {
       check: "osparc.component.widget.PersistentIframe",
       init: null,
+      nullable: true
+    },
+
+    node: {
+      check: "Object",
+      apply: "__applyNode",
       nullable: true
     }
   },
@@ -83,6 +90,10 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       this._add(widget, {
         flex: 1
       });
+    },
+
+    __applyNode: function(viewer) {
+      console.log(viewer);
     }
   }
 });

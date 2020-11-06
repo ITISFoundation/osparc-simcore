@@ -18,7 +18,7 @@
 qx.Class.define("osparc.viewer.MainPage", {
   extend: qx.ui.core.Widget,
 
-  construct: function(nodeId) {
+  construct: function() {
     this.base();
 
     this._setLayout(new qx.ui.layout.VBox());
@@ -26,9 +26,16 @@ qx.Class.define("osparc.viewer.MainPage", {
     const navBar = this.__createNavigationBar();
     this._add(navBar);
 
-    const nodeView = this.__createNodeViewer(nodeId);
-    this._add(nodeView, {
+    const nodeViewer = this.__createNodeViewer();
+    this._add(nodeViewer, {
       flex: 1
+    });
+
+    const socket = osparc.wrapper.WebSocket.getInstance();
+    const slotName = "dataset-viewer";
+    socket.removeSlot(slotName);
+    socket.on(slotName, viewer => {
+      nodeViewer.setNode(viewer);
     });
   },
 
@@ -40,9 +47,9 @@ qx.Class.define("osparc.viewer.MainPage", {
       return navBar;
     },
 
-    __createNodeViewer: function(nodeId) {
-      const navBar = new osparc.viewer.NodeViewer(nodeId);
-      return navBar;
+    __createNodeViewer: function() {
+      const nodeViewer = new osparc.viewer.NodeViewer();
+      return nodeViewer;
     }
   }
 });
