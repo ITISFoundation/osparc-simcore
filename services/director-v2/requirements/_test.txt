@@ -19,7 +19,7 @@ attrs==20.2.0             # via -r requirements/_base.txt, aiohttp, jsonschema, 
 bcrypt==3.2.0             # via paramiko
 billiard==3.6.3.0         # via -r requirements/_base.txt, celery
 cached-property==1.5.2    # via docker-compose
-celery[redis]==5.0.2      # via -r requirements/_base.txt
+celery[redis]==5.0.2      # via -r requirements/_base.txt, pytest-celery
 certifi==2020.6.20        # via -r requirements/_base.txt, httpx, requests
 cffi==1.14.3              # via bcrypt, cryptography, pynacl
 chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, httpx, requests
@@ -81,6 +81,7 @@ pynacl==1.4.0             # via paramiko
 pyparsing==2.4.7          # via packaging
 pyrsistent==0.17.3        # via jsonschema
 pytest-aiohttp==0.3.0     # via -r requirements/_test.in
+pytest-celery==0.0.0a1    # via -r requirements/_test.in
 pytest-cov==2.10.1        # via -r requirements/_test.in
 pytest-docker==0.10.1     # via -r requirements/_test.in
 pytest-mock==3.3.1        # via -r requirements/_test.in
