@@ -83,9 +83,7 @@ async def stop_service(app: web.Application, service_uuid: str) -> None:
     # bumping the stop command timeout to 1 hour
     # this will allow to sava bigger datasets from the services
     service_common_settings = ServicesCommonSettings()
-    timeout = ClientTimeout(
-        total=service_common_settings.director_stop_service_timeout
-    )
+    timeout = ClientTimeout(total=service_common_settings.director_stop_service_timeout)
     url = api_endpoint / "running_interactive_services" / service_uuid
     async with session.delete(url, ssl=False, timeout=timeout) as resp:
         if resp.status == 404:
