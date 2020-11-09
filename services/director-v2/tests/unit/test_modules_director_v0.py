@@ -1,12 +1,13 @@
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+# pylint:disable=protected-access
+
 import json
 import urllib.parse
 from pathlib import Path
 from typing import Callable, List, Tuple
 
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=protected-access
 import pytest
 import respx
 from fastapi import FastAPI, status
