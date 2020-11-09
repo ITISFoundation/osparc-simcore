@@ -170,7 +170,7 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     init: function() {
-      if (this.__isOutputFileSelected()) {
+      if (this.__isOutputFileSelectedFromStore()) {
         const outFile = this.__getOutputFile();
         this.__filesTree.loadFilePath(outFile.value);
       } else {
@@ -235,7 +235,7 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
-    __isOutputFileSelected: function() {
+    __isOutputFileSelectedFromStore: function() {
       const outFile = this.__getOutputFile();
       if (outFile && "value" in outFile && "path" in outFile.value) {
         return true;
@@ -244,7 +244,7 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __checkSelectedFileIsListed: function() {
-      if (this.__isOutputFileSelected()) {
+      if (this.__isOutputFileSelectedFromStore()) {
         const outFile = this.__getOutputFile();
         this.__filesTree.setSelectedFile(outFile.value.path);
         this.__filesTree.fireEvent("selectionChanged");
