@@ -8,6 +8,15 @@ import pytest
 import respx
 
 
+@pytest.fixture(autouse=True)
+def minimal_director_config(monkeypatch):
+    """set a minimal configuration for testing the director connection only"""
+    monkeypatch.setenv("DIRECTOR_ENABLED", "0")
+    monkeypatch.setenv("POSTGRES_ENABLED", "0")
+    monkeypatch.setenv("CELERY_ENABLED", "0")
+    monkeypatch.setenv("REGISTRY_ENABLED", "1")
+
+
 @pytest.fixture
 def mocked_registry_service_api(minimal_app):
     with respx.mock(
