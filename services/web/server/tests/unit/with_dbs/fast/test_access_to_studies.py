@@ -6,6 +6,7 @@
 # pylint:disable=redefined-outer-name
 
 
+import asyncio
 import logging
 import re
 import textwrap
@@ -353,7 +354,7 @@ async def test_access_cookie_of_expired_user(
     data, _ = await assert_status(resp, web.HTTPOk)
     assert await is_user_guest(app, data["id"])
 
-    async def garbage_collect_guest(uid):
+    async def enforce_garbage_collect_guest(uid):
         # Emulates garbage collector:
         #   - GUEST user expired, cleaning it up
         #   - client still holds cookie with its identifier nonetheless
@@ -367,7 +368,7 @@ async def test_access_cookie_of_expired_user(
         await delete_user(app, uid)
         return uid
 
-    user_id = await garbage_collect_guest(uid=data["id"])
+    user_id = await enforce_garbage_collect_guest(uid=data["id"])
     user_email = data["login"]
 
     # Now this should be non -authorized
@@ -388,7 +389,9 @@ async def test_access_cookie_of_expired_user(
     assert data["login"] != user_email
 
 
+@pytest.mark.parametrize("number_of_simultaneous_requests", [1, 2, 4, 8, 16, 32])
 async def test_guest_user_is_not_garbage_collected(
+    number_of_simultaneous_requests,
     client,
     published_project,
     storage_subsystem_mock,
@@ -396,33 +399,39 @@ async def test_guest_user_is_not_garbage_collected(
     mocks_on_projects_api,
 ):
     ## NOTE: use pytest -s --log-cli-level=DEBUG  to see GC logs
-    #
 
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
 
-    # clicks link to study
-    await collect_garbage(client.app)  # <<--
-    resp = await client.get(study_url)
+    async def _test_guest_user_workflow(request_index):
+        print("request #", request_index, "-"*10)
 
-    expected_prj_id = await assert_redirected_to_study(resp, client.session)
+        # clicks link to study
+        resp = await client.get(study_url)
+        expected_prj_id = await assert_redirected_to_study(resp, client.session)
 
-    # has auto logged in as guest?
-    await collect_garbage(client.app)  # <<--
-    me_url = client.app.router["get_my_profile"].url_for()
-    resp = await client.get(me_url)
+        # has auto logged in as guest?
+        me_url = client.app.router["get_my_profile"].url_for()
+        resp = await client.get(me_url)
 
-    data, _ = await assert_status(resp, web.HTTPOk)
-    assert data["login"].endswith("guest-at-osparc.io")
-    assert data["gravatar_id"]
-    assert data["role"].upper() == UserRole.GUEST.name
+        data, _ = await assert_status(resp, web.HTTPOk)
+        assert data["login"].endswith("guest-at-osparc.io")
+        assert data["gravatar_id"]
+        assert data["role"].upper() == UserRole.GUEST.name
 
-    # guest user only a copy of the template project
-    await collect_garbage(client.app)  # <<--
-    projects = await _get_user_projects(client)
-    assert len(projects) == 1
-    guest_project = projects[0]
+        # guest user only a copy of the template project
+        projects = await _get_user_projects(client)
+        assert len(projects) == 1
+        guest_project = projects[0]
 
-    assert expected_prj_id == guest_project["uuid"]
-    _assert_same_projects(guest_project, published_project)
+        assert expected_prj_id == guest_project["uuid"]
+        _assert_same_projects(guest_project, published_project)
 
-    assert guest_project["prjOwner"] == data["login"]
+        assert guest_project["prjOwner"] == data["login"]
+        print("request #", request_index, "DONE", "-"*10)
+
+    request_tasks = [
+        asyncio.ensure_future(_test_guest_user_workflow(n))
+        for n in range(number_of_simultaneous_requests)
+    ]
+
+    await asyncio.gather(*request_tasks)
