@@ -6,6 +6,7 @@ from celery.canvas import Signature
 from celery.result import AsyncResult
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from models_library.projects import NodeID, ProjectID, RunningState, Workbench
+from pydantic.main import BaseModel
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from starlette import status
 from starlette.requests import Request
@@ -13,6 +14,7 @@ from starlette.requests import Request
 from ...models.domains.comp_tasks import (
     CompTaskAtDB,
     ComputationTask,
+    ComputationTaskIn,
     ComputationTaskOut,
     TaskID,
 )
@@ -86,8 +88,7 @@ def topological_sort_grouping(dag_graph: nx.DiGraph) -> List[Signature]:
 )
 async def create_computation(
     # pylint: disable=too-many-arguments
-    user_id: UserID,
-    project_id: ProjectID,
+    job: ComputationTaskIn,
     background_tasks: BackgroundTasks,
     request: Request,
     project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
@@ -101,15 +102,17 @@ async def create_computation(
     director_client: DirectorV0Client = Depends(get_director_v0_client),
 ):
     log.debug(
-        "User %s is creating a new computation from project %s", user_id, project_id
+        "User %s is creating a new computation from project %s",
+        job.user_id,
+        job.project_id,
     )
     try:
         # get the project
-        project: ProjectAtDB = await project_repo.get_project(project_id)
+        project: ProjectAtDB = await project_repo.get_project(job.project_id)
 
         # check if current state allow to start the computation
         comp_tasks: Dict[NodeID, CompTaskAtDB] = await computation_tasks.get_comp_tasks(
-            project_id
+            job.project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
         if pipeline_state in [
@@ -120,7 +123,7 @@ async def create_computation(
         ]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Projet {project_id} already started, current state is {pipeline_state}",
+                detail=f"Projet {job.project_id} already started, current state is {pipeline_state}",
             )
 
         # create the DAG
@@ -129,27 +132,27 @@ async def create_computation(
         if not nx.is_directed_acyclic_graph(dag_graph):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Project {project_id} is not a valid directed acyclic graph!",
+                detail=f"Project {job.project_id} is not a valid directed acyclic graph!",
             )
         # find the entrypoints
         entrypoints = find_entrypoints(dag_graph)
         if not entrypoints:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Project {project_id} has no services to compute",
+                detail=f"Project {job.project_id} has no services to compute",
             )
         # FIXME: directly pass the tasks to celery instead of the current recursive way
         await computation_pipelines.publish_pipeline(project.uuid, dag_graph)
         # ok so publish the tasks
         await computation_tasks.publish_tasks_from_project(project, director_client)
         # trigger celery
-        task = celery_client.send_computation_task(user_id, project_id)
+        task = celery_client.send_computation_task(job.user_id, job.project_id)
         background_tasks.add_task(background_on_message, task)
         log.debug(
             "Started computational task %s for user %s based on project %s",
             task.id,
-            user_id,
-            project_id,
+            job.user_id,
+            job.project_id,
         )
         return ComputationTaskOut(
             id=task.id, state=task.state, url=f"{request.base_url}{task.id}"

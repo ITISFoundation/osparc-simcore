@@ -9,6 +9,8 @@ from pydantic import BaseModel, Extra, Field, HttpUrl, constr, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
 
+from ..schemas.constants import UserID
+
 TaskID = UUID
 
 
@@ -18,6 +20,11 @@ class ComputationTask(BaseModel):
     result: Optional[str] = Field(
         None, description="the result of the computational task"
     )
+
+
+class ComputationTaskIn(BaseModel):
+    user_id: UserID
+    project_id: ProjectID
 
 
 class ComputationTaskOut(ComputationTask):
