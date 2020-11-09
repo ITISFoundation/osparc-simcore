@@ -5,7 +5,7 @@ from uuid import UUID
 from models_library.constants import VERSION_RE
 from models_library.projects import Inputs, NodeID, Outputs, ProjectID, RunningState
 from models_library.services import KEY_RE, ServiceInputs, ServiceOutputs
-from pydantic import BaseModel, Extra, Field, HttpUrl, constr, validator
+from pydantic import BaseModel, Extra, Field, AnyHttpUrl, constr, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
 
@@ -28,7 +28,7 @@ class ComputationTaskIn(BaseModel):
 
 
 class ComputationTaskOut(ComputationTask):
-    url: HttpUrl = Field(
+    url: AnyHttpUrl = Field(
         ..., description="the link where to get the status of the task"
     )
 

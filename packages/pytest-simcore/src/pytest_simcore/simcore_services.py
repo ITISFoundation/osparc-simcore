@@ -43,7 +43,7 @@ async def simcore_services(
     await asyncio.gather(*wait_tasks, return_exceptions=False)
     for service, endpoint in services_endpoint.items():
         monkeypatch.setenv(f"{service.upper()}_HOST", endpoint.host)
-        monkeypatch.setenv(f"{service.upper()}_PORT", endpoint.port)
+        monkeypatch.setenv(f"{service.upper()}_PORT", str(endpoint.port))
 
     yield
 

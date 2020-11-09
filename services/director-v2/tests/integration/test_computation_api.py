@@ -58,8 +58,34 @@ def sleepers_workbench(sleepers_workbench_file: Path) -> Dict:
     return json.loads(sleepers_workbench_file.read_text())
 
 
+from simcore_postgres_database.models.users import users, UserRole, UserStatus
+
+
 @pytest.fixture
-def project(postgres_db: sa.engine.Engine) -> Callable:
+def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Dict:
+    with postgres_db.connect() as con:
+        result = con.execute(
+            users.insert()
+            .values(
+                id=user_id,
+                name="test user",
+                email="test@user.com",
+                password_hash="testhash",
+                status=UserStatus.ACTIVE,
+                role=UserRole.USER,
+            )
+            .returning(literal_column("*"))
+        )
+
+        user = result.first()
+
+        yield dict(user)
+
+        con.execute(users.delete().where(users.c.id == user["id"]))
+
+
+@pytest.fixture
+def project(postgres_db: sa.engine.Engine, user_db: Dict) -> Callable:
     created_project_ids = []
 
     def creator(**overrides):
@@ -68,6 +94,7 @@ def project(postgres_db: sa.engine.Engine) -> Callable:
             "name": "my test project",
             "type": ProjectType.STANDARD.name,
             "description": "my test description",
+            "prj_owner": user_db["id"],
             "workbench": {},
         }
         project_config.update(**overrides)
@@ -90,11 +117,9 @@ def project(postgres_db: sa.engine.Engine) -> Callable:
             con.execute(projects.delete().where(projects.c.uuid == str(pid)))
 
 
-def test_start_computation(
+def test_invalid_computation(
     client: TestClient,
     user_id: PositiveInt,
-    project: Callable,
-    sleepers_workbench: Dict,
 ):
     entrypoint = "v2/computations"
 
@@ -126,6 +151,13 @@ def test_start_computation(
         response.status_code == expected_resp
     ), f"response code is {response.status_code}, error: {response.text}"
 
+
+def test_empty_computation(
+    client: TestClient,
+    user_id: PositiveInt,
+    project: Callable,
+):
+    entrypoint = "v2/computations"
     # send an empty project to process
     expected_resp = status.HTTP_422_UNPROCESSABLE_ENTITY
     empty_project = project()
@@ -137,6 +169,14 @@ def test_start_computation(
         response.status_code == expected_resp
     ), f"response code is {response.status_code}, error: {response.text}"
 
+
+def test_start_computation(
+    client: TestClient,
+    user_id: PositiveInt,
+    project: Callable,
+    sleepers_workbench: Dict,
+):
+    entrypoint = "v2/computations"
     # send a valid project with a random number of sleepers
     sleepers_project = project(workbench=sleepers_workbench)
     expected_resp = status.HTTP_201_CREATED
