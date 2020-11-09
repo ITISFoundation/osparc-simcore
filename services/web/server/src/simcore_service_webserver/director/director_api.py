@@ -84,7 +84,7 @@ async def stop_service(app: web.Application, service_uuid: str) -> None:
     # this will allow to sava bigger datasets from the services
     url = api_endpoint / "running_interactive_services" / service_uuid
     async with session.delete(
-        url, ssl=False, timeout=ServicesCommonSettings().director_stop_service_timeout
+        url, ssl=False, timeout=ServicesCommonSettings().webserver_director_stop_service_timeout
     ) as resp:
         if resp.status == 404:
             raise director_exceptions.ServiceNotFoundError(service_uuid)
