@@ -34,13 +34,16 @@ def services_endpoint(
 
 @pytest.fixture(scope="function")
 async def simcore_services(
-    services_endpoint: Dict[str, URL], docker_stack: Dict
+    services_endpoint: Dict[str, URL], monkeypatch
 ) -> Dict[str, URL]:
     wait_tasks = [
         wait_till_service_responsive(endpoint)
         for service, endpoint in services_endpoint.items()
     ]
     await asyncio.gather(*wait_tasks, return_exceptions=False)
+    for service, endpoint in services_endpoint.items():
+        monkeypatch.setenv(f"{service.upper()}_HOST", endpoint.host)
+        monkeypatch.setenv(f"{service.upper()}_PORT", endpoint.port)
 
     yield
 
