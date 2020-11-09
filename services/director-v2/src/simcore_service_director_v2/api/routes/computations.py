@@ -3,10 +3,8 @@ from typing import Dict, List
 
 import networkx as nx
 from celery.canvas import Signature
-from celery.result import AsyncResult
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from models_library.projects import NodeID, ProjectID, RunningState, Workbench
-from pydantic.main import BaseModel
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from starlette import status
 from starlette.requests import Request
@@ -16,7 +14,6 @@ from ...models.domains.comp_tasks import (
     ComputationTask,
     ComputationTaskIn,
     ComputationTaskOut,
-    TaskID,
 )
 from ...models.domains.projects import ProjectAtDB
 from ...models.schemas.constants import UserID
@@ -114,7 +111,9 @@ async def create_computation(
         comp_tasks: Dict[NodeID, CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             job.project_id
         )
-        pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
+        pipeline_state = get_pipeline_state_from_task_states(
+            comp_tasks, celery_client.settings.publication_timeout
+        )
         if pipeline_state in [
             RunningState.PUBLISHED,
             RunningState.PENDING,
@@ -155,7 +154,9 @@ async def create_computation(
             job.project_id,
         )
         return ComputationTaskOut(
-            id=task.id, state=task.state, url=f"{request.base_url}{task.id}"
+            id=job.project_id,
+            state=task.state,
+            url=f"{request.url}/{job.project_id}",
         )
 
     except ProjectNotFoundError as e:
@@ -163,31 +164,59 @@ async def create_computation(
 
 
 @router.get(
-    "/{computation_id}",
-    response_model=ComputationTask,
+    "/{project_id}",
+    response_model=ComputationTaskOut,
     status_code=status.HTTP_202_ACCEPTED,
 )
-async def get_computation(computation_id: TaskID):
-    task = AsyncResult(str(computation_id))
-    if task.state == RunningState.SUCCESS:
-        return ComputationTask(id=task.id, state=task.state, result=task.result)
-    if task.state == RunningState.FAILED:
-        return ComputationTask(
-            id=task.id,
-            state=task.state,
-            result=task.backend.get(task.backend.get_key_for_task(task.id)),
+async def get_computation(
+    user_id: UserID,
+    project_id: ProjectID,
+    request: Request,
+    project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
+    computation_tasks: CompTasksRepository = Depends(
+        get_repository(CompTasksRepository)
+    ),
+    celery_client: CeleryClient = Depends(get_celery_client),
+):
+    log.debug("User %s getting computation status for project %s", user_id, project_id)
+    try:
+        # get the project
+        project: ProjectAtDB = await project_repo.get_project(project_id)
+        # get the project task states
+        comp_tasks: Dict[NodeID, CompTaskAtDB] = await computation_tasks.get_comp_tasks(
+            project_id
         )
-    return ComputationTask(id=task.id, state=task.state, result=task.info)
+        pipeline_state = get_pipeline_state_from_task_states(
+            comp_tasks, celery_client.settings.publication_timeout
+        )
 
+        log.debug(
+            "Computational task status by user %s for project %s is %s",
+            user_id,
+            project_id,
+            pipeline_state,
+        )
 
-# @router.post(
-#     "/{computation_id}:stop",
-#     summary="Stops a computation",
-#     status_code=status.HTTP_204_NO_CONTENT,
-# )
-# async def stop_computation(computation_id: TaskID):
-#     abortable_task = AbortableAsyncResult(str(computation_id))
-#     abortable_task.abort()
+        task_out = ComputationTaskOut(
+            id=project.uuid,
+            state=pipeline_state,
+            url=f"{request.url.remove_query_params('user_id')}",
+        )
+        return task_out
+
+    except ProjectNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+
+    # task = AsyncResult(str(computation_id))
+    # if task.state == RunningState.SUCCESS:
+    #     return ComputationTask(id=task.id, state=task.state, result=task.result)
+    # if task.state == RunningState.FAILED:
+    #     return ComputationTask(
+    #         id=task.id,
+    #         state=task.state,
+    #         result=task.backend.get(task.backend.get_key_for_task(task.id)),
+    #     )
+    # return ComputationTask(id=task.id, state=task.state, result=task.info)
 
 
 @router.post(
@@ -213,7 +242,9 @@ async def stop_computation_project(
         comp_tasks: Dict[NodeID, CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             project_id
         )
-        pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
+        pipeline_state = get_pipeline_state_from_task_states(
+            comp_tasks, celery_client.settings.publication_timeout
+        )
         if pipeline_state not in [
             RunningState.PUBLISHED,
             RunningState.PENDING,

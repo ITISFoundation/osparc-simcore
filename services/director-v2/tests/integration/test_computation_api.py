@@ -7,16 +7,18 @@
 import json
 from pathlib import Path
 from random import randint
+from time import sleep, time
 from typing import Callable, Dict
 from uuid import UUID, uuid4
 
 import pytest
 import sqlalchemy as sa
-from models_library.projects import Project, Workbench
+from models_library.projects import Project, RunningState, Workbench
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.projects import ProjectType, projects
+from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_service_director_v2.models.domains.comp_tasks import ComputationTaskOut
 from simcore_service_director_v2.models.domains.projects import ProjectAtDB
 from sqlalchemy import literal_column
@@ -56,9 +58,6 @@ def sleepers_workbench_file(mocks_dir: Path) -> Path:
 @pytest.fixture(scope="session")
 def sleepers_workbench(sleepers_workbench_file: Path) -> Dict:
     return json.loads(sleepers_workbench_file.read_text())
-
-
-from simcore_postgres_database.models.users import users, UserRole, UserStatus
 
 
 @pytest.fixture
@@ -170,7 +169,7 @@ def test_empty_computation(
     ), f"response code is {response.status_code}, error: {response.text}"
 
 
-def test_start_computation(
+def test_run_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -189,6 +188,40 @@ def test_start_computation(
     ), f"response code is {response.status_code}, error: {response.text}"
 
     task_out = ComputationTaskOut.parse_obj(response.json())
+
+    assert task_out.id == sleepers_project.uuid
+    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+
+    # now wait for the computation to finish
+    MAX_TIMEOUT_S = 60
+    start_time = time()
+    expected_resp = status.HTTP_202_ACCEPTED
+
+    while (time() - start_time) < MAX_TIMEOUT_S:
+        response = client.get(task_out.url, params={"user_id": user_id})
+        assert (
+            response.status_code == expected_resp
+        ), f"response code is {response.status_code}, error: {response.text}"
+        task_out = ComputationTaskOut.parse_obj(response.json())
+        assert task_out.id == sleepers_project.uuid
+        assert (
+            task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+        )
+        print("Pipeline is in ", task_out.state)
+        if task_out.state not in [
+            RunningState.PENDING,
+            RunningState.PUBLISHED,
+            RunningState.STARTED,
+            RunningState.RETRY,
+        ]:
+            break
+        print("waiting...")
+        sleep(1)
+
+    import pdb
+
+    pdb.set_trace()
+    assert task_out.state == RunningState.SUCCESS
 
 
 def test_abort_computation():

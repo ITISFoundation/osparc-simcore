@@ -1,5 +1,6 @@
 import logging
 import re
+from datetime import datetime
 from typing import Dict
 
 from models_library.projects import KEY_RE, NodeID, RunningState
@@ -11,21 +12,21 @@ log = logging.getLogger(__file__)
 
 
 def get_pipeline_state_from_task_states(
-    tasks: Dict[NodeID, CompTaskAtDB]
+    tasks: Dict[NodeID, CompTaskAtDB], publication_timeout: int
 ) -> RunningState:
 
     # compute pipeline state from task states
-    # now = datetime.utcnow()
+    now = datetime.utcnow()
     if tasks:
         # put in a set of unique values
         set_states = {task.state for task in tasks.values()}
-        # last_update = next(
-        #     iter(sorted([task.submit for task in tasks.values()], reverse=True))
-        # )
+        last_update = next(
+            iter(sorted([task.submit for task in tasks.values()], reverse=True))
+        )
         # FIXME: this should be done automatically after the timeout!!
-        # if RunningState.PUBLISHED in set_states:
-        #     if (now - last_update).seconds > get_celery_publication_timeout(app):
-        #         return RunningState.NOT_STARTED
+        if RunningState.PUBLISHED in set_states:
+            if (now - last_update).seconds > publication_timeout:
+                return RunningState.NOT_STARTED
         if len(set_states) == 1:
             # this is typically for success, pending, published
             return next(iter(set_states))
