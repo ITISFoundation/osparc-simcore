@@ -176,6 +176,11 @@ qx.Class.define("osparc.file.FilePicker", {
       } else {
         this.__initResources();
       }
+
+      if (this.__isOutputFileSelectedFromLink()) {
+        const outFile = this.__getOutputFile();
+        this.__downloadLink.setValue(outFile.value["downloadLink"]);
+      }
     },
 
     uploadPendingFiles: function(files) {
@@ -238,6 +243,14 @@ qx.Class.define("osparc.file.FilePicker", {
     __isOutputFileSelectedFromStore: function() {
       const outFile = this.__getOutputFile();
       if (outFile && "value" in outFile && "path" in outFile.value) {
+        return true;
+      }
+      return false;
+    },
+
+    __isOutputFileSelectedFromLink: function() {
+      const outFile = this.__getOutputFile();
+      if (outFile && "value" in outFile && "downloadLink" in outFile.value) {
         return true;
       }
       return false;
