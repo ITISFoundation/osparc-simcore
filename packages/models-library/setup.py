@@ -44,4 +44,3 @@ setup(
     extras_require={"test": test_requirements},
     zip_safe=False,
 )
-
