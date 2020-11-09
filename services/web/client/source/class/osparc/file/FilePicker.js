@@ -158,7 +158,8 @@ qx.Class.define("osparc.file.FilePicker", {
       const fileDownloadLink = this.__downloadLink = this._createChildControlImpl("downloadLink");
       fileDownloadLink.addListener("fileLinkAdded", e => {
         const downloadLink = e.getData();
-        this.__setOutputFileFromLink(downloadLink);
+        const label = osparc.file.FileDownloadLink.extractLabelFromLink(downloadLink);
+        this.__setOutputFileFromLink(downloadLink, label);
       }, this);
 
       const selectBtn = this.__selectBtn = this._createChildControlImpl("selectButton");

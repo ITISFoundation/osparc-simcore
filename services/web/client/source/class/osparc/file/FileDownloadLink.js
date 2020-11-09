@@ -56,15 +56,19 @@ qx.Class.define("osparc.file.FileDownloadLink", {
           return outInfo.label;
         }
         if ("downloadLink" in outInfo) {
-          // until question mark
-          const downloadLink = outInfo.downloadLink;
-          const regex = "(^.*)(?=\\?)";
-          const found = downloadLink.match(regex);
-          if (found && found.length > 1) {
-            const parts = found[1].split("/");
-            return parts[parts.length - 1];
-          }
+          return osparc.file.FileDownloadLink.extractLabelFromLink(outInfo.downloadLink);
         }
+      }
+      return null;
+    },
+
+    extractLabelFromLink: function(downloadLink) {
+      // until question mark
+      const regex = "(^.*)(?=\\?)";
+      const found = downloadLink.match(regex);
+      if (found && found.length > 1) {
+        const parts = found[1].split("/");
+        return parts[parts.length - 1];
       }
       return null;
     },
