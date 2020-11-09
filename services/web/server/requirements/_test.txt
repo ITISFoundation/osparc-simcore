@@ -22,7 +22,7 @@ amqp==5.0.1               # via -r requirements/_base.txt, kombu
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via -r requirements/_base.txt, aiohttp, aioredis
 asyncpg==0.21.0           # via -r requirements/_base.txt
-attrs==20.2.0             # via -r requirements/_base.txt, aiohttp, aioredlock, jsonschema, openapi-core, pytest, pytest-docker
+attrs==20.3.0             # via -r requirements/_base.txt, aiohttp, aioredlock, jsonschema, openapi-core, pytest, pytest-docker
 bcrypt==3.2.0             # via paramiko
 billiard==3.6.3.0         # via -r requirements/_base.txt, celery
 cached-property==1.5.1    # via docker-compose

@@ -20,7 +20,7 @@ aiozipkin==0.7.0          # via -r requirements/../../../../packages/service-lib
 amqp==5.0.1               # via kombu
 async-timeout==3.0.1      # via aiohttp, aioredis
 asyncpg==0.21.0           # via -r requirements/_base.in
-attrs==20.2.0             # via -r requirements/../../../../packages/service-library/requirements/_base.in, aiohttp, aioredlock, jsonschema, openapi-core
+attrs==20.3.0             # via -r requirements/../../../../packages/service-library/requirements/_base.in, aiohttp, aioredlock, jsonschema, openapi-core
 billiard==3.6.3.0         # via celery
 celery[redis]==5.0.1      # via -r requirements/_base.in
 cffi==1.14.2              # via cryptography
