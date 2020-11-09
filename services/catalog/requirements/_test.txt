@@ -66,7 +66,7 @@ psycopg2-binary==2.8.6    # via -r requirements/_base.txt, aiopg, sqlalchemy
 ptvsd==4.3.2              # via -r requirements/_test.in
 py==1.9.0                 # via pytest
 pycparser==2.20           # via cffi
-pydantic[dotenv,email]==1.6.1  # via -r requirements/_base.txt, fastapi
+pydantic[dotenv,email]==1.7.2  # via -r requirements/_base.txt, fastapi
 pylint==2.6.0             # via -r requirements/_test.in
 pynacl==1.4.0             # via paramiko
 pyparsing==2.4.7          # via packaging
