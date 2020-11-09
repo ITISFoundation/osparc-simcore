@@ -109,7 +109,6 @@ qx.Class.define("osparc.file.FilePicker", {
           break;
         case "downloadLink": {
           const groupBox = new qx.ui.groupbox.GroupBox(this.tr("Or provide a Download Link")).set({
-            // appearance: "settings-groupbox",
             layout: new qx.ui.layout.VBox(5)
           });
           control = new osparc.file.FileDownloadLink();
@@ -133,7 +132,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
       const filesTree = this.__filesTree = this._createChildControlImpl("filesTree");
       filesTree.addListener("selectionChanged", this.__selectionChanged, this);
-      filesTree.addListener("itemSelected", this.__itemSelected, this);
+      filesTree.addListener("itemSelected", this.__itemSelectedFromStore, this);
       filesTree.addListener("filesAddedToTree", this.__checkSelectedFileIsListed, this);
 
       const toolbar = new qx.ui.toolbar.ToolBar();
@@ -158,7 +157,7 @@ qx.Class.define("osparc.file.FilePicker", {
       const selectBtn = this.__selectBtn = this._createChildControlImpl("selectButton");
       selectBtn.setEnabled(false);
       selectBtn.addListener("execute", function() {
-        this.__itemSelected();
+        this.__itemSelectedFromStore();
       }, this);
     },
 
@@ -189,7 +188,7 @@ qx.Class.define("osparc.file.FilePicker", {
       this.__selectBtn.setEnabled(data ? data["isFile"] : false);
     },
 
-    __itemSelected: function() {
+    __itemSelectedFromStore: function() {
       const data = this.__filesTree.getSelectedFile();
       if (data && data["isFile"]) {
         const selectedItem = data["selectedItem"];
