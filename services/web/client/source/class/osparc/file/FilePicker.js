@@ -107,10 +107,16 @@ qx.Class.define("osparc.file.FilePicker", {
           control = new qx.ui.toolbar.Button(this.tr("Select"));
           this.__mainButtons.add(control);
           break;
-        case "downloadLink":
+        case "downloadLink": {
+          const groupBox = new qx.ui.groupbox.GroupBox(this.tr("Or provide a Download Link")).set({
+            // appearance: "settings-groupbox",
+            layout: new qx.ui.layout.VBox(5)
+          });
           control = new osparc.file.FileDownloadLink();
-          this._add(control);
+          groupBox.add(control);
+          this._add(groupBox);
           break;
+        }
       }
 
       return control || this.base(arguments, id);
