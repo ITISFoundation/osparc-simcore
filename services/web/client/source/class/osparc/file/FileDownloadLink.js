@@ -35,7 +35,7 @@ qx.Class.define("osparc.file.FileDownloadLink", {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.HBox(5));
-    const downloadLinkField = this._createChildControlImpl("downloadLink");
+    const downloadLinkField = this.__downloadLinkField = this._createChildControlImpl("downloadLink");
 
     const selectButton = this._createChildControlImpl("selectButton");
     selectButton.addListener("execute", () => {
@@ -90,6 +90,8 @@ qx.Class.define("osparc.file.FileDownloadLink", {
   },
 
   members: {
+    __downloadLinkField: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -118,6 +120,14 @@ qx.Class.define("osparc.file.FileDownloadLink", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    getValue: function() {
+      return this.__downloadLinkField.getValue();
+    },
+
+    setValue: function(value) {
+      this.__downloadLinkField.setValue(value);
     }
   }
 });
