@@ -56,7 +56,7 @@ prometheus-client==0.8.0  # via -r requirements/../../../../packages/service-lib
 prompt-toolkit==3.0.8     # via click-repl
 psycopg2-binary==2.8.5    # via -r requirements/../../../../packages/service-library/requirements/_base.in, aiopg, sqlalchemy
 pycparser==2.20           # via cffi
-pydantic[email]==1.6.1    # via -r requirements/../../../../packages/models-library/requirements/_base.in, -r requirements/_base.in
+pydantic[email]==1.7.2    # via -r requirements/../../../../packages/models-library/requirements/_base.in, -r requirements/../../../../packages/service-library/requirements/_base.in, -r requirements/_base.in
 pyrsistent==0.16.0        # via jsonschema
 python-engineio==3.13.2   # via python-socketio
 python-socketio==4.6.0    # via -r requirements/_base.in
