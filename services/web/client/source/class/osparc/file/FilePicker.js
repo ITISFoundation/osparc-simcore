@@ -137,7 +137,7 @@ qx.Class.define("osparc.file.FilePicker", {
       filesAdd.addListener("fileAdded", e => {
         const fileMetadata = e.getData();
         if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
-          this.__setOutputFile(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
+          this.__setOutputFileFromStore(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
         }
         this.__filesTree.resetCache();
         this.__initResources();
@@ -181,7 +181,7 @@ qx.Class.define("osparc.file.FilePicker", {
       const data = this.__filesTree.getSelectedFile();
       if (data && data["isFile"]) {
         const selectedItem = data["selectedItem"];
-        this.__setOutputFile(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
+        this.__setOutputFileFromStore(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
         this.getNode().repopulateOutputPortData();
         this.fireEvent("finished");
       }
@@ -192,7 +192,7 @@ qx.Class.define("osparc.file.FilePicker", {
       return outputs["outFile"];
     },
 
-    __setOutputFile: function(store, dataset, path, label) {
+    __setOutputFileFromStore: function(store, dataset, path, label) {
       if (store !== undefined && path) {
         const outputs = this.__getOutputFile();
         outputs["value"] = {
