@@ -91,23 +91,22 @@ async def list_solvers(
     return sorted(latest_solvers.values(), key=attrgetter("solver_key"))
 
 
-@router.get("/{solver_key:path}", response_model=Solver)
-async def get_solver(solver_key: SolverKey):
-    """ Returs a description of the solver and all its releases """
-    raise NotImplementedError()
-
-
 @router.get("/{solver_key:path}/{version}", response_model=Solver)
 async def get_solver_released_by_version(
     solver_key: SolverKey, version: str = LATEST_VERSION
 ):
-    # FIXME: router ccannto distinguish this from get_solver!!
-
+    # NOTE: add before get_solver
     # url = app.url_path_for("get_solver_released")
     # response = RedirectResponse(url=url)
     # return response
     solver_id = compose_solver_id(solver_key, version)
     return await get_solver_released(solver_id)
+
+
+@router.get("/{solver_key:path}", response_model=Solver)
+async def get_solver(solver_key: SolverKey):
+    """ Returs a description of the solver and all its releases """
+    raise NotImplementedError()
 
 
 @router.get("/{solver_id}", response_model=Solver)
