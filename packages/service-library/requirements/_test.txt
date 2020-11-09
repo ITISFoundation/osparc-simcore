@@ -5,9 +5,9 @@
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
 aiodebug==1.1.2           # via -r requirements/_base.txt
-aiohttp==3.6.3            # via -r requirements/_base.txt, aiozipkin, pytest-aiohttp
+aiohttp==3.7.2            # via -r requirements/_base.txt, aiozipkin, pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt
-aiozipkin==0.7.1          # via -r requirements/_base.txt
+aiozipkin==1.0.0          # via -r requirements/_base.txt
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via -r requirements/_base.txt, aiohttp
 attrs==20.3.0             # via -r requirements/_base.txt, aiohttp, jsonschema, openapi-core, pytest, pytest-docker
@@ -65,6 +65,7 @@ termcolor==1.1.0          # via pytest-sugar
 texttable==1.6.3          # via docker-compose
 toml==0.10.1              # via pylint, pytest
 trafaret==2.1.0           # via -r requirements/_base.txt
+typing-extensions==3.7.4.3  # via -r requirements/_base.txt, aiohttp
 ujson==4.0.1              # via -r requirements/_base.txt
 urllib3==1.25.11          # via requests
 websocket-client==0.57.0  # via docker, docker-compose
