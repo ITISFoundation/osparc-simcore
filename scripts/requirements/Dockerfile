@@ -10,6 +10,7 @@ RUN apt-get update \
   && apt-get -y install --no-install-recommends\
   make \
   git \
+  gawk \
   && rm -rf /var/lib/apt/lists/* \
   && apt-get clean
 
