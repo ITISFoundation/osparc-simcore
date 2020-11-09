@@ -42,11 +42,14 @@ qx.Class.define("osparc.file.FileDownloadLink", {
 
     checkButton.addListener("execute", () => {
       const downloadLink = downloadLinkField.getValue();
-      if (this.self().checkFileExists(downloadLink)) {
-        checkLink.setSource("@FontAwesome5Solid/check-circle/14");
-      } else {
-        checkLink.setSource("@FontAwesome5Solid/times-circle/14");
-      }
+      this.self().checkFileExists(downloadLink)
+        .then(exists => {
+          if (exists) {
+            checkLink.setSource("@FontAwesome5Solid/check-circle/14");
+          } else {
+            checkLink.setSource("@FontAwesome5Solid/times-circle/14");
+          }
+        });
     }, this);
 
     selectButton.addListener("execute", () => {
@@ -61,10 +64,18 @@ qx.Class.define("osparc.file.FileDownloadLink", {
 
   statics: {
     checkFileExists: function(urlToFile) {
-      const xhr = new XMLHttpRequest();
-      xhr.open("HEAD", urlToFile, false);
-      xhr.send();
-      return xhr.status != "404";
+      return new Promise(resolve => {
+        const http = new XMLHttpRequest();
+        http.open("HEAD", urlToFile, true);
+        http.onreadystatechange = function() {
+          if (this.readyState === this.DONE) {
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        };
+        http.send();
+      });
     }
   },
 
