@@ -107,6 +107,10 @@ qx.Class.define("osparc.file.FilePicker", {
           control = new qx.ui.toolbar.Button(this.tr("Select"));
           this.__mainButtons.add(control);
           break;
+        case "downloadLink":
+          control = new osparc.file.FileDownloadLink();
+          this._add(control);
+          break;
       }
 
       return control || this.base(arguments, id);
@@ -142,6 +146,8 @@ qx.Class.define("osparc.file.FilePicker", {
         this.__filesTree.resetCache();
         this.__initResources();
       }, this);
+
+      this.__downloadLink = this._createChildControlImpl("downloadLink");
 
       const selectBtn = this.__selectBtn = this._createChildControlImpl("selectButton");
       selectBtn.setEnabled(false);
@@ -199,6 +205,17 @@ qx.Class.define("osparc.file.FilePicker", {
           store,
           dataset,
           path,
+          label
+        };
+        this.getNode().getStatus().setProgress(100);
+      }
+    },
+
+    __setOutputFileFromLink: function(downloadLink, label) {
+      if (downloadLink) {
+        const outputs = this.__getOutputFile();
+        outputs["value"] = {
+          downloadLink,
           label
         };
         this.getNode().getStatus().setProgress(100);
