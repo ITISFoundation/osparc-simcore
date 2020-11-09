@@ -67,7 +67,7 @@ def qx_client_outdir(tmpdir):
 
     return Path(basedir)
 
-
+@pytest.fixture
 def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_service):
     """App's configuration used for every test in this module
 
