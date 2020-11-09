@@ -50,7 +50,6 @@ class CeleryClient:
     def instance(cls, app: FastAPI):
         return app.state.celery_client
 
-    # @handle_errors("Celery", logger)
     @handle_retry(logger)
     def send_task(self, task_name: str, *args, **kwargs) -> Task:
         return self.client.send_task(task_name, *args, **kwargs)
