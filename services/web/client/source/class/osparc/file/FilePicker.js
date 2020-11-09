@@ -65,8 +65,10 @@ qx.Class.define("osparc.file.FilePicker", {
         if ("label" in outInfo) {
           return outInfo.label;
         }
-        const splitFilename = outInfo.path.split("/");
-        return splitFilename[splitFilename.length-1];
+        if ("path" in outInfo) {
+          const splitFilename = outInfo.path.split("/");
+          return splitFilename[splitFilename.length-1];
+        }
       }
       return null;
     }
