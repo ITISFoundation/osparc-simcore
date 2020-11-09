@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Optional
 
 from models_library.settings.celery import CeleryConfig
-from models_library.postgres import PostgresSettings
+from models_library.settings.postgres import PostgresSettings
 from pydantic import (
     BaseSettings,
     Field,
@@ -15,6 +15,7 @@ from pydantic import (
     root_validator,
     validator,
 )
+
 from ..meta import api_vtag
 
 MINS = 60
@@ -72,6 +73,13 @@ class CelerySettings(CeleryConfig):
 class DirectorV0Settings(ApiServiceSettings):
     class Config(CommonConfig):
         env_prefix = "DIRECTOR_"
+
+
+class PGSettings(PostgresSettings):
+    enabled: bool = Field(True, description="Enables/Disables connection with service")
+
+    class Config(CommonConfig):
+        env_prefix = "POSTGRES_"
 
 
 class RegistrySettings(BaseSettings):
@@ -152,7 +160,7 @@ class AppSettings(BaseSettings):
     registry: RegistrySettings
 
     # POSTGRES
-    postgres: PostgresSettings
+    postgres: PGSettings
 
     # STORAGE
     storage_endpoint: str = Field("storage:8080", env="STORAGE_ENDPOINT")

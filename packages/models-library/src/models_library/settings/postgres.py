@@ -1,6 +1,14 @@
 from typing import Optional
 
-from pydantic import BaseSettings, Field, PostgresDsn, SecretStr, conint, validator
+from pydantic import (
+    BaseSettings,
+    Extra,
+    Field,
+    PostgresDsn,
+    SecretStr,
+    conint,
+    validator,
+)
 
 from ..basic_types import PortInt
 
@@ -46,4 +54,6 @@ class PostgresSettings(BaseSettings):
 
     class Config:
         case_sensitive = False
+        env_file = ".env"  # SEE https://pydantic-docs.helpmanual.io/usage/settings/#dotenv-env-support
         env_prefix = "POSTGRES_"
+        extra = Extra.forbid
