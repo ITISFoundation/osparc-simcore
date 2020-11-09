@@ -36,8 +36,8 @@ qx.Class.define("osparc.file.FileDownloadLink", {
 
     this._setLayout(new qx.ui.layout.HBox(5));
     const downloadLinkField = this._createChildControlImpl("downloadLink");
-    const selectButton = this._createChildControlImpl("selectButton");
 
+    const selectButton = this._createChildControlImpl("selectButton");
     selectButton.addListener("execute", () => {
       const downloadLink = downloadLinkField.getValue();
       this.fireDataEvent("fileLinkAdded", downloadLink);
@@ -49,6 +49,26 @@ qx.Class.define("osparc.file.FileDownloadLink", {
   },
 
   statics: {
+    getOutputLabel: function(outputValue) {
+      if ("outFile" in outputValue) {
+        const outInfo = outputValue["outFile"];
+        if ("label" in outInfo) {
+          return outInfo.label;
+        }
+        if ("downloadLink" in outInfo) {
+          // until question mark
+          const downloadLink = outInfo.downloadLink;
+          const regex = "(^.*)(?=\\?)";
+          const found = downloadLink.match(regex);
+          if (found && found.length > 1) {
+            const parts = found[1].split("/");
+            return parts[parts.length - 1];
+          }
+        }
+      }
+      return null;
+    },
+
     checkFileExists: function(urlToFile) {
       return new Promise(resolve => {
         const xhr = new XMLHttpRequest();

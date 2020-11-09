@@ -69,6 +69,9 @@ qx.Class.define("osparc.file.FilePicker", {
           const splitFilename = outInfo.path.split("/");
           return splitFilename[splitFilename.length-1];
         }
+        if ("downloadLink" in outInfo) {
+          return osparc.file.FileDownloadLink.getOutputLabel(outputValue);
+        }
       }
       return null;
     }
