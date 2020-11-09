@@ -336,6 +336,14 @@ properties:
                       - title: Owner
                         type: object
                         properties:
+                          user_id:
+                            title: User Id
+                            type: integer
+                            description: >-
+                              Owner's identifier when registered in the user's
+                              database table
+                            example:
+                              - 2
                           first_name:
                             title: First Name
                             description: Owner first name
@@ -349,6 +357,7 @@ properties:
                               - Smith
                             type: string
                         required:
+                          - user_id
                           - first_name
                           - last_name
                 required:
