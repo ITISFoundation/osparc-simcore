@@ -11,10 +11,10 @@ asgi-lifespan==1.0.1      # via -r requirements/_test.in
 astroid==2.4.2            # via pylint
 async-exit-stack==1.0.1   # via -r requirements/_base.txt, asgi-lifespan, fastapi
 async-generator==1.10     # via -r requirements/_base.txt, fastapi
-attrs==20.2.0             # via -r requirements/_base.txt, jsonschema, pytest, pytest-docker
+attrs==20.3.0             # via -r requirements/_base.txt, jsonschema, pytest, pytest-docker
 bcrypt==3.2.0             # via paramiko, passlib
 cached-property==1.5.2    # via docker-compose
-certifi==2020.6.20        # via -r requirements/_base.txt, httpx, requests
+certifi==2020.11.8        # via -r requirements/_base.txt, httpx, requests
 cffi==1.14.3              # via -r requirements/_base.txt, bcrypt, cryptography, pynacl
 change-case==0.5.2        # via -r requirements/_test.in
 chardet==3.0.4            # via -r requirements/_base.txt, requests
@@ -36,7 +36,7 @@ graphene==2.1.8           # via -r requirements/_base.txt, fastapi
 graphql-core==2.3.2       # via -r requirements/_base.txt, graphene, graphql-relay
 graphql-relay==2.0.1      # via -r requirements/_base.txt, graphene
 h11==0.9.0                # via -r requirements/_base.txt, httpcore, uvicorn
-httpcore==0.12.0          # via -r requirements/_base.txt, httpx
+httpcore==0.12.1          # via -r requirements/_base.txt, httpx
 httptools==0.1.1          # via -r requirements/_base.txt, uvicorn
 httpx==0.16.1             # via -r requirements/_base.txt, respx
 idna==2.10                # via -r requirements/_base.txt, email-validator, requests, rfc3986, yarl
@@ -50,38 +50,39 @@ lazy-object-proxy==1.4.3  # via astroid
 mako==1.1.3               # via alembic
 markupsafe==1.1.1         # via -c requirements/_base.txt, jinja2, mako
 mccabe==0.6.1             # via pylint
-multidict==4.7.6          # via -r requirements/_base.txt, yarl
-orjson==3.4.0             # via -r requirements/_base.txt, fastapi
-packaging==20.4           # via pytest
+multidict==5.0.0          # via -r requirements/_base.txt, yarl
+orjson==3.4.3             # via -r requirements/_base.txt, fastapi
+packaging==20.4           # via -r requirements/_base.txt, pytest
 paramiko==2.7.2           # via docker
 passlib[bcrypt]==1.7.4    # via -r requirements/_test.in
 pluggy==0.13.1            # via pytest
 psycopg2-binary==2.8.6    # via -c requirements/_base.txt, sqlalchemy
 ptvsd==4.3.2              # via -r requirements/_test.in
 py==1.9.0                 # via pytest
-pycparser==2.20           # via -c requirements/_base.txt, cffi
+pycparser==2.20           # via -r requirements/_base.txt, cffi
+pydantic[dotenv,email]==1.7.2  # via -r requirements/_base.txt, fastapi
 pylint==2.6.0             # via -r requirements/_test.in
 pynacl==1.4.0             # via paramiko
-pyparsing==2.4.7          # via packaging
+pyparsing==2.4.7          # via -r requirements/_base.txt, packaging
 pyrsistent==0.17.3        # via jsonschema
 pytest-asyncio==0.14.0    # via -r requirements/_test.in
 pytest-cov==2.10.1        # via -r requirements/_test.in
 pytest-docker==0.10.1     # via -r requirements/_test.in
 pytest-mock==3.3.1        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
-pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-mock
+pytest==6.1.2             # via -r requirements/_test.in, pytest-asyncio, pytest-cov, pytest-docker, pytest-mock
 python-dateutil==2.8.1    # via alembic, faker
-python-dotenv==0.14.0     # via -c requirements/_base.txt, docker-compose
+python-dotenv==0.15.0     # via -r requirements/_base.txt, docker-compose, pydantic
 python-editor==1.0.4      # via alembic
 python-multipart==0.0.5   # via -r requirements/_base.txt, fastapi
 pyyaml==5.3.1             # via -r requirements/_base.txt, docker-compose, fastapi
 requests==2.24.0          # via -r requirements/_base.txt, codecov, coveralls, docker, docker-compose, fastapi
-respx==0.13.0             # via -r requirements/_test.in
+respx==0.15.0             # via -r requirements/_test.in
 rfc3986[idna2008]==1.4.0  # via -r requirements/_base.txt, httpx
 rx==1.6.1                 # via -r requirements/_base.txt, graphql-core
 six==1.15.0               # via -r requirements/_base.txt, astroid, bcrypt, cryptography, docker, dockerpty, graphene, graphql-core, graphql-relay, jsonschema, packaging, promise, pynacl, python-dateutil, python-multipart, tenacity, websocket-client
 sniffio==1.2.0            # via -r requirements/_base.txt, asgi-lifespan, httpcore, httpx
-sqlalchemy[postgresql_psycopg2binary]==1.3.19  # via -r requirements/_base.txt, aiopg, alembic
+sqlalchemy[postgresql_psycopg2binary]==1.3.20  # via -r requirements/_base.txt, aiopg, alembic
 starlette==0.13.6         # via -r requirements/_base.txt, fastapi
 tenacity==6.2.0           # via -r requirements/_base.txt
 text-unidecode==1.3       # via faker
@@ -95,7 +96,7 @@ uvicorn==0.11.8           # via -r requirements/_base.txt, fastapi
 uvloop==0.14.0            # via -r requirements/_base.txt, uvicorn
 websocket-client==0.57.0  # via docker, docker-compose
 wrapt==1.12.1             # via astroid
-yarl==1.5.1               # via -c requirements/_base.txt, aiohttp
+yarl==1.6.2               # via -r requirements/_base.txt
 zipp==3.4.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
