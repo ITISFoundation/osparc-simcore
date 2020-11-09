@@ -156,7 +156,7 @@ class Node(BaseModel):
         None, description="map with key - access level pairs"
     )
     inputNodes: Optional[List[NodeID]] = Field(
-        None,
+        default_factory=list,
         description="node IDs of where the node is connected to",
         example=["nodeUuid1", "nodeUuid2"],
     )
