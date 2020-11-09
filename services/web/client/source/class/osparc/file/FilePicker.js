@@ -22,7 +22,6 @@
  * - FilesTree will be populated with data provided by storage service (simcore.S3 and datcore)
  * - Add button will open a dialogue where the selected file will be upload to S3
  * - Select button puts the file in the output of the FilePicker node so that connected nodes can access it.
- * When the selection is made "finished" event will be fired
  *
  * *Example*
  *
@@ -52,10 +51,6 @@ qx.Class.define("osparc.file.FilePicker", {
     node: {
       check: "osparc.data.model.Node"
     }
-  },
-
-  events: {
-    "finished": "qx.event.type.Event"
   },
 
   statics: {
@@ -207,7 +202,6 @@ qx.Class.define("osparc.file.FilePicker", {
         const selectedItem = data["selectedItem"];
         this.__setOutputFileFromStore(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
         this.getNode().repopulateOutputPortData();
-        this.fireEvent("finished");
       }
     },
 
@@ -237,6 +231,7 @@ qx.Class.define("osparc.file.FilePicker", {
           label
         };
         this.getNode().getStatus().setProgress(100);
+        this.getNode().repopulateOutputPortData();
       }
     },
 
