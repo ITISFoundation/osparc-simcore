@@ -51,16 +51,16 @@ qx.Class.define("osparc.file.FileDownloadLink", {
   statics: {
     checkFileExists: function(urlToFile) {
       return new Promise(resolve => {
-        const http = new XMLHttpRequest();
-        http.open("HEAD", urlToFile, true);
-        http.onreadystatechange = function() {
-          if (this.readyState === this.DONE) {
+        const xhr = new XMLHttpRequest();
+        xhr.open("HEAD", urlToFile, true);
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) { // 4=this.DONE
             resolve(true);
           } else {
             resolve(false);
           }
         };
-        http.send();
+        xhr.send();
       });
     }
   },
