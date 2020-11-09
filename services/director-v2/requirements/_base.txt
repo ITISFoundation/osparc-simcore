@@ -32,7 +32,7 @@ markupsafe==1.1.1         # via jinja2
 multidict==4.7.6          # via aiohttp, yarl
 orjson==3.4.0             # via fastapi
 promise==2.3              # via graphql-core, graphql-relay
-pydantic[dotenv]==1.6.1   # via -r requirements/_base.in, fastapi
+pydantic[dotenv]==1.7.2   # via -r requirements/_base.in, fastapi
 python-dotenv==0.14.0     # via pydantic
 python-multipart==0.0.5   # via fastapi
 pyyaml==5.3.1             # via fastapi
