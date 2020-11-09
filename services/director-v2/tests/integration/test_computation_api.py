@@ -8,6 +8,7 @@ from typing import Dict
 import pytest
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
+from starlette.testclient import TestClient
 from yarl import URL
 
 core_services = ["director", "redis", "rabbit", "sidecar", "postgres"]
@@ -23,13 +24,13 @@ def minimal_configuration(
     simcore_services: Dict[str, URL],
     monkeypatch,
 ):
+    pass
+
+
+def test_start_computation(client: TestClient):
     import pdb
 
     pdb.set_trace()
-
-
-def test_start_computation():
-    pass
 
 
 def test_abort_computation():

@@ -58,7 +58,7 @@ def project_env_devel_environment(project_env_devel_dict, monkeypatch):
 
 
 @pytest.fixture(scope="function")
-def client(loop, project_env_devel_environment) -> TestClient:
+def client(loop) -> TestClient:
     settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
     app = init_app(settings)
 
