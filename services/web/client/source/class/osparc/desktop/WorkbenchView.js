@@ -77,7 +77,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     nodeSelected: function(nodeId) {
       if (!nodeId) {
-        this.__loggerView.setCurrentNodeId();
+        this.__loggerView.setCurrentNodeId("");
         return;
       }
       if (this.__nodesTree) {
