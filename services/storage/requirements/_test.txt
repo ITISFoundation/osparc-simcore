@@ -7,7 +7,7 @@
 aiobotocore==1.0.7        # via -r requirements/_base.txt
 aiodebug==1.1.2           # via -r requirements/_base.txt
 aiofiles==0.6.0           # via -r requirements/_base.txt
-aiohttp-swagger==1.0.15   # via -r requirements/_base.txt
+aiohttp-swagger[performance]==1.0.15  # via -r requirements/_base.txt
 aiohttp==3.7.2            # via -r requirements/_base.txt, aiobotocore, aiohttp-swagger, aiozipkin, pytest-aiohttp
 aioitertools==0.7.0       # via -r requirements/_base.txt, aiobotocore
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt
@@ -54,11 +54,11 @@ markupsafe==1.1.1         # via -r requirements/_base.txt, aiohttp-swagger, jinj
 mccabe==0.6.1             # via pylint
 minio==6.0.0              # via -r requirements/_base.txt
 multidict==5.0.0          # via -r requirements/_base.txt, aiohttp, yarl
-numpy==1.19.3             # via pandas
+numpy==1.19.4             # via pandas
 openapi-core==0.12.0      # via -r requirements/_base.txt
 openapi-spec-validator==0.2.9  # via -r requirements/_base.txt, openapi-core
 packaging==20.4           # via pytest, pytest-sugar
-pandas==1.1.3             # via -r requirements/_test.in
+pandas==1.1.4             # via -r requirements/_test.in
 paramiko==2.7.2           # via docker
 pluggy==0.13.1            # via pytest
 prometheus-client==0.8.0  # via -r requirements/_base.txt
@@ -95,7 +95,7 @@ strict-rfc3339==0.7       # via -r requirements/_base.txt, openapi-core
 tenacity==6.2.0           # via -r requirements/_base.txt
 termcolor==1.1.0          # via pytest-sugar
 texttable==1.6.3          # via docker-compose
-toml==0.10.1              # via pylint, pytest
+toml==0.10.2              # via pylint, pytest
 trafaret==2.1.0           # via -r requirements/_base.txt
 typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.3  # via -r requirements/_base.txt, aiohttp, aioitertools, yarl
