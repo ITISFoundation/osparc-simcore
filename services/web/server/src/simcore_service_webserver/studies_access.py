@@ -70,6 +70,9 @@ async def create_temporary_user(request: web.Request):
     from .login.utils import get_client_ip, get_random_string
     from .security_api import encrypt_password
 
+    MAX_DELAY_TO_CREATE_GUEST_USER = 3  # sesc
+    MAX_DELAY_TO_GUEST_FIRST_CONNECTION = 15  # secs
+
     db = get_storage(request.app)
 
     # TODO: avatar is an icon of the hero!
@@ -80,7 +83,9 @@ async def create_temporary_user(request: web.Request):
     lock_manager: Aioredlock = request.app[APP_CLIENT_REDIS_LOCK_KEY]
 
     try:
-        async with await lock_manager.lock(GC_EXECUTION_LOCK, lock_timeout=3):
+        async with await lock_manager.lock(
+            GC_EXECUTION_LOCK, lock_timeout=MAX_DELAY_TO_CREATE_GUEST_USER
+        ):
             user = await db.create_user(
                 {
                     "name": username,
@@ -94,7 +99,7 @@ async def create_temporary_user(request: web.Request):
             # time-out lock to prevent GC from deleting this user until it acquires its first resources
             await lock_manager.lock(
                 GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
-                lock_timeout=30,
+                lock_timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
             )
     except LockError as err:
         #
