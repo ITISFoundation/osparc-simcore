@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
+import logging
 from typing import Dict, List
 
 import aiohttp
@@ -10,11 +11,10 @@ import pytest
 import tenacity
 from yarl import URL
 
-from servicelib.minio_utils import MinioRetryPolicyUponInitialization
-
 from .helpers.utils_docker import get_service_published_port
 
 SERVICES_TO_SKIP = ["sidecar", "postgres", "redis", "rabbit"]
+log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="module")
@@ -46,7 +46,12 @@ async def simcore_services(
 
 
 # HELPERS --
-@tenacity.retry(**MinioRetryPolicyUponInitialization().kwargs)
+@tenacity.retry(
+    wait=tenacity.wait_fixed(5),
+    stop=tenacity.stop_after_attempt(60),
+    before_sleep=tenacity.before_sleep_log(log, logging.INFO),
+    reraise=True,
+)
 async def wait_till_service_responsive(endpoint: URL):
     async with aiohttp.ClientSession() as session:
         async with session.get(endpoint.with_path("/v0/")) as resp:
