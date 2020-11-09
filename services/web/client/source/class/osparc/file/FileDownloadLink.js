@@ -36,21 +36,7 @@ qx.Class.define("osparc.file.FileDownloadLink", {
 
     this._setLayout(new qx.ui.layout.HBox(5));
     const downloadLinkField = this._createChildControlImpl("downloadLink");
-    const checkButton = this._createChildControlImpl("checkButton");
-    const checkLink = this._createChildControlImpl("checkLink");
     const selectButton = this._createChildControlImpl("selectButton");
-
-    checkButton.addListener("execute", () => {
-      const downloadLink = downloadLinkField.getValue();
-      this.self().checkFileExists(downloadLink)
-        .then(exists => {
-          if (exists) {
-            checkLink.setSource("@FontAwesome5Solid/check-circle/14");
-          } else {
-            checkLink.setSource("@FontAwesome5Solid/times-circle/14");
-          }
-        });
-    }, this);
 
     selectButton.addListener("execute", () => {
       const downloadLink = downloadLinkField.getValue();
