@@ -74,13 +74,12 @@ async def create_temporary_user(request: web.Request):
     MAX_DELAY_TO_GUEST_FIRST_CONNECTION = 15  # secs
 
     db = get_storage(request.app)
+    lock_manager: Aioredlock = request.app[APP_CLIENT_REDIS_LOCK_KEY]
 
     # TODO: avatar is an icon of the hero!
     username = get_random_string(min_len=5)
     email = username + "@guest-at-osparc.io"
     password = get_random_string(min_len=12)
-
-    lock_manager: Aioredlock = request.app[APP_CLIENT_REDIS_LOCK_KEY]
 
     try:
         async with await lock_manager.lock(
@@ -210,8 +209,14 @@ async def access_study(request: web.Request) -> web.Response:
 
     if not user:
         log.debug("Creating temporary user ...")
-        user = await create_temporary_user(request)
-        is_anonymous_user = True
+        wait_if_creating_user: asyncio.Semaphore = request.app[f"{__name__}.semaphone"]
+
+        await wait_if_creating_user.acquire()
+        try:
+            user = await create_temporary_user(request)
+            is_anonymous_user = True
+        finally:
+            wait_if_creating_user.release()
 
     try:
         log.debug(
@@ -256,6 +261,9 @@ async def access_study(request: web.Request) -> web.Response:
     raise response
 
 
+import asyncio
+
+
 @app_module_setup(__name__, ModuleCategory.ADDON, logger=log)
 def setup(app: web.Application):
 
@@ -275,6 +283,8 @@ def setup(app: web.Application):
             web.get(r"/study/{id}", study_handler, name="study"),
         ]
     )
+
+    app[f"{__name__}.semaphone"] = asyncio.Semaphore(value=1)
 
     return True
 
