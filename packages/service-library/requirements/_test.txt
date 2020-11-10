@@ -7,10 +7,10 @@
 aiodebug==1.1.2           # via -r requirements/_base.txt
 aiohttp==3.7.2            # via -r requirements/_base.txt, aiozipkin, pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt
-aiozipkin==1.0.0          # via -r requirements/_base.txt
+aiozipkin==0.7.1          # via -r requirements/_base.txt
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via -r requirements/_base.txt, aiohttp
-attrs==20.2.0             # via -r requirements/_base.txt, aiohttp, jsonschema, openapi-core, pytest, pytest-docker
+attrs==20.3.0             # via -r requirements/_base.txt, aiohttp, jsonschema, openapi-core, pytest, pytest-docker
 bcrypt==3.2.0             # via paramiko
 cached-property==1.5.2    # via docker-compose
 certifi==2020.6.20        # via requests
@@ -25,7 +25,9 @@ docker-compose==1.27.4    # via pytest-docker
 docker[ssh]==4.3.1        # via docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
-idna==2.10                # via -r requirements/_base.txt, requests, yarl
+idna-ssl==1.1.0           # via -r requirements/_base.txt, aiohttp
+idna==2.10                # via -r requirements/_base.txt, idna-ssl, requests, yarl
+importlib-metadata==2.0.0  # via -r requirements/_base.txt, jsonschema, pluggy, pytest
 iniconfig==1.1.1          # via pytest
 isodate==0.6.0            # via -r requirements/_base.txt, openapi-core
 isort==5.6.4              # via pylint
@@ -42,7 +44,7 @@ prometheus-client==0.8.0  # via -r requirements/_base.txt
 psycopg2-binary==2.8.6    # via -r requirements/_base.txt, aiopg, sqlalchemy
 py==1.9.0                 # via pytest
 pycparser==2.20           # via cffi
-pydantic==1.6.1           # via -r requirements/_base.txt
+pydantic==1.7.2           # via -r requirements/_base.txt
 pylint==2.6.0             # via -r requirements/_test.in
 pynacl==1.4.0             # via paramiko
 pyparsing==2.4.7          # via packaging
@@ -66,13 +68,15 @@ termcolor==1.1.0          # via pytest-sugar
 texttable==1.6.3          # via docker-compose
 toml==0.10.1              # via pylint, pytest
 trafaret==2.1.0           # via -r requirements/_base.txt
-typing-extensions==3.7.4.3  # via -r requirements/_base.txt, aiohttp
+typed-ast==1.4.1          # via astroid
+typing-extensions==3.7.4.3  # via -r requirements/_base.txt, aiohttp, yarl
 ujson==4.0.1              # via -r requirements/_base.txt
 urllib3==1.25.11          # via requests
 websocket-client==0.57.0  # via docker, docker-compose
 werkzeug==1.0.1           # via -r requirements/_base.txt
 wrapt==1.12.1             # via astroid
 yarl==1.5.1               # via -r requirements/_base.txt, aiohttp
+zipp==3.4.0               # via -r requirements/_base.txt, importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

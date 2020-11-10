@@ -6,6 +6,6 @@
 #
 dataclasses==0.7          # via pydantic
 dnspython==2.0.0          # via email-validator
-email-validator==1.1.1    # via pydantic
+email-validator==1.1.2    # via pydantic
 idna==2.10                # via email-validator
-pydantic[email]==1.6.1    # via -r requirements/_base.in
+pydantic[email]==1.7.2    # via -r requirements/_base.in
