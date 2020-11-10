@@ -4,7 +4,16 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
+from pydantic import (
+    BaseModel,
+    EmailStr,
+    Extra,
+    Field,
+    HttpUrl,
+    PositiveInt,
+    constr,
+    validator,
+)
 
 from .services import KEY_RE, PROPERTY_KEY_RE, VERSION_RE
 
