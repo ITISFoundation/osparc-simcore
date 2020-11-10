@@ -200,6 +200,22 @@
                           "type": "string"
                         }
                       }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "downloadLink"
+                      ],
+                      "properties": {
+                        "downloadLink": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "label": {
+                          "type": "string"
+                        }
+                      }
                     }
                   ]
                 }
@@ -268,6 +284,22 @@
                         },
                         "path": {
                           "type": "string"
+                        },
+                        "label": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "downloadLink"
+                      ],
+                      "properties": {
+                        "downloadLink": {
+                          "type": "string",
+                          "format": "uri"
                         },
                         "label": {
                           "type": "string"
