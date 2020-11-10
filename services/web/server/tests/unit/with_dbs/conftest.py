@@ -326,7 +326,7 @@ def postgres_db(postgres_dsn: Dict, postgres_service: str) -> sa.engine.Engine:
 
 
 @pytest.fixture(scope="session")
-def redis_service(docker_services, docker_ip):
+def redis_service(docker_services, docker_ip) -> URL:
 
     host = docker_ip
     port = docker_services.port_for("redis", 6379)
