@@ -209,7 +209,8 @@
                       ],
                       "properties": {
                         "downloadLink": {
-                          "type": "string"
+                          "type": "string",
+                          "format": "uri"
                         },
                         "label": {
                           "type": "string"
@@ -297,7 +298,8 @@
                       ],
                       "properties": {
                         "downloadLink": {
-                          "type": "string"
+                          "type": "string",
+                          "format": "uri"
                         },
                         "label": {
                           "type": "string"

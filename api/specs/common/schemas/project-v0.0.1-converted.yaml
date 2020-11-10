@@ -155,6 +155,7 @@ properties:
                     properties:
                       downloadLink:
                         type: string
+                        format: uri
                       label:
                         type: string
           inputAccess:
@@ -213,6 +214,7 @@ properties:
                     properties:
                       downloadLink:
                         type: string
+                        format: uri
                       label:
                         type: string
           outputNode:

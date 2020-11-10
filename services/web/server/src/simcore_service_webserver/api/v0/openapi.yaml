@@ -5924,6 +5924,7 @@ paths:
                                               properties:
                                                 downloadLink:
                                                   type: string
+                                                  format: uri
                                                 label:
                                                   type: string
                                     inputAccess:
@@ -5982,6 +5983,7 @@ paths:
                                               properties:
                                                 downloadLink:
                                                   type: string
+                                                  format: uri
                                                 label:
                                                   type: string
                                     outputNode:
@@ -6456,6 +6458,7 @@ paths:
                                   properties:
                                     downloadLink:
                                       type: string
+                                      format: uri
                                     label:
                                       type: string
                         inputAccess:
@@ -6514,6 +6517,7 @@ paths:
                                   properties:
                                     downloadLink:
                                       type: string
+                                      format: uri
                                     label:
                                       type: string
                         outputNode:
@@ -6868,6 +6872,7 @@ paths:
                                             properties:
                                               downloadLink:
                                                 type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   inputAccess:
@@ -6926,6 +6931,7 @@ paths:
                                             properties:
                                               downloadLink:
                                                 type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -7398,6 +7404,7 @@ paths:
                                             properties:
                                               downloadLink:
                                                 type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   inputAccess:
@@ -7456,6 +7463,7 @@ paths:
                                             properties:
                                               downloadLink:
                                                 type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -7934,6 +7942,7 @@ paths:
                                             properties:
                                               downloadLink:
                                                 type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   inputAccess:
@@ -7992,6 +8001,7 @@ paths:
                                             properties:
                                               downloadLink:
                                                 type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -8461,6 +8471,7 @@ paths:
                                   properties:
                                     downloadLink:
                                       type: string
+                                      format: uri
                                     label:
                                       type: string
                         inputAccess:
@@ -8519,6 +8530,7 @@ paths:
                                   properties:
                                     downloadLink:
                                       type: string
+                                      format: uri
                                     label:
                                       type: string
                         outputNode:
@@ -8873,6 +8885,7 @@ paths:
                                             properties:
                                               downloadLink:
                                                 type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   inputAccess:
@@ -8931,6 +8944,7 @@ paths:
                                             properties:
                                               downloadLink:
                                                 type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -9425,6 +9439,7 @@ paths:
                                             properties:
                                               downloadLink:
                                                 type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   inputAccess:
@@ -9483,6 +9498,7 @@ paths:
                                             properties:
                                               downloadLink:
                                                 type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -10789,6 +10805,7 @@ paths:
                                             properties:
                                               downloadLink:
                                                 type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   inputAccess:
@@ -10847,6 +10864,7 @@ paths:
                                             properties:
                                               downloadLink:
                                                 type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -11318,6 +11336,7 @@ paths:
                                             properties:
                                               downloadLink:
                                                 type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   inputAccess:
@@ -11376,6 +11395,7 @@ paths:
                                             properties:
                                               downloadLink:
                                                 type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
