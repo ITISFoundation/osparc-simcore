@@ -39,15 +39,15 @@ def setup_computation(app: web.Application):
         return
 
     specs = app[APP_OPENAPI_SPECS_KEY]
-    routes = map_handlers_with_operations(
-        {
-            # "start_pipeline": computation_handlers.start_pipeline,
-            "stop_pipeline": computation_handlers.stop_pipeline,
-        },
-        filter(lambda o: "stop_pipeline" in o[2], iter_path_operations(specs)),
-        strict=True,
-    )
-    app.router.add_routes(routes)
+    # routes = map_handlers_with_operations(
+    #     {
+    #         # "start_pipeline": computation_handlers.start_pipeline,
+    #         # "stop_pipeline": computation_handlers.stop_pipeline,
+    #     },
+    #     filter(lambda o: "stop_pipeline" in o[2], iter_path_operations(specs)),
+    #     strict=True,
+    # )
+    # app.router.add_routes(routes)
     setup_comp_tasks_listener(app)
 
 
