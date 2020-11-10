@@ -24,7 +24,7 @@ jobs:
     - stage: build / unit-testing
       # in pull request we do not have credentials to push, so this is useless
       if: NOT type = pull_request AND tag IS blank
-      name: build simcore images
+      name: "[build] docker images"
       sudo: required
       env:
         - OWNER=${TRAVIS_REPO_SLUG%/*}
@@ -49,7 +49,7 @@ jobs:
 
     # frontend testing ----------------------------------------------------------------------
     - stage: build / unit-testing
-      name: front end testing
+      name: "[unit] frontend"
       language: node_js
       node_js:
         - "10"
@@ -88,7 +88,7 @@ jobs:
 
     # test python, webserver ----------------------------------------------------------------------
     - stage: build / unit-testing
-      name: webserver-isolated
+      name: "[unit] webserver isolated"
       language: python
       python:
         - "3.6"
@@ -108,7 +108,7 @@ jobs:
         - unbuffer bash ci/travis/unit-testing/webserver.bash after_failure
 
     - stage: build / unit-testing
-      name: webserver-with-db-slow
+      name: "[unit] webserver slow"
       language: python
       python:
         - "3.6"
@@ -128,7 +128,7 @@ jobs:
         - unbuffer bash ci/travis/unit-testing/webserver.bash after_failure
 
     - stage: build / unit-testing
-      name: webserver-with-db-medium
+      name: "[unit] webserver medium"
       language: python
       python:
         - "3.6"
@@ -148,7 +148,7 @@ jobs:
         - unbuffer bash ci/travis/unit-testing/webserver.bash after_failure
 
     - stage: build / unit-testing
-      name: webserver-with-db-fast
+      name: "[unit] webserver fast"
       language: python
       python:
         - "3.6"
@@ -169,7 +169,7 @@ jobs:
 
     # test python, api-server ----------------------------------------------------------------------
     - stage: build / unit-testing
-      name: api-server
+      name: "[unit] api-server"
       language: python
       python:
         - "3.6"
@@ -192,7 +192,7 @@ jobs:
 
     # test python, catalog ----------------------------------------------------------------------
     - stage: build / unit-testing
-      name: catalog
+      name: "[unit] catalog"
       language: python
       python:
         - "3.6"
@@ -215,7 +215,7 @@ jobs:
 
     # test python, director ----------------------------------------------------------------------
     - stage: build / unit-testing
-      name: director
+      name: "[unit] director"
       language: python
       python:
         - "3.6"
@@ -236,7 +236,7 @@ jobs:
 
     # test python, director ----------------------------------------------------------------------
     - stage: build / unit-testing
-      name: sidecar
+      name: "[unit] sidecar"
       language: python
       python:
         - "3.6"
@@ -257,7 +257,7 @@ jobs:
 
     # test python, service-library ----------------------------------------------------------------------
     - stage: build / unit-testing
-      name: service-library
+      name: "[unit] service-library"
       language: python
       python:
         - "3.6"
@@ -278,7 +278,7 @@ jobs:
 
     # test python, service-library ----------------------------------------------------------------------
     - stage: build / unit-testing
-      name: models-library
+      name: "[unit] models-library"
       language: python
       python:
         - "3.6"
@@ -299,7 +299,7 @@ jobs:
 
     # test python, simcore-sdk-library ----------------------------------------------------------------------
     - stage: build / unit-testing
-      name: simcore-sdk
+      name: "[unit] simcore-sdk"
       language: python
       python:
         - "3.6"
@@ -320,7 +320,7 @@ jobs:
 
     # test python, storage ----------------------------------------------------------------------
     - stage: build / unit-testing
-      name: storage
+      name: "[unit] storage"
       language: python
       python:
         - "3.6"
@@ -343,7 +343,7 @@ jobs:
 
     # test python, api ----------------------------------------------------------------------
     - stage: build / unit-testing
-      name: api
+      name: "[unit] api"
       language: python
       python:
         - "3.6"
@@ -364,7 +364,7 @@ jobs:
 
     # test python, linting ----------------------------------------------------------------------
     - stage: build / unit-testing
-      name: python linting
+      name: "[unit] python-linting"
       language: python
       python:
         - "3.6"
@@ -384,7 +384,7 @@ jobs:
 
     # integrate webserver in swarm -------------------------------------------------------------
     - stage: integration-testing / system-testing
-      name: webserver in swarm
+      name: "[int] webserver in swarm"
       language: python
       python:
         - "3.6"
@@ -405,7 +405,7 @@ jobs:
 
     # integrate director-v2 in swarm -------------------------------------------------------------
     - stage: integration-testing / system-testing
-      name: director-v2
+      name: "[int] director-v2"
       language: python
       python:
         - "3.6"
@@ -426,7 +426,7 @@ jobs:
 
     # integrate sidecar in swarm -------------------------------------------------------------
     - stage: integration-testing / system-testing
-      name: sidecar in swarm
+      name: "[int] sidecar"
       language: python
       python:
         - "3.6"
@@ -447,7 +447,7 @@ jobs:
 
     # integrate simcore-sdk in swarm -------------------------------------------------------------
     - stage: integration-testing / system-testing
-      name: simcore-sdk in swarm
+      name: "[int] simcore-sdk"
       language: python
       python:
         - "3.6"
@@ -468,7 +468,7 @@ jobs:
 
     # system testing swarm deploy ----------------------------------------------------------------
     - stage: integration-testing / system-testing
-      name: swarm deploy
+      name: "[sys] swarm deploy"
       sudo: required
       language: python
       python:
