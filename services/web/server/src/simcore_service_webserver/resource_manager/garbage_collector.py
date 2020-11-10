@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from contextlib import suppress
 from itertools import chain
 from typing import Dict, List, Tuple
 
@@ -170,6 +171,7 @@ async def remove_disconnected_user_resources(
     # clean up all resources of expired keys
     for dead_key in dead_keys:
 
+        # Skip locked keys for the moment
         user_id = int(dead_key["user_id"])
         if await lock_manager.is_locked(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=user_id)
@@ -180,17 +182,15 @@ async def remove_disconnected_user_resources(
             )
             continue
 
-
+        # (0) If key has no resources => remove from registry and continue
         dead_key_resources = await registry.get_resources(dead_key)
         if not dead_key_resources:
-            # no resources associated with this user, just cleaning up the key
             await registry.remove_key(dead_key)
             continue
 
-
-        # CAREFULLY releasing every resource acquired by the expired key
+        # (1,2) CAREFULLY releasing every resource acquired by the expired key
         logger.debug(
-            "Key '%s' expired: cleaning the following resources: '%s'",
+            "Key '%s' expired. Cleaning the following resources: '%s'",
             dead_key,
             dead_key_resources,
         )
@@ -207,7 +207,8 @@ async def remove_disconnected_user_resources(
             ]
 
             # Every resource might be shared with other keys.
-            # In that case, the resource is released by THE LAST KEY alive (last standing man pattern?! :-) )
+            # In that case, the resource is released by THE LAST DYING KEY
+            # (we could call this the "last-standing-man" pattern! :-) )
             #
             other_keys_with_this_resource = [
                 k
@@ -253,10 +254,17 @@ async def remove_disconnected_user_resources(
                 resource_name,
                 keys_to_update,
             )
-            on_released_tasks = [
-                registry.remove_resource(key, resource_name) for key in keys_to_update
-            ]
-            await logged_gather(*on_released_tasks, reraise=False)
+            with suppress(asyncio.CancelledError):
+                on_released_tasks = [
+                    registry.remove_resource(key, resource_name)
+                    for key in keys_to_update
+                ]
+                await logged_gather(*on_released_tasks, reraise=False)
+
+            # NOTE:
+            #   - if releasing a resource (1) fails, annotations in registry allows GC to try in next round
+            #   - if any task in (2) fails, GC will clean them up in next round as well
+            #   - if all resource fields are removed from a key, next GC iteration will remove the key (see (0))
 
 
 async def remove_users_manually_marked_as_guests(
