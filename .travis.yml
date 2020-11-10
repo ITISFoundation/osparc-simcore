@@ -403,6 +403,27 @@ jobs:
       after_failure:
         - unbuffer bash ci/travis/integration-testing/webserver.bash after_failure
 
+    # integrate director-v2 in swarm -------------------------------------------------------------
+    - stage: integration-testing / system-testing
+      name: director-v2
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ci/travis/integration-testing/director-v2.bash before_install
+      install:
+        - unbuffer bash ci/travis/integration-testing/director-v2.bash install
+      before_script:
+        - unbuffer bash ci/travis/integration-testing/director-v2.bash before_script
+      script:
+        - unbuffer bash ci/travis/integration-testing/director-v2.bash script
+      after_success:
+        - unbuffer bash ci/travis/integration-testing/director-v2.bash after_success
+      after_failure:
+        - unbuffer bash ci/travis/integration-testing/director-v2.bash after_failure
+
     # integrate sidecar in swarm -------------------------------------------------------------
     - stage: integration-testing / system-testing
       name: sidecar in swarm

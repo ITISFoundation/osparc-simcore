@@ -931,6 +931,71 @@ jobs:
           name: integration_webserver_coverage
           path: codeclimate.integration_webserver_coverage.json
 
+  integration-test-director-v2:
+    name: "[int] director-v2"
+    needs: [build-test-images]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - name: set PR default variables
+        # only pushes have access to the docker credentials, use a default
+        if: github.event_name == 'pull_request'
+        run: |
+          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
+          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-director-v2-${{ hashFiles('services/director-v2/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-director-v2-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install
+        run: ./ci/github/integration-testing/director-v2.bash install
+      - name: test
+        run: ./ci/github/integration-testing/director-v2.bash test
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: integration_tests_director-v2_docker_logs
+          path: ./services/director-v2/test_failures
+      - name: cleanup
+        if: always()
+        run: ./ci/github/integration-testing/director-v2.bash clean_up
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: integrationtests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_director-v2_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: integration_director-v2_coverage
+          path: codeclimate.integration_director-v2_coverage.json
+
   integration-test-sidecar:
     name: "[int] sidecar"
     needs: [build-test-images]
@@ -1252,6 +1317,7 @@ jobs:
         unit-test-webserver-medium,
         unit-test-webserver-fast,
         integration-test-webserver,
+        integration-test-director-v2,
         integration-test-sidecar,
         integration-test-simcore-sdk,
       ]
@@ -1303,6 +1369,9 @@ jobs:
           name: integration_webserver_coverage
       - uses: actions/download-artifact@v1
         with:
+          name: integration_director-v2_coverage
+      - uses: actions/download-artifact@v1
+        with:
           name: integration_sidecar_coverage
       - uses: actions/download-artifact@v1
         with:
@@ -1325,6 +1394,7 @@ jobs:
             unit_webserver_medium_coverage/*.json \
             unit_webserver_fast_coverage/*.json \
             integration_webserver_coverage/*.json \
+            integration_director-v2_coverage/*.json \
             integration_sidecar_coverage/*.json \
             integration_simcoresdk_coverage/*.json \
             all_coverages/
@@ -1359,6 +1429,7 @@ jobs:
         unit-test-webserver-medium,
         unit-test-webserver-fast,
         integration-test-webserver,
+        integration-test-director-v2,
         integration-test-sidecar,
         integration-test-simcore-sdk,
         system-test-swarm-deploy,
