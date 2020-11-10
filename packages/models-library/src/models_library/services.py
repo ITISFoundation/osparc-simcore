@@ -5,7 +5,6 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
 from pydantic.types import PositiveInt
-from sqlalchemy.util.deprecations import deprecated
 
 from .constants import VERSION_RE
 
