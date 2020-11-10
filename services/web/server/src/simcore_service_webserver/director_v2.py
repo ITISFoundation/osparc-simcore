@@ -1,3 +1,4 @@
+import json
 import logging
 from asyncio import CancelledError
 from typing import Dict, Optional, Tuple, Union
@@ -32,9 +33,9 @@ async def _request_director_v2(
 ) -> Tuple[Dict, int]:
     session = get_client_session(app)
     try:
-        async with session.request(method, url, headers=headers, data=data) as resp:
+        async with session.request(method, url, headers=headers, json=data) as resp:
             if resp.status >= 400:
-                raise web.HTTPServerError(reason=resp.text)
+                raise web.HTTPServerError(reason=await resp.text())
             try:
                 payload: Dict = await resp.json()
                 return (payload, resp.status)
@@ -60,7 +61,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
     body = {"user_id": user_id, "project_id": project_id}
 
     # request to director-v2
-    computation_task_out, resp_status = _request_director_v2(
+    computation_task_out, resp_status = await _request_director_v2(
         request.app, "POST", backend_url, data=body
     )
     data = {"pipeline_id": computation_task_out["id"]}
@@ -72,7 +73,22 @@ async def start_pipeline(request: web.Request) -> web.Response:
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def stop_pipeline(request: web.Request) -> web.Response:
-    pass
+    director2_settings: Directorv2Settings = get_settings(request.app)
+
+    user_id = request[RQT_USERID_KEY]
+    project_id = request.match_info.get("project_id", None)
+
+    backend_url = URL(f"{director2_settings.endpoint}/computations/{project_id}:stop")
+    log.debug("Redirecting '%s' -> '%s'", request.url, backend_url)
+    body = {"user_id": user_id}
+
+    # request to director-v2
+    _, resp_status = await _request_director_v2(
+        request.app, "POST", backend_url, data=body
+    )
+    data = {}
+
+    return web.json_response(data=wrap_as_envelope(data=data), status=resp_status)
 
 
 @app_module_setup(
