@@ -112,7 +112,7 @@ async def create_computation(
             job.project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(
-            comp_tasks, celery_client.settings.publication_timeout
+            list(comp_tasks.values()), celery_client.settings.publication_timeout
         )
         if pipeline_state in [
             RunningState.PUBLISHED,
@@ -187,7 +187,7 @@ async def get_computation(
             project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(
-            comp_tasks, celery_client.settings.publication_timeout
+            list(comp_tasks.values()), celery_client.settings.publication_timeout
         )
 
         log.debug(
@@ -243,7 +243,7 @@ async def stop_computation_project(
             project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(
-            comp_tasks, celery_client.settings.publication_timeout
+            list(comp_tasks.values()), celery_client.settings.publication_timeout
         )
         if pipeline_state not in [
             RunningState.PUBLISHED,

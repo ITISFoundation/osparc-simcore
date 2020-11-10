@@ -1,9 +1,9 @@
 import logging
 import re
 from datetime import datetime
-from typing import Dict
+from typing import List, Set
 
-from models_library.projects import KEY_RE, NodeID, RunningState
+from models_library.projects import KEY_RE, RunningState
 
 from ..models.domains.comp_tasks import CompTaskAtDB
 from ..modules.db.tables import NodeClass
@@ -12,30 +12,34 @@ log = logging.getLogger(__file__)
 
 
 def get_pipeline_state_from_task_states(
-    tasks: Dict[NodeID, CompTaskAtDB], publication_timeout: int
+    tasks: List[CompTaskAtDB], publication_timeout: int
 ) -> RunningState:
 
     # compute pipeline state from task states
     now = datetime.utcnow()
     if tasks:
         # put in a set of unique values
-        set_states = {task.state for task in tasks.values()}
-        last_update = next(
-            iter(sorted([task.submit for task in tasks.values()], reverse=True))
-        )
-        # FIXME: this should be done automatically after the timeout!!
-        if RunningState.PUBLISHED in set_states:
-            if (now - last_update).seconds > publication_timeout:
-                return RunningState.NOT_STARTED
+        set_states: Set[RunningState] = {task.state for task in tasks}
+        last_update = max([t.submit for t in tasks])
         if len(set_states) == 1:
             # this is typically for success, pending, published
-            return next(iter(set_states))
+            the_state = next(iter(set_states))
+            if the_state == RunningState.PUBLISHED:
+                # FIXME: this should be done automatically after the timeout!!
+                if (now - last_update).seconds > publication_timeout:
+                    return RunningState.NOT_STARTED
+            return the_state
 
+        if all(s in [RunningState.SUCCESS, RunningState.PENDING] for s in set_states):
+            # this is a started pipeline
+            return RunningState.STARTED
+
+        # we have more than one state, let's check by order of priority
         for state in [
             RunningState.FAILED,  # task is failed -> pipeline as well
-            RunningState.PUBLISHED,  # still in publishing phase
+            RunningState.ABORTED,  # task aborted
             RunningState.STARTED,  # task is started or retrying
-            RunningState.PENDING,  # still running
+            RunningState.PENDING,
         ]:
             if state in set_states:
                 return state
