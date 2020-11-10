@@ -108,31 +108,3 @@ def test_send_computation_task(
     celery_client: CeleryClient = minimal_app.state.celery_client
     task = celery_client.send_computation_task(user_id, project_id)
     assert task.get(timeout=10) == f"task created for {user_id} and {project_id}:None"
-
-
-@pytest.mark.skip("unable to make that work in a unit test")
-def test_aborting_task(
-    minimal_app: FastAPI,
-    celery_app,
-    celery_worker,
-    celery_configuration,
-    user_id,
-    project_id,
-):
-    # now create a sleeping task that we can abort
-    @celery_app.task(name=celery_configuration.task_name, base=AbortableTask, bind=True)
-    def a_sleeping_task(
-        self, *, user_id: int, project_id: str, node_id: Optional[str] = None
-    ) -> str:
-        now = time()
-        while time() - now < 10:
-            print("hello!")
-            if self.is_aborted():
-                return f"task created for {user_id} and {project_id}:{node_id}"
-            sleep(1)
-        assert False
-
-    celery_worker.reload()
-
-    celery_client: CeleryClient = minimal_app.state.celery_client
-    task = celery_client.send_computation_task(user_id, project_id)
