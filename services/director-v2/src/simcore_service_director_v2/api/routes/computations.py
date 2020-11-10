@@ -11,7 +11,6 @@ from starlette.requests import Request
 
 from ...models.domains.comp_tasks import (
     CompTaskAtDB,
-    ComputationTask,
     ComputationTaskCreate,
     ComputationTaskOut,
     ComputationTaskStop,
