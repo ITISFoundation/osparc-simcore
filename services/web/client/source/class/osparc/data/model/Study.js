@@ -224,6 +224,10 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
+    initStudy: function() {
+      this.getWorkbench().initWorkbench();
+    },
+
     buildWorkbench: function() {
       this.getWorkbench().buildWorkbench();
     },
@@ -302,6 +306,7 @@ qx.Class.define("osparc.data.model.Study", {
             creationDate: new Date(data.creationDate),
             lastChangeDate: new Date(data.lastChangeDate),
             workbench: this.getWorkbench(),
+            ui: this.getUi(),
             sweeper: this.getSweeper()
           });
           return data;

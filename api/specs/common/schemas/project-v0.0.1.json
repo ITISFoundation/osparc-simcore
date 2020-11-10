@@ -466,6 +466,14 @@
                           "title": "Owner",
                           "type": "object",
                           "properties": {
+                            "user_id": {
+                              "title": "User Id",
+                              "type": "integer",
+                              "description": "Owner's identifier when registered in the user's database table",
+                              "example": [
+                                2
+                              ]
+                            },
                             "first_name": {
                               "title": "First Name",
                               "description": "Owner first name",
@@ -484,6 +492,7 @@
                             }
                           },
                           "required": [
+                            "user_id",
                             "first_name",
                             "last_name"
                           ]
