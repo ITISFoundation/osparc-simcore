@@ -4,12 +4,10 @@
 # pylint:disable=protected-access
 
 from random import randint
-from time import sleep, time
 from typing import Optional
 from uuid import uuid4
 
 import pytest
-from celery.contrib.abortable import AbortableTask
 from fastapi import FastAPI
 from models_library.settings.celery import CeleryConfig
 from pydantic.types import PositiveInt
