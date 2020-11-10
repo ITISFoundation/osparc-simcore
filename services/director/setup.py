@@ -23,6 +23,7 @@ def read_reqs(reqs_path: Path):
 install_requirements = read_reqs(here / "requirements" / "_base.txt") + [
     "aiohttp-apiset",
     "simcore-service-library",
+    "simcore-models-library"
 ]
 
 test_requirements = read_reqs(here / "requirements" / "_test.txt")

@@ -11,6 +11,7 @@ from yarl import URL
 import aiofiles
 from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
 from simcore_service_storage_sdk.rest import ApiException
+from models_library.settings.services_common import ServicesCommonSettings
 
 from . import config, exceptions
 
@@ -78,7 +79,15 @@ async def _get_location_id_from_location_name(store:str, api:UsersApi):
 async def _get_link(store_id:int, file_id:str, apifct) -> URL:
     log.debug("Getting link from store id %s for %s", store_id, file_id)
     try:
-        resp = await apifct(location_id=store_id, user_id=config.USER_ID, file_id=file_id)
+        # When uploading and downloading files from the storage service
+        # it is important to use a longer timeout, previously was 5 minutes
+        # changing to 1 hour. this will allow for larger payloads to be stored/download
+        resp = await apifct(
+            location_id=store_id, 
+            user_id=config.USER_ID, 
+            file_id=file_id, 
+            _request_timeout=ServicesCommonSettings().storage_service_upload_download_timeout
+        )
 
         if resp.error:
             raise exceptions.S3TransferError("Error getting link: {}".format(resp.error.to_str()))
