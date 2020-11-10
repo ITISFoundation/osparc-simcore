@@ -9,11 +9,11 @@ from pathlib import Path
 from random import randint
 from time import sleep, time
 from typing import Callable, Dict
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
-from models_library.projects import Project, RunningState, Workbench
+from models_library.projects import RunningState, Workbench
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from pydantic.types import PositiveInt
@@ -26,7 +26,7 @@ from starlette import status
 from starlette.testclient import TestClient
 from yarl import URL
 
-core_services = ["director", "redis", "rabbit", "sidecar", "postgres"]
+core_services = ["director", "redis", "rabbit", "sidecar", "storage", "postgres"]
 ops_services = ["minio"]
 
 
@@ -218,9 +218,6 @@ def test_run_computation(
         print("waiting...")
         sleep(1)
 
-    import pdb
-
-    pdb.set_trace()
     assert task_out.state == RunningState.SUCCESS
 
 
