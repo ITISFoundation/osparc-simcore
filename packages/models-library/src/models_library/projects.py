@@ -160,7 +160,9 @@ class Node(BaseModel):
         example=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )
 
-    inputs: Inputs = Field(..., description="values of input properties")
+    inputs: Optional[Inputs] = Field(
+        default_factory=dict, description="values of input properties"
+    )
     inputAccess: Optional[Dict[InputID, AccessEnum]] = Field(
         None, description="map with key - access level pairs"
     )
