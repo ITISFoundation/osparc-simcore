@@ -17,6 +17,7 @@ from typing import Dict
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
+from aiohttp.test_utils import TestClient
 
 from models_library.projects import (
     Owner,
@@ -67,6 +68,7 @@ def qx_client_outdir(tmpdir):
         index_file.write_text(HTML.format(frontend_app.upper()))
 
     return Path(basedir)
+
 
 @pytest.fixture
 def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_service):
@@ -164,12 +166,9 @@ async def unpublished_project(client, fake_project):
         yield template_project
 
 
-async def _get_user_projects(client, cookies=None):
+async def _get_user_projects(client):
     url = client.app.router["list_projects"].url_for()
-    if cookies:
-        resp = await client.get(url.with_query(type="user"), cookies=cookies)
-    else:
-        resp = await client.get(url.with_query(type="user"))
+    resp = await client.get(url.with_query(type="user"))
 
     payload = await resp.json()
     assert resp.status == 200, payload
@@ -245,7 +244,8 @@ def mocks_on_projects_api(mocker) -> Dict:
     """
     state = ProjectState(
         locked=ProjectLocked(
-            value=False, owner=Owner(user_id=2, first_name="Speedy", last_name="Gonzalez")
+            value=False,
+            owner=Owner(user_id=2, first_name="Speedy", last_name="Gonzalez"),
         ),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     ).dict(by_alias=True, exclude_unset=True)
@@ -396,7 +396,8 @@ async def test_access_cookie_of_expired_user(
 @pytest.mark.parametrize("number_of_simultaneous_requests", [1, 2, 4, 8, 16, 32])
 async def test_guest_user_is_not_garbage_collected(
     number_of_simultaneous_requests,
-    client,
+    web_server,
+    aiohttp_client,
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
@@ -404,10 +405,12 @@ async def test_guest_user_is_not_garbage_collected(
 ):
     ## NOTE: use pytest -s --log-cli-level=DEBUG  to see GC logs
 
-    study_url = client.app.router["study"].url_for(id=published_project["uuid"])
-
     async def _test_guest_user_workflow(request_index):
-        print("request #", request_index, "-"*10)
+        print("request #", request_index, "-" * 10)
+
+        # every guest uses different client to preserve it's own authorization/authentication cookies
+        client: TestClient = await aiohttp_client(web_server)
+        study_url = client.app.router["study"].url_for(id=published_project["uuid"])
 
         # clicks link to study
         resp = await client.get(study_url)
@@ -416,7 +419,6 @@ async def test_guest_user_is_not_garbage_collected(
         # has auto logged in as guest?
         me_url = client.app.router["get_my_profile"].url_for()
         resp = await client.get(me_url)
-        cookies = resp.cookies
 
         data, _ = await assert_status(resp, web.HTTPOk)
         assert data["login"].endswith("guest-at-osparc.io")
@@ -424,7 +426,7 @@ async def test_guest_user_is_not_garbage_collected(
         assert data["role"].upper() == UserRole.GUEST.name
 
         # guest user only a copy of the template project
-        projects = await _get_user_projects(client, cookies)
+        projects = await _get_user_projects(client)
         assert len(projects) == 1
         guest_project = projects[0]
 
@@ -432,8 +434,9 @@ async def test_guest_user_is_not_garbage_collected(
         _assert_same_projects(guest_project, published_project)
 
         assert guest_project["prjOwner"] == data["login"]
-        print("request #", request_index, "DONE", "-"*10)
+        print("request #", request_index, "DONE", "-" * 10)
 
+    # N concurrent requests
     request_tasks = [
         asyncio.ensure_future(_test_guest_user_workflow(n))
         for n in range(number_of_simultaneous_requests)

@@ -209,7 +209,7 @@ async def access_study(request: web.Request) -> web.Response:
 
     if not user:
         log.debug("Creating temporary user ...")
-        wait_if_creating_user: asyncio.Semaphore = request.app[f"{__name__}.semaphone"]
+        wait_if_creating_user: asyncio.Semaphore = request.app[f"{__name__}.semaphore"]
 
         await wait_if_creating_user.acquire()
         try:
@@ -284,7 +284,7 @@ def setup(app: web.Application):
         ]
     )
 
-    app[f"{__name__}.semaphone"] = asyncio.Semaphore(value=1)
+    app[f"{__name__}.semaphore"] = asyncio.Semaphore(value=1)
 
     return True
 
