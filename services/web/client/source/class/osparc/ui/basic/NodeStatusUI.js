@@ -127,14 +127,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       this.__node.getStatus().bind("progress", this.__label, "value", {
         converter: progress => {
           if (progress === 100) {
-            const outInfo = node.getOutputValues().outFile;
-            if (outInfo) {
-              if ("label" in outInfo) {
-                return outInfo.label;
-              }
-              const splitFilename = outInfo.path.split("/");
-              return splitFilename[splitFilename.length-1];
-            }
+            return osparc.file.FilePicker.getOutputLabel(node.getOutputValues());
           }
           return this.tr("Select a file");
         }
