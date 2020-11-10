@@ -16,11 +16,16 @@ from functools import lru_cache
 from typing import Dict
 
 from aiohttp import web
+from aioredlock import Aioredlock
 
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .login.decorators import login_required
+from .resource_manager.config import (
+    APP_CLIENT_REDIS_LOCK_KEY,
+    GUEST_USER_RC_LOCK_FORMAT,
+)
 from .security_api import is_anonymous, remember
 from .statics import INDEX_RESOURCE_NAME
 from .utils import compose_error_msg
@@ -60,57 +65,65 @@ async def create_temporary_user(request: web.Request):
     TODO: user should have an expiration date and limited persmissions!
     """
     from .login.cfg import get_storage
-    from .login.handlers import ACTIVE, ANONYMOUS
+    from .login.handlers import ACTIVE, GUEST
     from .login.utils import get_client_ip, get_random_string
     from .security_api import encrypt_password
 
     db = get_storage(request.app)
+    lock_manager: Aioredlock = request.app[APP_CLIENT_REDIS_LOCK_KEY]
 
     # TODO: avatar is an icon of the hero!
-    username = get_random_string(min_len=5)
-    email = username + "@guest-at-osparc.io"
+    random_uname = get_random_string(min_len=5)
+    email = random_uname + "@guest-at-osparc.io"
     password = get_random_string(min_len=12)
 
-    # creates a user that is marked as ANONYMOUS. see update_user_as_guest
-    user = await db.create_user(
-        {
-            "name": username,
-            "email": email,
-            "password_hash": encrypt_password(password),
-            "status": ACTIVE,
-            "role": ANONYMOUS,
-            "created_ip": get_client_ip(request),
-        }
-    )
+    # GUEST_USER_RC_LOCK:
+    #
+    #   These locks prevents the GC from deleting a GUEST user in to stages of its lifefime:
+    #
+    #  1. During construction:
+    #     - Prevents GC from deleting this GUEST user while it is being created
+    #     - Since the user still does not have an ID assigned, the lock is named with his random_uname
+    #
+    MAX_DELAY_TO_CREATE_USER = 3  # secs
+    #
+    #  2. During initialization
+    #     - Prevents the GC from deleting this GUEST user, with ID assigned, while it gets initialized and acquires it's first resource
+    #     - Uses the ID assigned to name the lock
+    #
+    MAX_DELAY_TO_GUEST_FIRST_CONNECTION = 15  # secs
+    #
+    #
+    # NOTES:
+    #   - In case of failure or excessive delay the lock has a timeout that automatically unlocks it
+    #     and the GC can clean up what remains
+    #   - Notice that the ids to name the locks are unique, therefore the lock can be acquired w/o errors
+    #   - These locks are very specific to resources and have timeout so the risk of blocking from GC is small
+    #
 
-    return user
-
-
-async def activate_as_guest_user(user: Dict, app: web.Application):
-    from .login.cfg import get_storage
-    from .login.handlers import GUEST, ANONYMOUS
-    from .resource_manager.websocket_manager import WebsocketRegistry
-
-    # Save time to allow user to be redirected back and not being deleted by GC
-    # SEE https://github.com/ITISFoundation/osparc-simcore/pull/1928#discussion_r517176479
-    EXTRA_TIME_TO_COMPLETE_REDIRECT = 3
-
-    if user.get("role") == ANONYMOUS:
-        db = get_storage(app)
-        username = user["name"]
-
-        # creates an entry in the socket's registry to avoid garbage collector (GC) deleting it
-        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1853
-        #
-        registry = WebsocketRegistry(user["id"], f"{username}-guest-session", app)
-        await registry.set_socket_id(
-            f"{username}-guest-socket-id", extra_tll=EXTRA_TIME_TO_COMPLETE_REDIRECT
+    # (1) read details above
+    async with await lock_manager.lock(
+        GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_uname),
+        lock_timeout=MAX_DELAY_TO_CREATE_USER,
+    ):
+        user = await db.create_user(
+            {
+                "name": random_uname,
+                "email": email,
+                "password_hash": encrypt_password(password),
+                "status": ACTIVE,
+                "role": GUEST,
+                "created_ip": get_client_ip(request),
+            }
         )
 
-        # Now that we know the ID, we set the user as GUEST
-        # This extra step is to prevent the possibility that the GC is cleaning while
-        # the function above is creating the entry in the socket
-        await db.update_user(user, updates={"role": GUEST})
+        # (2) read details above
+        await lock_manager.lock(
+            GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
+            lock_timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
+        )
+
+    return user
 
 
 # TODO: from .users import get_user?
@@ -247,7 +260,6 @@ async def access_study(request: web.Request) -> web.Response:
         log.debug("Auto login for anonymous user %s", user["name"])
         identity = user["email"]
         await remember(request, response, identity)
-        await activate_as_guest_user(user, request.app)
 
     raise response
 

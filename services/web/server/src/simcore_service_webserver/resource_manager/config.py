@@ -7,7 +7,7 @@ from typing import Dict, Optional
 
 import trafaret as T
 from aiohttp.web import Application
-from pydantic import BaseSettings, PositiveInt, Field
+from pydantic import BaseSettings, Field, PositiveInt
 
 from models_library.settings.redis import RedisConfig
 from servicelib.application_keys import APP_CONFIG_KEY
@@ -18,6 +18,10 @@ APP_CLIENT_REDIS_LOCK_KEY = __name__ + ".resource_manager.redis_lock"
 APP_CLIENT_SOCKET_REGISTRY_KEY = __name__ + ".resource_manager.registry"
 APP_RESOURCE_MANAGER_TASKS_KEY = __name__ + ".resource_manager.tasks.key"
 APP_GARBAGE_COLLECTOR_KEY = __name__ + ".resource_manager.garbage_collector_key"
+
+
+# lock names and format strings
+GUEST_USER_RC_LOCK_FORMAT = f"{__name__}:redlock:garbage_collect_user:{{user_id}}"
 
 schema = T.Dict(
     {
@@ -47,7 +51,8 @@ class ResourceManagerSettings(BaseSettings):
     enabled: bool = True
 
     resource_deletion_timeout_seconds: Optional[PositiveInt] = Field(
-        900, description="Expiration time (or Time to live (TTL) in redis jargon) for a registered resource"
+        900,
+        description="Expiration time (or Time to live (TTL) in redis jargon) for a registered resource",
     )
     garbage_collection_interval_seconds: Optional[PositiveInt] = Field(
         30, description="Waiting time between consecutive runs of the garbage-colector"
