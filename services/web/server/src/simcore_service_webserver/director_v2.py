@@ -1,8 +1,9 @@
 import logging
 from asyncio import CancelledError
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple, Union
 
 from aiohttp import ContentTypeError, web
+from pydantic.main import BaseModel
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
@@ -21,30 +22,29 @@ from .security_decorators import permission_required
 
 log = logging.getLogger(__file__)
 
-async def _request_director_v2(app: web.Application,
+
+async def _request_director_v2(
+    app: web.Application,
     method: str,
     url: URL,
     headers: Optional[Dict[str, str]] = None,
-    data: Optional[bytes] = None,) -> web.Response:
+    data: Optional[bytes] = None,
+) -> Tuple[Dict, int]:
     session = get_client_session(app)
     try:
         async with session.request(method, url, headers=headers, data=data) as resp:
-            is_error = resp.status >= 400
-            # backend sometimes sends error in plan=in text
+            if resp.status >= 400:
+                raise web.HTTPServerError(reason=resp.text)
             try:
                 payload: Dict = await resp.json()
+                return (payload, resp.status)
             except ContentTypeError:
                 payload = await resp.text()
-                is_error = True
+                raise web.HTTPServerError(reason=f"malformed data: {payload}")
 
-            if is_error:
-                data = wrap_as_envelope(error=payload)
-            else:
-                data = wrap_as_envelope(data=payload)
-
-            return web.json_response(data, status=resp.status)
     except (CancelledError, TimeoutError) as err:
         raise web.HTTPServiceUnavailable(reason="unavailable catalog service") from err
+
 
 @login_required
 @permission_required("services.pipeline.*")
@@ -55,45 +55,24 @@ async def start_pipeline(request: web.Request) -> web.Response:
     user_id = request[RQT_USERID_KEY]
     project_id = request.match_info.get("project_id", None)
 
-    backend_url = (
-        URL(f"{director2_settings.endpoint}/computations")
-        .with_query(request.rel_url.query)
-        .update_query({"user_id": user_id, "project_id": project_id})
-    )
+    backend_url = URL(f"{director2_settings.endpoint}/computations")
     log.debug("Redirecting '%s' -> '%s'", request.url, backend_url)
+    body = {"user_id": user_id, "project_id": project_id}
 
-    # body
-    raw = None
-    if request.can_read_body:
-        raw: bytes = await request.read()
+    # request to director-v2
+    computation_task_out, resp_status = _request_director_v2(
+        request.app, "POST", backend_url, data=body
+    )
+    data = {"pipeline_id": computation_task_out["id"]}
 
-    session = get_client_session(request.app)
-    try:
-        async with session.post(
-            backend_url, data=raw, headers=request.headers.copy()
-        ) as resp:
-            is_error = resp.status >= 400
-            # backend sometimes sends error in plan=in text
-            try:
-                payload: Dict = await resp.json()
-            except ContentTypeError:
-                payload = await resp.text()
-                is_error = True
+    return web.json_response(data=wrap_as_envelope(data=data), status=resp_status)
 
-            if is_error:
-                data = wrap_as_envelope(error=payload)
-            else:
-                # FIXME: hack we currently return the project id here
-                data = wrap_as_envelope(data={"pipeline_id": project_id})
-
-            return web.json_response(data, status=resp.status)
-    except (CancelledError, TimeoutError) as err:
-        raise web.HTTPServiceUnavailable(reason="unavailable catalog service") from err
 
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def stop_pipeline(request: web.Request) -> web.Response:
+    pass
 
 
 @app_module_setup(
