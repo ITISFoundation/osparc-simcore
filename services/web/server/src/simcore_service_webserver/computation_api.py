@@ -27,7 +27,6 @@ from simcore_postgres_database.webserver_models import (
     comp_tasks,
 )
 
-# TODO: move this to computation_models
 from simcore_service_webserver.computation_models import to_node_class
 
 from .computation_config import ComputationSettings

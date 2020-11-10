@@ -1,10 +1,9 @@
 import json
 import logging
 from asyncio import CancelledError
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple
 
 from aiohttp import ContentTypeError, web
-from pydantic.main import BaseModel
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
