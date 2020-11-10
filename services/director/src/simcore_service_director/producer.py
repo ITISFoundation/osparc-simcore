@@ -15,6 +15,7 @@ from aiohttp import ClientConnectionError, ClientSession, web
 import aiodocker
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.monitor_services import service_started, service_stopped
+from models_library.settings.services_common import ServicesCommonSettings
 
 from . import config, docker_utils, exceptions, registry_proxy
 from .config import APP_CLIENT_SESSION_KEY
@@ -965,7 +966,10 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
         try:
             session = app[APP_CLIENT_SESSION_KEY]
             service_url = "http://" + service_host_name + "/" + "state"
-            async with session.post(service_url) as response:
+            async with session.post(
+                service_url,
+                timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
+            ) as response:
                 if 199 < response.status < 300:
                     log.debug(
                         "service %s successfully saved its state", service_host_name
