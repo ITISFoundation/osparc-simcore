@@ -34,7 +34,6 @@ from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.projects_api import delete_project_from_db
-from simcore_service_webserver.resource_manager.garbage_collector import collect_garbage
 from simcore_service_webserver.statics import STATIC_DIRNAMES
 from simcore_service_webserver.users_api import delete_user, is_user_guest
 
@@ -393,7 +392,7 @@ async def test_access_cookie_of_expired_user(
     assert data["login"] != user_email
 
 
-@pytest.mark.parametrize("number_of_simultaneous_requests", [1, 2, 4, 8, 16, 32])
+@pytest.mark.parametrize("number_of_simultaneous_requests", [1, 2, 16, 32, 64])
 async def test_guest_user_is_not_garbage_collected(
     number_of_simultaneous_requests,
     web_server,
@@ -407,6 +406,9 @@ async def test_guest_user_is_not_garbage_collected(
 
     async def _test_guest_user_workflow(request_index):
         print("request #", request_index, "-" * 10)
+
+        # TODO: heartbeat is missing here!
+        # TODO: reduce GC activation period to 0.1 secs
 
         # every guest uses different client to preserve it's own authorization/authentication cookies
         client: TestClient = await aiohttp_client(web_server)

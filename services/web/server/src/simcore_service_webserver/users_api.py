@@ -118,7 +118,7 @@ async def get_guest_user_ids_and_names(app: web.Application) -> List[Tuple[int, 
         async for row in conn.execute(
             sa.select([users.c.id, users.c.name]).where(users.c.role == UserRole.GUEST)
         ):
-            result.append(row)
+            result.append(row.as_tuple())
         return list(result)
 
 

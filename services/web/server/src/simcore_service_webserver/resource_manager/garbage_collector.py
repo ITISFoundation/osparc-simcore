@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from itertools import chain
-from typing import Dict
+from typing import Dict, List, Tuple
 
 from aiohttp import web
 from aiopg.sa.result import RowProxy
@@ -267,7 +267,7 @@ async def remove_users_manually_marked_as_guests(
         user_ids_to_ignore.add(int(entry["user_id"]))
 
     # Prevent creating this list if a guest user
-    guest_users = await get_guest_user_ids_and_names(app)
+    guest_users: List[Tuple[int, str]] = await get_guest_user_ids_and_names(app)
     logger.info("GUEST user candidates to clean %s", guest_users)
 
     for guest_user_id, guest_user_name in guest_users:
