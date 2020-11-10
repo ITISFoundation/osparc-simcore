@@ -14,17 +14,21 @@ from ..schemas.constants import UserID
 TaskID = UUID
 
 
+class ComputationTaskCreate(BaseModel):
+    user_id: UserID
+    project_id: ProjectID
+
+
+class ComputationTaskStop(BaseModel):
+    user_id: UserID
+
+
 class ComputationTask(BaseModel):
     id: TaskID = Field(..., description="the id of the computation task")
     state: RunningState = Field(..., description="the state of the computational task")
     result: Optional[str] = Field(
         None, description="the result of the computational task"
     )
-
-
-class ComputationTaskIn(BaseModel):
-    user_id: UserID
-    project_id: ProjectID
 
 
 class ComputationTaskOut(ComputationTask):

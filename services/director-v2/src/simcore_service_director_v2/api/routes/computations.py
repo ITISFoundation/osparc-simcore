@@ -12,8 +12,9 @@ from starlette.requests import Request
 from ...models.domains.comp_tasks import (
     CompTaskAtDB,
     ComputationTask,
-    ComputationTaskIn,
+    ComputationTaskCreate,
     ComputationTaskOut,
+    ComputationTaskStop,
 )
 from ...models.domains.projects import ProjectAtDB
 from ...models.schemas.constants import UserID
@@ -85,7 +86,7 @@ def topological_sort_grouping(dag_graph: nx.DiGraph) -> List[Signature]:
 )
 async def create_computation(
     # pylint: disable=too-many-arguments
-    job: ComputationTaskIn,
+    job: ComputationTaskCreate,
     background_tasks: BackgroundTasks,
     request: Request,
     project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
@@ -226,7 +227,7 @@ async def get_computation(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def stop_computation_project(
-    user_id: UserID,
+    comp_task_stop: ComputationTaskStop,
     project_id: ProjectID,
     project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
     computation_tasks: CompTasksRepository = Depends(
@@ -234,7 +235,11 @@ async def stop_computation_project(
     ),
     celery_client: CeleryClient = Depends(get_celery_client),
 ):
-    log.debug("User %s stopping computation for project %s", user_id, project_id)
+    log.debug(
+        "User %s stopping computation for project %s",
+        comp_task_stop.user_id,
+        project_id,
+    )
     try:
         # get the project
         project: ProjectAtDB = await project_repo.get_project(project_id)
@@ -261,7 +266,9 @@ async def stop_computation_project(
             [str(c.job_id) for c in comp_tasks.values()]
         )
         log.debug(
-            "Computational task stopped by user %s for project %s", user_id, project_id
+            "Computational task stopped by user %s for project %s",
+            comp_task_stop.user_id,
+            project_id,
         )
 
     except ProjectNotFoundError as e:
