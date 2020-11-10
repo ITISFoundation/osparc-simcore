@@ -9,6 +9,7 @@
 # installs base + tests requirements
 -r _test.txt
 ../../packages/pytest-simcore/
+../../packages/models-library/
 
 # installs current package
 .
