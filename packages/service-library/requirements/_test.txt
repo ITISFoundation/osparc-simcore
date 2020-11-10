@@ -7,7 +7,7 @@
 aiodebug==1.1.2           # via -r requirements/_base.txt
 aiohttp==3.7.2            # via -r requirements/_base.txt, aiozipkin, pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt
-aiozipkin==1.0.0          # via -r requirements/_base.txt
+aiozipkin==0.7.1          # via -r requirements/_base.txt
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via -r requirements/_base.txt, aiohttp
 attrs==20.3.0             # via -r requirements/_base.txt, aiohttp, jsonschema, openapi-core, pytest, pytest-docker

@@ -7,7 +7,7 @@ pyyaml>=5.3              # Vulnerable
 psycopg2-binary          # enforces binary version - http://initd.org/psycopg/docs/install.html#binary-install-from-pypi
 openapi-core==0.12.0     # frozen until https://github.com/ITISFoundation/osparc-simcore/pull/1396 is CLOSED
 lazy-object-proxy~=1.4.3 # cannot upgrade due to contraints in openapi-core
-aiozipkin==0.7.1         # not compatible with new released version 1.0.0
+aiozipkin==0.7.1         # breaking changes with new released version 1.0.0 (https://github.com/aio-libs/aiozipkin/releases)
 
 aiohttp
 aiopg[sa]
