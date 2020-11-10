@@ -5,6 +5,7 @@ from typing import Dict, Optional, Tuple
 
 from aiohttp import ContentTypeError, web
 from servicelib.application_setup import ModuleCategory, app_module_setup
+from servicelib.logging_utils import log_decorator
 from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
 from yarl import URL
@@ -23,6 +24,7 @@ from .security_decorators import permission_required
 log = logging.getLogger(__file__)
 
 
+@log_decorator(logger=log)
 async def _request_director_v2(
     app: web.Application,
     method: str,
@@ -49,6 +51,7 @@ async def _request_director_v2(
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
+@log_decorator(logger=log)
 async def start_pipeline(request: web.Request) -> web.Response:
     director2_settings: Directorv2Settings = get_settings(request.app)
 
@@ -71,6 +74,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
+@log_decorator(logger=log)
 async def stop_pipeline(request: web.Request) -> web.Response:
     director2_settings: Directorv2Settings = get_settings(request.app)
 

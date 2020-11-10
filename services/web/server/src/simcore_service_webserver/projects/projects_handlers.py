@@ -13,7 +13,6 @@ from models_library.projects import ProjectState
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog
-from ..computation_api import update_pipeline_db
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
@@ -39,7 +38,6 @@ log = logging.getLogger(__name__)
 
 @login_required
 @permission_required("project.create")
-@permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def create_projects(request: web.Request):
     # pylint: disable=too-many-branches
     # TODO: keep here since is async and parser thinks it is a handler
@@ -95,9 +93,6 @@ async def create_projects(request: web.Request):
         project = await db.add_project(
             project, user_id, force_as_template=as_template is not None
         )
-
-        # This is a new project and every new graph needs to be reflected in the pipeline db
-        await update_pipeline_db(request.app, project["uuid"], project["workbench"])
 
         # Appends state
         project["state"] = await projects_api.get_project_state_for_user(
@@ -204,7 +199,7 @@ async def get_project(request: web.Request):
 
 
 @login_required
-@permission_required("services.pipeline.*")  # due to update_pipeline_db
+@permission_required("project.update")
 async def replace_project(request: web.Request):
     """Implements PUT /projects
 
@@ -259,10 +254,6 @@ async def replace_project(request: web.Request):
 
         new_project = await db.update_user_project(
             new_project, user_id, project_uuid, include_templates=True
-        )
-
-        await update_pipeline_db(
-            request.app, project_uuid, new_project["workbench"], replace_pipeline
         )
 
         # Appends state
