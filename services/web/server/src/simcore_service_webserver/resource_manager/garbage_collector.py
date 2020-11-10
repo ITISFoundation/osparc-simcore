@@ -33,7 +33,7 @@ from simcore_service_webserver.projects.projects_db import (
 from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
 from simcore_service_webserver.users_api import (
     delete_user,
-    get_guest_user_ids,
+    get_guest_user_ids_and_names,
     get_user,
     get_user_id_from_gid,
     is_user_guest,
@@ -43,7 +43,6 @@ from simcore_service_webserver.users_to_groups_api import get_users_for_gid
 from .config import (
     APP_CLIENT_REDIS_LOCK_KEY,
     APP_GARBAGE_COLLECTOR_KEY,
-    GC_EXECUTION_LOCK,
     GUEST_USER_RC_LOCK_FORMAT,
     get_garbage_collector_interval,
 )
@@ -72,10 +71,8 @@ async def garbage_collector_task(app: web.Application):
         logger.info("Starting garbage collector...")
         try:
             interval = get_garbage_collector_interval(app)
-            lock_manager: Aioredlock = app[APP_CLIENT_REDIS_LOCK_KEY]
             while True:
-                if not await lock_manager.is_locked(GC_EXECUTION_LOCK):
-                    await collect_garbage(app)
+                await collect_garbage(app)
                 await asyncio.sleep(interval)
 
         except asyncio.CancelledError:
@@ -174,8 +171,13 @@ async def remove_disconnected_user_resources(
     for dead_key in dead_keys:
 
         user_id = int(dead_key["user_id"])
-        if await lock_manager.is_locked(GUEST_USER_RC_LOCK_FORMAT.format(user_id=user_id)):
-            logger.debug("Skipping garbage-collecting user '%d' since it is still locked", user_id)
+        if await lock_manager.is_locked(
+            GUEST_USER_RC_LOCK_FORMAT.format(user_id=user_id)
+        ):
+            logger.debug(
+                "Skipping garbage-collecting user '%d' since it is still locked",
+                user_id,
+            )
             continue
 
         dead_key_resources = await registry.get_resources(dead_key)
@@ -184,7 +186,11 @@ async def remove_disconnected_user_resources(
             await registry.remove_key(dead_key)
             continue
 
-        logger.debug("Cleaning resources from expired key '%s': '%s'", dead_key, dead_key_resources)
+        logger.debug(
+            "Cleaning resources from expired key '%s': '%s'",
+            dead_key,
+            dead_key_resources,
+        )
 
         # removing all resources that are not needed anymore
         for resource_name, resource_value in dead_key_resources.items():
@@ -235,8 +241,14 @@ async def remove_disconnected_user_resources(
                 )
 
             # cleanup done. Remove resouce from registry
-            logger.debug("Cleaned resource '%s' for key '%s'. Removing now from registry.", resource_name, dead_key)
+            # FIXME: this still does not guarantee that resources were SUCCESFULLY removed!
+            logger.debug(
+                "Cleaned resource '%s' for key '%s'. Removing now from registry.",
+                resource_name,
+                dead_key,
+            )
             await registry.remove_resource(dead_key, resource_name)
+
 
 async def remove_users_manually_marked_as_guests(
     registry: RedisResourceRegistry, app: web.Application
@@ -254,10 +266,11 @@ async def remove_users_manually_marked_as_guests(
     for entry in chain(alive_keys, dead_keys):
         user_ids_to_ignore.add(int(entry["user_id"]))
 
-    guest_user_ids = await get_guest_user_ids(app)
-    logger.info("GUEST user id candidates to clean %s", guest_user_ids)
+    # Prevent creating this list if a guest user
+    guest_users = await get_guest_user_ids_and_names(app)
+    logger.info("GUEST user candidates to clean %s", guest_users)
 
-    for guest_user_id in guest_user_ids:
+    for guest_user_id, guest_user_name in guest_users:
         if guest_user_id in user_ids_to_ignore:
             logger.info(
                 "Ignoring user '%s' as it previously had alive or dead resource keys ",
@@ -265,11 +278,19 @@ async def remove_users_manually_marked_as_guests(
             )
             continue
 
-        if await lock_manager.is_locked(
+        lock_during_construction: bool = await lock_manager.is_locked(
+            GUEST_USER_RC_LOCK_FORMAT.format(user_id=guest_user_name)
+        )
+
+        lock_during_initialization: bool = await lock_manager.is_locked(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=guest_user_id)
-        ):
+        )
+
+        if lock_during_construction or lock_during_initialization:
             logger.debug(
-                "Skipping garbage-collecting user '%s' since it is still locked", guest_user_id
+                "Skipping garbage-collecting user '%s','%s' since it is still locked",
+                guest_user_id,
+                guest_user_name,
             )
             continue
 

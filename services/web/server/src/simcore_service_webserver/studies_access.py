@@ -16,7 +16,7 @@ from functools import lru_cache
 from typing import Dict
 
 from aiohttp import web
-from aioredlock import Aioredlock, LockError
+from aioredlock import Aioredlock
 
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
@@ -24,7 +24,6 @@ from servicelib.application_setup import ModuleCategory, app_module_setup
 from .login.decorators import login_required
 from .resource_manager.config import (
     APP_CLIENT_REDIS_LOCK_KEY,
-    GC_EXECUTION_LOCK,
     GUEST_USER_RC_LOCK_FORMAT,
 )
 from .security_api import is_anonymous, remember
@@ -70,49 +69,59 @@ async def create_temporary_user(request: web.Request):
     from .login.utils import get_client_ip, get_random_string
     from .security_api import encrypt_password
 
-    MAX_DELAY_TO_CREATE_GUEST_USER = 3  # sesc
-    MAX_DELAY_TO_GUEST_FIRST_CONNECTION = 15  # secs
-
     db = get_storage(request.app)
     lock_manager: Aioredlock = request.app[APP_CLIENT_REDIS_LOCK_KEY]
 
     # TODO: avatar is an icon of the hero!
-    username = get_random_string(min_len=5)
-    email = username + "@guest-at-osparc.io"
+    random_uname = get_random_string(min_len=5)
+    email = random_uname + "@guest-at-osparc.io"
     password = get_random_string(min_len=12)
 
-    try:
-        async with await lock_manager.lock(
-            GC_EXECUTION_LOCK, lock_timeout=MAX_DELAY_TO_CREATE_GUEST_USER
-        ):
-            user = await db.create_user(
-                {
-                    "name": username,
-                    "email": email,
-                    "password_hash": encrypt_password(password),
-                    "status": ACTIVE,
-                    "role": GUEST,
-                    "created_ip": get_client_ip(request),
-                }
-            )
-            # time-out lock to prevent GC from deleting this user until it acquires its first resources
-            await lock_manager.lock(
-                GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
-                lock_timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
-            )
-    except LockError as err:
-        #
-        # Will only attend this request if the GC execution lock can be acquired
-        #
-        # This will prevent disabling GC permanently e.g. due to high frequency guest requests
-        #
-        # At the same time, the lock is timed so in the worst case
-        # this will limit the througput to 1 request every 3 seconds
-        # (provided that nobody has permanently/temporary locked the GC for other reason)
-        #
-        raise web.HTTPTooManyRequests(
-            reason="Number of guests in platform are limited due to available resources"
-        ) from err
+    # GUEST_USER_RC_LOCK:
+    #
+    #   These locks prevents the GC from deleting a GUEST user in to stages of its lifefime:
+    #
+    #  1. During construction:
+    #     - Prevents GC from deleting this GUEST user while it is being created
+    #     - Since the user still does not have an ID assigned, the lock is named with his random_uname
+    #
+    MAX_DELAY_TO_CREATE_USER = 3  # secs
+    #
+    #  2. During initialization
+    #     - Prevents the GC from deleting this GUEST user, with ID assigned, while it gets initialized and acquires it's first resource
+    #     - Uses the ID assigned to name the lock
+    #
+    MAX_DELAY_TO_GUEST_FIRST_CONNECTION = 15  # secs
+    #
+    #
+    # NOTES:
+    #   - In case of failure or excessive delay the lock has a timeout that automatically unlocks it
+    #     and the GC can clean up what remains
+    #   - Notice that the ids to name the locks are unique, therefore the lock can be acquired w/o errors
+    #   - These locks are very specific to resources and have timeout so the risk of blocking from GC is small
+    #
+
+    # (1) read details above
+    async with await lock_manager.lock(
+        GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_uname),
+        lock_timeout=MAX_DELAY_TO_CREATE_USER,
+    ):
+        user = await db.create_user(
+            {
+                "name": random_uname,
+                "email": email,
+                "password_hash": encrypt_password(password),
+                "status": ACTIVE,
+                "role": GUEST,
+                "created_ip": get_client_ip(request),
+            }
+        )
+
+        # (2) read details above
+        await lock_manager.lock(
+            GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
+            lock_timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
+        )
 
     return user
 
@@ -209,14 +218,8 @@ async def access_study(request: web.Request) -> web.Response:
 
     if not user:
         log.debug("Creating temporary user ...")
-        wait_if_creating_user: asyncio.Semaphore = request.app[f"{__name__}.semaphore"]
-
-        await wait_if_creating_user.acquire()
-        try:
-            user = await create_temporary_user(request)
-            is_anonymous_user = True
-        finally:
-            wait_if_creating_user.release()
+        user = await create_temporary_user(request)
+        is_anonymous_user = True
 
     try:
         log.debug(
@@ -261,9 +264,6 @@ async def access_study(request: web.Request) -> web.Response:
     raise response
 
 
-import asyncio
-
-
 @app_module_setup(__name__, ModuleCategory.ADDON, logger=log)
 def setup(app: web.Application):
 
@@ -283,8 +283,6 @@ def setup(app: web.Application):
             web.get(r"/study/{id}", study_handler, name="study"),
         ]
     )
-
-    app[f"{__name__}.semaphore"] = asyncio.Semaphore(value=1)
 
     return True
 

@@ -21,7 +21,6 @@ APP_GARBAGE_COLLECTOR_KEY = __name__ + ".resource_manager.garbage_collector_key"
 
 
 # lock names and format strings
-GC_EXECUTION_LOCK = f"{__name__}:redlock:garbage_collector_execution"
 GUEST_USER_RC_LOCK_FORMAT = f"{__name__}:redlock:garbage_collect_user:{{user_id}}"
 
 schema = T.Dict(

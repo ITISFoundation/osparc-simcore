@@ -1,6 +1,6 @@
 import logging
 from collections import deque
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -29,7 +29,12 @@ async def get_user_profile(app: web.Application, user_id: int) -> Dict[str, Any]
     async with engine.acquire() as conn:
         async for row in conn.execute(
             sa.select(
-                [users, groups, user_to_groups.c.access_rights,], use_labels=True,
+                [
+                    users,
+                    groups,
+                    user_to_groups.c.access_rights,
+                ],
+                use_labels=True,
             )
             .select_from(
                 users.join(
@@ -106,14 +111,14 @@ async def is_user_guest(app: web.Application, user_id: int) -> bool:
     return bool(UserRole(user["role"]) == UserRole.GUEST)
 
 
-async def get_guest_user_ids(app: web.Application) -> List[int]:
+async def get_guest_user_ids_and_names(app: web.Application) -> List[Tuple[int, str]]:
     engine = app[APP_DB_ENGINE_KEY]
     result = deque()
     async with engine.acquire() as conn:
         async for row in conn.execute(
-            sa.select([users.c.id]).where(users.c.role == UserRole.GUEST)
+            sa.select([users.c.id, users.c.name]).where(users.c.role == UserRole.GUEST)
         ):
-            result.append(row[0])
+            result.append(row)
         return list(result)
 
 
