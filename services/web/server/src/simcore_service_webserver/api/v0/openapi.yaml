@@ -5917,6 +5917,16 @@ paths:
                                                   type: string
                                                 label:
                                                   type: string
+                                            - type: object
+                                              additionalProperties: false
+                                              required:
+                                                - downloadLink
+                                              properties:
+                                                downloadLink:
+                                                  type: string
+                                                  format: uri
+                                                label:
+                                                  type: string
                                     inputAccess:
                                       description: map with key - access level pairs
                                       type: object
@@ -5964,6 +5974,16 @@ paths:
                                                   type: string
                                                 path:
                                                   type: string
+                                                label:
+                                                  type: string
+                                            - type: object
+                                              additionalProperties: false
+                                              required:
+                                                - downloadLink
+                                              properties:
+                                                downloadLink:
+                                                  type: string
+                                                  format: uri
                                                 label:
                                                   type: string
                                     outputNode:
@@ -6431,6 +6451,16 @@ paths:
                                       type: string
                                     label:
                                       type: string
+                                - type: object
+                                  additionalProperties: false
+                                  required:
+                                    - downloadLink
+                                  properties:
+                                    downloadLink:
+                                      type: string
+                                      format: uri
+                                    label:
+                                      type: string
                         inputAccess:
                           description: map with key - access level pairs
                           type: object
@@ -6478,6 +6508,16 @@ paths:
                                       type: string
                                     path:
                                       type: string
+                                    label:
+                                      type: string
+                                - type: object
+                                  additionalProperties: false
+                                  required:
+                                    - downloadLink
+                                  properties:
+                                    downloadLink:
+                                      type: string
+                                      format: uri
                                     label:
                                       type: string
                         outputNode:
@@ -6825,6 +6865,16 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -6872,6 +6922,16 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -7337,6 +7397,16 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -7384,6 +7454,16 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -7855,6 +7935,16 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -7902,6 +7992,16 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -8364,6 +8464,16 @@ paths:
                                       type: string
                                     label:
                                       type: string
+                                - type: object
+                                  additionalProperties: false
+                                  required:
+                                    - downloadLink
+                                  properties:
+                                    downloadLink:
+                                      type: string
+                                      format: uri
+                                    label:
+                                      type: string
                         inputAccess:
                           description: map with key - access level pairs
                           type: object
@@ -8411,6 +8521,16 @@ paths:
                                       type: string
                                     path:
                                       type: string
+                                    label:
+                                      type: string
+                                - type: object
+                                  additionalProperties: false
+                                  required:
+                                    - downloadLink
+                                  properties:
+                                    downloadLink:
+                                      type: string
+                                      format: uri
                                     label:
                                       type: string
                         outputNode:
@@ -8758,6 +8878,16 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -8805,6 +8935,16 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -9292,6 +9432,16 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -9339,6 +9489,16 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -10638,6 +10798,16 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -10685,6 +10855,16 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -11149,6 +11329,16 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -11196,6 +11386,16 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:

@@ -111,12 +111,14 @@ qx.Class.define("osparc.data.model.Workbench", {
       const nodePath = [];
       nodePath.unshift(nodeId);
       const node = this.getNode(nodeId);
-      let parentNodeId = node.getParentNodeId();
-      while (parentNodeId) {
-        const checkThisNode = this.getNode(parentNodeId);
-        if (checkThisNode) {
-          nodePath.unshift(parentNodeId);
-          parentNodeId = checkThisNode.getParentNodeId();
+      if (node) {
+        let parentNodeId = node.getParentNodeId();
+        while (parentNodeId) {
+          const checkThisNode = this.getNode(parentNodeId);
+          if (checkThisNode) {
+            nodePath.unshift(parentNodeId);
+            parentNodeId = checkThisNode.getParentNodeId();
+          }
         }
       }
       nodePath.unshift(studyId);
