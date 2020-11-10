@@ -167,7 +167,7 @@ async def remove_disconnected_user_resources(
     alive_keys, dead_keys = await registry.get_all_resource_keys()
     logger.debug("potential dead keys: %s", dead_keys)
 
-    # clean up all the the websocket ids for the disconnected user
+    # clean up all resources of expired keys
     for dead_key in dead_keys:
 
         user_id = int(dead_key["user_id"])
@@ -180,50 +180,57 @@ async def remove_disconnected_user_resources(
             )
             continue
 
+
         dead_key_resources = await registry.get_resources(dead_key)
         if not dead_key_resources:
             # no resources associated with this user, just cleaning up the key
             await registry.remove_key(dead_key)
             continue
 
+
+        # CAREFULLY releasing every resource acquired by the expired key
         logger.debug(
-            "Cleaning resources from expired key '%s': '%s'",
+            "Key '%s' expired: cleaning the following resources: '%s'",
             dead_key,
             dead_key_resources,
         )
 
-        # removing all resources that are not needed anymore
         for resource_name, resource_value in dead_key_resources.items():
-            # list of other references to be removed
-            other_keys_with_this_resource = [
-                rkey
-                for rkey in await registry.find_keys((resource_name, resource_value))
-                if rkey != dead_key
+
+            # Releasing a resource consists of two steps
+            #   - (1) release actual resource (e.g. stop service, close project, deallocate memory, etc)
+            #   - (2) remove resource field entry in expired key registry after (1) is completed.
+
+            # collects a list of keys for (2)
+            keys_to_update = [
+                dead_key,
             ]
 
-            # check if the resource is still in use in the alive keys
-            if not any(rk in alive_keys for rk in other_keys_with_this_resource):
-                # remove the remaining resource entries
-                remove_tasks = [
-                    registry.remove_resource(rkey, resource_name)
-                    for rkey in other_keys_with_this_resource
-                ]
-                if remove_tasks:
-                    logger.debug(
-                        "removing resource entry: %s: %s",
-                        other_keys_with_this_resource,
-                        dead_key_resources,
-                    )
-                    await logged_gather(*remove_tasks, reraise=False)
+            # Every resource might be shared with other keys.
+            # In that case, the resource is released by THE LAST KEY alive (last standing man pattern?! :-) )
+            #
+            other_keys_with_this_resource = [
+                k
+                for k in await registry.find_keys((resource_name, resource_value))
+                if k != dead_key
+            ]
+            is_resource_still_in_use: bool = any(
+                k in alive_keys for k in other_keys_with_this_resource
+            )
 
-                logger.debug(
-                    "the resources %s:%s of %s may be now safely closed",
+            if not is_resource_still_in_use:
+
+                # adds the remaining resource entries for (2)
+                keys_to_update.extend(other_keys_with_this_resource)
+
+                # (1) releasing acquired resources
+                logger.info(
+                    "(1) Releasing resource %s:%s acquired by expired key %s",
                     resource_name,
                     resource_value,
                     dead_key,
                 )
 
-                # --- actual cleanup happens now ---
                 if resource_name == "project_id":
                     # inform that the project can be closed on the backend side
                     await emit(
@@ -240,14 +247,16 @@ async def remove_disconnected_user_resources(
                     user_id=int(dead_key["user_id"]),
                 )
 
-            # cleanup done. Remove resouce from registry
-            # FIXME: this still does not guarantee that resources were SUCCESFULLY removed!
-            logger.debug(
-                "Cleaned resource '%s' for key '%s'. Removing now from registry.",
+            # (2) remove resource field in collected keys since (1) is completed
+            logger.info(
+                "(2) Removing resource %s field entry from registry keys: %s",
                 resource_name,
-                dead_key,
+                keys_to_update,
             )
-            await registry.remove_resource(dead_key, resource_name)
+            on_released_tasks = [
+                registry.remove_resource(key, resource_name) for key in keys_to_update
+            ]
+            await logged_gather(*on_released_tasks, reraise=False)
 
 
 async def remove_users_manually_marked_as_guests(
