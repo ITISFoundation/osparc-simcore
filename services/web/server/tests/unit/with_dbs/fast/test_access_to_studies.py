@@ -164,9 +164,13 @@ async def unpublished_project(client, fake_project):
         yield template_project
 
 
-async def _get_user_projects(client):
+async def _get_user_projects(client, cookies=None):
     url = client.app.router["list_projects"].url_for()
-    resp = await client.get(url.with_query(start=0, count=3, type="user"))
+    if cookies:
+        resp = await client.get(url.with_query(type="user"), cookies=cookies)
+    else:
+        resp = await client.get(url.with_query(type="user"))
+
     payload = await resp.json()
     assert resp.status == 200, payload
 
@@ -412,6 +416,7 @@ async def test_guest_user_is_not_garbage_collected(
         # has auto logged in as guest?
         me_url = client.app.router["get_my_profile"].url_for()
         resp = await client.get(me_url)
+        cookies = resp.cookies
 
         data, _ = await assert_status(resp, web.HTTPOk)
         assert data["login"].endswith("guest-at-osparc.io")
@@ -419,7 +424,7 @@ async def test_guest_user_is_not_garbage_collected(
         assert data["role"].upper() == UserRole.GUEST.name
 
         # guest user only a copy of the template project
-        projects = await _get_user_projects(client)
+        projects = await _get_user_projects(client, cookies)
         assert len(projects) == 1
         guest_project = projects[0]
 
