@@ -147,7 +147,8 @@ async def remove_disconnected_user_resources(
     #
     # In redis jargon, every entry is denoted as "key"
     #   - A key can contain one or more fields: name-value pairs
-    #   - A key can have a limited livespan by setting the Time-to-live (TTL)
+    #   - A key can have a limited livespan by setting the Time-to-live (TTL) which
+    #       is automatically decreasing
     #
     # - Every user can open multiple sessions (e.g. in different tabs and/or browser) and
     #   each session is hierarchically represented in the redis registry with two keys:
@@ -162,7 +163,7 @@ async def remove_disconnected_user_resources(
     #
 
     # alive_keys = currently "active" users
-    # dead_keys = users considered as "inactive" (TTL expired)
+    # dead_keys = users considered as "inactive" (i.e. resource has expired since TLL reached 0!)
     # these keys hold references to more than one websocket connection ids
     # the websocket ids are referred to as resources (but NOT the only resource)
 
@@ -183,7 +184,7 @@ async def remove_disconnected_user_resources(
             await registry.remove_key(dead_key)
             continue
 
-        logger.debug("Dead key '%s' resources: '%s'", dead_key, dead_key_resources)
+        logger.debug("Cleaning resources from expired key '%s': '%s'", dead_key, dead_key_resources)
 
         # removing all resources that are not needed anymore
         for resource_name, resource_value in dead_key_resources.items():
@@ -193,13 +194,6 @@ async def remove_disconnected_user_resources(
                 for rkey in await registry.find_keys((resource_name, resource_value))
                 if rkey != dead_key
             ]
-
-            # FIXME: What if the actual cleanup fails? we cannot GC it anymore since there
-            #       are not reference of the resources to deallocate
-            #
-            # it is safe to remove the current resource entry for this user
-            logger.debug("removing resource '%s' for '%s' key", resource_name, dead_key)
-            await registry.remove_resource(dead_key, resource_name)
 
             # check if the resource is still in use in the alive keys
             if not any(rk in alive_keys for rk in other_keys_with_this_resource):
@@ -240,6 +234,9 @@ async def remove_disconnected_user_resources(
                     user_id=int(dead_key["user_id"]),
                 )
 
+            # cleanup done. Remove resouce from registry
+            logger.debug("Cleaned resource '%s' for key '%s'. Removing now from registry.", resource_name, dead_key)
+            await registry.remove_resource(dead_key, resource_name)
 
 async def remove_users_manually_marked_as_guests(
     registry: RedisResourceRegistry, app: web.Application
