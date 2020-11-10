@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Union
 from uuid import UUID
 
 from pydantic import (
+    AnyUrl,
     BaseModel,
     EmailStr,
     Extra,
@@ -55,6 +56,14 @@ class PortLink(BaseModel):
         regex=PROPERTY_KEY_RE,
         example=["out_2"],
     )
+
+    class Config:
+        extra = Extra.forbid
+
+
+class DownloadLink(BaseModel):
+    download_link: AnyUrl = Field(...)
+    label: Optional[str]
 
     class Config:
         extra = Extra.forbid
@@ -127,8 +136,12 @@ class Slideshow(BaseModel):
         extra = Extra.forbid
 
 
-InputTypes = Union[int, bool, str, float, PortLink, SimCoreFileLink, DatCoreFileLink]
-OutputTypes = Union[int, bool, str, float, SimCoreFileLink, DatCoreFileLink]
+InputTypes = Union[
+    int, bool, str, float, PortLink, SimCoreFileLink, DatCoreFileLink, DownloadLink
+]
+OutputTypes = Union[
+    int, bool, str, float, SimCoreFileLink, DatCoreFileLink, DownloadLink
+]
 InputID = constr(regex=PROPERTY_KEY_RE)
 OutputID = InputID
 Inputs = Dict[InputID, InputTypes]
