@@ -19,6 +19,7 @@
   "properties": {
     "uuid": {
       "type": "string",
+      "format": "uuid",
       "description": "project unique identifier",
       "examples": [
         "07640335-a91f-468c-ab69-a374fa82078d",
@@ -41,13 +42,12 @@
     },
     "prjOwner": {
       "type": "string",
-      "format": "idn-email",
+      "format": "email",
       "description": "user email"
     },
     "accessRights": {
       "type": "object",
       "description": "object containing the GroupID as key and read/write/execution permissions as value",
-      "additionalProperties": false,
       "patternProperties": {
         "^\\S+$": {
           "type": "object",
@@ -93,6 +93,9 @@
     },
     "thumbnail": {
       "type": "string",
+      "minLength": 1,
+      "maxLength": 2083,
+      "format": "uri",
       "description": "url of the latest screenshot of the project",
       "examples": [
         "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
@@ -101,7 +104,7 @@
     "workbench": {
       "type": "object",
       "patternProperties": {
-        "^\\S+$": {
+        "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$": {
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -130,7 +133,11 @@
               ]
             },
             "label": {
-              "type": "string"
+              "type": "string",
+              "description": "The short name of the node",
+              "example": [
+                "JupyterLab"
+              ]
             },
             "progress": {
               "type": "number",
@@ -139,6 +146,9 @@
               "description": "the node progress value"
             },
             "thumbnail": {
+              "minLength": 1,
+              "maxLength": 2083,
+              "format": "uri",
               "type": "string",
               "description": "url of the latest screenshot of the node",
               "examples": [
@@ -243,7 +253,7 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "pattern": "^\\S+$"
+                "format": "uuid"
               },
               "description": "node IDs of where the node is connected to",
               "examples": [
@@ -318,7 +328,7 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "pattern": "^\\S+$"
+                "format": "uuid"
               },
               "description": "Used in group-nodes. Node IDs of those connected to the output",
               "examples": [
@@ -327,11 +337,8 @@
               ]
             },
             "parent": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "pattern": "^\\S+$",
+              "type": "string",
+              "format": "uuid",
               "description": "Parent's (group-nodes') node ID s.",
               "examples": [
                 "nodeUuid1",
@@ -366,6 +373,7 @@
             "state": {
               "title": "RunningState",
               "description": "the node's running state",
+              "default": "NOT_STARTED",
               "enum": [
                 "UNKNOWN",
                 "NOT_STARTED",
@@ -390,7 +398,7 @@
         "workbench": {
           "type": "object",
           "patternProperties": {
-            "^\\S+$": {
+            "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$": {
               "type": "object",
               "additionalProperties": false,
               "required": [
@@ -428,7 +436,7 @@
         "slideshow": {
           "type": "object",
           "patternProperties": {
-            "^\\S+$": {
+            "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$": {
               "type": "object",
               "additionalProperties": false,
               "required": [

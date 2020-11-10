@@ -15,6 +15,7 @@ required:
 properties:
   uuid:
     type: string
+    format: uuid
     description: project unique identifier
     example: 07640335-a91f-468c-ab69-a374fa82078d
   name:
@@ -27,14 +28,13 @@ properties:
     example: Dabbling in temporal transitions ...
   prjOwner:
     type: string
-    format: idn-email
+    format: email
     description: user email
   accessRights:
     type: object
     description: >-
       object containing the GroupID as key and read/write/execution permissions
       as value
-    additionalProperties: false
     x-patternProperties:
       ^\S+$:
         type: object
@@ -54,6 +54,7 @@ properties:
           delete:
             type: boolean
             description: gives deletion rights
+    additionalProperties: true
   creationDate:
     type: string
     description: project creation date
@@ -68,12 +69,15 @@ properties:
     example: '2018-07-01T11:13:43Z'
   thumbnail:
     type: string
+    minLength: 1
+    maxLength: 2083
+    format: uri
     description: url of the latest screenshot of the project
     example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
   workbench:
     type: object
     x-patternProperties:
-      ^\S+$:
+      '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
         type: object
         additionalProperties: false
         required:
@@ -100,12 +104,18 @@ properties:
               - 0.0.1
           label:
             type: string
+            description: The short name of the node
+            example:
+              - JupyterLab
           progress:
             type: number
             maximum: 100
             minimum: 0
             description: the node progress value
           thumbnail:
+            minLength: 1
+            maxLength: 2083
+            format: uri
             type: string
             description: url of the latest screenshot of the node
             example:
@@ -175,7 +185,7 @@ properties:
             type: array
             items:
               type: string
-              pattern: ^\S+$
+              format: uuid
             description: node IDs of where the node is connected to
             example:
               - nodeUuid1
@@ -224,16 +234,14 @@ properties:
             type: array
             items:
               type: string
-              pattern: ^\S+$
+              format: uuid
             description: Used in group-nodes. Node IDs of those connected to the output
             example:
               - nodeUuid1
               - nodeUuid2
           parent:
-            type:
-              - string
-              - 'null'
-            pattern: ^\S+$
+            type: string
+            format: uuid
             description: Parent's (group-nodes') node ID s.
             example:
               - nodeUuid1
@@ -259,6 +267,7 @@ properties:
           state:
             title: RunningState
             description: the node's running state
+            default: NOT_STARTED
             enum:
               - UNKNOWN
               - NOT_STARTED
@@ -278,7 +287,7 @@ properties:
       workbench:
         type: object
         x-patternProperties:
-          ^\S+$:
+          '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
             type: object
             additionalProperties: false
             required:
@@ -305,7 +314,7 @@ properties:
       slideshow:
         type: object
         x-patternProperties:
-          ^\S+$:
+          '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
             type: object
             additionalProperties: false
             required:

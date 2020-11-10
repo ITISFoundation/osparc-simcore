@@ -48,7 +48,6 @@
     "accessRights": {
       "type": "object",
       "description": "object containing the GroupID as key and read/write/execution permissions as value",
-      "additionalProperties": false,
       "patternProperties": {
         "^\\S+$": {
           "type": "object",
@@ -105,7 +104,7 @@
     "workbench": {
       "type": "object",
       "patternProperties": {
-        "^\\S+$": {
+        "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$": {
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -399,7 +398,7 @@
         "workbench": {
           "type": "object",
           "patternProperties": {
-            "^\\S+$": {
+            "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$": {
               "type": "object",
               "additionalProperties": false,
               "required": [
@@ -437,7 +436,7 @@
         "slideshow": {
           "type": "object",
           "patternProperties": {
-            "^\\S+$": {
+            "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$": {
               "type": "object",
               "additionalProperties": false,
               "required": [

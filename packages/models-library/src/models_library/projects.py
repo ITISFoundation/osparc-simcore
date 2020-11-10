@@ -23,6 +23,10 @@ DATE_RE = r"\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|
 
 GroupID = constr(regex=r"^\S+$")
 NodeID = UUID
+# Pydantic does not support exporting a jsonschema with Dict keys being something else than a str
+_NodeID_For_Dict = constr(
+    regex=r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$"
+)
 ProjectID = UUID
 ClassifierID = str
 
@@ -206,8 +210,8 @@ class Node(BaseModel):
 
 
 class StudyUI(BaseModel):
-    workbench: Optional[Dict[NodeID, WorkbenchUI]] = Field(None)
-    slideshow: Optional[Dict[NodeID, Slideshow]] = Field(None)
+    workbench: Optional[Dict[_NodeID_For_Dict, WorkbenchUI]] = Field(None)
+    slideshow: Optional[Dict[_NodeID_For_Dict, Slideshow]] = Field(None)
 
 
 class AccessRights(BaseModel):
@@ -247,7 +251,7 @@ class ProjectState(BaseModel):
     state: ProjectRunningState = Field(..., description="The project running state")
 
 
-Workbench = Dict[NodeID, Node]
+Workbench = Dict[_NodeID_For_Dict, Node]
 
 
 class Project(BaseModel):
@@ -271,7 +275,6 @@ class Project(BaseModel):
     accessRights: Dict[GroupID, AccessRights] = Field(
         ...,
         description="object containing the GroupID as key and read/write/execution permissions as value",
-        additionalProperties=False,
     )
     creationDate: str = Field(
         ...,
