@@ -9,7 +9,7 @@ aiohttp==3.6.3            # via -r requirements/_base.txt, pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via -r requirements/_base.txt, aiohttp
-attrs==19.3.0             # via -r requirements/_base.txt, aiohttp, jsonschema, pytest, pytest-docker
+attrs==20.3.0             # via -r requirements/_base.txt, aiohttp, jsonschema, pytest, pytest-docker
 bcrypt==3.2.0             # via paramiko
 cached-property==1.5.2    # via docker-compose
 certifi==2020.6.20        # via requests
@@ -42,7 +42,7 @@ pluggy==0.13.1            # via pytest
 psycopg2-binary==2.8.6    # via -r requirements/_base.txt, aiopg, sqlalchemy
 py==1.9.0                 # via pytest
 pycparser==2.20           # via cffi
-pydantic==1.6.1           # via -r requirements/_base.txt
+pydantic==1.7.2           # via -r requirements/_base.txt
 pylint==2.6.0             # via -r requirements/_test.in
 pynacl==1.4.0             # via paramiko
 pyparsing==2.4.7          # via packaging

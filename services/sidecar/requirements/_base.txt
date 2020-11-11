@@ -35,7 +35,7 @@ networkx==2.5             # via -r requirements/_base.in
 packaging==20.4           # via -r requirements/_base.in
 pamqp==2.3.0              # via aiormq
 psycopg2-binary==2.8.6    # via -c requirements/../../../packages/service-library/requirements/_base.in, aiopg, sqlalchemy
-pydantic[email]==1.6.1    # via -c requirements/../../../packages/models-library/requirements/_base.in, -r requirements/_base.in
+pydantic[email]==1.7.2    # via -c requirements/../../../packages/models-library/requirements/_base.in, -c requirements/../../../packages/service-library/requirements/_base.in, -r requirements/_base.in
 pyparsing==2.4.7          # via packaging
 pytz==2020.1              # via celery
 redis==3.5.3              # via celery

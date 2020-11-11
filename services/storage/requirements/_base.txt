@@ -45,7 +45,7 @@ prometheus-client==0.8.0  # via -r requirements/../../../packages/service-librar
 protobuf==3.13.0          # via blackfynn
 psutil==5.7.3             # via blackfynn
 psycopg2-binary==2.8.6    # via -r requirements/../../../packages/service-library/requirements/_base.in, aiopg, sqlalchemy
-pydantic[email]==1.7.1    # via -r requirements/../../../packages/models-library/requirements/_base.in, -r requirements/../../../packages/service-library/requirements/_base.in
+pydantic[email]==1.7.2    # via -r requirements/../../../packages/models-library/requirements/_base.in, -r requirements/../../../packages/service-library/requirements/_base.in
 pyrsistent==0.17.3        # via jsonschema
 python-dateutil==2.8.1    # via blackfynn, botocore, minio
 pytz==2020.1              # via blackfynn, minio

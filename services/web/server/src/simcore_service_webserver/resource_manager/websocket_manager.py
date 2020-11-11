@@ -33,6 +33,16 @@ SOCKET_ID_KEY = "socket_id"
 
 @attr.s(auto_attribs=True)
 class WebsocketRegistry:
+    """
+    Keeps track of resources allocated for a user's session
+
+    A session is started when a socket resource is allocated (via set_socket_id)
+    A session can allocate multiple resources
+
+    """
+    # TODO: find a more descriptive name ... too many registries!
+    #
+
     user_id: int
     client_session_id: Optional[str]
     app: web.Application
@@ -45,7 +55,7 @@ class WebsocketRegistry:
             else "*",
         }
 
-    async def set_socket_id(self, socket_id: str, *, extra_tll: int = 0) -> None:
+    async def set_socket_id(self, socket_id: str) -> None:
         log.debug(
             "user %s/tab %s adding socket %s in registry...",
             self.user_id,
@@ -56,7 +66,7 @@ class WebsocketRegistry:
         await registry.set_resource(self._resource_key(), (SOCKET_ID_KEY, socket_id))
         # NOTE: hearthbeat is not emulated in tests, make sure that with very small GC intervals
         # the resources do not expire; this value is usually in the order of minutes
-        timeout = max(3, get_service_deletion_timeout(self.app)) + abs(extra_tll)
+        timeout = max(3, get_service_deletion_timeout(self.app))
         await registry.set_key_alive(self._resource_key(), timeout)
 
     async def get_socket_id(self) -> Optional[str]:
@@ -88,7 +98,7 @@ class WebsocketRegistry:
         )
 
     async def set_heartbeat(self) -> None:
-        """Refreshes heartbeat """
+        """Extends TTL to avoid expiration of all resources under this session """
         registry = get_registry(self.app)
         await registry.set_key_alive(
             self._resource_key(), get_service_deletion_timeout(self.app)

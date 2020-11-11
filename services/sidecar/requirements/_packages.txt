@@ -28,7 +28,7 @@ openapi-core==0.12.0      # via -r requirements/../../../packages/service-librar
 openapi-spec-validator==0.2.9  # via openapi-core
 prometheus-client==0.8.0  # via -r requirements/../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.8.6    # via -c requirements/_base.txt, -r requirements/../../../packages/service-library/requirements/_base.in, aiopg, sqlalchemy
-pydantic[email]==1.6.1    # via -c requirements/_base.txt, -r requirements/../../../packages/models-library/requirements/_base.in
+pydantic[email]==1.7.2           # via -c requirements/_base.txt, -r requirements/../../../packages/models-library/requirements/_base.in, -r requirements/../../../packages/service-library/requirements/_base.in
 pyrsistent==0.17.3        # via jsonschema
 python-dateutil==2.8.1    # via minio
 pytz==2020.1              # via -c requirements/_base.txt, minio

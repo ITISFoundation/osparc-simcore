@@ -13,7 +13,7 @@ astroid==2.4.2            # via pylint
 async-exit-stack==1.0.1   # via -r requirements/_base.txt, fastapi
 async-generator==1.10     # via -r requirements/_base.txt, fastapi
 async-timeout==3.0.1      # via aiohttp
-attrs==19.3.0             # via aiohttp, jsonschema, pytest, pytest-docker
+attrs==20.3.0             # via aiohttp, jsonschema, pytest, pytest-docker
 bcrypt==3.2.0             # via paramiko
 cached-property==1.5.1    # via docker-compose
 certifi==2020.6.20        # via -r requirements/_base.txt, httpx, requests
@@ -33,7 +33,7 @@ docker[ssh]==4.3.1        # via -r requirements/_test.in, docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
 email-validator==1.1.1    # via -r requirements/_base.txt, fastapi, pydantic
-faker==4.14.0             # via -r requirements/_test.in
+faker==4.14.2             # via -r requirements/_test.in
 fastapi[all]==0.61.1      # via -r requirements/_base.txt
 graphene==2.1.8           # via -r requirements/_base.txt, fastapi
 graphql-core==2.3.2       # via -r requirements/_base.txt, graphene, graphql-relay
@@ -66,7 +66,7 @@ psycopg2-binary==2.8.6    # via -r requirements/_base.txt, aiopg, sqlalchemy
 ptvsd==4.3.2              # via -r requirements/_test.in
 py==1.9.0                 # via pytest
 pycparser==2.20           # via cffi
-pydantic[dotenv,email]==1.6.1  # via -r requirements/_base.txt, fastapi
+pydantic[dotenv,email]==1.7.2  # via -r requirements/_base.txt, fastapi
 pylint==2.6.0             # via -r requirements/_test.in
 pynacl==1.4.0             # via paramiko
 pyparsing==2.4.7          # via packaging
