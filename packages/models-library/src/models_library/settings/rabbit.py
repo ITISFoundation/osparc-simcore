@@ -29,7 +29,9 @@ class RabbitConfig(BaseSettings):
     @validator("dsn", pre=True)
     @classmethod
     def autofill_dsn(cls, v, values):
-        if not v and all(key in values for key in cls.__fields__ if key != "dsn"):
+        if not v and all(
+            key in values for key in cls.__fields__ if key not in ["dsn", "channels"]
+        ):
             return RabbitDsn.build(
                 scheme="amqp",
                 user=values["user"],
