@@ -65,7 +65,7 @@ class TutorialBase {
     return this.__page;
   }
 
-  async goTo() {
+  async __goTo() {
     console.log("Opening", this.__url);
     // Try to reach the website
     try {
@@ -84,7 +84,7 @@ class TutorialBase {
 
     let resp = null;
     try {
-      await this.goTo();
+      await this.__goTo();
       resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
     }
     catch(err) {

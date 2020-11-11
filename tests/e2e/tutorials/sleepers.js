@@ -20,7 +20,8 @@ async function runTutorial() {
   try {
     tutorial.startScreenshooter();
     await tutorial.start();
-    await tutorial.openTemplate(1000);
+    const studyData = await tutorial.openTemplate(1000);
+    console.log("Study ID:", studyData["data"]["uuid"]);
 
     // Some time for loading the workbench
     await tutorial.waitFor(5000);
