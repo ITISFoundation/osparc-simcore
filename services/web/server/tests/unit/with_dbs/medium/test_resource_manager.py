@@ -3,24 +3,26 @@
 # pylint:disable=redefined-outer-name
 
 
+import re
 from asyncio import sleep
 from copy import deepcopy
-
-
 from typing import Callable
 
 import pytest
 import socketio
 import socketio.exceptions
 from aiohttp import web
+from aioresponses import aioresponses
 from mock import call
-
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import NewProject
+
+from models_library.nodes import RunningState
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director import setup_director
+from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.resource_manager import config, setup_resource_manager
@@ -62,6 +64,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_db, mock_orphaned_services):
     setup_socketio(app)
     setup_projects(app)
     setup_director(app)
+    setup_director_v2(app)
     assert setup_resource_manager(app)
 
     yield loop.run_until_complete(
@@ -74,7 +77,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_db, mock_orphaned_services):
 
 @pytest.fixture()
 async def logged_user(client, user_role: UserRole):
-    """ adds a user in db and logs in with client
+    """adds a user in db and logs in with client
 
     NOTE: `user_role` fixture is defined as a parametrization below!!!
     """
@@ -104,6 +107,26 @@ async def empty_user_project2(client, empty_project, logged_user):
         print("-----> added project", project["name"])
         yield project
         print("<----- removed project", project["name"])
+
+
+@pytest.fixture(autouse=True)
+async def director_v2_subsystem_mock() -> aioresponses:
+    """uses aioresponses to mock all calls of an aiohttpclient
+    WARNING: any request done through the client will go through aioresponses. It is
+    unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
+    Other than that it seems to behave nicely
+    """
+    PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1", "ws://"]
+    pattern = re.compile(r"^http://director-v2:8000/v2/computations/.*$")
+    with aioresponses(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
+        mock.get(
+            pattern,
+            status=202,
+            payload={"state": str(RunningState.NOT_STARTED.value)},
+            repeat=True,
+        )
+
+        yield mock
 
 
 # ------------------------ UTILS ----------------------------------
@@ -166,7 +189,10 @@ async def test_anonymous_websocket_connection(
     ],
 )
 async def test_websocket_resource_management(
-    client, logged_user, socketio_client, client_session_id,
+    client,
+    logged_user,
+    socketio_client,
+    client_session_id,
 ):
     app = client.server.app
     socket_registry = get_registry(app)
@@ -198,7 +224,10 @@ async def test_websocket_resource_management(
     ],
 )
 async def test_websocket_multiple_connections(
-    client, logged_user, socketio_client, client_session_id,
+    client,
+    logged_user,
+    socketio_client,
+    client_session_id,
 ):
     app = client.server.app
     socket_registry = get_registry(app)
@@ -251,7 +280,12 @@ async def test_websocket_multiple_connections(
     ],
 )
 async def test_websocket_disconnected_after_logout(
-    client, logged_user, socketio_client, client_session_id, expected, mocker,
+    client,
+    logged_user,
+    socketio_client,
+    client_session_id,
+    expected,
+    mocker,
 ):
     app = client.server.app
     socket_registry = get_registry(app)
@@ -301,7 +335,12 @@ async def test_websocket_disconnected_after_logout(
 
 
 @pytest.mark.parametrize(
-    "user_role", [(UserRole.GUEST), (UserRole.USER), (UserRole.TESTER),]
+    "user_role",
+    [
+        (UserRole.GUEST),
+        (UserRole.USER),
+        (UserRole.TESTER),
+    ],
 )
 async def test_interactive_services_removed_after_logout(
     client,
@@ -312,6 +351,7 @@ async def test_interactive_services_removed_after_logout(
     client_session_id,
     socketio_client,
     storage_subsystem_mock,  # when guest user logs out garbage is collected
+    director_v2_subsystem_mock: aioresponses,
 ):
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # login - logged_user fixture

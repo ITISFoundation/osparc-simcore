@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 import asyncio
-from enum import auto
 import json
 import re
 import time
@@ -32,7 +31,7 @@ from models_library.projects import (
     RunningState,
 )
 from servicelib.application import create_safe_application
-from simcore_service_webserver import catalog, director_v2
+from simcore_service_webserver import catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.director import setup_director
