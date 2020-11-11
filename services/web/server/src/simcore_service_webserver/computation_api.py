@@ -8,9 +8,7 @@ from typing import Dict, Optional, Tuple
 
 import sqlalchemy as sa
 from aiohttp import web
-from aiopg.sa import Engine
 from celery import Celery
-from celery.contrib.abortable import AbortableAsyncResult
 from sqlalchemy import and_
 
 from models_library.projects import RunningState
@@ -26,7 +24,6 @@ from simcore_postgres_database.webserver_models import (
 
 from .computation_config import ComputationSettings
 from .computation_config import get_settings as get_computation_settings
-from .director import director_api
 
 log = logging.getLogger(__file__)
 

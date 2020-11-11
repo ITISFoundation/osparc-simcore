@@ -217,10 +217,6 @@ async def replace_project(request: web.Request):
     """
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-    replace_pipeline = request.query.get(
-        "run", False
-    )  # FIXME: Actually was never called. CHECK if logic still applies (issue #1176)
-
     new_project = await request.json()
 
     # Prune state field (just in case)
