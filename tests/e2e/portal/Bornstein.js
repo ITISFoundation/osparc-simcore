@@ -19,7 +19,8 @@ async function runTutorial () {
   tutorial.startScreenshooter();
   const page = await tutorial.beforeScript();
   const studyData = await tutorial.openStudyLink();
-  console.log("Study ID:", studyData["data"]["uuid"]);
+  const studyId = studyData["data"]["uuid"];
+  console.log("Study ID:", studyId);
 
   const workbenchData = utils.extractWorkbenchData(studyData["data"]);
   await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][0]]);
