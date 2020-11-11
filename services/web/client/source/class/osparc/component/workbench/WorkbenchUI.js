@@ -889,6 +889,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         srvCat.open();
       }, this);
 
+      const commandEsc = new qx.ui.command.Command("Esc");
+      commandEsc.addListener("execute", () => {
+        this.resetSelectedNodes();
+      });
+
       this.__desktopCanvas.addListener("resize", () => this.__updateHint(), this);
 
       this.__desktopCanvas.addListener("tap", e => {
