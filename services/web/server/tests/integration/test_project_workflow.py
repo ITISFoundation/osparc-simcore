@@ -22,7 +22,6 @@ from models_library.projects import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import delete_all_projects
-from pytest_simcore.simcore_services import simcore_services
 from servicelib.application import create_safe_application
 from simcore_service_webserver import catalog
 from simcore_service_webserver.catalog import setup_catalog
@@ -43,6 +42,7 @@ API_VERSION = "v0"
 core_services = [
     "catalog",
     "director",
+    "director-v2",
     "postgres",
     "redis",
 ]
@@ -142,18 +142,6 @@ async def logged_user(client):  # , role: UserRole):
 
 
 @pytest.fixture
-def computational_system_mock(mocker):
-    # director needs access to service registry which unfortunately cannot be provided for testing. For that reason we need to mock
-    # interaction with director
-    mock_fun = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.update_pipeline_db",
-        return_value=Future(),
-    )
-    mock_fun.return_value.set_result("")
-    return mock_fun
-
-
-@pytest.fixture
 async def storage_subsystem_mock(loop, mocker):
     """
     Patches client calls to storage service
@@ -178,6 +166,29 @@ async def storage_subsystem_mock(loop, mocker):
     )
     mock1.return_value.set_result("")
     return mock, mock1
+
+
+@pytest.fixture
+async def catalog_subsystem_mock(monkeypatch):
+    services_in_project = []
+
+    def creator(projects: Optional[Union[List[Dict], Dict]] = None) -> None:
+        for proj in projects:
+            services_in_project.extend(
+                [
+                    {"key": s["key"], "version": s["version"]}
+                    for _, s in proj["workbench"].items()
+                ]
+            )
+
+    async def mocked_get_services_for_user(*args, **kwargs):
+        return services_in_project
+
+    monkeypatch.setattr(
+        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
+    )
+
+    return creator
 
 
 # Tests CRUD operations --------------------------------------------
@@ -229,29 +240,6 @@ async def _request_delete(client, pid):
     await assert_status(resp, web.HTTPNoContent)
 
 
-@pytest.fixture
-async def catalog_subsystem_mock(monkeypatch):
-    services_in_project = []
-
-    def creator(projects: Optional[Union[List[Dict], Dict]] = None) -> None:
-        for proj in projects:
-            services_in_project.extend(
-                [
-                    {"key": s["key"], "version": s["version"]}
-                    for _, s in proj["workbench"].items()
-                ]
-            )
-
-    async def mocked_get_services_for_user(*args, **kwargs):
-        return services_in_project
-
-    monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
-    )
-
-    return creator
-
-
 async def test_workflow(
     client,
     postgres_db: sa.engine.Engine,
@@ -262,7 +250,6 @@ async def test_workflow(
     logged_user,
     primary_group: Dict[str, str],
     standard_groups: List[Dict[str, str]],
-    computational_system_mock,
     storage_subsystem_mock,
 ):
     # empty list
