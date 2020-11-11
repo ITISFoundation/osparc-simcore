@@ -200,7 +200,7 @@ async function clickLoggerTitle(page) {
   await utils.waitAndClick(page, '[osparc-test-id="loggerTitleLabel"]')
 }
 
-async function runStudy(page, waitFor = 0) {
+async function runStudy(page) {
   console.log("Running study");
 
   const responsesQueue = new responses.ResponsesQueue(page);
@@ -227,9 +227,6 @@ async function runStudy(page, waitFor = 0) {
     console.error(err);
     throw (err);
   }
-
-  console.log("Running study and waiting for", waitFor / 1000, "seconds");
-  await page.waitFor(waitFor);
 }
 
 async function dashboardDeleteFirstStudy(page, studyName) {
