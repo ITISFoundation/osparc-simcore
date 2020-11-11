@@ -172,4 +172,4 @@ async def test_get_service_extras(
     )
     service_extras: ServiceExtras = await director_client.get_service_extras(service)
     assert mocked_director_service_fcts["get_service_extras"].called
-    assert fake_service_extras == fake_service_extras
+    assert fake_service_extras == service_extras
