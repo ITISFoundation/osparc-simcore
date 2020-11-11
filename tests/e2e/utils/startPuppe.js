@@ -82,6 +82,8 @@ function listenToEvents(page) {
 async function getPage(browser) {
   const page = await browser.newPage();
   page.setCacheEnabled(false);
+  // https://github.com/Netflix/pollyjs/issues/149#issuecomment-481108446
+  page.setBypassCSP(true);
   await page.setViewport({
     width: 1920,
     height: 1080
