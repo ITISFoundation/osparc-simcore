@@ -146,6 +146,8 @@ async function waitForResponse(page, url) {
 }
 
 async function __makeRequest(page, url) {
+  // https://github.com/Netflix/pollyjs/issues/149#issuecomment-481108446
+  await page.setBypassCSP(true);
   const resp = await page.evaluate(async (url) => {
     const resp = await fetch(url);
     const jsonResp = await resp.json();
