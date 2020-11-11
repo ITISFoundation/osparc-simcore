@@ -6118,6 +6118,7 @@ paths:
                               allOf:
                                 - title: ProjectState
                                   type: object
+                                  additionalProperties: false
                                   properties:
                                     locked:
                                       title: Locked
@@ -6125,6 +6126,7 @@ paths:
                                       allOf:
                                         - title: ProjectLocked
                                           type: object
+                                          additionalProperties: false
                                           properties:
                                             value:
                                               title: Value
@@ -6136,6 +6138,7 @@ paths:
                                               allOf:
                                                 - title: Owner
                                                   type: object
+                                                  additionalProperties: false
                                                   properties:
                                                     user_id:
                                                       title: User Id
@@ -6169,6 +6172,7 @@ paths:
                                       allOf:
                                         - title: ProjectRunningState
                                           type: object
+                                          additionalProperties: false
                                           properties:
                                             value:
                                               title: RunningState
@@ -6670,6 +6674,7 @@ paths:
                   allOf:
                     - title: ProjectState
                       type: object
+                      additionalProperties: false
                       properties:
                         locked:
                           title: Locked
@@ -6677,6 +6682,7 @@ paths:
                           allOf:
                             - title: ProjectLocked
                               type: object
+                              additionalProperties: false
                               properties:
                                 value:
                                   title: Value
@@ -6688,6 +6694,7 @@ paths:
                                   allOf:
                                     - title: Owner
                                       type: object
+                                      additionalProperties: false
                                       properties:
                                         user_id:
                                           title: User Id
@@ -6721,6 +6728,7 @@ paths:
                           allOf:
                             - title: ProjectRunningState
                               type: object
+                              additionalProperties: false
                               properties:
                                 value:
                                   title: RunningState
@@ -7102,6 +7110,7 @@ paths:
                             allOf:
                               - title: ProjectState
                                 type: object
+                                additionalProperties: false
                                 properties:
                                   locked:
                                     title: Locked
@@ -7109,6 +7118,7 @@ paths:
                                     allOf:
                                       - title: ProjectLocked
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: Value
@@ -7120,6 +7130,7 @@ paths:
                                             allOf:
                                               - title: Owner
                                                 type: object
+                                                additionalProperties: false
                                                 properties:
                                                   user_id:
                                                     title: User Id
@@ -7153,6 +7164,7 @@ paths:
                                     allOf:
                                       - title: ProjectRunningState
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: RunningState
@@ -7652,6 +7664,7 @@ paths:
                             allOf:
                               - title: ProjectState
                                 type: object
+                                additionalProperties: false
                                 properties:
                                   locked:
                                     title: Locked
@@ -7659,6 +7672,7 @@ paths:
                                     allOf:
                                       - title: ProjectLocked
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: Value
@@ -7670,6 +7684,7 @@ paths:
                                             allOf:
                                               - title: Owner
                                                 type: object
+                                                additionalProperties: false
                                                 properties:
                                                   user_id:
                                                     title: User Id
@@ -7703,6 +7718,7 @@ paths:
                                     allOf:
                                       - title: ProjectRunningState
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: RunningState
@@ -8208,6 +8224,7 @@ paths:
                             allOf:
                               - title: ProjectState
                                 type: object
+                                additionalProperties: false
                                 properties:
                                   locked:
                                     title: Locked
@@ -8215,6 +8232,7 @@ paths:
                                     allOf:
                                       - title: ProjectLocked
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: Value
@@ -8226,6 +8244,7 @@ paths:
                                             allOf:
                                               - title: Owner
                                                 type: object
+                                                additionalProperties: false
                                                 properties:
                                                   user_id:
                                                     title: User Id
@@ -8259,6 +8278,7 @@ paths:
                                     allOf:
                                       - title: ProjectRunningState
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: RunningState
@@ -8755,6 +8775,7 @@ paths:
                   allOf:
                     - title: ProjectState
                       type: object
+                      additionalProperties: false
                       properties:
                         locked:
                           title: Locked
@@ -8762,6 +8783,7 @@ paths:
                           allOf:
                             - title: ProjectLocked
                               type: object
+                              additionalProperties: false
                               properties:
                                 value:
                                   title: Value
@@ -8773,6 +8795,7 @@ paths:
                                   allOf:
                                     - title: Owner
                                       type: object
+                                      additionalProperties: false
                                       properties:
                                         user_id:
                                           title: User Id
@@ -8806,6 +8829,7 @@ paths:
                           allOf:
                             - title: ProjectRunningState
                               type: object
+                              additionalProperties: false
                               properties:
                                 value:
                                   title: RunningState
@@ -9187,6 +9211,7 @@ paths:
                             allOf:
                               - title: ProjectState
                                 type: object
+                                additionalProperties: false
                                 properties:
                                   locked:
                                     title: Locked
@@ -9194,6 +9219,7 @@ paths:
                                     allOf:
                                       - title: ProjectLocked
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: Value
@@ -9205,6 +9231,7 @@ paths:
                                             allOf:
                                               - title: Owner
                                                 type: object
+                                                additionalProperties: false
                                                 properties:
                                                   user_id:
                                                     title: User Id
@@ -9238,6 +9265,7 @@ paths:
                                     allOf:
                                       - title: ProjectRunningState
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: RunningState
@@ -9759,6 +9787,7 @@ paths:
                             allOf:
                               - title: ProjectState
                                 type: object
+                                additionalProperties: false
                                 properties:
                                   locked:
                                     title: Locked
@@ -9766,6 +9795,7 @@ paths:
                                     allOf:
                                       - title: ProjectLocked
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: Value
@@ -9777,6 +9807,7 @@ paths:
                                             allOf:
                                               - title: Owner
                                                 type: object
+                                                additionalProperties: false
                                                 properties:
                                                   user_id:
                                                     title: User Id
@@ -9810,6 +9841,7 @@ paths:
                                     allOf:
                                       - title: ProjectRunningState
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: RunningState
@@ -11143,6 +11175,7 @@ paths:
                             allOf:
                               - title: ProjectState
                                 type: object
+                                additionalProperties: false
                                 properties:
                                   locked:
                                     title: Locked
@@ -11150,6 +11183,7 @@ paths:
                                     allOf:
                                       - title: ProjectLocked
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: Value
@@ -11161,6 +11195,7 @@ paths:
                                             allOf:
                                               - title: Owner
                                                 type: object
+                                                additionalProperties: false
                                                 properties:
                                                   user_id:
                                                     title: User Id
@@ -11194,6 +11229,7 @@ paths:
                                     allOf:
                                       - title: ProjectRunningState
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: RunningState
@@ -11692,6 +11728,7 @@ paths:
                             allOf:
                               - title: ProjectState
                                 type: object
+                                additionalProperties: false
                                 properties:
                                   locked:
                                     title: Locked
@@ -11699,6 +11736,7 @@ paths:
                                     allOf:
                                       - title: ProjectLocked
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: Value
@@ -11710,6 +11748,7 @@ paths:
                                             allOf:
                                               - title: Owner
                                                 type: object
+                                                additionalProperties: false
                                                 properties:
                                                   user_id:
                                                     title: User Id
@@ -11743,6 +11782,7 @@ paths:
                                     allOf:
                                       - title: ProjectRunningState
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: RunningState

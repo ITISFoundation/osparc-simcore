@@ -491,6 +491,7 @@
         {
           "title": "ProjectState",
           "type": "object",
+          "additionalProperties": false,
           "properties": {
             "locked": {
               "title": "Locked",
@@ -499,6 +500,7 @@
                 {
                   "title": "ProjectLocked",
                   "type": "object",
+                  "additionalProperties": false,
                   "properties": {
                     "value": {
                       "title": "Value",
@@ -512,6 +514,7 @@
                         {
                           "title": "Owner",
                           "type": "object",
+                          "additionalProperties": false,
                           "properties": {
                             "user_id": {
                               "title": "User Id",
@@ -561,6 +564,7 @@
                 {
                   "title": "ProjectRunningState",
                   "type": "object",
+                  "additionalProperties": false,
                   "properties": {
                     "value": {
                       "title": "RunningState",

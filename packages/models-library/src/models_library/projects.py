@@ -62,6 +62,9 @@ class Owner(BaseModel):
     first_name: str = Field(..., description="Owner first name", example=["John"])
     last_name: str = Field(..., description="Owner last name", example=["Smith"])
 
+    class Config:
+        extra = Extra.forbid
+
 
 class ProjectLocked(BaseModel):
     value: bool = Field(
@@ -69,16 +72,25 @@ class ProjectLocked(BaseModel):
     )
     owner: Optional[Owner] = Field(None, description="The user that owns the lock")
 
+    class Config:
+        extra = Extra.forbid
+
 
 class ProjectRunningState(BaseModel):
     value: RunningState = Field(
         ..., description="The running state of the project", example=["STARTED"]
     )
 
+    class Config:
+        extra = Extra.forbid
+
 
 class ProjectState(BaseModel):
     locked: ProjectLocked = Field(..., description="The project lock state")
     state: ProjectRunningState = Field(..., description="The project running state")
+
+    class Config:
+        extra = Extra.forbid
 
 
 class Project(BaseModel):

@@ -352,6 +352,7 @@ properties:
     allOf:
       - title: ProjectState
         type: object
+        additionalProperties: false
         properties:
           locked:
             title: Locked
@@ -359,6 +360,7 @@ properties:
             allOf:
               - title: ProjectLocked
                 type: object
+                additionalProperties: false
                 properties:
                   value:
                     title: Value
@@ -370,6 +372,7 @@ properties:
                     allOf:
                       - title: Owner
                         type: object
+                        additionalProperties: false
                         properties:
                           user_id:
                             title: User Id
@@ -405,6 +408,7 @@ properties:
             allOf:
               - title: ProjectRunningState
                 type: object
+                additionalProperties: false
                 properties:
                   value:
                     title: RunningState
