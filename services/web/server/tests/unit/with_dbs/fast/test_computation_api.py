@@ -3,17 +3,13 @@
 # pylint:disable=redefined-outer-name
 
 
-from typing import Dict, Tuple
-
 import faker
 import pytest
 
 from models_library.projects import RunningState
 from simcore_postgres_database.models.comp_pipeline import StateType
-from simcore_service_webserver import computation_api
 from simcore_service_webserver.computation_api import (
     convert_state_from_db,
-    get_pipeline_state,
 )
 
 fake = faker.Faker()
@@ -33,151 +29,3 @@ NodeID = str
 )
 def test_convert_state_from_db(db_state: int, expected_state: RunningState):
     assert convert_state_from_db(db_state) == expected_state
-
-
-@pytest.fixture
-async def mock_get_task_states(
-    loop, monkeypatch, task_states_w_expressions: Dict[NodeID, Tuple[RunningState, str]]
-):
-    # Preface: Evaluates time expressions at a function scope (i.e. every time a test function is run)
-    #
-    # NOTE: Evaluation of parameters does not happen at the same time as the
-    #       execution time. Therefore, the times are evaluated here instead
-    #       of in the parameters variables
-
-    # pylint: disable=eval-used
-    # pylint: disable=unused-import
-    from datetime import datetime, timedelta
-
-    task_states = {}
-    for nodeid, values in task_states_w_expressions.items():
-        state, timedate_expression = values
-        task_states[nodeid] = (state, eval(timedate_expression))
-
-    # -----
-
-    async def return_node_to_state(
-        *args, **kwargs
-    ) -> Dict[NodeID, Tuple[RunningState, datetime]]:
-        return task_states
-
-    monkeypatch.setattr(computation_api, "get_task_states", return_node_to_state)
-
-
-CELERY_PUBLICATION_TIMEOUT = 120
-
-
-@pytest.fixture
-def mock_get_celery_publication_timeout(monkeypatch):
-    def return_celery_publication_timeout(*args, **kwargs) -> int:
-        return CELERY_PUBLICATION_TIMEOUT
-
-    monkeypatch.setattr(
-        computation_api,
-        "get_celery_publication_timeout",
-        return_celery_publication_timeout,
-    )
-
-
-@pytest.mark.parametrize(
-    "task_states_w_expressions, expected_pipeline_state",
-    [
-        (
-            # pipeline is published if any of the nodes is published AND time is within publication timeout
-            {
-                "task0": (RunningState.PUBLISHED, "datetime.utcnow()"),
-                "task1": (
-                    RunningState.PENDING,
-                    "datetime.utcnow()-timedelta(seconds=75)",
-                ),
-                "task2": (
-                    RunningState.STARTED,
-                    "datetime.utcnow()-timedelta(seconds=155)",
-                ),
-            },
-            RunningState.PUBLISHED,
-        ),
-        (
-            # pipeline is published if any of the node is published AND time is within publication timeout
-            {
-                "task0": (
-                    RunningState.PUBLISHED,
-                    "datetime.utcnow()-timedelta(seconds=CELERY_PUBLICATION_TIMEOUT + 75)",
-                ),
-                "task1": (
-                    RunningState.PENDING,
-                    "datetime.utcnow()-timedelta(seconds=145)",
-                ),
-                "task2": (
-                    RunningState.STARTED,
-                    "datetime.utcnow()-timedelta(seconds=1555)",
-                ),
-            },
-            RunningState.NOT_STARTED,
-        ),
-        (
-            # not started pipeline (all nodes are in non started mode)
-            {
-                "task0": (RunningState.NOT_STARTED, "fake.date_time()"),
-                "task1": (RunningState.NOT_STARTED, "fake.date_time()"),
-            },
-            RunningState.NOT_STARTED,
-        ),
-        (
-            # successful pipeline if ALL of the node are successful
-            {
-                "task0": (RunningState.SUCCESS, "fake.date_time()"),
-                "task1": (RunningState.SUCCESS, "fake.date_time()"),
-            },
-            RunningState.SUCCESS,
-        ),
-        (
-            # pending pipeline if ALL of the node are pending
-            {
-                "task0": (RunningState.PENDING, "fake.date_time()"),
-                "task1": (RunningState.PENDING, "fake.date_time()"),
-            },
-            RunningState.PENDING,
-        ),
-        (
-            # failed pipeline if any of the node is failed
-            {
-                "task0": (RunningState.PENDING, "fake.date_time()"),
-                "task1": (RunningState.FAILED, "fake.date_time()"),
-            },
-            RunningState.FAILED,
-        ),
-        (
-            # started pipeline if any of the node is started
-            {
-                "task0": (RunningState.STARTED, "fake.date_time()"),
-                "task1": (RunningState.FAILED, "fake.date_time()"),
-            },
-            RunningState.FAILED,
-        ),
-        (
-            # started pipeline if any of the node is started
-            {
-                "task0": (RunningState.SUCCESS, "fake.date_time()"),
-                "task1": (RunningState.PENDING, "fake.date_time()"),
-                "task2": (RunningState.PENDING, "fake.date_time()"),
-            },
-            RunningState.PENDING,
-        ),
-        (
-            # empty tasks (could be an empty project or filled with dynamic services)
-            {},
-            RunningState.NOT_STARTED,
-        ),
-    ],
-)
-async def test_get_pipeline_state(
-    mock_get_task_states,
-    mock_get_celery_publication_timeout,
-    task_states_w_expressions,
-    expected_pipeline_state: RunningState,
-):
-    FAKE_APP = {}
-    FAKE_PROJECT = "project_id"
-    pipeline_state = await get_pipeline_state(FAKE_APP, FAKE_PROJECT)
-    assert pipeline_state == expected_pipeline_state

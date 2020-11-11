@@ -21,12 +21,14 @@ from models_library.projects import (
     ProjectRunningState,
     ProjectState,
 )
+from pydantic.types import PositiveInt
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
-from ..computation_api import delete_pipeline_db, get_pipeline_state
+from ..director_v2 import get_pipeline_state
+from ..computation_api import delete_pipeline_db
 from ..director import director_api
 from ..resource_manager.websocket_manager import managed_resource
 from ..socketio.events import (
@@ -436,9 +438,9 @@ async def _get_project_lock_state(
 
 
 async def _get_project_running_state(
-    project_uuid: str, app: web.Application
+    user_id: PositiveInt, project_uuid: str, app: web.Application
 ) -> ProjectRunningState:
-    pipeline_state = await get_pipeline_state(app, project_uuid)
+    pipeline_state = await get_pipeline_state(app, user_id, project_uuid)
     return ProjectRunningState(value=pipeline_state)
 
 
@@ -454,7 +456,7 @@ async def get_project_state_for_user(user_id, project_uuid, app) -> Dict:
         might require a mock for this function to work properly
     """
     lock_state = await _get_project_lock_state(user_id, project_uuid, app)
-    running_state = await _get_project_running_state(project_uuid, app)
+    running_state = await _get_project_running_state(user_id, project_uuid, app)
     return ProjectState(
         locked=lock_state,
         state=running_state,

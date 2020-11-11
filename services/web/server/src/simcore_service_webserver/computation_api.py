@@ -3,8 +3,7 @@
 """
 # pylint: disable=too-many-arguments
 import logging
-from datetime import datetime
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -16,7 +15,6 @@ from servicelib.application_keys import APP_DB_ENGINE_KEY
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.webserver_models import (
-    NodeClass,
     comp_pipeline,
     comp_tasks,
 )
@@ -43,11 +41,6 @@ def get_celery(app: web.Application) -> Celery:
     return celery_app
 
 
-def get_celery_publication_timeout(app: web.Application) -> int:
-    comp_settings: ComputationSettings = get_computation_settings(app)
-    return comp_settings.publication_timeout
-
-
 DB_TO_RUNNING_STATE = {
     StateType.FAILED: RunningState.FAILED,
     StateType.PENDING: RunningState.PENDING,
@@ -62,54 +55,6 @@ DB_TO_RUNNING_STATE = {
 @log_decorator(logger=log)
 def convert_state_from_db(db_state: StateType) -> RunningState:
     return RunningState(DB_TO_RUNNING_STATE[StateType(db_state)])
-
-
-@log_decorator(logger=log)
-async def get_task_states(
-    app: web.Application, project_id: str
-) -> Dict[str, Tuple[RunningState, datetime]]:
-    db_engine = app[APP_DB_ENGINE_KEY]
-    task_states: Dict[str, RunningState] = {}
-    async with db_engine.acquire() as conn:
-        async for row in conn.execute(
-            sa.select([comp_tasks]).where(comp_tasks.c.project_id == project_id)
-        ):
-            if row.node_class != NodeClass.COMPUTATIONAL:
-                continue
-            task_states[row.node_id] = (convert_state_from_db(row.state), row.submit)
-    return task_states
-
-
-@log_decorator(logger=log)
-async def get_pipeline_state(app: web.Application, project_id: str) -> RunningState:
-    task_states: Dict[str, Tuple[RunningState, datetime]] = await get_task_states(
-        app, project_id
-    )
-    # compute pipeline state from task states
-    now = datetime.utcnow()
-    if task_states:
-        # put in a set of unique values
-        set_states = {state[0] for state in task_states.values()}
-        last_update = next(
-            iter(sorted([time[1] for time in task_states.values()], reverse=True))
-        )
-        if RunningState.PUBLISHED in set_states:
-            if (now - last_update).seconds > get_celery_publication_timeout(app):
-                return RunningState.NOT_STARTED
-        if len(set_states) == 1:
-            # this is typically for success, pending, published
-            return next(iter(set_states))
-
-        for state in [
-            RunningState.FAILED,  # task is failed -> pipeline as well
-            RunningState.PUBLISHED,  # still in publishing phase
-            RunningState.STARTED,  # task is started or retrying
-            RunningState.PENDING,  # still running
-        ]:
-            if state in set_states:
-                return state
-
-    return RunningState.NOT_STARTED
 
 
 @log_decorator(logger=log)
