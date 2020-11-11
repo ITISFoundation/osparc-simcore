@@ -115,9 +115,7 @@ def _log_arguments(
 
 def log_decorator(logger=None):
     # Build logger object
-    logger_obj = logger
-    if not logger:
-        logger_obj = log
+    logger_obj = logger or log
 
     def log_decorator_info(func):
         if iscoroutinefunction(func):
