@@ -19,14 +19,15 @@ async function runTutorial () {
   tutorial.startScreenshooter();
   const page = await tutorial.beforeScript();
   const studyData = await tutorial.openStudyLink();
-  console.log("Study ID:", studyData["data"]["uuid"]);
+  const studyId = studyData["data"]["uuid"];
+  console.log("Study ID:", studyId);
 
   // Some time for loading the workbench
   await tutorial.waitFor(10000);
   await utils.takeScreenshot(page, screenshotPrefix + 'workbench_loaded');
 
-  await tutorial.runPipeline(1500000);
-  await utils.takeScreenshot(page, screenshotPrefix + 'after_1-2_run');
+  await tutorial.runPipeline(studyId, 1800000);
+  await utils.takeScreenshot(page, screenshotPrefix + 'after_1-2-3_run');
 
   await tutorial.openNodeFiles(1);
   const outFiles0 = [
@@ -45,9 +46,6 @@ async function runTutorial () {
   ];
   await tutorial.checkResults(outFiles1.length);
 
-  // Some time for running the 2D
-  await tutorial.waitFor(300000);
-  await utils.takeScreenshot(page, screenshotPrefix + 'after_3_run');
   await tutorial.openNodeFiles(3);
   const outFiles2 = [
     "aps.zip",

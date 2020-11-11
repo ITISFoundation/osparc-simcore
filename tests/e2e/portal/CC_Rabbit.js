@@ -19,13 +19,14 @@ async function runTutorial () {
   tutorial.startScreenshooter();
   const page = await tutorial.beforeScript();
   const studyData = await tutorial.openStudyLink();
-  console.log("Study ID:", studyData["data"]["uuid"]);
+  const studyId = studyData["data"]["uuid"];
+  console.log("Study ID:", studyId);
 
   // Some time for loading the workbench
   await tutorial.waitFor(10000);
   await utils.takeScreenshot(page, screenshotPrefix + 'workbench_loaded');
 
-  await tutorial.runPipeline(1500000);
+  await tutorial.runPipeline(studyId, 1500000);
   await utils.takeScreenshot(page, screenshotPrefix + 'after_1-2-3_run');
 
   await tutorial.openNodeFiles(1);
