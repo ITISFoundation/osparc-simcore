@@ -225,7 +225,7 @@ class TutorialBase {
 
     const start = new Date().getTime();
     while ((new Date().getTime())-start < timeout) {
-      await utils.sleep(2500);
+      await utils.sleep(5000);
       if (await utils.isStudyDone(this.__page, host+"/v0", studyId)) {
         return;
       }
