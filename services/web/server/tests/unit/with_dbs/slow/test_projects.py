@@ -241,7 +241,7 @@ async def director_v2_subsystem_mock() -> aioresponses:
     unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
     Other than that it seems to behave nicely
     """
-    PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1"]
+    PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1", "ws://"]
     pattern = re.compile(r"^http://director-v2:8000/v2/computations/.*$")
     with aioresponses(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
         mock.get(
