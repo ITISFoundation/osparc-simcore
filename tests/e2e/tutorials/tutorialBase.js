@@ -242,12 +242,12 @@ class TutorialBase {
     await auto.clickLoggerTitle(this.__page);
   }
 
-  async runPipeline(studyId) {
+  async runPipeline(studyId, timeout = 60000) {
     await this.clickLoggerTitle();
 
     await this.takeScreenshot("runStudy_before");
     await auto.runStudy(this.__page);
-    await this.waitForStudyRun(studyId);
+    await this.waitForStudyRun(studyId, timeout);
     await this.takeScreenshot("runStudy_after");
   }
 
