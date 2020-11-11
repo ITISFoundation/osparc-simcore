@@ -17,7 +17,6 @@
       "inputs": {},
       "inputNodes": [],
       "outputs": {},
-      "parent": null,
       "position": {
         "x": 50,
         "y": 150
@@ -51,7 +50,6 @@
         "b4b20476-e7c0-47c2-8cc4-f66ac21a13bf"
       ],
       "outputs": {},
-      "parent": null,
       "position": {
         "x": 300,
         "y": 150
@@ -67,8 +65,7 @@
         "x": 1073,
         "y": 307
       },
-      "progress": 100,
-      "thumbnail": ""
+      "progress": 100
     }
   },
   "ui": {},

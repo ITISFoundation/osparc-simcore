@@ -69,7 +69,7 @@ properties:
     example: '2018-07-01T11:13:43Z'
   thumbnail:
     type: string
-    minLength: 1
+    minLength: 0
     maxLength: 2083
     format: uri
     description: url of the latest screenshot of the project
@@ -382,8 +382,6 @@ properties:
                               database table
                             example:
                               - 2
-                            exclusiveMinimum: true
-                            minimum: 0
                           first_name:
                             title: First Name
                             description: Owner first name

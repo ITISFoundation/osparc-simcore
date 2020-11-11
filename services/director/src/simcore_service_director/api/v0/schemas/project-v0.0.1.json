@@ -93,7 +93,7 @@
     },
     "thumbnail": {
       "type": "string",
-      "minLength": 1,
+      "minLength": 0,
       "maxLength": 2083,
       "format": "uri",
       "description": "url of the latest screenshot of the project",
@@ -522,8 +522,7 @@
                               "description": "Owner's identifier when registered in the user's database table",
                               "example": [
                                 2
-                              ],
-                              "exclusiveMinimum": 0
+                              ]
                             },
                             "first_name": {
                               "title": "First Name",
