@@ -14,8 +14,9 @@ DATE_RE = r"\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|
 GroupID = constr(regex=r"^\S+$")
 
 # Pydantic does not support exporting a jsonschema with Dict keys being something else than a str
+# this is a regex for having uuids of type: 8-4-4-4-12 digits
 _NodeID_For_Dict = constr(
-    regex=r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$"
+    regex=r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
 )
 ProjectID = UUID
 ClassifierID = str
