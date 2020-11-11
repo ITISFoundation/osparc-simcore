@@ -3,7 +3,7 @@ import re
 from datetime import datetime
 from typing import List, Set
 
-from models_library.projects import KEY_RE, RunningState
+from models_library.nodes import KEY_RE, RunningState
 
 from ..models.domains.comp_tasks import CompTaskAtDB
 from ..modules.db.tables import NodeClass

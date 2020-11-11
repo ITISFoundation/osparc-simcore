@@ -3,7 +3,8 @@ from typing import Optional
 from uuid import UUID
 
 from models_library.constants import VERSION_RE
-from models_library.projects import Inputs, NodeID, Outputs, ProjectID, RunningState
+from models_library.projects import ProjectID, RunningState
+from models_library.nodes import NodeID, Inputs, Outputs
 from models_library.services import KEY_RE, ServiceInputs, ServiceOutputs
 from pydantic import BaseModel, Extra, Field, AnyHttpUrl, constr, validator
 from pydantic.types import PositiveInt
