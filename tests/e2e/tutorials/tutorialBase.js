@@ -42,22 +42,6 @@ class TutorialBase {
     clearInterval(this.__interval);
   }
 
-  async start() {
-    try {
-      await this.beforeScript();
-      await this.goTo();
-
-      const needsRegister = await this.registerIfNeeded();
-      if (!needsRegister) {
-        await this.login();
-      }
-    }
-    catch(err) {
-      console.error("Error starting", err);
-      throw(err);
-    }
-  }
-
   async beforeScript() {
     this.__browser = await startPuppe.getBrowser(this.__demo);
     this.__page = await startPuppe.getPage(this.__browser);
@@ -77,6 +61,22 @@ class TutorialBase {
     }
     const domain = utils.getDomain(this.__url);
     await this.takeScreenshot("landingPage_" + domain);
+  }
+
+  async start() {
+    try {
+      await this.beforeScript();
+      await this.__goTo();
+
+      const needsRegister = await this.registerIfNeeded();
+      if (!needsRegister) {
+        await this.login();
+      }
+    }
+    catch(err) {
+      console.error("Error starting", err);
+      throw(err);
+    }
   }
 
   async openStudyLink(openStudyTimeout = 20000) {
