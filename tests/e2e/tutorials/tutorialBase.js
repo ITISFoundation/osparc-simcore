@@ -247,14 +247,7 @@ class TutorialBase {
 
     await this.takeScreenshot("runStudy_before");
     await auto.runStudy(this.__page);
-
-
-
-    console.log("Running study and waiting");
-    case "NOT_STARTED":
-    case "SUCCESS":
-    case "FAILED":
-
+    await this.waitForStudyRun(studyId);
     await this.takeScreenshot("runStudy_after");
   }
 
