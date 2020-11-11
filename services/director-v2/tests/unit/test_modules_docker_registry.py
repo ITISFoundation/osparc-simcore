@@ -9,7 +9,7 @@ import respx
 
 
 @pytest.fixture(autouse=True)
-def minimal_director_config(monkeypatch):
+def minimal_director_config(project_env_devel_environment, monkeypatch):
     """set a minimal configuration for testing the director connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "0")
     monkeypatch.setenv("POSTGRES_ENABLED", "0")

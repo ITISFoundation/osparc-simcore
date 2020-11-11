@@ -57,7 +57,7 @@ def celery_configuration() -> CeleryConfig:
 
 
 @pytest.fixture(autouse=True)
-def minimal_celery_config(monkeypatch):
+def minimal_celery_config(project_env_devel_environment, monkeypatch):
     """set a minimal configuration for testing the director connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "0")
     monkeypatch.setenv("POSTGRES_ENABLED", "0")
