@@ -145,15 +145,20 @@ async function waitForResponse(page, url) {
   })
 }
 
-async function isServiceReady(page, prefix, studyId, nodeId) {
-  const url = prefix + "/projects/" + studyId +"/nodes/" + nodeId;
-  console.log("-- Is service ready", url, ":");
+async function __makeRequest(url) {
   const resp = await page.evaluate(async (url) => {
     const resp = await fetch(url);
     const jsonResp = await resp.json();
     console.log(jsonResp)
     return jsonResp;
   }, url);
+  return resp;
+}
+
+async function isServiceReady(page, prefix, studyId, nodeId) {
+  const url = prefix + "/projects/" + studyId +"/nodes/" + nodeId;
+  console.log("-- Is service ready", url, ":");
+  const resp = __makeRequest(page, url);
 
   const status = resp["data"]["service_state"];
   console.log("Status:", nodeId, status);
@@ -161,6 +166,20 @@ async function isServiceReady(page, prefix, studyId, nodeId) {
     "running",
     "complete",
     "failed"
+  ];
+  return stopListening.includes(status);
+}
+
+async function isStudyDone(page, prefix, studyId) {
+  const url = prefix + "/projects/" + studyId +"/state";
+  console.log("-- Is study done", url, ":");
+  const resp = __makeRequest(page, url);
+
+  const pipelineStatus = resp["data"]["state"];
+  console.log("Pipeline Status:", studyId, pipelineStatus);
+  const stopListening = [
+    "SUCCESS",
+    "FAILED"
   ];
   return stopListening.includes(status);
 }
