@@ -34,9 +34,6 @@ class AccessEnum(str, Enum):
     Invisible = "Invisible"
     ReadOnly = "ReadOnly"
 
-    class Config:
-        extra = Extra.forbid
-
 
 class PortLink(BaseModel):
     nodeUuid: NodeID = Field(

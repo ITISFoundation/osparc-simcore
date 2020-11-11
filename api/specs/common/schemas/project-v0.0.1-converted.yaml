@@ -88,8 +88,7 @@ properties:
           key:
             type: string
             description: distinctive name for the node based on the docker registry path
-            pattern: >-
-              ^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s/]+)+$
+            pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
             example:
               - simcore/services/comp/sleeper
               - simcore/services/dynamic/3dviewer
@@ -140,8 +139,10 @@ properties:
                     properties:
                       nodeUuid:
                         type: string
+                        format: uuid
                       output:
                         type: string
+                        pattern: '^[-_a-zA-Z0-9]+$'
                   - type: object
                     additionalProperties: false
                     required:
@@ -164,6 +165,8 @@ properties:
                       - downloadLink
                     properties:
                       downloadLink:
+                        minLength: 1
+                        maxLength: 65536
                         type: string
                         format: uri
                       label:
@@ -191,6 +194,7 @@ properties:
               - nodeUuid1
               - nodeUuid2
           outputs:
+            default: {}
             type: object
             patternProperties:
               '^[-_a-zA-Z0-9]+$':
@@ -223,6 +227,8 @@ properties:
                       - downloadLink
                     properties:
                       downloadLink:
+                        minLength: 1
+                        maxLength: 65536
                         type: string
                         format: uri
                       label:
@@ -282,7 +288,7 @@ properties:
     additionalProperties: true
   ui:
     type: object
-    additionalProperties: true
+    additionalProperties: false
     properties:
       workbench:
         type: object
@@ -373,6 +379,8 @@ properties:
                               database table
                             example:
                               - 2
+                            exclusiveMinimum: true
+                            minimum: 0
                           first_name:
                             title: First Name
                             description: Owner first name
