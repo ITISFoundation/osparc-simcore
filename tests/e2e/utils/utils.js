@@ -149,18 +149,17 @@ async function __makeRequest(page, url) {
   const resp = await page.evaluate(async (url) => {
     const resp = await fetch(url);
     const jsonResp = await resp.json();
-    console.log(jsonResp)
-    return jsonResp;
+    return jsonResp["data"];
   }, url);
   return resp;
 }
 
 async function isServiceReady(page, prefix, studyId, nodeId) {
   const url = prefix + "/projects/" + studyId +"/nodes/" + nodeId;
-  console.log("-- Is service ready", url, ":");
+  console.log("-- Is service ready", url);
   const resp = await __makeRequest(page, url);
 
-  const status = resp["data"]["service_state"];
+  const status = resp["service_state"];
   console.log("Status:", nodeId, status);
   const stopListening = [
     "running",
@@ -172,16 +171,16 @@ async function isServiceReady(page, prefix, studyId, nodeId) {
 
 async function isStudyDone(page, prefix, studyId) {
   const url = prefix + "/projects/" + studyId +"/state";
-  console.log("-- Is study done", url, ":");
+  console.log("-- Is study done", url);
   const resp = await __makeRequest(page, url);
 
-  const pipelineStatus = resp["data"]["state"];
+  const pipelineStatus = resp["state"]["value"];
   console.log("Pipeline Status:", studyId, pipelineStatus);
   const stopListening = [
     "SUCCESS",
     "FAILED"
   ];
-  return stopListening.includes(status);
+  return stopListening.includes(pipelineStatus);
 }
 
 async function waitForValidOutputFile(page) {
