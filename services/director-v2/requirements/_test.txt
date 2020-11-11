@@ -14,6 +14,7 @@ aiormq==3.3.1             # via aio-pika
 alembic==1.4.3            # via -r requirements/_test.in
 amqp==5.0.2               # via -r requirements/_base.txt, kombu
 aniso8601==7.0.0          # via -r requirements/_base.txt, graphene
+apipkg==1.5               # via execnet
 astroid==2.4.2            # via pylint
 async-exit-stack==1.0.1 ; python_version < "3.7"  # via -r requirements/_base.txt, fastapi
 async-generator==1.10 ; python_version < "3.7"  # via -r requirements/_base.txt, fastapi
@@ -43,6 +44,7 @@ docker[ssh]==4.3.1        # via -r requirements/_test.in, docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
 email-validator==1.1.2    # via -r requirements/_base.txt, fastapi
+execnet==1.7.1            # via pytest-xdist
 faker==4.14.2             # via -r requirements/_test.in
 fastapi[all]==0.61.2      # via -r requirements/_base.txt
 graphene==2.1.8           # via -r requirements/_base.txt, fastapi
@@ -78,7 +80,7 @@ promise==2.3              # via -r requirements/_base.txt, graphql-core, graphql
 prompt-toolkit==3.0.8     # via -r requirements/_base.txt, click-repl
 psycopg2-binary==2.8.6    # via -r requirements/_base.txt, aiopg, sqlalchemy
 ptvsd==4.3.2              # via -r requirements/_test.in
-py==1.9.0                 # via pytest
+py==1.9.0                 # via pytest, pytest-forked
 pycparser==2.20           # via cffi
 pydantic[dotenv]==1.7.2   # via -r requirements/_base.txt, fastapi
 pylint==2.6.0             # via -r requirements/_test.in
@@ -89,9 +91,11 @@ pytest-aiohttp==0.3.0     # via -r requirements/_test.in
 pytest-celery==0.0.0a1    # via -r requirements/_test.in
 pytest-cov==2.10.1        # via -r requirements/_test.in
 pytest-docker==0.10.1     # via -r requirements/_test.in
+pytest-forked==1.3.0      # via pytest-xdist
 pytest-mock==3.3.1        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
-pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-mock
+pytest-xdist==2.1.0       # via -r requirements/_test.in
+pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-forked, pytest-mock, pytest-xdist
 python-dateutil==2.8.1    # via alembic, faker
 python-dotenv==0.15.0     # via -r requirements/_base.txt, docker-compose, pydantic
 python-editor==1.0.4      # via alembic

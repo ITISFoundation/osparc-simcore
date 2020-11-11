@@ -17,6 +17,7 @@ pytest-mock
 pytest-runner
 pytest-docker
 pytest-celery
+pytest-xdist
 
 # fixtures
 Faker

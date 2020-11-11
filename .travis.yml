@@ -234,7 +234,28 @@ jobs:
       after_failure:
         - unbuffer bash ci/travis/unit-testing/director.bash after_failure
 
-    # test python, director ----------------------------------------------------------------------
+    # test python, director-v2 ----------------------------------------------------------------------
+    - stage: build / unit-testing
+      name: "[unit] director-v2"
+      language: python
+      python:
+        - "3.6"
+      sudo: required
+      cache: pip
+      before_install:
+        - sudo bash ci/travis/unit-testing/director-v2.bash before_install
+      install:
+        - unbuffer bash ci/travis/unit-testing/director-v2.bash install
+      before_script:
+        - unbuffer bash ci/travis/unit-testing/director-v2.bash before_script
+      script:
+        - unbuffer bash ci/travis/unit-testing/director-v2.bash script
+      after_success:
+        - unbuffer bash ci/travis/unit-testing/director-v2.bash after_success
+      after_failure:
+        - unbuffer bash ci/travis/unit-testing/director-v2.bash after_failure
+
+    # test python, sidecar ----------------------------------------------------------------------
     - stage: build / unit-testing
       name: "[unit] sidecar"
       language: python
