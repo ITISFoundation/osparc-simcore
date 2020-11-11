@@ -122,6 +122,17 @@ async function fetch(endpoint) {
   return responseEnv;
 }
 
+async function makeRequest(page, url) {
+  // https://github.com/Netflix/pollyjs/issues/149#issuecomment-481108446
+  await page.setBypassCSP(true);
+  const resp = await page.evaluate(async (url) => {
+    const resp = await fetch(url);
+    const jsonResp = await resp.json();
+    return jsonResp["data"];
+  }, url);
+  return resp;
+}
+
 async function emptyField(page, selector) {
   await page.evaluate((selector) => document.querySelector(selector).value = "", selector);
 }
@@ -145,21 +156,10 @@ async function waitForResponse(page, url) {
   })
 }
 
-async function __makeRequest(page, url) {
-  // https://github.com/Netflix/pollyjs/issues/149#issuecomment-481108446
-  await page.setBypassCSP(true);
-  const resp = await page.evaluate(async (url) => {
-    const resp = await fetch(url);
-    const jsonResp = await resp.json();
-    return jsonResp["data"];
-  }, url);
-  return resp;
-}
-
 async function isServiceReady(page, prefix, studyId, nodeId) {
   const url = prefix + "/projects/" + studyId +"/nodes/" + nodeId;
   console.log("-- Is service ready", url);
-  const resp = await __makeRequest(page, url);
+  const resp = await makeRequest(page, url);
 
   const status = resp["service_state"];
   console.log("Status:", nodeId, status);
@@ -174,7 +174,7 @@ async function isServiceReady(page, prefix, studyId, nodeId) {
 async function isStudyDone(page, prefix, studyId) {
   const url = prefix + "/projects/" + studyId +"/state";
   console.log("-- Is study done", url);
-  const resp = await __makeRequest(page, url);
+  const resp = await makeRequest(page, url);
 
   const pipelineStatus = resp["state"]["value"];
   console.log("Pipeline Status:", studyId, pipelineStatus);
@@ -280,6 +280,7 @@ module.exports = {
   getFileTreeItemIDs,
   getVisibleChildrenIDs,
   fetch,
+  makeRequest,
   emptyField,
   dragAndDrop,
   waitForResponse,
