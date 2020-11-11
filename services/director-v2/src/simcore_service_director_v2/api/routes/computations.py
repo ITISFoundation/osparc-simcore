@@ -4,7 +4,8 @@ from typing import Dict, List
 import networkx as nx
 from celery.canvas import Signature
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from models_library.projects import NodeID, ProjectID, RunningState, Workbench
+from models_library.nodes import NodeID
+from models_library.projects import ProjectID, RunningState, Workbench
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from starlette import status
 from starlette.requests import Request

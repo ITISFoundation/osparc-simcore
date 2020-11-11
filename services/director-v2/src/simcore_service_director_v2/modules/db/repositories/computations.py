@@ -4,7 +4,8 @@ from typing import Dict
 
 import networkx as nx
 import sqlalchemy as sa
-from models_library.projects import Node, NodeID, ProjectID, RunningState
+from models_library.nodes import Node, NodeID
+from models_library.projects import ProjectID, RunningState
 from models_library.services import (
     Author,
     ServiceDockerData,
