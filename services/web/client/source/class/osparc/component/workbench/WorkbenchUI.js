@@ -900,6 +900,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       const commandEsc = new qx.ui.command.Command("Esc");
       commandEsc.addListener("execute", () => {
+        this.__selectedNodes.forEach(node => node.removeState("selected"));
         this.resetSelectedNodes();
       });
 
