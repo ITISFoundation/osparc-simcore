@@ -22,7 +22,7 @@ class RedisConfig(BaseSettings):
     @validator("dsn", pre=True)
     @classmethod
     def autofill_dsn(cls, v, values):
-        if v is None:
+        if not v and all(key in values for key in cls.__fields__ if key != "dsn"):
             return RedisDsn.build(
                 scheme="redis",
                 user=values["user"] or None,

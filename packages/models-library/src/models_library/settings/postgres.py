@@ -41,7 +41,7 @@ class PostgresSettings(BaseSettings):
     @validator("dsn", pre=True)
     @classmethod
     def autofill_dsn(cls, v, values):
-        if v is None:
+        if not v and all(key in values for key in cls.__fields__ if key != "dsn"):
             return PostgresDsn.build(
                 scheme="postgresql",
                 user=values["user"],
@@ -54,6 +54,5 @@ class PostgresSettings(BaseSettings):
 
     class Config:
         case_sensitive = False
-        env_file = ".env"  # SEE https://pydantic-docs.helpmanual.io/usage/settings/#dotenv-env-support
         env_prefix = "POSTGRES_"
         extra = Extra.forbid
