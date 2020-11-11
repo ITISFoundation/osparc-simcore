@@ -283,6 +283,7 @@ module.exports = {
   dragAndDrop,
   waitForResponse,
   isServiceReady,
+  isStudyDone,
   waitForValidOutputFile,
   waitAndClick,
   clearInput,

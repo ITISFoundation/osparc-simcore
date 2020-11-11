@@ -21,12 +21,13 @@ async function runTutorial() {
     tutorial.startScreenshooter();
     await tutorial.start();
     const studyData = await tutorial.openTemplate(1000);
-    console.log("Study ID:", studyData["data"]["uuid"]);
+    const studyId = studyData["data"]["uuid"];
+    console.log("Study ID:", studyId);
 
     // Some time for loading the workbench
     await tutorial.waitFor(5000);
 
-    await tutorial.runPipeline(30000);
+    await tutorial.runPipeline(studyId);
     console.log('Checking results for the first sleeper:');
     await tutorial.openNodeFiles(0);
     const outFiles = [
@@ -35,7 +36,6 @@ async function runTutorial() {
     ];
     await tutorial.checkResults(outFiles.length);
 
-    await tutorial.waitFor(30000);
     console.log('Checking results for the last sleeper:');
     await tutorial.openNodeFiles(4);
     await tutorial.checkResults(outFiles.length);

@@ -217,6 +217,23 @@ class TutorialBase {
     return;
   }
 
+  async waitForStudyRun(studyId, timeout = 60000) {
+    const getHost = () => {
+      return window.location.protocol + "//" + window.location.hostname;
+    }
+    const host = await this.__page.evaluate(getHost);
+
+    const start = new Date().getTime();
+    while ((new Date().getTime())-start < timeout) {
+      await utils.sleep(2500);
+      if (await utils.isStudyDone(this.__page, host+"/v0", studyId)) {
+        return;
+      }
+    }
+    console.log("Timeout reached waiting for study run", ((new Date().getTime())-start)/1000);
+    return;
+  }
+
   async restoreIFrame() {
     await auto.restoreIFrame(this.__page);
   }
@@ -225,11 +242,19 @@ class TutorialBase {
     await auto.clickLoggerTitle(this.__page);
   }
 
-  async runPipeline(waitFor = 25000) {
+  async runPipeline(studyId) {
     await this.clickLoggerTitle();
 
     await this.takeScreenshot("runStudy_before");
-    await auto.runStudy(this.__page, waitFor);
+    await auto.runStudy(this.__page);
+
+
+
+    console.log("Running study and waiting");
+    case "NOT_STARTED":
+    case "SUCCESS":
+    case "FAILED":
+
     await this.takeScreenshot("runStudy_after");
   }
 
