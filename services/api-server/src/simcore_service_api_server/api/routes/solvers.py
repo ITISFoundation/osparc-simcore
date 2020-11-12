@@ -69,18 +69,24 @@ async def list_solvers(
                 solver.version
             ) < packaging.version.parse(service["version"]):
                 try:
+                    # FIXME: image id is not provided. Temp fake id
+                    image_uuid = compose_solver_id(service_key, service["version"])
+
                     latest_solvers[service_key] = Solver(
-                        # FIXME: image id is not provided
-                        uid=compose_solver_id(service_key, service["version"]),
+                        uuid=image_uuid,
                         name=service_key,
                         title=service["name"],
                         maintainer=service["contact"],
                         version=service["version"],
                         description=service.get("description"),
+                        #solver_url=url_for(
+                        #    "get_solver_by_name_and_version",
+                        #    solver_name=pathname2url(service_key),
+                        #    version=service["version"],
+                        #),
                         solver_url=url_for(
-                            "get_solver_by_name_and_version",
-                            solver_name=pathname2url(service_key),
-                            version=service["version"],
+                            "get_solver_by_id",
+                            solver_id=image_uuid,
                         ),
                         # TODO: if field is not set in service, do not set here
                     )
@@ -108,10 +114,9 @@ async def get_solver_by_name_and_version(solver_name: SolverImageName, version: 
     if version == LATEST_VERSION:
         return await get_solver_latest_version_by_name(solver_name)
 
-    raise NotImplementedError(f"{solver_name}:{version}")
+    raise NotImplementedError(f"GET {solver_name}:{version}")
 
 
-@router.get("/{solver_name:path}", response_model=Solver)
 async def get_solver_latest_version_by_name(solver_name: SolverImageName):
     # catalog get / key:latest
     raise NotImplementedError(f"GET latest {solver_name}")

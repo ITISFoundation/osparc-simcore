@@ -7,7 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, HttpUrl, confloat, constr
 
 LATEST_VERSION = "latest"
-KEY_RE = r"^(simcore)/(services)/(comp)(/[^\s/]+)+/$"  # NOTE: needs to end with / !!
+KEY_RE = r"^(simcore)/(services)/(comp)(/[^\s/]+)+$"  # NOTE: needs to end with / !!
 
 
 # Human-readable unique identifier
@@ -17,7 +17,7 @@ SolverImageName = constr(regex=KEY_RE, strip_whitespace=True)
 
 class SolverImage(BaseModel):
     # This is an image. Notice that tags refer to this image
-    uid: UUID = Field(..., description="Image sha256 unique identifier")
+    uuid: UUID = Field(..., description="Image sha256 unique identifier")
     name: SolverImageName = Field(
         ...,
         description="Name of the solver image including namespace and excluding tag",
@@ -33,7 +33,7 @@ class Solver(BaseModel):
     hierarchical version tags (e.g. 3, 3.2)
     """
 
-    uid: UUID = Field(..., description="Same as the solver's image sha256")
+    uuid: UUID = Field(..., description="Same as the solver's image sha256")
     name: str = Field(..., description="Image name including namespace")
     version: str  # complete tag.  e.g. 3.4.5 TODO: regex for version in python PEP
     version_aliases: List[str] = []  # remaining tags
@@ -56,7 +56,7 @@ class Solver(BaseModel):
                 alias.append(tag)
 
         return cls(
-            uid=img.uid,
+            uuid=img.uuid,
             name=img.name,
             title=img.name.split("/")[-1],
             maintainer=img.maintainer,
