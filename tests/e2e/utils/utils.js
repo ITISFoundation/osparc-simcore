@@ -122,14 +122,26 @@ async function fetch(endpoint) {
   return responseEnv;
 }
 
-async function makeRequest(page, url) {
+async function __getHost(page) {
+  const getHost = () => {
+    // return window.location.protocol + "//" + window.location.hostname;
+    return window.location.href;
+  }
+  const host = await page.evaluate(getHost);
+  return host;
+}
+
+async function makeRequest(page, endpoint, apiVersion = "v0") {
+  const host = __getHost(page);
   // https://github.com/Netflix/pollyjs/issues/149#issuecomment-481108446
   await page.setBypassCSP(true);
-  const resp = await page.evaluate(async (url) => {
+  const resp = await page.evaluate(async (host, endpoint, apiVersion) => {
+    const url = host+apiVersion+endpoint;
+    console.log("makeRequest", url);
     const resp = await fetch(url);
     const jsonResp = await resp.json();
     return jsonResp["data"];
-  }, url);
+  }, host, endpoint, apiVersion);
   return resp;
 }
 
@@ -156,10 +168,10 @@ async function waitForResponse(page, url) {
   })
 }
 
-async function isServiceReady(page, prefix, studyId, nodeId) {
-  const url = prefix + "/projects/" + studyId +"/nodes/" + nodeId;
-  console.log("-- Is service ready", url);
-  const resp = await makeRequest(page, url);
+async function isServiceReady(page, studyId, nodeId) {
+  const endPoint = "/projects/" + studyId +"/nodes/" + nodeId;
+  console.log("-- Is service ready", endPoint);
+  const resp = await makeRequest(page, endPoint);
 
   const status = resp["service_state"];
   console.log("Status:", nodeId, status);
@@ -171,10 +183,10 @@ async function isServiceReady(page, prefix, studyId, nodeId) {
   return stopListening.includes(status);
 }
 
-async function isStudyDone(page, prefix, studyId) {
-  const url = prefix + "/projects/" + studyId +"/state";
-  console.log("-- Is study done", url);
-  const resp = await makeRequest(page, url);
+async function isStudyDone(page, studyId) {
+  const endPoint = "/projects/" + studyId +"/state";
+  console.log("-- Is study done", endPoint);
+  const resp = await makeRequest(page, endPoint);
 
   const pipelineStatus = resp["state"]["value"];
   console.log("Pipeline Status:", studyId, pipelineStatus);

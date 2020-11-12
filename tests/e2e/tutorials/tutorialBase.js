@@ -192,16 +192,12 @@ class TutorialBase {
     if (nodeIds.length < 1) {
       return;
     }
-    const getHost = () => {
-      return window.location.protocol + "//" + window.location.hostname;
-    }
-    const host = await this.__page.evaluate(getHost);
 
     const start = new Date().getTime();
     while ((new Date().getTime())-start < timeout) {
       for (let i = nodeIds.length-1; i>=0; i--) {
         const nodeId = nodeIds[i];
-        if (await utils.isServiceReady(this.__page, host+"/v0", studyId, nodeId)) {
+        if (await utils.isServiceReady(this.__page, studyId, nodeId)) {
           nodeIds.splice(i, 1);
         }
       }
@@ -218,16 +214,10 @@ class TutorialBase {
   }
 
   async waitForStudyRun(studyId, timeout = 60000) {
-    const getHost = () => {
-      // return window.location.protocol + "//" + window.location.hostname;
-      return window.location.href;
-    }
-    const host = await this.__page.evaluate(getHost);
-
     const start = new Date().getTime();
     while ((new Date().getTime())-start < timeout) {
       await utils.sleep(5000);
-      if (await utils.isStudyDone(this.__page, host+"v0", studyId)) {
+      if (await utils.isStudyDone(this.__page, studyId)) {
         return;
       }
     }
