@@ -4,13 +4,12 @@
 
 import pytest
 import respx
-from starlette.testclient import TestClient
+from fastapi import FastAPI
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import AppSettings
-from simcore_service_api_server.models.schemas.solvers import SolverOverview
-
-from fastapi import FastAPI
+from simcore_service_api_server.models.schemas.solvers import SolverOverview, SolverRelease
 from starlette import status
+from starlette.testclient import TestClient
 
 
 @pytest.fixture
@@ -34,7 +33,7 @@ def app(project_env_devel_environment, monkeypatch) -> FastAPI:
 @pytest.fixture
 def mocked_catalog_service_api(app: FastAPI):
     def create_service(**overrides):
-        # TODO: fake from Catalog schemas classes
+        # FIXME: should change when schema changes
         obj = {
             "name": "Fast Counter",
             "key": "simcore/services/comp/itis/sleeper",
@@ -90,9 +89,8 @@ def test_list_solvers(sync_client: TestClient, mocked_catalog_service_api):
 
         # valid link
         assert s.solver_url.host == "api.testserver.io"
-        resp = sync_client.get(s.solver_url.path)
+        resp = sync_client.get(s.solver_detailed_url.path)
 
+        resp = sync_client.get(f"{s.solver_detailed_url.path}/latest")
         assert resp.status_code == status.HTTP_200_OK
-
-
-    # test *_url fiels
+        s = SolverRelease(**resp.json())

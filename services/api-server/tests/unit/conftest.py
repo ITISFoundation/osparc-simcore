@@ -14,6 +14,7 @@ import simcore_postgres_database.cli as pg_cli
 import simcore_service_api_server
 import sqlalchemy as sa
 import yaml
+from _helpers import RWApiKeysRepository, RWUsersRepository
 from asgi_lifespan import LifespanManager
 from dotenv import dotenv_values
 from fastapi import FastAPI
@@ -21,8 +22,6 @@ from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from simcore_postgres_database.models.base import metadata
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
-
-from _helpers import RWApiKeysRepository, RWUsersRepository
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -60,6 +59,7 @@ def project_env_devel_dict(project_slug_dir: Path) -> Dict:
 def project_env_devel_environment(project_env_devel_dict, monkeypatch):
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
+
 
 ## FOLDER LAYOUT ---------------------------------------------------------------------
 
@@ -220,7 +220,9 @@ async def client(initialized_app: FastAPI) -> AsyncClient:
 def sync_client(app: FastAPI) -> TestClient:
     # test client:
     # Context manager to trigger events: https://fastapi.tiangolo.com/advanced/testing-events/
-    with TestClient(app, base_url="http://api.testserver.io", raise_server_exceptions=True) as cli:
+    with TestClient(
+        app, base_url="http://api.testserver.io", raise_server_exceptions=True
+    ) as cli:
         yield cli
 
 
