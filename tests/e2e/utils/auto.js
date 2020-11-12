@@ -129,8 +129,20 @@ async function dashboardNewStudy(page) {
 
 async function toDashboard(page) {
   console.log("To Dashboard");
+
+  console.log("close study");
+  const responsesQueue = new responses.ResponsesQueue(page);
+  responsesQueue.addResponseListener(":close");
+
   await utils.waitAndClick(page, '[osparc-test-id="dashboardBtn"]');
-  await page.waitFor(2000);
+
+  try {
+    await responsesQueue.waitUntilResponse(":close");
+  }
+  catch (err) {
+    console.error(err);
+    throw (err);
+  }
 }
 
 async function dashboardOpenFirstTemplate(page, templateName) {
@@ -200,7 +212,7 @@ async function clickLoggerTitle(page) {
   await utils.waitAndClick(page, '[osparc-test-id="loggerTitleLabel"]')
 }
 
-async function runStudy(page, waitFor = 0) {
+async function runStudy(page) {
   console.log("Running study");
 
   const responsesQueue = new responses.ResponsesQueue(page);
@@ -227,9 +239,6 @@ async function runStudy(page, waitFor = 0) {
     console.error(err);
     throw (err);
   }
-
-  console.log("Running study and waiting for", waitFor / 1000, "seconds");
-  await page.waitFor(waitFor);
 }
 
 async function dashboardDeleteFirstStudy(page, studyName) {

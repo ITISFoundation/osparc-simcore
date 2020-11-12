@@ -111,7 +111,7 @@ async function getVisibleChildrenIDs(page, parentSelector) {
   return childrenIDs;
 }
 
-async function fetch(endpoint) {
+async function fetchReq(endpoint) {
   const responseEnv = await page.evaluate(
     // NOTE: without the following comment it fails here with some weird message
     /* istanbul ignore next */
@@ -120,6 +120,29 @@ async function fetch(endpoint) {
       return await response.json();
     }, url, apiVersion, endpoint);
   return responseEnv;
+}
+
+async function __getHost(page) {
+  const getHost = () => {
+    // return window.location.protocol + "//" + window.location.hostname;
+    return window.location.href;
+  }
+  const host = await page.evaluate(getHost);
+  return host;
+}
+
+async function makeRequest(page, endpoint, apiVersion = "v0") {
+  const host = await __getHost(page);
+  // https://github.com/Netflix/pollyjs/issues/149#issuecomment-481108446
+  await page.setBypassCSP(true);
+  const resp = await page.evaluate(async (host, endpoint, apiVersion) => {
+    const url = host+apiVersion+endpoint;
+    console.log("makeRequest", url);
+    const resp = await fetch(url);
+    const jsonResp = await resp.json();
+    return jsonResp["data"];
+  }, host, endpoint, apiVersion);
+  return resp;
 }
 
 async function emptyField(page, selector) {
@@ -145,17 +168,12 @@ async function waitForResponse(page, url) {
   })
 }
 
-async function isServiceReady(page, prefix, studyId, nodeId) {
-  const url = prefix + "/projects/" + studyId +"/nodes/" + nodeId;
-  console.log("-- Is service ready", url, ":");
-  const resp = await page.evaluate(async (url) => {
-    const resp = await fetch(url);
-    const jsonResp = await resp.json();
-    console.log(jsonResp)
-    return jsonResp;
-  }, url);
+async function isServiceReady(page, studyId, nodeId) {
+  const endPoint = "/projects/" + studyId +"/nodes/" + nodeId;
+  console.log("-- Is service ready", endPoint);
+  const resp = await makeRequest(page, endPoint);
 
-  const status = resp["data"]["service_state"];
+  const status = resp["service_state"];
   console.log("Status:", nodeId, status);
   const stopListening = [
     "running",
@@ -163,6 +181,20 @@ async function isServiceReady(page, prefix, studyId, nodeId) {
     "failed"
   ];
   return stopListening.includes(status);
+}
+
+async function isStudyDone(page, studyId) {
+  const endPoint = "/projects/" + studyId +"/state";
+  console.log("-- Is study done", endPoint);
+  const resp = await makeRequest(page, endPoint);
+
+  const pipelineStatus = resp["state"]["value"];
+  console.log("Pipeline Status:", studyId, pipelineStatus);
+  const stopListening = [
+    "SUCCESS",
+    "FAILED"
+  ];
+  return stopListening.includes(pipelineStatus);
 }
 
 async function waitForValidOutputFile(page) {
@@ -259,11 +291,13 @@ module.exports = {
   getNodeTreeItemIDs,
   getFileTreeItemIDs,
   getVisibleChildrenIDs,
-  fetch,
+  fetchReq,
+  makeRequest,
   emptyField,
   dragAndDrop,
   waitForResponse,
   isServiceReady,
+  isStudyDone,
   waitForValidOutputFile,
   waitAndClick,
   clearInput,
