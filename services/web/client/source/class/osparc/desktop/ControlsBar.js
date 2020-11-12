@@ -189,7 +189,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
 
     __createStartButton: function() {
       const startButton = this.__startButton = this.__createButton(this.tr("Run"), "play", "runStudyBtn", "startPipeline");
-      console.log(startButton.getIcon())
       return startButton;
     },
     __createStopButton: function() {
