@@ -7,7 +7,7 @@ import respx
 from fastapi import FastAPI
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import AppSettings
-from simcore_service_api_server.models.schemas.solvers import SolverOverview, SolverRelease
+from simcore_service_api_server.models.schemas.solvers import Solver
 from starlette import status
 from starlette.testclient import TestClient
 
@@ -29,45 +29,21 @@ def app(project_env_devel_environment, monkeypatch) -> FastAPI:
     mini_app = init_app(settings)
     return mini_app
 
-
+import catalog_fakes
 @pytest.fixture
 def mocked_catalog_service_api(app: FastAPI):
-    def create_service(**overrides):
-        # FIXME: should change when schema changes
-        obj = {
-            "name": "Fast Counter",
-            "key": "simcore/services/comp/itis/sleeper",
-            "version": "1.0.0",
-            "integration-version": "1.0.0",
-            "type": "computational",
-            "authors":  [
-                    {
-                        "name": "Jim Knopf",
-                        "email": ["sun@sense.eight", "deleen@minbar.bab"],
-                        "affiliation": ["Sense8", "Babylon 5"],
-                    }
-                ]
-            ,
-            "contact": "lab@net.flix",
-            "inputs": {},
-            "outputs": {},
-            "owner": "user@example.com",
-        }
-        obj.update(**overrides)
-        return obj
-
     with respx.mock(
         base_url=app.state.settings.catalog.base_url,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
         respx_mock.get(
-            "/v0/services?user_id=0&details=false",
+            "/v0/services?user_id=1&details=false",
             status_code=200,
             content=[
-                create_service(version="0.0.1"),
-                create_service(version="1.0.1"),
-                create_service(type="dynamic"),
+                catalog_fakes.create_service_out(version="0.0.1"),
+                catalog_fakes.create_service_out(version="1.0.1"),
+                catalog_fakes.create_service_out(type="dynamic"),
             ],
             alias="list_services",
             content_type="application/json",
@@ -77,20 +53,21 @@ def mocked_catalog_service_api(app: FastAPI):
 
 
 def test_list_solvers(sync_client: TestClient, mocked_catalog_service_api):
+    cli = sync_client
 
-    resp = sync_client.get("/v0/solvers")
-
+    # list solvers latest releases
+    resp = cli.get("/v0/solvers")
     assert resp.status_code == status.HTTP_200_OK
-
-    # validates response
     for item in resp.json():
-        s = SolverOverview(**item)
-        print(s.json(indent=1))
+        solver = Solver(**item)
+        print(solver.json(indent=1))
 
-        # valid link
-        assert s.solver_url.host == "api.testserver.io"
-        resp = sync_client.get(s.solver_detailed_url.path)
+        # use link to get the same solver
+        assert solver.solver_url.host == "api.testserver.io"
+        resp = cli.get(solver.solver_url.path)
+        assert solver == Solver(**resp.json())
 
-        resp = sync_client.get(f"{s.solver_detailed_url.path}/latest")
-        assert resp.status_code == status.HTTP_200_OK
-        s = SolverRelease(**resp.json())
+        # get latest by name
+        resp = cli.get(f"{solver.name}/latest")
+        latest_solver = Solver(**resp.json())
+        assert latest_solver == solver

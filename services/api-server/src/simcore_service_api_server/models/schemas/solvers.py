@@ -1,9 +1,10 @@
+import re
 from datetime import datetime
 from enum import Enum
 from typing import List, Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel, HttpUrl, confloat, constr
+from pydantic import BaseModel, Field, HttpUrl, confloat, constr
 
 LATEST_VERSION = "latest"
 KEY_RE = r"^(simcore)/(services)/(comp)(/[^\s/]+)+$"
@@ -11,32 +12,63 @@ KEY_RE = r"^(simcore)/(services)/(comp)(/[^\s/]+)+$"
 
 # Human-readable unique identifier
 KeyIdentifier = constr(strip_whitespace=True, min_length=3)
-SolverKey = constr(regex=KEY_RE, strip_whitespace=True)
+SolverImageName = constr(regex=KEY_RE, strip_whitespace=True)
 
 
-class SolverRelease(BaseModel):
-    solver_id: UUID
-    version: str
-    version_alias: List[str] = [] # TODO: must be unique!
-    release_date: datetime
-
-class SolverBase(BaseModel):
-    solver_key: SolverKey
-    title: str
+class SolverImage(BaseModel):
+    # This is an image. Notice that tags refer to this image
+    uid: UUID = Field(..., description="Image sha256 unique identifier")
+    name: SolverImageName = Field(
+        ...,
+        description="Name of the solver image including namespace and excluding tag",
+    )
     maintainer: str
+    released: datetime
 
 
-class SolverOverview(SolverBase):
-    latest_version: str
+class Solver(BaseModel):
+    """ A released solver with a specific version
+
+    This version might have human-readable alias (e.g. latest) or
+    hierarchical version tags (e.g. 3, 3.2)
+    """
+
+    uid: UUID = Field(..., description="Same as the solver's image sha256")
+    name: str = Field(..., description="Image name including namespace")
+    version: str  # complete tag.  e.g. 3.4.5 TODO: regex for version in python PEP
+    version_aliases: List[str] = []  # remaining tags
+
+    title: str
+    description: Optional[str]
+    maintainer: str
+    released: datetime
+
     solver_url: HttpUrl
 
+    @classmethod
+    def create_from_image(cls, img: SolverImage, tags: List, **kwargs) -> "Solver":
+        version = None
+        alias = []
+        for tag in tags:
+            if re.match(r"\d+\.\d+\.\d+", tag):
+                version = tag
+            else:
+                alias.append(tag)
 
-class Solver(SolverBase):
-    releases: List[SolverRelease] # sorted from latest to oldest
+        return cls(
+            uid=img.uid,
+            name=img.name,
+            title=img.name.split("/")[-1],
+            maintainer=img.maintainer,
+            released=img.released,
+            version=version,
+            version_aliases=alias,
+            **kwargs
+        )
 
 
-class RunProxy(BaseModel):
-    run_id: UUID
+class Job(BaseModel):
+    job_id: UUID
     inputs_sha: str
     status_url: HttpUrl
     results_url: HttpUrl
@@ -46,12 +78,12 @@ class RunProxy(BaseModel):
 class TaskStates(str, Enum):
     UNDEFINED = "undefined"
     PENDING = "pending"
-    RUNNING = "running"
+    JOBNING = "jobning"
     SUCCESS = "success"
     FAILED = "failed"
 
 
-class RunState(BaseModel):
+class JobState(BaseModel):
     status: TaskStates = TaskStates.UNDEFINED
     progress: int = confloat(ge=0, le=100)
     started_at: datetime
@@ -64,7 +96,7 @@ class SolverInput(BaseModel):
     title: Optional[str] = None
 
 
-class RunInput(SolverInput):
+class JobInput(SolverInput):
     value: Union[float, str, int, None] = None
     value_url: Optional[HttpUrl] = None
 
@@ -77,7 +109,7 @@ class SolverOutput(BaseModel):
     title: Optional[str] = None
 
 
-class RunOutput(SolverOutput):
+class JobOutput(SolverOutput):
     status: TaskStates = TaskStates.UNDEFINED  # every output can
     value: Optional[Union[float, str, int]] = None
     value_url: Optional[HttpUrl] = None

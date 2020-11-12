@@ -13,15 +13,15 @@ from starlette import status
 
 from ...models.schemas.solvers import (
     LATEST_VERSION,
+    Job,
+    JobInput,
+    JobOutput,
+    JobState,
     KeyIdentifier,
-    RunInput,
-    RunOutput,
-    RunProxy,
-    RunState,
     Solver,
-    SolverKey,
+    SolverImage,
+    SolverImageName,
     SolverOutput,
-    SolverOverview,
 )
 from ...modules.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
@@ -36,14 +36,18 @@ router = APIRouter()
 ## SOLVERS ------------
 
 
-@router.get("", response_model=List[SolverOverview])
+@router.get("", response_model=List[Solver])
 async def list_solvers(
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    """ Lists an overview of all solvers. Each solver overview includes all released versions """
+    """
+    Returns a list of the latest version of each solver
+    """
     # TODO: pagination
     # TODO: deduce user
+
+    # FIXME: temporary hard-coded user!
     user_id = 1
 
     available_services = await catalog_client.get(
@@ -54,24 +58,28 @@ async def list_solvers(
 
     # TODO: move this sorting down to database?
     # Create list list of the latest version of each solver
-    latest_solvers: Dict[SolverOverview] = {}
+    latest_solvers: Dict[str, Solver] = {}
     for service in available_services:
         if service.get("type") == "computational":
             service_key = service["key"]
             solver = latest_solvers.get(service_key)
 
             if not solver or packaging.version.parse(
-                solver.latest_version
+                solver.version
             ) < packaging.version.parse(service["version"]):
                 try:
-                    latest_solvers[service_key] = SolverOverview(
-                        solver_key=service_key,
+                    latest_solvers[service_key] = Solver(
+                        # FIXME: image id is not provided
+                        uid=compose_solver_id(
+                            service_key, service["version"]
+                        ),
                         title=service["name"],
                         maintainer=service["contact"],
                         latest_version=service["version"],
+                        description=service.get("description"),
                         solver_url=url_for(
-                            "get_solver_released_by_version",
-                            solver_key=pathname2url(service_key),
+                            "get_solver_by_name_and_version",
+                            solver_name=pathname2url(service_key),
                             version=service["version"],
                         ),
                     )
@@ -91,26 +99,22 @@ async def list_solvers(
     return sorted(latest_solvers.values(), key=attrgetter("solver_key"))
 
 
-@router.get("/{solver_key:path}/{version}", response_model=Solver)
-async def get_solver_released_by_version(
-    solver_key: SolverKey, version: str = LATEST_VERSION
+@router.get("/{solver_name:path}/{version}", response_model=Solver)
+async def get_solver_by_name_and_version(
+    solver_name: SolverImageName, version: str = LATEST_VERSION
 ):
-    # NOTE: add before get_solver
-    # url = app.url_path_for("get_solver_released")
-    # response = RedirectResponse(url=url)
-    # return response
-    solver_id = compose_solver_id(solver_key, version)
-    return await get_solver_released(solver_id)
+    #
+    raise NotImplementedError()
 
 
-@router.get("/{solver_key:path}", response_model=Solver)
-async def get_solver(solver_key: SolverKey):
-    """ Returs a description of the solver and all its releases """
+@router.get("/{solver_name:path}", response_model=Solver)
+async def get_solver_latest_version_by_name(solver_name: SolverImageName):
+    #
     raise NotImplementedError()
 
 
 @router.get("/{solver_id}", response_model=Solver)
-async def get_solver_released(solver_id: UUID):
+async def get_solver_by_id(solver_id: UUID):
     raise NotImplementedError()
 
 
@@ -123,42 +127,42 @@ async def list_jobs(solver_id: UUID):
     raise NotImplementedError()
 
 
-@router.post("/{solver_id}/jobs", response_model=RunProxy)
-async def create_job(solver_id: UUID, inputs: Optional[List[RunInput]] = None):
-    """ Runs a solver with given inputs """
+@router.post("/{solver_id}/jobs", response_model=Job)
+async def create_job(solver_id: UUID, inputs: Optional[List[JobInput]] = None):
+    """ Jobs a solver with given inputs """
 
     # TODO: validate inputs against solver specs
     # TODO: create a unique identifier of job based on solver_id and inputs
-    return RunProxy()
+    return Job()
 
 
-@router.get("/{solver_id}/jobs/{job_id}", response_model=RunProxy)
+@router.get("/{solver_id}/jobs/{job_id}", response_model=Job)
 async def get_job(solver_id: UUID, job_id: UUID):
     raise NotImplementedError()
 
 
-@router.post("/{solver_id}/jobs/{job_id}:start", response_model=RunProxy)
+@router.post("/{solver_id}/jobs/{job_id}:start", response_model=Job)
 async def start_job(solver_id: UUID, job_id: UUID):
     raise NotImplementedError()
 
 
-@router.post("/{solver_id}/jobs/{job_id}:run", response_model=RunProxy)
-async def run_job(solver_id: UUID, inputs: Optional[List[RunInput]] = None):
+@router.post("/{solver_id}/jobs/{job_id}:run", response_model=Job)
+async def run_job(solver_id: UUID, inputs: Optional[List[JobInput]] = None):
     """ create + start job in a single call """
     raise NotImplementedError()
 
 
-@router.post("/{solver_id}/jobs/{job_id}:stop", response_model=RunProxy)
+@router.post("/{solver_id}/jobs/{job_id}:stop", response_model=Job)
 async def stop_job(solver_id: UUID, job_id: UUID):
     raise NotImplementedError()
 
 
-@router.post("/{solver_id}/jobs/{job_id}:inspect", response_model=RunState)
+@router.post("/{solver_id}/jobs/{job_id}:inspect", response_model=JobState)
 async def inspect_job(solver_id: UUID):
     raise NotImplementedError()
 
 
-@router.get("/{solver_id}/jobs/{job_id}/outputs", response_model=List[RunOutput])
+@router.get("/{solver_id}/jobs/{job_id}/outputs", response_model=List[JobOutput])
 async def list_job_outputs(solver_id: UUID, job_id: UUID):
     raise NotImplementedError()
 
@@ -176,5 +180,7 @@ NAMESPACE_SOLVER_KEY = uuidlib.UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
 
 
 @functools.lru_cache()
-def compose_solver_id(solver_key: SolverKey, version: str) -> UUID:
+def compose_solver_id(solver_key: SolverImageName, version: str) -> UUID:
+    # FIXME: this is a temporary solution. Should be image id
+
     return uuidlib.uuid3(NAMESPACE_SOLVER_KEY, f"{solver_key}:{version}")
