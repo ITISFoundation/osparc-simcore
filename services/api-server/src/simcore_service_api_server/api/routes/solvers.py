@@ -46,6 +46,7 @@ async def list_solvers(
     """
     # TODO: pagination
     # TODO: deduce user
+    # filter and format as in docker listings ??
 
     # FIXME: temporary hard-coded user!
     user_id = 1
@@ -60,8 +61,9 @@ async def list_solvers(
     # Create list list of the latest version of each solver
     latest_solvers: Dict[str, Solver] = {}
     for service in available_services:
-        if service.get("type") == "computational":
+        if service["type"] == "computational":
             service_key = service["key"]
+
             solver = latest_solvers.get(service_key)
 
             if not solver or packaging.version.parse(
@@ -70,20 +72,23 @@ async def list_solvers(
                 try:
                     latest_solvers[service_key] = Solver(
                         # FIXME: image id is not provided
-                        uid=compose_solver_id(
-                            service_key, service["version"]
-                        ),
+                        uid=compose_solver_id(service_key, service["version"]),
+                        name=service_key,
                         title=service["name"],
                         maintainer=service["contact"],
-                        latest_version=service["version"],
+                        version=service["version"],
                         description=service.get("description"),
                         solver_url=url_for(
                             "get_solver_by_name_and_version",
                             solver_name=pathname2url(service_key),
                             version=service["version"],
                         ),
+                        # TODO: if field is not set in service, do not set here
                     )
                 except ValidationError as err:
+                    # NOTE: This is necessary because there are no guarantees
+                    #       at the image registry. Therefore we exclude and warn
+                    #       invalid items instead of returning error
                     logger.warning(
                         "Skipping invalid service returned by catalog '%s': %s",
                         service_key,
@@ -96,29 +101,30 @@ async def list_solvers(
                         detail="Catalog API corrupted",
                     ) from err
 
-    return sorted(latest_solvers.values(), key=attrgetter("solver_key"))
+    return sorted(latest_solvers.values(), key=attrgetter("name"))
 
 
 @router.get("/{solver_name:path}/{version}", response_model=Solver)
-async def get_solver_by_name_and_version(
-    solver_name: SolverImageName, version: str = LATEST_VERSION
-):
-    #
-    raise NotImplementedError()
+async def get_solver_by_name_and_version(solver_name: SolverImageName, version: str):
+    if version == LATEST_VERSION:
+        return await get_solver_latest_version_by_name(solver_name)
+
+    raise NotImplementedError(f"{solver_name}:{version}")
 
 
 @router.get("/{solver_name:path}", response_model=Solver)
 async def get_solver_latest_version_by_name(solver_name: SolverImageName):
-    #
-    raise NotImplementedError()
+    # catalog get / key:latest
+    raise NotImplementedError(f"GET latest {solver_name}")
 
 
 @router.get("/{solver_id}", response_model=Solver)
 async def get_solver_by_id(solver_id: UUID):
-    raise NotImplementedError()
+    # catalog get /image_id
+    raise NotImplementedError(f"GET solver {solver_id}")
 
 
-## RUNS ---------------
+## JOBS ---------------
 @router.get("/{solver_id}/jobs")
 async def list_jobs(solver_id: UUID):
     """ List of all jobs (could be finished) by user of a given solver """

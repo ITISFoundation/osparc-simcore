@@ -1,13 +1,13 @@
-
-
 def create_service_out(**overrides):
     # FIXME: should change when schema changes
 
+
+
     obj = {
         "name": "Fast Counter",
-        "key": "simcore/services/comp/itis/sleeper"
-        if overrides.get("type") == "computational"
-        else "simcore/service/dynanic/itis/sim4life",
+        "key": "simcore/service/dynanic/itis/sim4life"
+        if overrides.get("type") == "dynamic"
+        else "simcore/services/comp/itis/sleeper",
         "version": "1.0.0",
         "integration-version": "1.0.0",
         "type": "computational",

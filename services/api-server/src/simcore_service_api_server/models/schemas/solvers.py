@@ -41,7 +41,7 @@ class Solver(BaseModel):
     title: str
     description: Optional[str]
     maintainer: str
-    released: datetime
+    released: Optional[datetime] # TODO: turn into required
 
     solver_url: HttpUrl
 
