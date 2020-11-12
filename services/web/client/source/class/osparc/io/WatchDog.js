@@ -41,11 +41,6 @@ qx.Class.define("osparc.io.WatchDog", {
   type: "singleton",
 
   construct: function() {
-    this.__clientHeartbeatPinger = new qx.event.Timer(this.heartbeatInterval);
-    this.__clientHeartbeatPinger.addListener("interval", () => {
-      this.__pingServer();
-    }, this);
-
     if (window.Worker) {
       this.__clientHeartbeatWWPinger = new Worker("resource/osparc/timer4Worker.js");
       this.__clientHeartbeatWWPinger.onmessage = () => {
@@ -82,18 +77,13 @@ qx.Class.define("osparc.io.WatchDog", {
   },
 
   members: {
-    __clientHeartbeatPinger: null,
-    __lastPing: null,
-
     __clientHeartbeatWWPinger: null,
-    __lastWWPing: null,
 
     _applyOnLine: function(value) {
       let logo = osparc.component.widget.LogoOnOff.getInstance();
       if (logo) {
         logo.setOnLine(value);
       }
-      value ? this.__clientHeartbeatPinger.start() : this.__clientHeartbeatPinger.stop();
 
       if (value) {
         this.__clientHeartbeatWWPinger.postMessage(["start", this.getHeartbeatInterval()]);
@@ -103,34 +93,13 @@ qx.Class.define("osparc.io.WatchDog", {
     },
 
     _applyHeartbeatInterval: function(value) {
-      this.__clientHeartbeatPinger.setInterval(value);
-      this.__clientHeartbeatWWPinger.postMessage(["start", this.getHeartbeatInterval()]);
-    },
-
-    __pingServer: function() {
-      const socket = osparc.wrapper.WebSocket.getInstance();
-      try {
-        const now = Date.now();
-        if (this.__lastPing) {
-          console.log("ping window offset", now-this.__lastPing-this.getHeartbeatInterval());
-        }
-        this.__lastPing = now;
-        socket.emit("client_heartbeat");
-      } catch (error) {
-        // no need to handle the error, nor does it need to cause further issues
-        // it is ok to eat it up
-      }
+      this.__clientHeartbeatWWPinger.postMessage(["start", value]);
     },
 
     __pingWWServer: function() {
-      // const socket = osparc.wrapper.WebSocket.getInstance();
+      const socket = osparc.wrapper.WebSocket.getInstance();
       try {
-        const now = Date.now();
-        if (this.__lastWWPing) {
-          console.log("ping worker offset", now-this.__lastWWPing-this.getHeartbeatInterval());
-        }
-        this.__lastWWPing = now;
-        // socket.emit("client_heartbeat");
+        socket.emit("client_heartbeat");
       } catch (error) {
         // no need to handle the error, nor does it need to cause further issues
         // it is ok to eat it up
