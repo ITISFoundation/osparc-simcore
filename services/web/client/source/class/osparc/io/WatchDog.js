@@ -43,7 +43,7 @@ qx.Class.define("osparc.io.WatchDog", {
   construct: function() {
     this.__clientHeartbeatWWPinger = new Worker("resource/osparc/timer4Worker.js");
     this.__clientHeartbeatWWPinger.onmessage = () => {
-      this.__pingWWServer();
+      this.__pingServer();
     };
 
     // register for socket.io event to change the default heartbeat interval
@@ -92,7 +92,7 @@ qx.Class.define("osparc.io.WatchDog", {
       this.__clientHeartbeatWWPinger.postMessage(["start", value]);
     },
 
-    __pingWWServer: function() {
+    __pingServer: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
       try {
         socket.emit("client_heartbeat");
