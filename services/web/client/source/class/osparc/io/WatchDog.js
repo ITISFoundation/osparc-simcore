@@ -38,14 +38,8 @@ qx.Class.define("osparc.io.WatchDog", {
 
   construct: function() {
     this.__clientHeartbeatPinger = new qx.event.Timer(this.heartbeatInterval);
-    this.__clientHeartbeatPinger.addListener("interval", function() {
-      const socket = osparc.wrapper.WebSocket.getInstance();
-      try {
-        socket.emit("client_heartbeat");
-      } catch (error) {
-        // no need to handle the error, nor does it need to cause further issues
-        // it is ok to eat it up
-      }
+    this.__clientHeartbeatPinger.addListener("interval", () => {
+      this.__pingServer();
     }, this);
 
     // register for socket.io event to change the default heartbeat interval
@@ -87,6 +81,21 @@ qx.Class.define("osparc.io.WatchDog", {
 
     _applyHeartbeatInterval: function(value) {
       this.__clientHeartbeatPinger.setInterval(value);
+    },
+
+    __pingServer: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      try {
+        const now = Date.now();
+        if (this.__lastPing) {
+          console.log("ping diff", now-this.__lastPing);
+        }
+        this.__lastPing = now;
+        socket.emit("client_heartbeat");
+      } catch (error) {
+        // no need to handle the error, nor does it need to cause further issues
+        // it is ok to eat it up
+      }
     }
-  } // members
+  }
 });
