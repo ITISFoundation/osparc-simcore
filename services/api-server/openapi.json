@@ -3,7 +3,7 @@
   "info": {
     "title": "Public API Server",
     "description": "**osparc-simcore Public RESTful API Specifications**\n## Python Library\n- Check the [documentation](https://itisfoundation.github.io/osparc-simcore-python-client)\n- Quick install: ``pip install git+https://github.com/ITISFoundation/osparc-simcore-python-client.git``\n",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "x-logo": {
       "url": "https://raw.githubusercontent.com/ITISFoundation/osparc-manual/b809d93619512eb60c827b7e769c6145758378d0/_media/osparc-logo.svg",
       "altText": "osparc-simcore logo"
@@ -100,10 +100,836 @@
           }
         ]
       }
+    },
+    "/v0/files": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "summary": "List Files",
+        "description": "Lists all user's files ",
+        "operationId": "list_files",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/files:upload": {
+      "post": {
+        "tags": [
+          "files"
+        ],
+        "summary": "Upload Single File",
+        "operationId": "upload_single_file",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_single_file_v0_files_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileUploaded"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/files:upload-multiple": {
+      "post": {
+        "tags": [
+          "files"
+        ],
+        "summary": "Upload Multiple Files",
+        "operationId": "upload_multiple_files",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_multiple_files_v0_files_upload_multiple_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Upload Multiple Files V0 Files Upload Multiple Post",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FileUploaded"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/files/upload-multiple-view": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "summary": "Files Upload Multiple View",
+        "description": "Web form to upload files at http://localhost:8000/v0/files/upload-form-view\n\nOvercomes limitation of Swagger UI view\nNOTE: As of 2020-10-07, Swagger UI doesn't support multiple file uploads in the same form field",
+        "operationId": "files_upload_multiple_view",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/files/{file_id}:download": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "summary": "Download File",
+        "operationId": "download_file",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "File Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "file_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "List Solvers",
+        "description": "Returns a list of the latest version of each solver",
+        "operationId": "list_solvers",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Solvers V0 Solvers Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Solver"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/{solver_name}/{version}": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Solver By Name And Version",
+        "operationId": "get_solver_by_name_and_version",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Name",
+              "pattern": "^(simcore)/(services)/(comp)(/[^\\s/]+)+$",
+              "type": "string"
+            },
+            "name": "solver_name",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "type": "string"
+            },
+            "name": "version",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Solver"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/{solver_id}": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Solver By Id",
+        "operationId": "get_solver_by_id",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "solver_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Solver"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/{solver_id}/jobs": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "List Jobs",
+        "description": "List of all jobs (could be finished) by user of a given solver ",
+        "operationId": "list_jobs",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "solver_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Create Job",
+        "description": "Jobs a solver with given inputs ",
+        "operationId": "create_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "solver_id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Inputs",
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/JobInput"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/{solver_id}/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Job",
+        "operationId": "get_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "solver_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/{solver_id}/jobs/{job_id}:start": {
+      "post": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Start Job",
+        "operationId": "start_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "solver_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/{solver_id}/jobs/{job_id}:run": {
+      "post": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Run Job",
+        "description": "create + start job in a single call ",
+        "operationId": "run_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "solver_id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Inputs",
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/JobInput"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/{solver_id}/jobs/{job_id}:stop": {
+      "post": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Stop Job",
+        "operationId": "stop_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "solver_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/{solver_id}/jobs/{job_id}:inspect": {
+      "post": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Inspect Job",
+        "operationId": "inspect_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "solver_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/{solver_id}/jobs/{job_id}/outputs": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "List Job Outputs",
+        "operationId": "list_job_outputs",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "solver_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Job Outputs V0 Solvers  Solver Id  Jobs  Job Id  Outputs Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobOutput"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/{solver_id}/jobs/{job_id}/outputs/{output_key}": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Job Output",
+        "operationId": "get_job_output",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "solver_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "job_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Output Key",
+              "minLength": 3,
+              "type": "string"
+            },
+            "name": "output_key",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolverOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "Body_upload_multiple_files_v0_files_upload_multiple_post": {
+        "title": "Body_upload_multiple_files_v0_files_upload_multiple_post",
+        "required": [
+          "files"
+        ],
+        "type": "object",
+        "properties": {
+          "files": {
+            "title": "Files",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        }
+      },
+      "Body_upload_single_file_v0_files_upload_post": {
+        "title": "Body_upload_single_file_v0_files_upload_post",
+        "required": [
+          "file"
+        ],
+        "type": "object",
+        "properties": {
+          "file": {
+            "title": "File",
+            "type": "string",
+            "format": "binary"
+          }
+        }
+      },
+      "FileUploaded": {
+        "title": "FileUploaded",
+        "required": [
+          "filename",
+          "content_type",
+          "hash"
+        ],
+        "type": "object",
+        "properties": {
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "hash": {
+            "title": "Hash",
+            "type": "string"
+          },
+          "download_url": {
+            "title": "Download Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "description": "Describes a file on the server side "
+      },
       "Groups": {
         "title": "Groups",
         "required": [
@@ -133,7 +959,7 @@
         "type": "object",
         "properties": {
           "errors": {
-            "title": "Errors",
+            "title": "Validation errors",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ValidationError"
@@ -141,11 +967,171 @@
           }
         }
       },
+      "Job": {
+        "title": "Job",
+        "required": [
+          "job_id",
+          "inputs_sha",
+          "status_url",
+          "results_url"
+        ],
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "inputs_sha": {
+            "title": "Inputs Sha",
+            "type": "string"
+          },
+          "status_url": {
+            "title": "Status Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          },
+          "results_url": {
+            "title": "Results Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "JobInput": {
+        "title": "JobInput",
+        "required": [
+          "key",
+          "content_type"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "minLength": 3,
+            "type": "string"
+          },
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "value_url": {
+            "title": "Value Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "JobOutput": {
+        "title": "JobOutput",
+        "required": [
+          "content_type",
+          "key"
+        ],
+        "type": "object",
+        "properties": {
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "minLength": 3,
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TaskStates"
+              }
+            ],
+            "default": "undefined"
+          },
+          "value": {
+            "title": "Value",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "value_url": {
+            "title": "Value Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "JobState": {
+        "title": "JobState",
+        "required": [
+          "started_at"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TaskStates"
+              }
+            ],
+            "default": "undefined"
+          },
+          "started_at": {
+            "title": "Started At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "stopped_at": {
+            "title": "Stopped At",
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "Meta": {
         "title": "Meta",
         "required": [
           "name",
-          "version"
+          "version",
+          "docs_url",
+          "docs_dev_url"
         ],
         "type": "object",
         "properties": {
@@ -166,6 +1152,20 @@
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
             },
             "description": "Maps every route's path tag with a released version"
+          },
+          "docs_url": {
+            "title": "Docs Url",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          },
+          "docs_dev_url": {
+            "title": "Docs Dev Url",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
           }
         },
         "example": {
@@ -174,7 +1174,9 @@
           "released": {
             "v1": "1.3.4",
             "v2": "2.4.45"
-          }
+          },
+          "doc_url": "https://api.osparc.io/doc",
+          "doc_dev_url": "https://api.osparc.io/dev/doc"
         }
       },
       "Profile": {
@@ -201,14 +1203,7 @@
             "format": "email"
           },
           "role": {
-            "title": "Role",
-            "enum": [
-              "ANONYMOUS",
-              "GUEST",
-              "USER",
-              "TESTER"
-            ],
-            "type": "string"
+            "$ref": "#/components/schemas/UserRoleEnum"
           },
           "groups": {
             "$ref": "#/components/schemas/Groups"
@@ -236,6 +1231,114 @@
             "example": "Maxwell"
           }
         }
+      },
+      "Solver": {
+        "title": "Solver",
+        "required": [
+          "uuid",
+          "name",
+          "version",
+          "title",
+          "maintainer",
+          "solver_url"
+        ],
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "title": "Uuid",
+            "type": "string",
+            "description": "Same as the solver's image sha256",
+            "format": "uuid"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "description": "Image name including namespace"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          },
+          "version_aliases": {
+            "title": "Version Aliases",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "maintainer": {
+            "title": "Maintainer",
+            "type": "string"
+          },
+          "released": {
+            "title": "Released",
+            "type": "string",
+            "format": "date-time"
+          },
+          "solver_url": {
+            "title": "Solver Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "description": "A released solver with a specific version\n\nThis version might have human-readable alias (e.g. latest) or\nhierarchical version tags (e.g. 3, 3.2)"
+      },
+      "SolverOutput": {
+        "title": "SolverOutput",
+        "required": [
+          "content_type",
+          "key"
+        ],
+        "type": "object",
+        "properties": {
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "minLength": 3,
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        }
+      },
+      "TaskStates": {
+        "title": "TaskStates",
+        "enum": [
+          "undefined",
+          "pending",
+          "jobning",
+          "success",
+          "failed"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
+      "UserRoleEnum": {
+        "title": "UserRoleEnum",
+        "enum": [
+          "ANONYMOUS",
+          "GUEST",
+          "USER",
+          "TESTER"
+        ],
+        "type": "string",
+        "description": "An enumeration."
       },
       "UsersGroup": {
         "title": "UsersGroup",
