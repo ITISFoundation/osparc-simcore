@@ -115,6 +115,7 @@ python-client: client openapi.json ## runs python client generator
 		--release-note="Updated to $(APP_VERSION)"
 
 
+
 generator-help: ## help on client-api generator
 	# generate help
 	@$(SCRIPTS_DIR)/openapi-generator-cli.bash help generate
