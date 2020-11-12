@@ -18,28 +18,28 @@ afterAll(async () => {
 
 describe('Calls after logging in', () => {
   test('Profile', async () => {
-    const responseEnv = await utils.fetch('me');
+    const responseEnv = await utils.fetchReq('me');
     expect(responseEnv.data["login"]).toBe(user);
   }, ourTimeout);
 
   test('Studies', async () => {
-    const responseEnv = await utils.fetch('projects?type=user');
+    const responseEnv = await utils.fetchReq('projects?type=user');
     expect(Array.isArray(responseEnv.data)).toBeTruthy();
   }, ourTimeout);
 
   test('Templates', async () => {
-    const responseEnv = await utils.fetch('projects?type=template');
+    const responseEnv = await utils.fetchReq('projects?type=template');
     expect(Array.isArray(responseEnv.data)).toBeTruthy();
   }, ourTimeout);
 
   test('Services', async () => {
-    const responseEnv = await utils.fetch('catalog/services');
+    const responseEnv = await utils.fetchReq('catalog/services');
     expect(Array.isArray(responseEnv.data)).toBeTruthy();
     expect(responseEnv.data.length).toBeGreaterThan(0);
   }, ourTimeout);
 
   test('Locations', async () => {
-    const responseEnv = await utils.fetch('storage/locations');
+    const responseEnv = await utils.fetchReq('storage/locations');
     expect(Array.isArray(responseEnv.data)).toBeTruthy();
     expect(responseEnv.data.length).toBeGreaterThan(0);
   }, ourTimeout);
