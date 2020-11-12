@@ -111,7 +111,7 @@ async function getVisibleChildrenIDs(page, parentSelector) {
   return childrenIDs;
 }
 
-async function fetch(endpoint) {
+async function fetchReq(endpoint) {
   const responseEnv = await page.evaluate(
     // NOTE: without the following comment it fails here with some weird message
     /* istanbul ignore next */
@@ -132,7 +132,7 @@ async function __getHost(page) {
 }
 
 async function makeRequest(page, endpoint, apiVersion = "v0") {
-  const host = __getHost(page);
+  const host = await __getHost(page);
   // https://github.com/Netflix/pollyjs/issues/149#issuecomment-481108446
   await page.setBypassCSP(true);
   const resp = await page.evaluate(async (host, endpoint, apiVersion) => {
@@ -291,7 +291,7 @@ module.exports = {
   getNodeTreeItemIDs,
   getFileTreeItemIDs,
   getVisibleChildrenIDs,
-  fetch,
+  fetchReq,
   makeRequest,
   emptyField,
   dragAndDrop,
