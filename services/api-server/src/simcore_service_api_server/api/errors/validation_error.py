@@ -21,6 +21,6 @@ validation_error_response_definition["properties"] = {
     "errors": {
         "title": "Errors",
         "type": "array",
-        "items": {"$ref": "{0}ValidationError".format(REF_PREFIX)},
+        "items": {"$ref": f"{REF_PREFIX}ValidationError"},
     },
 }

@@ -3,14 +3,15 @@ from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from starlette import status
 from starlette.exceptions import HTTPException
 
 from .._meta import api_version, api_vtag
-from ..api.errors.http_error import http_error_handler
+from ..api.errors.http_error import make_http_error_handler_for_exception, http_error_handler
 from ..api.errors.validation_error import http422_error_handler
 from ..api.root import router as api_router
 from ..api.routes.health import router as health_router
-from ..modules import catalog, remote_debug, webserver, storage, director
+from ..modules import catalog, director, remote_debug, storage, webserver
 from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .redoc import create_redoc_handler
@@ -57,13 +58,16 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings.director.enabled:
         director.setup(app, settings.director)
 
-
     # setup app
     app.add_event_handler("startup", create_start_app_handler(app))
     app.add_event_handler("shutdown", create_stop_app_handler(app))
 
     app.add_exception_handler(HTTPException, http_error_handler)
     app.add_exception_handler(RequestValidationError, http422_error_handler)
+    app.add_exception_handler(
+        NotImplementedError,
+        make_http_error_handler_for_exception(status.HTTP_501_NOT_IMPLEMENTED),
+    )
 
     # routing
 

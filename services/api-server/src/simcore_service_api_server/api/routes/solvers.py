@@ -19,7 +19,6 @@ from ...models.schemas.solvers import (
     JobState,
     KeyIdentifier,
     Solver,
-    SolverImage,
     SolverImageName,
     SolverOutput,
 )

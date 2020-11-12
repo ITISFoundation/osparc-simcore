@@ -7,7 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, HttpUrl, confloat, constr
 
 LATEST_VERSION = "latest"
-KEY_RE = r"^(simcore)/(services)/(comp)(/[^\s/]+)+$"
+KEY_RE = r"^(simcore)/(services)/(comp)(/[^\s/]+)+/$"  # NOTE: needs to end with / !!
 
 
 # Human-readable unique identifier
@@ -27,7 +27,7 @@ class SolverImage(BaseModel):
 
 
 class Solver(BaseModel):
-    """ A released solver with a specific version
+    """A released solver with a specific version
 
     This version might have human-readable alias (e.g. latest) or
     hierarchical version tags (e.g. 3, 3.2)
@@ -41,7 +41,7 @@ class Solver(BaseModel):
     title: str
     description: Optional[str]
     maintainer: str
-    released: Optional[datetime] # TODO: turn into required
+    released: Optional[datetime]  # TODO: turn into required
 
     solver_url: HttpUrl
 
