@@ -38,8 +38,7 @@
 
 qx.Class.define("osparc.io.WatchDog", {
   extend: qx.core.Object,
-
-  type : "singleton",
+  type: "singleton",
 
   construct: function() {
     this.__clientHeartbeatPinger = new qx.event.Timer(this.heartbeatInterval);
@@ -52,6 +51,8 @@ qx.Class.define("osparc.io.WatchDog", {
       this.__clientHeartbeatWWPinger.onmessage = () => {
         this.__pingWWServer();
       };
+    } else {
+      console.error("Your browser doesn't support web workers.");
     }
 
     // register for socket.io event to change the default heartbeat interval
