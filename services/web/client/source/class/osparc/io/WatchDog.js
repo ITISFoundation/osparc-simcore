@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
-  * @asset(osparc/timer4Worker.js)
+  * @asset(timer4Worker.js)
   * @ignore(Worker)
   */
 
@@ -47,7 +47,7 @@ qx.Class.define("osparc.io.WatchDog", {
     }, this);
 
     if (window.Worker) {
-      this.__clientHeartbeatWWPinger = new Worker("osparc/timer4Worker.js");
+      this.__clientHeartbeatWWPinger = new Worker("resource/osparc/timer4Worker.js");
       this.__clientHeartbeatWWPinger.onmessage = () => {
         this.__pingWWServer();
       };
