@@ -41,14 +41,10 @@ qx.Class.define("osparc.io.WatchDog", {
   type: "singleton",
 
   construct: function() {
-    if (window.Worker) {
-      this.__clientHeartbeatWWPinger = new Worker("resource/osparc/timer4Worker.js");
-      this.__clientHeartbeatWWPinger.onmessage = () => {
-        this.__pingWWServer();
-      };
-    } else {
-      console.error("Your browser doesn't support web workers.");
-    }
+    this.__clientHeartbeatWWPinger = new Worker("resource/osparc/timer4Worker.js");
+    this.__clientHeartbeatWWPinger.onmessage = () => {
+      this.__pingWWServer();
+    };
 
     // register for socket.io event to change the default heartbeat interval
     const socket = osparc.wrapper.WebSocket.getInstance();
