@@ -23,6 +23,7 @@
   "externalResources": {
     "script": [
       "socketio/socket.io.js",
+      "osparc/timer4Worker.js",
       "svg/svg.js",
       "svg/svg.path.js",
       "jsondiffpatch/jsondiffpatch.min.js",
