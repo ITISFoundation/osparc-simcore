@@ -241,7 +241,7 @@ async function runStudy(page) {
   }
 }
 
-async function dashboardDeleteFirstStudy(page, studyName) {
+async function deleteFirstStudy(page, studyName) {
   console.log("Deleting first study")
 
   await utils.waitAndClick(page, '[osparc-test-id="studiesTabBtn"]')
@@ -373,7 +373,7 @@ module.exports = {
   dashboardOpenFirstService,
   clickLoggerTitle,
   runStudy,
-  dashboardDeleteFirstStudy,
+  deleteFirstStudy,
   toDashboard,
   openNode,
   openLastNode,

@@ -291,17 +291,17 @@ class TutorialBase {
 
   async removeStudy() {
     await auto.toDashboard(this.__page);
-    await this.takeScreenshot("dashboardDeleteFirstStudy_before");
+    await this.takeScreenshot("deleteFirstStudy_before");
     this.__responsesQueue.addResponseListener("projects/");
     try {
-      await auto.dashboardDeleteFirstStudy(this.__page, this.__templateName);
+      await auto.deleteFirstStudy(this.__page, this.__templateName);
       await this.__responsesQueue.waitUntilResponse("projects/");
     }
     catch(err) {
       console.error("Failed deleting study", err);
       throw(err);
     }
-    await this.takeScreenshot("dashboardDeleteFirstStudy_after");
+    await this.takeScreenshot("deleteFirstStudy_after");
   }
 
   async logOut() {
