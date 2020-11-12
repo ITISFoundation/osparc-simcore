@@ -29,6 +29,8 @@ async function runTutorial() {
     // Wait for some time
     await tutorial.waitFor(12000);
 
+    await tutorial.closeStudy();
+
     await tutorial.removeStudy();
   }
   catch(err) {

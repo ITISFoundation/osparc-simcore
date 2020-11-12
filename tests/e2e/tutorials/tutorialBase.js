@@ -289,8 +289,21 @@ class TutorialBase {
     await this.takeScreenshot("checkResults_after");
   }
 
+  async closeStudy() {
+    await this.takeScreenshot("closeStudy_before");
+    this.__responsesQueue.addResponseListener(":close");
+    try {
+      await auto.toDashboard(this.__page);
+      await this.__responsesQueue.waitUntilResponse(":close");
+    }
+    catch(err) {
+      console.error("Failed closing study", err);
+      throw(err);
+    }
+    await this.takeScreenshot("closeStudy_after");
+  }
+
   async removeStudy() {
-    await auto.toDashboard(this.__page);
     await this.takeScreenshot("deleteFirstStudy_before");
     this.__responsesQueue.addResponseListener("projects/");
     try {
