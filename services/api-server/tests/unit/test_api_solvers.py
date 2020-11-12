@@ -7,6 +7,7 @@ import pytest
 import respx
 import simcore_service_api_server.api.routes.solvers
 from fastapi import FastAPI
+from httpx import Response
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import AppSettings
 from simcore_service_api_server.models.schemas.solvers import Solver
@@ -39,22 +40,24 @@ def mocked_catalog_service_api(app: FastAPI):
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
+
         respx_mock.get(
-            "/v0/services?user_id=1&details=false",
-            status_code=200,
-            content=[
-                # one solver
-                catalog_fakes.create_service_out(
-                    key="simcore/services/comp/Foo", name="Foo"
-                ),
-                # two version of the same solver
-                catalog_fakes.create_service_out(version="0.0.1"),
-                catalog_fakes.create_service_out(version="1.0.1"),
-                # not a solver
-                catalog_fakes.create_service_out(type="dynamic"),
-            ],
-            alias="list_services",
-            content_type="application/json",
+            "/v0/services?user_id=1&details=false", name="list_services"
+        ).mock(
+            return_value=Response(
+                status_code=200,
+                json=[
+                    # one solver
+                    catalog_fakes.create_service_out(
+                        key="simcore/services/comp/Foo", name="Foo"
+                    ),
+                    # two version of the same solver
+                    catalog_fakes.create_service_out(version="0.0.1"),
+                    catalog_fakes.create_service_out(version="1.0.1"),
+                    # not a solver
+                    catalog_fakes.create_service_out(type="dynamic"),
+                ],
+            )
         )
 
         yield respx_mock
@@ -83,15 +86,25 @@ def test_list_solvers(sync_client: TestClient, mocked_catalog_service_api, mocke
         print(solver.json(indent=1, exclude_unset=True))
 
         # use link to get the same solver
-        assert solver.solver_url.host == "api.testserver.io"
+        assert solver.solver_url.host == "api.testserver.io"  # cli.base_url
+
+        # get_solver_latest_version_by_name
         resp0 = cli.get(solver.solver_url.path)
-        assert Solver(**resp0.json()) == solver
+        assert resp0.status_code == status.HTTP_501_NOT_IMPLEMENTED
+        # assert f"GET {solver.name}:{solver.version}"  in resp0.json()["errors"][0]
+        assert f"GET solver {solver.uuid}" in resp0.json()["errors"][0]
+        # assert Solver(**resp0.json()) == solver
 
-        # by id
-        resp1 = cli.get(f"/v0/{solver.uid}")
-        assert Solver(**resp1.json()) == solver
+        # get_solver_by_id
+        resp1 = cli.get(f"/v0/solvers/{solver.uuid}")
+        assert resp1.status_code == status.HTTP_501_NOT_IMPLEMENTED
+        assert f"GET solver {solver.uuid}" in resp1.json()["errors"][0]
+        # assert Solver(**resp1.json()) == solver
 
-        # get latest by name
-        resp2 = cli.get(f"/v0/{solver.name}/latest")
-        resp3 = cli.get(f"/v0/{solver.name}")
-        assert Solver(**resp2.json()) == Solver(**resp3.json())
+        # get_solver_latest_version_by_name
+        resp2 = cli.get(f"/v0/solvers/{solver.name}/latest")
+
+        assert resp2.status_code == status.HTTP_501_NOT_IMPLEMENTED
+        assert f"GET latest {solver.name}" in resp2.json()["errors"][0]
+
+        # assert Solver(**resp2.json()) == Solver(**resp3.json())
