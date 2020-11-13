@@ -43,7 +43,7 @@ class StudyUI(BaseModel):
     current_node_id: Optional[NodeID] = Field(alias="currentNodeId")
 
     class Config:
-        extra = Extra.forbid
+        extra = Extra.allow
 
 
 class AccessRights(BaseModel):

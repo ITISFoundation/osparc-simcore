@@ -6054,7 +6054,7 @@ paths:
                               additionalProperties: true
                             ui:
                               type: object
-                              additionalProperties: false
+                              additionalProperties: true
                               properties:
                                 workbench:
                                   type: object
@@ -6611,7 +6611,7 @@ paths:
                   additionalProperties: true
                 ui:
                   type: object
-                  additionalProperties: false
+                  additionalProperties: true
                   properties:
                     workbench:
                       type: object
@@ -7048,7 +7048,7 @@ paths:
                             additionalProperties: true
                           ui:
                             type: object
-                            additionalProperties: false
+                            additionalProperties: true
                             properties:
                               workbench:
                                 type: object
@@ -7603,7 +7603,7 @@ paths:
                             additionalProperties: true
                           ui:
                             type: object
-                            additionalProperties: false
+                            additionalProperties: true
                             properties:
                               workbench:
                                 type: object
@@ -8164,7 +8164,7 @@ paths:
                             additionalProperties: true
                           ui:
                             type: object
-                            additionalProperties: false
+                            additionalProperties: true
                             properties:
                               workbench:
                                 type: object
@@ -8716,7 +8716,7 @@ paths:
                   additionalProperties: true
                 ui:
                   type: object
-                  additionalProperties: false
+                  additionalProperties: true
                   properties:
                     workbench:
                       type: object
@@ -9153,7 +9153,7 @@ paths:
                             additionalProperties: true
                           ui:
                             type: object
-                            additionalProperties: false
+                            additionalProperties: true
                             properties:
                               workbench:
                                 type: object
@@ -9730,7 +9730,7 @@ paths:
                             additionalProperties: true
                           ui:
                             type: object
-                            additionalProperties: false
+                            additionalProperties: true
                             properties:
                               workbench:
                                 type: object
@@ -11119,7 +11119,7 @@ paths:
                             additionalProperties: true
                           ui:
                             type: object
-                            additionalProperties: false
+                            additionalProperties: true
                             properties:
                               workbench:
                                 type: object
@@ -11673,7 +11673,7 @@ paths:
                             additionalProperties: true
                           ui:
                             type: object
-                            additionalProperties: false
+                            additionalProperties: true
                             properties:
                               workbench:
                                 type: object
