@@ -41,7 +41,7 @@ from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio import setup_sockets
+from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.tags import setup_tags
 from simcore_service_webserver.utils import now_str, to_datetime
@@ -86,7 +86,7 @@ def client(
     setup_rest(app)
     setup_login(app)  # needed for login_utils fixtures
     setup_resource_manager(app)
-    setup_sockets(app)
+    setup_socketio(app)
     setup_director(app)
     setup_tags(app)
     assert setup_projects(app)
@@ -127,7 +127,7 @@ def mocks_on_projects_api(mocker, logged_user) -> Dict:
     nameparts = logged_user["name"].split(".") + [""]
     state = ProjectState(
         locked=ProjectLocked(
-            value=False, owner=Owner(first_name=nameparts[0], last_name=nameparts[1])
+            value=False, owner=Owner(user_id=logged_user["id"], first_name=nameparts[0], last_name=nameparts[1])
         ),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     ).dict(by_alias=True, exclude_unset=True)
@@ -1420,6 +1420,7 @@ async def test_open_shared_project_2_users_locked(
     )
     expected_project_state.locked.value = True
     expected_project_state.locked.owner = Owner(
+        user_id=logged_user["id"],
         first_name=(logged_user["name"].split(".") + [""])[0],
         last_name=(logged_user["name"].split(".") + [""])[1],
     )
@@ -1498,6 +1499,7 @@ async def test_open_shared_project_2_users_locked(
     if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
         expected_project_state.locked.value = True
         expected_project_state.locked.owner = Owner(
+            user_id=user_2["id"],
             first_name=(user_2["name"].split(".") + [""])[0],
             last_name=(user_2["name"].split(".") + [""])[1],
         )

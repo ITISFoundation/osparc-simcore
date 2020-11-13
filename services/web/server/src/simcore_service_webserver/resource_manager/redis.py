@@ -33,7 +33,7 @@ async def redis_client(app: web.Application):
     client = None
     for attempt in Retrying(**retry_upon_init_policy):
         with attempt:
-            client = await aioredis.create_redis_pool(url, encoding="utf-8")
+            client: aioredis.Redis = await aioredis.create_redis_pool(url, encoding="utf-8")
     # create lock manager
     lock_manager = Aioredlock([url])
 

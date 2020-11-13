@@ -127,7 +127,7 @@ setup_database() {
   echo "--------------- injecting templates in postgres db..."
 
   # Checks that pg is up and running
-  IMAGE_NAME="$(docker image ls --filter 'reference=postgres*' --format "{{.Repository}}:{{.Tag}}" | tail -1)"
+  IMAGE_NAME="$(docker image ls --filter 'reference=postgres*' --format "{{.ID}}" | tail -1)"
   docker ps --filter "ancestor=$IMAGE_NAME"
   docker inspect "$(docker ps --filter "ancestor=$IMAGE_NAME" -q)"
 

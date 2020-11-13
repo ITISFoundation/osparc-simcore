@@ -18,16 +18,11 @@ import sys
 from argparse import ArgumentParser
 from typing import Dict, List, Optional
 
-from aiodebug import log_slow_callbacks
-from aiohttp.log import access_logger
-from servicelib.logging_utils import set_logging_handler
-
 from .application import run_service
 from .application_config import CLI_DEFAULT_CONFIGFILE, app_schema
 from .cli_config import add_cli_options, config_from_options
+from .log import setup_logging
 from .utils import search_osparc_repo_dir
-
-LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 
 log = logging.getLogger(__name__)
 
@@ -104,26 +99,10 @@ def main(args: Optional[List] = None):
     config = parse(args, parser)
 
     # service log level
-    log_level = getattr(logging, config["main"]["log_level"])
-    logging.basicConfig(level=log_level)
-    logging.root.setLevel(log_level)
-    set_logging_handler(logging.root)
-
-    # aiohttp access log-levels
-    access_logger.setLevel(log_level)
-
-    # keep mostly quiet noisy loggers
-    quiet_level = max(
-        min(log_level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
-    )
-    logging.getLogger("engineio").setLevel(quiet_level)
-    logging.getLogger("openapi_spec_validator").setLevel(quiet_level)
-    logging.getLogger("sqlalchemy").setLevel(quiet_level)
-    logging.getLogger("sqlalchemy.engine").setLevel(quiet_level)
-
-    # NOTE: Every task blocking > AIODEBUG_SLOW_DURATION_SECS secs is considered slow and logged as warning
-    slow_duration = float(os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0.1))
-    log_slow_callbacks.enable(slow_duration)
+    slow_duration = float(
+        os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0)
+    )  # TODO: move to settings.py::ApplicationSettings
+    setup_logging(level=config["main"]["log_level"], slow_duration=slow_duration)
 
     # run
     run_service(config)

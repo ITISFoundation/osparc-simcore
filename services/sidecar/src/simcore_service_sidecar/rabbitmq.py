@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import aio_pika
 import tenacity
-from models_library.celery import CeleryConfig
+from models_library.settings.celery import CeleryConfig
 from pydantic import BaseModel  # pylint: disable=no-name-in-module
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 

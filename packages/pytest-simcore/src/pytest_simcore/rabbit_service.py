@@ -12,7 +12,7 @@ import aio_pika
 import pytest
 import tenacity
 
-from models_library.rabbit import RabbitConfig
+from models_library.settings.rabbit import RabbitConfig
 
 from .helpers.utils_docker import get_service_published_port
 

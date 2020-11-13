@@ -23,7 +23,7 @@ log = logging.getLogger(__file__)
 
 
 @app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
-def setup(app: web.Application):
+def setup_security(app: web.Application):
     # Once user is identified, an identity string is created for that user
     identity_policy = SessionIdentityPolicy()
 
@@ -36,6 +36,5 @@ def setup(app: web.Application):
     aiohttp_security.setup(app, identity_policy, authorization_policy)
 
 
-setup_security = setup
 
 __all__ = "setup_security"

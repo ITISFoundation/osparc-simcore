@@ -177,6 +177,10 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   statics: {
+    isContainer: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("nodes-group"));
+    },
+
     isDynamic: function(metaData) {
       return (metaData && metaData.type && metaData.type === "dynamic");
     },
@@ -224,7 +228,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     isContainer: function() {
-      return this.getKey().includes("nodes-group");
+      return osparc.data.model.Node.isContainer(this.getMetaData());
     },
 
     isDynamic: function() {
@@ -250,13 +254,6 @@ qx.Class.define("osparc.data.model.Node", {
     getInputValues: function() {
       if (this.isPropertyInitialized("propsForm") && this.getPropsForm()) {
         return this.getPropsForm().getValues();
-      }
-      return {};
-    },
-
-    getInputEditorValues: function() {
-      if (this.isPropertyInitialized("propsFormEditor") && this.getPropsFormEditor()) {
-        return this.getPropsFormEditor().getValues();
       }
       return {};
     },

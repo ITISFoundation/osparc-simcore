@@ -12,18 +12,16 @@ from typing import Dict, List
 import pytest
 
 from pytest_simcore.helpers.utils_environs import eval_service_environ
+from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import is_setup_function
 from simcore_service_webserver.application_config import create_schema
 from simcore_service_webserver.cli import parse, setup_parser
-from simcore_service_webserver.login import APP_CONFIG_KEY
-from simcore_service_webserver.login import CONFIG_SECTION_NAME as LOGIN_SECTION
-from simcore_service_webserver.login import (
-    DB_SECTION,
-    SMTP_SECTION,
-    _create_login_config,
-)
+from simcore_service_webserver.db_config import CONFIG_SECTION_NAME as DB_SECTION
+from simcore_service_webserver.email_config import CONFIG_SECTION_NAME as SMTP_SECTION
 from simcore_service_webserver.login.cfg import DEFAULTS as CONFIG_DEFAULTS
 from simcore_service_webserver.login.cfg import Cfg
+from simcore_service_webserver.login.config import CONFIG_SECTION_NAME as LOGIN_SECTION
+from simcore_service_webserver.login.config import create_login_internal_config
 from simcore_service_webserver.resources import resources
 
 config_yaml_filenames = [str(name) for name in resources.listdir("config")]
@@ -178,7 +176,7 @@ def test_creation_of_login_config(configfile, service_webserver_environ):
         fake_app = {APP_CONFIG_KEY: app_config}
         fake_storage = object()
 
-        update_cfg = _create_login_config(fake_app, fake_storage)
+        update_cfg = create_login_internal_config(fake_app, fake_storage)
         assert all(
             value.lower() is not ["none", "null", ""]
             for value in update_cfg.values()

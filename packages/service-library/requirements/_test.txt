@@ -5,12 +5,12 @@
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
 aiodebug==1.1.2           # via -r requirements/_base.txt
-aiohttp==3.6.3            # via -r requirements/_base.txt, aiozipkin, pytest-aiohttp
+aiohttp==3.7.2            # via -r requirements/_base.txt, aiozipkin, pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt
 aiozipkin==0.7.1          # via -r requirements/_base.txt
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via -r requirements/_base.txt, aiohttp
-attrs==20.2.0             # via -r requirements/_base.txt, aiohttp, jsonschema, openapi-core, pytest, pytest-docker
+attrs==20.3.0             # via -r requirements/_base.txt, aiohttp, jsonschema, openapi-core, pytest, pytest-docker
 bcrypt==3.2.0             # via paramiko
 cached-property==1.5.2    # via docker-compose
 certifi==2020.6.20        # via requests
@@ -18,7 +18,8 @@ cffi==1.14.3              # via bcrypt, cryptography, pynacl
 chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, requests
 coverage==5.3             # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==2.1.2          # via -r requirements/_test.in
-cryptography==3.1.1       # via paramiko
+cryptography==3.2.1       # via paramiko
+dataclasses==0.7          # via -r requirements/_base.txt, pydantic
 distro==1.5.0             # via docker-compose
 docker-compose==1.27.4    # via pytest-docker
 docker[ssh]==4.3.1        # via docker-compose
@@ -27,7 +28,7 @@ docopt==0.6.2             # via coveralls, docker-compose
 idna-ssl==1.1.0           # via -r requirements/_base.txt, aiohttp
 idna==2.10                # via -r requirements/_base.txt, idna-ssl, requests, yarl
 importlib-metadata==2.0.0  # via -r requirements/_base.txt, jsonschema, pluggy, pytest
-iniconfig==1.0.1          # via pytest
+iniconfig==1.1.1          # via pytest
 isodate==0.6.0            # via -r requirements/_base.txt, openapi-core
 isort==5.6.4              # via pylint
 jsonschema==3.2.0         # via -r requirements/_base.txt, docker-compose, openapi-spec-validator
@@ -43,6 +44,7 @@ prometheus-client==0.8.0  # via -r requirements/_base.txt
 psycopg2-binary==2.8.6    # via -r requirements/_base.txt, aiopg, sqlalchemy
 py==1.9.0                 # via pytest
 pycparser==2.20           # via cffi
+pydantic==1.7.2           # via -r requirements/_base.txt
 pylint==2.6.0             # via -r requirements/_test.in
 pynacl==1.4.0             # via paramiko
 pyparsing==2.4.7          # via packaging
@@ -54,8 +56,8 @@ pytest-instafail==0.4.2   # via -r requirements/_test.in
 pytest-mock==3.3.1        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.4       # via -r requirements/_test.in
-pytest==6.1.1             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-instafail, pytest-mock, pytest-sugar
-python-dotenv==0.14.0     # via docker-compose
+pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-instafail, pytest-mock, pytest-sugar
+python-dotenv==0.15.0     # via docker-compose
 pyyaml==5.3.1             # via -r requirements/_base.txt, docker-compose, openapi-spec-validator
 requests==2.24.0          # via coveralls, docker, docker-compose
 six==1.15.0               # via -r requirements/_base.txt, astroid, bcrypt, cryptography, docker, dockerpty, isodate, jsonschema, openapi-core, openapi-spec-validator, packaging, pynacl, tenacity, websocket-client
@@ -69,12 +71,12 @@ trafaret==2.1.0           # via -r requirements/_base.txt
 typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.3  # via -r requirements/_base.txt, aiohttp, yarl
 ujson==4.0.1              # via -r requirements/_base.txt
-urllib3==1.25.10          # via requests
+urllib3==1.25.11          # via requests
 websocket-client==0.57.0  # via docker, docker-compose
 werkzeug==1.0.1           # via -r requirements/_base.txt
 wrapt==1.12.1             # via astroid
 yarl==1.5.1               # via -r requirements/_base.txt, aiohttp
-zipp==3.3.1               # via -r requirements/_base.txt, importlib-metadata
+zipp==3.4.0               # via -r requirements/_base.txt, importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

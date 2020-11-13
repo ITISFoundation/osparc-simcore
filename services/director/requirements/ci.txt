@@ -9,8 +9,7 @@
 # installs base + tests requirements
 -r _test.txt
 ../../packages/pytest-simcore/
-# installs this repo's packages
-../../packages/service-library/
+../../packages/models-library/
 
 # installs current package
 .

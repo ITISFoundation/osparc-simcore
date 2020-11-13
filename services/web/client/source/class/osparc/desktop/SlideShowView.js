@@ -31,41 +31,32 @@ qx.Class.define("osparc.desktop.SlideShowView", {
   properties: {
     study: {
       check: "osparc.data.model.Study",
+      apply: "_applyStudy",
       nullable: false
     }
   },
 
+  statics: {
+    getSortedNodes: function(study) {
+      const slideShow = study.getUi().getSlideshow();
+      const nodes = [];
+      for (let nodeId in slideShow) {
+        const node = slideShow[nodeId];
+        nodes.push({
+          ...node,
+          nodeId
+        });
+      }
+      nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
+      return nodes;
+    }
+  },
+
   members: {
-    __nodeView: null,
     __controlsBar: null,
     __prvsBtn: null,
     __nextBtn: null,
     __currentNodeId: null,
-
-    initViews: function() {
-      this.__initViews();
-
-      this.__showFirstNode();
-    },
-
-    __showFirstNode: function() {
-      const study = this.getStudy();
-      if (study) {
-        const slideShow = study.getUi().getSlideshow();
-        const nodes = [];
-        for (let nodeId in slideShow) {
-          const node = slideShow[nodeId];
-          nodes.push({
-            ...node,
-            nodeId
-          });
-        }
-        if (nodes.length) {
-          nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
-          this.nodeSelected(nodes[0].nodeId);
-        }
-      }
-    },
 
     nodeSelected: function(nodeId) {
       this.__currentNodeId = nodeId;
@@ -73,10 +64,22 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
       const node = this.getStudy().getWorkbench().getNode(nodeId);
       if (node) {
-        this.__nodeView.setNode(node);
-        this.__nodeView.populateLayout();
-        this.__nodeView.getInputsView().exclude();
-        this.__nodeView.getOutputsView().exclude();
+        let view;
+        if (node.isContainer()) {
+          view = new osparc.component.node.GroupNodeView();
+        } else if (node.isFilePicker()) {
+          view = new osparc.component.node.FilePickerNodeView();
+        } else {
+          view = new osparc.component.node.NodeView();
+        }
+        if (view) {
+          view.setNode(node);
+          view.populateLayout();
+          view.getInputsView().exclude();
+          view.getOutputsView().exclude();
+          this.__showInMainView(view);
+          this.__syncButtons();
+        }
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
     },
@@ -89,18 +92,22 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       if (isValid && currentNodeId) {
         this.nodeSelected(currentNodeId);
       } else {
-        this.__showFirstNode();
+        this.__openFirstNode();
+      }
+    },
+
+    _applyStudy: function(study) {
+      if (study) {
+        this.__initViews();
       }
     },
 
     __initViews: function() {
       this._removeAll();
+      this.__createControlsBar();
+    },
 
-      const nodeView = this.__nodeView = new osparc.component.node.NodeView();
-      this._add(nodeView, {
-        flex: 1
-      });
-
+    __createControlsBar: function() {
       const controlsBar = this.__controlsBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         minHeight: 40,
         padding: 5
@@ -110,7 +117,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
         flex: 1
       });
 
-      const prvsBtn = this.__prvsBtn = new qx.ui.form.Button(this.tr("Previuos")).set({
+      const prvsBtn = this.__prvsBtn = new qx.ui.form.Button(this.tr("Previous")).set({
         allowGrowX: false
       });
       prvsBtn.addListener("execute", () => {
@@ -129,20 +136,49 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       this._add(controlsBar);
     },
 
+    __showInMainView: function(nodeView) {
+      const children = this._getChildren();
+      for (let i=0; i<children.length; i++) {
+        if (children[i] !== this.__controlsBar) {
+          this._removeAt(i);
+        }
+      }
+      this._addAt(nodeView, 0, {
+        flex: 1
+      });
+    },
+
+    __syncButtons: function() {
+      const study = this.getStudy();
+      if (study) {
+        const nodes = this.self().getSortedNodes(study);
+        if (nodes.length && nodes[0].nodeId === this.__currentNodeId) {
+          this.__prvsBtn.setEnabled(false);
+        } else {
+          this.__prvsBtn.setEnabled(true);
+        }
+        if (nodes.length && nodes[nodes.length-1].nodeId === this.__currentNodeId) {
+          this.__nextBtn.setEnabled(false);
+        } else {
+          this.__nextBtn.setEnabled(true);
+        }
+      }
+    },
+
+    __openFirstNode: function() {
+      const study = this.getStudy();
+      if (study) {
+        const nodes = this.self().getSortedNodes(study);
+        if (nodes.length) {
+          this.nodeSelected(nodes[0].nodeId);
+        }
+      }
+    },
+
     __next: function() {
       const study = this.getStudy();
       if (study) {
-        const slideShow = study.getUi().getSlideshow();
-        const nodes = [];
-        for (let nodeId in slideShow) {
-          const node = slideShow[nodeId];
-          nodes.push({
-            ...node,
-            nodeId
-          });
-        }
-        nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
-
+        const nodes = this.self().getSortedNodes(study);
         const idx = nodes.findIndex(node => node.nodeId === this.__currentNodeId);
         if (idx > -1 && idx+1 < nodes.length) {
           this.nodeSelected(nodes[idx+1].nodeId);
@@ -153,17 +189,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     __previous: function() {
       const study = this.getStudy();
       if (study) {
-        const slideShow = study.getUi().getSlideshow();
-        const nodes = [];
-        for (let nodeId in slideShow) {
-          const node = slideShow[nodeId];
-          nodes.push({
-            ...node,
-            nodeId
-          });
-        }
-        nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
-
+        const nodes = this.self().getSortedNodes(study);
         const idx = nodes.findIndex(node => node.nodeId === this.__currentNodeId);
         if (idx > -1 && idx-1 > -1) {
           this.nodeSelected(nodes[idx-1].nodeId);

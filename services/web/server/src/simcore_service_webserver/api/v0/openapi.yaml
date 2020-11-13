@@ -5917,6 +5917,16 @@ paths:
                                                   type: string
                                                 label:
                                                   type: string
+                                            - type: object
+                                              additionalProperties: false
+                                              required:
+                                                - downloadLink
+                                              properties:
+                                                downloadLink:
+                                                  type: string
+                                                  format: uri
+                                                label:
+                                                  type: string
                                     inputAccess:
                                       description: map with key - access level pairs
                                       type: object
@@ -5964,6 +5974,16 @@ paths:
                                                   type: string
                                                 path:
                                                   type: string
+                                                label:
+                                                  type: string
+                                            - type: object
+                                              additionalProperties: false
+                                              required:
+                                                - downloadLink
+                                              properties:
+                                                downloadLink:
+                                                  type: string
+                                                  format: uri
                                                 label:
                                                   type: string
                                     outputNode:
@@ -6105,6 +6125,12 @@ paths:
                                                 - title: Owner
                                                   type: object
                                                   properties:
+                                                    user_id:
+                                                      title: User Id
+                                                      type: integer
+                                                      description: Owner's identifier when registered in the user's database table
+                                                      example:
+                                                        - 2
                                                     first_name:
                                                       title: First Name
                                                       description: Owner first name
@@ -6118,6 +6144,7 @@ paths:
                                                         - Smith
                                                       type: string
                                                   required:
+                                                    - user_id
                                                     - first_name
                                                     - last_name
                                           required:
@@ -6424,6 +6451,16 @@ paths:
                                       type: string
                                     label:
                                       type: string
+                                - type: object
+                                  additionalProperties: false
+                                  required:
+                                    - downloadLink
+                                  properties:
+                                    downloadLink:
+                                      type: string
+                                      format: uri
+                                    label:
+                                      type: string
                         inputAccess:
                           description: map with key - access level pairs
                           type: object
@@ -6471,6 +6508,16 @@ paths:
                                       type: string
                                     path:
                                       type: string
+                                    label:
+                                      type: string
+                                - type: object
+                                  additionalProperties: false
+                                  required:
+                                    - downloadLink
+                                  properties:
+                                    downloadLink:
+                                      type: string
+                                      format: uri
                                     label:
                                       type: string
                         outputNode:
@@ -6612,6 +6659,12 @@ paths:
                                     - title: Owner
                                       type: object
                                       properties:
+                                        user_id:
+                                          title: User Id
+                                          type: integer
+                                          description: Owner's identifier when registered in the user's database table
+                                          example:
+                                            - 2
                                         first_name:
                                           title: First Name
                                           description: Owner first name
@@ -6625,6 +6678,7 @@ paths:
                                             - Smith
                                           type: string
                                       required:
+                                        - user_id
                                         - first_name
                                         - last_name
                               required:
@@ -6811,6 +6865,16 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -6858,6 +6922,16 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -6999,6 +7073,12 @@ paths:
                                               - title: Owner
                                                 type: object
                                                 properties:
+                                                  user_id:
+                                                    title: User Id
+                                                    type: integer
+                                                    description: Owner's identifier when registered in the user's database table
+                                                    example:
+                                                      - 2
                                                   first_name:
                                                     title: First Name
                                                     description: Owner first name
@@ -7012,6 +7092,7 @@ paths:
                                                       - Smith
                                                     type: string
                                                 required:
+                                                  - user_id
                                                   - first_name
                                                   - last_name
                                         required:
@@ -7316,6 +7397,16 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -7363,6 +7454,16 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -7504,6 +7605,12 @@ paths:
                                               - title: Owner
                                                 type: object
                                                 properties:
+                                                  user_id:
+                                                    title: User Id
+                                                    type: integer
+                                                    description: Owner's identifier when registered in the user's database table
+                                                    example:
+                                                      - 2
                                                   first_name:
                                                     title: First Name
                                                     description: Owner first name
@@ -7517,6 +7624,7 @@ paths:
                                                       - Smith
                                                     type: string
                                                 required:
+                                                  - user_id
                                                   - first_name
                                                   - last_name
                                         required:
@@ -7827,6 +7935,16 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -7874,6 +7992,16 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -8015,6 +8143,12 @@ paths:
                                               - title: Owner
                                                 type: object
                                                 properties:
+                                                  user_id:
+                                                    title: User Id
+                                                    type: integer
+                                                    description: Owner's identifier when registered in the user's database table
+                                                    example:
+                                                      - 2
                                                   first_name:
                                                     title: First Name
                                                     description: Owner first name
@@ -8028,6 +8162,7 @@ paths:
                                                       - Smith
                                                     type: string
                                                 required:
+                                                  - user_id
                                                   - first_name
                                                   - last_name
                                         required:
@@ -8329,6 +8464,16 @@ paths:
                                       type: string
                                     label:
                                       type: string
+                                - type: object
+                                  additionalProperties: false
+                                  required:
+                                    - downloadLink
+                                  properties:
+                                    downloadLink:
+                                      type: string
+                                      format: uri
+                                    label:
+                                      type: string
                         inputAccess:
                           description: map with key - access level pairs
                           type: object
@@ -8376,6 +8521,16 @@ paths:
                                       type: string
                                     path:
                                       type: string
+                                    label:
+                                      type: string
+                                - type: object
+                                  additionalProperties: false
+                                  required:
+                                    - downloadLink
+                                  properties:
+                                    downloadLink:
+                                      type: string
+                                      format: uri
                                     label:
                                       type: string
                         outputNode:
@@ -8517,6 +8672,12 @@ paths:
                                     - title: Owner
                                       type: object
                                       properties:
+                                        user_id:
+                                          title: User Id
+                                          type: integer
+                                          description: Owner's identifier when registered in the user's database table
+                                          example:
+                                            - 2
                                         first_name:
                                           title: First Name
                                           description: Owner first name
@@ -8530,6 +8691,7 @@ paths:
                                             - Smith
                                           type: string
                                       required:
+                                        - user_id
                                         - first_name
                                         - last_name
                               required:
@@ -8716,6 +8878,16 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -8763,6 +8935,16 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -8904,6 +9086,12 @@ paths:
                                               - title: Owner
                                                 type: object
                                                 properties:
+                                                  user_id:
+                                                    title: User Id
+                                                    type: integer
+                                                    description: Owner's identifier when registered in the user's database table
+                                                    example:
+                                                      - 2
                                                   first_name:
                                                     title: First Name
                                                     description: Owner first name
@@ -8917,6 +9105,7 @@ paths:
                                                       - Smith
                                                     type: string
                                                 required:
+                                                  - user_id
                                                   - first_name
                                                   - last_name
                                         required:
@@ -9243,6 +9432,16 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -9290,6 +9489,16 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -9431,6 +9640,12 @@ paths:
                                               - title: Owner
                                                 type: object
                                                 properties:
+                                                  user_id:
+                                                    title: User Id
+                                                    type: integer
+                                                    description: Owner's identifier when registered in the user's database table
+                                                    example:
+                                                      - 2
                                                   first_name:
                                                     title: First Name
                                                     description: Owner first name
@@ -9444,6 +9659,7 @@ paths:
                                                       - Smith
                                                     type: string
                                                 required:
+                                                  - user_id
                                                   - first_name
                                                   - last_name
                                         required:
@@ -10582,6 +10798,16 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -10629,6 +10855,16 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -10770,6 +11006,12 @@ paths:
                                               - title: Owner
                                                 type: object
                                                 properties:
+                                                  user_id:
+                                                    title: User Id
+                                                    type: integer
+                                                    description: Owner's identifier when registered in the user's database table
+                                                    example:
+                                                      - 2
                                                   first_name:
                                                     title: First Name
                                                     description: Owner first name
@@ -10783,6 +11025,7 @@ paths:
                                                       - Smith
                                                     type: string
                                                 required:
+                                                  - user_id
                                                   - first_name
                                                   - last_name
                                         required:
@@ -11086,6 +11329,16 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   inputAccess:
                                     description: map with key - access level pairs
                                     type: object
@@ -11133,6 +11386,16 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   outputNode:
@@ -11274,6 +11537,12 @@ paths:
                                               - title: Owner
                                                 type: object
                                                 properties:
+                                                  user_id:
+                                                    title: User Id
+                                                    type: integer
+                                                    description: Owner's identifier when registered in the user's database table
+                                                    example:
+                                                      - 2
                                                   first_name:
                                                     title: First Name
                                                     description: Owner first name
@@ -11287,6 +11556,7 @@ paths:
                                                       - Smith
                                                     type: string
                                                 required:
+                                                  - user_id
                                                   - first_name
                                                   - last_name
                                         required:

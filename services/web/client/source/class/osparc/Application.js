@@ -47,7 +47,7 @@ qx.Class.define("osparc.Application", {
         window.localStorage.getItem("themeName") !== qx.theme.manager.Meta.getInstance().getTheme().name) {
         const preferredTheme = qx.Theme.getByName(window.localStorage.getItem("themeName"));
         const themes = qx.Theme.getAll();
-        if (Object.keys(themes).includes(preferredTheme)) {
+        if (preferredTheme && Object.keys(themes).includes(preferredTheme.name)) {
           qx.theme.manager.Meta.getInstance().setTheme(preferredTheme);
         }
       }
@@ -104,10 +104,13 @@ qx.Class.define("osparc.Application", {
         if (urlFragment.nav[0] === "study" && urlFragment.nav.length > 1) {
           // Route: /#/study/{id}
           osparc.utils.Utils.cookie.deleteCookie("user");
-          osparc.auth.Manager.getInstance().validateToken(() => {
-            osparc.store.Store.getInstance().setCurrentStudyId(urlFragment.nav[1]);
-            this.__loadMainPage();
-          }, this.__loadLoginPage, this);
+          osparc.auth.Manager.getInstance().validateToken()
+            .then(() => {
+              const studyId = urlFragment.nav[1];
+              osparc.store.Store.getInstance().setCurrentStudyId(studyId);
+              this.__loadMainPage();
+            })
+            .catch(() => this.__loadLoginPage());
         } else if (urlFragment.nav[0] === "registration" && urlFragment.params && urlFragment.params.invitation) {
           // Route: /#/registration/?invitation={token}
           osparc.utils.Utils.cookie.deleteCookie("user");
@@ -165,14 +168,16 @@ qx.Class.define("osparc.Application", {
         // Reset store (cache)
         osparc.store.Store.getInstance().invalidate();
 
-        osparc.auth.Manager.getInstance().validateToken(data => {
-          if (data.role.toLowerCase() === "guest") {
-            // Logout a guest trying to access the Dashboard
-            osparc.auth.Manager.getInstance().logout();
-          } else {
-            this.__loadMainPage();
-          }
-        }, this.__loadLoginPage, this);
+        osparc.auth.Manager.getInstance().validateToken()
+          .then(data => {
+            if (data.role.toLowerCase() === "guest") {
+              // Logout a guest trying to access the Dashboard
+              osparc.auth.Manager.getInstance().logout();
+            } else {
+              this.__loadMainPage();
+            }
+          })
+          .catch(() => this.__loadLoginPage());
       }
     },
 

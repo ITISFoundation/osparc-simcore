@@ -11,8 +11,8 @@
 -r _test.txt
 
 # installs this repo's packages
--e ../../packages/service-library/
 -e ../../packages/pytest-simcore/
+-e ../../packages/models-library/
 
 # installs current package
 -e .

@@ -6,7 +6,7 @@ import logging
 import openapi_core
 import yaml
 from aiohttp import web
-
+from aiohttp_swagger import setup_swagger
 from servicelib.openapi import get_base_path
 from servicelib.rest_middlewares import append_rest_middlewares
 
@@ -20,14 +20,13 @@ log = logging.getLogger(__name__)
 def setup(app: web.Application):
     """Setup the rest API module in the application in aiohttp fashion.
 
-        - users "rest" section of configuration (see schema in rest_config.py)
-        - loads and validate openapi specs from a remote (e.g. apihub) or local location
-        - connects openapi specs paths to handlers (see rest_routes.py)
-        - enables error, validation and envelope middlewares on API routes
+    - loads and validate openapi specs from a remote (e.g. apihub) or local location
+    - connects openapi specs paths to handlers (see rest_routes.py)
+    - enables error, validation and envelope middlewares on API routes
 
 
-        IMPORTANT: this is a critical subsystem. Any failure should stop
-        the system startup. It CANNOT be simply disabled & continue
+    IMPORTANT: this is a critical subsystem. Any failure should stop
+    the system startup. It CANNOT be simply disabled & continue
     """
     log.debug("Setting up %s ...", __name__)
 
@@ -48,6 +47,14 @@ def setup(app: web.Application):
     # Enable error, validation and envelop middleware on API routes
     base_path = get_base_path(api_specs)
     append_rest_middlewares(app, base_path)
+
+    # Adds swagger doc UI
+    setup_swagger(
+        app,
+        swagger_url="/dev/doc",
+        swagger_from_file=str(spec_path),
+        ui_version=3,
+    )
 
 
 # alias

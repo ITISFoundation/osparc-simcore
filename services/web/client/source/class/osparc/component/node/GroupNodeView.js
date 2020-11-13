@@ -51,6 +51,17 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
         }
       });
       return settingsEditorLayout;
+    },
+
+    isSettingsGroupShowable: function(innerNodes) {
+      const innerNodesArray = Object.values(innerNodes);
+      for (let i=0; i<innerNodesArray.length; i++) {
+        const innerNode = innerNodesArray[i];
+        if (osparc.component.node.NodeView.isPropsFormShowable(innerNode)) {
+          return true;
+        }
+      }
+      return false;
     }
   },
 
@@ -66,8 +77,14 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
           const innerSettings = osparc.component.node.BaseNodeView.createSettingsGroupBox();
           innerNode.bind("label", innerSettings, "legend");
           innerSettings.add(propsForm);
+          propsForm.addListener("changeChildVisibility", () => {
+            const isSettingsGroupShowable = osparc.component.node.NodeView.isPropsFormShowable(innerNode);
+            innerSettings.setVisibility(isSettingsGroupShowable ? "visible" : "excluded");
+            this.__checkSettingsVisibility();
+          }, this);
           this._settingsLayout.add(innerSettings);
         }
+        this.__checkSettingsVisibility();
         const mapper = innerNode.getInputsMapper();
         if (mapper) {
           this._mapperLayout.add(mapper, {
@@ -82,20 +99,14 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
       });
     },
 
+    __checkSettingsVisibility: function() {
+      const isSettingsGroupShowable = this.isSettingsGroupShowable();
+      this._settingsLayout.setVisibility(isSettingsGroupShowable ? "visible" : "excluded");
+    },
+
     isSettingsGroupShowable: function() {
-      let anyVisible = false;
       const innerNodes = this.getNode().getInnerNodes(true);
-      const innerNodesArray = Object.values(innerNodes);
-      for (let i=0; i<innerNodesArray.length && !anyVisible; i++) {
-        const innerNode = innerNodesArray[i];
-        const propsForm = innerNode.getPropsForm();
-        if (propsForm) {
-          anyVisible = propsForm.hasVisibleInputs();
-        } else {
-          anyVisible = false;
-        }
-      }
-      return anyVisible;
+      return this.self().isSettingsGroupShowable(innerNodes);
     },
 
     __iFrameChanged: function(innerNode, tabPage) {
@@ -167,7 +178,9 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
     _openEditAccessLevel: function() {
       const settingsEditorLayout = this.self().getSettingsEditorLayout(this.getNode().getInnerNodes());
       const title = this.getNode().getLabel();
-      osparc.ui.window.Window.popUpInWindow(settingsEditorLayout, title, 800, 600);
+      osparc.ui.window.Window.popUpInWindow(settingsEditorLayout, title, 800, 600).set({
+        autoDestroy: false
+      });
     },
 
     _applyNode: function(node) {

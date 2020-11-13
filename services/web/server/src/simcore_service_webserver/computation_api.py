@@ -15,9 +15,10 @@ from aiopg.sa.connection import SAConnection
 from celery import Celery
 from celery.contrib.abortable import AbortableAsyncResult
 from sqlalchemy import and_
+from sqlalchemy.dialects.postgresql import insert
 
 from models_library.projects import RunningState
-from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
+from servicelib.application_keys import APP_DB_ENGINE_KEY
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.webserver_models import (
@@ -29,8 +30,8 @@ from simcore_postgres_database.webserver_models import (
 # TODO: move this to computation_models
 from simcore_service_webserver.computation_models import to_node_class
 
-from .computation_config import CONFIG_SECTION_NAME as CONFIG_RABBIT_SECTION
 from .computation_config import ComputationSettings
+from .computation_config import get_settings as get_computation_settings
 from .director import director_api
 
 log = logging.getLogger(__file__)
@@ -241,37 +242,23 @@ async def _parse_project_data(pipeline_data: Dict, app: web.Application):
 async def _set_adjacency_in_pipeline_db(
     db_engine: Engine, project_id: str, dag_adjacency_list: Dict
 ):
-    # pylint: disable=no-value-for-parameter
     async with db_engine.acquire() as conn:
-        # READ
-        # get pipeline
-        query = sa.select([comp_pipeline]).where(
-            comp_pipeline.c.project_id == project_id
+        # Because race conditions always use an upsert operation
+        insert_stmt = insert(comp_pipeline).values(
+            project_id=project_id,
+            dag_adjacency_list=dag_adjacency_list,
+            state=StateType.NOT_STARTED,
         )
-        result = await conn.execute(query)
-        pipeline = await result.first()
+        upsert_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=[
+                comp_pipeline.c.project_id,
+            ],
+            set_=dict(
+                dag_adjacency_list=dag_adjacency_list, state=StateType.NOT_STARTED
+            ),
+        )
 
-        # WRITE
-        if pipeline is None:
-            # create pipeline
-            log.debug("No pipeline for project %s, creating one", project_id)
-            query = comp_pipeline.insert().values(
-                project_id=project_id,
-                dag_adjacency_list=dag_adjacency_list,
-                state=StateType.NOT_STARTED,
-            )
-        else:
-            # update pipeline
-            log.debug("Found pipeline for project %s, updating it", project_id)
-            query = (
-                comp_pipeline.update()
-                .where(comp_pipeline.c.project_id == project_id)
-                .values(
-                    dag_adjacency_list=dag_adjacency_list, state=StateType.NOT_STARTED
-                )
-            )
-
-        await conn.execute(query)
+        await conn.execute(upsert_stmt)
 
 
 @log_decorator(logger=log)
@@ -451,8 +438,8 @@ async def update_pipeline_db(
     await _set_tasks_in_tasks_db(db_engine, project_id, tasks, replace_pipeline)
 
 
-def get_celery(_app: web.Application) -> Celery:
-    comp_settings: ComputationSettings = _app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
+def get_celery(app: web.Application) -> Celery:
+    comp_settings: ComputationSettings = get_computation_settings(app)
     celery_app = Celery(
         comp_settings.task_name,
         broker=comp_settings.broker_url,
@@ -462,12 +449,12 @@ def get_celery(_app: web.Application) -> Celery:
 
 
 def get_celery_task_name(app: web.Application) -> str:
-    comp_settings: ComputationSettings = app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
+    comp_settings: ComputationSettings = get_computation_settings(app)
     return comp_settings.task_name
 
 
 def get_celery_publication_timeout(app: web.Application) -> int:
-    comp_settings: ComputationSettings = app[APP_CONFIG_KEY][CONFIG_RABBIT_SECTION]
+    comp_settings: ComputationSettings = get_computation_settings(app)
     return comp_settings.publication_timeout
 
 

@@ -51,7 +51,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
   events: {
     "slidesEdit": "qx.event.type.Event",
-    "nodeDoubleClicked": "qx.event.type.Data",
+    "nodeSelected": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
     "exportNode": "qx.event.type.Data",
     "changeSelectedNode": "qx.event.type.Data"
@@ -165,10 +165,9 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
       const openButton = this.__openButton = new qx.ui.toolbar.Button(this.tr("Open"), "@FontAwesome5Solid/edit/"+iconSize);
       openButton.addListener("execute", e => {
-        const study = osparc.store.Store.getInstance().getCurrentStudy();
         const selectedItem = this.__getSelection();
         if (selectedItem) {
-          const nodeId = selectedItem ? selectedItem.getNodeId() : study.getUuid();
+          const nodeId = selectedItem ? selectedItem.getNodeId() : this.getStudy().getUuid();
           this.__openItem(nodeId);
         }
       }, this);
@@ -241,7 +240,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     populateTree: function() {
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const study = this.getStudy();
       const topLevelNodes = study.getWorkbench().getNodes();
       let data = {
         label: study.getName(),
@@ -316,7 +315,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
     __openItem: function(nodeId) {
       if (nodeId) {
-        this.fireDataEvent("nodeDoubleClicked", nodeId);
+        this.fireDataEvent("nodeSelected", nodeId);
       }
     },
 
@@ -334,7 +333,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
             newLabel
           } = e.getData();
           const nodeId = selectedItem.getNodeId();
-          const study = osparc.store.Store.getInstance().getCurrentStudy();
+          const study = this.getStudy();
           if (nodeId === study.getUuid() && osparc.data.Permissions.getInstance().canDo("study.update", true)) {
             const params = {
               name: newLabel
@@ -373,8 +372,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         this.__tree.openNodeAndParents(item);
         this.__tree.setSelection(new qx.data.Array([item]));
 
-        const study = osparc.store.Store.getInstance().getCurrentStudy();
-        const studyId = study.getUuid();
+        const studyId = this.getStudy().getUuid();
         if (this.__exportButton) {
           this.__exportButton.setEnabled(studyId !== nodeId && item.getIsContainer());
         }

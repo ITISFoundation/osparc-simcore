@@ -25,6 +25,7 @@ import socketio
 import sqlalchemy as sa
 import trafaret_config
 from aiohttp import web
+from aiohttp.test_utils import TestClient, TestServer
 from pydantic import BaseSettings
 from yarl import URL
 
@@ -117,19 +118,25 @@ class _BaseSettingEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, BaseSettings):
             return o.json()
+        elif isinstance(o, Path):
+            return str(o)
+
         # Let the base class default method raise the TypeError
         return json.JSONEncoder.default(self, o)
 
 
 @pytest.fixture
-def web_server(loop, aiohttp_server, app_cfg, monkeypatch, postgres_db):
+def web_server(
+    loop, aiohttp_server, app_cfg: Dict, monkeypatch, postgres_db
+) -> TestServer:
+    print(
+        "Inits webserver with app_cfg",
+        json.dumps(app_cfg, indent=2, cls=_BaseSettingEncoder),
+    )
     # original APP
     app = create_application(app_cfg)
 
-    print(
-        "Inits webserver with config",
-        json.dumps(app[APP_CONFIG_KEY], indent=2, cls=_BaseSettingEncoder),
-    )
+    assert app[APP_CONFIG_KEY] == app_cfg
 
     # with patched email
     _path_mail(monkeypatch)
@@ -139,9 +146,9 @@ def web_server(loop, aiohttp_server, app_cfg, monkeypatch, postgres_db):
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, web_server, mock_orphaned_services):
-    client = loop.run_until_complete(aiohttp_client(web_server))
-    return client
+def client(loop, aiohttp_client, web_server, mock_orphaned_services) -> TestClient:
+    cli = loop.run_until_complete(aiohttp_client(web_server))
+    return cli
 
 
 # SUBSYSTEM MOCKS FIXTURES ------------------------------------------------
@@ -297,9 +304,7 @@ def postgres_service(docker_services, postgres_dsn):
 
 
 @pytest.fixture
-def postgres_db(
-    app_cfg: Dict, postgres_dsn: Dict, postgres_service: str
-) -> sa.engine.Engine:
+def postgres_db(postgres_dsn: Dict, postgres_service: str) -> sa.engine.Engine:
     url = postgres_service
 
     # Configures db and initializes tables
@@ -321,7 +326,7 @@ def postgres_db(
 
 
 @pytest.fixture(scope="session")
-def redis_service(docker_services, docker_ip):
+def redis_service(docker_services, docker_ip) -> URL:
 
     host = docker_ip
     port = docker_services.port_for("redis", 6379)
@@ -355,7 +360,7 @@ def _is_redis_responsive(host: str, port: int) -> bool:
 
 @pytest.fixture()
 def socketio_url(client) -> Callable:
-    def create_url(client_override: Optional = None) -> str:
+    def create_url(client_override: Optional[TestClient] = None) -> str:
         SOCKET_IO_PATH = "/socket.io/"
         return str((client_override or client).make_url(SOCKET_IO_PATH))
 
@@ -364,7 +369,7 @@ def socketio_url(client) -> Callable:
 
 @pytest.fixture()
 async def security_cookie_factory(client) -> Callable:
-    async def creator(client_override: Optional = None) -> str:
+    async def creator(client_override: Optional[TestClient] = None) -> str:
         # get the cookie by calling the root entrypoint
         resp = await (client_override or client).get("/v0/")
         data, error = await assert_status(resp, web.HTTPOk)
@@ -388,7 +393,7 @@ async def socketio_client(
     clients = []
 
     async def connect(
-        client_session_id: str, client: Optional = None
+        client_session_id: str, client: Optional[TestClient] = None
     ) -> socketio.AsyncClient:
         sio = socketio.AsyncClient(ssl_verify=False)
         # enginio 3.10.0 introduced ssl verification

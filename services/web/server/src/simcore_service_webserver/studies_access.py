@@ -16,11 +16,16 @@ from functools import lru_cache
 from typing import Dict
 
 from aiohttp import web
+from aioredlock import Aioredlock
 
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
 from .login.decorators import login_required
+from .resource_manager.config import (
+    APP_CLIENT_REDIS_LOCK_KEY,
+    GUEST_USER_RC_LOCK_FORMAT,
+)
 from .security_api import is_anonymous, remember
 from .statics import INDEX_RESOURCE_NAME
 from .utils import compose_error_msg
@@ -32,10 +37,10 @@ BASE_UUID = uuid.UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
 @lru_cache()
 def compose_uuid(template_uuid, user_id, query="") -> str:
-    """ Creates a new uuid composing a project's and user ids such that
-        any template pre-assigned to a user
+    """Creates a new uuid composing a project's and user ids such that
+    any template pre-assigned to a user
 
-        Enforces a constraint: a user CANNOT have multiple copies of the same template
+    Enforces a constraint: a user CANNOT have multiple copies of the same template
     """
     new_uuid = str(
         uuid.uuid5(BASE_UUID, str(template_uuid) + str(user_id) + str(query))
@@ -46,7 +51,7 @@ def compose_uuid(template_uuid, user_id, query="") -> str:
 # TODO: from .projects import get_public_project
 async def get_public_project(app: web.Application, project_uuid: str):
     """
-        Returns project if project_uuid is a template and is marked as published, otherwise None
+    Returns project if project_uuid is a template and is marked as published, otherwise None
     """
     from .projects.projects_db import APP_PROJECT_DBAPI
 
@@ -55,37 +60,68 @@ async def get_public_project(app: web.Application, project_uuid: str):
     return prj
 
 
-# TODO: from .users import create_temporary_user
 async def create_temporary_user(request: web.Request):
     """
-        TODO: user should have an expiration date and limited persmissions!
+    TODO: user should have an expiration date and limited persmissions!
     """
     from .login.cfg import get_storage
     from .login.handlers import ACTIVE, GUEST
     from .login.utils import get_client_ip, get_random_string
     from .security_api import encrypt_password
 
-    # from .utils import generate_passphrase
-    # from .utils import generate_password
-
     db = get_storage(request.app)
+    lock_manager: Aioredlock = request.app[APP_CLIENT_REDIS_LOCK_KEY]
 
     # TODO: avatar is an icon of the hero!
-    # FIXME: # username = generate_passphrase(number_of_words=2).replace(" ", "_").replace("'", "")
-    username = get_random_string(min_len=5)
-    email = username + "@guest-at-osparc.io"
+    random_uname = get_random_string(min_len=5)
+    email = random_uname + "@guest-at-osparc.io"
     password = get_random_string(min_len=12)
 
-    user = await db.create_user(
-        {
-            "name": username,
-            "email": email,
-            "password_hash": encrypt_password(password),
-            "status": ACTIVE,
-            "role": GUEST,
-            "created_ip": get_client_ip(request),
-        }
-    )
+    # GUEST_USER_RC_LOCK:
+    #
+    #   These locks prevents the GC from deleting a GUEST user in to stages of its lifefime:
+    #
+    #  1. During construction:
+    #     - Prevents GC from deleting this GUEST user while it is being created
+    #     - Since the user still does not have an ID assigned, the lock is named with his random_uname
+    #
+    MAX_DELAY_TO_CREATE_USER = 3  # secs
+    #
+    #  2. During initialization
+    #     - Prevents the GC from deleting this GUEST user, with ID assigned, while it gets initialized and acquires it's first resource
+    #     - Uses the ID assigned to name the lock
+    #
+    MAX_DELAY_TO_GUEST_FIRST_CONNECTION = 15  # secs
+    #
+    #
+    # NOTES:
+    #   - In case of failure or excessive delay the lock has a timeout that automatically unlocks it
+    #     and the GC can clean up what remains
+    #   - Notice that the ids to name the locks are unique, therefore the lock can be acquired w/o errors
+    #   - These locks are very specific to resources and have timeout so the risk of blocking from GC is small
+    #
+
+    # (1) read details above
+    async with await lock_manager.lock(
+        GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_uname),
+        lock_timeout=MAX_DELAY_TO_CREATE_USER,
+    ):
+        user = await db.create_user(
+            {
+                "name": random_uname,
+                "email": email,
+                "password_hash": encrypt_password(password),
+                "status": ACTIVE,
+                "role": GUEST,
+                "created_ip": get_client_ip(request),
+            }
+        )
+
+        # (2) read details above
+        await lock_manager.lock(
+            GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
+            lock_timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
+        )
 
     return user
 
@@ -106,10 +142,10 @@ async def copy_study_to_account(
     request: web.Request, template_project: Dict, user: Dict
 ):
     """
-        Creates a copy of the study to a given project in user's account
+    Creates a copy of the study to a given project in user's account
 
-        - Replaces template parameters by values passed in query
-        - Avoids multiple copies of the same template on each account
+    - Replaces template parameters by values passed in query
+    - Avoids multiple copies of the same template on each account
     """
     from .projects.projects_db import APP_PROJECT_DBAPI
     from .projects.projects_exceptions import ProjectNotFoundError
@@ -156,11 +192,11 @@ async def copy_study_to_account(
 # HANDLERS --------------------------------------------------------
 async def access_study(request: web.Request) -> web.Response:
     """
-        Handles requests to get and open a public study
+    Handles requests to get and open a public study
 
-        - public studies are templates that are marked as published in the database
-        - if user is not registered, it creates a temporary guest account with limited resources and expiration
-        - this handler is NOT part of the API and therefore does NOT respond with json
+    - public studies are templates that are marked as published in the database
+    - if user is not registered, it creates a temporary guest account with limited resources and expiration
+    - this handler is NOT part of the API and therefore does NOT respond with json
     """
     # TODO: implement nice error-page.html
     project_id = request.match_info["id"]
@@ -243,7 +279,9 @@ def setup(app: web.Application):
 
     # TODO: make sure that these routes are filtered properly in active middlewares
     app.router.add_routes(
-        [web.get(r"/study/{id}", study_handler, name="study"),]
+        [
+            web.get(r"/study/{id}", study_handler, name="study"),
+        ]
     )
 
     return True

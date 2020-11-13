@@ -50,6 +50,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   properties: {
     study: {
       check: "osparc.data.model.Study",
+      apply: "_applyStudy",
       nullable: false
     }
   },
@@ -66,15 +67,17 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __loggerView: null,
     __currentNodeId: null,
 
-    initViews: function() {
-      this.__initViews();
-      this.__connectEvents();
-      this.__attachSocketEventHandlers();
+    _applyStudy: function(study) {
+      if (study) {
+        this.__initViews();
+        this.__connectEvents();
+        this.__attachSocketEventHandlers();
+      }
     },
 
     nodeSelected: function(nodeId) {
       if (!nodeId) {
-        this.__loggerView.setCurrentNodeId();
+        this.__loggerView.setCurrentNodeId("");
         return;
       }
       if (this.__nodesTree) {
@@ -102,7 +105,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.__workbenchUI.loadModel(node);
           this.__groupNodeView.populateLayout();
         } else if (node.isFilePicker()) {
-          const nodeView = new osparc.component.node.FilePickerNodeView(node);
+          const nodeView = new osparc.component.node.FilePickerNodeView();
+          nodeView.setNode(node);
           this.__showInMainView(nodeView, nodeId);
           nodeView.populateLayout();
         } else {
@@ -293,7 +297,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["project_id"];
-      const runButton = this.__mainPanel.getControls().getStartButton();
       this.getLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
@@ -303,20 +306,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         /* If no projectStateUpdated comes in 60 seconds, client must
         check state of pipeline and update button accordingly. */
         const timer = setTimeout(() => {
-          osparc.data.Resources.fetch("studies", "state", {
-            url: {
-              projectId: pipelineId
-            }
-          })
-            .then(({state}) => {
-              if (state && (
-                state.value === "NOT_STARTED" ||
-                state.value === "SUCCESS" ||
-                state.value === "FAILED"
-              )) {
-                runButton.setFetching(false);
-              }
-            });
+          osparc.store.Store.getInstance().getStudyState(pipelineId);
         }, 60000);
         const socket = osparc.wrapper.WebSocket.getInstance();
         socket.getSocket().once("projectStateUpdated", jsonStr => {
@@ -550,7 +540,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         nodesTree,
         workbenchUI
       ].forEach(widget => {
-        widget.addListener("nodeDoubleClicked", e => {
+        widget.addListener("nodeSelected", e => {
           const nodeId = e.getData();
           this.nodeSelected(nodeId);
         }, this);
@@ -667,7 +657,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    openOneNode: function() {
+    openFirstNode: function() {
       const validNodeIds = [];
       const allNodes = this.getStudy().getWorkbench().getNodes(true);
       Object.values(allNodes).forEach(node => {

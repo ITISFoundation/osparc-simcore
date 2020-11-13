@@ -1,7 +1,7 @@
 version: "3.7"
 services:
   postgres:
-    image: postgres:10.11
+    image: "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f"
     restart: always
     environment:
       POSTGRES_DB: ${TEST_POSTGRES_DB}
@@ -22,6 +22,6 @@ services:
     command: postgres -c tcp_keepalives_idle=600 -c tcp_keepalives_interval=600 -c tcp_keepalives_count=5
 
   redis:
-    image: redis:5.0-alpine
+    image: "redis:5.0.9-alpine@sha256:b011c1ca7fa97ed92d6c5995e5dd752dc37fe157c1b60ce96a6e35701851dabc"
     ports:
       - "6379:6379"

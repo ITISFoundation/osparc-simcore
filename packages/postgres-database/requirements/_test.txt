@@ -4,12 +4,12 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aiohttp==3.6.2            # via pytest-aiohttp
+aiohttp==3.7.2            # via pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r requirements/_test.in
 alembic==1.4.3            # via -r requirements/_migration.txt
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via aiohttp
-attrs==20.2.0             # via aiohttp, jsonschema, pytest, pytest-docker
+attrs==20.3.0             # via aiohttp, jsonschema, pytest, pytest-docker
 bcrypt==3.2.0             # via paramiko
 cached-property==1.5.2    # via docker-compose
 certifi==2020.6.20        # via -r requirements/_migration.txt, requests
@@ -18,17 +18,17 @@ chardet==3.0.4            # via -r requirements/_migration.txt, aiohttp, request
 click==7.1.2              # via -r requirements/_migration.txt
 coverage==5.3             # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==2.1.2          # via -r requirements/_test.in
-cryptography==3.1.1       # via paramiko
+cryptography==3.2.1       # via paramiko
 distro==1.5.0             # via docker-compose
 docker-compose==1.27.4    # via pytest-docker
 docker[ssh]==4.3.1        # via -r requirements/_migration.txt, docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
-faker==4.4.0              # via -r requirements/_test.in
+faker==4.14.2             # via -r requirements/_test.in
 idna-ssl==1.1.0           # via aiohttp
 idna==2.10                # via -r requirements/_migration.txt, idna-ssl, requests, yarl
 importlib-metadata==2.0.0  # via jsonschema, pluggy, pytest
-iniconfig==1.0.1          # via pytest
+iniconfig==1.1.1          # via pytest
 isort==5.6.4              # via pylint
 jsonschema==3.2.0         # via docker-compose
 lazy-object-proxy==1.4.3  # via astroid
@@ -51,9 +51,9 @@ pytest-cov==2.10.1        # via -r requirements/_test.in
 pytest-docker==0.10.1     # via -r requirements/_test.in
 pytest-instafail==0.4.2   # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
-pytest==6.1.1             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-instafail
+pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-instafail
 python-dateutil==2.8.1    # via -r requirements/_migration.txt, alembic, faker
-python-dotenv==0.14.0     # via docker-compose
+python-dotenv==0.15.0     # via docker-compose
 python-editor==1.0.4      # via -r requirements/_migration.txt, alembic
 pyyaml==5.3.1             # via -r requirements/_test.in, docker-compose
 requests==2.24.0          # via -r requirements/_migration.txt, coveralls, docker, docker-compose
@@ -65,11 +65,11 @@ texttable==1.6.3          # via docker-compose
 toml==0.10.1              # via pylint, pytest
 typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.3  # via -r requirements/_migration.txt, aiohttp, yarl
-urllib3==1.25.10          # via -r requirements/_migration.txt, requests
+urllib3==1.25.11          # via -r requirements/_migration.txt, requests
 websocket-client==0.57.0  # via -r requirements/_migration.txt, docker, docker-compose
 wrapt==1.12.1             # via astroid
 yarl==1.6.0               # via -r requirements/_migration.txt, aiohttp
-zipp==3.2.0               # via importlib-metadata
+zipp==3.4.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

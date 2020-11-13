@@ -3,24 +3,18 @@
     - config-file schema
     - settings
 """
-import trafaret as T
+from typing import Dict
 
+import trafaret as T
+from aiohttp.web import Application
+from pydantic import BaseSettings
+from typing import Optional
+
+from models_library.settings.postgres import PostgresSettings
+from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_sdk.config.db import CONFIG_SCHEMA as _PG_SCHEMA
 
 CONFIG_SECTION_NAME = "db"
-
-
-# FIXME: database user password host port minsize maxsize
-# CONFIG_SCHEMA = T.Dict({
-#    "database": T.String(),
-#    "user": T.String(),
-#    "password": T.String(),
-#    "host": T.Or( T.String, T.Null),
-#    "port": T.Or( T.ToInt, T.Null),
-#    T.Key("minsize", default=1 ,optional=True): T.ToInt(),
-#    T.Key("maxsize", default=4, optional=True): T.ToInt(),
-# })
-
 
 schema = T.Dict(
     {
@@ -28,3 +22,21 @@ schema = T.Dict(
         T.Key("enabled", default=True, optional=True): T.Bool(),
     }
 )
+
+
+class PgSettings(PostgresSettings):
+    endpoint: Optional[str] = None  # TODO: PC remove or deprecate that one
+
+    class Config:
+        fields = {"db": "database"}
+
+
+class DatabaseSettings(BaseSettings):
+    enabled: bool = True
+    postgres: PgSettings
+
+
+def assert_valid_config(app: Application) -> Dict:
+    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    _settings = DatabaseSettings(**cfg)
+    return cfg

@@ -863,13 +863,7 @@
         "required": [
           "key",
           "version",
-          "label",
-          "progress",
-          "inputs",
-          "inputAccess",
-          "inputNodes",
-          "outputNodes",
-          "position"
+          "label"
         ],
         "type": "object",
         "properties": {
@@ -976,7 +970,16 @@
             ]
           },
           "position": {
-            "$ref": "#/components/schemas/Position"
+            "title": "Position",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Position"
+              }
+            ],
+            "deprecated": true
+          },
+          "state": {
+            "$ref": "#/components/schemas/RunningState"
           }
         },
         "additionalProperties": false
@@ -1036,6 +1039,22 @@
           }
         },
         "additionalProperties": false
+      },
+      "RunningState": {
+        "title": "RunningState",
+        "enum": [
+          "UNKNOWN",
+          "PUBLISHED",
+          "NOT_STARTED",
+          "PENDING",
+          "STARTED",
+          "RETRY",
+          "SUCCESS",
+          "FAILURE",
+          "ABORTED"
+        ],
+        "type": "string",
+        "description": "An enumeration."
       },
       "SelectBox": {
         "title": "SelectBox",
@@ -1375,6 +1394,7 @@
       "ServiceType": {
         "title": "ServiceType",
         "enum": [
+          "frontend",
           "computational",
           "dynamic"
         ],

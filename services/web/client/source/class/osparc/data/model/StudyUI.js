@@ -29,14 +29,14 @@ qx.Class.define("osparc.data.model.StudyUI", {
     this.base(arguments);
 
     this.set({
-      workbech: studyDataUI.workbench || {},
-      slideshow: studyDataUI.slideshow || {},
-      currentNodeId: studyDataUI.currentNodeId || null
+      workbench: studyDataUI && studyDataUI.workbench ? studyDataUI.workbench : {},
+      slideshow: studyDataUI && studyDataUI.slideshow ? studyDataUI.slideshow : {},
+      currentNodeId: studyDataUI && studyDataUI.currentNodeId ? studyDataUI.currentNodeId : null
     });
   },
 
   properties: {
-    workbech: {
+    workbench: {
       check: "Object",
       nullable: true
     },
@@ -58,7 +58,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
     serialize: function() {
       const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
       let jsonObject = {};
-      jsonObject["workbench"] = currentStudy.getWorkbench().serializeUI();
+      jsonObject["workbench"] = currentStudy ? currentStudy.getWorkbench().serializeUI() : this.getWorkbench();
       jsonObject["slideshow"] = this.getSlideshow();
       jsonObject["currentNodeId"] = this.getCurrentNodeId();
       return jsonObject;

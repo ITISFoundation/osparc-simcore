@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from pydantic import UUID4, BaseModel, EmailStr, Extra, Field, HttpUrl, constr
+from pydantic.types import PositiveInt
 
 from .services import KEY_RE, PROPERTY_KEY_RE, VERSION_RE
 
@@ -200,6 +201,7 @@ class AccessRights(BaseModel):
 
 
 class Owner(BaseModel):
+    user_id: PositiveInt = Field(..., description="Owner's identifier when registered in the user's database table", example=[2])
     first_name: str = Field(..., description="Owner first name", example=["John"])
     last_name: str = Field(..., description="Owner last name", example=["Smith"])
 

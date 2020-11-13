@@ -4,22 +4,39 @@
 #
 #    pip-compile --output-file=requirements/_base.txt requirements/_base.in
 #
+aiodebug==1.1.2           # via -r requirements/_base.in, simcore-service-library
 aiodocker==0.14.0         # via -r requirements/_base.in
-aiohttp==3.3.2            # via -r requirements/_base.in, aiodocker, aiohttp-apiset
-git+https://github.com/ITISFoundation/aiohttp_apiset.git@fixes_4_osparc#egg=aiohttp_apiset  # via -r requirements/_base.in
-async-generator==1.10     # via asyncio-extras
-async-timeout==3.0.1      # via aiohttp
+git+https://github.com/ITISFoundation/aiohttp_apiset.git@5c8a61ceb6de7ed9e09db5b4609b458a0d3773df  # via -r requirements/_base.in
+aiohttp==3.3.2            # via -r requirements/_base.in, aiodocker, aiohttp-apiset, aiozipkin, simcore-service-library
+aiopg==1.0.0              # via -r requirements/_base.in, simcore-service-library
+aiozipkin==0.7.1          # via -r requirements/_base.in, simcore-service-library
+async-generator==1.10     # via -r requirements/_base.in, asyncio-extras
+async-timeout==3.0.1      # via -r requirements/_base.in, aiohttp
 asyncio-extras==1.3.2     # via -r requirements/_base.in
-attrs==20.2.0             # via aiohttp
-certifi==2019.3.9         # via requests
-chardet==3.0.4            # via aiohttp, requests
-idna-ssl==1.1.0           # via aiohttp
-idna==2.8                 # via idna-ssl, requests, yarl
-jsonschema==2.6.0         # via aiohttp-apiset
-multidict==4.5.2          # via aiohttp, yarl
-pyyaml==5.3               # via -r requirements/_base.in, aiohttp-apiset
+attrs==20.2.0             # via -r requirements/_base.in, aiohttp, openapi-core, simcore-service-library
+certifi==2019.3.9         # via -r requirements/_base.in, requests
+chardet==3.0.4            # via -r requirements/_base.in, aiohttp, requests
+dataclasses==0.7          # via -r requirements/_base.in, pydantic
+idna-ssl==1.1.0           # via -r requirements/_base.in, aiohttp
+idna==2.8                 # via -r requirements/_base.in, idna-ssl, requests, yarl
+isodate==0.6.0            # via -r requirements/_base.in, openapi-core
+jsonschema==2.6.0         # via -r requirements/_base.in, aiohttp-apiset, openapi-spec-validator, simcore-service-library
+lazy-object-proxy==1.4.3  # via -r requirements/_base.in, openapi-core, simcore-service-library
+multidict==4.5.2          # via -r requirements/_base.in, aiohttp, yarl
+openapi-core==0.12.0      # via -r requirements/_base.in, simcore-service-library
+openapi-spec-validator==0.2.9  # via -r requirements/_base.in, openapi-core
+prometheus-client==0.8.0  # via -r requirements/_base.in, simcore-service-library
+psycopg2-binary==2.8.6    # via -r requirements/_base.in, aiopg, simcore-service-library
+pydantic==1.7.2           # via -r requirements/_base.in, simcore-service-library
+pyyaml==5.3               # via -r requirements/_base.in, aiohttp-apiset, openapi-spec-validator, simcore-service-library
 requests==2.22.0          # via -r requirements/_base.in
-six==1.12.0               # via tenacity
-tenacity==6.0.0           # via -r requirements/_base.in
-urllib3==1.25.8           # via -r requirements/_base.in, requests
-yarl==1.3.0               # via aiodocker, aiohttp
+git+https://github.com/ITISFoundation/osparc-simcore.git@c8669fb52659b684514fefa4f3b4599f57f276a0#egg=simcore-service-library&subdirectory=packages/service-library  # via -r requirements/_base.in
+six==1.12.0               # via -r requirements/_base.in, isodate, openapi-core, openapi-spec-validator, tenacity
+sqlalchemy==1.3.20        # via -r requirements/_base.in, simcore-service-library
+strict-rfc3339==0.7       # via -r requirements/_base.in, openapi-core
+tenacity==6.0.0           # via -r requirements/_base.in, simcore-service-library
+trafaret==2.1.0           # via -r requirements/_base.in, simcore-service-library
+ujson==4.0.1              # via -r requirements/_base.in, simcore-service-library
+urllib3==1.25.11          # via -r requirements/_base.in, requests
+werkzeug==1.0.1           # via -r requirements/_base.in, simcore-service-library
+yarl==1.3.0               # via -r requirements/_base.in, aiodocker, aiohttp

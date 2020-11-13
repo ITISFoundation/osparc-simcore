@@ -85,7 +85,7 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       });
       this.addWidget(posLbl);
 
-      const hideBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye-slash/10").set({
+      const hideBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye/10").set({
         marginRight: 5,
         appearance: "no-shadow-button"
       });
@@ -105,7 +105,7 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       });
       this.addWidget(hideBtn);
 
-      const showBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye/10").set({
+      const showBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye-slash/10").set({
         marginRight: 5,
         appearance: "no-shadow-button"
       });

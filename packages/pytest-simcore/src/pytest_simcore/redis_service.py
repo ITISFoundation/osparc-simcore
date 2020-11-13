@@ -8,7 +8,7 @@ from typing import Dict
 import aioredis
 import pytest
 import tenacity
-from models_library.redis import RedisConfig
+from models_library.settings.redis import RedisConfig
 from servicelib.redis_utils import RedisRetryPolicyUponInitialization
 from yarl import URL
 

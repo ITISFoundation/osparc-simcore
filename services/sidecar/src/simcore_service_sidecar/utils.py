@@ -89,13 +89,18 @@ def is_gpu_node() -> bool:
                 "AttachStderr": False,
                 "Tty": False,
                 "OpenStdin": False,
-                "HostConfig": {"Init": True, "AutoRemove": True},
+                "HostConfig": {
+                    "Init": True,
+                    "AutoRemove": True,
+                },  # NOTE: The Init parameter shows a weird behavior: no exception thrown when the container fails
             }
             try:
-                await docker.containers.run(
+                container = await docker.containers.run(
                     config=spec_config, name=f"sidecar_{uuid.uuid4()}_test_gpu"
                 )
-                return True
+
+                container_data = await container.wait(timeout=30)
+                return container_data["StatusCode"] == 0
             except aiodocker.exceptions.DockerError as err:
                 logger.debug(
                     "is_gpu_node DockerError while check-run %s: %s", spec_config, err
