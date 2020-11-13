@@ -129,7 +129,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     MENU_BTN_WIDTH: 25,
     SHARED_USER: "@FontAwesome5Solid/user/14",
     SHARED_ORGS: "@FontAwesome5Solid/users/14",
-    SHARED_ALL: "@FontAwesome5Solid/globe/14"
+    SHARED_ALL: "@FontAwesome5Solid/globe/14",
+    STUDY_ICON: "@FontAwesome5Solid/file-alt/50",
+    TEMPLATE_ICON: "@FontAwesome5Solid/copy/50",
+    SERVICE_ICON: "@FontAwesome5Solid/paw/14"
   },
 
   members: {
@@ -205,19 +208,19 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           uuid = studyData.uuid;
           owner = studyData.prjOwner;
           accessRights = studyData.accessRights;
-          defaultThumbnail = "@FontAwesome5Solid/file-alt/50";
+          defaultThumbnail = this.self().STUDY_ICON;
           break;
         case "template":
           uuid = studyData.uuid;
           owner = studyData.prjOwner;
           accessRights = studyData.accessRights;
-          defaultThumbnail = "@FontAwesome5Solid/copy/50";
+          defaultThumbnail = this.self().TEMPLATE_ICON;
           break;
         case "service":
           uuid = studyData.key;
           owner = studyData.owner;
           accessRights = studyData.access_rights;
-          defaultThumbnail = "@FontAwesome5Solid/paw/50";
+          defaultThumbnail = this.self().SERVICE_ICON;
           break;
       }
 
