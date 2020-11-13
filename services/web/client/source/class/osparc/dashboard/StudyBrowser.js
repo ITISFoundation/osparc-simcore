@@ -394,6 +394,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__itemClicked(item, e.getNativeEvent().shiftKey);
         }
       }, this);
+      item.addListener("startSlideshow", () => {
+        this.__startStudy(studyData["uuid"], "slideshow");
+      }, this);
 
       return item;
     },
@@ -429,11 +432,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (isCurrentUserOwner && canCreateTemplate) {
         const saveAsTemplateButton = this.__getSaveAsTemplateMenuButton(studyData);
         menu.add(saveAsTemplateButton);
-      }
-
-      if (osparc.data.model.Study.hasSlideshow(studyData)) {
-        const startAsSlideshowButton = this.__getStartAsSlideshowButton(studyData);
-        menu.add(startAsSlideshowButton);
       }
 
       const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
@@ -522,14 +520,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             window.close();
           }
         }, this);
-      }, this);
-      return saveAsTemplateButton;
-    },
-
-    __getStartAsSlideshowButton: function(studyData) {
-      const saveAsTemplateButton = new qx.ui.menu.Button(this.tr("Start Guided mode"));
-      saveAsTemplateButton.addListener("execute", () => {
-        this.__startStudy(studyData["uuid"], "slideshow");
       }, this);
       return saveAsTemplateButton;
     },

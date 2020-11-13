@@ -132,6 +132,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     }
   },
 
+  events: {
+    "startSlideshow": "qx.event.type.Event"
+  },
+
   statics: {
     MENU_BTN_WIDTH: 25,
     SHARED_USER: "@FontAwesome5Solid/user/14",
@@ -186,9 +190,41 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             left: 0
           });
           break;
+        case "slideshow-icon": {
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/caret-square-right/24").set({
+            toolTipText: this.tr("Start Guided mode")
+          });
+          control.addListener("tap", e => {
+            this.fireEvent("startSlideshow");
+            e.stopPropagation();
+          }, this);
+          this._add(control, {
+            bottom: 2,
+            right: 2
+          });
+          break;
+        }
       }
 
       return control || this.base(arguments, id);
+    },
+
+    // overriden
+    _onPointerOver: function() {
+      this.base(arguments);
+
+      if (!this.getMultiSelectionMode() && osparc.data.model.Study.hasSlideshow(this.getResourceData())) {
+        const slideshowIcon = this.getChildControl("slideshow-icon");
+        slideshowIcon.show();
+      }
+    },
+
+    // overridden
+    _onPointerOut : function() {
+      this.base(arguments);
+
+      const slideshowIcon = this.getChildControl("slideshow-icon");
+      slideshowIcon.exclude();
     },
 
     isResourceType: function(resourceType) {
