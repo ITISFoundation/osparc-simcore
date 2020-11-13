@@ -220,7 +220,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__newStudyBtn.setEnabled(!nSelected);
         this.__userStudyContainer.getChildren().forEach(userStudyItem => {
           if (userStudyItem instanceof osparc.dashboard.StudyBrowserButtonItem) {
-            userStudyItem.multiSelection(nSelected);
+            userStudyItem.setMultiSelectionMode(Boolean(nSelected));
           }
         });
         this.__updateDeleteStudiesButton(studiesDeleteButton);

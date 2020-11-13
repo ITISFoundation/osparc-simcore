@@ -122,6 +122,13 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       check: "String",
       nullable: true,
       apply: "_applyLockedBy"
+    },
+
+    multiSelectionMode: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      apply: "_applyMultiSelectionMode"
     }
   },
 
@@ -188,8 +195,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       return this.getResourceType() === resourceType;
     },
 
-    multiSelection: function(on) {
-      if (on) {
+    _applyMultiSelectionMode: function(value) {
+      if (value) {
         const menuButton = this.getChildControl("menu-button");
         menuButton.setVisibility("excluded");
         this.__itemSelected();
