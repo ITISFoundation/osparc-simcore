@@ -102,6 +102,7 @@ async function runTutorial() {
     ];
     await tutorial.checkResults(outFiles2.length);
 
+    await tutorial.closeStudy();
 
     await tutorial.removeStudy();
   }
