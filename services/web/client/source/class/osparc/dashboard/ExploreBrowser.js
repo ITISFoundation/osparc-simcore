@@ -411,7 +411,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const tags = studyData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => studyData.tags.includes(tag.id)) : [];
 
       const item = new osparc.dashboard.StudyBrowserButtonItem().set({
-        studyData,
+        resourceData: studyData,
         tags
       });
 

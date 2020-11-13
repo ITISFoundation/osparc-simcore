@@ -42,10 +42,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
   },
 
   properties: {
-    studyData: {
+    resourceData: {
       check: "Object",
       nullable: false,
-      apply: "__applyStudyData"
+      apply: "__applyResourceData"
     },
 
     resourceType: {
@@ -195,7 +195,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       }
     },
 
-    __applyStudyData: function(studyData) {
+    __applyResourceData: function(studyData) {
       let defaultThumbnail = "";
       let uuid = null;
       let owner = "";
