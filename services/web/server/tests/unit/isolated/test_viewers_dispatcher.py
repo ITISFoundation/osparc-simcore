@@ -1,19 +1,22 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-from simcore_service_webserver.projects.projects_db import ProjectDBAPI
-from simcore_service_webserver.utils import now_str
-from simcore_service_webserver import db_models
-from simcore_service_webserver.constants import APP_JSONSCHEMA_SPECS_KEY
-from simcore_service_webserver.projects import projects_api
 
-# from simcore_service_webserver.viewers_distpacher import *
+# from simcore_service_webserver.projects.projects_db import ProjectDBAPI
+# from simcore_service_webserver import db_models
 
-from models_library.projects import Project, Node, PortLink, AccessRights, StudyUI
-import pytest
 import json
 from pathlib import Path
 from typing import Dict
+
+import pytest
+
+from models_library.projects import AccessRights, Node, PortLink, Project, StudyUI
+from simcore_service_webserver.constants import APP_JSONSCHEMA_SPECS_KEY
+from simcore_service_webserver.projects import projects_api
+from simcore_service_webserver.utils import now_str
+
+# from simcore_service_webserver.viewers_distpacher import *
 
 
 @pytest.fixture
@@ -25,7 +28,7 @@ def test_create_project_with_viewer(project_jsonschema):
     # create project with file-picker (download_link) and viewer
     owner_email = "foo@bar.com"
     owner_gid = 3
-    owner_uid = 1
+    ## owner_uid = 1 ??
 
     file_picker_id = "4c69c0ce-00e4-4bd5-9cf0-59b67b3a9343"
     file_picker_output_id = "outFile"
@@ -36,7 +39,6 @@ def test_create_project_with_viewer(project_jsonschema):
         inputs={},
         inputNodes=[],
         outputs={
-            # FIXME: ????? No schema??
             file_picker_output_id: {
                 "downloadLink": "http://httpbin.org/image/jpeg",
                 "label": None,
@@ -76,11 +78,15 @@ def test_create_project_with_viewer(project_jsonschema):
         ),
     )
 
-    # can convert to db?
+    print(project.json(indent=2))
+
+    # This operation is done exactly before adding to the database in projects_handlers.create_projects
     projects_api.validate_project(
         app={APP_JSONSCHEMA_SPECS_KEY: {"projects": project_jsonschema}},
-        project=project.json(),
+        project=json.loads(project.json()),
     )
+
+    # can convert to db?
 
 
 def test_map_file_types_to_viewers():
