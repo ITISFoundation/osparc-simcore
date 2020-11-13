@@ -6,7 +6,6 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
 import json
 from asyncio import Future, Task, wait_for
 from copy import deepcopy
@@ -17,7 +16,6 @@ from typing import Dict, List, Optional, Union
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
-
 from models_library.projects import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
@@ -26,6 +24,7 @@ from servicelib.application import create_safe_application
 from simcore_service_webserver import catalog
 from simcore_service_webserver.catalog import setup_catalog
 from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects import setup_projects
@@ -42,7 +41,6 @@ API_VERSION = "v0"
 core_services = [
     "catalog",
     "director",
-    "director-v2",
     "postgres",
     "redis",
 ]
@@ -77,6 +75,7 @@ def client(
     assert setup_projects(app)
     setup_catalog(app)
     setup_products(app)
+    setup_director_v2(app)
 
     yield loop.run_until_complete(
         aiohttp_client(
@@ -241,16 +240,17 @@ async def _request_delete(client, pid):
 
 
 async def test_workflow(
-    client,
     postgres_db: sa.engine.Engine,
     docker_registry: str,
     simcore_services,
     fake_project_data,
     catalog_subsystem_mock,
+    client,
     logged_user,
     primary_group: Dict[str, str],
     standard_groups: List[Dict[str, str]],
     storage_subsystem_mock,
+    director_v2_subsystem_mock,
 ):
     # empty list
     projects = await _request_list(client)
@@ -374,6 +374,7 @@ async def test_list_template_projects(
     fake_template_projects_isan,
     fake_template_projects_osparc,
     catalog_subsystem_mock,
+    director_v2_subsystem_mock,
 ):
     catalog_subsystem_mock(
         fake_template_projects
