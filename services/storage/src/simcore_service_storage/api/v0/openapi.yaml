@@ -2060,6 +2060,9 @@ paths:
                                     - 0
                                     - 2
                           additionalProperties: true
+                        currentNodeId:
+                          type: string
+                          format: uuid
                     tags:
                       type: array
                       items:
@@ -2483,6 +2486,9 @@ paths:
                                     - 0
                                     - 2
                           additionalProperties: true
+                        currentNodeId:
+                          type: string
+                          format: uuid
                     tags:
                       type: array
                       items:
@@ -2916,6 +2922,9 @@ paths:
                                   - 0
                                   - 2
                         additionalProperties: true
+                      currentNodeId:
+                        type: string
+                        format: uuid
                   tags:
                     type: array
                     items:
@@ -3449,6 +3458,9 @@ components:
                         - 0
                         - 2
               additionalProperties: true
+            currentNodeId:
+              type: string
+              format: uuid
         tags:
           type: array
           items:

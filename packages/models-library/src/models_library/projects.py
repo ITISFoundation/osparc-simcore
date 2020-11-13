@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, PositiveInt, constr
 
-from .nodes import Node, Position, RunningState
+from .nodes import Node, NodeID, Position, RunningState
 
 current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 
@@ -40,6 +40,7 @@ class Slideshow(BaseModel):
 class StudyUI(BaseModel):
     workbench: Optional[Dict[_NodeID_For_Dict, WorkbenchUI]] = Field(None)
     slideshow: Optional[Dict[_NodeID_For_Dict, Slideshow]] = Field(None)
+    current_node_id: Optional[NodeID] = Field(alias="currentNodeId")
 
     class Config:
         extra = Extra.forbid
