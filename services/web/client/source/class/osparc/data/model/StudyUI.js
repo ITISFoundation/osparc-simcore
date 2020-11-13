@@ -31,6 +31,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
     this.set({
       workbench: studyDataUI && studyDataUI.workbench ? studyDataUI.workbench : {},
       slideshow: studyDataUI && studyDataUI.slideshow ? studyDataUI.slideshow : {},
+      availableViews: studyDataUI && studyDataUI.availableViews ? studyDataUI.availableViews : this.getAvailableViews(),
       currentNodeId: studyDataUI && studyDataUI.currentNodeId ? studyDataUI.currentNodeId : null
     });
   },
@@ -47,6 +48,13 @@ qx.Class.define("osparc.data.model.StudyUI", {
       event: "changeSlideshow"
     },
 
+    availableViews: {
+      check: "Array",
+      init: ["workbench", "slideshow"],
+      nullable: true,
+      event: "changeAvailableViews"
+    },
+
     currentNodeId: {
       check: "String",
       nullable: true,
@@ -60,6 +68,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
       let jsonObject = {};
       jsonObject["workbench"] = currentStudy ? currentStudy.getWorkbench().serializeUI() : this.getWorkbench();
       jsonObject["slideshow"] = this.getSlideshow();
+      jsonObject["availableViews"] = this.getAvailableViews();
       jsonObject["currentNodeId"] = this.getCurrentNodeId();
       return jsonObject;
     }
