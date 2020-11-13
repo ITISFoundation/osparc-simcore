@@ -26,6 +26,13 @@ from .security_decorators import permission_required
 
 log = logging.getLogger(__file__)
 
+class ForwardedException(Exception):
+    """Basic exception for errors raised with director"""
+
+    def __init__(self, status: int, reason: str):
+        self.status = status
+        self.reason = reason
+        super().__init__(f"forwarded call failed with status {status}, reason {reason}")
 
 @log_decorator(logger=log)
 async def _request_director_v2(
@@ -39,9 +46,7 @@ async def _request_director_v2(
     try:
         async with session.request(method, url, headers=headers, json=data) as resp:
             if resp.status >= 400:
-                forwared_exc = web.HTTPException(reason=await resp.text())
-                forwared_exc.status = resp.status
-                raise forwared_exc
+                raise ForwardedException(resp.status, await resp.text())
             try:
                 payload: Dict = await resp.json()
                 return (payload, resp.status)
@@ -84,12 +89,15 @@ async def start_pipeline(request: web.Request) -> web.Response:
     body = {"user_id": user_id, "project_id": project_id}
 
     # request to director-v2
-    computation_task_out, resp_status = await _request_director_v2(
-        request.app, "POST", backend_url, data=body
-    )
-    data = {"pipeline_id": computation_task_out["id"]}
+    try:
+        computation_task_out, resp_status = await _request_director_v2(
+            request.app, "POST", backend_url, data=body
+        )
+        data = {"pipeline_id": computation_task_out["id"]}
 
-    return web.json_response(data=wrap_as_envelope(data=data), status=resp_status)
+        return web.json_response(data=wrap_as_envelope(data=data), status=resp_status)
+    except ForwardedException as exc:
+        return web.json_response(data=wrap_as_envelope(data=exc.reason), status=exc.status)
 
 
 @login_required
@@ -107,12 +115,14 @@ async def stop_pipeline(request: web.Request) -> web.Response:
     body = {"user_id": user_id}
 
     # request to director-v2
-    _, resp_status = await _request_director_v2(
-        request.app, "POST", backend_url, data=body
-    )
-    data = {}
-
-    return web.json_response(data=wrap_as_envelope(data=data), status=resp_status)
+    try:
+        _, resp_status = await _request_director_v2(
+            request.app, "POST", backend_url, data=body
+        )
+        data = {}
+        return web.json_response(data=wrap_as_envelope(data=data), status=resp_status)
+    except ForwardedException as exc:
+        return web.json_response(data=wrap_as_envelope(data=exc.reason), status=exc.status)
 
 
 @app_module_setup(
