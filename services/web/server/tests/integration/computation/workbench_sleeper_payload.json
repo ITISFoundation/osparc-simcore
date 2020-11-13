@@ -23,7 +23,6 @@
       "version": "1.0.0",
       "label": "sleeper",
       "inputs": {
-        "in_1": null,
         "in_2": 20
       },
       "inputNodes": [
@@ -41,7 +40,6 @@
       "version": "1.0.0",
       "label": "sleeper",
       "inputs": {
-        "in_1": null,
         "in_2": 2
       },
       "inputNodes": [],
