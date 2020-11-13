@@ -29,21 +29,23 @@ qx.Class.define("osparc.data.model.StudyUI", {
     this.base(arguments);
 
     this.set({
-      workbench: studyDataUI && studyDataUI.workbench ? studyDataUI.workbench : {},
-      slideshow: studyDataUI && studyDataUI.slideshow ? studyDataUI.slideshow : {},
+      workbench: studyDataUI && studyDataUI.workbench ? studyDataUI.workbench : this.getWorkbench(),
+      slideshow: studyDataUI && studyDataUI.slideshow ? studyDataUI.slideshow : this.getSlideshow(),
       availableViews: studyDataUI && studyDataUI.availableViews ? studyDataUI.availableViews : this.getAvailableViews(),
-      currentNodeId: studyDataUI && studyDataUI.currentNodeId ? studyDataUI.currentNodeId : null
+      currentNodeId: studyDataUI && studyDataUI.currentNodeId ? studyDataUI.currentNodeId : this.getCurrentNodeId()
     });
   },
 
   properties: {
     workbench: {
       check: "Object",
+      init: {},
       nullable: true
     },
 
     slideshow: {
       check: "Object",
+      init: {},
       nullable: true,
       event: "changeSlideshow"
     },
@@ -57,6 +59,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
 
     currentNodeId: {
       check: "String",
+      init: null,
       nullable: true,
       event: "changeCurrentNodeId"
     }
