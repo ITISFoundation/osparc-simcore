@@ -142,12 +142,14 @@ qx.Class.define("osparc.desktop.ControlsBar", {
         case "PUBLISHED":
         case "STARTED":
           startButton.setFetching(true);
+          stopButton.setEnabled(true);
           break;
         case "NOT_STARTED":
         case "SUCCESS":
         case "FAILED":
         default:
           startButton.setFetching(false);
+          stopButton.setEnabled(false);
           break;
       }
     },
