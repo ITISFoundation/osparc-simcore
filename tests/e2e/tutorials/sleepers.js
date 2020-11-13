@@ -40,6 +40,8 @@ async function runTutorial() {
     await tutorial.openNodeFiles(4);
     await tutorial.checkResults(outFiles.length);
 
+    await tutorial.closeStudy();
+
     await tutorial.removeStudy();
   }
   catch(err) {
