@@ -2,7 +2,7 @@ import uuid
 
 from aiohttp import web
 
-
+# REST-API handlers ------------------------------------------------
 rest_routes = web.RouteTableDef()
 
 
@@ -34,6 +34,8 @@ async def get_viewers_handler(request: web.Request):
     }
 
 
+
+# PAGE handlers ------------------------------------------------
 page_routes = web.RouteTableDef()
 
 from pydantic import BaseModel, HttpUrl, ValidationError
@@ -81,30 +83,23 @@ def get_redirection_to_viewer_impl(app: web.Application, *, file_name: str, file
 
     # how to gurantee that the metadata is the same??
 
-    # create guest user (if not authorized)
+    # create guest user (if not authorized) -> studies_access
 
     # create project with file-picker (download_link) and viewer
 
-    # spawn task to open project
+    # spawn task to open project -> studies_access
 
     # get node-uuid from viewer
     viewer_uuid = uuid.uuid4()
 
     # info for the front-end
-    info = {
+    body = {
         "iframe_path": f"/x/{viewer_uuid}",
         "file_name": file_name, # to display while waiting
         "file_size": file_size, # to display estimated load time
     }
 
-
     viewer_page_url = (
         app.router["main"].url_for().with_fragment()
     )
     raise web.HTTPFound(location=viewer_page_url)
-
-
-
-
-def setup_guest_pages(app: web.Application):
-    raise NotImplementedError()
