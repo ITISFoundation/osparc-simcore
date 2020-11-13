@@ -22,6 +22,21 @@
   "python.formatting.autopep8Args": [
     "--max-line-length 140"
   ],
+  "python.analysis.extraPaths": [
+    "./packages/models-library/src",
+    "./packages/postgres-database/src",
+    "./packages/pytest-simcore/src",
+    "./packages/s3wrapper/src",
+    "./packages/service-library/src",
+    "./packages/simcore-sdk/src",
+    "./services/api-server/src",
+    "./services/catalog/src",
+    "./services/director/src",
+    "./services/director-v2/src",
+    "./services/sidecar/src",
+    "./services/storage/src",
+    "./services/web/server/src"
+  ],
   "python.linting.pylintEnabled": true,
   "python.linting.enabled": true,
   "[python]": {
