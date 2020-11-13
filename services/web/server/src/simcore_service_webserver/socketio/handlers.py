@@ -18,7 +18,6 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 
 from ..groups_api import list_user_groups
 from ..login.decorators import RQT_USERID_KEY, login_required
-from ..resource_manager.config import get_service_deletion_timeout
 from ..resource_manager.websocket_manager import managed_resource
 from .config import get_socket_server
 from .events import post_messages
@@ -53,9 +52,10 @@ async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
         raise SocketIOConnectionError(f"Unexpected error: {exc}") from exc
 
     # Send service_deletion_timeout to client
-    # the interval should be < get_service_deletion_timeout(app) to avoid
-    # issues, assuming half of the interval and not less the 2 seconds
-    emit_interval: int = max(2, get_service_deletion_timeout(app) // 2)
+    # 2 seconds avoids GC from removing the services to early
+    # this has been tested and is working with good results
+    # the previous implementation was not working as expected
+    emit_interval: int = 2
     log.info("Sending set_heartbeat_emit_interval with %s", emit_interval)
 
     user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
