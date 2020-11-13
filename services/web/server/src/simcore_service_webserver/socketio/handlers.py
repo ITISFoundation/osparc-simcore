@@ -18,7 +18,6 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 
 from ..groups_api import list_user_groups
 from ..login.decorators import RQT_USERID_KEY, login_required
-from ..resource_manager.config import get_service_deletion_timeout
 from ..resource_manager.websocket_manager import managed_resource
 from .config import get_socket_server
 from .events import post_messages
