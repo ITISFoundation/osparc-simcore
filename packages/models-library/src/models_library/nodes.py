@@ -153,7 +153,9 @@ class Node(BaseModel):
         example=["nodeUuid1", "nodeUuid2"],
     )
 
-    outputs: Optional[Outputs] = Field({}, description="values of output properties")
+    outputs: Optional[Outputs] = Field(
+        default_factory=dict, description="values of output properties"
+    )
     outputNode: Optional[bool] = Field(None, deprecated=True)
     outputNodes: Optional[List[NodeID]] = Field(
         None,
