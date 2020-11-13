@@ -39,7 +39,11 @@ async def _request_director_v2(
     try:
         async with session.request(method, url, headers=headers, json=data) as resp:
             if resp.status >= 400:
-                raise web.HTTPServerError(reason=await resp.text())
+                propagate_exception = web.HTTPException(
+                    reason=await resp.text(), status=resp.status
+                )
+
+                raise propagate_exception
             try:
                 payload: Dict = await resp.json()
                 return (payload, resp.status)
