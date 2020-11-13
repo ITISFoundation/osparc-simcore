@@ -16,14 +16,7 @@ import socketio
 from aiohttp import web
 from aioresponses import aioresponses
 from mock import call
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
-from pytest_simcore.helpers.utils_mock import future_with_result
-from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
-from socketio.exceptions import ConnectionError as SocketConnectionError
-
-from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
-from models_library.projects import (
+from models_library.projects_state import (
     Owner,
     ProjectLocked,
     ProjectRunningState,
