@@ -42,6 +42,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
   },
 
   properties: {
+    studyData: {
+      check: "Object",
+      nullable: false,
+      apply: "__applyStudyData"
+    },
+
     resourceType: {
       check: ["study", "template", "service"],
       nullable: false,
@@ -187,6 +193,46 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       } else {
         this.__showMenuOnly();
       }
+    },
+
+    __applyStudyData: function(studyData) {
+      let defaultThumbnail = "";
+      let uuid = null;
+      let owner = "";
+      let accessRights = {};
+      switch (studyData["resourceType"]) {
+        case "study":
+          uuid = studyData.uuid;
+          owner = studyData.prjOwner;
+          accessRights = studyData.accessRights;
+          defaultThumbnail = "@FontAwesome5Solid/file-alt/50";
+          break;
+        case "template":
+          uuid = studyData.uuid;
+          owner = studyData.prjOwner;
+          accessRights = studyData.accessRights;
+          defaultThumbnail = "@FontAwesome5Solid/copy/50";
+          break;
+        case "service":
+          uuid = studyData.key;
+          owner = studyData.owner;
+          accessRights = studyData.access_rights;
+          defaultThumbnail = "@FontAwesome5Solid/paw/50";
+          break;
+      }
+
+      this.set({
+        resourceType: studyData.resourceType,
+        uuid,
+        studyTitle: studyData.name,
+        studyDescription: studyData.description,
+        owner,
+        accessRights,
+        lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : null,
+        icon: studyData.thumbnail || defaultThumbnail,
+        state: studyData.state ? studyData.state : {},
+        classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
+      });
     },
 
     __itemSelected: function() {
