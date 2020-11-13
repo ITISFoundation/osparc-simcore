@@ -37,6 +37,7 @@ PortInt = conint(gt=0, lt=65535)
 
 
 class BootModeEnum(str, Enum):
+    DEFAULT = "default"
     DEBUG = "debug-ptvsd"
     PRODUCTION = "production"
     DEVELOPMENT = "development"
