@@ -112,7 +112,7 @@ properties:
             minimum: 0
             description: the node progress value
           thumbnail:
-            minLength: 1
+            minLength: 0
             maxLength: 2083
             format: uri
             type: string
