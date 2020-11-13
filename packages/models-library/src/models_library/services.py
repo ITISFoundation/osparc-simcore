@@ -1,19 +1,19 @@
-import sys
+"""
+
+NOTE: to dump json-schema from CLI use
+    python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
+"""
 from enum import Enum
-from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
 from pydantic.types import PositiveInt
 
-from .constants import VERSION_RE
+# from .constants import VERSION_RE
+from .basic_regex import VERSION_RE
 
-current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
-
-KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$" # TODO: deprecate this global constant by SERVICE_KEY_RE
+KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$"  # TODO: deprecate this global constant by SERVICE_KEY_RE
 SERVICE_KEY_RE = KEY_RE
-
-VERSION_RE = r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
 
 PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
 PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"
@@ -306,9 +306,3 @@ class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
 
     class Config:
         orm_mode = True
-
-
-if __name__ == "__main__":
-
-    with open(current_file.with_suffix(".json"), "wt") as fh:
-        print(ServiceDockerData.schema_json(indent=2), file=fh)
