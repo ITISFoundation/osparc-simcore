@@ -180,6 +180,9 @@ class Node(BaseModel):
         example=["RUNNING", "FAILED"],
     )
 
+
+
+
     @validator("thumbnail", pre=True)
     @classmethod
     def convert_empty_str_to_none(v):
