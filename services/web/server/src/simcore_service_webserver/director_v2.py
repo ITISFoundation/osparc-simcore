@@ -39,11 +39,9 @@ async def _request_director_v2(
     try:
         async with session.request(method, url, headers=headers, json=data) as resp:
             if resp.status >= 400:
-                propagate_exception = web.HTTPException(
-                    reason=await resp.text(), status=resp.status
+                raise web.HTTPException(
+                    status_code=resp.status, reason=await resp.text()
                 )
-
-                raise propagate_exception
             try:
                 payload: Dict = await resp.json()
                 return (payload, resp.status)
@@ -137,10 +135,7 @@ def setup_director_v2(app: web.Application):
     specs = app[APP_OPENAPI_SPECS_KEY]
     # bind routes with handlers
     routes = map_handlers_with_operations(
-        {
-            "start_pipeline": start_pipeline,
-            "stop_pipeline": stop_pipeline,
-        },
+        {"start_pipeline": start_pipeline, "stop_pipeline": stop_pipeline,},
         filter(lambda o: "computation" in o[1], iter_path_operations(specs)),
         strict=True,
     )
