@@ -231,7 +231,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : null,
         icon: studyData.thumbnail || defaultThumbnail,
         state: studyData.state ? studyData.state : {},
-        classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
+        classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : []
       });
     },
 
