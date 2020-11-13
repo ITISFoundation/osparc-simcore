@@ -20,7 +20,7 @@ from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 
-from models_library.projects import (
+from models_library.projects_state import (
     Owner,
     ProjectLocked,
     ProjectRunningState,

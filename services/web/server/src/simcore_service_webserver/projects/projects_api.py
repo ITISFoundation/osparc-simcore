@@ -16,7 +16,7 @@ from uuid import uuid4
 from aiohttp import web
 from models_library.project_nodes import RunningState
 
-from models_library.projects import (
+from models_library.projects_state import (
     Owner,
     ProjectLocked,
     ProjectRunningState,
