@@ -117,8 +117,8 @@ services:
     environment:
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
       - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
-      - DIRECTOR-V2_HOST=${DIRECTOR_HOST:-director}
-      - DIRECTOR-V2_PORT=${DIRECTOR_PORT:-8000}
+      - DIRECTOR_V2_HOST=${DIRECTOR_V2_HOST:-director-v2}
+      - DIRECTOR_V2_PORT=${DIRECTOR_V2_PORT:-8000}
       - STORAGE_HOST=${STORAGE_HOST:-storage}
       - STORAGE_PORT=${STORAGE_PORT:-8080}
       - CATALOG_HOST=${CATALOG_HOST:-catalog}

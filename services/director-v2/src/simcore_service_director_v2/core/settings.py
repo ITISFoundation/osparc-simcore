@@ -215,4 +215,4 @@ class AppSettings(BaseSettings):
     remote_debug_port: PortInt = 3000
 
     class Config(CommonConfig):
-        env_prefix = "DIRECTOR2_"
+        env_prefix = "DIRECTOR_V2_"

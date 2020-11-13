@@ -61,12 +61,12 @@ def webserver_environ(
     request, docker_stack: Dict, simcore_docker_compose: Dict
 ) -> Dict[str, str]:
     """
-        Started already swarm with integration stack (via dependency with 'docker_stack')
+    Started already swarm with integration stack (via dependency with 'docker_stack')
 
-        Environment variable expected for the web-server application in
-        an test-integration context, i.e. web-server runs in host and the
-        remaining services (defined in variable 'core_services') are deployed
-        in containers
+    Environment variable expected for the web-server application in
+    an test-integration context, i.e. web-server runs in host and the
+    remaining services (defined in variable 'core_services') are deployed
+    in containers
     """
     assert "webserver" not in docker_stack["services"]
 
@@ -97,8 +97,8 @@ def webserver_environ(
     ]
     for name in services_with_published_ports:
 
-        host_key = f"{name.upper()}_HOST"
-        port_key = f"{name.upper()}_PORT"
+        host_key = f"{name.upper().replace('-', '_')}_HOST"
+        port_key = f"{name.upper().replace('-', '_')}_PORT"
 
         # published port is sometimes dynamically defined by the swarm
         assert (
@@ -118,11 +118,11 @@ def webserver_environ(
 @pytest.fixture(scope="module")
 def _webserver_dev_config(webserver_environ: Dict, docker_stack: Dict) -> Dict:
     """
-        Swarm with integration stack already started
+    Swarm with integration stack already started
 
-        Configuration for a webserver provided it runs in host
+    Configuration for a webserver provided it runs in host
 
-        NOTE: Prefer using 'app_config' below instead of this as a function-scoped fixture
+    NOTE: Prefer using 'app_config' below instead of this as a function-scoped fixture
     """
     config_file_path = current_dir / "webserver_dev_config.yaml"
 
@@ -161,8 +161,8 @@ def _webserver_dev_config(webserver_environ: Dict, docker_stack: Dict) -> Dict:
 @pytest.fixture(scope="function")
 def app_config(_webserver_dev_config: Dict, aiohttp_unused_port) -> Dict:
     """
-        Swarm with integration stack already started
-        This fixture can be safely modified during test since it is renovated on every call
+    Swarm with integration stack already started
+    This fixture can be safely modified during test since it is renovated on every call
     """
     cfg = deepcopy(_webserver_dev_config)
     cfg["main"]["port"] = aiohttp_unused_port()

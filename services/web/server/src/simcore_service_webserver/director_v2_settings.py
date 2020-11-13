@@ -35,7 +35,7 @@ class Directorv2Settings(BaseSettings):
         return v
 
     class Config:
-        prefix = "DIRECTOR2_"
+        prefix = "DIRECTOR_V2_"
 
 
 def create_settings(app: web.Application) -> Directorv2Settings:
