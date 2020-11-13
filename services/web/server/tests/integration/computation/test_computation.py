@@ -55,9 +55,7 @@ core_services = [
     "storage",
 ]
 
-ops_services = [
-    "minio",
-]
+ops_services = ["minio", "adminer"]
 
 
 @pytest.fixture
@@ -225,9 +223,9 @@ def _assert_sleeper_services_completed(
     "user_role,expected_start_response, expected_stop_response",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk, web.HTTPNoContent),
-        (UserRole.USER, web.HTTPOk, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPOk, web.HTTPNoContent),
+        (UserRole.GUEST, web.HTTPCreated, web.HTTPNoContent),
+        (UserRole.USER, web.HTTPCreated, web.HTTPNoContent),
+        (UserRole.TESTER, web.HTTPCreated, web.HTTPNoContent),
     ],
 )
 async def test_start_pipeline(
@@ -252,7 +250,7 @@ async def test_start_pipeline(
         sio = await socketio_client(client_session_id)
         assert sio.sid
     except SocketConnectionError:
-        if expected_start_response == web.HTTPOk:
+        if expected_start_response == web.HTTPCreated:
             pytest.fail("socket io connection should not fail")
 
     url_start = client.app.router["start_pipeline"].url_for(project_id=project_id)
