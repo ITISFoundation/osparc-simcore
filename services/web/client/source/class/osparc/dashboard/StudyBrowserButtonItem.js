@@ -130,47 +130,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     __dateFormat: null,
     __timeFormat: null,
 
-    isResourceType: function(resourceType) {
-      return this.getResourceType() === resourceType;
-    },
-
-    multiSelection: function(on) {
-      if (on) {
-        const menuButton = this.getChildControl("menu-button");
-        menuButton.setVisibility("excluded");
-        this.__itemSelected();
-      } else {
-        this.__showMenuOnly();
-      }
-    },
-
-    __itemSelected: function() {
-      if (this.isResourceType("study")) {
-        const selected = this.getValue();
-
-        if (this.isLocked() && selected) {
-          this.setValue(false);
-        }
-
-        const tick = this.getChildControl("tick-selected");
-        tick.setVisibility(selected ? "visible" : "excluded");
-
-        const untick = this.getChildControl("tick-unselected");
-        untick.setVisibility(selected ? "excluded" : "visible");
-      } else {
-        this.__showMenuOnly();
-      }
-    },
-
-    __showMenuOnly: function() {
-      const menuButton = this.getChildControl("menu-button");
-      menuButton.setVisibility("visible");
-      const tick = this.getChildControl("tick-selected");
-      tick.setVisibility("excluded");
-      const untick = this.getChildControl("tick-unselected");
-      untick.setVisibility("excluded");
-    },
-
     // overridden
     _createChildControlImpl: function(id) {
       let control;
@@ -214,6 +173,47 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    isResourceType: function(resourceType) {
+      return this.getResourceType() === resourceType;
+    },
+
+    multiSelection: function(on) {
+      if (on) {
+        const menuButton = this.getChildControl("menu-button");
+        menuButton.setVisibility("excluded");
+        this.__itemSelected();
+      } else {
+        this.__showMenuOnly();
+      }
+    },
+
+    __itemSelected: function() {
+      if (this.isResourceType("study")) {
+        const selected = this.getValue();
+
+        if (this.isLocked() && selected) {
+          this.setValue(false);
+        }
+
+        const tick = this.getChildControl("tick-selected");
+        tick.setVisibility(selected ? "visible" : "excluded");
+
+        const untick = this.getChildControl("tick-unselected");
+        untick.setVisibility(selected ? "excluded" : "visible");
+      } else {
+        this.__showMenuOnly();
+      }
+    },
+
+    __showMenuOnly: function() {
+      const menuButton = this.getChildControl("menu-button");
+      menuButton.setVisibility("visible");
+      const tick = this.getChildControl("tick-selected");
+      tick.setVisibility("excluded");
+      const untick = this.getChildControl("tick-unselected");
+      untick.setVisibility("excluded");
     },
 
     _applyMenu: function(value, old) {
