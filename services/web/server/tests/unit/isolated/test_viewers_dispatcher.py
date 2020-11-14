@@ -93,7 +93,7 @@ def test_map_file_types_to_viewers():
     pass
 
 
-def test_create_guset_use():
+def test_create_guest_user():
     pass
 
 
