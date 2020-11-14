@@ -20,10 +20,10 @@ class Owner(BaseModel):
     user_id: PositiveInt = Field(
         ...,
         description="Owner's identifier when registered in the user's database table",
-        example=[2],
+        examples=[2],
     )
-    first_name: str = Field(..., description="Owner first name", example=["John"])
-    last_name: str = Field(..., description="Owner last name", example=["Smith"])
+    first_name: str = Field(..., description="Owner first name", examples=["John"])
+    last_name: str = Field(..., description="Owner last name", examples=["Smith"])
 
     class Config:
         extra = Extra.forbid
@@ -41,7 +41,7 @@ class ProjectLocked(BaseModel):
 
 class ProjectRunningState(BaseModel):
     value: RunningState = Field(
-        ..., description="The running state of the project", example=["STARTED"]
+        ..., description="The running state of the project", examples=["STARTED"]
     )
 
     class Config:

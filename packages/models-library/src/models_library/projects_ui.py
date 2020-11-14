@@ -23,7 +23,7 @@ class WorkbenchUI(BaseModel):
 
 
 class Slideshow(BaseModel):
-    position: int = Field(..., description="Slide's position", example=["0", "2"])
+    position: int = Field(..., description="Slide's position", examples=["0", "2"])
 
     class Config:
         extra = Extra.forbid
