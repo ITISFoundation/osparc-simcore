@@ -8,10 +8,11 @@
 
 """
 import logging
-from typing import AsyncGenerator, Dict
+from typing import Dict
 
 from aiohttp import web
 from aioredlock import Aioredlock
+from pydantic import BaseModel
 
 from ..login.cfg import get_storage
 from ..login.handlers import ACTIVE, GUEST
@@ -25,9 +26,16 @@ from ..security_api import authorized_userid, encrypt_password, is_anonymous, re
 log = logging.getLogger(__name__)
 
 
-async def ensure_authorized_user(
-    request: web.Request, response: web.Response
-) -> AsyncGenerator[Dict, None]:
+class UserInfo(BaseModel):
+    id: int
+    name: str
+    email: str
+    primary_gid: int
+    needs_login: bool = False
+    is_guest: bool = True
+
+
+async def acquire_user(request: web.Request) -> UserInfo:
     """
     Identifies request's user and if anonymous, it creates
     a temporary guest user that is autho
@@ -39,23 +47,28 @@ async def ensure_authorized_user(
     if not is_anonymous_user:
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
         # TODO: test if temp user overrides old cookie properly
-        user = await get_authorized_user(request)
+        user = await _get_authorized_user(request)
 
     if not user:
         log.debug("Creating temporary user ...")
-        user = await create_temporary_user(request)
+        user = await _create_temporary_user(request)
         is_anonymous_user = True
 
-    yield user
+    return UserInfo(
+        needs_login=is_anonymous_user, is_guest=user.get("role") == GUEST, **user
+    )
 
-    if is_anonymous_user:
+
+async def ensure_authentication(
+    user: UserInfo, request: web.Request, response: web.Response
+):
+    if user.needs_login:
         log.debug("Auto login for anonymous user %s", user["name"])
-        identity = user["email"]
+        identity = user.email
         await remember(request, response, identity)
 
 
-# TODO: from .users import get_user?
-async def get_authorized_user(request: web.Request) -> Dict:
+async def _get_authorized_user(request: web.Request) -> Dict:
 
     db = get_storage(request.app)
     userid = await authorized_userid(request)
@@ -63,7 +76,7 @@ async def get_authorized_user(request: web.Request) -> Dict:
     return user
 
 
-async def create_temporary_user(request: web.Request):
+async def _create_temporary_user(request: web.Request):
     db = get_storage(request.app)
     lock_manager: Aioredlock = request.app[APP_CLIENT_REDIS_LOCK_KEY]
 
